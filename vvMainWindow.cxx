@@ -14,6 +14,7 @@
 #include "pqStandardViewModules.h"
 #include "vtkPVPlugin.h"
 #include "vvLoadDataReaction.h"
+#include "vvSelectionReaction.h"
 
 // Declare the plugin to load.
 PV_PLUGIN_IMPORT_INIT(VelodyneHDLPlugin);
@@ -60,6 +61,10 @@ private:
   void setupUi(vvMainWindow* window)
     {
     new vvLoadDataReaction(this->Ui.action_Open);
+    new vvSelectionReaction(vvSelectionReaction::SURFACE_POINTS,
+      this->Ui.actionSelect_Visible_Points);
+    new vvSelectionReaction(vvSelectionReaction::ALL_POINTS,
+      this->Ui.actionSelect_All_Points);
     }
 };
 

@@ -17,11 +17,14 @@ set (source_files
   vvLoadDataReaction.h
   vvMainWindow.cxx
   vvMainWindow.h
+  vvSelectionReaction.cxx
+  vvSelectionReaction.h
   )
 
 qt4_wrap_cpp(moc_source_files
   vvLoadDataReaction.h
   vvMainWindow.h
+  vvSelectionReaction.h
   )
 
 qt4_wrap_ui(ui_source_files
