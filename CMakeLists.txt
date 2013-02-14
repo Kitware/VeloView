@@ -69,6 +69,10 @@ include_directories(
 # Add the reader plugin and any other plugins.
 add_subdirectory(VelodyneHDL)
 
+# This ensure that build_paraview_client() adds an "forwarding path" to locate
+# paraview from installed location.
+set (PARAVIEW_INSTALL_LIB_DIR "lib/paraview-${PARAVIEW_VERSION_MAJOR}.${PARAVIEW_VERSION_MINOR}")
+
 build_paraview_client(VelodyneViewer
   TITLE "LIDAR Viewer - Velodyne"
   ORGANIZATION "Velodyne"
