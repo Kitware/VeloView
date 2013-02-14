@@ -1,0 +1,3 @@
+<ParaViewReaders>
+  <Proxy group="sources" name="VelodyneHDLReader" />
+</ParaViewReaders>
