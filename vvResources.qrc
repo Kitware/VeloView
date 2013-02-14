@@ -1,0 +1,6 @@
+<RCC>
+  <qresource prefix="/vvResources">
+    <file>Icons/logo.jpg</file>
+    <file>Icons/open.png</file>
+  </qresource>
+</RCC>
