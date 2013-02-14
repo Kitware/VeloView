@@ -35,6 +35,10 @@ include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}
   ${CMAKE_CURRENT_BINARY_DIR})
 
+
+# Add the reader plugin and any other plugins.
+add_subdirectory(VelodyneHDL)
+
 build_paraview_client(VelodyneViewer
   TITLE "LIDAR Viewer - Velodyne"
   ORGANIZATION "Velodyne"
@@ -53,3 +57,6 @@ build_paraview_client(VelodyneViewer
     ${ui_source_files}
     ${rcs_source_files}
 )
+
+# We directly link against the plugin and import them statically.
+target_link_libraries(VelodyneViewer VelodyneHDLPlugin)

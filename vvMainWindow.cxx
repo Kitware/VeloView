@@ -3,6 +3,7 @@
 
 #include "pqActiveObjects.h"
 #include "pqApplicationCore.h"
+#include "pqAutoLoadPluginXMLBehavior.h"
 #include "pqCommandLineOptionsBehavior.h"
 #include "pqCrashRecoveryBehavior.h"
 #include "pqInterfaceTracker.h"
@@ -11,7 +12,11 @@
 #include "pqQtMessageHandlerBehavior.h"
 #include "pqRenderView.h"
 #include "pqStandardViewModules.h"
+#include "vtkPVPlugin.h"
 #include "vvLoadDataReaction.h"
+
+// Declare the plugin to load.
+PV_PLUGIN_IMPORT_INIT(VelodyneHDLPlugin);
 
 class vvMainWindow::pqInternals
 {
@@ -34,10 +39,11 @@ private:
     pgm->addInterface(new pqStandardViewModules(pgm));
 
     // Define application behaviors.
-    new pqQtMessageHandlerBehavior(window);
-    new pqCrashRecoveryBehavior(window);
+    new pqAutoLoadPluginXMLBehavior(window);
     new pqCommandLineOptionsBehavior(window);
+    new pqCrashRecoveryBehavior(window);
     new pqPersistentMainWindowStateBehavior(window);
+    new pqQtMessageHandlerBehavior(window);
 
     // Connect to builtin server.
     pqObjectBuilder* builder = core->getObjectBuilder();
@@ -60,6 +66,7 @@ private:
 //-----------------------------------------------------------------------------
 vvMainWindow::vvMainWindow() : Internals (new vvMainWindow::pqInternals(this))
 {
+  PV_PLUGIN_IMPORT(VelodyneHDLPlugin);
 }
 
 //-----------------------------------------------------------------------------
@@ -68,4 +75,5 @@ vvMainWindow::~vvMainWindow()
   delete this->Internals;
   this->Internals = NULL;
 }
+
 //-----------------------------------------------------------------------------

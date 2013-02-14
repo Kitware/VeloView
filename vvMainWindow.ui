@@ -68,7 +68,7 @@
     <string>Exit Application</string>
    </property>
    <property name="shortcut">
-    <string>Meta+Q</string>
+    <string>Ctrl+Q</string>
    </property>
   </action>
   <action name="action_Open">
