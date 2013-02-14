@@ -1,0 +1,22 @@
+##------------------------------------------------------------------------------
+## Regular expression for warning exception during build process
+#set (CTEST_CUSTOM_WARNING_EXCEPTION
+#  ${CTEST_CUSTOM_WARNING_EXCEPTION}
+#)
+
+# Regular expression for warning exception during build process
+# Regular expression for error exceptions during build process
+set (CTEST_CUSTOM_ERROR_EXCEPTION
+  ${CTEST_CUSTOM_ERROR_EXCEPTION}
+
+  # skip numpy configure errors on Windows.
+  # these are warnings about Atlas/Blas not found.
+  "system_info.py.*UserWarning:"
+
+  # again from numpy, skip configtest errors.
+  "_configtest"
+
+  # skip untar errors when unpacking silo.
+  "CMake Error.*archive_write_header"
+  "CMake Error.*silo-4.8-bsd/config-site"
+)
