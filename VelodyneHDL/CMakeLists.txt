@@ -33,7 +33,14 @@ add_paraview_plugin(VelodyneHDLPlugin "1.0"
 )
 
 target_link_libraries(VelodyneHDLPlugin ${PCAP_LIBRARY})
-install(TARGETS VelodyneHDLPlugin
-        RUNTIME DESTINATION ${VV_INSTALL_RUNTIME_DIR}
-        LIBRARY DESTINATION ${VV_INSTALL_LIBRARY_DIR}
-        COMPONENT Runtime)
+if (NOT APPLE)
+  install(TARGETS VelodyneHDLPlugin
+          RUNTIME DESTINATION ${VV_INSTALL_RUNTIME_DIR}
+          LIBRARY DESTINATION ${VV_INSTALL_LIBRARY_DIR}
+          COMPONENT Runtime)
+else()
+  install(TARGETS VelodyneHDLPlugin
+          RUNTIME DESTINATION ${VV_INSTALL_RUNTIME_DIR}/VelodyneViewer.app/Contents/Libraries
+          LIBRARY DESTINATION ${VV_INSTALL_RUNTIME_DIR}/VelodyneViewer.app/Contents/Libraries
+          COMPONENT Runtime)
+endif()

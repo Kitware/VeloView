@@ -65,6 +65,12 @@ include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}
   ${CMAKE_CURRENT_BINARY_DIR})
 
+if (APPLE)
+  set(CMAKE_INSTALL_NAME_DIR "@executable_path/../Libraries")
+
+  # ensure that we don't build forwarding executables on apple.
+  set(VTK_BUILD_FORWARDING_EXECUTABLES FALSE)
+endif()
 
 # Add the reader plugin and any other plugins.
 add_subdirectory(VelodyneHDL)
