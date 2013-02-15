@@ -61,7 +61,8 @@ class Library(object):
       return self.__depencies
     collection = set()
     for dep in _getdependencies(self.RealPath):
-      collection.add(Library.createFromReference(dep, exepath))
+      if not isexcluded(dep):
+        collection.add(Library.createFromReference(dep, exepath))
     self.__depencies = collection
     return self.__depencies
 
@@ -143,8 +144,9 @@ SearchLocations = []
 if __name__ == "__main__":
   App = sys.argv[1]
   SearchLocations = [sys.argv[2]]
-  if len(sys.argv) > 3:
-    QtPluginsDir = sys.argv[3]
+  SearchLocations.append (sys.argv[3])
+  if len(sys.argv) > 4:
+    QtPluginsDir = sys.argv[4]
   else:
     QtPluginsDir = None
   LibrariesPrefix = "Contents/Libraries"
@@ -237,14 +239,3 @@ if __name__ == "__main__":
   #  print "Fixing '%s'" % dep
     commands.getoutput('install_name_tool %s "%s"' % (install_name_tool_command, dep))
     commands.getoutput('chmod a-w "%s"' % dep)
-  
-
-
-  # Fix mpich issue when loading CosmologyTools. When CosmologyTools was loaded, an 
-  # error was thrown about not being able to find libpmpich.dylib and libmpicxx.dylib.
-  # Creating these symbolic links is a temporary workaround, but, likely not a good
-  # long-term solution.
-  commands.getoutput('cd %s/Contents/Libraries && ln -s libmpich.3.3.dylib libmpich.dylib' % App);
-  commands.getoutput('cd %s/Contents/Libraries && ln -s libmpichcxx.3.3.dylib libmpichcxx.dylib' % App);
-  commands.getoutput('cd %s/Contents/Libraries && ln -s libmpich.3.3.dylib libpmpich.dylib' % App);
-  
