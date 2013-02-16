@@ -1,6 +1,6 @@
 <RCC>
   <qresource prefix="/vvResources">
-    <file>Icons/logo.jpg</file>
+    <file>Icons/logo.png</file>
     <file>Icons/open.png</file>
     <file>Icons/pqFrustumSelectionPoint24.png</file>
     <file>Icons/pqSurfaceSelectionPoint24.png</file>
