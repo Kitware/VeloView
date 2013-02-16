@@ -24,7 +24,7 @@
      <x>0</x>
      <y>0</y>
      <width>800</width>
-     <height>25</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -72,6 +72,17 @@
    </attribute>
    <addaction name="actionSelect_Visible_Points"/>
    <addaction name="actionSelect_All_Points"/>
+  </widget>
+  <widget class="pqVCRToolbar" name="vcrToolBar">
+   <property name="windowTitle">
+    <string>VCR Controls</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
   </widget>
   <action name="actionE_xit">
    <property name="text">
@@ -126,6 +137,11 @@
    <class>pqColorToolbar</class>
    <extends>QToolBar</extends>
    <header>pqColorToolbar.h</header>
+  </customwidget>
+  <customwidget>
+   <class>pqVCRToolbar</class>
+   <extends>QToolBar</extends>
+   <header>pqVCRToolbar.h</header>
   </customwidget>
  </customwidgets>
  <resources>
