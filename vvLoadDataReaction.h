@@ -15,6 +15,20 @@ public:
   vvLoadDataReaction(QAction* parent);
   virtual ~vvLoadDataReaction();
 
+  // This method uses the default FileOpen dialog (as against the ParaView
+  // specific one used by pqLoadDataReaction).
+  pqPipelineSource* loadData();
+
+protected:
+  /// Called when the action is triggered.
+  virtual void onTriggered()
+    {
+    pqPipelineSource *source = vvLoadDataReaction::loadData();
+    if (source)
+      {
+      emit this->loadedData(source);
+      }
+    }
 private slots:
   void onDataLoaded(pqPipelineSource*);
 
