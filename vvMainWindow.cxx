@@ -13,6 +13,7 @@
 #include "pqRenderView.h"
 #include "pqStandardViewModules.h"
 #include "vtkPVPlugin.h"
+#include "vtkSMPropertyHelper.h"
 #include "vvLoadDataReaction.h"
 #include "vvSelectionReaction.h"
 
@@ -54,6 +55,10 @@ private:
     // Create a default view.
     pqView* view = builder->createView(pqRenderView::renderViewType(),
       server);
+    vtkSMPropertyHelper(view->getProxy(),"CenterAxesVisibility").Set(0);
+    // MultiSamples doesn't work, we need to set that up before registering the proxy.
+    vtkSMPropertyHelper(view->getProxy(),"MultiSamples").Set(4);
+    view->getProxy()->UpdateVTKObjects();
     pqActiveObjects::instance().setActiveView(view);
     window->setCentralWidget(view->getWidget());
     }
