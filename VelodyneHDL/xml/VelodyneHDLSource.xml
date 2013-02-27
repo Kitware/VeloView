@@ -1,0 +1,41 @@
+<ServerManagerConfiguration>
+  <ProxyGroup name="sources">
+    <SourceProxy name="VelodyneHDLSource" class="vtkVelodyneHDLSource" label="Velodyne HDL Source">
+      <Documentation
+         short_help="Velodyne HDL Source"
+         long_help="Velodyne HDL Source">
+      </Documentation>
+
+      <StringVectorProperty
+          name="PacketFile"
+          animateable="0"
+          command="SetPacketFile"
+          number_of_elements="1">
+          <FileListDomain name="files"/>
+          <Documentation>
+            This property specifies the pcap file to stream.
+          </Documentation>
+      </StringVectorProperty>
+
+      <Property
+        name="Poll"
+        command="Poll" />
+
+      <Property
+        name="Start"
+        command="Start" />
+
+      <Property
+        name="Stop"
+        command="Stop" />
+
+      <IntVectorProperty
+         name="HasNewData"
+         command="HasNewData"
+         information_only="1">
+         <SimpleIntInformationHelper/>
+      </IntVectorProperty>
+
+   </SourceProxy>
+  </ProxyGroup>
+</ServerManagerConfiguration>

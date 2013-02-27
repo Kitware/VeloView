@@ -37,7 +37,6 @@
 #include <sstream>
 #include <algorithm>
 #include <cmath>
-#include <stdint.h>
 
 #include <pcap.h>
 
@@ -55,6 +54,7 @@ public:
   vtkSmartPointer<vtkPolyData> CurrentDataset;
 
 
+  void SplitFrame();
   void LoadData(const std::string& filename);
   vtkSmartPointer<vtkPolyData> CreateData(vtkIdType numberOfPoints);
   vtkSmartPointer<vtkCellArray> NewVertexCells(vtkIdType numberOfVerts);
@@ -161,6 +161,24 @@ int vtkVelodyneHDLReader::CanReadFile(const char *fname)
 }
 
 //-----------------------------------------------------------------------------
+void vtkVelodyneHDLReader::ProcessHDLPacket(unsigned char *data, unsigned int bytesReceived)
+{
+  this->Internal->ProcessHDLPacket(data, bytesReceived);
+}
+
+//-----------------------------------------------------------------------------
+std::vector<vtkSmartPointer<vtkPolyData> >& vtkVelodyneHDLReader::GetDatasets()
+{
+  return this->Internal->Datasets;
+}
+
+//-----------------------------------------------------------------------------
+void vtkVelodyneHDLReader::SplitFrame()
+{
+  this->Internal->SplitFrame();
+}
+
+//-----------------------------------------------------------------------------
 vtkSmartPointer<vtkPolyData> vtkVelodyneHDLReader::vtkInternal::CreateData(vtkIdType numberOfPoints)
 {
   vtkSmartPointer<vtkPolyData> polyData = vtkSmartPointer<vtkPolyData>::New();
@@ -189,6 +207,12 @@ vtkSmartPointer<vtkPolyData> vtkVelodyneHDLReader::vtkInternal::CreateData(vtkId
   azimuth->SetName("azimuth");
   azimuth->SetNumberOfTuples(numberOfPoints);
   polyData->GetPointData()->AddArray(azimuth.GetPointer());
+
+  // range
+  vtkNew<vtkUnsignedShortArray> distance;
+  distance->SetName("distance");
+  distance->SetNumberOfTuples(numberOfPoints);
+  polyData->GetPointData()->AddArray(distance.GetPointer());
 
   return polyData;
 }
@@ -316,6 +340,7 @@ void PushFiringData(vtkPolyData* polyData, unsigned char laserId, unsigned short
   vtkUnsignedCharArray::SafeDownCast(polyData->GetPointData()->GetArray("intensity"))->InsertNextValue(intensity);
   vtkUnsignedCharArray::SafeDownCast(polyData->GetPointData()->GetArray("laser_id"))->InsertNextValue(laserId);
   vtkUnsignedShortArray::SafeDownCast(polyData->GetPointData()->GetArray("azimuth"))->InsertNextValue(azimuth);
+  vtkUnsignedShortArray::SafeDownCast(polyData->GetPointData()->GetArray("distance"))->InsertNextValue(laserReturn.distance);
   polyData->GetPoints()->InsertNextPoint(x,y,z);
 }
 
@@ -413,6 +438,19 @@ void vtkVelodyneHDLReader::vtkInternal::Init()
 }
 
 //-----------------------------------------------------------------------------
+void vtkVelodyneHDLReader::vtkInternal::SplitFrame()
+{
+  if (!this->CurrentDataset || !this->CurrentDataset->GetNumberOfPoints())
+    {
+    return;
+    }
+
+  this->CurrentDataset->SetVerts(this->NewVertexCells(this->CurrentDataset->GetNumberOfPoints()));
+  this->Datasets.push_back(this->CurrentDataset);
+  this->CurrentDataset = 0;
+}
+
+//-----------------------------------------------------------------------------
 void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(unsigned char *data, std::size_t bytesReceived)
 {
   if (bytesReceived != 1206)
@@ -427,24 +465,22 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(unsigned char *data, st
 
   HDLDataPacket* dataPacket = reinterpret_cast<HDLDataPacket *>(data);
 
-  static unsigned int last_azimuth_ = 65000;
-
+  static unsigned int last_azimuth_ = 0;
+  static unsigned int packetCounter = 0;
 
   for (int i = 0; i < HDL_FIRING_PER_PKT; ++i)
     {
     HDLFiringData firingData = dataPacket->firingData[i];
     int offset = (firingData.blockIdentifier == BLOCK_0_TO_31) ? 0 : 32;
 
-    if (firingData.rotationalPosition < last_azimuth_
+    if (firingData.rotationalPosition > 18000 && last_azimuth_ < 18000
         && ((last_azimuth_ - firingData.rotationalPosition) > 18000)
         && this->CurrentDataset && this->CurrentDataset->GetNumberOfPoints())
       {
       //printf("azimuths: %d %d\n", firingData.rotationalPosition, last_azimuth_);
-
-      this->CurrentDataset->SetVerts(this->NewVertexCells(this->CurrentDataset->GetNumberOfPoints()));
-      this->Datasets.push_back(this->CurrentDataset);
-      this->CurrentDataset = 0;
+      this->SplitFrame();
       }
+    last_azimuth_ = firingData.rotationalPosition;
 
     if (!this->CurrentDataset)
       {
@@ -456,11 +492,12 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(unsigned char *data, st
       unsigned char laserId = static_cast<unsigned char>(j + offset);
       PushFiringData(this->CurrentDataset, laserId, firingData.rotationalPosition, firingData.laserReturns[j], laser_corrections_[j + offset]);
       }
-
-
-    last_azimuth_ = firingData.rotationalPosition;
     }
 
+  //if ((++packetCounter % 170) == 0)
+  //  {
+  //  this->SplitFrame();
+  //  }
 }
 
 //-----------------------------------------------------------------------------

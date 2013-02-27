@@ -1,0 +1,6 @@
+<ParaViewReaders>
+  <Reader name="VelodyneHDLReader"
+    extensions="pcap"
+    file_description="Velodyone HDL Data File">
+  </Reader>
+</ParaViewReaders>

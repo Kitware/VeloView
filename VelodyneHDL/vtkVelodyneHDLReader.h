@@ -19,7 +19,8 @@
 #ifndef _vtkVelodyneHDLReader_h
 #define _vtkVelodyneHDLReader_h
 
-#include "vtkPolyDataAlgorithm.h"
+#include <vtkPolyDataAlgorithm.h>
+#include <vtkSmartPointer.h>
 
 class VTK_EXPORT vtkVelodyneHDLReader : public vtkPolyDataAlgorithm
 {
@@ -37,6 +38,10 @@ public:
   //
   int CanReadFile(const char* fname);
 
+
+  void SplitFrame();
+  void ProcessHDLPacket(unsigned char *data, unsigned int bytesReceived);
+  std::vector<vtkSmartPointer<vtkPolyData> >& GetDatasets();
 
 protected:
   vtkVelodyneHDLReader();
