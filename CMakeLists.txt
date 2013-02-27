@@ -122,6 +122,7 @@ set (CM_PROJECTS_ALL)
 include(qt)
 include(paraview)
 include(pcap)
+include(boost)
 include(velodyneviewer)
 
 process_dependencies()

@@ -20,6 +20,16 @@ add_revision(velodyneviewer
   GIT_REPOSITORY git://kwsource.kitwarein.com/miscellaneousprojectsuda/velodyneviewer.git
   GIT_TAG master)
 
-add_revision(pcap
-  URL "http://www.tcpdump.org/release/libpcap-1.3.0.tar.gz"
-  URL_MD5 "f78455a92622b7a3c05c58b6ad1cec7e")
+if (WIN32)
+  add_revision(pcap
+    URL "http://www.winpcap.org/install/bin/WpdPack_4_1_2.zip"
+    URL_MD5 bae2236af062b0900ad1416b2c4878b9)
+else()  
+  add_revision(pcap
+    URL "http://www.tcpdump.org/release/libpcap-1.3.0.tar.gz"
+    URL_MD5 "f78455a92622b7a3c05c58b6ad1cec7e")
+endif()
+
+add_revision(boost
+  URL "http://downloads.sourceforge.net/project/boost/boost/1.50.0/boost_1_50_0.tar.gz"
+  URL_MD5 dbc07ab0254df3dda6300fd737b3f264)
