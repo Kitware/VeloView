@@ -37,7 +37,17 @@
 #include <sstream>
 #include <algorithm>
 #include <cmath>
-#include <stdint.h>
+
+#ifdef _MSC_VER
+# include <boost/cstdint.hpp>
+typedef boost::uint8_t uint8_t;
+# ifndef M_PI
+#   define M_PI 3.14159265358979323846
+# endif
+#else
+# include <stdint.h>
+#endif
+
 #include <pcap.h>
 
 //-----------------------------------------------------------------------------
