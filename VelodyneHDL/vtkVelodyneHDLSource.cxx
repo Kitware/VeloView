@@ -35,6 +35,11 @@ class PacketConsumer
 {
 public:
 
+  PacketConsumer()
+  {
+    this->NewData = false;
+  }
+
   void HandleSensorData(const unsigned char* data, unsigned int length)
   {
     this->HDLReader->ProcessHDLPacket(const_cast<unsigned char*>(data), length);
