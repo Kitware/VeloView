@@ -37,7 +37,7 @@
 #include <sstream>
 #include <algorithm>
 #include <cmath>
-
+#include <stdint.h>
 #include <pcap.h>
 
 //-----------------------------------------------------------------------------
