@@ -57,10 +57,10 @@ private:
       server);
     vtkSMPropertyHelper(view->getProxy(),"CenterAxesVisibility").Set(0);
     // MultiSamples doesn't work, we need to set that up before registering the proxy.
-    vtkSMPropertyHelper(view->getProxy(),"MultiSamples").Set(4);
+    //vtkSMPropertyHelper(view->getProxy(),"MultiSamples").Set(1);
     view->getProxy()->UpdateVTKObjects();
-    pqActiveObjects::instance().setActiveView(view);
     window->setCentralWidget(view->getWidget());
+    pqActiveObjects::instance().setActiveView(view);
     }
 
   void setupUi(vvMainWindow* window)
