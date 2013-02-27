@@ -16,8 +16,6 @@ else(ParaView_SOURCE_DIR)
 
 endif(ParaView_SOURCE_DIR)
 
-
-
 find_library(PCAP_LIBRARY pcap DOC "pcap library")
 find_path(PCAP_INCLUDE_DIR pcap.h DOC "pcap include directory")
 mark_as_advanced(PCAP_LIBRARY PCAP_INCLUDE_DIR)
@@ -26,8 +24,8 @@ include_directories(${PCAP_INCLUDE_DIR})
 
 set(Boost_USE_STATIC_LIBS   ON)
 set(Boost_USE_MULTITHREADED ON)
-find_package(Boost REQUIRED COMPONENTS system thread)
-
+find_package(Boost REQUIRED COMPONENTS system thread chrono regex date_time)
+include_directories(${Boost_INCLUDE_DIRS})
 
 ########################
 # build paraview plugin
@@ -52,26 +50,21 @@ endif()
 
 list(APPEND servermanager_sources
   vtkVelodyneHDLReader.cxx
-  vtkVelodyneHDLSource.cxx
-  )
+  vtkVelodyneHDLSource.cxx)
 
 
 list(APPEND servermanager_xml
   xml/VelodyneHDLReader.xml
-  xml/VelodyneHDLSource.xml
-  )
+  xml/VelodyneHDLSource.xml)
 
 
 list(APPEND gui_xml
   xml/VelodyneHDLReadersGUI.xml
-  xml/VelodyneHDLSourcesGUI.xml
-  )
+  xml/VelodyneHDLSourcesGUI.xml)
 
 list(APPEND deps
   ${PCAP_LIBRARY}
-  ${Boost_THREAD_LIBRARY}
-  ${Boost_SYSTEM_LIBRARY}
-  )
+  ${Boost_LIBRARIES})
 
 
 set(library_name VelodyneHDLPlugin)
@@ -81,8 +74,7 @@ add_paraview_plugin(${library_name} "1.0"
   GUI_RESOURCE_FILES ${gui_xml}
   GUI_SOURCES ${gui_sources}
   SERVER_MANAGER_XML ${servermanager_xml}
-  SERVER_MANAGER_SOURCES ${servermanager_sources}
-  )
+  SERVER_MANAGER_SOURCES ${servermanager_sources})
 
 target_link_libraries(${library_name} ${deps})
 
