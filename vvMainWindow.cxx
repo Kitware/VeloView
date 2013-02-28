@@ -53,9 +53,11 @@ private:
     pqActiveObjects::instance().setActiveServer(server);
 
     // Create a default view.
-    pqView* view = builder->createView(pqRenderView::renderViewType(),
-      server);
+    pqView* view = builder->createView(pqRenderView::renderViewType(), server);
+
     vtkSMPropertyHelper(view->getProxy(),"CenterAxesVisibility").Set(0);
+    double bgcolor[3] = {0, 0, 0};
+    vtkSMPropertyHelper(view->getProxy(), "Background").Set(bgcolor, 3);
     // MultiSamples doesn't work, we need to set that up before registering the proxy.
     //vtkSMPropertyHelper(view->getProxy(),"MultiSamples").Set(1);
     view->getProxy()->UpdateVTKObjects();
