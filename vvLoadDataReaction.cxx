@@ -3,11 +3,15 @@
 #include "pqActiveObjects.h"
 #include "pqApplicationCore.h"
 #include "pqCoreUtilities.h"
-#include "pqDataRepresentation.h"
 #include "pqObjectBuilder.h"
+#include "pqPipelineRepresentation.h"
 #include "pqPipelineSource.h"
 #include "pqServer.h"
 #include "pqView.h"
+#include "vtkDataObject.h"
+#include "vtkPVArrayInformation.h"
+#include "vtkPVDataInformation.h"
+#include "vtkPVDataSetAttributesInformation.h"
 #include "vtkSMPropertyHelper.h"
 #include "vtkSMProxy.h"
 #include "vtkSMProxyManager.h"
@@ -40,9 +44,24 @@ void vvLoadDataReaction::onDataLoaded(pqPipelineSource* source)
 
   this->PreviousSource = source;
   pqActiveObjects::instance().setActiveSource(source);
-  pqDataRepresentation* repr = builder->createDataRepresentation(
-    source->getOutputPort(0), pqActiveObjects::instance().activeView());
+  pqPipelineRepresentation* repr = qobject_cast<pqPipelineRepresentation*>(
+    builder->createDataRepresentation(
+    source->getOutputPort(0), pqActiveObjects::instance().activeView()));
+  if (!repr)
+    {
+    qWarning("Failed to create representation");
+    return;
+    }
   vtkSMPropertyHelper(repr->getProxy(), "Representation").Set("Points");
+
+  // color by "intensity" if array is present.
+  vtkPVDataInformation* info = repr->getInputDataInformation();
+  vtkPVArrayInformation* arrayInfo =
+    info->GetPointDataInformation()->GetArrayInformation("intensity");
+  if (arrayInfo !=NULL)
+    {
+    repr->colorByArray("intensity", vtkDataObject::FIELD_ASSOCIATION_POINTS);
+    }
   repr->getProxy()->UpdateVTKObjects();
   repr->renderViewEventually();
   pqActiveObjects::instance().activeView()->resetDisplay();
