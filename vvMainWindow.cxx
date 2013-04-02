@@ -11,11 +11,17 @@
 #include "pqPersistentMainWindowStateBehavior.h"
 #include "pqQtMessageHandlerBehavior.h"
 #include "pqRenderView.h"
+#include "pqSpreadSheetView.h"
+#include "pqSpreadSheetVisibilityBehavior.h"
 #include "pqStandardViewModules.h"
 #include "vtkPVPlugin.h"
 #include "vtkSMPropertyHelper.h"
 #include "vvLoadDataReaction.h"
 #include "vvSelectionReaction.h"
+#include "vvToggleSpreadSheetReaction.h"
+
+#include <QSplitter>
+
 
 // Declare the plugin to load.
 PV_PLUGIN_IMPORT_INIT(VelodyneHDLPlugin);
@@ -46,6 +52,7 @@ private:
     new pqCrashRecoveryBehavior(window);
     new pqPersistentMainWindowStateBehavior(window);
     new pqQtMessageHandlerBehavior(window);
+    new pqSpreadSheetVisibilityBehavior(window);
 
     // Connect to builtin server.
     pqObjectBuilder* builder = core->getObjectBuilder();
@@ -61,7 +68,17 @@ private:
     // MultiSamples doesn't work, we need to set that up before registering the proxy.
     //vtkSMPropertyHelper(view->getProxy(),"MultiSamples").Set(1);
     view->getProxy()->UpdateVTKObjects();
-    window->setCentralWidget(view->getWidget());
+
+    // Create a horizontal splitter as the central widget, add views to splitter
+    QSplitter* splitter = new QSplitter(Qt::Horizontal);
+    window->setCentralWidget(splitter);
+    splitter->addWidget(view->getWidget());
+
+    pqView* spreadsheetView = builder->createView(pqSpreadSheetView::spreadsheetViewType(), server);
+    spreadsheetView->getProxy()->UpdateVTKObjects();
+    splitter->addWidget(spreadsheetView->getWidget());
+    new vvToggleSpreadSheetReaction(this->Ui.actionShow_Spreadsheet, spreadsheetView);
+
     pqActiveObjects::instance().setActiveView(view);
     }
 

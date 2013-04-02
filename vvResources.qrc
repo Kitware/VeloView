@@ -4,5 +4,6 @@
     <file>Icons/open.png</file>
     <file>Icons/pqFrustumSelectionPoint24.png</file>
     <file>Icons/pqSurfaceSelectionPoint24.png</file>
+    <file>Icons/pqSpreadsheet16.png</file>
   </qresource>
 </RCC>

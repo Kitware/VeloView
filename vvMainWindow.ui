@@ -72,6 +72,7 @@
    </attribute>
    <addaction name="actionSelect_Visible_Points"/>
    <addaction name="actionSelect_All_Points"/>
+   <addaction name="actionShow_Spreadsheet"/>
   </widget>
   <widget class="pqVCRToolbar" name="vcrToolBar">
    <property name="windowTitle">
@@ -129,6 +130,18 @@
    </property>
    <property name="toolTip">
     <string>Select All Points</string>
+   </property>
+  </action>
+  <action name="actionShow_Spreadsheet">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="vvResources.qrc">
+     <normaloff>:/vvResources/Icons/pqSpreadsheet16.png</normaloff>:/vvResources/Icons/pqSpreadsheet16.png</iconset>
+   </property>
+   <property name="text">
+    <string>Show Spreadsheet</string>
    </property>
   </action>
  </widget>
