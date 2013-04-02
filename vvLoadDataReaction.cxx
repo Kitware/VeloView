@@ -52,7 +52,9 @@ void vvLoadDataReaction::onDataLoaded(pqPipelineSource* source)
     qWarning("Failed to create representation");
     return;
     }
+
   vtkSMPropertyHelper(repr->getProxy(), "Representation").Set("Points");
+  vtkSMPropertyHelper(repr->getProxy(), "InterpolateScalarsBeforeMapping").Set(0);
 
   // color by "intensity" if array is present.
   vtkPVDataInformation* info = repr->getInputDataInformation();
@@ -62,6 +64,7 @@ void vvLoadDataReaction::onDataLoaded(pqPipelineSource* source)
     {
     repr->colorByArray("intensity", vtkDataObject::FIELD_ASSOCIATION_POINTS);
     }
+
   repr->getProxy()->UpdateVTKObjects();
   repr->renderViewEventually();
   pqActiveObjects::instance().activeView()->resetDisplay();
