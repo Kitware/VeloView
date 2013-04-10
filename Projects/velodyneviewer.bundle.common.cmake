@@ -1,16 +1,16 @@
 # We hardcode the version numbers since we cannot determine versions during
 # configure stage.
-set (vv_version_major 0)
+set (vv_version_major 1)
 set (vv_version_minor 0)
-set (vv_version_patch 1)
+set (vv_version_patch 0)
 set (vv_version_suffix)
 set (vv_version "${vv_version_major}.${vv_version_minor}")
 
 # Enable CPack packaging.
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY
-  "Velodyne Viewer is a scientific visualization tool.")
-set(CPACK_PACKAGE_NAME "VelodyneViewer")
-set(CPACK_PACKAGE_VENDOR "Velodyne.")
+  "VeloView")
+set(CPACK_PACKAGE_NAME "VeloView")
+set(CPACK_PACKAGE_VENDOR "Velodyne Lidar")
 set(CPACK_PACKAGE_VERSION_MAJOR ${vv_version_major})
 set(CPACK_PACKAGE_VERSION_MINOR ${vv_version_minor})
 if (vv_version_suffix)
