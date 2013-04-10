@@ -88,7 +88,7 @@ if (NOT APPLE)
           COMPONENT Runtime)
 else()
   install(TARGETS VelodyneHDLPlugin
-          RUNTIME DESTINATION ${VV_INSTALL_RUNTIME_DIR}/VelodyneViewer.app/Contents/Libraries
-          LIBRARY DESTINATION ${VV_INSTALL_RUNTIME_DIR}/VelodyneViewer.app/Contents/Libraries
+          RUNTIME DESTINATION ${VV_INSTALL_RUNTIME_DIR}/VeloView.app/Contents/Libraries
+          LIBRARY DESTINATION ${VV_INSTALL_RUNTIME_DIR}/VeloView.app/Contents/Libraries
           COMPONENT Runtime)
 endif()

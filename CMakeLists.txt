@@ -1,9 +1,9 @@
 cmake_minimum_required(VERSION 2.8.8 FATAL_ERROR)
-project(VelodyneViewer)
+project(VeloView)
 
-set (VV_VERSION_MAJOR 0)
+set (VV_VERSION_MAJOR 1)
 set (VV_VERSION_MINOR 0)
-set (VV_VERSION_PATCH 1)
+set (VV_VERSION_PATCH 0)
 
 find_package(ParaView REQUIRED)
 include(${PARAVIEW_USE_FILE})
@@ -82,9 +82,9 @@ add_subdirectory(VelodyneHDL)
 # paraview from installed location.
 set (PARAVIEW_INSTALL_LIB_DIR "lib/paraview-${PARAVIEW_VERSION_MAJOR}.${PARAVIEW_VERSION_MINOR}")
 
-build_paraview_client(VelodyneViewer
-  TITLE "LIDAR Viewer - Velodyne"
-  ORGANIZATION "Velodyne"
+build_paraview_client(VeloView
+  TITLE "VeloView"
+  ORGANIZATION "Velodyne Lidar"
   VERSION_MAJOR ${VV_VERSION_MAJOR}
   VERSION_MINOR ${VV_VERSION_MINOR}
   VERSION_PATCH ${VV_VERSION_PATCH}
@@ -105,4 +105,4 @@ build_paraview_client(VelodyneViewer
 )
 
 # We directly link against the plugin and import them statically.
-target_link_libraries(VelodyneViewer VelodyneHDLPlugin)
+target_link_libraries(VeloView VelodyneHDLPlugin)
