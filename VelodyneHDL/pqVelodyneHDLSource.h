@@ -31,7 +31,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 =========================================================================*/
 #include "pqObjectPanel.h"
 
-#include "pqView.h"
+#include <pqView.h>
+#include <pqPVApplicationCore.h>
+#include <pqAnimationManager.h>
+#include <pqAnimationScene.h>
 
 #include <vtkSMSourceProxy.h>
 #include <vtkSMPropertyHelper.h>
@@ -54,23 +57,47 @@ public:
 
   pqVelodyneHDLSource(pqProxy* proxy, QWidget* p) : pqObjectPanel(proxy, p)
   {
+    this->LastTime = 0.0;
 
     QVBoxLayout* layout = new QVBoxLayout(this);
 
     this->Timer = new QTimer(this);
+    this->Timer->setInterval(33);
     this->connect(this->Timer, SIGNAL(timeout()), SLOT(onPollSource()));
 
+
+    QHBoxLayout* buttonLayout = new QHBoxLayout;
+    this->PlayButton = new QPushButton("Play");
+    this->StopButton = new QPushButton("Stop");
+    this->connect(this->PlayButton, SIGNAL(clicked()), SLOT(onPlay()));
+    this->connect(this->StopButton, SIGNAL(clicked()), SLOT(onStop()));
+    buttonLayout->addWidget(this->PlayButton);
+    buttonLayout->addWidget(this->StopButton);
+    layout->addLayout(buttonLayout);
+
     this->FileNameLabel = new QLabel("Packet file: <none>");
+    this->ChoosePacketFileButton = new QPushButton("Choose packet file");
     layout->addWidget(this->FileNameLabel);
+    layout->addWidget(this->ChoosePacketFileButton);
+    this->connect(this->ChoosePacketFileButton, SIGNAL(clicked()), SLOT(onChoosePacketFile()));
 
-    QPushButton* fileButton = new QPushButton("Choose packet file");
-    layout->addWidget(fileButton);
-    this->connect(fileButton, SIGNAL(clicked()), SLOT(onChooseFile()));
 
-    QCheckBox* check = new QCheckBox("Streaming enabled");
-    this->connect(check, SIGNAL(toggled(bool)), SLOT(onEnableStreamingChecked(bool)));
-    layout->addWidget(check);
+    this->CalibrationFileNameLabel = new QLabel("Calibration file: <none>");
+    this->ChooseCalibrationFileButton = new QPushButton("Choose calibration file");
+    layout->addWidget(this->CalibrationFileNameLabel);
+    layout->addWidget(this->ChooseCalibrationFileButton);
+    this->connect(this->ChooseCalibrationFileButton, SIGNAL(clicked()), SLOT(onChooseCalibrationFile()));
 
+
+    this->OutputFileNameLabel = new QLabel("Output file: <none>");
+    this->ChooseOutputFileButton = new QPushButton("Choose output file");
+    layout->addWidget(this->OutputFileNameLabel);
+    layout->addWidget(this->ChooseOutputFileButton);
+    this->connect(this->ChooseOutputFileButton, SIGNAL(clicked()), SLOT(onChooseOutputFile()));
+
+
+
+    /*
     layout->addWidget(new QLabel);
 
     QPushButton* refreshButton = new QPushButton("Refresh");
@@ -94,12 +121,24 @@ public:
     slider->setValue(1);
 
     autoRefreshCheck->setChecked(true);
-    //this->setFileName("/Users/pat/Desktop/F-P266_2012-12-11_02-08pm_Monterey Highway.pcap");
+    */
+
+    this->onAutoRefreshChecked(true);
   }
 
 public slots:
 
-  void onEnableStreamingChecked(bool checked)
+  void onPlay()
+  {
+    this->setStreaming(true);
+  }
+
+  void onStop()
+  {
+    this->setStreaming(false);
+  }
+
+  void setStreaming(bool checked)
   {
     vtkSMSourceProxy* sourceProxy = vtkSMSourceProxy::SafeDownCast(this->proxy());
     if (!sourceProxy)
@@ -115,6 +154,12 @@ public slots:
       {
       sourceProxy->InvokeCommand("Stop");
       }
+
+    this->PlayButton->setEnabled(!checked);
+    this->StopButton->setEnabled(checked);
+    this->ChoosePacketFileButton->setEnabled(!checked);
+    this->ChooseCalibrationFileButton->setEnabled(!checked);
+    this->ChooseOutputFileButton->setEnabled(!checked);
   }
 
   void onAutoRefreshChecked(bool checked)
@@ -142,13 +187,31 @@ public slots:
     this->onPollSource();
   }
 
-  void onChooseFile()
+  void onChoosePacketFile()
   {
     QString selectedFiler("*.pcap");
     QString fileName = QFileDialog::getOpenFileName(this, tr("Choose Packet File"),
                             QString(""),
                             tr("pcap (*.pcap)"), &selectedFiler);
     this->setFileName(fileName);
+  }
+
+  void onChooseCalibrationFile()
+  {
+    QString selectedFiler("*.xml");
+    QString fileName = QFileDialog::getOpenFileName(this, tr("Choose Calibration File"),
+                            QString(""),
+                            tr("xml (*.xml)"), &selectedFiler);
+    this->setCalibrationFileName(fileName);
+  }
+
+  void onChooseOutputFile()
+  {
+    QString selectedFiler("*.pcap");
+    QString fileName = QFileDialog::getSaveFileName(this, tr("Choose Output File"),
+                            QString(""),
+                            tr("pcap (*.pcap)"), &selectedFiler);
+    this->setOutputFileName(fileName);
   }
 
   void setFileName(QString fileName)
@@ -165,6 +228,29 @@ public slots:
     sourceProxy->UpdateProperty("PacketFile");
   }
 
+  void setCalibrationFileName(QString fileName)
+  {
+    if (!QFileInfo(fileName).isFile())
+      {
+      return;
+      }
+
+    this->CalibrationFileNameLabel->setText(QString("Calibration file: %1").arg(QFileInfo(fileName).fileName()));
+
+    vtkSMSourceProxy* sourceProxy = vtkSMSourceProxy::SafeDownCast(this->proxy());
+    vtkSMPropertyHelper(sourceProxy, "CorrectionsFile").Set(fileName.toAscii().data());
+    sourceProxy->UpdateProperty("CorrectionsFile");
+  }
+
+  void setOutputFileName(QString fileName)
+  {
+    this->OutputFileNameLabel->setText(QString("Output file: %1").arg(QFileInfo(fileName).fileName()));
+
+    vtkSMSourceProxy* sourceProxy = vtkSMSourceProxy::SafeDownCast(this->proxy());
+    vtkSMPropertyHelper(sourceProxy, "OutputFile").Set(fileName.toAscii().data());
+    sourceProxy->UpdateProperty("OutputFile");
+  }
+
   void onPollSource()
   {
     vtkSMSourceProxy* sourceProxy = vtkSMSourceProxy::SafeDownCast(this->proxy());
@@ -173,26 +259,46 @@ public slots:
       return;
       }
 
-    vtkSMIntVectorProperty* prop = vtkSMIntVectorProperty::SafeDownCast(sourceProxy->GetProperty("HasNewData"));
-    if (!prop)
+    sourceProxy->InvokeCommand("Poll");
+    sourceProxy->UpdatePipelineInformation();
+
+    double lastTime = 0;
+    int nElements = vtkSMPropertyHelper(sourceProxy, "TimestepValues").GetNumberOfElements();
+    if (nElements)
       {
-      return;
+      lastTime = vtkSMPropertyHelper(sourceProxy, "TimestepValues").GetAsDouble(nElements-1);
       }
 
-    sourceProxy->InvokeCommand("Poll");
-    sourceProxy->UpdatePropertyInformation(prop);
-    int hasNewData = prop->GetElement(0);
+    bool latestTimestepChanged = (lastTime != this->LastTime);
+    this->LastTime = lastTime;
 
-    if (hasNewData && this->view())
+    if (latestTimestepChanged && this->snapToLatestTimeStep())
       {
-      this->view()->render();
+      pqPVApplicationCore::instance()->animationManager()->
+        getActiveScene()->getProxy()->InvokeCommand("GoToLast");
       }
   }
 
 
+
+  bool snapToLatestTimeStep()
+  {
+    return true;
+  }
+
 protected:
 
   QLabel* FileNameLabel;
+  QLabel* CalibrationFileNameLabel;
+  QLabel* OutputFileNameLabel;
   QLabel* AutoRefreshLabel;
+
+  QPushButton* PlayButton;
+  QPushButton* StopButton;
+  QPushButton* ChoosePacketFileButton;
+  QPushButton* ChooseCalibrationFileButton;
+  QPushButton* ChooseOutputFileButton;
   QTimer* Timer;
+
+  double LastTime;
 };
