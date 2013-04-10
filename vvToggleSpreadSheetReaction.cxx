@@ -25,5 +25,4 @@ vvToggleSpreadSheetReaction::~vvToggleSpreadSheetReaction()
 void vvToggleSpreadSheetReaction::onToggleSpreadsheet()
 {
   this->View->getWidget()->setVisible(this->Action->isChecked());
-  this->Action->setText( this->Action->isChecked() ? tr("Hide spreadsheet") : tr("Show spreadsheet"));
 }
