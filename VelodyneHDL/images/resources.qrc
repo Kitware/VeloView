@@ -1,0 +1,20 @@
+<RCC>
+  <qresource prefix="/VelodyneHDLPlugin">
+
+    <file>media-eject.png</file>
+    <file>media-playback-pause.png</file>
+    <file>media-playback-start.png</file>
+    <file>media-playback-stop.png</file>
+    <file>media-record.png</file>
+    <file>media-seek-backward.png</file>
+    <file>media-seek-forward.png</file>
+    <file>media-skip-backward.png</file>
+    <file>media-skip-forward.png</file>
+    <file>WiresharkDoc-128.png</file>
+    <file>velodyne_hdl.png</file>
+    <file>angle_icon.png</file>
+    <file>preferences-system-64.png</file>
+    <file>velodyne_logo.png</file>
+
+  </qresource>
+</RCC>
