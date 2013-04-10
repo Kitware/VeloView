@@ -40,8 +40,6 @@ set(VV_INSTALL_ARCHIVE_DIR
     lib/velodyne-viewer-${VV_VERSION_MAJOR}.${VV_VERSION_MINOR})
 
 set (source_files
-  vvLoadDataReaction.cxx
-  vvLoadDataReaction.h
   vvMainWindow.cxx
   vvMainWindow.h
   vvSelectionReaction.cxx
@@ -51,7 +49,6 @@ set (source_files
   )
 
 qt4_wrap_cpp(moc_source_files
-  vvLoadDataReaction.h
   vvMainWindow.h
   vvSelectionReaction.h
   vvToggleSpreadSheetReaction.h
@@ -68,6 +65,7 @@ include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}
   ${CMAKE_CURRENT_BINARY_DIR})
 
+
 if (APPLE)
   set(CMAKE_INSTALL_NAME_DIR "@executable_path/../Libraries")
 
@@ -77,6 +75,8 @@ endif()
 
 # Add the reader plugin and any other plugins.
 add_subdirectory(VelodyneHDL)
+
+include_directories(VelodyneHDL)
 
 # This ensure that build_paraview_client() adds an "forwarding path" to locate
 # paraview from installed location.

@@ -9,19 +9,20 @@
 #include "pqInterfaceTracker.h"
 #include "pqObjectBuilder.h"
 #include "pqPersistentMainWindowStateBehavior.h"
+#include "pqPythonShellReaction.h"
 #include "pqQtMessageHandlerBehavior.h"
 #include "pqRenderView.h"
 #include "pqSpreadSheetView.h"
 #include "pqSpreadSheetVisibilityBehavior.h"
 #include "pqStandardViewModules.h"
+#include "pqVelodyneManager.h"
 #include "vtkPVPlugin.h"
 #include "vtkSMPropertyHelper.h"
-#include "vvLoadDataReaction.h"
 #include "vvSelectionReaction.h"
 #include "vvToggleSpreadSheetReaction.h"
 
+#include <QLabel>
 #include <QSplitter>
-
 
 // Declare the plugin to load.
 PV_PLUGIN_IMPORT_INIT(VelodyneHDLPlugin);
@@ -35,6 +36,10 @@ public:
     this->Ui.setupUi(window);
     this->paraviewInit(window);
     this->setupUi(window);
+
+    window->show();
+    window->raise();
+    window->activateWindow();
     }
 
 private:
@@ -77,18 +82,39 @@ private:
     pqView* spreadsheetView = builder->createView(pqSpreadSheetView::spreadsheetViewType(), server);
     spreadsheetView->getProxy()->UpdateVTKObjects();
     splitter->addWidget(spreadsheetView->getWidget());
-    new vvToggleSpreadSheetReaction(this->Ui.actionShow_Spreadsheet, spreadsheetView);
+    new vvToggleSpreadSheetReaction(this->Ui.actionSpreadsheet, spreadsheetView);
 
     pqActiveObjects::instance().setActiveView(view);
     }
 
   void setupUi(vvMainWindow* window)
     {
-    new vvLoadDataReaction(this->Ui.action_Open);
     new vvSelectionReaction(vvSelectionReaction::SURFACE_POINTS,
       this->Ui.actionSelect_Visible_Points);
     new vvSelectionReaction(vvSelectionReaction::ALL_POINTS,
       this->Ui.actionSelect_All_Points);
+
+    new pqPythonShellReaction(this->Ui.actionPython_Console);
+
+    pqVelodyneManager::instance()->setup(
+      this->Ui.action_Open,
+      this->Ui.actionClose,
+      this->Ui.actionOpen_Sensor_Stream,
+      this->Ui.actionChoose_Calibration_File,
+      this->Ui.actionReset_Camera,
+      this->Ui.actionPlay,
+      this->Ui.actionSeek_Forward,
+      this->Ui.actionSeek_Backward,
+      this->Ui.actionGo_To_Start,
+      this->Ui.actionGo_To_End,
+      this->Ui.actionRecord,
+      this->Ui.actionMeasurement_Grid,
+      this->Ui.actionSave_Screenshot);
+
+    window->statusBar()->addPermanentWidget(pqVelodyneManager::instance()->statusBarLogo());
+    window->statusBar()->addWidget(pqVelodyneManager::instance()->filenameLabel());
+    window->statusBar()->addWidget(pqVelodyneManager::instance()->statusLabel());
+    window->statusBar()->addWidget(pqVelodyneManager::instance()->timeLabel());
     }
 };
 

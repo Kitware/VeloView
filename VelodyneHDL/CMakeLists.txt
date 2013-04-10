@@ -37,14 +37,42 @@ set(servermanager_sources)
 set(servermanager_xml)
 
 if(PARAVIEW_BUILD_QT_GUI)
-  QT4_WRAP_CPP(moc_srcs pqVelodyneHDLSource.h)
+
+  SET(UI_FILES
+    vvCalibrationDialog.ui
+    )
+
+  SET(MOC_HEADERS
+    pqVelodyneHDLSource.h
+    pqVelodyneManager.h
+    vvCalibrationDialog.h
+    vvLoadDataReaction.h
+    )
+
+  set(resources
+    images/resources.qrc)
+
+  QT4_WRAP_CPP(moc_srcs ${MOC_HEADERS})
+  QT4_WRAP_UI(ui_srcs ${UI_FILES})
+  QT4_ADD_RESOURCES(resource_srcs ${resources})
+
   ADD_PARAVIEW_OBJECT_PANEL(
     ifaces iface_srcs
     CLASS_NAME pqVelodyneHDLSource
     XML_NAME VelodyneHDLSource
     XML_GROUP sources)
+
   list(APPEND gui_interfaces ${ifaces})
-  list(APPEND gui_sources ${iface_srcs} ${moc_srcs})
+  list(APPEND gui_sources
+    ${iface_srcs}
+    ${moc_srcs}
+    ${ui_srcs}
+    ${resource_srcs}
+    pqVelodyneManager.cxx
+    vvCalibrationDialog.cxx
+    vvLoadDataReaction.cxx
+    )
+
 endif()
 
 
@@ -78,7 +106,7 @@ add_paraview_plugin(${library_name} "1.0"
   SERVER_MANAGER_XML ${servermanager_xml}
   SERVER_MANAGER_SOURCES ${servermanager_sources})
 
-target_link_libraries(${library_name} ${deps})
+target_link_libraries(${library_name} ${deps} pqApplicationComponents)
 
 add_executable(PacketFileSender PacketFileSender.cxx)
 target_link_libraries(PacketFileSender ${deps})

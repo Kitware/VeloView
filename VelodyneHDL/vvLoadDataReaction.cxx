@@ -1,5 +1,7 @@
 #include "vvLoadDataReaction.h"
 
+#include "pqVelodyneManager.h"
+
 #include "pqActiveObjects.h"
 #include "pqApplicationCore.h"
 #include "pqCoreUtilities.h"
@@ -7,6 +9,7 @@
 #include "pqPipelineRepresentation.h"
 #include "pqPipelineSource.h"
 #include "pqServer.h"
+#include "pqSettings.h"
 #include "pqView.h"
 #include "vtkDataObject.h"
 #include "vtkPVArrayInformation.h"
@@ -17,13 +20,16 @@
 #include "vtkSMProxyManager.h"
 #include "vtkSMReaderFactory.h"
 
+#include <QFileInfo>
 #include <QFileDialog>
+#include <QDir>
+
 //-----------------------------------------------------------------------------
 vvLoadDataReaction::vvLoadDataReaction(QAction* parentAction)
   : Superclass(parentAction)
 {
-  QObject::connect(this, SIGNAL(loadedData(pqPipelineSource*)),
-    this, SLOT(onDataLoaded(pqPipelineSource*)));
+  //QObject::connect(this, SIGNAL(loadedData(pqPipelineSource*)),
+  //  this, SLOT(onDataLoaded(pqPipelineSource*)));
 }
 
 //-----------------------------------------------------------------------------
@@ -83,13 +89,33 @@ pqPipelineSource* vvLoadDataReaction::loadData()
     }
   filters += "All files (*)";
 
- QString fileName = QFileDialog::getOpenFileName(
-    pqCoreUtilities::mainWidget(), tr("Open File"), QString(), filters);
+
+  pqSettings* settings = pqApplicationCore::instance()->settings();
+  QString defaultDir = settings->value("VelodyneHDLPlugin/OpenData/DefaultDir", QDir::homePath()).toString();
+
+
+  QString fileName = QFileDialog::getOpenFileName(
+    pqCoreUtilities::mainWidget(), tr("Open File"), defaultDir, filters);
+
+  if (fileName.isEmpty())
+    {
+    return NULL;
+    }
+
+
+  settings->setValue("VelodyneHDLPlugin/OpenData/DefaultDir", QFileInfo(fileName).absoluteDir().absolutePath());
+
+
+  pqVelodyneManager::instance()->openData(fileName);
+
+  /*
  if (!fileName.isEmpty())
    {
    QStringList files;
    files << fileName;
    return pqLoadDataReaction::loadData(files);
    }
+  */
+
  return NULL;
 }
