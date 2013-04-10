@@ -21,6 +21,7 @@
 
 #include <vtkPolyDataAlgorithm.h>
 #include <vtkSmartPointer.h>
+#include <string>
 
 class VTK_EXPORT vtkVelodyneHDLReader : public vtkPolyDataAlgorithm
 {
@@ -31,15 +32,19 @@ public:
 
   //Description:
   //
-  vtkSetStringMacro(FileName);
-  vtkGetStringMacro(FileName);
+  const std::string& GetFileName();
+  void SetFileName(const std::string& filename);
+
+  //Description:
+  //
+  const std::string& GetCorrectionsFile();
+  void SetCorrectionsFile(const std::string& correctionsFile);
 
   //Description:
   //
   int CanReadFile(const char* fname);
 
 
-  void SplitFrame();
   void ProcessHDLPacket(unsigned char *data, unsigned int bytesReceived);
   std::vector<vtkSmartPointer<vtkPolyData> >& GetDatasets();
 
@@ -55,7 +60,14 @@ protected:
                   vtkInformationVector **,
                   vtkInformationVector *);
 
-  char *FileName;
+
+  void UnloadData();
+  void LoadData(const std::string& filename);
+  void SetTimestepInformation(vtkInformation *info);
+
+
+  std::string CorrectionsFile;
+  std::string FileName;
 
   class vtkInternal;
   vtkInternal* Internal;

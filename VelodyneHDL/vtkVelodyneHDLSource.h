@@ -29,22 +29,35 @@ public:
 
   static vtkVelodyneHDLSource *New();
 
-  bool HasNewData();
 
   void Poll();
 
   void Start();
   void Stop();
 
-  // Description:
-  // Set/get the packet file to read.
-  vtkSetStringMacro(PacketFile);
-  vtkGetStringMacro(PacketFile);
+  int GetCacheSize();
+  void SetCacheSize(int cacheSize);
+
+  void ReadNextFrame();
+
+  const std::string& GetPacketFile();
+  void SetPacketFile(const std::string& filename);
+
+  const std::string& GetCorrectionsFile();
+  void SetCorrectionsFile(const std::string& correctionsFile);
+
+  const std::string& GetOutputFile();
+  void SetOutputFile(const std::string& filename);
 
   vtkSetMacro(SensorPort, int);
   vtkGetMacro(SensorPort, int);
 
 protected:
+
+
+  virtual int RequestInformation(vtkInformation *request,
+                         vtkInformationVector **inputVector,
+                         vtkInformationVector *outputVector);
 
   virtual int RequestData(vtkInformation *request,
                           vtkInformationVector **inputVector,
@@ -53,8 +66,11 @@ protected:
   vtkVelodyneHDLSource();
   virtual ~vtkVelodyneHDLSource();
 
-  char *PacketFile;
+
   int SensorPort;
+  std::string PacketFile;
+  std::string OutputFile;
+  std::string CorrectionsFile;
 
 private:
   vtkVelodyneHDLSource(const vtkVelodyneHDLSource&);  // Not implemented.
@@ -65,5 +81,3 @@ private:
 };
 
 #endif
-
-

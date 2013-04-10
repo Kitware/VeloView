@@ -23,6 +23,7 @@
 #include "vtkPoints.h"
 #include "vtkDoubleArray.h"
 #include "vtkUnsignedShortArray.h"
+#include "vtkUnsignedIntArray.h"
 #include "vtkDataArray.h"
 #include "vtkFloatArray.h"
 
@@ -34,9 +35,17 @@
 #include "vtkMath.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
 
+#include "vtkPacketFileReader.h"
+
 #include <sstream>
 #include <algorithm>
 #include <cmath>
+
+
+#include <boost/foreach.hpp>
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/xml_parser.hpp>
+
 
 #ifdef _MSC_VER
 # include <boost/cstdint.hpp>
@@ -47,8 +56,6 @@ typedef boost::uint8_t uint8_t;
 #else
 # include <stdint.h>
 #endif
-
-#include <pcap.h>
 
 //-----------------------------------------------------------------------------
 class vtkVelodyneHDLReader::vtkInternal
@@ -65,11 +72,12 @@ public:
 
 
   void SplitFrame();
-  void LoadData(const std::string& filename);
   vtkSmartPointer<vtkPolyData> CreateData(vtkIdType numberOfPoints);
   vtkSmartPointer<vtkCellArray> NewVertexCells(vtkIdType numberOfVerts);
 
   void LoadHDL32Corrections();
+  void LoadCorrectionsFile(const std::string& filename);
+  void SetCorrectionsCommon();
   void Init();
   void InitTables();
   void ProcessHDLPacket(unsigned char *data, std::size_t bytesReceived);
@@ -82,35 +90,114 @@ vtkStandardNewMacro(vtkVelodyneHDLReader);
 vtkVelodyneHDLReader::vtkVelodyneHDLReader()
 {
   this->Internal = new vtkInternal;
-  this->FileName = 0;
+  this->UnloadData();
   this->SetNumberOfInputPorts(0);
   this->SetNumberOfOutputPorts(1);
+
+  //this->SetCorrectionsFile("/Users/pat/Desktop/pcap/S2-Unit#135 Flatness intensity cal db.xml");
 }
 
 //-----------------------------------------------------------------------------
 vtkVelodyneHDLReader::~vtkVelodyneHDLReader()
 {
-  this->SetFileName(0);
   delete this->Internal;
 }
 
+//-----------------------------------------------------------------------------
+const std::string& vtkVelodyneHDLReader::GetFileName()
+{
+  return this->FileName;
+}
+
+//-----------------------------------------------------------------------------
+void vtkVelodyneHDLReader::SetFileName(const std::string& filename)
+{
+  if (filename == this->FileName)
+    {
+    return;
+    }
+
+  this->FileName = filename;
+  this->UnloadData();
+  this->Modified();
+}
+
+//-----------------------------------------------------------------------------
+const std::string& vtkVelodyneHDLReader::GetCorrectionsFile()
+{
+  return this->CorrectionsFile;
+}
+
+//-----------------------------------------------------------------------------
+void vtkVelodyneHDLReader::SetCorrectionsFile(const std::string& correctionsFile)
+{
+  if (correctionsFile == this->CorrectionsFile)
+    {
+    return;
+    }
+
+  if (correctionsFile.length())
+    {
+    this->Internal->LoadCorrectionsFile(correctionsFile);
+    }
+  else
+    {
+    this->Internal->LoadHDL32Corrections();
+    }
+
+  this->CorrectionsFile = correctionsFile;
+  this->UnloadData();
+  this->Modified();
+}
+
+//-----------------------------------------------------------------------------
+void vtkVelodyneHDLReader::UnloadData()
+{
+  this->Internal->Datasets.clear();
+  this->Internal->CurrentDataset = this->Internal->CreateData(0);
+}
+
+//-----------------------------------------------------------------------------
+void vtkVelodyneHDLReader::SetTimestepInformation(vtkInformation *info)
+{
+  const int numberOfTimesteps = static_cast<int>(this->Internal->Datasets.size());
+  const int maxTimestep = (numberOfTimesteps > 0) ? numberOfTimesteps - 1 : 0;
+  std::vector<double> timesteps;
+  for (size_t i = 0; i < numberOfTimesteps; ++i)
+    {
+    timesteps.push_back(i);
+    }
+
+  double timeRange[2] = {0, maxTimestep};
+  info->Set(vtkStreamingDemandDrivenPipeline::TIME_STEPS(), &timesteps.front(), timesteps.size());
+  info->Set(vtkStreamingDemandDrivenPipeline::TIME_RANGE(), timeRange, 2);
+}
 
 //-----------------------------------------------------------------------------
 int vtkVelodyneHDLReader::RequestData(vtkInformation *request,
                               vtkInformationVector **inputVector,
                               vtkInformationVector *outputVector)
 {
-  this->UpdateProgress(0.0);
   vtkPolyData *output = vtkPolyData::GetData(outputVector);
   vtkInformation *info = outputVector->GetInformationObject(0);
 
+  if (!this->FileName.length())
+    {
+    vtkErrorMacro("FileName has not been set.");
+    return 0;
+    }
+
+  if (!this->Internal->Datasets.size())
+    {
+    this->LoadData(this->FileName);
+    this->SetTimestepInformation(info);
+    }
 
   int timestep = 0;
   if (info->Has(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP()))
     {
-    double TimeStepsReq = info->Get(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP());
-    timestep = static_cast<int>(floor(TimeStepsReq));
-    //printf("timestep request: %d\n", timestep);
+    double timeRequest = info->Get(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP());
+    timestep = static_cast<int>(floor(timeRequest));
     }
 
   if (timestep < 0 || timestep >= this->Internal->Datasets.size())
@@ -121,8 +208,6 @@ int vtkVelodyneHDLReader::RequestData(vtkInformation *request,
     }
 
   output->ShallowCopy(this->Internal->Datasets[timestep]);
-  this->UpdateProgress(1.0);
-
   return 1;
 }
 
@@ -131,28 +216,8 @@ int vtkVelodyneHDLReader::RequestInformation(vtkInformation *request,
                                      vtkInformationVector **inputVector,
                                      vtkInformationVector *outputVector)
 {
-  vtkInformation *outInfo = outputVector->GetInformationObject(0);
-
-  if (this->FileName)
-    {
-    this->Internal->LoadData(this->FileName);
-    }
-
-  const int numberOfTimesteps = static_cast<int>(this->Internal->Datasets.size());
-
-  printf("number of timesteps: %d\n", numberOfTimesteps);
-
-  const int maxTimestep = (numberOfTimesteps > 0) ? numberOfTimesteps - 1 : 0;
-  std::vector<double> timesteps;
-  for (size_t i = 0; i < this->Internal->Datasets.size(); ++i)
-    {
-    timesteps.push_back(i);
-    }
-
-  double timeRange[2] = {0, maxTimestep};
-  outInfo->Set(vtkStreamingDemandDrivenPipeline::TIME_STEPS(), &timesteps.front(), timesteps.size());
-  outInfo->Set(vtkStreamingDemandDrivenPipeline::TIME_RANGE(), timeRange, 2);
-
+  vtkInformation *info = outputVector->GetInformationObject(0);
+  this->SetTimestepInformation(info);
   return 1;
 }
 
@@ -160,14 +225,34 @@ int vtkVelodyneHDLReader::RequestInformation(vtkInformation *request,
 void vtkVelodyneHDLReader::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
-  os << indent << "FileName: "
-     << (this->FileName ? this->FileName : "(NULL)") << endl;
+  os << indent << "FileName: " << this->FileName << endl;
+  os << indent << "CorrectionsFile: " << this->CorrectionsFile << endl;
 }
 
 //-----------------------------------------------------------------------------
 int vtkVelodyneHDLReader::CanReadFile(const char *fname)
 {
   return 1;
+}
+
+//-----------------------------------------------------------------------------
+void vtkVelodyneHDLReader::LoadData(const std::string& filename)
+{
+  vtkPacketFileReader reader;
+  if (!reader.Open(filename))
+    {
+    vtkErrorMacro("Failed to open packet file: " << filename << endl << reader.GetLastError());
+    return;
+    }
+
+  const unsigned char* data = 0;
+  unsigned int dataLength = 0;
+  double timeSinceStart = 0;
+
+  while (reader.NextPacket(data, dataLength, timeSinceStart))
+    {
+    this->ProcessHDLPacket(const_cast<unsigned char*>(data), dataLength);
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -180,12 +265,6 @@ void vtkVelodyneHDLReader::ProcessHDLPacket(unsigned char *data, unsigned int by
 std::vector<vtkSmartPointer<vtkPolyData> >& vtkVelodyneHDLReader::GetDatasets()
 {
   return this->Internal->Datasets;
-}
-
-//-----------------------------------------------------------------------------
-void vtkVelodyneHDLReader::SplitFrame()
-{
-  this->Internal->SplitFrame();
 }
 
 //-----------------------------------------------------------------------------
@@ -224,6 +303,12 @@ vtkSmartPointer<vtkPolyData> vtkVelodyneHDLReader::vtkInternal::CreateData(vtkId
   distance->SetNumberOfTuples(numberOfPoints);
   polyData->GetPointData()->AddArray(distance.GetPointer());
 
+  // timestamp
+  vtkNew<vtkUnsignedIntArray> timestamp;
+  timestamp->SetName("timestamp");
+  timestamp->SetNumberOfTuples(numberOfPoints);
+  polyData->GetPointData()->AddArray(timestamp.GetPointer());
+
   return polyData;
 }
 
@@ -249,14 +334,15 @@ namespace
 
 #define HDL_Grabber_toRadians(x) ((x) * M_PI / 180.0)
 
-const int HDL_NUM_ROT_ANGLES = 36000;
+const int HDL_NUM_ROT_ANGLES = 36001;
 const int HDL_LASER_PER_FIRING = 32;
 const int HDL_MAX_NUM_LASERS = 64;
 const int HDL_FIRING_PER_PKT = 12;
 
 enum HDLBlock
 {
-  BLOCK_0_TO_31 = 0xeeff, BLOCK_32_TO_63 = 0xddff
+  BLOCK_0_TO_31 = 0xeeff,
+  BLOCK_32_TO_63 = 0xddff
 };
 
 #pragma pack(push, 1)
@@ -305,10 +391,9 @@ struct HDLRGB
 double *cos_lookup_table_;
 double *sin_lookup_table_;
 HDLLaserCorrection laser_corrections_[HDL_MAX_NUM_LASERS];
-HDLRGB laser_rgb_mapping_[HDL_MAX_NUM_LASERS];
 
 
-void PushFiringData(vtkPolyData* polyData, unsigned char laserId, unsigned short azimuth, HDLLaserReturn laserReturn, HDLLaserCorrection correction)
+void PushFiringData(vtkPolyData* polyData, unsigned char laserId, unsigned short azimuth, unsigned int timestamp, HDLLaserReturn laserReturn, HDLLaserCorrection correction)
 {
   double cosAzimuth, sinAzimuth;
   if (correction.azimuthCorrection == 0)
@@ -318,12 +403,12 @@ void PushFiringData(vtkPolyData* polyData, unsigned char laserId, unsigned short
   }
   else
   {
-    double azimuthInRadians = HDL_Grabber_toRadians ((static_cast<double> (azimuth) / 100.0) - correction.azimuthCorrection);
+    double azimuthInRadians = HDL_Grabber_toRadians((static_cast<double> (azimuth) / 100.0) - correction.azimuthCorrection);
     cosAzimuth = std::cos (azimuthInRadians);
     sinAzimuth = std::sin (azimuthInRadians);
   }
-  double distanceM = laserReturn.distance * 0.002 + correction.distanceCorrection;
 
+  double distanceM = laserReturn.distance * 0.002 + correction.distanceCorrection;
   double xyDistance = distanceM * correction.cosVertCorrection - correction.sinVertOffsetCorrection;
 
   double x = (xyDistance * sinAzimuth - correction.horizontalOffsetCorrection * cosAzimuth);
@@ -331,26 +416,13 @@ void PushFiringData(vtkPolyData* polyData, unsigned char laserId, unsigned short
   double z = (distanceM * correction.sinVertCorrection + correction.cosVertOffsetCorrection);
   unsigned char intensity = laserReturn.intensity;
 
-  if (vtkMath::IsNan(x)
-      || vtkMath::IsNan(y)
-      || vtkMath::IsNan(z))
-    {
-    return;
-    }
-
-  if (std::fabs(x) > 1000
-      || std::fabs(y) > 1000
-      || std::fabs(z) > 1000)
-    {
-    return;
-    }
-
-
 
   vtkUnsignedCharArray::SafeDownCast(polyData->GetPointData()->GetArray("intensity"))->InsertNextValue(intensity);
   vtkUnsignedCharArray::SafeDownCast(polyData->GetPointData()->GetArray("laser_id"))->InsertNextValue(laserId);
   vtkUnsignedShortArray::SafeDownCast(polyData->GetPointData()->GetArray("azimuth"))->InsertNextValue(azimuth);
   vtkUnsignedShortArray::SafeDownCast(polyData->GetPointData()->GetArray("distance"))->InsertNextValue(laserReturn.distance);
+  vtkUnsignedIntArray::SafeDownCast(polyData->GetPointData()->GetArray("timestamp"))->InsertNextValue(timestamp);
+
   polyData->GetPoints()->InsertNextPoint(x,y,z);
 }
 
@@ -366,11 +438,77 @@ void vtkVelodyneHDLReader::vtkInternal::InitTables()
     sin_lookup_table_ = static_cast<double *> (malloc (HDL_NUM_ROT_ANGLES * sizeof (*sin_lookup_table_)));
     for (unsigned int i = 0; i < HDL_NUM_ROT_ANGLES; i++)
       {
-      double rad = (M_PI / 180.0) * (static_cast<double> (i) / 100.0);
-      cos_lookup_table_[i] = std::cos (rad);
-      sin_lookup_table_[i] = std::sin (rad);
+      double rad = HDL_Grabber_toRadians(i / 100.0);
+      cos_lookup_table_[i] = std::cos(rad);
+      sin_lookup_table_[i] = std::sin(rad);
       }
     }
+}
+
+//-----------------------------------------------------------------------------
+void vtkVelodyneHDLReader::vtkInternal::LoadCorrectionsFile(const std::string& correctionsFile)
+{
+
+  boost::property_tree::ptree pt;
+  try
+    {
+    read_xml(correctionsFile, pt, boost::property_tree::xml_parser::trim_whitespace);
+    }
+  catch (boost::exception const&)
+    {
+    vtkGenericWarningMacro("LoadCorrectionsFile: error reading calibration file: " << correctionsFile);
+    return;
+    }
+
+  BOOST_FOREACH (boost::property_tree::ptree::value_type &v, pt.get_child("boost_serialization.DB.points_"))
+    {
+    if (v.first == "item")
+      {
+      boost::property_tree::ptree points = v.second;
+      BOOST_FOREACH (boost::property_tree::ptree::value_type &px, points)
+        {
+        if (px.first == "px")
+          {
+          boost::property_tree::ptree calibrationData = px.second;
+          int index = -1;
+          double azimuth = 0;
+          double vertCorrection = 0;
+          double distCorrection = 0;
+          double vertOffsetCorrection = 0;
+          double horizOffsetCorrection = 0;
+
+          BOOST_FOREACH (boost::property_tree::ptree::value_type &item, calibrationData)
+            {
+            if (item.first == "id_")
+              index = atoi(item.second.data().c_str());
+            if (item.first == "rotCorrection_")
+              azimuth = atof(item.second.data().c_str());
+            if (item.first == "vertCorrection_")
+              vertCorrection = atof(item.second.data().c_str());
+            if (item.first == "distCorrection_")
+              distCorrection = atof(item.second.data().c_str());
+            if (item.first == "vertOffsetCorrection_")
+              vertOffsetCorrection = atof(item.second.data().c_str());
+            if (item.first == "horizOffsetCorrection_")
+              horizOffsetCorrection = atof(item.second.data().c_str());
+            }
+          if (index != -1)
+            {
+            laser_corrections_[index].azimuthCorrection = azimuth;
+            laser_corrections_[index].verticalCorrection = vertCorrection;
+            laser_corrections_[index].distanceCorrection = distCorrection / 100.0;
+            laser_corrections_[index].verticalOffsetCorrection = vertOffsetCorrection / 100.0;
+            laser_corrections_[index].horizontalOffsetCorrection = horizOffsetCorrection / 100.0;
+
+            laser_corrections_[index].cosVertCorrection = std::cos (HDL_Grabber_toRadians(laser_corrections_[index].verticalCorrection));
+            laser_corrections_[index].sinVertCorrection = std::sin (HDL_Grabber_toRadians(laser_corrections_[index].verticalCorrection));
+            }
+          }
+        }
+      }
+    }
+
+  this->SetCorrectionsCommon();
 }
 
 //-----------------------------------------------------------------------------
@@ -403,14 +541,13 @@ void vtkVelodyneHDLReader::vtkInternal::LoadHDL32Corrections()
     laser_corrections_[i].sinVertCorrection = 0.0;
     laser_corrections_[i].cosVertCorrection = 1.0;
     }
+
+  this->SetCorrectionsCommon();
 }
 
 //-----------------------------------------------------------------------------
-void vtkVelodyneHDLReader::vtkInternal::Init()
+void vtkVelodyneHDLReader::vtkInternal::SetCorrectionsCommon()
 {
-  this->InitTables();
-  this->LoadHDL32Corrections();
-
   for (int i = 0; i < HDL_MAX_NUM_LASERS; i++)
     {
     HDLLaserCorrection correction = laser_corrections_[i];
@@ -419,45 +556,21 @@ void vtkVelodyneHDLReader::vtkInternal::Init()
     laser_corrections_[i].cosVertOffsetCorrection = correction.verticalOffsetCorrection
                                        * correction.cosVertCorrection;
     }
+}
 
-
-  for (int i = 0; i < HDL_MAX_NUM_LASERS; i++)
-    laser_rgb_mapping_[i].r = laser_rgb_mapping_[i].g = laser_rgb_mapping_[i].b = 0;
-
-  if (laser_corrections_[32].distanceCorrection == 0.0)
-    {
-    for (int i = 0; i < 16; i++)
-      {
-      laser_rgb_mapping_[i * 2].b = static_cast<uint8_t> (i * 6 + 64);
-      laser_rgb_mapping_[i * 2 + 1].b = static_cast<uint8_t> ( (i + 16) * 6 + 64);
-      }
-    }
-  else
-    {
-    for (int i = 0; i < 16; i++)
-      {
-      laser_rgb_mapping_[i * 2].b = static_cast<uint8_t> (i * 3 + 64);
-      laser_rgb_mapping_[i * 2 + 1].b = static_cast<uint8_t> ( (i + 16) * 3 + 64);
-      }
-    for (int i = 0; i < 16; i++)
-      {
-      laser_rgb_mapping_[i * 2 + 32].b = static_cast<uint8_t> (i * 3 + 160);
-      laser_rgb_mapping_[i * 2 + 33].b = static_cast<uint8_t> ( (i + 16) * 3 + 160);
-      }
-    }
+//-----------------------------------------------------------------------------
+void vtkVelodyneHDLReader::vtkInternal::Init()
+{
+  this->InitTables();
+  this->LoadHDL32Corrections();
 }
 
 //-----------------------------------------------------------------------------
 void vtkVelodyneHDLReader::vtkInternal::SplitFrame()
 {
-  if (!this->CurrentDataset || !this->CurrentDataset->GetNumberOfPoints())
-    {
-    return;
-    }
-
   this->CurrentDataset->SetVerts(this->NewVertexCells(this->CurrentDataset->GetNumberOfPoints()));
   this->Datasets.push_back(this->CurrentDataset);
-  this->CurrentDataset = 0;
+  this->CurrentDataset = this->CreateData(0);
 }
 
 //-----------------------------------------------------------------------------
@@ -468,111 +581,31 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(unsigned char *data, st
     return;
     }
 
-  if (sizeof (HDLLaserReturn) != 3)
-    {
-    return;
-    }
-
   HDLDataPacket* dataPacket = reinterpret_cast<HDLDataPacket *>(data);
 
   static unsigned int last_azimuth_ = 0;
-  static unsigned int packetCounter = 0;
 
   for (int i = 0; i < HDL_FIRING_PER_PKT; ++i)
     {
     HDLFiringData firingData = dataPacket->firingData[i];
     int offset = (firingData.blockIdentifier == BLOCK_0_TO_31) ? 0 : 32;
 
-    if (firingData.rotationalPosition > 18000 && last_azimuth_ < 18000
-        && ((last_azimuth_ - firingData.rotationalPosition) > 18000)
-        && this->CurrentDataset && this->CurrentDataset->GetNumberOfPoints())
+    if (firingData.rotationalPosition < last_azimuth_
+        && this->CurrentDataset->GetNumberOfPoints())
       {
-      //printf("azimuths: %d %d\n", firingData.rotationalPosition, last_azimuth_);
       this->SplitFrame();
       }
-    last_azimuth_ = firingData.rotationalPosition;
 
-    if (!this->CurrentDataset)
-      {
-      this->CurrentDataset = this->CreateData(0);
-      }
+    last_azimuth_ = firingData.rotationalPosition;
 
     for (int j = 0; j < HDL_LASER_PER_FIRING; j++)
       {
       unsigned char laserId = static_cast<unsigned char>(j + offset);
-      PushFiringData(this->CurrentDataset, laserId, firingData.rotationalPosition, firingData.laserReturns[j], laser_corrections_[j + offset]);
+      if (firingData.laserReturns[j].distance != 0.0)
+        {
+        PushFiringData(this->CurrentDataset, laserId, firingData.rotationalPosition,
+          dataPacket->gpsTimestamp, firingData.laserReturns[j], laser_corrections_[j + offset]);
+        }
       }
     }
-
-  //if ((++packetCounter % 170) == 0)
-  //  {
-  //  this->SplitFrame();
-  //  }
-}
-
-//-----------------------------------------------------------------------------
-void vtkVelodyneHDLReader::vtkInternal::LoadData(const std::string& filename)
-{
-
-  printf("reading file: %s\n", filename.c_str());
-
-  struct pcap_pkthdr *header;
-  const unsigned char *data;
-  char errbuff[PCAP_ERRBUF_SIZE];
-
-  pcap_t *pcap = pcap_open_offline (filename.c_str (), errbuff);
-
-  struct bpf_program filter;
-  std::ostringstream stringStream;
-
-  stringStream << "udp ";
-
-
-  // PCAP_NETMASK_UNKNOWN should be 0xffffffff, but it's undefined in older PCAP versions
-  if (pcap_compile (pcap, &filter, stringStream.str ().c_str(), 0, 0xffffffff) == -1)
-    {
-    vtkGenericWarningMacro("pcap_compile message: " << pcap_geterr(pcap));
-    }
-  else if (pcap_setfilter(pcap, &filter) == -1)
-    {
-    vtkGenericWarningMacro("pcap_setfilter message: " << pcap_geterr(pcap));
-    }
-
-  struct timeval lasttime;
-  unsigned long long uSecDelay;
-
-  lasttime.tv_sec = 0;
-
-  int returnValue = pcap_next_ex(pcap, &header, &data);
-
-  while (returnValue >= 0)
-    {
-
-    if (lasttime.tv_sec == 0)
-      {
-      lasttime.tv_sec = header->ts.tv_sec;
-      lasttime.tv_usec = header->ts.tv_usec;
-      }
-
-    if (lasttime.tv_usec > header->ts.tv_usec)
-      {
-      lasttime.tv_usec -= 1000000;
-      lasttime.tv_sec++;
-      }
-
-    uSecDelay = ((header->ts.tv_sec - lasttime.tv_sec) * 1000000) +
-                (header->ts.tv_usec - lasttime.tv_usec);
-
-    //boost::this_thread::sleep(boost::posix_time::microseconds(uSecDelay));
-
-    lasttime.tv_sec = header->ts.tv_sec;
-    lasttime.tv_usec = header->ts.tv_usec;
-
-    // The ETHERNET header is 42 bytes long; unnecessary
-    this->ProcessHDLPacket(const_cast<unsigned char*>(data) + 42, header->len - 42);
-
-    returnValue = pcap_next_ex(pcap, &header, &data);
-    }
-
-
 }

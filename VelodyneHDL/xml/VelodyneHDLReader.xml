@@ -19,6 +19,18 @@
           </Documentation>
       </StringVectorProperty>
 
+      <StringVectorProperty
+          name="ZCorrectionsFile"
+          label="Calibration File"
+          animateable="0"
+          command="SetCorrectionsFile"
+          number_of_elements="1">
+          <FileListDomain name="files"/>
+          <Documentation>
+            This property specifies the corrections file for a 64 laser sensor.
+          </Documentation>
+      </StringVectorProperty>
+
       <DoubleVectorProperty
             name="TimeRange"
                 information_only="1" >

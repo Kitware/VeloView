@@ -36,11 +36,6 @@ public:
     this->Close();
   }
 
-  bool IsOpen()
-  {
-    return (this->PCAPFile != 0);
-  }
-
   bool Open(const std::string& filename)
   {
     char errbuff[PCAP_ERRBUF_SIZE];
@@ -71,19 +66,31 @@ public:
     return true;
   }
 
+  bool IsOpen()
+  {
+    return (this->PCAPFile != 0);
+  }
+
   void Close()
   {
     if (this->PCAPFile)
       {
       pcap_close(this->PCAPFile);
       this->PCAPFile = 0;
+      this->FileName.clear();
       }
   }
 
-  double GetElapsedTime(const struct timeval& end, const struct timeval& start)
+  const std::string& GetLastError()
   {
-    return (end.tv_sec - start.tv_sec) + (end.tv_usec - start.tv_usec) / 1000000.00;
+    return this->LastError;
   }
+
+  const std::string& GetFileName()
+  {
+    return this->FileName;
+  }
+
 
   bool NextPacket(const unsigned char*& data, unsigned int& dataLength, double& timeSinceStart)
   {
@@ -106,6 +113,13 @@ public:
     data = data + bytesToSkip;
     timeSinceStart = GetElapsedTime(header->ts, this->StartTime);
     return true;
+  }
+
+protected:
+
+  double GetElapsedTime(const struct timeval& end, const struct timeval& start)
+  {
+    return (end.tv_sec - start.tv_sec) + (end.tv_usec - start.tv_usec) / 1000000.00;
   }
 
   pcap_t* PCAPFile;

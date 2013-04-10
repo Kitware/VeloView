@@ -17,9 +17,35 @@
           </Documentation>
       </StringVectorProperty>
 
+      <StringVectorProperty
+          name="CorrectionsFile"
+          animateable="0"
+          command="SetCorrectionsFile"
+          number_of_elements="1">
+          <FileListDomain name="files"/>
+          <Documentation>
+            This property specifies the corrections file for a 64 laser sensor.
+          </Documentation>
+      </StringVectorProperty>
+
+      <StringVectorProperty
+          name="OutputFile"
+          animateable="0"
+          command="SetOutputFile"
+          number_of_elements="1">
+          <FileListDomain name="files"/>
+          <Documentation>
+            This property specifies the output packet file for writing.
+          </Documentation>
+      </StringVectorProperty>
+
       <Property
         name="Poll"
         command="Poll" />
+
+      <Property
+        name="ReadNextFrame"
+        command="ReadNextFrame" />
 
       <Property
         name="Start"
@@ -29,11 +55,22 @@
         name="Stop"
         command="Stop" />
 
+      <DoubleVectorProperty
+          name="TimestepValues"
+          repeatable="1"
+          information_only="1">
+        <TimeStepsInformationHelper/>
+      </DoubleVectorProperty>
+
       <IntVectorProperty
-         name="HasNewData"
-         command="HasNewData"
-         information_only="1">
-         <SimpleIntInformationHelper/>
+        name="CacheSize"
+        command="SetCacheSize"
+        number_of_elements="1"
+        default_values="500">
+        <Documentation>
+        The cache size determines how many timesteps of data will be saved
+        by this source.  A cache size of zero indicates an unlimited size.
+        </Documentation>
       </IntVectorProperty>
 
    </SourceProxy>

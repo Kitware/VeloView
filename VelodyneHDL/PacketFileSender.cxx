@@ -78,7 +78,7 @@ int main(int argc, char* argv[])
 
         size_t bytesSent = socket.send_to(boost::asio::buffer(data, dataLength), destinationEndpoint);
 
-        if ((++packetCounter % 100) == 0)
+        if ((++packetCounter % 500) == 0)
           {
           printf("total sent packets: %lu\n", packetCounter);
           }
