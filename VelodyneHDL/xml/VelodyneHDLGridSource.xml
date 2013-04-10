@@ -1,0 +1,36 @@
+<ServerManagerConfiguration>
+  <!-- Begin vtkVelodyneHDLGridSource -->
+  <ProxyGroup name="sources">
+    <SourceProxy name="VelodyneHDLGridSource" class="vtkVelodyneHDLGridSource" label="Velodyne HDL Grid Source">
+      <Documentation
+        short_help="Generates a vtkPolyData measurement grid plane."
+        long_help="Generates a vtkPolyData measurement grid plane.">
+        Generates a vtkPolyData measurement grid plane.
+      </Documentation>
+
+
+      <IntVectorProperty
+        name="GridSize"
+        command="SetGridSize"
+        number_of_elements="1"
+        default_values="10">
+      </IntVectorProperty>
+
+      <DoubleVectorProperty
+        name="Origin"
+        command="SetOrigin"
+        number_of_elements="3"
+        default_values="0.0 0.0 0.0">
+      </DoubleVectorProperty>
+
+      <DoubleVectorProperty
+        name="Normal"
+        command="SetNormal"
+        number_of_elements="3"
+        default_values="0.0 0.0 1.0">
+      </DoubleVectorProperty>
+
+    </SourceProxy>
+  </ProxyGroup>
+  <!-- End vtkVelodyneHDLGridSource -->
+</ServerManagerConfiguration>
