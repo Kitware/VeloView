@@ -120,6 +120,7 @@ set (CM_PROJECTS_ALL)
 # Include all optional projects. These are the ones user can pick and choose.
 # Some of these allow using system libraries too.
 include(qt)
+include(python)
 include(paraview)
 include(pcap)
 include(boost)
