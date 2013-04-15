@@ -4,6 +4,8 @@
 
 #include <QObject>
 
+#include "vvConfigure.h"
+
 class pqServer;
 class pqView;
 class pqPipelineSource;
@@ -14,7 +16,7 @@ class vvAppLogic;
 class QAction;
 class QLabel;
 
-class pqVelodyneManager : public QObject
+class VelodyneHDLPlugin_EXPORT pqVelodyneManager : public QObject
 {
 
   Q_OBJECT
