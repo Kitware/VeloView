@@ -1,4 +1,4 @@
-
+import os
 import paraview.simple as smp
 from paraview import vtk
 
@@ -110,6 +110,43 @@ def showMeasurementGrid():
     smp.Render()
 
 
+def saveCSVCurrentFrame(filename):
+    w = smp.DataSetCSVWriter(FileName=filename)
+    w.UpdatePipeline()
+    smp.Delete(w)
+
+
+def saveCSVAllFrames(filename):
+    saveCSV(filename, getCurrentTimesteps())
+
+
+def saveCSVLastFrames(filename, lastFrames):
+    if lastFrames >= 1:
+        timesteps = getCurrentTimesteps()
+        endIndex = timesteps.index(smp.GetActiveView().ViewTime)
+        startIndex = endIndex - lastFrames + 1
+        startIndex = max(startIndex, 0)
+        timesteps = timesteps[startIndex : endIndex+1]
+        saveCSV(filename, timesteps)
+
+
+def saveCSV(filename, timesteps):
+
+    writer = smp.DataSetCSVWriter()
+    view = smp.GetActiveView()
+
+    filename, extension = os.path.splitext(filename)
+    filename = filename + '_%04d' + extension
+
+    for t in timesteps:
+        view.ViewTime = t
+        view.StillRender()
+        writer.FileName = filename % t
+        writer.UpdatePipeline()
+
+    smp.Delete(writer)
+
+
 def close():
 
     unloadReader()
@@ -148,11 +185,15 @@ def stopStream():
 def pollSource():
 
     source = getReader() or getSensor()
-    if source is None:
-      return
+    if source is not None:
+        source.Poll()
+        source.UpdatePipelineInformation()
+    return source
 
-    source.Poll()
-    source.UpdatePipelineInformation()
+
+def getCurrentTimesteps():
+    source = pollSource()
+    return list(source.TimestepValues) if source is not None else []
 
 
 def gotoStart():
@@ -195,9 +236,7 @@ def onPlayTimer():
   view = smp.GetActiveView()
 
   if sensor is not None:
-      sensor.Poll()
-      sensor.UpdatePipelineInformation()
-      timesteps = sensor.TimestepValues
+      timesteps = getCurrentTimesteps()
       if not timesteps:
           return
 
@@ -213,10 +252,7 @@ def onPlayTimer():
       smp.GetAnimationScene().GoToLast()
 
   elif reader is not None:
-
-      reader.Poll()
-      reader.UpdatePipelineInformation()
-      timesteps = reader.TimestepValues
+      timesteps = getCurrentTimesteps()
       if not timesteps:
           return
 

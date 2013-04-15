@@ -57,7 +57,7 @@ public:
 
   void setup(QAction* openFile, QAction* close, QAction* openSensor, QAction* chooseCalibrationFile,
              QAction* resetView, QAction* play, QAction* seekForward, QAction* seekBackward, QAction* gotoStart, QAction* gotoEnd,
-             QAction* record, QAction* measurementGrid, QAction* saveScreenshot);
+             QAction* record, QAction* measurementGrid, QAction* saveScreenshot, QAction* saveCSV);
 
   void openData(const QString& filename);
 
@@ -79,6 +79,7 @@ public slots:
   void onRecord();
   void onMeasurementGrid();
   void onSaveScreenshot();
+  void onSaveCSV();
   void onPollSource();
 
 signals:

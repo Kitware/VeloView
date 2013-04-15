@@ -60,6 +60,7 @@ public:
   QAction* GotoEnd;
   QAction* Record;
   QAction* MeasurementGrid;
+  QAction* SaveCSV;
 
   QLabel* FilenameLabel;
   QLabel* LogoLabel;
@@ -133,7 +134,7 @@ void pqVelodyneManager::runPython(const QString& statements)
 //-----------------------------------------------------------------------------
 void pqVelodyneManager::setup(QAction* openFile, QAction* close, QAction* openSensor,
   QAction* chooseCalibrationFile, QAction* resetView, QAction* play, QAction* seekForward, QAction* seekBackward,  QAction* gotoStart, QAction* gotoEnd,
-  QAction* record, QAction* measurementGrid, QAction* saveScreenshot)
+  QAction* record, QAction* measurementGrid, QAction* saveScreenshot, QAction* saveCSV)
 {
   this->Internal->OpenFile = openFile;
   this->Internal->Close = close;
@@ -147,6 +148,7 @@ void pqVelodyneManager::setup(QAction* openFile, QAction* close, QAction* openSe
   this->Internal->GotoEnd = gotoEnd;
   this->Internal->Record = record;
   this->Internal->MeasurementGrid = measurementGrid;
+  this->Internal->SaveCSV = saveCSV;
 
   play->setEnabled(false);
   record->setEnabled(false);
@@ -173,6 +175,7 @@ void pqVelodyneManager::setup(QAction* openFile, QAction* close, QAction* openSe
   this->connect(record, SIGNAL(triggered()), SLOT(onRecord()));
   this->connect(measurementGrid, SIGNAL(triggered()), SLOT(onMeasurementGrid()));
   this->connect(saveScreenshot, SIGNAL(triggered()), SLOT(onSaveScreenshot()));
+  this->connect(saveCSV, SIGNAL(triggered()), SLOT(onSaveCSV()));
 
   new vvLoadDataReaction(openFile);
 
@@ -305,6 +308,28 @@ void pqVelodyneManager::onSaveScreenshot()
   settings->setValue("VelodyneHDLPlugin/OpenData/DefaultDir", QFileInfo(fileName).absoluteDir().absolutePath());
 
   this->runPython(QString("_vv.saveScreenshot('%1')\n").arg(fileName));
+}
+
+//-----------------------------------------------------------------------------
+void pqVelodyneManager::onSaveCSV()
+{
+  pqSettings* settings = pqApplicationCore::instance()->settings();
+  QString defaultDir = settings->value("VelodyneHDLPlugin/OpenData/DefaultDir", QDir::homePath()).toString();
+
+
+  QString selectedFiler("*.csv");
+  QString fileName = QFileDialog::getSaveFileName(this->getMainWindow(), tr("Save CSV"),
+                          defaultDir,
+                          tr("csv (*.csv)"), &selectedFiler);
+
+  if (fileName.isEmpty())
+    {
+    return;
+    }
+
+  settings->setValue("VelodyneHDLPlugin/OpenData/DefaultDir", QFileInfo(fileName).absoluteDir().absolutePath());
+
+  this->runPython(QString("_vv.saveCSVCurrentFrame('%1')\n").arg(fileName));
 }
 
 //-----------------------------------------------------------------------------

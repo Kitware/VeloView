@@ -109,7 +109,8 @@ private:
       this->Ui.actionGo_To_End,
       this->Ui.actionRecord,
       this->Ui.actionMeasurement_Grid,
-      this->Ui.actionSave_Screenshot);
+      this->Ui.actionSave_Screenshot,
+      this->Ui.actionSave_CSV);
 
     window->statusBar()->addPermanentWidget(pqVelodyneManager::instance()->statusBarLogo());
     window->statusBar()->addWidget(pqVelodyneManager::instance()->filenameLabel());
