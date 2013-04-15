@@ -117,7 +117,10 @@ public:
       }
 
     struct timeval currentTime;
+//fixme: gettimeofday is not available on windows
+#if !defined(WIN32)
     gettimeofday(&currentTime, NULL);
+#endif
     this->PacketHeader.ts = currentTime;
 
     memcpy(this->PacketBuffer + 42, data, dataLength);
