@@ -56,6 +56,10 @@ install(DIRECTORY "${install_location}/lib/paraview-3.98"
         PATTERN "*.lib" EXCLUDE)
 
 
+install(FILES "${wpcap_library_dir}/wpcap.dll"  "${wpcap_library_dir}/Packet.dll"
+        DESTINATION "bin"
+        COMPONENT VelodyneViewer)
+
 #------------------------------------------------------------------------------
 set (CPACK_NSIS_MUI_ICON "${CMAKE_CURRENT_LIST_DIR}/InstallerIcon.ico")
 

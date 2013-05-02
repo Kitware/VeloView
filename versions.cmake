@@ -28,13 +28,13 @@ add_revision(paraview
 
 add_revision(velodyneviewer
   GIT_REPOSITORY git://kwsource.kitwarein.com/miscellaneousprojectsuda/velodyneviewer.git
-  GIT_TAG master)
+  GIT_TAG pat-wip)
 
 if (WIN32)
   add_revision(pcap
-    URL "http://www.winpcap.org/install/bin/WpdPack_4_1_2.zip"
-    URL_MD5 bae2236af062b0900ad1416b2c4878b9)
-else()  
+    GIT_REPOSITORY git://github.com/patmarion/winpcap.git
+    GIT_TAG master)
+else()
   add_revision(pcap
     URL "http://www.tcpdump.org/release/libpcap-1.3.0.tar.gz"
     URL_MD5 "f78455a92622b7a3c05c58b6ad1cec7e")

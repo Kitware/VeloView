@@ -2,7 +2,7 @@
 # configure stage.
 set (vv_version_major 1)
 set (vv_version_minor 0)
-set (vv_version_patch 0)
+set (vv_version_patch 1)
 set (vv_version_suffix)
 set (vv_version "${vv_version_major}.${vv_version_minor}")
 
