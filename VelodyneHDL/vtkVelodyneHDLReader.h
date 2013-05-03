@@ -44,9 +44,16 @@ public:
   //
   int CanReadFile(const char* fname);
 
+  void Open();
+  void Close();
+  int ReadFrameInformation();
+  int GetNumberOfFrames();
+  vtkSmartPointer<vtkPolyData> GetFrame(int frameNumber);
 
   void ProcessHDLPacket(unsigned char *data, unsigned int bytesReceived);
   std::vector<vtkSmartPointer<vtkPolyData> >& GetDatasets();
+
+  class vtkInternal;
 
 protected:
   vtkVelodyneHDLReader();
@@ -69,7 +76,7 @@ protected:
   std::string CorrectionsFile;
   std::string FileName;
 
-  class vtkInternal;
+
   vtkInternal* Internal;
 
 private:

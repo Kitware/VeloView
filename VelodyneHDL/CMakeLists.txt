@@ -111,6 +111,9 @@ target_link_libraries(${library_name} ${deps} pqApplicationComponents)
 add_executable(PacketFileSender PacketFileSender.cxx)
 target_link_libraries(PacketFileSender ${deps})
 
+add_executable(TestReader test/TestReader.cxx)
+target_link_libraries(TestReader ${library_name})
+
 if (NOT APPLE)
   install(TARGETS VelodyneHDLPlugin
           RUNTIME DESTINATION ${VV_INSTALL_RUNTIME_DIR}

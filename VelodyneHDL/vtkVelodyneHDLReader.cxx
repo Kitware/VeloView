@@ -64,12 +64,30 @@ public:
 
   vtkInternal()
   {
+    this->Skip = 0;
+    this->LastAzimuth = 0;
+    this->Reader = 0;
     this->Init();
   }
 
   std::vector<vtkSmartPointer<vtkPolyData> > Datasets;
   vtkSmartPointer<vtkPolyData> CurrentDataset;
 
+
+  vtkPoints* Points;
+  vtkUnsignedCharArray* Intensity;
+  vtkUnsignedCharArray* LaserId;
+  vtkUnsignedShortArray* Azimuth;
+  vtkUnsignedShortArray* Distance;
+  vtkUnsignedIntArray* Timestamp;
+
+
+  unsigned int LastAzimuth;
+
+  std::vector<fpos_t> FilePositions;
+  std::vector<int> Skips;
+  int Skip;
+  vtkPacketFileReader* Reader;
 
   void SplitFrame();
   vtkSmartPointer<vtkPolyData> CreateData(vtkIdType numberOfPoints);
@@ -118,6 +136,8 @@ void vtkVelodyneHDLReader::SetFileName(const std::string& filename)
     }
 
   this->FileName = filename;
+  this->Internal->FilePositions.clear();
+  this->Internal->Skips.clear();
   this->UnloadData();
   this->Modified();
 }
@@ -153,6 +173,7 @@ void vtkVelodyneHDLReader::SetCorrectionsFile(const std::string& correctionsFile
 //-----------------------------------------------------------------------------
 void vtkVelodyneHDLReader::UnloadData()
 {
+  this->Internal->LastAzimuth = 0;
   this->Internal->Datasets.clear();
   this->Internal->CurrentDataset = this->Internal->CreateData(0);
 }
@@ -160,17 +181,24 @@ void vtkVelodyneHDLReader::UnloadData()
 //-----------------------------------------------------------------------------
 void vtkVelodyneHDLReader::SetTimestepInformation(vtkInformation *info)
 {
-  const int numberOfTimesteps = static_cast<int>(this->Internal->Datasets.size());
-  const int maxTimestep = (numberOfTimesteps > 0) ? numberOfTimesteps - 1 : 0;
+  const size_t numberOfTimesteps = this->Internal->FilePositions.size();
   std::vector<double> timesteps;
   for (size_t i = 0; i < numberOfTimesteps; ++i)
     {
     timesteps.push_back(i);
     }
 
-  double timeRange[2] = {0, maxTimestep};
-  info->Set(vtkStreamingDemandDrivenPipeline::TIME_STEPS(), &timesteps.front(), timesteps.size());
-  info->Set(vtkStreamingDemandDrivenPipeline::TIME_RANGE(), timeRange, 2);
+  if (numberOfTimesteps)
+    {
+    double timeRange[2] = {timesteps.front(), timesteps.back()};
+    info->Set(vtkStreamingDemandDrivenPipeline::TIME_STEPS(), &timesteps.front(), timesteps.size());
+    info->Set(vtkStreamingDemandDrivenPipeline::TIME_RANGE(), timeRange, 2);
+    }
+  else
+    {
+    info->Remove(vtkStreamingDemandDrivenPipeline::TIME_STEPS());
+    info->Remove(vtkStreamingDemandDrivenPipeline::TIME_RANGE());
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -187,27 +215,34 @@ int vtkVelodyneHDLReader::RequestData(vtkInformation *request,
     return 0;
     }
 
+  /*
   if (!this->Internal->Datasets.size())
     {
     this->LoadData(this->FileName);
     this->SetTimestepInformation(info);
     }
+  */
 
   int timestep = 0;
   if (info->Has(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP()))
     {
     double timeRequest = info->Get(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP());
-    timestep = static_cast<int>(floor(timeRequest));
+    timestep = static_cast<int>(floor(timeRequest+0.5));
     }
 
-  if (timestep < 0 || timestep >= this->Internal->Datasets.size())
+  //if (timestep < 0 || timestep >= this->Internal->Datasets.size())
+  if (timestep < 0 || timestep >= this->GetNumberOfFrames())
     {
-    vtkErrorMacro("Cannot meet timestep request: " << timestep << ".  Have " << this->Internal->Datasets.size() << " datasets.");
+    //vtkErrorMacro("Cannot meet timestep request: " << timestep << ".  Have " << this->Internal->Datasets.size() << " datasets.");
+    vtkErrorMacro("Cannot meet timestep request: " << timestep << ".  Have " << this->GetNumberOfFrames() << " datasets.");
     output->ShallowCopy(this->Internal->CreateData(0));
     return 0;
     }
 
-  output->ShallowCopy(this->Internal->Datasets[timestep]);
+  //output->ShallowCopy(this->Internal->Datasets[timestep]);
+  this->Open();
+  output->ShallowCopy(this->GetFrame(timestep));
+  this->Close();
   return 1;
 }
 
@@ -216,6 +251,11 @@ int vtkVelodyneHDLReader::RequestInformation(vtkInformation *request,
                                      vtkInformationVector **inputVector,
                                      vtkInformationVector *outputVector)
 {
+  if (this->FileName.length() && !this->Internal->FilePositions.size())
+    {
+    this->ReadFrameInformation();
+    }
+
   vtkInformation *info = outputVector->GetInformationObject(0);
   this->SetTimestepInformation(info);
   return 1;
@@ -268,6 +308,58 @@ std::vector<vtkSmartPointer<vtkPolyData> >& vtkVelodyneHDLReader::GetDatasets()
 }
 
 //-----------------------------------------------------------------------------
+int vtkVelodyneHDLReader::GetNumberOfFrames()
+{
+  return this->Internal->FilePositions.size();;
+}
+
+//-----------------------------------------------------------------------------
+void vtkVelodyneHDLReader::Open()
+{
+  this->Close();
+  this->Internal->Reader = new vtkPacketFileReader;
+  if (!this->Internal->Reader->Open(this->FileName))
+    {
+    vtkErrorMacro("Failed to open packet file: " << this->FileName << endl << this->Internal->Reader->GetLastError());
+    this->Close();
+    }
+}
+
+//-----------------------------------------------------------------------------
+void vtkVelodyneHDLReader::Close()
+{
+  delete this->Internal->Reader;
+  this->Internal->Reader = 0;
+}
+
+//-----------------------------------------------------------------------------
+vtkSmartPointer<vtkPolyData> vtkVelodyneHDLReader::GetFrame(int frameNumber)
+{
+  this->UnloadData();
+
+  const unsigned char* data = 0;
+  unsigned int dataLength = 0;
+  double timeSinceStart = 0;
+
+
+  this->Internal->Reader->SetFilePosition(&this->Internal->FilePositions[frameNumber]);
+  this->Internal->Skip = this->Internal->Skips[frameNumber];
+
+  while (this->Internal->Reader->NextPacket(data, dataLength, timeSinceStart))
+    {
+    this->ProcessHDLPacket(const_cast<unsigned char*>(data), dataLength);
+
+    if (this->Internal->Datasets.size())
+      {
+      return this->Internal->Datasets.back();
+      }
+    }
+
+  this->Internal->SplitFrame();
+  return this->Internal->Datasets.back();
+}
+
+//-----------------------------------------------------------------------------
 vtkSmartPointer<vtkPolyData> vtkVelodyneHDLReader::vtkInternal::CreateData(vtkIdType numberOfPoints)
 {
   vtkSmartPointer<vtkPolyData> polyData = vtkSmartPointer<vtkPolyData>::New();
@@ -308,6 +400,13 @@ vtkSmartPointer<vtkPolyData> vtkVelodyneHDLReader::vtkInternal::CreateData(vtkId
   timestamp->SetName("timestamp");
   timestamp->SetNumberOfTuples(numberOfPoints);
   polyData->GetPointData()->AddArray(timestamp.GetPointer());
+
+  this->Points = points.GetPointer();
+  this->Intensity = intensity.GetPointer();
+  this->LaserId = laserId.GetPointer();
+  this->Azimuth = azimuth.GetPointer();
+  this->Distance = distance.GetPointer();
+  this->Timestamp = timestamp.GetPointer();
 
   return polyData;
 }
@@ -393,7 +492,7 @@ double *sin_lookup_table_;
 HDLLaserCorrection laser_corrections_[HDL_MAX_NUM_LASERS];
 
 
-void PushFiringData(vtkPolyData* polyData, unsigned char laserId, unsigned short azimuth, unsigned int timestamp, HDLLaserReturn laserReturn, HDLLaserCorrection correction)
+void PushFiringData(vtkPolyData* polyData, unsigned char laserId, unsigned short azimuth, unsigned int timestamp, HDLLaserReturn laserReturn, HDLLaserCorrection correction, vtkVelodyneHDLReader::vtkInternal* internal)
 {
   double cosAzimuth, sinAzimuth;
   if (correction.azimuthCorrection == 0)
@@ -417,6 +516,7 @@ void PushFiringData(vtkPolyData* polyData, unsigned char laserId, unsigned short
   unsigned char intensity = laserReturn.intensity;
 
 
+  /*
   vtkUnsignedCharArray::SafeDownCast(polyData->GetPointData()->GetArray("intensity"))->InsertNextValue(intensity);
   vtkUnsignedCharArray::SafeDownCast(polyData->GetPointData()->GetArray("laser_id"))->InsertNextValue(laserId);
   vtkUnsignedShortArray::SafeDownCast(polyData->GetPointData()->GetArray("azimuth"))->InsertNextValue(azimuth);
@@ -424,6 +524,33 @@ void PushFiringData(vtkPolyData* polyData, unsigned char laserId, unsigned short
   vtkUnsignedIntArray::SafeDownCast(polyData->GetPointData()->GetArray("timestamp"))->InsertNextValue(timestamp);
 
   polyData->GetPoints()->InsertNextPoint(x,y,z);
+  */
+
+  /*
+  polyData->GetPoints()->SetPoint(0, x,y,z);
+  vtkUnsignedCharArray::SafeDownCast(polyData->GetPointData()->GetArray("intensity"))->SetValue(0, intensity);
+  vtkUnsignedCharArray::SafeDownCast(polyData->GetPointData()->GetArray("laser_id"))->SetValue(0, laserId);
+  vtkUnsignedShortArray::SafeDownCast(polyData->GetPointData()->GetArray("azimuth"))->SetValue(0, azimuth);
+  vtkUnsignedShortArray::SafeDownCast(polyData->GetPointData()->GetArray("distance"))->SetValue(0, laserReturn.distance);
+  vtkUnsignedIntArray::SafeDownCast(polyData->GetPointData()->GetArray("timestamp"))->SetValue(0, timestamp);
+  */
+
+  /*
+  internal->Points->SetPoint(0, x,y,z);
+  internal->Intensity->SetValue(0, intensity);
+  internal->LaserId->SetValue(0, laserId);
+  internal->Azimuth->SetValue(0, azimuth);
+  internal->Distance->SetValue(0, laserReturn.distance);
+  internal->Timestamp->SetValue(0, timestamp);
+  */
+
+  internal->Points->InsertNextPoint(x,y,z);
+  internal->Intensity->InsertNextValue(intensity);
+  internal->LaserId->InsertNextValue(laserId);
+  internal->Azimuth->InsertNextValue(azimuth);
+  internal->Distance->InsertNextValue(laserReturn.distance);
+  internal->Timestamp->InsertNextValue(timestamp);
+
 }
 
 }
@@ -583,20 +710,23 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(unsigned char *data, st
 
   HDLDataPacket* dataPacket = reinterpret_cast<HDLDataPacket *>(data);
 
-  static unsigned int last_azimuth_ = 0;
 
-  for (int i = 0; i < HDL_FIRING_PER_PKT; ++i)
+  int i = this->Skip;
+  this->Skip = 0;
+
+  for ( ; i < HDL_FIRING_PER_PKT; ++i)
     {
     HDLFiringData firingData = dataPacket->firingData[i];
     int offset = (firingData.blockIdentifier == BLOCK_0_TO_31) ? 0 : 32;
 
-    if (firingData.rotationalPosition < last_azimuth_
-        && this->CurrentDataset->GetNumberOfPoints())
+    if (firingData.rotationalPosition < this->LastAzimuth
+        )
+        //&& this->CurrentDataset->GetNumberOfPoints())
       {
       this->SplitFrame();
       }
 
-    last_azimuth_ = firingData.rotationalPosition;
+    this->LastAzimuth = firingData.rotationalPosition;
 
     for (int j = 0; j < HDL_LASER_PER_FIRING; j++)
       {
@@ -604,8 +734,75 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(unsigned char *data, st
       if (firingData.laserReturns[j].distance != 0.0)
         {
         PushFiringData(this->CurrentDataset, laserId, firingData.rotationalPosition,
-          dataPacket->gpsTimestamp, firingData.laserReturns[j], laser_corrections_[j + offset]);
+          dataPacket->gpsTimestamp, firingData.laserReturns[j], laser_corrections_[j + offset], this);
         }
       }
     }
+}
+
+
+//-----------------------------------------------------------------------------
+int vtkVelodyneHDLReader::ReadFrameInformation()
+{
+  vtkPacketFileReader reader;
+  if (!reader.Open(this->FileName))
+    {
+    vtkErrorMacro("Failed to open packet file: " << this->FileName << endl << reader.GetLastError());
+    return 0;
+    }
+
+  const unsigned char* data = 0;
+  unsigned int dataLength = 0;
+  double timeSinceStart = 0;
+
+  unsigned int lastAzimuth = 0;
+  unsigned int lastTimestamp = 0;
+
+  std::vector<fpos_t> filePositions;
+  std::vector<int> skips;
+
+  fpos_t lastFilePosition;
+  reader.GetFilePosition(&lastFilePosition);
+
+
+  filePositions.push_back(lastFilePosition);
+  skips.push_back(0);
+
+  while (reader.NextPacket(data, dataLength, timeSinceStart))
+    {
+
+    if (dataLength != 1206)
+      {
+      //printf("skipping packet of length: %u\n", dataLength);
+      continue;
+      }
+
+    const HDLDataPacket* dataPacket = reinterpret_cast<const HDLDataPacket *>(data);
+
+    unsigned int timeDiff = dataPacket->gpsTimestamp - lastTimestamp;
+    if (timeDiff > 600 && lastTimestamp != 0)
+      {
+      printf("missed %d packets\n",  static_cast<int>(floor((timeDiff/553.0) + 0.5)));
+      }
+
+    for (int i = 0; i < HDL_FIRING_PER_PKT; ++i)
+      {
+      HDLFiringData firingData = dataPacket->firingData[i];
+
+      if (firingData.rotationalPosition < lastAzimuth)
+        {
+        filePositions.push_back(lastFilePosition);
+        skips.push_back(i);
+        }
+
+      lastAzimuth = firingData.rotationalPosition;
+      }
+
+    lastTimestamp = dataPacket->gpsTimestamp;
+    reader.GetFilePosition(&lastFilePosition);
+    }
+
+  this->Internal->FilePositions = filePositions;
+  this->Internal->Skips = skips;
+  return this->GetNumberOfFrames();
 }

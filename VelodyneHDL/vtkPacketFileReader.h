@@ -91,6 +91,25 @@ public:
     return this->FileName;
   }
 
+  void GetFilePosition(fpos_t* position)
+  {
+#ifdef _MSC_VER
+    pcap_fgetpos(this->PCAPFile, position);
+#else
+    FILE* f = pcap_file(this->PCAPFile);
+    fgetpos(f, position);
+#endif
+  }
+
+  void SetFilePosition(fpos_t* position)
+  {
+#ifdef _MSC_VER
+    pcap_fsetpos(this->PCAPFile, position);
+#else
+    FILE* f = pcap_file(this->PCAPFile);
+    fsetpos(f, position);
+#endif
+  }
 
   bool NextPacket(const unsigned char*& data, unsigned int& dataLength, double& timeSinceStart)
   {

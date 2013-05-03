@@ -73,8 +73,13 @@ def openPCAP(filename, calibrationFile):
 
     unloadReader()
 
-    reader = smp.VelodyneHDLSource(guiName='Reader', PacketFile=filename, CorrectionsFile=calibrationFile, CacheSize=0)
-    reader.ReadNextFrame()
+
+    #reader = smp.VelodyneHDLSource(guiName='Reader', PacketFile=filename, CalibrationFile=calibrationFile, CacheSize=0)
+    reader = smp.VelodyneHDLReader(guiName='Reader', FileName=filename, CalibrationFile=calibrationFile)
+
+    reader.FileName = filename
+
+    #reader.ReadNextFrame()
     reader.UpdatePipeline()
 
     if not hasArrayName(reader, 'intensity'):
@@ -82,7 +87,7 @@ def openPCAP(filename, calibrationFile):
         resetCameraToForwardView()
         return
 
-    reader.Start()
+    #reader.Start()
     rep = smp.Show(reader)
     rep.InterpolateScalarsBeforeMapping = 0
 
@@ -184,11 +189,12 @@ def stopStream():
 
 def pollSource():
 
-    source = getReader() or getSensor()
+    source = getSensor()
+    reader = getReader()
     if source is not None:
         source.Poll()
         source.UpdatePipelineInformation()
-    return source
+    return source or reader
 
 
 def getCurrentTimesteps():
@@ -270,7 +276,7 @@ def unloadReader():
     sensor = getSensor()
 
     if reader is not None:
-        reader.Stop()
+        #reader.Stop()
         smp.Delete(reader)
         app.reader = None
 
@@ -296,8 +302,14 @@ def setCalibrationFile(calibrationFile):
     sensor = getSensor()
 
     if reader is not None:
-        filename = reader.PacketFile
-        openPCAP(filename, calibrationFile)
+        #filename = reader.PacketFile
+        #openPCAP(filename, calibrationFile)
+        reader.CalibrationFile = calibrationFile
+        smp.Render()
+
+    elif sensor is not None:
+        sensor.CalibrationFile = calibrationFile
+        # no need to render now, calibration file will be used on the next frame
 
 
 def resetCamera():
