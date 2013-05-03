@@ -106,8 +106,8 @@ void pqVelodyneManager::pythonStartup()
   this->runPython(QString(
       "import sys\n"
       "sys.path.insert(0, '%1')\n"
-      "import veloview.applogic as _vv\n"
-      "_vv.start()\n").arg(pythonDir));
+      "import veloview.applogic as vv\n"
+      "vv.start()\n").arg(pythonDir));
 
   this->onMeasurementGrid();
 
@@ -198,7 +198,7 @@ void pqVelodyneManager::openData(const QString& filename)
       QString calibrationFile = dialog.selectedCalibrationFile();
 
       this->onClose();
-      this->runPython(QString("_vv.openPCAP('%1', '%2')\n").arg(filename).arg(calibrationFile));
+      this->runPython(QString("vv.openPCAP('%1', '%2')\n").arg(filename).arg(calibrationFile));
 
       if (pqActiveObjects::instance().activeSource())
         {
@@ -216,7 +216,7 @@ void pqVelodyneManager::openData(const QString& filename)
     }
   else
     {
-    this->runPython(QString("_vv.openData('%1')\n").arg(filename));
+    this->runPython(QString("vv.openData('%1')\n").arg(filename));
     }
 }
 
@@ -225,7 +225,7 @@ void pqVelodyneManager::onClose()
 {
   this->Internal->Record->setChecked(false);
   this->setStreaming(false);
-  this->runPython(QString("_vv.close()\n"));
+  this->runPython(QString("vv.close()\n"));
   this->filenameLabel()->setText(QString());
   this->timeLabel()->setText(QString());
   this->statusLabel()->setText(QString());
@@ -249,11 +249,11 @@ void pqVelodyneManager::onSeekForward()
 {
   if (this->Internal->Playing)
     {
-    this->runPython(QString("_vv.playDirectionForward()\n"));
+    this->runPython(QString("vv.playDirectionForward()\n"));
     }
   else if (!this->Internal->Playing)
     {
-    this->runPython(QString("_vv.gotoNext()\n"));
+    this->runPython(QString("vv.gotoNext()\n"));
     }
 
   this->updateTimeLabel();
@@ -264,11 +264,11 @@ void pqVelodyneManager::onSeekBackward()
 {
   if (this->Internal->Playing)
     {
-    this->runPython(QString("_vv.playDirectionReverse()\n"));
+    this->runPython(QString("vv.playDirectionReverse()\n"));
     }
   else if (!this->Internal->Playing)
     {
-    this->runPython(QString("_vv.gotoPrevious()\n"));
+    this->runPython(QString("vv.gotoPrevious()\n"));
     }
 
   this->updateTimeLabel();
@@ -277,14 +277,14 @@ void pqVelodyneManager::onSeekBackward()
 //-----------------------------------------------------------------------------
 void pqVelodyneManager::onGotoStart()
 {
-  this->runPython(QString("_vv.gotoStart()\n"));
+  this->runPython(QString("vv.gotoStart()\n"));
   this->updateTimeLabel();
 }
 
 //-----------------------------------------------------------------------------
 void pqVelodyneManager::onGotoEnd()
 {
-  this->runPython(QString("_vv.gotoEnd()\n"));
+  this->runPython(QString("vv.gotoEnd()\n"));
   this->updateTimeLabel();
 }
 
@@ -307,7 +307,7 @@ void pqVelodyneManager::onSaveScreenshot()
 
   settings->setValue("VelodyneHDLPlugin/OpenData/DefaultDir", QFileInfo(fileName).absoluteDir().absolutePath());
 
-  this->runPython(QString("_vv.saveScreenshot('%1')\n").arg(fileName));
+  this->runPython(QString("vv.saveScreenshot('%1')\n").arg(fileName));
 }
 
 //-----------------------------------------------------------------------------
@@ -329,7 +329,7 @@ void pqVelodyneManager::onSaveCSV()
 
   settings->setValue("VelodyneHDLPlugin/OpenData/DefaultDir", QFileInfo(fileName).absoluteDir().absolutePath());
 
-  this->runPython(QString("_vv.saveCSVCurrentFrame('%1')\n").arg(fileName));
+  this->runPython(QString("vv.saveCSVCurrentFrame('%1')\n").arg(fileName));
 }
 
 //-----------------------------------------------------------------------------
@@ -346,14 +346,14 @@ void pqVelodyneManager::setStreaming(bool streaming)
 
   if (streaming)
     {
-    this->runPython(QString("_vv.startStream()\n"));
-    this->runPython(QString("_vv.playDirectionForward()\n"));
+    this->runPython(QString("vv.startStream()\n"));
+    this->runPython(QString("vv.playDirectionForward()\n"));
     this->Internal->Play->setIcon(QPixmap(":/VelodyneHDLPlugin/media-playback-pause.png"));
     QTimer::singleShot(33, this, SLOT(onPollSource()));
     }
   else
     {
-    this->runPython(QString("_vv.stopStream()\n"));
+    this->runPython(QString("vv.stopStream()\n"));
     this->Internal->Play->setIcon(QPixmap(":/VelodyneHDLPlugin/media-playback-start.png"));
     }
 }
@@ -377,7 +377,7 @@ void pqVelodyneManager::onPollSource()
     ++frameCounter;
     */
 
-    this->runPython("_vv.onPlayTimer()\n");
+    this->runPython("vv.onPlayTimer()\n");
 
     int elapsedMilliseconds = static_cast<int>((vtkTimerLog::GetUniversalTime() - startTime)*1000);
     int waitMilliseconds = 33 - elapsedMilliseconds;
@@ -408,11 +408,11 @@ void pqVelodyneManager::onMeasurementGrid()
 
   if (gridVisible)
     {
-    this->runPython("_vv.showMeasurementGrid()\n");
+    this->runPython("vv.showMeasurementGrid()\n");
     }
   else
     {
-    this->runPython("_vv.hideMeasurementGrid()\n");
+    this->runPython("vv.hideMeasurementGrid()\n");
     }
 }
 
@@ -430,7 +430,7 @@ void pqVelodyneManager::onOpenSensor()
   QString calibrationFile = dialog.selectedCalibrationFile();
 
   this->onClose();
-  this->runPython(QString("_vv.openSensor('%1')\n").arg(calibrationFile));
+  this->runPython(QString("vv.openSensor('%1')\n").arg(calibrationFile));
 
   this->filenameLabel()->setText(tr("Live sensor stream."));
 
@@ -447,7 +447,7 @@ void pqVelodyneManager::onOpenSensor()
 //-----------------------------------------------------------------------------
 void pqVelodyneManager::onResetView()
 {
-  this->runPython(QString("_vv.resetCamera()\n"));
+  this->runPython(QString("vv.resetCamera()\n"));
 }
 
 //-----------------------------------------------------------------------------
@@ -458,11 +458,11 @@ void pqVelodyneManager::onRecord()
     {
 
     this->statusLabel()->setText(QString());
-    this->runPython(QString("_vv.stopRecording()\n"));
+    this->runPython(QString("vv.stopRecording()\n"));
 
     if (this->Internal->Playing)
       {
-      this->runPython(QString("_vv.startStream()\n"));
+      this->runPython(QString("vv.startStream()\n"));
       }
 
     }
@@ -486,11 +486,11 @@ void pqVelodyneManager::onRecord()
     settings->setValue("VelodyneHDLPlugin/OpenData/DefaultDir", QFileInfo(fileName).absoluteDir().absolutePath());
 
     this->statusLabel()->setText(QString("  Recording file: %1.").arg(QFileInfo(fileName).fileName()));
-    this->runPython(QString("_vv.recordFile('%1')\n").arg(fileName));
+    this->runPython(QString("vv.recordFile('%1')\n").arg(fileName));
 
     if (this->Internal->Playing)
       {
-      this->runPython(QString("_vv.startStream()\n"));
+      this->runPython(QString("vv.startStream()\n"));
       }
     }
 }
@@ -508,7 +508,7 @@ void pqVelodyneManager::onChooseCalibrationFile()
 
   QString calibrationFile = dialog.selectedCalibrationFile();
 
-  this->runPython(QString("_vv.setCalibrationFile('%1')\n").arg(calibrationFile));
+  this->runPython(QString("vv.setCalibrationFile('%1')\n").arg(calibrationFile));
 }
 
 //-----------------------------------------------------------------------------
