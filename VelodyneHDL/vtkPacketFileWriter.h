@@ -31,6 +31,24 @@ typedef unsigned __int64 uint64_t;
 #endif
 
 
+#ifdef _MSC_VER
+
+#include <windows.h>
+
+int gettimeofday(struct timeval * tp, void *)
+{
+  FILETIME ft;
+  ::GetSystemTimeAsFileTime( &ft );
+  long long t = (static_cast<long long>(ft.dwHighDateTime) << 32) | ft.dwLowDateTime;
+  t -= 116444736000000000LL;
+  t /= 10;  // microseconds
+  tp->tv_sec = static_cast<long>( t / 1000000UL);
+  tp->tv_usec = static_cast<long>( t % 1000000UL);
+  return 0;
+}
+
+#endif
+
 class vtkPacketFileWriter
 {
 public:
@@ -117,10 +135,7 @@ public:
       }
 
     struct timeval currentTime;
-//fixme: gettimeofday is not available on windows
-#if !defined(WIN32)
     gettimeofday(&currentTime, NULL);
-#endif
     this->PacketHeader.ts = currentTime;
 
     memcpy(this->PacketBuffer + 42, data, dataLength);
