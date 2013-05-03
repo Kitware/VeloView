@@ -53,7 +53,7 @@ def openSensor(calibrationFile):
 
     unloadReader()
 
-    sensor = smp.VelodyneHDLSource(guiName='Sensor', CorrectionsFile=calibrationFile, CacheSize=100)
+    sensor = smp.VelodyneHDLSource(guiName='Sensor', CalibrationFile=calibrationFile, CacheSize=100)
 
     sensor.UpdatePipeline()
     sensor.Start()
