@@ -348,7 +348,7 @@ def resetCameraToForwardView(view=None):
     view = view or smp.GetActiveView()
     view.CameraFocalPoint = [0,0,0]
     view.CameraViewUp = [0, 0.27, 0.96]
-    view.CameraPosition = [0, -12, 3.0]
+    view.CameraPosition = [0, -72, 18.0]
     view.CenterOfRotation = [0, 0, 0]
     smp.Render(view)
 
