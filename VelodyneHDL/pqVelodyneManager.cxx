@@ -97,11 +97,23 @@ pqVelodyneManager::~pqVelodyneManager()
 //-----------------------------------------------------------------------------
 void pqVelodyneManager::pythonStartup()
 {
-  QString pythonDir = QString("/source/velodyne/velodyneviewer/VelodyneHDL/python");
-  if (!QDir(pythonDir).exists())
+
+  QStringList pythonDirs;
+  pythonDirs << "/source/velodyne/velodyneviewer/VelodyneHDL/python"
+             << "c:/velodyne/build/velodyneviewer/src/velodyneviewer/VelodyneHDL/python"
+             << QCoreApplication::applicationDirPath()  + "/../Python"
+             << QCoreApplication::applicationDirPath()  + "/site-packages";
+
+  QString pythonDir = QCoreApplication::applicationDirPath();
+  foreach (const QString& dirname, pythonDirs)
     {
-    pythonDir = QCoreApplication::applicationDirPath()  + "/../Python";
+      if (QDir(dirname).exists())
+        {
+        pythonDir = dirname;
+        break;
+        }
     }
+
 
   this->runPython(QString(
       "import sys\n"
