@@ -17,6 +17,13 @@
       </IntVectorProperty>
 
       <DoubleVectorProperty
+        name="Scale"
+        command="SetScale"
+        number_of_elements="1"
+        default_values="10.0">
+      </DoubleVectorProperty>
+
+      <DoubleVectorProperty
         name="Origin"
         command="SetOrigin"
         number_of_elements="3"

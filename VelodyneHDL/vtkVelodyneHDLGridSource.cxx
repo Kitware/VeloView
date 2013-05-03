@@ -35,6 +35,7 @@ vtkStandardNewMacro(vtkVelodyneHDLGridSource);
 vtkVelodyneHDLGridSource::vtkVelodyneHDLGridSource()
 {
   this->GridSize = 10;
+  this->Scale = 10.0;
 
   this->Origin[0] = 0.0;
   this->Origin[1] = 0.0;
@@ -54,15 +55,15 @@ vtkVelodyneHDLGridSource::~vtkVelodyneHDLGridSource()
 }
 
 //-----------------------------------------------------------------------------
-vtkSmartPointer<vtkPolyData> vtkVelodyneHDLGridSource::CreateGrid(int gridSize, double origin[3], double normal[3])
+vtkSmartPointer<vtkPolyData> vtkVelodyneHDLGridSource::CreateGrid(int gridSize, double scale, double origin[3], double normal[3])
 {
   vtkNew<vtkPlaneSource> plane;
   vtkNew<vtkExtractEdges> edges;
   vtkNew<vtkAppendPolyData> append;
 
-  plane->SetOrigin(-gridSize, -gridSize, 0.0);
-  plane->SetPoint1(gridSize, -gridSize, 0.0);
-  plane->SetPoint2(-gridSize, gridSize, 0.0);
+  plane->SetOrigin(-gridSize*scale, -gridSize*scale, 0.0);
+  plane->SetPoint1(gridSize*scale, -gridSize*scale, 0.0);
+  plane->SetPoint2(-gridSize*scale, gridSize*scale, 0.0);
   plane->SetResolution(gridSize*2, gridSize*2);
   plane->SetCenter(origin);
   plane->SetNormal(normal);
@@ -75,7 +76,7 @@ vtkSmartPointer<vtkPolyData> vtkVelodyneHDLGridSource::CreateGrid(int gridSize, 
 
   for (int i = 1; i <= gridSize; ++i)
     {
-    double startPoint[3] = {arcStartVector[0]*i, arcStartVector[1]*i, arcStartVector[2]*i};
+    double startPoint[3] = {arcStartVector[0]*i*scale, arcStartVector[1]*i*scale, arcStartVector[2]*i*scale};
     vtkNew<vtkArcSource> arc;
     arc->UseNormalAndAngleOn();
     arc->SetCenter(origin);
@@ -106,7 +107,7 @@ int vtkVelodyneHDLGridSource::RequestData(vtkInformation *request,
     return 0;
     }
 
-  output->ShallowCopy(this->CreateGrid(this->GridSize, this->Origin, this->Normal));
+  output->ShallowCopy(this->CreateGrid(this->GridSize, this->Scale, this->Origin, this->Normal));
   return 1;
 }
 
