@@ -35,6 +35,7 @@
     <addaction name="actionOpen_Sensor_Stream"/>
     <addaction name="actionChoose_Calibration_File"/>
     <addaction name="separator"/>
+    <addaction name="actionExport_To_KiwiViewer"/>
     <addaction name="actionSave_CSV"/>
     <addaction name="actionSave_Screenshot"/>
     <addaction name="separator"/>
@@ -48,6 +49,7 @@
     </property>
     <addaction name="actionSpreadsheet"/>
     <addaction name="actionMeasurement_Grid"/>
+    <addaction name="actionGrid_Properties"/>
     <addaction name="actionChoose_Calibration_File"/>
     <addaction name="separator"/>
     <addaction name="actionPlay"/>
@@ -340,6 +342,23 @@
    </property>
    <property name="text">
     <string>Loop</string>
+   </property>
+  </action>
+  <action name="actionExport_To_KiwiViewer">
+   <property name="icon">
+    <iconset resource="VelodyneHDL/images/resources.qrc">
+     <normaloff>:/VelodyneHDLPlugin/kiwi_200.png</normaloff>:/VelodyneHDLPlugin/kiwi_200.png</iconset>
+   </property>
+   <property name="text">
+    <string>Export To KiwiViewer</string>
+   </property>
+   <property name="toolTip">
+    <string>Export To KiwiViewer</string>
+   </property>
+  </action>
+  <action name="actionGrid_Properties">
+   <property name="text">
+    <string>Grid Properties</string>
    </property>
   </action>
  </widget>

@@ -22,7 +22,6 @@ vvSelectFramesDialog::vvSelectFramesDialog(QWidget *p) : QDialog(p)
 //-----------------------------------------------------------------------------
 vvSelectFramesDialog::~vvSelectFramesDialog()
 {
-  printf("~vvSelectFramesDialog()\n");
   this->saveState();
   delete this->Internal;
 }

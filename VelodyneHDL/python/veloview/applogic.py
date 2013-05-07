@@ -7,19 +7,27 @@ from PythonQt import QtCore, QtGui
 
 from vtkIOXMLPython import vtkXMLPolyDataWriter
 import kiwiviewerExporter
+import gridAdjustmentDialog
 
 class AppLogic(object):
 
     def __init__(self):
         self.playing = False
         self.playDirection = 1
+        self.seekPlayDirection = 1
+        self.seekPlay = False
         self.createStatusBarWidgets()
-        self.setupPlayTimer()
+        self.setupTimers()
 
-    def setupPlayTimer(self):
+    def setupTimers(self):
         self.playTimer = QtCore.QTimer()
         self.playTimer.setSingleShot(True)
         self.playTimer.connect('timeout()', onPlayTimer)
+
+
+        self.seekTimer = QtCore.QTimer()
+        self.seekTimer.setSingleShot(True)
+        self.seekTimer.connect('timeout()', seekPressTimeout)
 
     def createStatusBarWidgets(self):
 
@@ -219,22 +227,61 @@ def onSaveCSV():
 
 
 
+def onKiwiViewerExport():
+
+    if not getNumberOfTimesteps():
+        return
+
+    # get frame selection
+    dialog = PythonQt.paraview.vvSelectFramesDialog(getMainWindow())
+    dialog.setFrameMinimum(app.scene.StartTime)
+    dialog.setFrameMaximum(app.scene.EndTime)
+    dialog.restoreState()
+    accepted = dialog.exec_()
+    if not accepted:
+        return
+
+
+    settings = getPVSettings()
+
+    defaultDir = settings.value('VelodyneHDLPlugin/OpenData/DefaultDir', QtCore.QDir.homePath())
+
+    selectedFiler = '*.csv'
+    fileName = QtGui.QFileDialog.getSaveFileName(getMainWindow(), 'Export To KiwiViewer',
+                        defaultDir, 'zip (*.zip)', selectedFiler);
+
+    if not fileName:
+        return
+
+    settings.setValue('VelodyneHDLPlugin/OpenData/DefaultDir', QtCore.QFileInfo(fileName).absoluteDir().absolutePath())
+
+    stride = 3
+
+    if dialog.frameMode() == 0:
+        saveToKiwiViewer(fileName, [app.scene.AnimationTime])
+    elif dialog.frameMode() == 1:
+        saveToKiwiViewer(fileName, range(app.scene.StartTime, app.scene.EndTime, stride))
+    else:
+        saveToKiwiViewer(fileName, range(dialog.frameStart(), dialog.frameStop(), stride))
+
+    dialog.setParent(None)
+
+
 def saveToKiwiViewer(filename, timesteps):
 
     outDir = os.path.splitext(filename)[0]
 
-    print 'outDir:', outDir
+    tempDir = kiwiviewerExporter.tempfile.mkdtemp()
+    outDir = os.path.join(tempDir, os.path.splitext(os.path.basename(filename))[0])
 
-    #assert not os.path.isdir(outDir)
-    if not os.path.isdir(outDir):
-        os.makedirs(outDir)
+    os.makedirs(outDir)
 
     filenames = exportToDirectory(outDir, timesteps)
 
     kiwiviewerExporter.writeJsonData(outDir, smp.GetActiveView(), smp.GetDisplayProperties(), filenames)
 
     kiwiviewerExporter.zipDir(outDir, filename)
-    #kiwiviewerExporter.shutil.rmtree(outDir)
+    kiwiviewerExporter.shutil.rmtree(tempDir)
 
 
 def exportToDirectory(outDir, timesteps):
@@ -283,8 +330,6 @@ def seekForward():
     if app.playDirection < 0 or app.playDirection == 3:
         app.playDirection = 0
     app.playDirection += 1
-
-    print app.playDirection
     updateSeekButtons()
 
   else:
@@ -297,13 +342,36 @@ def seekBackward():
     if app.playDirection > 0 or app.playDirection == -3:
         app.playDirection = 0
     app.playDirection -= 1
-
-    print app.playDirection
-
     updateSeekButtons()
 
   else:
     gotoPrevious()
+
+
+def seekPressTimeout():
+    app.seekPlay = True
+    onPlayTimer()
+
+
+def seekForwardPressed():
+    app.seekPlayDirection = 1
+    if not app.playing:
+        app.seekTimer.start(500)
+
+
+def seekForwardReleased():
+    app.seekTimer.stop()
+    app.seekPlay = False
+
+
+def seekBackwardPressed():
+    app.seekPlayDirection = -1
+    if not app.playing:
+        app.seekTimer.start(500)
+
+
+def seekBackwardReleased():
+    seekForwardReleased()
 
 
 def updateSeekButtons():
@@ -423,7 +491,7 @@ def stop():
 
 def onPlayTimer():
 
-    if app.playing:
+    if app.playing or app.seekPlay:
 
         startTime = vtk.vtkTimerLog.GetUniversalTime()
 
@@ -515,7 +583,8 @@ def playbackTick():
       if not numberOfTimesteps:
           return
 
-      newTime = app.scene.AnimationTime + app.playDirection
+      step = app.seekPlayDirection if app.seekPlay else app.playDirection
+      newTime = app.scene.AnimationTime + step
 
       if app.actions['actionLoop'].isChecked():
           newTime = newTime % numberOfTimesteps
@@ -663,11 +732,12 @@ def start():
     disablePlaybackActions()
     setupStatusBar()
     setupTimeSliderWidget()
+    hideColorByComponent()
     getTimeKeeper().connect('timeChanged()', onTimeChanged)
 
 
     openPCAP('/Users/pat/Desktop/pcap/F-P266_2012-12-11_02-05pm_Gas Station.pcap', '')
-    saveToKiwiViewer('/tmp/test.zip', [0, 5, 10])
+    #saveToKiwiViewer('./footest.zip', range(0, 50, 4))
 
 
 def findQObjectByName(widgets, name):
@@ -759,7 +829,6 @@ renderTimer.setSingleShot(True)
 renderTimer.connect('timeout()', forceRender)
 
 
-
 def onTimeSliderChanged(frame):
     app.scene.AnimationTime = frame
 
@@ -788,6 +857,15 @@ def onTimeChanged():
         widget.blockSignals(False)
 
 
+def onGridProperties():
+    if gridAdjustmentDialog.showDialog(getMainWindow(), app.grid):
+        smp.Render()
+
+
+def hideColorByComponent():
+    getMainWindow().findChild('pqColorToolbar').findChild('pqDisplayColorWidget').findChildren('QComboBox')[1].hide()
+
+
 def setupActions():
 
     actions = getMainWindow().findChildren('QAction')
@@ -799,9 +877,25 @@ def setupActions():
     app.actions['actionPlay'].connect('triggered()', togglePlay)
     app.actions['actionRecord'].connect('triggered()', onRecord)
     app.actions['actionSave_CSV'].connect('triggered()', onSaveCSV)
+    app.actions['actionExport_To_KiwiViewer'].connect('triggered()', onKiwiViewerExport)
     app.actions['actionReset_Camera'].connect('triggered()', resetCamera)
+    app.actions['actionGrid_Properties'].connect('triggered()', onGridProperties)
     app.actions['actionSeek_Forward'].connect('triggered()', seekForward)
     app.actions['actionSeek_Backward'].connect('triggered()', seekBackward)
     app.actions['actionGo_To_End'].connect('triggered()', gotoEnd)
     app.actions['actionGo_To_Start'].connect('triggered()', gotoStart)
+
+
+
+    buttons = {}
+    for button in getPlaybackToolBar().findChildren('QToolButton'):
+        buttons[button.text] = button
+
+
+    buttons['Seek Forward'].connect('pressed()', seekForwardPressed)
+    buttons['Seek Forward'].connect('released()', seekForwardReleased)
+
+    buttons['Seek Backward'].connect('pressed()', seekBackwardPressed)
+    buttons['Seek Backward'].connect('released()', seekBackwardReleased)
+
 
