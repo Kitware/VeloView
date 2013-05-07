@@ -735,9 +735,7 @@ def start():
     hideColorByComponent()
     getTimeKeeper().connect('timeChanged()', onTimeChanged)
 
-
-    openPCAP('/Users/pat/Desktop/pcap/F-P266_2012-12-11_02-05pm_Gas Station.pcap', '')
-    #saveToKiwiViewer('./footest.zip', range(0, 50, 4))
+    #openPCAP('/Users/pat/Desktop/pcap/F-P266_2012-12-11_02-05pm_Gas Station.pcap', ''
 
 
 def findQObjectByName(widgets, name):
