@@ -26,6 +26,7 @@
 
 // Declare the plugin to load.
 PV_PLUGIN_IMPORT_INIT(VelodyneHDLPlugin);
+PV_PLUGIN_IMPORT_INIT(pqPythonQtPlugin);
 
 class vvMainWindow::pqInternals
 {
@@ -111,11 +112,6 @@ private:
       this->Ui.actionMeasurement_Grid,
       this->Ui.actionSave_Screenshot,
       this->Ui.actionSave_CSV);
-
-    window->statusBar()->addPermanentWidget(pqVelodyneManager::instance()->statusBarLogo());
-    window->statusBar()->addWidget(pqVelodyneManager::instance()->filenameLabel());
-    window->statusBar()->addWidget(pqVelodyneManager::instance()->statusLabel());
-    window->statusBar()->addWidget(pqVelodyneManager::instance()->timeLabel());
     }
 };
 
@@ -123,6 +119,7 @@ private:
 vvMainWindow::vvMainWindow() : Internals (new vvMainWindow::pqInternals(this))
 {
   PV_PLUGIN_IMPORT(VelodyneHDLPlugin);
+  PV_PLUGIN_IMPORT(pqPythonQtPlugin);
 }
 
 //-----------------------------------------------------------------------------

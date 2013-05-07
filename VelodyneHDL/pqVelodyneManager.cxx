@@ -1,6 +1,7 @@
 #include "pqVelodyneManager.h"
 #include "vvLoadDataReaction.h"
 #include "vvCalibrationDialog.h"
+#include "vvPythonQtDecorators.h"
 
 #include <pqActiveObjects.h>
 #include <pqActiveView.h>
@@ -37,16 +38,8 @@ public:
 
   pqInternal()
   {
-    this->Playing = false;
-    this->LogoLabel = new QLabel;
-    this->LogoLabel->setPixmap(QPixmap(":/VelodyneHDLPlugin/velodyne_logo.png"));
-    this->LogoLabel->setScaledContents(true);
-    this->FilenameLabel = new QLabel;
-    this->StatusLabel = new QLabel;
-    this->TimeLabel = new QLabel;
-  }
 
-  bool Playing;
+  }
 
   QAction* OpenFile;
   QAction* Close;
@@ -61,11 +54,6 @@ public:
   QAction* Record;
   QAction* MeasurementGrid;
   QAction* SaveCSV;
-
-  QLabel* FilenameLabel;
-  QLabel* LogoLabel;
-  QLabel* StatusLabel;
-  QLabel* TimeLabel;
 };
 
 //-----------------------------------------------------------------------------
@@ -118,8 +106,13 @@ void pqVelodyneManager::pythonStartup()
   this->runPython(QString(
       "import sys\n"
       "sys.path.insert(0, '%1')\n"
+      "import PythonQt\n"
+      "QtGui = PythonQt.QtGui\n"
+      "QtCore = PythonQt.QtCore\n"
       "import veloview.applogic as vv\n"
       "vv.start()\n").arg(pythonDir));
+
+  PythonQt::self()->addDecorators(new vvPythonQtDecorators());
 
   this->onMeasurementGrid();
 
@@ -162,32 +155,15 @@ void pqVelodyneManager::setup(QAction* openFile, QAction* close, QAction* openSe
   this->Internal->MeasurementGrid = measurementGrid;
   this->Internal->SaveCSV = saveCSV;
 
-  play->setEnabled(false);
-  record->setEnabled(false);
-  seekForward->setEnabled(false);
-  seekBackward->setEnabled(false);
-  gotoStart->setEnabled(false);
-  gotoEnd->setEnabled(false);
-
   pqSettings* settings = pqApplicationCore::instance()->settings();
   bool gridVisible = settings->value("VelodyneHDLPlugin/MeasurementGrid/Visibility", true).toBool();
   measurementGrid->setChecked(gridVisible);
 
-  this->connect(close, SIGNAL(triggered()), SLOT(onClose()));
   this->connect(openSensor, SIGNAL(triggered()), SLOT(onOpenSensor()));
   this->connect(chooseCalibrationFile, SIGNAL(triggered()), SLOT(onChooseCalibrationFile()));
-  this->connect(resetView, SIGNAL(triggered()), SLOT(onResetView()));
-  this->connect(play, SIGNAL(triggered()), SLOT(onPlay()));
 
-  this->connect(seekForward, SIGNAL(triggered()), SLOT(onSeekForward()));
-  this->connect(seekBackward, SIGNAL(triggered()), SLOT(onSeekBackward()));
-  this->connect(gotoStart, SIGNAL(triggered()), SLOT(onGotoStart()));
-  this->connect(gotoEnd, SIGNAL(triggered()), SLOT(onGotoEnd()));
-
-  this->connect(record, SIGNAL(triggered()), SLOT(onRecord()));
   this->connect(measurementGrid, SIGNAL(triggered()), SLOT(onMeasurementGrid()));
   this->connect(saveScreenshot, SIGNAL(triggered()), SLOT(onSaveScreenshot()));
-  this->connect(saveCSV, SIGNAL(triggered()), SLOT(onSaveCSV()));
 
   new vvLoadDataReaction(openFile);
 
@@ -209,95 +185,12 @@ void pqVelodyneManager::openData(const QString& filename)
 
       QString calibrationFile = dialog.selectedCalibrationFile();
 
-      this->onClose();
       this->runPython(QString("vv.openPCAP('%1', '%2')\n").arg(filename).arg(calibrationFile));
-
-      if (pqActiveObjects::instance().activeSource())
-        {
-        this->filenameLabel()->setText(QString("File: %1.").arg(QFileInfo(filename).fileName()));
-
-
-        this->Internal->Play->setEnabled(true);
-        this->Internal->SeekForward->setEnabled(true);
-        this->Internal->SeekBackward->setEnabled(true);
-        this->Internal->GotoStart->setEnabled(true);
-        this->Internal->GotoEnd->setEnabled(true);
-        }
-
-      this->updateTimeLabel();
     }
   else
     {
     this->runPython(QString("vv.openData('%1')\n").arg(filename));
     }
-}
-
-//-----------------------------------------------------------------------------
-void pqVelodyneManager::onClose()
-{
-  this->Internal->Record->setChecked(false);
-  this->setStreaming(false);
-  this->runPython(QString("vv.close()\n"));
-  this->filenameLabel()->setText(QString());
-  this->timeLabel()->setText(QString());
-  this->statusLabel()->setText(QString());
-
-  this->Internal->Play->setEnabled(false);
-  this->Internal->Record->setEnabled(false);
-  this->Internal->SeekForward->setEnabled(false);
-  this->Internal->SeekBackward->setEnabled(false);
-  this->Internal->GotoStart->setEnabled(false);
-  this->Internal->GotoEnd->setEnabled(false);
-}
-
-//-----------------------------------------------------------------------------
-void pqVelodyneManager::onPlay()
-{
-  this->setStreaming(!this->Internal->Playing);
-}
-
-//-----------------------------------------------------------------------------
-void pqVelodyneManager::onSeekForward()
-{
-  if (this->Internal->Playing)
-    {
-    this->runPython(QString("vv.playDirectionForward()\n"));
-    }
-  else if (!this->Internal->Playing)
-    {
-    this->runPython(QString("vv.gotoNext()\n"));
-    }
-
-  this->updateTimeLabel();
-}
-
-//-----------------------------------------------------------------------------
-void pqVelodyneManager::onSeekBackward()
-{
-  if (this->Internal->Playing)
-    {
-    this->runPython(QString("vv.playDirectionReverse()\n"));
-    }
-  else if (!this->Internal->Playing)
-    {
-    this->runPython(QString("vv.gotoPrevious()\n"));
-    }
-
-  this->updateTimeLabel();
-}
-
-//-----------------------------------------------------------------------------
-void pqVelodyneManager::onGotoStart()
-{
-  this->runPython(QString("vv.gotoStart()\n"));
-  this->updateTimeLabel();
-}
-
-//-----------------------------------------------------------------------------
-void pqVelodyneManager::onGotoEnd()
-{
-  this->runPython(QString("vv.gotoEnd()\n"));
-  this->updateTimeLabel();
 }
 
 //-----------------------------------------------------------------------------
@@ -320,95 +213,6 @@ void pqVelodyneManager::onSaveScreenshot()
   settings->setValue("VelodyneHDLPlugin/OpenData/DefaultDir", QFileInfo(fileName).absoluteDir().absolutePath());
 
   this->runPython(QString("vv.saveScreenshot('%1')\n").arg(fileName));
-}
-
-//-----------------------------------------------------------------------------
-void pqVelodyneManager::onSaveCSV()
-{
-  pqSettings* settings = pqApplicationCore::instance()->settings();
-  QString defaultDir = settings->value("VelodyneHDLPlugin/OpenData/DefaultDir", QDir::homePath()).toString();
-
-
-  QString selectedFiler("*.csv");
-  QString fileName = QFileDialog::getSaveFileName(this->getMainWindow(), tr("Save CSV"),
-                          defaultDir,
-                          tr("csv (*.csv)"), &selectedFiler);
-
-  if (fileName.isEmpty())
-    {
-    return;
-    }
-
-  settings->setValue("VelodyneHDLPlugin/OpenData/DefaultDir", QFileInfo(fileName).absoluteDir().absolutePath());
-
-  this->runPython(QString("vv.saveCSVCurrentFrame('%1')\n").arg(fileName));
-}
-
-//-----------------------------------------------------------------------------
-void pqVelodyneManager::setStreaming(bool streaming)
-{
-  pqPipelineSource* source = pqActiveObjects::instance().activeSource();
-  vtkSMSourceProxy* sourceProxy = source ? vtkSMSourceProxy::SafeDownCast(source->getProxy()) : NULL;
-  if (!sourceProxy)
-    {
-    return;
-    }
-
-  this->Internal->Playing = streaming;
-
-  if (streaming)
-    {
-    this->runPython(QString("vv.startStream()\n"));
-    this->runPython(QString("vv.playDirectionForward()\n"));
-    this->Internal->Play->setIcon(QPixmap(":/VelodyneHDLPlugin/media-playback-pause.png"));
-    QTimer::singleShot(33, this, SLOT(onPollSource()));
-    }
-  else
-    {
-    this->runPython(QString("vv.stopStream()\n"));
-    this->Internal->Play->setIcon(QPixmap(":/VelodyneHDLPlugin/media-playback-start.png"));
-    }
-}
-
-//-----------------------------------------------------------------------------
-void pqVelodyneManager::onPollSource()
-{
-  if (this->Internal->Playing)
-    {
-    double startTime = vtkTimerLog::GetUniversalTime();
-
-    /*
-    static double lastTime = startTime;
-    static int frameCounter = 0;
-    if (startTime - lastTime > 1.0)
-      {
-      printf("%f fps\n", frameCounter / (startTime - lastTime));
-      frameCounter = 0;
-      lastTime = startTime;
-      }
-    ++frameCounter;
-    */
-
-    this->runPython("vv.onPlayTimer()\n");
-
-    int elapsedMilliseconds = static_cast<int>((vtkTimerLog::GetUniversalTime() - startTime)*1000);
-    int waitMilliseconds = 33 - elapsedMilliseconds;
-    QTimer::singleShot(waitMilliseconds > 0 ? waitMilliseconds : 1, this, SLOT(onPollSource()));
-
-    this->updateTimeLabel();
-    }
-}
-
-//-----------------------------------------------------------------------------
-void pqVelodyneManager::updateTimeLabel()
-{
-  pqView* view = this->getRenderView();
-  vtkSMViewProxy* viewProxy = view ? vtkSMViewProxy::SafeDownCast(view->getProxy()) : NULL;
-  if (viewProxy)
-    {
-      int viewTime = static_cast<int>(vtkSMPropertyHelper(viewProxy, "ViewTime").GetAsDouble(0));
-      this->Internal->TimeLabel->setText(QString("  Frame: %1").arg(viewTime));
-    }
 }
 
 //-----------------------------------------------------------------------------
@@ -441,70 +245,7 @@ void pqVelodyneManager::onOpenSensor()
 
   QString calibrationFile = dialog.selectedCalibrationFile();
 
-  this->onClose();
   this->runPython(QString("vv.openSensor('%1')\n").arg(calibrationFile));
-
-  this->filenameLabel()->setText(tr("Live sensor stream."));
-
-  this->Internal->Play->setEnabled(true);
-  this->Internal->Record->setEnabled(true);
-  this->Internal->SeekForward->setEnabled(true);
-  this->Internal->SeekBackward->setEnabled(true);
-  this->Internal->GotoStart->setEnabled(true);
-  this->Internal->GotoEnd->setEnabled(true);
-
-  this->onPlay();
-}
-
-//-----------------------------------------------------------------------------
-void pqVelodyneManager::onResetView()
-{
-  this->runPython(QString("vv.resetCamera()\n"));
-}
-
-//-----------------------------------------------------------------------------
-void pqVelodyneManager::onRecord()
-{
-
-  if (!this->Internal->Record->isChecked())
-    {
-
-    this->statusLabel()->setText(QString());
-    this->runPython(QString("vv.stopRecording()\n"));
-
-    if (this->Internal->Playing)
-      {
-      this->runPython(QString("vv.startStream()\n"));
-      }
-
-    }
-  else
-    {
-
-    pqSettings* settings = pqApplicationCore::instance()->settings();
-    QString defaultDir = settings->value("VelodyneHDLPlugin/OpenData/DefaultDir", QDir::homePath()).toString();
-
-    QString selectedFiler("*.pcap");
-    QString fileName = QFileDialog::getSaveFileName(this->getMainWindow(), tr("Choose Output File"),
-                            defaultDir,
-                            tr("pcap (*.pcap)"), &selectedFiler);
-
-    if (fileName.isEmpty())
-      {
-      this->Internal->Record->setChecked(false);
-      return;
-      }
-
-    settings->setValue("VelodyneHDLPlugin/OpenData/DefaultDir", QFileInfo(fileName).absoluteDir().absolutePath());
-
-    this->statusLabel()->setText(QString("  Recording file: %1.").arg(QFileInfo(fileName).fileName()));
-    this->runPython(QString("vv.recordFile('%1')\n").arg(fileName));
-
-    if (this->Internal->Playing)
-      {
-      this->runPython(QString("vv.startStream()\n"));
-      }
-    }
 }
 
 //-----------------------------------------------------------------------------
@@ -521,30 +262,6 @@ void pqVelodyneManager::onChooseCalibrationFile()
   QString calibrationFile = dialog.selectedCalibrationFile();
 
   this->runPython(QString("vv.setCalibrationFile('%1')\n").arg(calibrationFile));
-}
-
-//-----------------------------------------------------------------------------
-QLabel* pqVelodyneManager::statusBarLogo()
-{
-  return this->Internal->LogoLabel;
-}
-
-//-----------------------------------------------------------------------------
-QLabel* pqVelodyneManager::filenameLabel()
-{
-  return this->Internal->FilenameLabel;
-}
-
-//-----------------------------------------------------------------------------
-QLabel* pqVelodyneManager::timeLabel()
-{
-  return this->Internal->TimeLabel;
-}
-
-//-----------------------------------------------------------------------------
-QLabel* pqVelodyneManager::statusLabel()
-{
-  return this->Internal->StatusLabel;
 }
 
 //-----------------------------------------------------------------------------

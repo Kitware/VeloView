@@ -1,25 +1,28 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>SaveCSVDailog</class>
- <widget class="QDialog" name="SaveCSVDailog">
+ <class>vvSelectFramesDialog</class>
+ <widget class="QDialog" name="vvSelectFramesDialog">
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>400</width>
-    <height>300</height>
+    <width>294</width>
+    <height>169</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Save CSV</string>
+   <string>Select Frames</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout_4">
      <item>
-      <widget class="QRadioButton" name="radioButton">
+      <widget class="QRadioButton" name="CurrentFrameButton">
        <property name="text">
         <string>Current frame</string>
+       </property>
+       <property name="checked">
+        <bool>true</bool>
        </property>
       </widget>
      </item>
@@ -31,7 +34,7 @@
       <number>6</number>
      </property>
      <item>
-      <widget class="QRadioButton" name="radioButton_2">
+      <widget class="QRadioButton" name="AllFramesButton">
        <property name="text">
         <string>All frames</string>
        </property>
@@ -48,26 +51,42 @@
       <number>0</number>
      </property>
      <item>
-      <widget class="QRadioButton" name="radioButton_3">
+      <widget class="QRadioButton" name="FrameRangeButton">
        <property name="text">
-        <string>Last</string>
+        <string>Frames from</string>
        </property>
       </widget>
      </item>
      <item>
-      <widget class="QSpinBox" name="spinBox">
+      <widget class="QSpinBox" name="FrameStart">
        <property name="focusPolicy">
         <enum>Qt::ClickFocus</enum>
        </property>
+       <property name="maximum">
+        <number>100</number>
+       </property>
        <property name="value">
-        <number>20</number>
+        <number>0</number>
        </property>
       </widget>
      </item>
      <item>
       <widget class="QLabel" name="label">
        <property name="text">
-        <string>frames</string>
+        <string> to </string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QSpinBox" name="FrameStop">
+       <property name="focusPolicy">
+        <enum>Qt::ClickFocus</enum>
+       </property>
+       <property name="maximum">
+        <number>100</number>
+       </property>
+       <property name="value">
+        <number>10</number>
        </property>
       </widget>
      </item>
@@ -116,7 +135,7 @@
   <connection>
    <sender>buttonBox</sender>
    <signal>accepted()</signal>
-   <receiver>SaveCSVDailog</receiver>
+   <receiver>vvSelectFramesDialog</receiver>
    <slot>accept()</slot>
    <hints>
     <hint type="sourcelabel">
@@ -132,7 +151,7 @@
   <connection>
    <sender>buttonBox</sender>
    <signal>rejected()</signal>
-   <receiver>SaveCSVDailog</receiver>
+   <receiver>vvSelectFramesDialog</receiver>
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">

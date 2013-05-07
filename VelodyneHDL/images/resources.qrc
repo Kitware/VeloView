@@ -7,9 +7,14 @@
     <file>media-playback-stop.png</file>
     <file>media-record.png</file>
     <file>media-seek-backward.png</file>
+    <file>media-seek-backward-3x.png</file>
+    <file>media-seek-backward-2x.png</file>
     <file>media-seek-forward.png</file>
+    <file>media-seek-forward-2x.png</file>
+    <file>media-seek-forward-3x.png</file>
     <file>media-skip-backward.png</file>
     <file>media-skip-forward.png</file>
+    <file>media-loop.png</file>
     <file>WiresharkDoc-128.png</file>
     <file>velodyne_hdl.png</file>
     <file>angle_icon.png</file>

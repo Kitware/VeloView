@@ -40,6 +40,7 @@ if(PARAVIEW_BUILD_QT_GUI)
 
   SET(UI_FILES
     vvCalibrationDialog.ui
+    vvSelectFramesDialog.ui
     )
 
   SET(MOC_HEADERS
@@ -47,6 +48,8 @@ if(PARAVIEW_BUILD_QT_GUI)
     pqVelodyneManager.h
     vvCalibrationDialog.h
     vvLoadDataReaction.h
+    vvPythonQtDecorators.h
+    vvSelectFramesDialog.h
     )
 
   set(resources
@@ -71,6 +74,7 @@ if(PARAVIEW_BUILD_QT_GUI)
     pqVelodyneManager.cxx
     vvCalibrationDialog.cxx
     vvLoadDataReaction.cxx
+    vvSelectFramesDialog.cxx
     )
 
 endif()
@@ -94,7 +98,8 @@ list(APPEND gui_xml
 
 list(APPEND deps
   ${PCAP_LIBRARY}
-  ${Boost_LIBRARIES})
+  ${Boost_LIBRARIES}
+  ${PYTHONQT_LIBRARIES})
 
 
 set(library_name VelodyneHDLPlugin)

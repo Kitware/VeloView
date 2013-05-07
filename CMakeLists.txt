@@ -39,6 +39,16 @@ endif()
 set(VV_INSTALL_ARCHIVE_DIR
     lib/velodyne-viewer-${VV_VERSION_MAJOR}.${VV_VERSION_MINOR})
 
+
+# Find and include PythonQt
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR})
+find_package(PythonQt REQUIRED)
+if(NOT PYTHONQT_FOUND)
+  message(SEND_ERROR "PythonQt not found.  Please set the required paths.")
+endif()
+include_directories(${PYTHONQT_INCLUDE_DIR})
+
+
 set (source_files
   vvMainWindow.cxx
   vvMainWindow.h
@@ -78,6 +88,8 @@ add_subdirectory(VelodyneHDL)
 
 include_directories(VelodyneHDL)
 
+
+
 # This ensure that build_paraview_client() adds an "forwarding path" to locate
 # paraview from installed location.
 set (PARAVIEW_INSTALL_LIB_DIR "lib/paraview-${PARAVIEW_VERSION_MAJOR}.${PARAVIEW_VERSION_MINOR}")
@@ -105,4 +117,4 @@ build_paraview_client(VeloView
 )
 
 # We directly link against the plugin and import them statically.
-target_link_libraries(VeloView VelodyneHDLPlugin)
+target_link_libraries(VeloView VelodyneHDLPlugin ${PYTHONQTPLUGIN_LIBRARY} ${PYTHONQT_LIBRARIES})

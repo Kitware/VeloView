@@ -49,12 +49,6 @@ public:
   pqPipelineSource* source();
 
 
-  QLabel* statusBarLogo();
-  QLabel* filenameLabel();
-  QLabel* statusLabel();
-  QLabel* timeLabel();
-
-
   void setup(QAction* openFile, QAction* close, QAction* openSensor, QAction* chooseCalibrationFile,
              QAction* resetView, QAction* play, QAction* seekForward, QAction* seekBackward, QAction* gotoStart, QAction* gotoEnd,
              QAction* record, QAction* measurementGrid, QAction* saveScreenshot, QAction* saveCSV);
@@ -67,30 +61,16 @@ public slots:
 
   void pythonStartup();
 
-  void onClose();
-  void onResetView();
-  void onPlay();
-  void onSeekForward();
-  void onSeekBackward();
-  void onGotoStart();
-  void onGotoEnd();
   void onOpenSensor();
   void onChooseCalibrationFile();
-  void onRecord();
   void onMeasurementGrid();
   void onSaveScreenshot();
-  void onSaveCSV();
-  void onPollSource();
 
 signals:
 
   void sourceCreated();
 
 private:
-
-  void setStreaming(bool streaming);
-
-  void updateTimeLabel();
 
   pqVelodyneManager(QObject *p);
 

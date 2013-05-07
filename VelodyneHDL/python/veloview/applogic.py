@@ -2,11 +2,46 @@ import os
 import paraview.simple as smp
 from paraview import vtk
 
+import PythonQt
+from PythonQt import QtCore, QtGui
+
+from vtkIOXMLPython import vtkXMLPolyDataWriter
+import kiwiviewerExporter
 
 class AppLogic(object):
 
     def __init__(self):
-        pass
+        self.playing = False
+        self.playDirection = 1
+        self.createStatusBarWidgets()
+        self.setupPlayTimer()
+
+    def setupPlayTimer(self):
+        self.playTimer = QtCore.QTimer()
+        self.playTimer.setSingleShot(True)
+        self.playTimer.connect('timeout()', onPlayTimer)
+
+    def createStatusBarWidgets(self):
+
+        self.logoLabel = QtGui.QLabel()
+        self.logoLabel.setPixmap(QtGui.QPixmap(":/VelodyneHDLPlugin/velodyne_logo.png"))
+        self.logoLabel.setScaledContents(True)
+
+        self.filenameLabel = QtGui.QLabel()
+        self.statusLabel = QtGui.QLabel()
+        self.timeLabel = QtGui.QLabel()
+
+
+class IconPaths(object):
+
+    play = ':/VelodyneHDLPlugin/media-playback-start.png'
+    pause =':/VelodyneHDLPlugin/media-playback-pause.png'
+    seekForward = ':/VelodyneHDLPlugin/media-seek-forward.png'
+    seekForward2x = ':/VelodyneHDLPlugin/media-seek-forward-2x.png'
+    seekForward3x = ':/VelodyneHDLPlugin/media-seek-forward-3x.png'
+    seekBackward = ':/VelodyneHDLPlugin/media-seek-backward.png'
+    seekBackward2x = ':/VelodyneHDLPlugin/media-seek-backward-2x.png'
+    seekBackward3x = ':/VelodyneHDLPlugin/media-seek-backward-3x.png'
 
 
 def hasArrayName(sourceProxy, arrayName):
@@ -51,10 +86,9 @@ def colorByIntensity(sourceProxy):
 
 def openSensor(calibrationFile):
 
-    unloadReader()
+    close()
 
     sensor = smp.VelodyneHDLSource(guiName='Sensor', CalibrationFile=calibrationFile, CacheSize=100)
-
     sensor.UpdatePipeline()
     sensor.Start()
     rep = smp.Show(sensor)
@@ -62,24 +96,21 @@ def openSensor(calibrationFile):
 
     smp.GetActiveView().ViewTime = 0.0
 
-    global app
     app.sensor = sensor
     app.colorByInitialized = False
-
+    app.filenameLabel.setText('Live sensor stream.')
+    enablePlaybackActions()
     smp.Render()
+
+    play()
 
 
 def openPCAP(filename, calibrationFile):
 
-    unloadReader()
+    close()
 
-
-    #reader = smp.VelodyneHDLSource(guiName='Reader', PacketFile=filename, CalibrationFile=calibrationFile, CacheSize=0)
     reader = smp.VelodyneHDLReader(guiName='Reader', FileName=filename, CalibrationFile=calibrationFile)
-
     reader.FileName = filename
-
-    #reader.ReadNextFrame()
     reader.UpdatePipeline()
 
     if not hasArrayName(reader, 'intensity'):
@@ -87,16 +118,18 @@ def openPCAP(filename, calibrationFile):
         resetCameraToForwardView()
         return
 
-    #reader.Start()
     rep = smp.Show(reader)
     rep.InterpolateScalarsBeforeMapping = 0
-
     colorByIntensity(reader)
 
     smp.GetActiveView().ViewTime = 0.0
 
-    global app
     app.reader = reader
+    app.filenameLabel.setText('File: %s' % os.path.basename(filename))
+
+    updateSliderTimeRange()
+    enablePlaybackActions()
+    app.actions['actionRecord'].setEnabled(False)
 
     resetCamera()
 
@@ -125,14 +158,9 @@ def saveCSVAllFrames(filename):
     saveCSV(filename, getCurrentTimesteps())
 
 
-def saveCSVLastFrames(filename, lastFrames):
-    if lastFrames >= 1:
-        timesteps = getCurrentTimesteps()
-        endIndex = timesteps.index(smp.GetActiveView().ViewTime)
-        startIndex = endIndex - lastFrames + 1
-        startIndex = max(startIndex, 0)
-        timesteps = timesteps[startIndex : endIndex+1]
-        saveCSV(filename, timesteps)
+def saveCSVFrameRange(filename, frameStart, frameStop):
+    timesteps = range(frameStart, frameStop+1)
+    saveCSV(filename, timesteps)
 
 
 def saveCSV(filename, timesteps):
@@ -144,34 +172,209 @@ def saveCSV(filename, timesteps):
     filename = filename + '_%04d' + extension
 
     for t in timesteps:
-        view.ViewTime = t
-        view.StillRender()
+        #view.ViewTime = t
+        #view.StillRender()
+        app.scene.AnimationTime = t
         writer.FileName = filename % t
         writer.UpdatePipeline()
 
     smp.Delete(writer)
 
 
+def onSaveCSV():
+
+    if not getNumberOfTimesteps():
+        return
+
+    # get frame selection
+    dialog = PythonQt.paraview.vvSelectFramesDialog(getMainWindow())
+    dialog.setFrameMinimum(app.scene.StartTime)
+    dialog.setFrameMaximum(app.scene.EndTime)
+    dialog.restoreState()
+    accepted = dialog.exec_()
+    if not accepted:
+        return
+
+
+    settings = getPVSettings()
+
+    defaultDir = settings.value('VelodyneHDLPlugin/OpenData/DefaultDir', QtCore.QDir.homePath())
+
+    selectedFiler = '*.csv'
+    fileName = QtGui.QFileDialog.getSaveFileName(getMainWindow(), 'Save CSV',
+                        defaultDir, 'csv (*.csv)', selectedFiler);
+
+    if not fileName:
+        return
+
+    settings.setValue('VelodyneHDLPlugin/OpenData/DefaultDir', QtCore.QFileInfo(fileName).absoluteDir().absolutePath())
+
+    if dialog.frameMode() == 0:
+        saveCSVCurrentFrame(fileName)
+    elif dialog.frameMode() == 1:
+        saveCSVAllFrames(fileName)
+    else:
+        saveCSVFrameRange(fileName, dialog.frameStart(), dialog.frameStop())
+    dialog.setParent(None)
+
+
+
+def saveToKiwiViewer(filename, timesteps):
+
+    outDir = os.path.splitext(filename)[0]
+
+    print 'outDir:', outDir
+
+    #assert not os.path.isdir(outDir)
+    if not os.path.isdir(outDir):
+        os.makedirs(outDir)
+
+    filenames = exportToDirectory(outDir, timesteps)
+
+    kiwiviewerExporter.writeJsonData(outDir, smp.GetActiveView(), smp.GetDisplayProperties(), filenames)
+
+    kiwiviewerExporter.zipDir(outDir, filename)
+    #kiwiviewerExporter.shutil.rmtree(outDir)
+
+
+def exportToDirectory(outDir, timesteps):
+
+    filenames = []
+
+    alg = smp.GetActiveSource().GetClientSideObject()
+
+    writer = vtkXMLPolyDataWriter()
+    writer.SetDataModeToAppended()
+    writer.EncodeAppendedDataOff()
+    writer.SetCompressorTypeToZLib()
+
+    for t in timesteps:
+
+        filename = 'frame_%04d.vtp' % t
+        filenames.append(filename)
+
+        app.scene.AnimationTime = t
+        polyData = vtk.vtkPolyData()
+        polyData.ShallowCopy(alg.GetOutput())
+
+        writer.SetInputData(polyData)
+        writer.SetFileName(os.path.join(outDir, filename))
+        writer.Update()
+
+    return filenames
+
+
 def close():
 
+    stop()
     unloadReader()
     resetCameraToForwardView()
+    app.filenameLabel.setText('')
+    app.statusLabel.setText('')
+    app.timeLabel.setText('')
+    updateSliderTimeRange()
+    disablePlaybackActions()
+    app.actions['actionRecord'].setChecked(False)
+
+
+def seekForward():
+
+  if app.playing:
+    if app.playDirection < 0 or app.playDirection == 3:
+        app.playDirection = 0
+    app.playDirection += 1
+
+    print app.playDirection
+    updateSeekButtons()
+
+  else:
+    gotoNext()
+
+
+def seekBackward():
+
+  if app.playing:
+    if app.playDirection > 0 or app.playDirection == -3:
+        app.playDirection = 0
+    app.playDirection -= 1
+
+    print app.playDirection
+
+    updateSeekButtons()
+
+  else:
+    gotoPrevious()
+
+
+def updateSeekButtons():
+
+    icons = { -3 : IconPaths.seekBackward3x,
+              -2 : IconPaths.seekBackward2x,
+              -1 : IconPaths.seekBackward,
+               1 : IconPaths.seekForward,
+               2 : IconPaths.seekForward2x,
+               3 : IconPaths.seekForward3x,
+            }
+
+    setActionIcon('actionSeek_Backward', icons[app.playDirection] if app.playDirection < 0 else IconPaths.seekBackward)
+    setActionIcon('actionSeek_Forward', icons[app.playDirection] if app.playDirection > 0 else IconPaths.seekForward)
+
+
+def disablePlaybackActions():
+    for action in ('Play', 'Record', 'Seek_Forward', 'Seek_Backward', 'Go_To_Start', 'Go_To_End'):
+        app.actions['action'+action].setEnabled(False)
+
+
+def enablePlaybackActions():
+    for action in ('Play', 'Record', 'Seek_Forward', 'Seek_Backward', 'Go_To_Start', 'Go_To_End'):
+        app.actions['action'+action].setEnabled(True)
 
 
 def recordFile(filename):
 
     sensor = getSensor()
     if sensor:
-        sensor.Stop()
+        stopStream()
         sensor.OutputFile = filename
+        app.statusLabel.setText('  Recording file: %s.' % os.path.basename(filename))
+        if app.playing:
+            startStream()
+
+
+def onRecord():
+
+    recordAction = app.actions['actionRecord']
+
+    if not recordAction.isChecked():
+        stopRecording()
+
+    else:
+
+        settings = getPVSettings()
+
+        defaultDir = settings.value('VelodyneHDLPlugin/OpenData/DefaultDir', QtCore.QDir.homePath())
+
+        selectedFiler = '*.pcap'
+        fileName = QtGui.QFileDialog.getSaveFileName(getMainWindow(), 'Choose Output File',
+                            defaultDir, 'pcap (*.pcap)', selectedFiler);
+
+        if not fileName:
+            recordAction.setChecked(False)
+            return
+
+        settings.setValue('VelodyneHDLPlugin/OpenData/DefaultDir', QtCore.QFileInfo(fileName).absoluteDir().absolutePath())
+        recordFile(fileName)
 
 
 def stopRecording():
 
+    app.statusLabel.setText('')
     sensor = getSensor()
     if sensor:
-        sensor.Stop()
+        stopStream()
         sensor.OutputFile = ''
+        if app.playing:
+            startStream()
 
 
 def startStream():
@@ -202,41 +405,90 @@ def getCurrentTimesteps():
     return list(source.TimestepValues) if source is not None else []
 
 
-def gotoStart():
-    pollSource()
-    smp.GetAnimationScene().GoToFirst()
+def getNumberOfTimesteps():
+    #app.scene.TimeKeeper.GetProperty('TimestepValues').GetNumberOfElements()
+    return getTimeKeeper().getNumberOfTimeStepValues()
 
 
-def gotoEnd():
-    pollSource()
-    smp.GetAnimationScene().GoToLast()
+def togglePlay():
+    setPlayMode(not app.playing)
+
+def play():
+    setPlayMode(True)
 
 
-def gotoNext():
-    pollSource()
-    smp.GetAnimationScene().GoToNext()
-
-
-def gotoPrevious():
-    pollSource()
-    smp.GetAnimationScene().GoToPrevious()
-
-
-playDirection = 1
-
-def playDirectionForward():
-    global playDirection
-    playDirection = 1
-
-
-def playDirectionReverse():
-    global playDirection
-    playDirection = 0
+def stop():
+    setPlayMode(False)
 
 
 def onPlayTimer():
 
-  global app
+    if app.playing:
+
+        startTime = vtk.vtkTimerLog.GetUniversalTime()
+
+        '''
+        static double lastTime = startTime;
+        static int frameCounter = 0;
+        if (startTime - lastTime > 1.0)
+          {
+          printf("%f fps\n", frameCounter / (startTime - lastTime));
+          frameCounter = 0;
+          lastTime = startTime;
+          }
+        ++frameCounter;
+        '''
+
+        playbackTick()
+
+        elapsedMilliseconds = int((vtk.vtkTimerLog.GetUniversalTime() - startTime)*1000)
+        waitMilliseconds = 33 - elapsedMilliseconds
+        app.playTimer.start(waitMilliseconds if waitMilliseconds > 0 else 1)
+
+
+def setPlayMode(mode):
+
+    if not getReader() and not getSensor():
+        return
+
+    app.playing = mode
+
+    if mode:
+        startStream()
+        setActionIcon('actionPlay', IconPaths.pause)
+        app.playTimer.start(33)
+        if app.scene.AnimationTime == app.scene.EndTime:
+            app.scene.AnimationTime = app.scene.StartTime
+
+    else:
+      stopStream()
+      setActionIcon('actionPlay', IconPaths.play)
+      app.playDirection = 1
+      updateSeekButtons()
+
+
+def gotoStart():
+    pollSource()
+    app.scene.GoToFirst()
+
+
+def gotoEnd():
+    pollSource()
+    app.scene.GoToLast()
+
+
+def gotoNext():
+    pollSource()
+    app.scene.GoToNext()
+
+
+def gotoPrevious():
+    pollSource()
+    app.scene.GoToPrevious()
+
+
+def playbackTick():
+
   sensor = getSensor()
   reader = getReader()
   view = smp.GetActiveView()
@@ -255,28 +507,34 @@ def onPlayTimer():
               app.colorByInitialized = True
               resetCamera()
 
-      smp.GetAnimationScene().GoToLast()
+      app.scene.GoToLast()
 
   elif reader is not None:
-      timesteps = getCurrentTimesteps()
-      if not timesteps:
+
+      numberOfTimesteps = getNumberOfTimesteps()
+      if not numberOfTimesteps:
           return
 
-      global playDirection
-      if playDirection == 0 and view.ViewTime != timesteps[0]:
-          smp.GetAnimationScene().GoToPrevious()
-      elif playDirection == 1 and view.ViewTime != timesteps[-1]:
-          smp.GetAnimationScene().GoToNext()
+      newTime = app.scene.AnimationTime + app.playDirection
+
+      if app.actions['actionLoop'].isChecked():
+          newTime = newTime % numberOfTimesteps
+      else:
+          newTime = max(app.scene.StartTime, min(newTime, app.scene.EndTime))
+
+          # stop playback when it reaches the first or last timestep
+          if newTime in (app.scene.StartTime, app.scene.EndTime):
+              stop()
+
+      app.scene.AnimationTime = newTime
 
 
 def unloadReader():
 
-    global app
     reader = getReader()
     sensor = getSensor()
 
     if reader is not None:
-        #reader.Stop()
         smp.Delete(reader)
         app.reader = None
 
@@ -287,12 +545,10 @@ def unloadReader():
 
 
 def getReader():
-    global app
     return getattr(app, 'reader', None)
 
 
 def getSensor():
-    global app
     return getattr(app, 'sensor', None)
 
 
@@ -302,8 +558,6 @@ def setCalibrationFile(calibrationFile):
     sensor = getSensor()
 
     if reader is not None:
-        #filename = reader.PacketFile
-        #openPCAP(filename, calibrationFile)
         reader.CalibrationFile = calibrationFile
         smp.Render()
 
@@ -393,6 +647,7 @@ def start():
 
     global app
     app = AppLogic()
+    app.scene = smp.GetAnimationScene()
 
     view = smp.GetActiveView()
     view.Background = [0.0, 0.0, 0.0]
@@ -403,3 +658,150 @@ def start():
     app.grid = createGrid()
 
     resetCameraToForwardView()
+
+    setupActions()
+    disablePlaybackActions()
+    setupStatusBar()
+    setupTimeSliderWidget()
+    getTimeKeeper().connect('timeChanged()', onTimeChanged)
+
+
+    openPCAP('/Users/pat/Desktop/pcap/F-P266_2012-12-11_02-05pm_Gas Station.pcap', '')
+    saveToKiwiViewer('/tmp/test.zip', [0, 5, 10])
+
+
+def findQObjectByName(widgets, name):
+    for w in widgets:
+        if w.objectName == name:
+            return w
+
+
+def getMainWindow():
+    return findQObjectByName(QtGui.QApplication.topLevelWidgets(), 'vvMainWindow')
+
+
+def getPVApplicationCore():
+    return PythonQt.paraview.pqPVApplicationCore.instance()
+
+
+def getPVSettings():
+    return getPVApplicationCore().settings()
+
+
+def getTimeKeeper():
+    return getPVApplicationCore().getActiveServer().getTimeKeeper()
+
+
+def getPlaybackToolBar():
+    return findQObjectByName(getMainWindow().children(), 'playbackToolbar')
+
+
+def setupTimeSliderWidget():
+
+    frame = QtGui.QWidget()
+    layout = QtGui.QHBoxLayout(frame)
+    spinBox = QtGui.QSpinBox()
+    spinBox.setMinimum(0)
+    spinBox.setMaximum(100)
+    spinBox.setValue(0)
+    slider = QtGui.QSlider(QtCore.Qt.Horizontal)
+    slider.setMaximumWidth(160)
+    slider.connect('valueChanged(int)', onTimeSliderChanged)
+    spinBox.connect('valueChanged(int)', onTimeSliderChanged)
+    slider.setEnabled(False)
+    spinBox.setEnabled(False)
+    layout.addWidget(slider)
+    layout.addWidget(spinBox)
+    layout.addStretch()
+
+    toolbar = getPlaybackToolBar()
+    toolbar.addWidget(frame)
+    app.timeSlider = slider
+    app.timeSpinBox = spinBox
+
+
+
+def updateSliderTimeRange():
+
+    timeKeeper = getTimeKeeper()
+
+    frame = int(app.scene.AnimationTime)
+    lastFrame = int(app.scene.EndTime)
+
+    for widget in (app.timeSlider, app.timeSpinBox):
+        widget.setMinimum(0)
+        widget.setMaximum(lastFrame)
+        widget.setSingleStep(1)
+        if hasattr(widget, 'setPageStep'):
+            widget.setPageStep(10)
+        widget.setValue(frame)
+        widget.setEnabled(getNumberOfTimesteps())
+
+
+renderIsPending = False
+
+def scheduleRender():
+
+    global renderIsPending
+    if not renderIsPending:
+        renderIsPending = True
+        renderTimer.start(33)
+
+
+def forceRender():
+    smp.Render()
+    global renderIsPending
+    renderIsPending = False
+
+
+renderTimer = QtCore.QTimer()
+renderTimer.setSingleShot(True)
+renderTimer.connect('timeout()', forceRender)
+
+
+
+def onTimeSliderChanged(frame):
+    app.scene.AnimationTime = frame
+
+
+def setupStatusBar():
+
+    statusBar = getMainWindow().statusBar()
+    statusBar.addPermanentWidget(app.logoLabel)
+    statusBar.addWidget(app.filenameLabel)
+    statusBar.addWidget(app.statusLabel)
+    statusBar.addWidget(app.timeLabel)
+
+
+def setActionIcon(actionName, iconPath):
+    app.actions[actionName].setIcon(QtGui.QIcon(QtGui.QPixmap(iconPath)))
+
+
+def onTimeChanged():
+
+    frame = int(getTimeKeeper().getTime())
+    app.timeLabel.setText('  Frame: %s' % frame)
+
+    for widget in (app.timeSlider, app.timeSpinBox):
+        widget.blockSignals(True)
+        widget.setValue(frame)
+        widget.blockSignals(False)
+
+
+def setupActions():
+
+    actions = getMainWindow().findChildren('QAction')
+    app.actions = {}
+    for a in actions:
+        app.actions[a.objectName] = a
+
+    app.actions['actionClose'].connect('triggered()', close)
+    app.actions['actionPlay'].connect('triggered()', togglePlay)
+    app.actions['actionRecord'].connect('triggered()', onRecord)
+    app.actions['actionSave_CSV'].connect('triggered()', onSaveCSV)
+    app.actions['actionReset_Camera'].connect('triggered()', resetCamera)
+    app.actions['actionSeek_Forward'].connect('triggered()', seekForward)
+    app.actions['actionSeek_Backward'].connect('triggered()', seekBackward)
+    app.actions['actionGo_To_End'].connect('triggered()', gotoEnd)
+    app.actions['actionGo_To_Start'].connect('triggered()', gotoStart)
+
