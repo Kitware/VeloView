@@ -17,9 +17,11 @@
     <file>media-loop.png</file>
     <file>WiresharkDoc-128.png</file>
     <file>velodyne_hdl.png</file>
+    <file>kiwi_200.png</file>
     <file>angle_icon.png</file>
     <file>preferences-system-64.png</file>
     <file>velodyne_logo.png</file>
+    <file>vvGridAdjustmentDialog.ui</file>
 
   </qresource>
 </RCC>
