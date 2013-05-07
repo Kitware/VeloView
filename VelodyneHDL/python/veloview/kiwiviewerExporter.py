@@ -66,7 +66,10 @@ def writeJsonData(outDir, view, rep, dataFilenames):
 
     objectMetaData = getObjectMetaData(rep)
 
-    objectMetaData['filenames'] = dataFilenames
+    if len(dataFilenames) > 1:
+        objectMetaData['filenames'] = dataFilenames
+    else:
+        objectMetaData['filename'] = dataFilenames[0]
 
     scene['objects'] = [objectMetaData]
 
