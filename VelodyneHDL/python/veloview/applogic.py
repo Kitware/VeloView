@@ -92,6 +92,17 @@ def colorByIntensity(sourceProxy):
     return True
 
 
+def getDefaultSaveFileName(extension):
+
+    sensor = getSensor()
+    reader = getReader()
+
+    if sensor:
+        return 'live-sensor.' + extension
+    if reader:
+        return os.path.splitext(os.path.basename(reader.FileName))[0] + '.%s' % extension
+
+
 def openSensor(calibrationFile):
 
     close()
@@ -210,7 +221,7 @@ def onSaveCSV():
 
     selectedFiler = '*.csv'
     fileName = QtGui.QFileDialog.getSaveFileName(getMainWindow(), 'Save CSV',
-                        defaultDir, 'csv (*.csv)', selectedFiler);
+                        os.path.join(defaultDir, getDefaultSaveFileName('csv')), 'csv (*.csv)', selectedFiler);
 
     if not fileName:
         return
@@ -246,9 +257,9 @@ def onKiwiViewerExport():
 
     defaultDir = settings.value('VelodyneHDLPlugin/OpenData/DefaultDir', QtCore.QDir.homePath())
 
-    selectedFiler = '*.csv'
+    selectedFiler = '*.zip'
     fileName = QtGui.QFileDialog.getSaveFileName(getMainWindow(), 'Export To KiwiViewer',
-                        defaultDir, 'zip (*.zip)', selectedFiler);
+                        os.path.join(defaultDir, getDefaultSaveFileName('zip')), 'zip (*.zip)', selectedFiler);
 
     if not fileName:
         return
@@ -424,7 +435,7 @@ def onRecord():
 
         selectedFiler = '*.pcap'
         fileName = QtGui.QFileDialog.getSaveFileName(getMainWindow(), 'Choose Output File',
-                            defaultDir, 'pcap (*.pcap)', selectedFiler);
+                            os.path.join(defaultDir, getDefaultSaveFileName('pcap')), 'pcap (*.pcap)', selectedFiler);
 
         if not fileName:
             recordAction.setChecked(False)
