@@ -41,12 +41,8 @@ set(VV_INSTALL_ARCHIVE_DIR
 
 
 # Find and include PythonQt
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR})
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/CMake)
 find_package(PythonQt REQUIRED)
-if(NOT PYTHONQT_FOUND)
-  message(SEND_ERROR "PythonQt not found.  Please set the required paths.")
-endif()
-include_directories(${PYTHONQT_INCLUDE_DIR})
 
 
 set (source_files

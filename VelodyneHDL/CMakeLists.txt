@@ -35,8 +35,11 @@ set(gui_interfaces)
 set(gui_xml)
 set(servermanager_sources)
 set(servermanager_xml)
+set(deps)
 
 if(PARAVIEW_BUILD_QT_GUI)
+
+  include_directories(${PYTHONQT_INCLUDE_DIRS})
 
   SET(UI_FILES
     vvCalibrationDialog.ui
@@ -77,6 +80,11 @@ if(PARAVIEW_BUILD_QT_GUI)
     vvSelectFramesDialog.cxx
     )
 
+  list(APPEND deps
+    ${PYTHONQT_LIBRARIES}
+    pqApplicationComponents
+    )
+
 endif()
 
 
@@ -99,7 +107,7 @@ list(APPEND gui_xml
 list(APPEND deps
   ${PCAP_LIBRARY}
   ${Boost_LIBRARIES}
-  ${PYTHONQT_LIBRARIES})
+  )
 
 
 set(library_name VelodyneHDLPlugin)
@@ -111,7 +119,7 @@ add_paraview_plugin(${library_name} "1.0"
   SERVER_MANAGER_XML ${servermanager_xml}
   SERVER_MANAGER_SOURCES ${servermanager_sources})
 
-target_link_libraries(${library_name} ${deps} pqApplicationComponents)
+target_link_libraries(${library_name} ${deps})
 
 add_executable(PacketFileSender PacketFileSender.cxx)
 target_link_libraries(PacketFileSender ${deps})
