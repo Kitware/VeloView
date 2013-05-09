@@ -22,9 +22,13 @@ add_revision(qt
   URL "http://releases.qt-project.org/qt4/source/qt-everywhere-opensource-src-4.8.2.tar.gz"
   URL_MD5 3c1146ddf56247e16782f96910a8423b)
 
+add_revision(pythonqt
+  GIT_REPOSITORY git://github.com/commontk/PythonQt.git
+  GIT_TAG patched-3)
+
 add_revision(paraview
-  URL "http://paraview.org/files/v3.98/ParaView-3.98.1-source.tar.gz"
-  URL_MD5 e91992b825be4c8e5ef8639fdfa0b557)
+  GIT_REPOSITORY git://github.com/patmarion/ParaView.git
+  GIT_TAG PythonQtPlugin)
 
 add_revision(velodyneviewer
   GIT_REPOSITORY git://kwsource.kitwarein.com/miscellaneousprojectsuda/velodyneviewer.git
