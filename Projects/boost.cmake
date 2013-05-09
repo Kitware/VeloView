@@ -1,4 +1,4 @@
-add_external_project(boost
+add_external_project_or_use_system(boost
   BUILD_IN_SOURCE 1
   CONFIGURE_COMMAND
     <SOURCE_DIR>/bootstrap.sh --prefix=<INSTALL_DIR>
