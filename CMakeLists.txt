@@ -44,6 +44,12 @@ set(VV_INSTALL_ARCHIVE_DIR
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/CMake)
 find_package(PythonQt REQUIRED)
 
+# Find the PythonQt plugin library in ParaView lib directory
+get_target_property(paraview_lib_location pqCore LOCATION)
+get_filename_component(paraview_lib_location ${paraview_lib_location} PATH)
+find_library(PYTHONQTPLUGIN_LIBRARY pqPythonQtPlugin HINTS ${paraview_lib_location}  DOC "ParaView PythonQt plugin library")
+mark_as_advanced(PYTHONQTPLUGIN_LIBRARY)
+
 
 set (source_files
   vvMainWindow.cxx
