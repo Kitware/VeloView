@@ -125,6 +125,8 @@ def openSensor(calibrationFile):
     enablePlaybackActions()
     smp.Render()
 
+    showSourceInSpreadSheet(sensor)
+
     play()
 
 
@@ -144,6 +146,8 @@ def openPCAP(filename, calibrationFile):
     rep = smp.Show(reader)
     rep.InterpolateScalarsBeforeMapping = 0
     colorByIntensity(reader)
+
+    showSourceInSpreadSheet(reader)
 
     smp.GetActiveView().ViewTime = 0.0
 
@@ -721,12 +725,31 @@ def saveScreenshot(filename):
     composite.save(filename)
 
 
-def getRenderViewWidget(view):
+def getRenderViewWidget():
+    return getPQView(smp.GetRenderView()).getWidget()
 
+
+def getPQView(view):
     app = PythonQt.paraview.pqApplicationCore.instance()
     model = app.getServerManagerModel()
-    view = PythonQt.paraview.pqPythonQtMethodHelpers.findProxyItem(model, view.SMProxy)
-    return view.getWidget()
+    return PythonQt.paraview.pqPythonQtMethodHelpers.findProxyItem(model, view.SMProxy)
+
+
+def getSpreadSheetViewProxy():
+    for p in smp.servermanager.ProxyManager():
+        if p.GetXMLName() == 'SpreadSheetView':
+            return p
+
+
+def showSourceInSpreadSheet(source):
+
+    spreadSheetView = getSpreadSheetViewProxy()
+    smp.Show(source, spreadSheetView)
+
+    # Work around a bug where the 'Showing' combobox doesn't update.
+    # Calling hide and show again will trigger the refresh.
+    smp.Hide(source, spreadSheetView)
+    smp.Show(source, spreadSheetView)
 
 
 def createGrid(view=None):
