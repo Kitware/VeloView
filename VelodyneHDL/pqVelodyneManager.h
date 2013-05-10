@@ -64,7 +64,6 @@ public slots:
   void onOpenSensor();
   void onChooseCalibrationFile();
   void onMeasurementGrid();
-  void onSaveScreenshot();
 
 signals:
 

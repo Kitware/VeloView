@@ -163,7 +163,6 @@ void pqVelodyneManager::setup(QAction* openFile, QAction* close, QAction* openSe
   this->connect(chooseCalibrationFile, SIGNAL(triggered()), SLOT(onChooseCalibrationFile()));
 
   this->connect(measurementGrid, SIGNAL(triggered()), SLOT(onMeasurementGrid()));
-  this->connect(saveScreenshot, SIGNAL(triggered()), SLOT(onSaveScreenshot()));
 
   new vvLoadDataReaction(openFile);
 
@@ -191,28 +190,6 @@ void pqVelodyneManager::openData(const QString& filename)
     {
     this->runPython(QString("vv.openData('%1')\n").arg(filename));
     }
-}
-
-//-----------------------------------------------------------------------------
-void pqVelodyneManager::onSaveScreenshot()
-{
-  pqSettings* settings = pqApplicationCore::instance()->settings();
-  QString defaultDir = settings->value("VelodyneHDLPlugin/OpenData/DefaultDir", QDir::homePath()).toString();
-
-
-  QString selectedFiler("*.png");
-  QString fileName = QFileDialog::getSaveFileName(this->getMainWindow(), tr("Screenshot"),
-                          defaultDir,
-                          tr("png (*.png)"), &selectedFiler);
-
-  if (fileName.isEmpty())
-    {
-    return;
-    }
-
-  settings->setValue("VelodyneHDLPlugin/OpenData/DefaultDir", QFileInfo(fileName).absoluteDir().absolutePath());
-
-  this->runPython(QString("vv.saveScreenshot('%1')\n").arg(fileName));
 }
 
 //-----------------------------------------------------------------------------

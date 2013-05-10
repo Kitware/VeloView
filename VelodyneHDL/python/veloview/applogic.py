@@ -1,4 +1,5 @@
 import os
+import datetime
 import paraview.simple as smp
 from paraview import vtk
 
@@ -96,15 +97,23 @@ def colorByIntensity(sourceProxy):
     return True
 
 
-def getDefaultSaveFileName(extension):
+def getTimeStamp():
+    format = '%Y-%m-%d-%H-%M-%S'
+    return datetime.datetime.now().strftime(format)
+
+
+def getDefaultSaveFileName(extension, appendFrameNumber=True):
 
     sensor = getSensor()
     reader = getReader()
 
     if sensor:
-        return 'live-sensor.' + extension
+        return '%s_Velodyne-HDL-Data.%s' % (getTimeStamp(), extension)
     if reader:
-        return os.path.splitext(os.path.basename(reader.FileName))[0] + '.%s' % extension
+        basename =  os.path.splitext(os.path.basename(reader.FileName))[0]
+        if appendFrameNumber:
+            basename = '%s (Frame %04d)' % (basename, int(app.scene.AnimationTime))
+        return '%s.%s' % (basename, extension)
 
 
 def openSensor(calibrationFile):
@@ -196,20 +205,61 @@ def saveCSVFrameRange(filename, frameStart, frameStop):
 
 def saveCSV(filename, timesteps):
 
+    tempDir = kiwiviewerExporter.tempfile.mkdtemp()
+    basenameWithoutExtension = os.path.splitext(os.path.basename(filename))[0]
+    outDir = os.path.join(tempDir, basenameWithoutExtension)
+    filenameTemplate = os.path.join(outDir, basenameWithoutExtension + ' (Frame %04d).csv')
+    os.makedirs(outDir)
+
     writer = smp.DataSetCSVWriter()
     view = smp.GetActiveView()
 
-    filename, extension = os.path.splitext(filename)
-    filename = filename + '_%04d' + extension
-
     for t in timesteps:
-        #view.ViewTime = t
-        #view.StillRender()
         app.scene.AnimationTime = t
-        writer.FileName = filename % t
+        writer.FileName = filenameTemplate % t
         writer.UpdatePipeline()
 
     smp.Delete(writer)
+
+    kiwiviewerExporter.zipDir(outDir, filename)
+    kiwiviewerExporter.shutil.rmtree(tempDir)
+
+
+def getTimeStamp():
+    format = '%Y-%m-%d-%H-%M-%S'
+    return datetime.datetime.now().strftime(format)
+
+
+def getSaveFileName(title, extension, defaultFileName=None):
+
+    settings = getPVSettings()
+    defaultDir = settings.value('VelodyneHDLPlugin/OpenData/DefaultDir', QtCore.QDir.homePath())
+    defaultFileName = defaultDir if not defaultFileName else os.path.join(defaultDir, defaultFileName)
+
+    filters = '%s (*.%s)' % (extension, extension)
+    selectedFilter = '*.%s' % extension
+    fileName = QtGui.QFileDialog.getSaveFileName(getMainWindow(), title,
+                        defaultFileName, filters, selectedFilter)
+
+    if fileName:
+        settings.setValue('VelodyneHDLPlugin/OpenData/DefaultDir', QtCore.QFileInfo(fileName).absoluteDir().absolutePath())
+        return fileName
+
+
+
+def getFrameSelectionFromUser():
+
+    dialog = PythonQt.paraview.vvSelectFramesDialog(getMainWindow())
+    dialog.setFrameMinimum(app.scene.StartTime)
+    dialog.setFrameMaximum(app.scene.EndTime)
+    dialog.restoreState()
+    accepted = dialog.exec_()
+    frameMode = dialog.frameMode()
+    frameStart = dialog.frameStart()
+    frameStop = dialog.frameStop()
+    dialog.setParent(None)
+
+    return accepted, frameMode, frameStart, frameStop
 
 
 def onSaveCSV():
@@ -217,37 +267,30 @@ def onSaveCSV():
     if not getNumberOfTimesteps():
         return
 
-    # get frame selection
-    dialog = PythonQt.paraview.vvSelectFramesDialog(getMainWindow())
-    dialog.setFrameMinimum(app.scene.StartTime)
-    dialog.setFrameMaximum(app.scene.EndTime)
-    dialog.restoreState()
-    accepted = dialog.exec_()
+    accepted, frameMode, frameStart, frameStop = getFrameSelectionFromUser()
     if not accepted:
         return
 
 
-    settings = getPVSettings()
+    if frameMode == 0:
+        fileName = getSaveFileName('Save CSV', 'csv', getDefaultSaveFileName('csv'))
+        if fileName:
+            saveCSVCurrentFrame(fileName)
 
-    defaultDir = settings.value('VelodyneHDLPlugin/OpenData/DefaultDir', QtCore.QDir.homePath())
-
-    selectedFiler = '*.csv'
-    fileName = QtGui.QFileDialog.getSaveFileName(getMainWindow(), 'Save CSV',
-                        os.path.join(defaultDir, getDefaultSaveFileName('csv')), 'csv (*.csv)', selectedFiler);
-
-    if not fileName:
-        return
-
-    settings.setValue('VelodyneHDLPlugin/OpenData/DefaultDir', QtCore.QFileInfo(fileName).absoluteDir().absolutePath())
-
-    if dialog.frameMode() == 0:
-        saveCSVCurrentFrame(fileName)
-    elif dialog.frameMode() == 1:
-        saveCSVAllFrames(fileName)
     else:
-        saveCSVFrameRange(fileName, dialog.frameStart(), dialog.frameStop())
-    dialog.setParent(None)
+        fileName = getSaveFileName('Save CSV (to zip file)', 'zip', getDefaultSaveFileName('zip', appendFrameNumber=False))
+        if fileName:
+            if frameMode == 1:
+                saveCSVAllFrames(fileName)
+            else:
+                saveCSVFrameRange(fileName, frameStart, frameStop)
 
+
+def onSaveScreenshot():
+
+    fileName = getSaveFileName('Save Screenshot', 'png', getDefaultSaveFileName('png'))
+    if fileName:
+        saveScreenshot(fileName)
 
 
 def onKiwiViewerExport():
@@ -255,44 +298,26 @@ def onKiwiViewerExport():
     if not getNumberOfTimesteps():
         return
 
-    # get frame selection
-    dialog = PythonQt.paraview.vvSelectFramesDialog(getMainWindow())
-    dialog.setFrameMinimum(app.scene.StartTime)
-    dialog.setFrameMaximum(app.scene.EndTime)
-    dialog.restoreState()
-    accepted = dialog.exec_()
+    accepted, frameMode, frameStart, frameStop = getFrameSelectionFromUser()
     if not accepted:
         return
 
-
-    settings = getPVSettings()
-
-    defaultDir = settings.value('VelodyneHDLPlugin/OpenData/DefaultDir', QtCore.QDir.homePath())
-
-    selectedFiler = '*.zip'
-    fileName = QtGui.QFileDialog.getSaveFileName(getMainWindow(), 'Export To KiwiViewer',
-                        os.path.join(defaultDir, getDefaultSaveFileName('zip')), 'zip (*.zip)', selectedFiler);
-
+    fileName = getSaveFileName('Export To KiwiViewer', 'zip', getDefaultSaveFileName('zip', appendFrameNumber=False))
     if not fileName:
         return
 
-    settings.setValue('VelodyneHDLPlugin/OpenData/DefaultDir', QtCore.QFileInfo(fileName).absoluteDir().absolutePath())
-
     stride = 3
 
-    if dialog.frameMode() == 0:
+    if frameMode == 0:
         saveToKiwiViewer(fileName, [app.scene.AnimationTime])
-    elif dialog.frameMode() == 1:
+    elif frameMode == 1:
         saveToKiwiViewer(fileName, range(app.scene.StartTime, app.scene.EndTime, stride))
     else:
-        saveToKiwiViewer(fileName, range(dialog.frameStart(), dialog.frameStop(), stride))
+        saveToKiwiViewer(fileName, range(frameStart, frameStop, stride))
 
-    dialog.setParent(None)
 
 
 def saveToKiwiViewer(filename, timesteps):
-
-    outDir = os.path.splitext(filename)[0]
 
     tempDir = kiwiviewerExporter.tempfile.mkdtemp()
     outDir = os.path.join(tempDir, os.path.splitext(os.path.basename(filename))[0])
@@ -441,19 +466,11 @@ def onRecord():
 
     else:
 
-        settings = getPVSettings()
-
-        defaultDir = settings.value('VelodyneHDLPlugin/OpenData/DefaultDir', QtCore.QDir.homePath())
-
-        selectedFiler = '*.pcap'
-        fileName = QtGui.QFileDialog.getSaveFileName(getMainWindow(), 'Choose Output File',
-                            os.path.join(defaultDir, getDefaultSaveFileName('pcap')), 'pcap (*.pcap)', selectedFiler);
-
+        fileName = getSaveFileName('Choose Output File', 'pcap', getDefaultSaveFileName('pcap'))
         if not fileName:
             recordAction.setChecked(False)
             return
 
-        settings.setValue('VelodyneHDLPlugin/OpenData/DefaultDir', QtCore.QFileInfo(fileName).absoluteDir().absolutePath())
         recordFile(fileName)
 
 
@@ -497,7 +514,6 @@ def getCurrentTimesteps():
 
 
 def getNumberOfTimesteps():
-    #app.scene.TimeKeeper.GetProperty('TimestepValues').GetNumberOfElements()
     return getTimeKeeper().getNumberOfTimeStepValues()
 
 
@@ -517,18 +533,6 @@ def onPlayTimer():
     if app.playing or app.seekPlay:
 
         startTime = vtk.vtkTimerLog.GetUniversalTime()
-
-        '''
-        static double lastTime = startTime;
-        static int frameCounter = 0;
-        if (startTime - lastTime > 1.0)
-          {
-          printf("%f fps\n", frameCounter / (startTime - lastTime));
-          frameCounter = 0;
-          lastTime = startTime;
-          }
-        ++frameCounter;
-        '''
 
         playbackTick()
 
@@ -808,8 +812,6 @@ def start():
     hideColorByComponent()
     getTimeKeeper().connect('timeChanged()', onTimeChanged)
 
-    #openPCAP('/Users/pat/Desktop/pcap/F-P266_2012-12-11_02-05pm_Gas Station.pcap', ''
-
 
 def findQObjectByName(widgets, name):
     for w in widgets:
@@ -948,6 +950,7 @@ def setupActions():
     app.actions['actionPlay'].connect('triggered()', togglePlay)
     app.actions['actionRecord'].connect('triggered()', onRecord)
     app.actions['actionSave_CSV'].connect('triggered()', onSaveCSV)
+    app.actions['actionSave_Screenshot'].connect('triggered()', onSaveScreenshot)
     app.actions['actionExport_To_KiwiViewer'].connect('triggered()', onKiwiViewerExport)
     app.actions['actionReset_Camera'].connect('triggered()', resetCamera)
     app.actions['actionGrid_Properties'].connect('triggered()', onGridProperties)
