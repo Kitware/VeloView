@@ -16,6 +16,7 @@ class AppLogic(object):
         self.playDirection = 1
         self.seekPlayDirection = 1
         self.seekPlay = False
+        self.renderIsPending = False
         self.createStatusBarWidgets()
         self.setupTimers()
 
@@ -24,10 +25,13 @@ class AppLogic(object):
         self.playTimer.setSingleShot(True)
         self.playTimer.connect('timeout()', onPlayTimer)
 
-
         self.seekTimer = QtCore.QTimer()
         self.seekTimer.setSingleShot(True)
         self.seekTimer.connect('timeout()', seekPressTimeout)
+
+        self.renderTimer = QtCore.QTimer()
+        self.renderTimer.setSingleShot(True)
+        self.renderTimer.connect('timeout()', forceRender)
 
     def createStatusBarWidgets(self):
 
@@ -107,7 +111,7 @@ def openSensor(calibrationFile):
 
     close()
 
-    sensor = smp.VelodyneHDLSource(guiName='Sensor', CalibrationFile=calibrationFile, CacheSize=100)
+    sensor = smp.VelodyneHDLSource(guiName='Data', CalibrationFile=calibrationFile, CacheSize=100)
     sensor.UpdatePipeline()
     sensor.Start()
     rep = smp.Show(sensor)
@@ -128,7 +132,7 @@ def openPCAP(filename, calibrationFile):
 
     close()
 
-    reader = smp.VelodyneHDLReader(guiName='Reader', FileName=filename, CalibrationFile=calibrationFile)
+    reader = smp.VelodyneHDLReader(guiName='Data', FileName=filename, CalibrationFile=calibrationFile)
     reader.FileName = filename
     reader.UpdatePipeline()
 
@@ -154,14 +158,12 @@ def openPCAP(filename, calibrationFile):
 
 
 def hideMeasurementGrid():
-    global app
     rep = smp.GetDisplayProperties(app.grid)
     rep.Visibility = 0
     smp.Render()
 
 
 def showMeasurementGrid():
-    global app
     rep = smp.GetDisplayProperties(app.grid)
     rep.Visibility = 1
     smp.Render()
@@ -730,7 +732,7 @@ def getRenderViewWidget(view):
 def createGrid(view=None):
 
     view = view or smp.GetActiveView()
-    grid = smp.VelodyneHDLGridSource()
+    grid = smp.VelodyneHDLGridSource(guiName='Measurement Grid')
     rep = smp.Show(grid, view)
     rep.DiffuseColor = [0.2, 0.2, 0.2]
     rep.Pickable = 0
@@ -851,25 +853,15 @@ def updateSliderTimeRange():
         widget.setEnabled(getNumberOfTimesteps())
 
 
-renderIsPending = False
-
 def scheduleRender():
-
-    global renderIsPending
-    if not renderIsPending:
-        renderIsPending = True
-        renderTimer.start(33)
+    if not app.renderIsPending:
+        app.renderIsPending = True
+        app.renderTimer.start(33)
 
 
 def forceRender():
     smp.Render()
-    global renderIsPending
-    renderIsPending = False
-
-
-renderTimer = QtCore.QTimer()
-renderTimer.setSingleShot(True)
-renderTimer.connect('timeout()', forceRender)
+    app.renderIsPending = False
 
 
 def onTimeSliderChanged(frame):
