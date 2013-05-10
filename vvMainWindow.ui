@@ -197,9 +197,6 @@
    <property name="text">
     <string>Choose Calibration File</string>
    </property>
-   <property name="shortcut">
-    <string>Ctrl+C</string>
-   </property>
   </action>
   <action name="actionSeek_Backward">
    <property name="icon">
