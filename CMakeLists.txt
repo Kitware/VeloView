@@ -3,7 +3,7 @@ project(VeloView)
 
 set (VV_VERSION_MAJOR 1)
 set (VV_VERSION_MINOR 0)
-set (VV_VERSION_PATCH 2)
+set (VV_VERSION_PATCH 3)
 
 find_package(ParaView REQUIRED)
 include(${PARAVIEW_USE_FILE})
