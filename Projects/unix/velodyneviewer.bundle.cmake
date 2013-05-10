@@ -31,7 +31,7 @@ if (qt_ENABLED AND NOT USE_SYSTEM_qt)
 endif()
 
 # install executables
-foreach(executable VelodyneViewer)
+foreach(executable VeloView)
   install(PROGRAMS "${install_location}/bin/${executable}"
     DESTINATION "bin"
     COMPONENT superbuild)
