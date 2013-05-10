@@ -134,9 +134,15 @@ def openPCAP(filename, calibrationFile):
 
     close()
 
+    progressDialog = QtGui.QProgressDialog('Reading packet file...', '', 0, 0, getMainWindow())
+    progressDialog.setCancelButton(None)
+    progressDialog.setModal(True)
+    progressDialog.show()
+
     reader = smp.VelodyneHDLReader(guiName='Data', FileName=filename, CalibrationFile=calibrationFile)
-    reader.FileName = filename
     reader.UpdatePipeline()
+
+    progressDialog.close()
 
     if not hasArrayName(reader, 'intensity'):
         smp.Delete(reader)
