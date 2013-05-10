@@ -337,7 +337,7 @@ def exportToDirectory(outDir, timesteps):
 def close():
 
     stop()
-    unloadReader()
+    unloadData()
     resetCameraToForwardView()
     app.filenameLabel.setText('')
     app.statusLabel.setText('')
@@ -621,7 +621,7 @@ def playbackTick():
       app.scene.AnimationTime = newTime
 
 
-def unloadReader():
+def unloadData():
 
     reader = getReader()
     sensor = getSensor()
@@ -634,6 +634,8 @@ def unloadReader():
         sensor.Stop()
         smp.Delete(sensor)
         app.sensor = None
+
+    clearSpreadSheetView()
 
 
 def getReader():
@@ -745,6 +747,11 @@ def getSpreadSheetViewProxy():
     for p in smp.servermanager.ProxyManager():
         if p.GetXMLName() == 'SpreadSheetView':
             return p
+
+
+def clearSpreadSheetView():
+    view = getSpreadSheetViewProxy()
+    view.Representations = []
 
 
 def showSourceInSpreadSheet(source):
