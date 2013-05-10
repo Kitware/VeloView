@@ -111,8 +111,6 @@ vtkVelodyneHDLReader::vtkVelodyneHDLReader()
   this->UnloadData();
   this->SetNumberOfInputPorts(0);
   this->SetNumberOfOutputPorts(1);
-
-  //this->SetCorrectionsFile("/Users/pat/Desktop/pcap/S2-Unit#135 Flatness intensity cal db.xml");
 }
 
 //-----------------------------------------------------------------------------
@@ -215,13 +213,6 @@ int vtkVelodyneHDLReader::RequestData(vtkInformation *request,
     return 0;
     }
 
-  /*
-  if (!this->Internal->Datasets.size())
-    {
-    this->LoadData(this->FileName);
-    this->SetTimestepInformation(info);
-    }
-  */
 
   int timestep = 0;
   if (info->Has(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP()))
@@ -230,16 +221,13 @@ int vtkVelodyneHDLReader::RequestData(vtkInformation *request,
     timestep = static_cast<int>(floor(timeRequest+0.5));
     }
 
-  //if (timestep < 0 || timestep >= this->Internal->Datasets.size())
   if (timestep < 0 || timestep >= this->GetNumberOfFrames())
     {
-    //vtkErrorMacro("Cannot meet timestep request: " << timestep << ".  Have " << this->Internal->Datasets.size() << " datasets.");
     vtkErrorMacro("Cannot meet timestep request: " << timestep << ".  Have " << this->GetNumberOfFrames() << " datasets.");
     output->ShallowCopy(this->Internal->CreateData(0));
     return 0;
     }
 
-  //output->ShallowCopy(this->Internal->Datasets[timestep]);
   this->Open();
   output->ShallowCopy(this->GetFrame(timestep));
   this->Close();
@@ -336,6 +324,11 @@ void vtkVelodyneHDLReader::Close()
 vtkSmartPointer<vtkPolyData> vtkVelodyneHDLReader::GetFrame(int frameNumber)
 {
   this->UnloadData();
+  if (!this->Internal->Reader)
+    {
+    vtkErrorMacro("GetFrame() called but packet file reader is not open.");
+    return 0;
+    }
 
   const unsigned char* data = 0;
   unsigned int dataLength = 0;
@@ -515,42 +508,12 @@ void PushFiringData(vtkPolyData* polyData, unsigned char laserId, unsigned short
   double z = (distanceM * correction.sinVertCorrection + correction.cosVertOffsetCorrection);
   unsigned char intensity = laserReturn.intensity;
 
-
-  /*
-  vtkUnsignedCharArray::SafeDownCast(polyData->GetPointData()->GetArray("intensity"))->InsertNextValue(intensity);
-  vtkUnsignedCharArray::SafeDownCast(polyData->GetPointData()->GetArray("laser_id"))->InsertNextValue(laserId);
-  vtkUnsignedShortArray::SafeDownCast(polyData->GetPointData()->GetArray("azimuth"))->InsertNextValue(azimuth);
-  vtkUnsignedShortArray::SafeDownCast(polyData->GetPointData()->GetArray("distance"))->InsertNextValue(laserReturn.distance);
-  vtkUnsignedIntArray::SafeDownCast(polyData->GetPointData()->GetArray("timestamp"))->InsertNextValue(timestamp);
-
-  polyData->GetPoints()->InsertNextPoint(x,y,z);
-  */
-
-  /*
-  polyData->GetPoints()->SetPoint(0, x,y,z);
-  vtkUnsignedCharArray::SafeDownCast(polyData->GetPointData()->GetArray("intensity"))->SetValue(0, intensity);
-  vtkUnsignedCharArray::SafeDownCast(polyData->GetPointData()->GetArray("laser_id"))->SetValue(0, laserId);
-  vtkUnsignedShortArray::SafeDownCast(polyData->GetPointData()->GetArray("azimuth"))->SetValue(0, azimuth);
-  vtkUnsignedShortArray::SafeDownCast(polyData->GetPointData()->GetArray("distance"))->SetValue(0, laserReturn.distance);
-  vtkUnsignedIntArray::SafeDownCast(polyData->GetPointData()->GetArray("timestamp"))->SetValue(0, timestamp);
-  */
-
-  /*
-  internal->Points->SetPoint(0, x,y,z);
-  internal->Intensity->SetValue(0, intensity);
-  internal->LaserId->SetValue(0, laserId);
-  internal->Azimuth->SetValue(0, azimuth);
-  internal->Distance->SetValue(0, laserReturn.distance);
-  internal->Timestamp->SetValue(0, timestamp);
-  */
-
   internal->Points->InsertNextPoint(x,y,z);
   internal->Intensity->InsertNextValue(intensity);
   internal->LaserId->InsertNextValue(laserId);
   internal->Azimuth->InsertNextValue(azimuth);
   internal->Distance->InsertNextValue(laserReturn.distance);
   internal->Timestamp->InsertNextValue(timestamp);
-
 }
 
 }
@@ -773,7 +736,6 @@ int vtkVelodyneHDLReader::ReadFrameInformation()
 
     if (dataLength != 1206)
       {
-      //printf("skipping packet of length: %u\n", dataLength);
       continue;
       }
 
