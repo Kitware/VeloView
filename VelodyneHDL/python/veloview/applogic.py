@@ -702,6 +702,30 @@ def resetCameraToForwardView(view=None):
 def saveScreenshot(filename):
     smp.WriteImage(filename)
 
+    # reload the saved screenshot as a pixmap
+    screenshot = QtGui.QPixmap()
+    screenshot.load(filename)
+
+    # create a new pixmap with the status bar widget painted at the bottom
+    statusBar = QtGui.QPixmap.grabWidget(getMainWindow().statusBar())
+    composite = QtGui.QPixmap(screenshot.width(), screenshot.height() + statusBar.height())
+    painter = QtGui.QPainter()
+    painter.begin(composite)
+    painter.drawPixmap(screenshot.rect(), screenshot, screenshot.rect())
+    painter.drawPixmap(statusBar.rect().translated(0, screenshot.height()), statusBar, statusBar.rect())
+    painter.end()
+
+    # save final screenshot
+    composite.save(filename)
+
+
+def getRenderViewWidget(view):
+
+    app = PythonQt.paraview.pqApplicationCore.instance()
+    model = app.getServerManagerModel()
+    view = PythonQt.paraview.pqPythonQtMethodHelpers.findProxyItem(model, view.SMProxy)
+    return view.getWidget()
+
 
 def createGrid(view=None):
 
@@ -773,6 +797,16 @@ def getTimeKeeper():
 
 def getPlaybackToolBar():
     return findQObjectByName(getMainWindow().children(), 'playbackToolbar')
+
+
+def quit():
+    PythonQt.QtGui.QApplication.instance().quit()
+exit = quit
+
+
+def addShortcuts(keySequenceStr, function):
+    shortcut = PythonQt.QtGui.QShortcut(PythonQt.QtGui.QKeySequence(keySequenceStr), getMainWindow())
+    shortcut.connect("activated()", function)
 
 
 def setupTimeSliderWidget():
