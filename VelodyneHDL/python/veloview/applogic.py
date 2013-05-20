@@ -302,7 +302,9 @@ def onKiwiViewerExport():
     if not accepted:
         return
 
-    fileName = getSaveFileName('Export To KiwiViewer', 'zip', getDefaultSaveFileName('zip', appendFrameNumber=False))
+    defaultFileName = getDefaultSaveFileName('zip', appendFrameNumber=False)
+    defaultFileName = defaultFileName.replace('.zip', ' (KiwiViewer).zip')
+    fileName = getSaveFileName('Export To KiwiViewer', 'zip', defaultFileName)
     if not fileName:
         return
 
