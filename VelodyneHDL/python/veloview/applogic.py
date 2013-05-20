@@ -311,7 +311,7 @@ def onKiwiViewerExport():
     if frameMode == 0:
         saveToKiwiViewer(fileName, [app.scene.AnimationTime])
     elif frameMode == 1:
-        saveToKiwiViewer(fileName, range(app.scene.StartTime, app.scene.EndTime, stride))
+        saveToKiwiViewer(fileName, range(int(app.scene.StartTime), int(app.scene.EndTime), stride))
     else:
         saveToKiwiViewer(fileName, range(frameStart, frameStop, stride))
 
