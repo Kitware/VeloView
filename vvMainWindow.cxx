@@ -12,6 +12,7 @@
 #include "pqPythonShellReaction.h"
 #include "pqQtMessageHandlerBehavior.h"
 #include "pqRenderView.h"
+#include "pqServer.h"
 #include "pqSpreadSheetView.h"
 #include "pqSpreadSheetVisibilityBehavior.h"
 #include "pqStandardViewModules.h"
@@ -59,6 +60,9 @@ private:
     new pqPersistentMainWindowStateBehavior(window);
     new pqQtMessageHandlerBehavior(window);
     new pqSpreadSheetVisibilityBehavior(window);
+
+
+    pqServer::setCoincidentTopologyResolutionModeSetting(0);
 
     // Connect to builtin server.
     pqObjectBuilder* builder = core->getObjectBuilder();
