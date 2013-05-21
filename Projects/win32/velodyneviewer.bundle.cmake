@@ -67,6 +67,13 @@ install(FILES "${wpcap_library_dir}/wpcap.dll"  "${wpcap_library_dir}/Packet.dll
 #------------------------------------------------------------------------------
 set (CPACK_NSIS_MUI_ICON "${CMAKE_CURRENT_LIST_DIR}/InstallerIcon.ico")
 
+set(CPACK_NSIS_MODIFY_PATH OFF)
+
+if (64bit_build)
+  set(CPACK_NSIS_INSTALL_ROOT "$PROGRAMFILES64")
+endif()
+
+
 # install system runtimes.
 set(CMAKE_INSTALL_SYSTEM_RUNTIME_DESTINATION "bin")
 include(InstallRequiredSystemLibraries)
