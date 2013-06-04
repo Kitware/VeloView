@@ -17,6 +17,7 @@ class AppLogic(object):
         self.playDirection = 1
         self.seekPlayDirection = 1
         self.seekPlay = False
+        self.targetFps = 30
         self.renderIsPending = False
         self.createStatusBarWidgets()
         self.setupTimers()
@@ -51,10 +52,14 @@ class IconPaths(object):
     pause =':/VelodyneHDLPlugin/media-playback-pause.png'
     seekForward = ':/VelodyneHDLPlugin/media-seek-forward.png'
     seekForward2x = ':/VelodyneHDLPlugin/media-seek-forward-2x.png'
+    seekForwardHalfx = ':/VelodyneHDLPlugin/media-seek-forward-0.5x.png'
+    seekForwardQuarterx = ':/VelodyneHDLPlugin/media-seek-forward-0.25x.png'
     seekForward3x = ':/VelodyneHDLPlugin/media-seek-forward-3x.png'
     seekBackward = ':/VelodyneHDLPlugin/media-seek-backward.png'
     seekBackward2x = ':/VelodyneHDLPlugin/media-seek-backward-2x.png'
     seekBackward3x = ':/VelodyneHDLPlugin/media-seek-backward-3x.png'
+    seekBackwardHalfx = ':/VelodyneHDLPlugin/media-seek-backward-0.5x.png'
+    seekBackwardQuarterx = ':/VelodyneHDLPlugin/media-seek-backward-0.25x.png'
 
 
 def hasArrayName(sourceProxy, arrayName):
@@ -377,7 +382,7 @@ def close():
 def seekForward():
 
   if app.playing:
-    if app.playDirection < 0 or app.playDirection == 3:
+    if app.playDirection < 0 or app.playDirection == 5:
         app.playDirection = 0
     app.playDirection += 1
     updateSeekButtons()
@@ -389,7 +394,7 @@ def seekForward():
 def seekBackward():
 
   if app.playing:
-    if app.playDirection > 0 or app.playDirection == -3:
+    if app.playDirection > 0 or app.playDirection == -5:
         app.playDirection = 0
     app.playDirection -= 1
     updateSeekButtons()
@@ -426,16 +431,25 @@ def seekBackwardReleased():
 
 def updateSeekButtons():
 
-    icons = { -3 : IconPaths.seekBackward3x,
+    icons = {
+              -5 : IconPaths.seekBackwardQuarterx,
+              -4 : IconPaths.seekBackwardHalfx,
+              -3 : IconPaths.seekBackward3x,
               -2 : IconPaths.seekBackward2x,
               -1 : IconPaths.seekBackward,
                1 : IconPaths.seekForward,
                2 : IconPaths.seekForward2x,
                3 : IconPaths.seekForward3x,
+               4 : IconPaths.seekForwardHalfx,
+               5 : IconPaths.seekForwardQuarterx,
             }
 
     setActionIcon('actionSeek_Backward', icons[app.playDirection] if app.playDirection < 0 else IconPaths.seekBackward)
     setActionIcon('actionSeek_Forward', icons[app.playDirection] if app.playDirection > 0 else IconPaths.seekForward)
+
+    fpsMap = {-5:5, 5:5, -4:11, 4:11}
+    fpsDefault = 30
+    app.targetFps = fpsMap.get(app.playDirection, fpsDefault)
 
 
 def disablePlaybackActions():
@@ -538,8 +552,9 @@ def onPlayTimer():
 
         playbackTick()
 
+        fpsDelayMilliseconds = int(1000 / app.targetFps)
         elapsedMilliseconds = int((vtk.vtkTimerLog.GetUniversalTime() - startTime)*1000)
-        waitMilliseconds = 33 - elapsedMilliseconds
+        waitMilliseconds = fpsDelayMilliseconds - elapsedMilliseconds
         app.playTimer.start(waitMilliseconds if waitMilliseconds > 0 else 1)
 
 
@@ -613,6 +628,8 @@ def playbackTick():
           return
 
       step = app.seekPlayDirection if app.seekPlay else app.playDirection
+      stepMap = {4:1, 5:1, -4:-1, -5:-1}
+      step = stepMap.get(step, step)
       newTime = app.scene.AnimationTime + step
 
       if app.actions['actionLoop'].isChecked():
