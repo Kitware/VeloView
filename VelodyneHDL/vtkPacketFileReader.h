@@ -48,8 +48,7 @@ public:
 
     struct bpf_program filter;
 
-    // PCAP_NETMASK_UNKNOWN should be 0xffffffff, but it's undefined in older PCAP versions
-    if (pcap_compile(pcapFile, &filter, "udp ", 0, 0xffffffff) == -1)
+    if (pcap_compile(pcapFile, &filter, "udp", 0, PCAP_NETMASK_UNKNOWN) == -1)
       {
       this->LastError = pcap_geterr(pcapFile);
       return false;
