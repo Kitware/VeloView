@@ -65,9 +65,11 @@ def writeJsonData(outDir, view, rep, dataFilenames):
     scene = getSceneMetaData(view)
 
     objectMetaData = getObjectMetaData(rep)
+    objectMetaData['point_size'] = 2
 
     if len(dataFilenames) > 1:
         objectMetaData['filenames'] = dataFilenames
+        objectMetaData['frames_per_second'] = 18
     else:
         objectMetaData['filename'] = dataFilenames[0]
 
