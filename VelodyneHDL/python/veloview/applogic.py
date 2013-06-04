@@ -257,15 +257,26 @@ def getSaveFileName(title, extension, defaultFileName=None):
     defaultDir = settings.value('VelodyneHDLPlugin/OpenData/DefaultDir', QtCore.QDir.homePath())
     defaultFileName = defaultDir if not defaultFileName else os.path.join(defaultDir, defaultFileName)
 
+    nativeDialog = 0 if app.actions['actionNative_File_Dialogs'].isChecked() else QtGui.QFileDialog.DontUseNativeDialog
+
     filters = '%s (*.%s)' % (extension, extension)
     selectedFilter = '*.%s' % extension
     fileName = QtGui.QFileDialog.getSaveFileName(getMainWindow(), title,
-                        defaultFileName, filters, selectedFilter)
+                        defaultFileName, filters, selectedFilter, nativeDialog)
 
     if fileName:
         settings.setValue('VelodyneHDLPlugin/OpenData/DefaultDir', QtCore.QFileInfo(fileName).absoluteDir().absolutePath())
         return fileName
 
+
+def restoreNativeFileDialogsAction():
+    settings = getPVSettings()
+    app.actions['actionNative_File_Dialogs'].setChecked(int(settings.value('VelodyneHDLPlugin/NativeFileDialogs', 1)))
+
+
+def onNativeFileDialogsAction():
+    settings = getPVSettings()
+    defaultDir = settings.setValue('VelodyneHDLPlugin/NativeFileDialogs', int(app.actions['actionNative_File_Dialogs'].isChecked()))
 
 
 def getFrameSelectionFromUser(frameStrideVisibility=False):
@@ -847,6 +858,7 @@ def start():
     setupStatusBar()
     setupTimeSliderWidget()
     hideColorByComponent()
+    restoreNativeFileDialogsAction()
     getTimeKeeper().connect('timeChanged()', onTimeChanged)
 
 
@@ -995,7 +1007,7 @@ def setupActions():
     app.actions['actionSeek_Backward'].connect('triggered()', seekBackward)
     app.actions['actionGo_To_End'].connect('triggered()', gotoEnd)
     app.actions['actionGo_To_Start'].connect('triggered()', gotoStart)
-
+    app.actions['actionNative_File_Dialogs'].connect('triggered()', onNativeFileDialogsAction)
 
 
     buttons = {}
