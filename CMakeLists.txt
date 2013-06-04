@@ -1,9 +1,8 @@
 cmake_minimum_required(VERSION 2.8.8 FATAL_ERROR)
 project(VeloView)
 
-set (VV_VERSION_MAJOR 1)
-set (VV_VERSION_MINOR 0)
-set (VV_VERSION_PATCH 4)
+# Sets VV_VERSION_{MAJOR,MINOR,PATCH}
+include(CMake/version.cmake)
 
 find_package(ParaView REQUIRED)
 include(${PARAVIEW_USE_FILE})
