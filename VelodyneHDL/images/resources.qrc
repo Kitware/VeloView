@@ -9,9 +9,13 @@
     <file>media-seek-backward.png</file>
     <file>media-seek-backward-3x.png</file>
     <file>media-seek-backward-2x.png</file>
+    <file>media-seek-backward-0.5x.png</file>
+    <file>media-seek-backward-0.25x.png</file>
     <file>media-seek-forward.png</file>
     <file>media-seek-forward-2x.png</file>
     <file>media-seek-forward-3x.png</file>
+    <file>media-seek-forward-0.5x.png</file>
+    <file>media-seek-forward-0.25x.png</file>
     <file>media-skip-backward.png</file>
     <file>media-skip-forward.png</file>
     <file>media-loop.png</file>
