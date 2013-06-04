@@ -53,7 +53,8 @@ public:
       this->LastError = pcap_geterr(pcapFile);
       return false;
       }
-    else if (pcap_setfilter(pcapFile, &filter) == -1)
+
+    if (pcap_setfilter(pcapFile, &filter) == -1)
       {
       this->LastError = pcap_geterr(pcapFile);
       return false;
