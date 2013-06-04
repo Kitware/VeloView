@@ -86,7 +86,7 @@
     </property>
     <addaction name="actionAbout_VeloView"/>
     <addaction name="separator"/>
-    <addaction name="actionShow_Help"/>
+    <addaction name="actionVeloView_Help"/>
    </widget>
    <addaction name="menu_File"/>
    <addaction name="menuTools"/>
@@ -408,9 +408,9 @@
     <string>About VeloView</string>
    </property>
   </action>
-  <action name="actionShow_Help">
+  <action name="actionVeloView_Help">
    <property name="text">
-    <string>VeloView Help</string>
+    <string>VeloView Developer Guide</string>
    </property>
   </action>
   <action name="actionRecent_file1">
