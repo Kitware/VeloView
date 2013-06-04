@@ -25,6 +25,7 @@
     <file>angle_icon.png</file>
     <file>preferences-system-64.png</file>
     <file>velodyne_logo.png</file>
+    <file>csv.png</file>
     <file>vvGridAdjustmentDialog.ui</file>
 
   </qresource>
