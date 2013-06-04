@@ -1,4 +1,5 @@
 import os
+import csv
 import datetime
 import paraview.simple as smp
 from paraview import vtk
@@ -193,9 +194,23 @@ def showMeasurementGrid():
     smp.Render()
 
 
+def rotateCSVFile(filename):
+
+    # read the csv file, move the last 3 columns to the
+    # front, and then overwrite the file with the result
+    csvFile = open(filename, 'rb')
+    reader = csv.reader(csvFile, quoting=csv.QUOTE_NONNUMERIC)
+    rows = [row[-3:] + row[:-3] for row in reader]
+    csvFile.close()
+
+    writer = csv.writer(open(filename, 'wb'), quoting=csv.QUOTE_NONNUMERIC, delimiter=',')
+    writer.writerows(rows)
+
+
 def saveCSVCurrentFrame(filename):
     w = smp.DataSetCSVWriter(FileName=filename)
     w.UpdatePipeline()
+    rotateCSVFile(filename)
     smp.Delete(w)
 
 
@@ -223,6 +238,7 @@ def saveCSV(filename, timesteps):
         app.scene.AnimationTime = t
         writer.FileName = filenameTemplate % t
         writer.UpdatePipeline()
+        rotateCSVFile(writer.FileName)
 
     smp.Delete(writer)
 
