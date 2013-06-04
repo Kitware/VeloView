@@ -252,19 +252,21 @@ def getSaveFileName(title, extension, defaultFileName=None):
 
 
 
-def getFrameSelectionFromUser():
+def getFrameSelectionFromUser(frameStrideVisibility=False):
 
     dialog = PythonQt.paraview.vvSelectFramesDialog(getMainWindow())
     dialog.setFrameMinimum(app.scene.StartTime)
     dialog.setFrameMaximum(app.scene.EndTime)
+    dialog.setFrameStrideVisibility(frameStrideVisibility)
     dialog.restoreState()
     accepted = dialog.exec_()
     frameMode = dialog.frameMode()
     frameStart = dialog.frameStart()
     frameStop = dialog.frameStop()
+    frameStride = dialog.frameStride()
     dialog.setParent(None)
 
-    return accepted, frameMode, frameStart, frameStop
+    return accepted, frameMode, frameStart, frameStop, frameStride
 
 
 def onSaveCSV():
@@ -272,7 +274,7 @@ def onSaveCSV():
     if not getNumberOfTimesteps():
         return
 
-    accepted, frameMode, frameStart, frameStop = getFrameSelectionFromUser()
+    accepted, frameMode, frameStart, frameStop, frameStride = getFrameSelectionFromUser()
     if not accepted:
         return
 
@@ -303,7 +305,7 @@ def onKiwiViewerExport():
     if not getNumberOfTimesteps():
         return
 
-    accepted, frameMode, frameStart, frameStop = getFrameSelectionFromUser()
+    accepted, frameMode, frameStart, frameStop, frameStride = getFrameSelectionFromUser(frameStrideVisibility=True)
     if not accepted:
         return
 
@@ -313,14 +315,14 @@ def onKiwiViewerExport():
     if not fileName:
         return
 
-    stride = 3
-
     if frameMode == 0:
-        saveToKiwiViewer(fileName, [app.scene.AnimationTime])
+        timesteps = [app.scene.AnimationTime]
     elif frameMode == 1:
-        saveToKiwiViewer(fileName, range(int(app.scene.StartTime), int(app.scene.EndTime), stride))
+        timesteps = range(int(app.scene.StartTime), int(app.scene.EndTime) + 1, frameStride)
     else:
-        saveToKiwiViewer(fileName, range(frameStart, frameStop, stride))
+        timesteps = range(frameStart, frameStop+1, frameStride)
+
+    saveToKiwiViewer(fileName, timesteps)
 
 
 
