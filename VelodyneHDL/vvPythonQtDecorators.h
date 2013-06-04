@@ -62,6 +62,11 @@ public slots:
     return inst->frameStop();
     }
 
+  int frameStride(vvSelectFramesDialog* inst)
+    {
+    return inst->frameStride();
+    }
+
 
   void setFrameStart(vvSelectFramesDialog* inst, int arg0)
     {
@@ -73,6 +78,11 @@ public slots:
     inst->setFrameStop(arg0);
     }
 
+  void setFrameStride(vvSelectFramesDialog* inst, int arg0)
+    {
+    inst->setFrameStride(arg0);
+    }
+
 
   void setFrameMinimum(vvSelectFramesDialog* inst, int arg0)
     {
@@ -82,6 +92,12 @@ public slots:
   void setFrameMaximum(vvSelectFramesDialog* inst, int arg0)
     {
     inst->setFrameMaximum(arg0);
+    }
+
+
+  void setFrameStrideVisibility(vvSelectFramesDialog* inst, bool arg0)
+    {
+    inst->setFrameStrideVisibility(arg0);
     }
 
 

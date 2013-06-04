@@ -8,12 +8,16 @@ void vvSelectFramesDialog::setFrameMode(int);
 
 int vvSelectFramesDialog::frameStart() const;
 int vvSelectFramesDialog::frameStop() const;
+int vvSelectFramesDialog::frameStride() const;
 
 void vvSelectFramesDialog::setFrameStart(int);
 void vvSelectFramesDialog::setFrameStop(int);
+void vvSelectFramesDialog::setFrameStride(int);
 
 void vvSelectFramesDialog::setFrameMinimum(int);
 void vvSelectFramesDialog::setFrameMaximum(int);
+
+void vvSelectFramesDialog::setFrameStrideVisibility(bool);
 
 void vvSelectFramesDialog::saveState();
 void vvSelectFramesDialog::restoreState();

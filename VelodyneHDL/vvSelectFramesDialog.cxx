@@ -17,6 +17,7 @@ vvSelectFramesDialog::vvSelectFramesDialog(QWidget *p) : QDialog(p)
 {
   this->Internal = new pqInternal;
   this->Internal->setupUi(this);
+  this->Internal->FrameStart->clearFocus();
 }
 
 //-----------------------------------------------------------------------------
@@ -73,6 +74,12 @@ int vvSelectFramesDialog::frameStop() const
 }
 
 //-----------------------------------------------------------------------------
+int vvSelectFramesDialog::frameStride() const
+{
+  return this->Internal->FrameStride->value();
+}
+
+//-----------------------------------------------------------------------------
 void vvSelectFramesDialog::setFrameStart(int frameStart)
 {
   this->Internal->FrameStart->setValue(frameStart);
@@ -82,6 +89,12 @@ void vvSelectFramesDialog::setFrameStart(int frameStart)
 void vvSelectFramesDialog::setFrameStop(int frameStop)
 {
   this->Internal->FrameStop->setValue(frameStop);
+}
+
+//-----------------------------------------------------------------------------
+void vvSelectFramesDialog::setFrameStride(int frameStride)
+{
+  this->Internal->FrameStride->setValue(frameStride);
 }
 
 //-----------------------------------------------------------------------------
@@ -97,12 +110,20 @@ void vvSelectFramesDialog::setFrameMaximum(int frameMax)
 }
 
 //-----------------------------------------------------------------------------
+void vvSelectFramesDialog::setFrameStrideVisibility(bool visible)
+{
+  this->Internal->FrameStride->setVisible(visible);
+  this->Internal->FrameStrideLabel->setVisible(visible);
+}
+
+//-----------------------------------------------------------------------------
 void vvSelectFramesDialog::saveState()
 {
   pqSettings* settings = pqApplicationCore::instance()->settings();
   settings->setValue("VelodyneHDLPlugin/SelectFramesDialog/Mode", this->frameMode());
   settings->setValue("VelodyneHDLPlugin/SelectFramesDialog/Start", this->frameStart());
   settings->setValue("VelodyneHDLPlugin/SelectFramesDialog/Stop", this->frameStop());
+  settings->setValue("VelodyneHDLPlugin/SelectFramesDialog/Stride", this->frameStride());
   settings->setValue("VelodyneHDLPlugin/SelectFramesDialog/Geometry", this->saveGeometry());
 }
 
@@ -114,6 +135,5 @@ void vvSelectFramesDialog::restoreState()
   this->setFrameMode(settings->value("VelodyneHDLPlugin/SelectFramesDialog/Mode", CURRENT_FRAME).toInt());
   this->setFrameStart(settings->value("VelodyneHDLPlugin/SelectFramesDialog/Start", 0).toInt());
   this->setFrameStop(settings->value("VelodyneHDLPlugin/SelectFramesDialog/Stop", 10).toInt());
+  this->setFrameStride(settings->value("VelodyneHDLPlugin/SelectFramesDialog/Stride", 1).toInt());
 }
-
-

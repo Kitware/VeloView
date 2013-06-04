@@ -23,12 +23,16 @@ public:
 
   int frameStart() const;
   int frameStop() const;
+  int frameStride() const;
 
   void setFrameStart(int frameStart);
   void setFrameStop(int frameStop);
+  void setFrameStride(int frameStride);
 
   void setFrameMinimum(int frameMin);
   void setFrameMaximum(int frameMax);
+
+  void setFrameStrideVisibility(bool visible);
 
   void saveState();
   void restoreState();
