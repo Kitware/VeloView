@@ -399,6 +399,18 @@ def getVersionString():
   return QtGui.QApplication.instance().applicationVersion
 
 
+def onHelp():
+    basePath = PythonQt.QtGui.QApplication.instance().applicationDirPath()
+
+    paths = ['../Resources/VeloView_Developer_Guide.pdf']
+
+    for path in paths:
+        filename = os.path.join(basePath, path)
+        if os.path.isfile(filename):
+            print 'opening', filename
+            QtGui.QDesktopServices.openUrl(QtCore.QUrl('file:///%s' % filename, QtCore.QUrl.TolerantMode))
+
+
 def onAbout():
     title = 'About VeloView'
     text = '<h1>VeloView %s</h1><br/>Copyright (c) 2013, Velodyne Lidar' % getVersionString()
@@ -1019,6 +1031,7 @@ def setupActions():
     app.actions['actionGo_To_Start'].connect('triggered()', gotoStart)
     app.actions['actionNative_File_Dialogs'].connect('triggered()', onNativeFileDialogsAction)
     app.actions['actionAbout_VeloView'].connect('triggered()', onAbout)
+    app.actions['actionVeloView_Help'].connect('triggered()', onHelp)
 
 
     buttons = {}
