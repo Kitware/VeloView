@@ -395,6 +395,16 @@ def exportToDirectory(outDir, timesteps):
     return filenames
 
 
+def getVersionString():
+  return QtGui.QApplication.instance().applicationVersion
+
+
+def onAbout():
+    title = 'About VeloView'
+    text = '<h1>VeloView %s</h1><br/>Copyright (c) 2013, Velodyne Lidar' % getVersionString()
+    QtGui.QMessageBox.about(getMainWindow(), title, text)
+
+
 def close():
 
     stop()
@@ -1008,6 +1018,7 @@ def setupActions():
     app.actions['actionGo_To_End'].connect('triggered()', gotoEnd)
     app.actions['actionGo_To_Start'].connect('triggered()', gotoStart)
     app.actions['actionNative_File_Dialogs'].connect('triggered()', onNativeFileDialogsAction)
+    app.actions['actionAbout_VeloView'].connect('triggered()', onAbout)
 
 
     buttons = {}
