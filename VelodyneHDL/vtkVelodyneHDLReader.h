@@ -50,6 +50,8 @@ public:
   int GetNumberOfFrames();
   vtkSmartPointer<vtkPolyData> GetFrame(int frameNumber);
 
+  void DumpFrames(int startFrame, int endFrame, const std::string& filename);
+
   void ProcessHDLPacket(unsigned char *data, unsigned int bytesReceived);
   std::vector<vtkSmartPointer<vtkPolyData> >& GetDatasets();
 

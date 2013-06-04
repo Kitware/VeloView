@@ -144,6 +144,12 @@ public:
     return true;
   }
 
+  bool WritePacket(pcap_pkthdr* packetHeader, unsigned char* packetData)
+  {
+    pcap_dump((u_char *)this->PCAPDump, packetHeader, packetData);
+    return true;
+  }
+
 protected:
 
 

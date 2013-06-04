@@ -111,7 +111,7 @@ public:
 #endif
   }
 
-  bool NextPacket(const unsigned char*& data, unsigned int& dataLength, double& timeSinceStart)
+  bool NextPacket(const unsigned char*& data, unsigned int& dataLength, double& timeSinceStart, pcap_pkthdr** headerReference=NULL)
   {
     if (!this->PCAPFile)
       {
@@ -124,6 +124,14 @@ public:
       {
       this->Close();
       return false;
+      }
+
+    if (headerReference != NULL)
+      {
+      *headerReference = header;
+      dataLength = header->len;
+      timeSinceStart = GetElapsedTime(header->ts, this->StartTime);
+      return true;
       }
 
     // The ethernet header is 42 bytes long; unnecessary

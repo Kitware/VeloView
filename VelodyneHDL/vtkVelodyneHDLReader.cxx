@@ -36,6 +36,7 @@
 #include "vtkStreamingDemandDrivenPipeline.h"
 
 #include "vtkPacketFileReader.h"
+#include "vtkPacketFileWriter.h"
 
 #include <sstream>
 #include <algorithm>
@@ -318,6 +319,58 @@ void vtkVelodyneHDLReader::Close()
 {
   delete this->Internal->Reader;
   this->Internal->Reader = 0;
+}
+
+
+//-----------------------------------------------------------------------------
+void vtkVelodyneHDLReader::DumpFrames(int startFrame, int endFrame, const std::string& filename)
+{
+  if (!this->Internal->Reader)
+    {
+    vtkErrorMacro("DumpFrames() called but packet file reader is not open.");
+    return;
+    }
+
+  vtkPacketFileWriter writer;
+  if (!writer.Open(filename))
+    {
+    vtkErrorMacro("Failed to open packet file for writing: " << filename);
+    return;
+    }
+
+  pcap_pkthdr* header = 0;
+  const unsigned char* data = 0;
+  unsigned int dataLength = 0;
+  double timeSinceStart = 0;
+
+  this->Internal->Reader->SetFilePosition(&this->Internal->FilePositions[startFrame]);
+
+  fpos_t endPosition = 0;
+  if (endFrame+1 < this->Internal->FilePositions.size())
+    {
+    endPosition = this->Internal->FilePositions[endFrame+1];
+    }
+
+  while (this->Internal->Reader->NextPacket(data, dataLength, timeSinceStart, &header))
+    {
+
+    if (dataLength == (1206 + 42))
+      {
+      writer.WritePacket(header, const_cast<unsigned char*>(data));
+      }
+
+    if (endPosition > 0)
+      {
+      fpos_t currentPosition;
+      this->Internal->Reader->GetFilePosition(&currentPosition);
+      if (currentPosition >= endPosition)
+        {
+        break;
+        }
+      }
+    }
+
+  writer.Close();
 }
 
 //-----------------------------------------------------------------------------
@@ -702,7 +755,6 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(unsigned char *data, st
       }
     }
 }
-
 
 //-----------------------------------------------------------------------------
 int vtkVelodyneHDLReader::ReadFrameInformation()
