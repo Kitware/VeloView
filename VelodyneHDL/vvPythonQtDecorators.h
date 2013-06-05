@@ -5,6 +5,7 @@
 #include <QObject>
 #include "PythonQt.h"
 
+#include "pqVelodyneManager.h"
 #include "vvCalibrationDialog.h"
 #include "vvSelectFramesDialog.h"
 
@@ -16,6 +17,7 @@ public:
 
   vvPythonQtDecorators(QObject* parent=0) : QObject(parent)
     {
+    this->registerClassForPythonQt(&pqVelodyneManager::staticMetaObject);
     this->registerClassForPythonQt(&vvCalibrationDialog::staticMetaObject);
     this->registerClassForPythonQt(&vvSelectFramesDialog::staticMetaObject);
     }
@@ -109,6 +111,12 @@ public slots:
   void restoreState(vvSelectFramesDialog* inst)
     {
     inst->restoreState();
+    }
+
+
+  void static_pqVelodyneManager_saveFramesToPCAP(vtkSMSourceProxy* arg0, int arg1, int arg2, const QString& arg3)
+    {
+    pqVelodyneManager::saveFramesToPCAP(arg0, arg1, arg2, arg3);
     }
 
 

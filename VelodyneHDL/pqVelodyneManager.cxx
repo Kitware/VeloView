@@ -21,6 +21,7 @@
 #include <vtkSMSourceProxy.h>
 #include <vtkSMViewProxy.h>
 #include <vtkTimerLog.h>
+#include <vtkVelodyneHDLReader.h>
 
 #include <QApplication>
 #include <QDir>
@@ -134,6 +135,25 @@ void pqVelodyneManager::runPython(const QString& statements)
   pqPythonManager* manager = pqPVApplicationCore::instance()->pythonManager();
   pqPythonDialog* dialog = manager->pythonShellDialog();
   dialog->runString(statements);
+}
+
+//-----------------------------------------------------------------------------
+void pqVelodyneManager::saveFramesToPCAP(vtkSMSourceProxy* proxy, int startFrame, int endFrame, const QString& filename)
+{
+  if (!proxy)
+    {
+    return;
+    }
+
+  vtkVelodyneHDLReader* reader = vtkVelodyneHDLReader::SafeDownCast(proxy->GetClientSideObject());
+  if (!reader)
+    {
+    return;
+    }
+
+  reader->Open();
+  reader->DumpFrames(startFrame, endFrame, filename.toAscii().data());
+  reader->Close();
 }
 
 //-----------------------------------------------------------------------------

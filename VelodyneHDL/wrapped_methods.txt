@@ -21,3 +21,5 @@ void vvSelectFramesDialog::setFrameStrideVisibility(bool);
 
 void vvSelectFramesDialog::saveState();
 void vvSelectFramesDialog::restoreState();
+
+static void pqVelodyneManager::saveFramesToPCAP(vtkSMSourceProxy*, int, int, const QString&);

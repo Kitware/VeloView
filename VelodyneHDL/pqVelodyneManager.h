@@ -9,6 +9,7 @@
 class pqServer;
 class pqView;
 class pqPipelineSource;
+class vtkSMSourceProxy;
 class QWidget;
 
 class vvAppLogic;
@@ -56,6 +57,9 @@ public:
   void openData(const QString& filename);
 
   void runPython(const QString& statements);
+
+  static void saveFramesToPCAP(vtkSMSourceProxy* proxy, int startFrame, int endFrame, const QString& filename);
+
 
 public slots:
 

@@ -108,7 +108,7 @@ def getTimeStamp():
     return datetime.datetime.now().strftime(format)
 
 
-def getDefaultSaveFileName(extension, appendFrameNumber=True):
+def getDefaultSaveFileName(extension, suffix='', appendFrameNumber=False):
 
     sensor = getSensor()
     reader = getReader()
@@ -118,8 +118,8 @@ def getDefaultSaveFileName(extension, appendFrameNumber=True):
     if reader:
         basename =  os.path.splitext(os.path.basename(reader.FileName))[0]
         if appendFrameNumber:
-            basename = '%s (Frame %04d)' % (basename, int(app.scene.AnimationTime))
-        return '%s.%s' % (basename, extension)
+            suffix = '%s (Frame %04d)' % (suffix, int(app.scene.AnimationTime))
+        return '%s%s.%s' % (basename, suffix, extension)
 
 
 def openSensor(calibrationFile):
@@ -307,12 +307,12 @@ def onSaveCSV():
 
 
     if frameMode == 0:
-        fileName = getSaveFileName('Save CSV', 'csv', getDefaultSaveFileName('csv'))
+        fileName = getSaveFileName('Save CSV', 'csv', getDefaultSaveFileName('csv', appendFrameNumber=True))
         if fileName:
             saveCSVCurrentFrame(fileName)
 
     else:
-        fileName = getSaveFileName('Save CSV (to zip file)', 'zip', getDefaultSaveFileName('zip', appendFrameNumber=False))
+        fileName = getSaveFileName('Save CSV (to zip file)', 'zip', getDefaultSaveFileName('zip'))
         if fileName:
             if frameMode == 1:
                 saveCSVAllFrames(fileName)
@@ -320,9 +320,33 @@ def onSaveCSV():
                 saveCSVFrameRange(fileName, frameStart, frameStop)
 
 
+def onSavePCAP():
+
+    if not getNumberOfTimesteps():
+        return
+
+    accepted, frameMode, frameStart, frameStop, frameStride = getFrameSelectionFromUser()
+    if not accepted:
+        return
+
+    if frameMode == 0:
+        frameStart = frameStop = app.scene.AnimationTime
+    elif frameMode == 1:
+        frameStart = int(app.scene.StartTime)
+        frameStop = int(app.scene.EndTime)
+
+    defaultFileName = getDefaultSaveFileName('pcap', suffix=' (Frame %d to %d)' % (frameStart, frameStop))
+    fileName = getSaveFileName('Save PCAP', 'pcap', defaultFileName)
+    if not fileName:
+        return
+
+    PythonQt.paraview.pqVelodyneManager.saveFramesToPCAP(getReader().SMProxy, frameStart, frameStop, fileName)
+
+
+
 def onSaveScreenshot():
 
-    fileName = getSaveFileName('Save Screenshot', 'png', getDefaultSaveFileName('png'))
+    fileName = getSaveFileName('Save Screenshot', 'png', getDefaultSaveFileName('png', appendFrameNumber=True))
     if fileName:
         saveScreenshot(fileName)
 
@@ -336,8 +360,7 @@ def onKiwiViewerExport():
     if not accepted:
         return
 
-    defaultFileName = getDefaultSaveFileName('zip', appendFrameNumber=False)
-    defaultFileName = defaultFileName.replace('.zip', ' (KiwiViewer).zip')
+    defaultFileName = getDefaultSaveFileName('zip', suffix=' (KiwiViewer)')
     fileName = getSaveFileName('Export To KiwiViewer', 'zip', defaultFileName)
     if not fileName:
         return
@@ -1021,6 +1044,7 @@ def setupActions():
     app.actions['actionPlay'].connect('triggered()', togglePlay)
     app.actions['actionRecord'].connect('triggered()', onRecord)
     app.actions['actionSave_CSV'].connect('triggered()', onSaveCSV)
+    app.actions['actionSave_PCAP'].connect('triggered()', onSavePCAP)
     app.actions['actionSave_Screenshot'].connect('triggered()', onSaveScreenshot)
     app.actions['actionExport_To_KiwiViewer'].connect('triggered()', onKiwiViewerExport)
     app.actions['actionReset_Camera'].connect('triggered()', resetCamera)
