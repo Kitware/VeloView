@@ -41,17 +41,14 @@ if(PARAVIEW_BUILD_QT_GUI)
 
   include_directories(${PYTHONQT_INCLUDE_DIRS})
 
-  SET(UI_FILES
+  set(UI_FILES
     vvCalibrationDialog.ui
     vvSelectFramesDialog.ui
     )
 
-  SET(MOC_HEADERS
+  set(MOC_HEADERS
     pqVelodyneHDLSource.h
-    pqVelodyneManager.h
     vvCalibrationDialog.h
-    vvLoadDataReaction.h
-    vvPythonQtDecorators.h
     vvSelectFramesDialog.h
     )
 
@@ -74,14 +71,11 @@ if(PARAVIEW_BUILD_QT_GUI)
     ${moc_srcs}
     ${ui_srcs}
     ${resource_srcs}
-    pqVelodyneManager.cxx
     vvCalibrationDialog.cxx
-    vvLoadDataReaction.cxx
     vvSelectFramesDialog.cxx
     )
 
   list(APPEND deps
-    ${PYTHONQT_LIBRARIES}
     pqApplicationComponents
     )
 
@@ -126,6 +120,29 @@ target_link_libraries(PacketFileSender ${deps})
 
 add_executable(TestReader test/TestReader.cxx)
 target_link_libraries(TestReader ${library_name})
+
+
+
+#########
+set(MOC_HEADERS
+  pqVelodyneManager.h
+  vvLoadDataReaction.h
+  vvPythonQtDecorators.h
+  )
+
+QT4_WRAP_CPP(moc_srcs ${MOC_HEADERS})
+
+set(gui_sources)
+list(APPEND gui_sources
+  ${moc_srcs}
+  pqVelodyneManager.cxx
+  vvLoadDataReaction.cxx
+  )
+
+add_library(VelodyneHDLPython STATIC ${gui_sources})
+target_link_libraries(VelodyneHDLPython ${library_name} ${PYTHONQT_LIBRARIES})
+#########
+
 
 if (NOT APPLE)
   install(TARGETS VelodyneHDLPlugin
