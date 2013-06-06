@@ -105,6 +105,7 @@ def openData(filename):
     updateSliderTimeRange()
     enablePlaybackActions()
     enableSaveActions()
+    addRecentFile(filename)
     app.actions['actionSave_PCAP'].setEnabled(False)
     app.actions['actionChoose_Calibration_File'].setEnabled(False)
     app.actions['actionRecord'].setEnabled(False)
@@ -220,6 +221,7 @@ def openPCAP(filename, calibrationFile):
     updateSliderTimeRange()
     enablePlaybackActions()
     enableSaveActions()
+    addRecentFile(filename)
     app.actions['actionRecord'].setEnabled(False)
 
     resetCamera()
@@ -954,6 +956,7 @@ def start():
     setupTimeSliderWidget()
     hideColorByComponent()
     restoreNativeFileDialogsAction()
+    updateRecentFiles()
     getTimeKeeper().connect('timeChanged()', onTimeChanged)
 
 
@@ -1083,6 +1086,63 @@ def hideColorByComponent():
     getMainWindow().findChild('pqColorToolbar').findChild('pqDisplayColorWidget').findChildren('QComboBox')[1].hide()
 
 
+def addRecentFile(filename):
+
+    recentFiles = getRecentFiles()
+
+    try:
+        recentFiles.remove(filename)
+    except ValueError:
+        pass
+
+    recentFiles = recentFiles[:4]
+    recentFiles.insert(0, filename)
+    getPVSettings().setValue('VelodyneHDLPlugin/RecentFiles', recentFiles)
+    updateRecentFiles()
+
+
+def openRecentFile(filename):
+    if not os.path.isfile(filename):
+        QtGui.QMessageBox.warning(getMainWindow(), 'File not found', 'File not found: %s' % filename)
+        return
+
+    if os.path.splitext(filename)[1].lower() == 'pcap':
+        openPCAP(filename)
+    else:
+        openData(filename)
+
+
+def getRecentFiles():
+    return list(getPVSettings().value('VelodyneHDLPlugin/RecentFiles', []) or [])
+
+
+def updateRecentFiles():
+    settings = getPVSettings()
+    recentFiles = getRecentFiles()
+    recentFilesMenu =  findQObjectByName(findQObjectByName(getMainWindow().menuBar().children(), 'menu_File').children(), 'menuRecent_Files')
+
+    clearMenuAction = app.actions['actionClear_Menu']
+    for action in recentFilesMenu.actions()[:-2]:
+        recentFilesMenu.removeAction(action)
+
+    def createActionFunction(filename):
+        def f():
+            openRecentFile(filename)
+        return f
+
+    actions = []
+    for filename in recentFiles:
+        actions.append(QtGui.QAction(os.path.basename(filename), recentFilesMenu))
+        actions[-1].connect('triggered()', createActionFunction(filename))
+    recentFilesMenu.insertActions(recentFilesMenu.actions()[0], actions)
+
+
+def onClearMenu():
+    settings = getPVSettings()
+    settings.setValue('VelodyneHDLPlugin/RecentFiles', [])
+    updateRecentFiles()
+
+
 def setupActions():
 
     actions = getMainWindow().findChildren('QAction')
@@ -1106,6 +1166,7 @@ def setupActions():
     app.actions['actionNative_File_Dialogs'].connect('triggered()', onNativeFileDialogsAction)
     app.actions['actionAbout_VeloView'].connect('triggered()', onAbout)
     app.actions['actionVeloView_Help'].connect('triggered()', onHelp)
+    app.actions['actionClear_Menu'].connect('triggered()', onClearMenu)
 
 
     buttons = {}

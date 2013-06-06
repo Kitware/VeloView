@@ -35,11 +35,6 @@
      <property name="title">
       <string>Recent Files</string>
      </property>
-     <addaction name="actionRecent_file1"/>
-     <addaction name="actionRecent_file2"/>
-     <addaction name="actionRecent_file3"/>
-     <addaction name="actionRecent_file4"/>
-     <addaction name="actionRecent_file5"/>
      <addaction name="separator"/>
      <addaction name="actionClear_Menu"/>
     </widget>
