@@ -40,8 +40,8 @@ if (WIN32)
     GIT_TAG master)
 else()
   add_revision(pcap
-    URL "http://www.tcpdump.org/release/libpcap-1.3.0.tar.gz"
-    URL_MD5 "f78455a92622b7a3c05c58b6ad1cec7e")
+    URL "http://www.tcpdump.org/release/libpcap-1.4.0.tar.gz"
+    URL_MD5 "56e88a5aabdd1e04414985ac24f7e76c")
 endif()
 
 add_revision(boost
