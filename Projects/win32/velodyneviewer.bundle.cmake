@@ -4,7 +4,8 @@ include(velodyneviewer.bundle.common)
 # set NSIS install specific stuff.
 
 set (CPACK_NSIS_MENU_LINKS
-  "bin/VeloView.exe" "VeloView")
+  "bin/VeloView.exe" "VeloView"
+  "doc/VeloView_Developer_Guide.pdf" "Developer Guide")
 
 set(AppName VeloView)
 
@@ -62,6 +63,10 @@ install(DIRECTORY "${install_location}/lib/paraview-3.98"
 
 install(FILES "${wpcap_library_dir}/wpcap.dll"  "${wpcap_library_dir}/Packet.dll"
         DESTINATION "bin"
+        COMPONENT ${AppName})
+
+install(FILES "${SuperBuild_BINARY_DIR}/velodyneviewer/src/velodyneviewer/Doc/VeloView_Developer_Guide.pdf"
+        DESTINATION "doc"
         COMPONENT ${AppName})
 
 #------------------------------------------------------------------------------
