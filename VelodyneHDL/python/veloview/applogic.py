@@ -724,47 +724,47 @@ def gotoPrevious():
 
 def playbackTick():
 
-  sensor = getSensor()
-  reader = getReader()
-  view = smp.GetActiveView()
+    sensor = getSensor()
+    reader = getReader()
+    view = smp.GetActiveView()
 
-  if sensor is not None:
-      timesteps = getCurrentTimesteps()
-      if not timesteps:
-          return
+    if sensor is not None:
+        timesteps = getCurrentTimesteps()
+        if not timesteps:
+            return
 
-      if view.ViewTime == timesteps[-1]:
-          return
+        if view.ViewTime == timesteps[-1]:
+            return
 
-      if not app.colorByInitialized:
-          sensor.UpdatePipeline()
-          if colorByIntensity(sensor):
-              app.colorByInitialized = True
-              resetCamera()
+        if not app.colorByInitialized:
+            sensor.UpdatePipeline()
+            if colorByIntensity(sensor):
+                app.colorByInitialized = True
+                resetCamera()
 
-      app.scene.GoToLast()
+        app.scene.GoToLast()
 
-  elif reader is not None:
+    elif reader is not None:
 
-      numberOfTimesteps = getNumberOfTimesteps()
-      if not numberOfTimesteps:
-          return
+        numberOfTimesteps = getNumberOfTimesteps()
+        if not numberOfTimesteps:
+            return
 
-      step = app.seekPlayDirection if app.seekPlay else app.playDirection
-      stepMap = {4:1, 5:1, -4:-1, -5:-1}
-      step = stepMap.get(step, step)
-      newTime = app.scene.AnimationTime + step
+        step = app.seekPlayDirection if app.seekPlay else app.playDirection
+        stepMap = {4:1, 5:1, -4:-1, -5:-1}
+        step = stepMap.get(step, step)
+        newTime = app.scene.AnimationTime + step
 
-      if app.actions['actionLoop'].isChecked():
-          newTime = newTime % numberOfTimesteps
-      else:
-          newTime = max(app.scene.StartTime, min(newTime, app.scene.EndTime))
+        if app.actions['actionLoop'].isChecked():
+            newTime = newTime % numberOfTimesteps
+        else:
+            newTime = max(app.scene.StartTime, min(newTime, app.scene.EndTime))
 
-          # stop playback when it reaches the first or last timestep
-          if newTime in (app.scene.StartTime, app.scene.EndTime):
-              stop()
+            # stop playback when it reaches the first or last timestep
+            if newTime in (app.scene.StartTime, app.scene.EndTime):
+                stop()
 
-      app.scene.AnimationTime = newTime
+        app.scene.AnimationTime = newTime
 
 
 def unloadData():
