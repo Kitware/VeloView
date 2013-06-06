@@ -103,17 +103,18 @@ void pqVelodyneManager::pythonStartup()
         }
     }
 
-
   this->runPython(QString(
       "import sys\n"
       "sys.path.insert(0, '%1')\n"
       "import PythonQt\n"
       "QtGui = PythonQt.QtGui\n"
-      "QtCore = PythonQt.QtCore\n"
-      "import veloview.applogic as vv\n"
-      "vv.start()\n").arg(pythonDir));
+      "QtCore = PythonQt.QtCore\n").arg(pythonDir));
 
   PythonQt::self()->addDecorators(new vvPythonQtDecorators());
+
+  this->runPython(
+      "import veloview.applogic as vv\n"
+      "vv.start()\n");
 
   this->onMeasurementGrid();
 
