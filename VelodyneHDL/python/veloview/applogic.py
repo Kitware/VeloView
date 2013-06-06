@@ -1,7 +1,9 @@
 import os
 import csv
 import datetime
+import time
 import paraview.simple as smp
+from paraview import servermanager
 from paraview import vtk
 
 import PythonQt
@@ -149,14 +151,27 @@ def openPCAP(filename, calibrationFile):
 
     close()
 
+    def onProgressEvent(o, e):
+        PythonQt.QtGui.QApplication.instance().processEvents()
+
     progressDialog = QtGui.QProgressDialog('Reading packet file...', '', 0, 0, getMainWindow())
     progressDialog.setCancelButton(None)
     progressDialog.setModal(True)
     progressDialog.show()
 
+    handler = servermanager.ActiveConnection.Session.GetProgressHandler()
+    handler.PrepareProgress()
+    freq = handler.GetProgressFrequency()
+    handler.SetProgressFrequency(0.05)
+    tag = handler.AddObserver('ProgressEvent', onProgressEvent)
+
+    # construct the reader, this calls UpdateInformation on the
+    # reader which scans the pcap file and emits progress events
     reader = smp.VelodyneHDLReader(guiName='Data', FileName=filename, CalibrationFile=calibrationFile)
     reader.UpdatePipeline()
 
+    handler.RemoveObserver(tag)
+    handler.SetProgressFrequency(freq)
     progressDialog.close()
 
     if not hasArrayName(reader, 'intensity'):
