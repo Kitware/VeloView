@@ -84,11 +84,32 @@ def hasArrayName(sourceProxy, arrayName):
 
 def openData(filename):
 
-    smp.OpenDataFile(filename)
-    smp.Show()
-    smp.ResetCamera()
-    smp.Render()
-    smp.SetActiveSource(None)
+    close()
+
+    reader = smp.OpenDataFile(filename, guiName='Data')
+
+    if not reader:
+        return
+
+    rep = smp.Show(reader)
+    rep.InterpolateScalarsBeforeMapping = 0
+    colorByIntensity(reader)
+
+    showSourceInSpreadSheet(reader)
+
+    smp.GetActiveView().ViewTime = 0.0
+
+    app.reader = reader
+    app.filenameLabel.setText('File: %s' % os.path.basename(filename))
+
+    updateSliderTimeRange()
+    enablePlaybackActions()
+    enableSaveActions()
+    app.actions['actionSave_PCAP'].setEnabled(False)
+    app.actions['actionChoose_Calibration_File'].setEnabled(False)
+    app.actions['actionRecord'].setEnabled(False)
+
+    resetCamera()
 
 
 def colorByIntensity(sourceProxy):
@@ -110,6 +131,11 @@ def getTimeStamp():
     return datetime.datetime.now().strftime(format)
 
 
+def getReaderFileName():
+    filename = getReader().FileName
+    return filename[0] if isinstance(filename, servermanager.FileNameProperty) else filename
+
+
 def getDefaultSaveFileName(extension, suffix='', appendFrameNumber=False):
 
     sensor = getSensor()
@@ -118,7 +144,7 @@ def getDefaultSaveFileName(extension, suffix='', appendFrameNumber=False):
     if sensor:
         return '%s_Velodyne-HDL-Data.%s' % (getTimeStamp(), extension)
     if reader:
-        basename =  os.path.splitext(os.path.basename(reader.FileName))[0]
+        basename =  os.path.splitext(os.path.basename(getReaderFileName()))[0]
         if appendFrameNumber:
             suffix = '%s (Frame %04d)' % (suffix, int(app.scene.AnimationTime))
         return '%s%s.%s' % (basename, suffix, extension)
@@ -140,6 +166,7 @@ def openSensor(calibrationFile):
     app.colorByInitialized = False
     app.filenameLabel.setText('Live sensor stream.')
     enablePlaybackActions()
+    enableSaveActions()
     smp.Render()
 
     showSourceInSpreadSheet(sensor)
@@ -192,6 +219,7 @@ def openPCAP(filename, calibrationFile):
 
     updateSliderTimeRange()
     enablePlaybackActions()
+    enableSaveActions()
     app.actions['actionRecord'].setEnabled(False)
 
     resetCamera()
@@ -313,9 +341,6 @@ def getFrameSelectionFromUser(frameStrideVisibility=False):
 
 def onSaveCSV():
 
-    if not getNumberOfTimesteps():
-        return
-
     accepted, frameMode, frameStart, frameStop, frameStride = getFrameSelectionFromUser()
     if not accepted:
         return
@@ -337,9 +362,6 @@ def onSaveCSV():
 
 def onSavePCAP():
 
-    if not getNumberOfTimesteps():
-        return
-
     accepted, frameMode, frameStart, frameStop, frameStride = getFrameSelectionFromUser()
     if not accepted:
         return
@@ -358,7 +380,6 @@ def onSavePCAP():
     PythonQt.paraview.pqVelodyneManager.saveFramesToPCAP(getReader().SMProxy, frameStart, frameStop, fileName)
 
 
-
 def onSaveScreenshot():
 
     fileName = getSaveFileName('Save Screenshot', 'png', getDefaultSaveFileName('png', appendFrameNumber=True))
@@ -367,9 +388,6 @@ def onSaveScreenshot():
 
 
 def onKiwiViewerExport():
-
-    if not getNumberOfTimesteps():
-        return
 
     accepted, frameMode, frameStart, frameStop, frameStride = getFrameSelectionFromUser(frameStrideVisibility=True)
     if not accepted:
@@ -388,7 +406,6 @@ def onKiwiViewerExport():
         timesteps = range(frameStart, frameStop+1, frameStride)
 
     saveToKiwiViewer(fileName, timesteps)
-
 
 
 def saveToKiwiViewer(filename, timesteps):
@@ -465,6 +482,7 @@ def close():
     app.timeLabel.setText('')
     updateSliderTimeRange()
     disablePlaybackActions()
+    disableSaveActions()
     app.actions['actionRecord'].setChecked(False)
 
 
@@ -541,14 +559,30 @@ def updateSeekButtons():
     app.targetFps = fpsMap.get(app.playDirection, fpsDefault)
 
 
-def disablePlaybackActions():
+def setPlaybackActionsEnabled(enabled):
     for action in ('Play', 'Record', 'Seek_Forward', 'Seek_Backward', 'Go_To_Start', 'Go_To_End'):
-        app.actions['action'+action].setEnabled(False)
+        app.actions['action'+action].setEnabled(enabled)
 
 
 def enablePlaybackActions():
-    for action in ('Play', 'Record', 'Seek_Forward', 'Seek_Backward', 'Go_To_Start', 'Go_To_End'):
-        app.actions['action'+action].setEnabled(True)
+    setPlaybackActionsEnabled(True)
+
+
+def disablePlaybackActions():
+    setPlaybackActionsEnabled(False)
+
+
+def setSaveActionsEnabled(enabled):
+    for action in ('Save_CSV', 'Save_PCAP', 'Export_To_KiwiViewer', 'Close', 'Choose_Calibration_File'):
+        app.actions['action'+action].setEnabled(enabled)
+
+
+def enableSaveActions():
+    setSaveActionsEnabled(True)
+
+
+def disableSaveActions():
+    setSaveActionsEnabled(False)
 
 
 def recordFile(filename):
@@ -915,6 +949,7 @@ def start():
 
     setupActions()
     disablePlaybackActions()
+    setSaveActionsEnabled(False)
     setupStatusBar()
     setupTimeSliderWidget()
     hideColorByComponent()
