@@ -807,6 +807,7 @@ int vtkVelodyneHDLReader::ReadFrameInformation()
         {
         filePositions.push_back(lastFilePosition);
         skips.push_back(i);
+        this->UpdateProgress(0.0);
         }
 
       lastAzimuth = firingData.rotationalPosition;
