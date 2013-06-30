@@ -1106,8 +1106,8 @@ def openRecentFile(filename):
         QtGui.QMessageBox.warning(getMainWindow(), 'File not found', 'File not found: %s' % filename)
         return
 
-    if os.path.splitext(filename)[1].lower() == 'pcap':
-        openPCAP(filename)
+    if os.path.splitext(filename)[1].lower() == '.pcap':
+        openPCAP(filename, calibrationFile='')
     else:
         openData(filename)
 
