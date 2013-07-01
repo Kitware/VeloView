@@ -130,6 +130,7 @@ set(MOC_HEADERS
   vvPythonQtDecorators.h
   )
 
+set(moc_srcs)
 QT4_WRAP_CPP(moc_srcs ${MOC_HEADERS})
 
 set(gui_sources)
