@@ -9,8 +9,15 @@
   #define VelodyneHDLPlugin_EXPORT __declspec( dllimport )
  #endif
 
+ #if defined(VelodyneHDLPython_EXPORTS)
+  #define VelodyneHDLPython_EXPORT __declspec( dllexport )
+ #else
+  #define VelodyneHDLPython_EXPORT __declspec( dllimport )
+ #endif
+
 #else
  #define VelodyneHDLPlugin_EXPORT
+ #define VelodyneHDLPython_EXPORT
 #endif
 
 

@@ -3,7 +3,9 @@
 
 #include <QDialog>
 
-class vvSelectFramesDialog : public QDialog
+#include "vvConfigure.h"
+
+class VelodyneHDLPlugin_EXPORT vvSelectFramesDialog : public QDialog
 {
   Q_OBJECT
 public:

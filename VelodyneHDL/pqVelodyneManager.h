@@ -17,7 +17,7 @@ class vvAppLogic;
 class QAction;
 class QLabel;
 
-class VelodyneHDLPlugin_EXPORT pqVelodyneManager : public QObject
+class VelodyneHDLPython_EXPORT pqVelodyneManager : public QObject
 {
 
   Q_OBJECT

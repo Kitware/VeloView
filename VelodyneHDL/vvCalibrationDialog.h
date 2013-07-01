@@ -3,7 +3,9 @@
 
 #include <QDialog>
 
-class vvCalibrationDialog : public QDialog
+#include "vvConfigure.h"
+
+class VelodyneHDLPlugin_EXPORT vvCalibrationDialog : public QDialog
 {
   Q_OBJECT
 public:

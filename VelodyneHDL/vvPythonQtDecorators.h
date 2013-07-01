@@ -7,9 +7,10 @@
 
 #include "pqVelodyneManager.h"
 #include "vvCalibrationDialog.h"
+#include "vvConfigure.h"
 #include "vvSelectFramesDialog.h"
 
-class  vvPythonQtDecorators : public QObject
+class VelodyneHDLPython_EXPORT vvPythonQtDecorators : public QObject
 {
   Q_OBJECT
 
