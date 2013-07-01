@@ -35,6 +35,7 @@ typedef unsigned __int64 uint64_t;
 
 #include <windows.h>
 
+namespace {
 int gettimeofday(struct timeval * tp, void *)
 {
   FILETIME ft;
@@ -45,6 +46,7 @@ int gettimeofday(struct timeval * tp, void *)
   tp->tv_sec = static_cast<long>( t / 1000000UL);
   tp->tv_usec = static_cast<long>( t % 1000000UL);
   return 0;
+}
 }
 
 #endif
