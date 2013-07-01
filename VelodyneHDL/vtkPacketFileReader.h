@@ -22,6 +22,11 @@
 #include <pcap.h>
 #include <string>
 
+// Some versions of libpcap do not have PCAP_NETMASK_UNKNOWN
+#if !defined(PCAP_NETMASK_UNKNOWN)
+  #define PCAP_NETMASK_UNKNOWN 0xffffffff
+#endif
+
 class vtkPacketFileReader
 {
 public:
