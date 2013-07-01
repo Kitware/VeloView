@@ -65,7 +65,7 @@ install(FILES "${wpcap_library_dir}/wpcap.dll"  "${wpcap_library_dir}/Packet.dll
         DESTINATION "bin"
         COMPONENT ${AppName})
 
-install(FILES "${SuperBuild_BINARY_DIR}/velodyneviewer/src/velodyneviewer/Doc/VeloView_Developer_Guide.pdf"
+install(FILES "${SuperBuild_BINARY_DIR}/velodyneviewer/src/velodyneviewer/Documentation/VeloView_Developer_Guide.pdf"
         DESTINATION "doc"
         COMPONENT ${AppName})
 
