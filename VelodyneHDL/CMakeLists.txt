@@ -140,7 +140,7 @@ list(APPEND gui_sources
   vvLoadDataReaction.cxx
   )
 
-add_library(VelodyneHDLPython STATIC ${gui_sources})
+add_library(VelodyneHDLPython ${gui_sources})
 target_link_libraries(VelodyneHDLPython ${library_name} ${PYTHONQT_LIBRARIES})
 #########
 
