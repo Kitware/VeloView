@@ -7,6 +7,10 @@ set (CPACK_NSIS_MENU_LINKS
   "bin/VeloView.exe" "VeloView"
   "doc/VeloView_Developer_Guide.pdf" "Developer Guide")
 
+set(CPACK_PACKAGE_EXECUTABLES "VeloView" "VeloView" ${CPACK_PACKAGE_EXECUTABLES})
+set(CPACK_CREATE_DESKTOP_LINKS "VeloView" ${CPACK_CREATE_DESKTOP_LINKS})
+set(CPACK_NSIS_MODIFY_PATH OFF)
+
 set(AppName VeloView)
 
 install(DIRECTORY "${install_location}/bin/"
@@ -71,8 +75,6 @@ install(FILES "${SuperBuild_BINARY_DIR}/velodyneviewer/src/velodyneviewer/Docume
 
 #------------------------------------------------------------------------------
 set (CPACK_NSIS_MUI_ICON "${CMAKE_CURRENT_LIST_DIR}/InstallerIcon.ico")
-
-set(CPACK_NSIS_MODIFY_PATH OFF)
 
 if (64bit_build)
   set(CPACK_NSIS_INSTALL_ROOT "$PROGRAMFILES64")
