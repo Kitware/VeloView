@@ -151,6 +151,11 @@ if (NOT APPLE)
           LIBRARY DESTINATION ${VV_INSTALL_LIBRARY_DIR}
           COMPONENT Runtime)
 
+  install(TARGETS VelodyneHDLPython
+          RUNTIME DESTINATION ${VV_INSTALL_RUNTIME_DIR}
+          LIBRARY DESTINATION ${VV_INSTALL_LIBRARY_DIR}
+          COMPONENT Runtime)
+
   #install python modules.
   install(DIRECTORY python/veloview
           DESTINATION ${VV_INSTALL_LIBRARY_DIR}/site-packages
