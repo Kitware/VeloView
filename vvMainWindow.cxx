@@ -27,7 +27,7 @@
 
 // Declare the plugin to load.
 PV_PLUGIN_IMPORT_INIT(VelodyneHDLPlugin);
-PV_PLUGIN_IMPORT_INIT(pqPythonQtPlugin);
+PV_PLUGIN_IMPORT_INIT(PythonQtPlugin);
 
 class vvMainWindow::pqInternals
 {
@@ -123,7 +123,7 @@ private:
 vvMainWindow::vvMainWindow() : Internals (new vvMainWindow::pqInternals(this))
 {
   PV_PLUGIN_IMPORT(VelodyneHDLPlugin);
-  PV_PLUGIN_IMPORT(pqPythonQtPlugin);
+  PV_PLUGIN_IMPORT(PythonQtPlugin);
 }
 
 //-----------------------------------------------------------------------------
