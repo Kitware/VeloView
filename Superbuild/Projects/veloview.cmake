@@ -1,4 +1,4 @@
-add_external_project(velodyneviewer
+add_external_project(veloview
   DEPENDS paraview qt pcap boost
 
   CMAKE_ARGS

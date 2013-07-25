@@ -1,4 +1,4 @@
-include(velodyneviewer.bundle.common)
+include(veloview.bundle.common)
 
 #------------------------------------------------------------------------------
 # set NSIS install specific stuff.
@@ -58,10 +58,10 @@ if (python_ENABLED AND NOT USE_SYSTEM_python)
 endif()
 
 # install paraview python modules and others.
-install(DIRECTORY "${install_location}/lib/paraview-3.98"
+install(DIRECTORY "${install_location}/lib/paraview-4.0"
         DESTINATION "lib"
         USE_SOURCE_PERMISSIONS
-        COMPONENT ${AppName} 
+        COMPONENT ${AppName}
         PATTERN "*.lib" EXCLUDE)
 
 
@@ -69,7 +69,7 @@ install(FILES "${wpcap_library_dir}/wpcap.dll"  "${wpcap_library_dir}/Packet.dll
         DESTINATION "bin"
         COMPONENT ${AppName})
 
-install(FILES "${SuperBuild_BINARY_DIR}/velodyneviewer/src/velodyneviewer/Documentation/VeloView_Developer_Guide.pdf"
+install(FILES "${VeloViewSuperBuild_SOURCE_DIR}/../Documentation/VeloView_Developer_Guide.pdf"
         DESTINATION "doc"
         COMPONENT ${AppName})
 

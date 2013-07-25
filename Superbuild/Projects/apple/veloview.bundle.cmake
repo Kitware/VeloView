@@ -1,4 +1,4 @@
-include(velodyneviewer.bundle.common)
+include(veloview.bundle.common)
 
 set (CPACK_GENERATOR DragNDrop)
 include(CPack)
@@ -8,7 +8,7 @@ install(CODE "
           \"${install_location}/bin/VeloView.app\")
 
      file(INSTALL DESTINATION \"\${CMAKE_INSTALL_PREFIX}\" USE_SOURCE_PERMISSIONS TYPE FILE FILES
-          \"${VelodyneViewerSuperBuild_SOURCE_DIR}/../Documentation/VeloView_Developer_Guide.pdf\")
+          \"${VeloViewSuperBuild_SOURCE_DIR}/../Documentation/VeloView_Developer_Guide.pdf\")
 
      file(WRITE \"\${CMAKE_INSTALL_PREFIX}/VeloView.app/Contents/Resources/qt.conf\"
                 \"\")

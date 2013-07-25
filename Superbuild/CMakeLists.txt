@@ -7,10 +7,10 @@ if (APPLE)
   endif()
 endif()
 
-project(VelodyneViewerSuperBuild)
+project(VeloViewSuperBuild)
 set (SuperBuild_CMAKE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/CMake")
 set (SuperBuild_PROJECTS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/Projects")
-set (SuperBuild_BINARY_DIR ${VelodyneViewerSuperBuild_BINARY_DIR})
+set (SuperBuild_BINARY_DIR ${VeloViewSuperBuild_BINARY_DIR})
 
 include(CMakeDependentOption)
 
@@ -95,7 +95,7 @@ string (STRIP "${cxxflags}" cxxflags)
 string (STRIP "${cflags}"  cflags)
 #-----------------------------------------------------------------------------
 ## Top-level options. These must be limited to a commonly used subset with
-## default values being used for building VelodyneViewer binaries.
+## default values being used for building VeloView binaries.
 #option(PV_COMMAND_LINE_TOOLS_ONLY
 #  "Turn this ON to build command lines tools alone." OFF)
 
@@ -125,10 +125,10 @@ include(pythonqt)
 include(paraview)
 include(pcap)
 include(boost)
-include(velodyneviewer)
+include(veloview)
 
 process_dependencies()
 
-if (velodyneviewer_ENABLED)
-  include(velodyneviewer.bundle OPTIONAL)
+if (veloview_ENABLED)
+  include(veloview.bundle OPTIONAL)
 endif()

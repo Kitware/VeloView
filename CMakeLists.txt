@@ -34,10 +34,10 @@ if (WIN32)
   set(VV_INSTALL_LIBRARY_DIR bin)
 else()
   set(VV_INSTALL_LIBRARY_DIR
-    lib/velodyne-viewer-${VV_VERSION_MAJOR}.${VV_VERSION_MINOR})
+    lib/veloview-${VV_VERSION_MAJOR}.${VV_VERSION_MINOR})
 endif()
 set(VV_INSTALL_ARCHIVE_DIR
-    lib/velodyne-viewer-${VV_VERSION_MAJOR}.${VV_VERSION_MINOR})
+    lib/veloview-${VV_VERSION_MAJOR}.${VV_VERSION_MINOR})
 
 
 # Find and include PythonQt
