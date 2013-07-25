@@ -948,11 +948,19 @@ def showGrid():
     smp.GetDisplayProperties(app.grid).Show()
 
 
+def getAnimationScene():
+    '''This function is a workaround because paraview.simple.GetAnimationScene()
+    has an issue where the returned proxy might not have its Cues property initialized'''
+    for proxy in servermanager.ProxyManager().GetProxiesInGroup("animation").values():
+        if proxy.GetXMLName() == 'AnimationScene' and len(proxy.Cues):
+            return proxy
+
+
 def start():
 
     global app
     app = AppLogic()
-    app.scene = smp.GetAnimationScene()
+    app.scene = getAnimationScene()
 
     view = smp.GetActiveView()
     view.Background = [0.0, 0.0, 0.0]
