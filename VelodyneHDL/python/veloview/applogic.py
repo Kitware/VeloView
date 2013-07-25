@@ -649,6 +649,21 @@ def pollSource():
     return source or reader
 
 
+def getPointCloudData(attribute=None):
+
+    if attribute is not None:
+        data = getPointCloudData()
+        if data:
+            if attribute == 'points':
+                return data.GetPoints().GetData()
+            else:
+                return data.GetPointData().GetArray(attribute)
+    else:
+        source = getSensor() or getReader()
+        if source:
+            return source.GetClientSideObject().GetOutput()
+
+
 def getCurrentTimesteps():
     source = pollSource()
     return list(source.TimestepValues) if source is not None else []
