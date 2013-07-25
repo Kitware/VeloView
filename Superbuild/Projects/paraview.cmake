@@ -31,7 +31,7 @@ add_external_project(paraview
     -DPARAVIEW_BUILD_PLUGIN_VRPlugin:BOOL=FALSE
     -DPARAVIEW_BUILD_PLUGIN_VaporPlugin:BOOL=FALSE
 
-    -DPARAVIEW_BUILD_PLUGIN_PythonQt:BOOL=TRUE
+    -DPARAVIEW_BUILD_PLUGIN_PythonQtPlugin:BOOL=TRUE
     -DPYTHONQT_DIR:PATH=<INSTALL_DIR>
 
     # specify the apple app install prefix. No harm in specifying it for all
