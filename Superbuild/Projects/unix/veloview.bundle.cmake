@@ -9,7 +9,7 @@ install(DIRECTORY "${install_location}/lib/paraview-4.0"
   COMPONENT superbuild)
 
 # install all velodyne libraries
-install(DIRECTORY "${install_location}/lib/veloview-${vv_version}"
+install(DIRECTORY "${install_location}/lib/veloview-${VV_VERSION}"
   DESTINATION "lib"
   USE_SOURCE_PERMISSIONS
   COMPONENT superbuild)
@@ -20,10 +20,10 @@ if (qt_ENABLED AND NOT USE_SYSTEM_qt)
     # FIXME: we can reconfigure Qt to be built with inbuilt sqllite support to
     # avoid the need for plugins.
     "${install_location}/plugins/"
-    DESTINATION "lib/veloview-${vv_version}"
+    DESTINATION "lib/veloview-${VV_VERSION}"
     COMPONENT superbuild
     PATTERN "*.a" EXCLUDE
-    PATTERN "veloview-${vv_version}" EXCLUDE
+    PATTERN "veloview-${VV_VERSION}" EXCLUDE
     PATTERN "fontconfig" EXCLUDE
     PATTERN "*.jar" EXCLUDE
     PATTERN "*.debug.*" EXCLUDE

@@ -1,21 +1,20 @@
-# We hardcode the version numbers since we cannot determine versions during
-# configure stage.
-set (vv_version_major 1)
-set (vv_version_minor 0)
-set (vv_version_patch 5)
-set (vv_version_suffix)
-set (vv_version "${vv_version_major}.${vv_version_minor}")
+
+
+# Sets VV_VERSION_{MAJOR,MINOR,PATCH}
+include(${VeloViewSuperBuild_SOURCE_DIR}/../CMake/version.cmake)
+set(VV_VERSION "${VV_VERSION_MAJOR}.${VV_VERSION_MINOR}")
+set(VV_VERSION_SUFFIX)
 
 # Enable CPack packaging.
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "VeloView")
 set(CPACK_PACKAGE_NAME "VeloView")
 set(CPACK_PACKAGE_VENDOR "Velodyne Lidar")
-set(CPACK_PACKAGE_VERSION_MAJOR ${vv_version_major})
-set(CPACK_PACKAGE_VERSION_MINOR ${vv_version_minor})
-if (vv_version_suffix)
-  set(CPACK_PACKAGE_VERSION_PATCH ${vv_version_patch}-${vv_version_suffix})
+set(CPACK_PACKAGE_VERSION_MAJOR ${VV_VERSION_MAJOR})
+set(CPACK_PACKAGE_VERSION_MINOR ${VV_VERSION_MINOR})
+if (VV_VERSION_SUFFIX)
+  set(CPACK_PACKAGE_VERSION_PATCH ${VV_VERSION_PATCH}-${VV_VERSION_SUFFIX})
 else()
-  set(CPACK_PACKAGE_VERSION_PATCH ${vv_version_patch})
+  set(CPACK_PACKAGE_VERSION_PATCH ${VV_VERSION_PATCH})
 endif()
 
 set(CPACK_RESOURCE_FILE_LICENSE "${VeloViewSuperBuild_SOURCE_DIR}/LICENSE")
