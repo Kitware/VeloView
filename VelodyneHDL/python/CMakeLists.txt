@@ -4,7 +4,6 @@ set(veloview_python_files
   veloview/applogic.py
   veloview/gridAdjustmentDialog.py
   veloview/kiwiviewerExporter.py
-  veloview/testing.py
   veloview/timer.py
   )
 
