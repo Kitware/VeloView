@@ -162,6 +162,11 @@ else()
           LIBRARY DESTINATION ${VV_INSTALL_RUNTIME_DIR}/VeloView.app/Contents/Libraries
           COMPONENT Runtime)
 
+  install(TARGETS VelodyneHDLPython
+          RUNTIME DESTINATION ${VV_INSTALL_RUNTIME_DIR}/VeloView.app/Contents/Libraries
+          LIBRARY DESTINATION ${VV_INSTALL_RUNTIME_DIR}/VeloView.app/Contents/Libraries
+          COMPONENT Runtime)
+
   # install paraview python modules
   install(DIRECTORY ${ParaView_DIR}/lib/site-packages/paraview DESTINATION ${VV_INSTALL_RUNTIME_DIR}/VeloView.app/Contents/Python)
   file(GLOB python_libs ${ParaView_DIR}/lib/*Python.so)
