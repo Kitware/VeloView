@@ -28,11 +28,11 @@ add_revision(pythonqt
 
 add_revision(paraview
   GIT_REPOSITORY git://github.com/patmarion/ParaView.git
-  GIT_TAG PythonQtPlugin)
+  GIT_TAG PythonQtPlugin-pv4.0)
 
-add_revision(velodyneviewer
-  GIT_REPOSITORY git://kwsource.kitwarein.com/miscellaneousprojectsuda/velodyneviewer.git
-  GIT_TAG pat-wip)
+add_revision(veloview
+    SOURCE_DIR ${CMAKE_SOURCE_DIR}/..
+    DOWNLOAD_COMMAND "")
 
 if (WIN32)
   add_revision(pcap
