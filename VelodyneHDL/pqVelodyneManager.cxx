@@ -20,6 +20,7 @@
 #include <vtkSMPropertyHelper.h>
 #include <vtkSMSourceProxy.h>
 #include <vtkSMViewProxy.h>
+#include <vtkPythonInterpreter.h>
 #include <vtkTimerLog.h>
 #include <vtkVelodyneHDLReader.h>
 
@@ -86,35 +87,31 @@ pqVelodyneManager::~pqVelodyneManager()
 //-----------------------------------------------------------------------------
 void pqVelodyneManager::pythonStartup()
 {
-
   QStringList pythonDirs;
-  pythonDirs << "/source/velodyne/velodyneviewer/VelodyneHDL/python"
-             << "c:/velodyne/build/velodyneviewer/src/velodyneviewer/VelodyneHDL/python"
-             << QCoreApplication::applicationDirPath()  + "/../Python"
-             << QCoreApplication::applicationDirPath()  + "/site-packages";
+  pythonDirs << QCoreApplication::applicationDirPath()  + "/../Python" // MacOSX application bundle
+             << QCoreApplication::applicationDirPath()  + "/../../../../lib/site-packages" // MacOSX application bundle in build directory
+             << QCoreApplication::applicationDirPath()  + "/../lib/site-packages" // Windows NMake build directory
+             << QCoreApplication::applicationDirPath()  + "/site-packages"; // Windows install tree
 
-  QString pythonDir = QCoreApplication::applicationDirPath();
   foreach (const QString& dirname, pythonDirs)
     {
       if (QDir(dirname).exists())
         {
-        pythonDir = dirname;
+        vtkPythonInterpreter::PrependPythonPath(dirname.toAscii().data());
         break;
         }
     }
 
+  vtkPythonInterpreter::RunSimpleString("import PythonQt");
+  PythonQt::self()->addDecorators(new vvPythonQtDecorators());
+  vtkPythonInterpreter::RunSimpleString("import veloview");
+
   this->runPython(QString(
-      "import sys\n"
-      "sys.path.insert(0, '%1')\n"
       "import PythonQt\n"
       "QtGui = PythonQt.QtGui\n"
-      "QtCore = PythonQt.QtCore\n").arg(pythonDir));
-
-  PythonQt::self()->addDecorators(new vvPythonQtDecorators());
-
-  this->runPython(
+      "QtCore = PythonQt.QtCore\n"
       "import veloview.applogic as vv\n"
-      "vv.start()\n");
+      "vv.start()\n"));
 
   this->onMeasurementGrid();
 

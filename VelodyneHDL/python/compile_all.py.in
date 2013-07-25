@@ -1,0 +1,4 @@
+import compileall
+compileall.compile_dir('@python_module_dir@')
+file = open('./compile_complete', 'w')
+file.write('Done')

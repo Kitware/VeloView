@@ -5,6 +5,7 @@ project(VeloView)
 include(CMake/version.cmake)
 
 find_package(ParaView REQUIRED)
+find_package(PythonInterp REQUIRED)
 include(${PARAVIEW_USE_FILE})
 option(BUILD_SHARED_LIBS "Build shared libs" ON)
 

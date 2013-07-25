@@ -156,18 +156,13 @@ if (NOT APPLE)
           LIBRARY DESTINATION ${VV_INSTALL_LIBRARY_DIR}
           COMPONENT Runtime)
 
-  #install python modules.
-  install(DIRECTORY python/veloview
-          DESTINATION ${VV_INSTALL_LIBRARY_DIR}/site-packages
-          COMPONENT Runtime)
 else()
   install(TARGETS VelodyneHDLPlugin
           RUNTIME DESTINATION ${VV_INSTALL_RUNTIME_DIR}/VeloView.app/Contents/Libraries
           LIBRARY DESTINATION ${VV_INSTALL_RUNTIME_DIR}/VeloView.app/Contents/Libraries
           COMPONENT Runtime)
 
-  # install python modules
-  install(DIRECTORY python/veloview DESTINATION ${VV_INSTALL_RUNTIME_DIR}/VeloView.app/Contents/Python)
+  # install paraview python modules
   install(DIRECTORY ${ParaView_DIR}/lib/site-packages/paraview DESTINATION ${VV_INSTALL_RUNTIME_DIR}/VeloView.app/Contents/Python)
   file(GLOB python_libs ${ParaView_DIR}/lib/*Python.so)
   install(FILES ${python_libs} DESTINATION ${VV_INSTALL_RUNTIME_DIR}/VeloView.app/Contents/Libraries)
@@ -176,3 +171,5 @@ else()
   configure_file(${VeloView_SOURCE_DIR}/Documentation/VeloView_Developer_Guide.pdf ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/VeloView.app/Contents/Resources/VeloView_Developer_Guide.pdf)
 
 endif()
+
+add_subdirectory(python)
