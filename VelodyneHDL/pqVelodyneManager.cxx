@@ -91,6 +91,7 @@ void pqVelodyneManager::pythonStartup()
   pythonDirs << QCoreApplication::applicationDirPath()  + "/../Python" // MacOSX application bundle
              << QCoreApplication::applicationDirPath()  + "/../../../../lib/site-packages" // MacOSX application bundle in build directory
              << QCoreApplication::applicationDirPath()  + "/site-packages" // Windows NMake build directory and install tree
+             << QCoreApplication::applicationDirPath()  + "/../lib/paraview-4.0" // Windows install tree
              << QCoreApplication::applicationDirPath()  + "/../lib/paraview-4.0/site-packages"; // Windows install tree
 
   foreach (const QString& dirname, pythonDirs)
