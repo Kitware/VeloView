@@ -33,7 +33,7 @@ Getting the source code
 The VeloView software is hosted in a git repository on github.com  Use the
 following command line to checkout the source code::
 
-    git clone git://github.com/kitware/veloview.git
+    git clone git://public.kitware.com/VeloView.git
 
 
 External dependencies

@@ -1013,7 +1013,7 @@ endobj
 % 'R58': class PDFInfo 
 58 0 obj
 << /Author ()
- /CreationDate (D:20130806094626+05'00')
+ /CreationDate (D:20130813161922+05'00')
  /Creator (\(unspecified\))
  /Keywords ()
  /Producer (ReportLab PDF Library - www.reportlab.com)
@@ -1717,7 +1717,7 @@ n -6 -6 468.6898 24 re B*
 Q
 q
 0 0 0 rg
-BT 1 0 0 1 0 2 Tm /F4 10 Tf 12 TL (git clone git://github.com/kitware/veloview.git) Tj T* ET
+BT 1 0 0 1 0 2 Tm /F4 10 Tf 12 TL (git clone git://public.kitware.com/VeloView.git) Tj T* ET
 Q
 Q
 Q
@@ -2317,7 +2317,7 @@ xref
 trailer
 << /ID 
  % ReportLab generated PDF document -- digest (http://www.reportlab.com) 
- [(\326\177\373y\013\231\352\010\266\2405@\016\321\201\000) (\326\177\373y\013\231\352\010\266\2405@\016\321\201\000)] 
+ [(#\214\224\217K\234R'Z\006\012\320\002\334\265l) (#\214\224\217K\234R'Z\006\012\320\002\334\265l)] 
 
  /Info 58 0 R
  /Root 57 0 R
