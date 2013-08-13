@@ -22,7 +22,6 @@ mark_as_advanced(PCAP_LIBRARY PCAP_INCLUDE_DIR)
 include_directories(${PCAP_INCLUDE_DIR})
 
 
-set(Boost_USE_STATIC_LIBS   ON)
 set(Boost_USE_MULTITHREADED ON)
 find_package(Boost REQUIRED COMPONENTS system thread chrono regex date_time)
 include_directories(${Boost_INCLUDE_DIRS})
