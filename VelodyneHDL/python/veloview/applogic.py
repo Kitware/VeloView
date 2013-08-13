@@ -493,7 +493,8 @@ def onUserGuide():
 
 def onAbout():
     title = 'About VeloView'
-    text = '<h1>VeloView %s</h1><br/>Copyright (c) 2013, Velodyne Lidar' % getVersionString()
+    text = '''<h1>VeloView %s</h1><br/>Copyright (c) 2013, Velodyne Lidar<br />
+           Sample Data Repository: <a href=http://midas3.kitware.com/midas/community/29>http://midas3.kitware.com/midas/community/29</a>'''% getVersionString()
     QtGui.QMessageBox.about(getMainWindow(), title, text)
 
 
