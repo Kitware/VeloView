@@ -92,7 +92,7 @@ public:
   vtkUnsignedCharArray* Intensity;
   vtkUnsignedCharArray* LaserId;
   vtkUnsignedShortArray* Azimuth;
-  vtkUnsignedShortArray* Distance;
+  vtkDoubleArray*        Distance;
   vtkUnsignedIntArray* Timestamp;
 
 
@@ -449,8 +449,8 @@ vtkSmartPointer<vtkPolyData> vtkVelodyneHDLReader::vtkInternal::CreateData(vtkId
   polyData->GetPointData()->AddArray(azimuth.GetPointer());
 
   // range
-  vtkNew<vtkUnsignedShortArray> distance;
-  distance->SetName("distance");
+  vtkNew<vtkDoubleArray> distance;
+  distance->SetName("distance_m");
   distance->SetNumberOfTuples(numberOfPoints);
   polyData->GetPointData()->AddArray(distance.GetPointer());
 
@@ -578,7 +578,7 @@ void PushFiringData(vtkPolyData* polyData, unsigned char laserId, unsigned short
   internal->Intensity->InsertNextValue(intensity);
   internal->LaserId->InsertNextValue(laserId);
   internal->Azimuth->InsertNextValue(azimuth);
-  internal->Distance->InsertNextValue(laserReturn.distance);
+  internal->Distance->InsertNextValue(distanceM);
   internal->Timestamp->InsertNextValue(timestamp);
 }
 
