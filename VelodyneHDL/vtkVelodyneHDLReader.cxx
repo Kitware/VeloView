@@ -71,6 +71,70 @@ typedef boost::uint8_t uint8_t;
 # include <stdint.h>
 #endif
 
+namespace
+{
+
+#define HDL_Grabber_toRadians(x) ((x) * M_PI / 180.0)
+
+const int HDL_NUM_ROT_ANGLES = 36001;
+const int HDL_LASER_PER_FIRING = 32;
+const int HDL_MAX_NUM_LASERS = 64;
+const int HDL_FIRING_PER_PKT = 12;
+
+enum HDLBlock
+{
+  BLOCK_0_TO_31 = 0xeeff,
+  BLOCK_32_TO_63 = 0xddff
+};
+
+#pragma pack(push, 1)
+typedef struct HDLLaserReturn
+{
+  unsigned short distance;
+  unsigned char intensity;
+} HDLLaserReturn;
+#pragma pack(pop)
+
+struct HDLFiringData
+{
+  unsigned short blockIdentifier;
+  unsigned short rotationalPosition;
+  HDLLaserReturn laserReturns[HDL_LASER_PER_FIRING];
+};
+
+struct HDLDataPacket
+{
+  HDLFiringData firingData[HDL_FIRING_PER_PKT];
+  unsigned int gpsTimestamp;
+  unsigned char blank1;
+  unsigned char blank2;
+};
+
+struct HDLLaserCorrection
+{
+  double azimuthCorrection;
+  double verticalCorrection;
+  double distanceCorrection;
+  double verticalOffsetCorrection;
+  double horizontalOffsetCorrection;
+  double sinVertCorrection;
+  double cosVertCorrection;
+  double sinVertOffsetCorrection;
+  double cosVertOffsetCorrection;
+};
+
+struct HDLRGB
+{
+  uint8_t r;
+  uint8_t g;
+  uint8_t b;
+};
+
+double *cos_lookup_table_;
+double *sin_lookup_table_;
+HDLLaserCorrection laser_corrections_[HDL_MAX_NUM_LASERS];
+}
+
 //-----------------------------------------------------------------------------
 class vtkVelodyneHDLReader::vtkInternal
 {
@@ -356,31 +420,36 @@ void vtkVelodyneHDLReader::DumpFrames(int startFrame, int endFrame, const std::s
   unsigned int dataLength = 0;
   double timeSinceStart = 0;
 
+  unsigned int lastAzimuth = 0;
+  int numFrames = (endFrame + 1) - startFrame;
+
   this->Internal->Reader->SetFilePosition(&this->Internal->FilePositions[startFrame]);
 
-  fpos_t endPosition = 0;
-  if (endFrame+1 < this->Internal->FilePositions.size())
+  while (this->Internal->Reader->NextPacket(data, dataLength, timeSinceStart, &header) &&
+         numFrames > 0)
     {
-    endPosition = this->Internal->FilePositions[endFrame+1];
-    }
-
-  while (this->Internal->Reader->NextPacket(data, dataLength, timeSinceStart, &header))
-    {
-
     if (dataLength == (1206 + 42))
       {
       writer.WritePacket(header, const_cast<unsigned char*>(data));
       }
 
-    if (endPosition > 0)
+    // Check if we cycled a frame and decrement
+    const HDLDataPacket* dataPacket = reinterpret_cast<const HDLDataPacket *>(data + 42);
+
+    for (int i = 0; i < HDL_FIRING_PER_PKT; ++i)
       {
-      fpos_t currentPosition;
-      this->Internal->Reader->GetFilePosition(&currentPosition);
-      if (currentPosition >= endPosition)
+      HDLFiringData firingData = dataPacket->firingData[i];
+      if (firingData.rotationalPosition < lastAzimuth)
         {
-        break;
+        numFrames--;
+        if(numFrames <= 0)
+          {
+          break;
+          }
         }
+      lastAzimuth = firingData.rotationalPosition;
       }
+
     }
 
   writer.Close();
@@ -487,70 +556,9 @@ vtkSmartPointer<vtkCellArray> vtkVelodyneHDLReader::vtkInternal::NewVertexCells(
   return cellArray;
 }
 
+
 namespace
 {
-
-#define HDL_Grabber_toRadians(x) ((x) * M_PI / 180.0)
-
-const int HDL_NUM_ROT_ANGLES = 36001;
-const int HDL_LASER_PER_FIRING = 32;
-const int HDL_MAX_NUM_LASERS = 64;
-const int HDL_FIRING_PER_PKT = 12;
-
-enum HDLBlock
-{
-  BLOCK_0_TO_31 = 0xeeff,
-  BLOCK_32_TO_63 = 0xddff
-};
-
-#pragma pack(push, 1)
-typedef struct HDLLaserReturn
-{
-  unsigned short distance;
-  unsigned char intensity;
-} HDLLaserReturn;
-#pragma pack(pop)
-
-struct HDLFiringData
-{
-  unsigned short blockIdentifier;
-  unsigned short rotationalPosition;
-  HDLLaserReturn laserReturns[HDL_LASER_PER_FIRING];
-};
-
-struct HDLDataPacket
-{
-  HDLFiringData firingData[HDL_FIRING_PER_PKT];
-  unsigned int gpsTimestamp;
-  unsigned char blank1;
-  unsigned char blank2;
-};
-
-struct HDLLaserCorrection
-{
-  double azimuthCorrection;
-  double verticalCorrection;
-  double distanceCorrection;
-  double verticalOffsetCorrection;
-  double horizontalOffsetCorrection;
-  double sinVertCorrection;
-  double cosVertCorrection;
-  double sinVertOffsetCorrection;
-  double cosVertOffsetCorrection;
-};
-
-struct HDLRGB
-{
-  uint8_t r;
-  uint8_t g;
-  uint8_t b;
-};
-
-double *cos_lookup_table_;
-double *sin_lookup_table_;
-HDLLaserCorrection laser_corrections_[HDL_MAX_NUM_LASERS];
-
-
 void PushFiringData(vtkPolyData* polyData, unsigned char laserId, unsigned short azimuth, unsigned int timestamp, HDLLaserReturn laserReturn, HDLLaserCorrection correction, vtkVelodyneHDLReader::vtkInternal* internal)
 {
   double cosAzimuth, sinAzimuth;
