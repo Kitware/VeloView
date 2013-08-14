@@ -62,6 +62,7 @@ public:
   int ReadFrameInformation();
   int GetNumberOfFrames();
   vtkSmartPointer<vtkPolyData> GetFrame(int frameNumber);
+  vtkSmartPointer<vtkPolyData> GetFrameRange(int frameNumber, int numberOfFrames);
 
   void DumpFrames(int startFrame, int endFrame, const std::string& filename);
 
