@@ -15,13 +15,4 @@
         <file>Icons/pqZMinus32.png</file>
         <file>Icons/pqZPlus32.png</file>
     </qresource>
-  <qresource prefix="/vvResources">
-    <file>Icons/logo.png</file>
-    <file>Icons/open.png</file>
-    <file>Icons/pqFrustumSelectionPoint24.png</file>
-    <file>Icons/pqSurfaceSelectionPoint24.png</file>
-    <file>Icons/pqSpreadsheet16.png</file>
-    <file>Icons/pqResetCamera32.png</file>
-    <file>Icons/python_logo_124.png</file>
-  </qresource>
 </RCC>

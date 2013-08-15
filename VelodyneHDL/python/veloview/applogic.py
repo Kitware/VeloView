@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 import os
 import csv
 import datetime
@@ -1189,6 +1190,16 @@ def onClearMenu():
     settings.setValue('VelodyneHDLPlugin/RecentFiles', [])
     updateRecentFiles()
 
+def toggleProjectionType():
+    view = smp.GetActiveView()
+
+    if view.CameraParallelProjection == 1:
+        view.CameraParallelProjection = 0
+    else:
+        view.CameraParallelProjection = 1
+
+    smp.Render()
+
 def setViewTo(axis,sign):
     view = smp.GetActiveView()
     viewUp=view.CameraViewUp
@@ -1256,6 +1267,9 @@ def setupActions():
     app.actions['actionClear_Menu'].connect('triggered()', onClearMenu)
 
     # Added functions #
+
+    app.actions['actionToggleProjection'].connect('triggered()', toggleProjectionType)
+
     app.actions['actionSetViewXPlus'].connect('triggered()', setViewToXPlus)
     app.actions['actionSetViewXMinus'].connect('triggered()', setViewToXMinus)
     app.actions['actionSetViewYPlus'].connect('triggered()', setViewToYPlus)

@@ -24,7 +24,7 @@
      <x>0</x>
      <y>0</y>
      <width>1070</width>
-     <height>22</height>
+     <height>25</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -103,7 +103,6 @@
    <addaction name="actionOpen_Sensor_Stream"/>
    <addaction name="actionChoose_Calibration_File"/>
    <addaction name="separator"/>
-   <addaction name="actionReset_Camera"/>
    <addaction name="actionSelect_All_Points"/>
    <addaction name="actionSpreadsheet"/>
    <addaction name="actionPython_Console"/>
@@ -468,6 +467,18 @@
    </property>
    <property name="text">
     <string>Native File Dialogs</string>
+   </property>
+  </action>
+  <action name="actionToggleProjection">
+   <property name="icon">
+    <iconset resource="vvResources.qrc">
+     <normaloff>:/vvResources/Icons/pqProjection24.png</normaloff>:/vvResources/Icons/pqProjection24.png</iconset>
+   </property>
+   <property name="text">
+    <string>toggleProjection</string>
+   </property>
+   <property name="toolTip">
+    <string>Toggle projection type</string>
    </property>
   </action>
   <action name="actionSetViewXPlus">
