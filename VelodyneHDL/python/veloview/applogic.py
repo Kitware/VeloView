@@ -15,6 +15,7 @@ import os
 import csv
 import datetime
 import time
+import math
 import paraview.simple as smp
 from paraview import servermanager
 from paraview import vtk
@@ -1188,6 +1189,46 @@ def onClearMenu():
     settings.setValue('VelodyneHDLPlugin/RecentFiles', [])
     updateRecentFiles()
 
+def setViewTo(axis,sign):
+    view = smp.GetActiveView()
+    viewUp=view.CameraViewUp
+    position=view.CameraPosition
+
+    norm=math.sqrt(math.pow(position[0],2)+math.pow(position[1],2)+math.pow(position[2],2))
+
+    if axis == 'X':
+        view.CameraViewUp = [0,0,1]
+        view.CameraPosition = [-1*sign*norm,0,0]
+    elif axis == 'Y':
+        view.CameraViewUp = [0,0,1]
+        view.CameraPosition = [0,-1*sign*norm,0]
+    elif axis == 'Z':
+        view.CameraViewUp = [0,1,0]
+        view.CameraPosition = [0,0,-1*sign*norm]
+
+    view.ResetCamera()
+    smp.Render()
+
+def setViewToXPlus():
+    setViewTo('X',1)
+
+def setViewToXMinus():
+    setViewTo('X',-1)
+
+def setViewToYPlus():
+    setViewTo('Y',1)
+
+def setViewToYMinus():
+    setViewTo('Y',-1)
+
+def setViewToZPlus():
+    setViewTo('Z',1)
+
+def setViewToZMinus():
+    setViewTo('Z',-1)
+
+def myTestFunction():
+    print("test")
 
 def setupActions():
 
@@ -1214,6 +1255,13 @@ def setupActions():
     app.actions['actionVeloViewDeveloperGuide'].connect('triggered()', onDevelopperGuide)
     app.actions['actionClear_Menu'].connect('triggered()', onClearMenu)
 
+    # Added functions #
+    app.actions['actionSetViewXPlus'].connect('triggered()', setViewToXPlus)
+    app.actions['actionSetViewXMinus'].connect('triggered()', setViewToXMinus)
+    app.actions['actionSetViewYPlus'].connect('triggered()', setViewToYPlus)
+    app.actions['actionSetViewYMinus'].connect('triggered()', setViewToYMinus)
+    app.actions['actionSetViewZPlus'].connect('triggered()', setViewToZPlus)
+    app.actions['actionSetViewZMinus'].connect('triggered()', setViewToZMinus)
 
     buttons = {}
     for button in getPlaybackToolBar().findChildren('QToolButton'):
