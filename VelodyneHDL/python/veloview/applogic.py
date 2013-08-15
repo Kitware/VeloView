@@ -469,7 +469,7 @@ def getVersionString():
   return QtGui.QApplication.instance().applicationVersion
 
 
-def onHelp():
+def onDevelopperGuide():
     basePath = PythonQt.QtGui.QApplication.instance().applicationDirPath()
 
     paths = ['../Resources/VeloView_Developer_Guide.pdf']
@@ -480,6 +480,16 @@ def onHelp():
             print 'opening', filename
             QtGui.QDesktopServices.openUrl(QtCore.QUrl('file:///%s' % filename, QtCore.QUrl.TolerantMode))
 
+def onUserGuide():
+    basePath = PythonQt.QtGui.QApplication.instance().applicationDirPath()
+
+    paths = ['../Resources/VeloView_User_Guide.pdf']
+
+    for path in paths:
+        filename = os.path.join(basePath, path)
+        if os.path.isfile(filename):
+            print 'opening', filename
+            QtGui.QDesktopServices.openUrl(QtCore.QUrl('file:///%s' % filename, QtCore.QUrl.TolerantMode))
 
 def onAbout():
     title = 'About VeloView'
@@ -1201,7 +1211,7 @@ def setupActions():
     app.actions['actionGo_To_Start'].connect('triggered()', gotoStart)
     app.actions['actionNative_File_Dialogs'].connect('triggered()', onNativeFileDialogsAction)
     app.actions['actionAbout_VeloView'].connect('triggered()', onAbout)
-    app.actions['actionVeloView_Help'].connect('triggered()', onHelp)
+    app.actions['actionVeloViewDeveloperGuide'].connect('triggered()', onDevelopperGuide)
     app.actions['actionClear_Menu'].connect('triggered()', onClearMenu)
 
 

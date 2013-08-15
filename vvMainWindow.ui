@@ -81,7 +81,8 @@
     </property>
     <addaction name="actionAbout_VeloView"/>
     <addaction name="separator"/>
-    <addaction name="actionVeloView_Help"/>
+    <addaction name="actionVeloViewUserGuide"/>
+    <addaction name="actionVeloViewDeveloperGuide"/>
    </widget>
    <addaction name="menu_File"/>
    <addaction name="menuTools"/>
@@ -403,7 +404,7 @@
     <string>About VeloView</string>
    </property>
   </action>
-  <action name="actionVeloView_Help">
+  <action name="actionVeloViewDeveloperGuide">
    <property name="text">
     <string>VeloView Developer Guide</string>
    </property>
@@ -447,6 +448,11 @@
    </property>
    <property name="text">
     <string>Native File Dialogs</string>
+   </property>
+  </action>
+  <action name="actionVeloViewUserGuide">
+   <property name="text">
+    <string>VeloView User Guide</string>
    </property>
   </action>
  </widget>
