@@ -401,12 +401,13 @@ void vtkVelodyneHDLReader::DumpFrames(int startFrame, int endFrame, const std::s
   double timeSinceStart = 0;
 
   unsigned int lastAzimuth = 0;
-  int numFrames = (endFrame + 1) - startFrame;
+  int currentFrame = startFrame;
 
   this->Internal->Reader->SetFilePosition(&this->Internal->FilePositions[startFrame]);
+  int skip = this->Internal->Skips[startFrame];
 
   while (this->Internal->Reader->NextPacket(data, dataLength, timeSinceStart, &header) &&
-         numFrames > 0)
+         currentFrame <= endFrame)
     {
     if (dataLength == (1206 + 42))
       {
@@ -416,20 +417,21 @@ void vtkVelodyneHDLReader::DumpFrames(int startFrame, int endFrame, const std::s
     // Check if we cycled a frame and decrement
     const HDLDataPacket* dataPacket = reinterpret_cast<const HDLDataPacket *>(data + 42);
 
-    for (int i = 0; i < HDL_FIRING_PER_PKT; ++i)
+    for (int i = skip; i < HDL_FIRING_PER_PKT; ++i)
       {
       HDLFiringData firingData = dataPacket->firingData[i];
-      if (firingData.rotationalPosition < lastAzimuth)
+
+      if (firingData.rotationalPosition != 0 && firingData.rotationalPosition < lastAzimuth)
         {
-        numFrames--;
-        if(numFrames <= 0)
+        currentFrame++;
+        if(currentFrame > endFrame)
           {
           break;
           }
         }
       lastAzimuth = firingData.rotationalPosition;
       }
-
+    skip = 0;
     }
 
   writer.Close();
