@@ -272,6 +272,29 @@ def showRuler():
     app.ruler.Visibility = True
     smp.Render()
 
+def getPointFromCoordinate(coord, midPlaneDistance = 0.5):
+    assert len(coord) == 2
+
+    displayPoint = [coord[0], coord[1], midPlaneDistance]
+    renderer = smp.GetActiveView().GetRenderer()
+    renderer.SetDisplayPoint(displayPoint)
+    renderer.DisplayToWorld()
+    world1 = renderer.GetWorldPoint()
+
+    return world1[:3]
+
+# TODO: remove me
+def setRulerCoordinates(pt1, pt2):
+    world1 = getPointFromCoordinate(pt1)
+    world2 = getPointFromCoordinate(pt2)
+
+    print world1
+    print world2
+
+    app.ruler.Point1WorldPosition = world1
+    app.ruler.Point2WorldPosition = world2
+    smp.Render()
+
 # End Functions related to ruler
 
 def rotateCSVFile(filename):
