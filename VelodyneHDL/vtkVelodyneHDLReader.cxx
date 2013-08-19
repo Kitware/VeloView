@@ -342,26 +342,6 @@ int vtkVelodyneHDLReader::CanReadFile(const char *fname)
 }
 
 //-----------------------------------------------------------------------------
-void vtkVelodyneHDLReader::LoadData(const std::string& filename)
-{
-  vtkPacketFileReader reader;
-  if (!reader.Open(filename))
-    {
-    vtkErrorMacro("Failed to open packet file: " << filename << endl << reader.GetLastError());
-    return;
-    }
-
-  const unsigned char* data = 0;
-  unsigned int dataLength = 0;
-  double timeSinceStart = 0;
-
-  while (reader.NextPacket(data, dataLength, timeSinceStart))
-    {
-    this->ProcessHDLPacket(const_cast<unsigned char*>(data), dataLength);
-    }
-}
-
-//-----------------------------------------------------------------------------
 void vtkVelodyneHDLReader::ProcessHDLPacket(unsigned char *data, unsigned int bytesReceived)
 {
   this->Internal->ProcessHDLPacket(data, bytesReceived);

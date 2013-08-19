@@ -84,9 +84,7 @@ protected:
 
 
   void UnloadData();
-  void LoadData(const std::string& filename);
   void SetTimestepInformation(vtkInformation *info);
-
 
   std::string CorrectionsFile;
   std::string FileName;
