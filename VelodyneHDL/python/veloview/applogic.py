@@ -253,6 +253,26 @@ def showMeasurementGrid():
     rep.Visibility = 1
     smp.Render()
 
+# Start Functions related to ruler
+def createRuler():
+    pxm = servermanager.ProxyManager()
+    distancerep = pxm.NewProxy('representations', 'DistanceWidgetRepresentation')
+    distancerepeasy = servermanager._getPyProxy(distancerep)
+    smp.GetActiveView().Representations.append(distancerepeasy)
+    distancerepeasy.Visibility = False
+    smp.Render()
+
+    return distancerepeasy
+
+def hideRuler():
+    app.ruler.Visibility = False
+    smp.Render()
+
+def showRuler():
+    app.ruler.Visibility = True
+    smp.Render()
+
+# End Functions related to ruler
 
 def rotateCSVFile(filename):
 
@@ -994,6 +1014,7 @@ def start():
     smp._DisableFirstRenderCameraReset()
     smp.GetActiveView().LODThreshold = 1e100
     app.grid = createGrid()
+    app.ruler = createRuler()
 
     resetCameraToForwardView()
 
