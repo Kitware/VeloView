@@ -7,12 +7,13 @@
         <file>Icons/pqSpreadsheet16.png</file>
         <file>Icons/pqResetCamera32.png</file>
         <file>Icons/python_logo_124.png</file>
-        <file>Icons/pqProjection24.png</file>
         <file>Icons/pqXMinus32.png</file>
         <file>Icons/pqXPlus32.png</file>
         <file>Icons/pqYMinus32.png</file>
         <file>Icons/pqYPlus32.png</file>
         <file>Icons/pqZMinus32.png</file>
         <file>Icons/pqZPlus32.png</file>
+        <file>Icons/ViewOrtho.png</file>
+        <file>Icons/ViewPerspective.png</file>
     </qresource>
 </RCC>

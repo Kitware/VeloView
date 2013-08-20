@@ -470,15 +470,19 @@
    </property>
   </action>
   <action name="actionToggleProjection">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
    <property name="icon">
     <iconset resource="vvResources.qrc">
-     <normaloff>:/vvResources/Icons/pqProjection24.png</normaloff>:/vvResources/Icons/pqProjection24.png</iconset>
+     <normaloff>:/vvResources/Icons/ViewOrtho.png</normaloff>
+     <normalon>:/vvResources/Icons/ViewPerspective.png</normalon>:/vvResources/Icons/ViewOrtho.png</iconset>
    </property>
    <property name="text">
     <string>toggleProjection</string>
    </property>
    <property name="toolTip">
-    <string>Toggle projection type</string>
+    <string>Toggle between projective and orthogonal view</string>
    </property>
   </action>
   <action name="actionSetViewXPlus">
