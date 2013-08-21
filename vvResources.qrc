@@ -15,5 +15,6 @@
         <file>Icons/pqZPlus32.png</file>
         <file>Icons/ViewOrtho.png</file>
         <file>Icons/ViewPerspective.png</file>
+        <file>Icons/Measurements.png</file>
     </qresource>
 </RCC>

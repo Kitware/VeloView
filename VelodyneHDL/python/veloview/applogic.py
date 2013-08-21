@@ -40,6 +40,8 @@ class AppLogic(object):
         self.createStatusBarWidgets()
         self.setupTimers()
 
+        self.mousePressed = False
+
     def setupTimers(self):
         self.playTimer = QtCore.QTimer()
         self.playTimer.setSingleShot(True)
@@ -264,18 +266,23 @@ def createRuler():
 
     return distancerepeasy
 
+
 def hideRuler():
     app.ruler.Visibility = False
     smp.Render()
+
 
 def showRuler():
     app.ruler.Visibility = True
     smp.Render()
 
+
 def getPointFromCoordinate(coord, midPlaneDistance = 0.5):
     assert len(coord) == 2
 
-    displayPoint = [coord[0], coord[1], midPlaneDistance]
+    windowHeight = smp.GetActiveView().ViewSize[1]
+
+    displayPoint = [coord[0], windowHeight - coord[1], midPlaneDistance]
     renderer = smp.GetActiveView().GetRenderer()
     renderer.SetDisplayPoint(displayPoint)
     renderer.DisplayToWorld()
@@ -283,17 +290,35 @@ def getPointFromCoordinate(coord, midPlaneDistance = 0.5):
 
     return world1[:3]
 
-# TODO: remove me
-def setRulerCoordinates(pt1, pt2):
-    world1 = getPointFromCoordinate(pt1)
-    world2 = getPointFromCoordinate(pt2)
 
-    print world1
-    print world2
+def setRulerCoordinates(mouseEvent):
 
-    app.ruler.Point1WorldPosition = world1
-    app.ruler.Point2WorldPosition = world2
-    smp.Render()
+    measureButton = getMainWindow().findChildren('QAction','actionMeasure')[0]
+    measurmentState = measureButton.isChecked()
+
+    if measurmentState == True:
+
+        pqView = smp.GetActiveView()
+        rW = pqView.GetRenderWindow()
+	windowInteractor = rW.GetInteractor()
+        currentMouseState = mouseEvent.buttons()
+
+        if currentMouseState == 2 and app.mousePressed == False: # Mouse pressed for the first time
+            app.mousePressed = True
+            app.ruler.Point1WorldPosition = getPointFromCoordinate([mouseEvent.x(),mouseEvent.y()])
+            windowInteractor.Disable()
+
+        elif currentMouseState == 0 and app.mousePressed == True: # Mouse pressed for the second time
+            app.mousePressed = False
+            app.ruler.Point2WorldPosition = getPointFromCoordinate([mouseEvent.x(),mouseEvent.y()])
+            windowInteractor.Enable()
+            showRuler()
+
+    elif measurmentState == False:
+
+        app.mousePressed = False
+        hideRuler()
+
 
 # End Functions related to ruler
 
@@ -1042,6 +1067,7 @@ def start():
     resetCameraToForwardView()
 
     setupActions()
+    setupEventsListener()
     disablePlaybackActions()
     setSaveActionsEnabled(False)
     setupStatusBar()
@@ -1211,7 +1237,7 @@ def getRecentFiles():
 def updateRecentFiles():
     settings = getPVSettings()
     recentFiles = getRecentFiles()
-    recentFilesMenu =  findQObjectByName(findQObjectByName(getMainWindow().menuBar().children(), 'menu_File').children(), 'menuRecent_Files')
+    recentFilesMenu = findQObjectByName(findQObjectByName(getMainWindow().menuBar().children(), 'menu_File').children(), 'menuRecent_Files')
 
     clearMenuAction = app.actions['actionClear_Menu']
     for action in recentFilesMenu.actions()[:-2]:
@@ -1264,26 +1290,41 @@ def setViewTo(axis,sign):
     view.ResetCamera()
     smp.Render()
 
+
 def setViewToXPlus():
     setViewTo('X',1)
+
 
 def setViewToXMinus():
     setViewTo('X',-1)
 
+
 def setViewToYPlus():
     setViewTo('Y',1)
+
 
 def setViewToYMinus():
     setViewTo('Y',-1)
 
+
 def setViewToZPlus():
     setViewTo('Z',1)
+
 
 def setViewToZMinus():
     setViewTo('Z',-1)
 
+
 def myTestFunction():
-    print("test")
+    print(test)
+
+
+def setupEventsListener():
+    mW = getMainWindow()
+    vtkW = mW.findChild('pqQVTKWidget')
+
+    vtkW.connect('mouseEvent(QMouseEvent*)', setRulerCoordinates)
+
 
 def setupActions():
 
@@ -1325,11 +1366,9 @@ def setupActions():
     for button in getPlaybackToolBar().findChildren('QToolButton'):
         buttons[button.text] = button
 
-
     buttons['Seek Forward'].connect('pressed()', seekForwardPressed)
     buttons['Seek Forward'].connect('released()', seekForwardReleased)
 
     buttons['Seek Backward'].connect('pressed()', seekBackwardPressed)
     buttons['Seek Backward'].connect('released()', seekBackwardReleased)
-
 

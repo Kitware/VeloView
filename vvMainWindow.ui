@@ -102,6 +102,7 @@
    <addaction name="action_Open"/>
    <addaction name="actionOpen_Sensor_Stream"/>
    <addaction name="actionChoose_Calibration_File"/>
+   <addaction name="actionMeasure"/>
    <addaction name="separator"/>
    <addaction name="actionSelect_All_Points"/>
    <addaction name="actionSpreadsheet"/>
@@ -560,6 +561,21 @@
   <action name="actionVeloViewUserGuide">
    <property name="text">
     <string>VeloView User Guide</string>
+   </property>
+  </action>
+  <action name="actionMeasure">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="vvResources.qrc">
+     <normaloff>:/vvResources/Icons/Measurements.png</normaloff>:/vvResources/Icons/Measurements.png</iconset>
+   </property>
+   <property name="text">
+    <string>Measure</string>
+   </property>
+   <property name="toolTip">
+    <string>Measure the distance between two points: press and release right button of the mouse</string>
    </property>
   </action>
  </widget>
