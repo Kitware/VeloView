@@ -303,16 +303,31 @@ def setRulerCoordinates(mouseEvent):
 	windowInteractor = rW.GetInteractor()
         currentMouseState = mouseEvent.buttons()
 
-        if currentMouseState == 2 and app.mousePressed == False: # Mouse pressed for the first time
-            app.mousePressed = True
-            app.ruler.Point1WorldPosition = getPointFromCoordinate([mouseEvent.x(),mouseEvent.y()])
+        if currentMouseState == 2: #Right button pressed
+
             windowInteractor.Disable()
 
-        elif currentMouseState == 0 and app.mousePressed == True: # Mouse pressed for the second time
-            app.mousePressed = False
-            app.ruler.Point2WorldPosition = getPointFromCoordinate([mouseEvent.x(),mouseEvent.y()])
+            if app.mousePressed == False: #For the first time
+
+                app.mousePressed = True
+                app.ruler.Point1WorldPosition = getPointFromCoordinate([mouseEvent.x(),mouseEvent.y()])
+
+            elif app.mousePressed == True: #Not for the first time
+
+                app.ruler.Point2WorldPosition = getPointFromCoordinate([mouseEvent.x(),mouseEvent.y()])
+                showRuler()
+                smp.Render()
+
+        elif currentMouseState == 0: #Right button released
+
             windowInteractor.Enable()
-            showRuler()
+
+            if  app.mousePressed == True: #For the first time
+
+                app.mousePressed = False
+                app.ruler.Point2WorldPosition = getPointFromCoordinate([mouseEvent.x(),mouseEvent.y()])
+                showRuler()
+                smp.Render()
 
     elif measurmentState == False:
 
