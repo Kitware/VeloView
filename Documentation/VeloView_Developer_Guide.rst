@@ -7,7 +7,7 @@ Software developer documentation for the VeloView application and libraries
 ---------------------------------------------------------------------------
 
 :copyright: Copyright (c) 2013, Velodyne Lidar. All rights reserved.
-:version: 1.0.6
+:version: 1.0.7
 
 .. contents:: Table of Contents
 .. section-numbering::
