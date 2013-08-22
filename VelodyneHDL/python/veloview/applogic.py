@@ -240,6 +240,7 @@ def openPCAP(filename, calibrationFile):
     enableSaveActions()
     addRecentFile(filename)
     app.actions['actionRecord'].setEnabled(False)
+    app.actions['actionTrailingFramesSelector'].setEnabled(True)
 
     resetCamera()
 
@@ -1352,8 +1353,11 @@ def setupEventsListener():
 
 def setupActions():
 
-    actions = getMainWindow().findChildren('QAction')
+    mW = getMainWindow()
+    actions = mW.findChildren('QAction')
+
     app.actions = {}
+
     for a in actions:
         app.actions[a.objectName] = a
 
@@ -1375,8 +1379,6 @@ def setupActions():
     app.actions['actionVeloViewDeveloperGuide'].connect('triggered()', onDevelopperGuide)
     app.actions['actionClear_Menu'].connect('triggered()', onClearMenu)
 
-    # Added functions #
-
     app.actions['actionToggleProjection'].connect('triggered()', toggleProjectionType)
 
     app.actions['actionSetViewXPlus'].connect('triggered()', setViewToXPlus)
@@ -1385,6 +1387,18 @@ def setupActions():
     app.actions['actionSetViewYMinus'].connect('triggered()', setViewToYMinus)
     app.actions['actionSetViewZPlus'].connect('triggered()', setViewToZPlus)
     app.actions['actionSetViewZMinus'].connect('triggered()', setViewToZMinus)
+
+    # Action created #
+
+    timeToolBar = mW.findChild('QToolBar','playbackToolbar')
+
+    spinBox = QtGui.QSpinBox()
+    spinBox.setMinimum(1)
+    spinBox.setMaximum(20)
+
+    app.actions['actionTrailingFramesSelector'] = timeToolBar.addWidget(spinBox)
+    app.actions['actionTrailingFramesSelector'].setVisible(True)
+    app.actions['actionTrailingFramesSelector'].setEnabled(False)
 
     buttons = {}
     for button in getPlaybackToolBar().findChildren('QToolButton'):
