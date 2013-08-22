@@ -255,7 +255,10 @@ def showMeasurementGrid():
     rep.Visibility = 1
     smp.Render()
 
+
 # Start Functions related to ruler
+
+
 def createRuler():
     pxm = servermanager.ProxyManager()
     distancerep = pxm.NewProxy('representations', 'DistanceWidgetRepresentation')
@@ -300,34 +303,37 @@ def setRulerCoordinates(mouseEvent):
 
         pqView = smp.GetActiveView()
         rW = pqView.GetRenderWindow()
-	windowInteractor = rW.GetInteractor()
+        windowInteractor = rW.GetInteractor()
         currentMouseState = mouseEvent.buttons()
+        currentKeyboardState = mouseEvent.modifiers()
 
-        if currentMouseState == 2: #Right button pressed
+        if currentKeyboardState == 33554432: #Shift button pressed
 
-            windowInteractor.Disable()
+            if currentMouseState == 1:  #Left button pressed
 
-            if app.mousePressed == False: #For the first time
+                windowInteractor.Disable()
 
-                app.mousePressed = True
-                app.ruler.Point1WorldPosition = getPointFromCoordinate([mouseEvent.x(),mouseEvent.y()])
+                if app.mousePressed == False: #For the first time
 
-            elif app.mousePressed == True: #Not for the first time
+                    app.mousePressed = True
+                    app.ruler.Point1WorldPosition = getPointFromCoordinate([mouseEvent.x(),mouseEvent.y()])
 
-                app.ruler.Point2WorldPosition = getPointFromCoordinate([mouseEvent.x(),mouseEvent.y()])
-                showRuler()
-                smp.Render()
+                elif app.mousePressed == True: #Not for the first time
 
-        elif currentMouseState == 0: #Right button released
+                    app.ruler.Point2WorldPosition = getPointFromCoordinate([mouseEvent.x(),mouseEvent.y()])
+                    showRuler()
+                    smp.Render()
 
-            windowInteractor.Enable()
+            elif currentMouseState == 0: #Left button released
 
-            if  app.mousePressed == True: #For the first time
+                windowInteractor.Enable()
 
-                app.mousePressed = False
-                app.ruler.Point2WorldPosition = getPointFromCoordinate([mouseEvent.x(),mouseEvent.y()])
-                showRuler()
-                smp.Render()
+                if  app.mousePressed == True: #For the first time
+
+                    app.mousePressed = False
+                    app.ruler.Point2WorldPosition = getPointFromCoordinate([mouseEvent.x(),mouseEvent.y()])
+                    showRuler()
+                    smp.Render()
 
     elif measurmentState == False:
 
@@ -336,6 +342,7 @@ def setRulerCoordinates(mouseEvent):
 
 
 # End Functions related to ruler
+
 
 def rotateCSVFile(filename):
 
@@ -1287,10 +1294,10 @@ def toggleProjectionType():
 
 def setViewTo(axis,sign):
     view = smp.GetActiveView()
-    viewUp=view.CameraViewUp
-    position=view.CameraPosition
+    viewUp = view.CameraViewUp
+    position = view.CameraPosition
 
-    norm=math.sqrt(math.pow(position[0],2)+math.pow(position[1],2)+math.pow(position[2],2))
+    norm = math.sqrt(math.pow(position[0],2) + math.pow(position[1],2) + math.pow(position[2],2))
 
     if axis == 'X':
         view.CameraViewUp = [0,0,1]
@@ -1330,16 +1337,18 @@ def setViewToZMinus():
     setViewTo('Z',-1)
 
 
-def myTestFunction():
+def myTestFunction(test="test"):
     print(test)
 
+def myTestFunctionMouse(mouseEvent):
+    #print(dir(mouseEvent))
+    print(type(mouseEvent.modifiers()))
 
 def setupEventsListener():
     mW = getMainWindow()
     vtkW = mW.findChild('pqQVTKWidget')
 
     vtkW.connect('mouseEvent(QMouseEvent*)', setRulerCoordinates)
-
 
 def setupActions():
 
