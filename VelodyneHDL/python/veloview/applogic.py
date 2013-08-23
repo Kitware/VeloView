@@ -11,10 +11,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 import os
 import csv
 import datetime
 import time
+import math
 import paraview.simple as smp
 from paraview import servermanager
 from paraview import vtk
@@ -37,6 +39,8 @@ class AppLogic(object):
         self.renderIsPending = False
         self.createStatusBarWidgets()
         self.setupTimers()
+
+        self.mousePressed = False
 
     def setupTimers(self):
         self.playTimer = QtCore.QTimer()
@@ -250,6 +254,94 @@ def showMeasurementGrid():
     rep = smp.GetDisplayProperties(app.grid)
     rep.Visibility = 1
     smp.Render()
+
+
+# Start Functions related to ruler
+
+
+def createRuler():
+    pxm = servermanager.ProxyManager()
+    distancerep = pxm.NewProxy('representations', 'DistanceWidgetRepresentation')
+    distancerepeasy = servermanager._getPyProxy(distancerep)
+    smp.GetActiveView().Representations.append(distancerepeasy)
+    distancerepeasy.Visibility = False
+    smp.Render()
+
+    return distancerepeasy
+
+
+def hideRuler():
+    app.ruler.Visibility = False
+    smp.Render()
+
+
+def showRuler():
+    app.ruler.Visibility = True
+    smp.Render()
+
+
+def getPointFromCoordinate(coord, midPlaneDistance = 0.5):
+    assert len(coord) == 2
+
+    windowHeight = smp.GetActiveView().ViewSize[1]
+
+    displayPoint = [coord[0], windowHeight - coord[1], midPlaneDistance]
+    renderer = smp.GetActiveView().GetRenderer()
+    renderer.SetDisplayPoint(displayPoint)
+    renderer.DisplayToWorld()
+    world1 = renderer.GetWorldPoint()
+
+    return world1[:3]
+
+
+def setRulerCoordinates(mouseEvent):
+
+    measureButton = getMainWindow().findChildren('QAction','actionMeasure')[0]
+    measurmentState = measureButton.isChecked()
+
+    if measurmentState == True:
+
+        pqView = smp.GetActiveView()
+        rW = pqView.GetRenderWindow()
+        windowInteractor = rW.GetInteractor()
+        currentMouseState = mouseEvent.buttons()
+        currentKeyboardState = mouseEvent.modifiers()
+
+        if currentKeyboardState == 33554432: #Shift button pressed
+
+            if currentMouseState == 1:  #Left button pressed
+
+                windowInteractor.Disable()
+
+                if app.mousePressed == False: #For the first time
+
+                    app.mousePressed = True
+                    app.ruler.Point1WorldPosition = getPointFromCoordinate([mouseEvent.x(),mouseEvent.y()])
+
+                elif app.mousePressed == True: #Not for the first time
+
+                    app.ruler.Point2WorldPosition = getPointFromCoordinate([mouseEvent.x(),mouseEvent.y()])
+                    showRuler()
+                    smp.Render()
+
+            elif currentMouseState == 0: #Left button released
+
+                windowInteractor.Enable()
+
+                if  app.mousePressed == True: #For the first time
+
+                    app.mousePressed = False
+                    app.ruler.Point2WorldPosition = getPointFromCoordinate([mouseEvent.x(),mouseEvent.y()])
+                    showRuler()
+                    smp.Render()
+
+    elif measurmentState == False:
+
+        app.mousePressed = False
+        hideRuler()
+
+
+# End Functions related to ruler
 
 
 def rotateCSVFile(filename):
@@ -992,10 +1084,12 @@ def start():
     smp._DisableFirstRenderCameraReset()
     smp.GetActiveView().LODThreshold = 1e100
     app.grid = createGrid()
+    app.ruler = createRuler()
 
     resetCameraToForwardView()
 
     setupActions()
+    setupEventsListener()
     disablePlaybackActions()
     setSaveActionsEnabled(False)
     setupStatusBar()
@@ -1165,7 +1259,7 @@ def getRecentFiles():
 def updateRecentFiles():
     settings = getPVSettings()
     recentFiles = getRecentFiles()
-    recentFilesMenu =  findQObjectByName(findQObjectByName(getMainWindow().menuBar().children(), 'menu_File').children(), 'menuRecent_Files')
+    recentFilesMenu = findQObjectByName(findQObjectByName(getMainWindow().menuBar().children(), 'menu_File').children(), 'menuRecent_Files')
 
     clearMenuAction = app.actions['actionClear_Menu']
     for action in recentFilesMenu.actions()[:-2]:
@@ -1188,6 +1282,73 @@ def onClearMenu():
     settings.setValue('VelodyneHDLPlugin/RecentFiles', [])
     updateRecentFiles()
 
+def toggleProjectionType():
+    view = smp.GetActiveView()
+
+    if view.CameraParallelProjection == 1:
+        view.CameraParallelProjection = 0
+    else:
+        view.CameraParallelProjection = 1
+
+    smp.Render()
+
+def setViewTo(axis,sign):
+    view = smp.GetActiveView()
+    viewUp = view.CameraViewUp
+    position = view.CameraPosition
+
+    norm = math.sqrt(math.pow(position[0],2) + math.pow(position[1],2) + math.pow(position[2],2))
+
+    if axis == 'X':
+        view.CameraViewUp = [0,0,1]
+        view.CameraPosition = [-1*sign*norm,0,0]
+    elif axis == 'Y':
+        view.CameraViewUp = [0,0,1]
+        view.CameraPosition = [0,-1*sign*norm,0]
+    elif axis == 'Z':
+        view.CameraViewUp = [0,1,0]
+        view.CameraPosition = [0,0,-1*sign*norm]
+
+    view.ResetCamera()
+    smp.Render()
+
+
+def setViewToXPlus():
+    setViewTo('X',1)
+
+
+def setViewToXMinus():
+    setViewTo('X',-1)
+
+
+def setViewToYPlus():
+    setViewTo('Y',1)
+
+
+def setViewToYMinus():
+    setViewTo('Y',-1)
+
+
+def setViewToZPlus():
+    setViewTo('Z',1)
+
+
+def setViewToZMinus():
+    setViewTo('Z',-1)
+
+
+def myTestFunction(test="test"):
+    print(test)
+
+def myTestFunctionMouse(mouseEvent):
+    #print(dir(mouseEvent))
+    print(type(mouseEvent.modifiers()))
+
+def setupEventsListener():
+    mW = getMainWindow()
+    vtkW = mW.findChild('pqQVTKWidget')
+
+    vtkW.connect('mouseEvent(QMouseEvent*)', setRulerCoordinates)
 
 def setupActions():
 
@@ -1214,16 +1375,24 @@ def setupActions():
     app.actions['actionVeloViewDeveloperGuide'].connect('triggered()', onDevelopperGuide)
     app.actions['actionClear_Menu'].connect('triggered()', onClearMenu)
 
+    # Added functions #
+
+    app.actions['actionToggleProjection'].connect('triggered()', toggleProjectionType)
+
+    app.actions['actionSetViewXPlus'].connect('triggered()', setViewToXPlus)
+    app.actions['actionSetViewXMinus'].connect('triggered()', setViewToXMinus)
+    app.actions['actionSetViewYPlus'].connect('triggered()', setViewToYPlus)
+    app.actions['actionSetViewYMinus'].connect('triggered()', setViewToYMinus)
+    app.actions['actionSetViewZPlus'].connect('triggered()', setViewToZPlus)
+    app.actions['actionSetViewZMinus'].connect('triggered()', setViewToZMinus)
 
     buttons = {}
     for button in getPlaybackToolBar().findChildren('QToolButton'):
         buttons[button.text] = button
-
 
     buttons['Seek Forward'].connect('pressed()', seekForwardPressed)
     buttons['Seek Forward'].connect('released()', seekForwardReleased)
 
     buttons['Seek Backward'].connect('pressed()', seekBackwardPressed)
     buttons['Seek Backward'].connect('released()', seekBackwardReleased)
-
 
