@@ -145,6 +145,8 @@ public:
     this->Skip = 0;
     this->LastAzimuth = 0;
     this->Reader = 0;
+    this->SplitCounter = 0;
+    this->NumberOfTrailingFrames = 0;
     this->Init();
   }
 
@@ -167,7 +169,10 @@ public:
   int Skip;
   vtkPacketFileReader* Reader;
 
-  void SplitFrame();
+  int SplitCounter;
+  int NumberOfTrailingFrames;
+
+  void SplitFrame(bool force=false);
   vtkSmartPointer<vtkPolyData> CreateData(vtkIdType numberOfPoints);
   vtkSmartPointer<vtkCellArray> NewVertexCells(vtkIdType numberOfVerts);
 
@@ -222,6 +227,13 @@ void vtkVelodyneHDLReader::SetFileName(const std::string& filename)
 const std::string& vtkVelodyneHDLReader::GetCorrectionsFile()
 {
   return this->CorrectionsFile;
+}
+
+//-----------------------------------------------------------------------------
+void vtkVelodyneHDLReader::SetNumberOfTrailingFrames(int numTrailing)
+{
+  assert(numTrailing >= 0);
+  this->Internal->NumberOfTrailingFrames = numTrailing;
 }
 
 //-----------------------------------------------------------------------------
@@ -307,7 +319,16 @@ int vtkVelodyneHDLReader::RequestData(vtkInformation *request,
     }
 
   this->Open();
-  output->ShallowCopy(this->GetFrame(timestep));
+
+  if(this->Internal->NumberOfTrailingFrames > 0)
+    {
+    output->ShallowCopy(this->GetFrameRange(timestep - this->Internal->NumberOfTrailingFrames,
+                                            this->Internal->NumberOfTrailingFrames));
+    }
+  else
+    {
+    output->ShallowCopy(this->GetFrame(timestep));
+    }
   this->Close();
   return 1;
 }
@@ -435,6 +456,48 @@ void vtkVelodyneHDLReader::DumpFrames(int startFrame, int endFrame, const std::s
     }
 
   writer.Close();
+}
+
+//-----------------------------------------------------------------------------
+vtkSmartPointer<vtkPolyData> vtkVelodyneHDLReader::GetFrameRange(int startFrame, int numberOfFrames)
+{
+  this->UnloadData();
+  if (!this->Internal->Reader)
+    {
+    vtkErrorMacro("GetFrame() called but packet file reader is not open.");
+    return 0;
+    }
+
+  const unsigned char* data = 0;
+  unsigned int dataLength = 0;
+  double timeSinceStart = 0;
+
+  if(startFrame < 0)
+    {
+    numberOfFrames += startFrame;
+    startFrame = 0;
+    }
+  assert(numberOfFrames > 0);
+
+  this->Internal->Reader->SetFilePosition(&this->Internal->FilePositions[startFrame]);
+  this->Internal->Skip = this->Internal->Skips[startFrame];
+
+  this->Internal->SplitCounter = numberOfFrames;
+
+  while (this->Internal->Reader->NextPacket(data, dataLength, timeSinceStart))
+    {
+    this->ProcessHDLPacket(const_cast<unsigned char*>(data), dataLength);
+
+    if (this->Internal->Datasets.size())
+      {
+      this->Internal->SplitCounter = 0;
+      return this->Internal->Datasets.back();
+      }
+    }
+
+  this->Internal->SplitFrame(true);
+  this->Internal->SplitCounter = 0;
+  return this->Internal->Datasets.back();
 }
 
 //-----------------------------------------------------------------------------
@@ -712,8 +775,14 @@ void vtkVelodyneHDLReader::vtkInternal::Init()
 }
 
 //-----------------------------------------------------------------------------
-void vtkVelodyneHDLReader::vtkInternal::SplitFrame()
+void vtkVelodyneHDLReader::vtkInternal::SplitFrame(bool force)
 {
+  if(this->SplitCounter > 0 && !force)
+    {
+    this->SplitCounter--;
+    return;
+    }
+
   this->CurrentDataset->SetVerts(this->NewVertexCells(this->CurrentDataset->GetNumberOfPoints()));
   this->Datasets.push_back(this->CurrentDataset);
   this->CurrentDataset = this->CreateData(0);

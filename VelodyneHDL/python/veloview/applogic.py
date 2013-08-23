@@ -586,7 +586,8 @@ def onUserGuide():
 
 def onAbout():
     title = 'About VeloView'
-    text = '<h1>VeloView %s</h1><br/>Copyright (c) 2013, Velodyne Lidar' % getVersionString()
+    text = '''<h1>VeloView %s</h1><br/>Copyright (c) 2013, Velodyne Lidar<br />
+           Sample Data Repository: <a href=http://midas3.kitware.com/midas/community/29>http://midas3.kitware.com/midas/community/29</a>'''% getVersionString()
     QtGui.QMessageBox.about(getMainWindow(), title, text)
 
 
@@ -1137,6 +1138,11 @@ def addShortcuts(keySequenceStr, function):
     shortcut.connect("activated()", function)
 
 
+def onTrailingFramesChanged(numFrames):
+    app.reader.NumberOfTrailingFrames = numFrames
+    app.reader.UpdatePipeline()
+
+
 def setupTimeSliderWidget():
 
     frame = QtGui.QWidget()
@@ -1389,12 +1395,12 @@ def setupActions():
     app.actions['actionSetViewZMinus'].connect('triggered()', setViewToZMinus)
 
     # Action created #
-
     timeToolBar = mW.findChild('QToolBar','playbackToolbar')
 
     spinBox = QtGui.QSpinBox()
-    spinBox.setMinimum(1)
+    spinBox.setMinimum(0)
     spinBox.setMaximum(20)
+    spinBox.connect('valueChanged(int)', onTrailingFramesChanged)
 
     app.actions['actionTrailingFramesSelector'] = timeToolBar.addWidget(spinBox)
     app.actions['actionTrailingFramesSelector'].setVisible(True)
