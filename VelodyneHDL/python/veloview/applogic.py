@@ -296,8 +296,7 @@ def getPointFromCoordinate(coord, midPlaneDistance = 0.5):
 
 def setRulerCoordinates(mouseEvent):
 
-    measureButton = getMainWindow().findChildren('QAction','actionMeasure')[0]
-    measurmentState = measureButton.isChecked()
+    measurmentState = app.actions['actionMeasure'].isChecked()
 
     if measurmentState == True:
 
@@ -1388,6 +1387,8 @@ def setupActions():
     app.actions['actionSetViewYMinus'].connect('triggered()', setViewToYMinus)
     app.actions['actionSetViewZPlus'].connect('triggered()', setViewToZPlus)
     app.actions['actionSetViewZMinus'].connect('triggered()', setViewToZMinus)
+
+    app.actions['actionMeasure'].connect('triggered()', toggleProjectionType)
 
     buttons = {}
     for button in getPlaybackToolBar().findChildren('QToolButton'):
