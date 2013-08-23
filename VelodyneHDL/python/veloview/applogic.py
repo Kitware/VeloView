@@ -308,7 +308,7 @@ def setRulerCoordinates(mouseEvent):
         currentMouseState = mouseEvent.buttons()
         currentKeyboardState = mouseEvent.modifiers()
 
-        if currentKeyboardState == 33554432: #Shift button pressed
+        if currentKeyboardState == 33554432 or app.mousePressed: #Shift button pressed
 
             if currentMouseState == 1:  #Left button pressed
 
