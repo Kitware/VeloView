@@ -57,6 +57,12 @@ public:
   //
   int CanReadFile(const char* fname);
 
+
+  // Description:
+  // Number of frames behind current frame to read.  Zero indicates only
+  // show the current frame.  Negative numbers are invalid.
+  void SetNumberOfTrailingFrames(int numberTrailing);
+
   void Open();
   void Close();
   int ReadFrameInformation();

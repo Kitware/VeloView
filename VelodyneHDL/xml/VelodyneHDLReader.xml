@@ -19,6 +19,17 @@
           </Documentation>
       </StringVectorProperty>
 
+      <IntVectorProperty
+          name="NumberOfTrailingFrames"
+          animateable="0"
+          command="SetNumberOfTrailingFrames"
+          default_values="0"
+          number_of_elements="1">
+        <Documentation>
+          Number of frames behind the current frame to show
+        </Documentation>
+      </IntVectorPRopert>
+
       <StringVectorProperty
           name="ZCorrectionsFile"
           label="Calibration File"

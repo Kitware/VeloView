@@ -146,7 +146,7 @@ public:
     this->LastAzimuth = 0;
     this->Reader = 0;
     this->SplitCounter = 0;
-    this->NumberOfTrailingFrames = 10;
+    this->NumberOfTrailingFrames = 0;
     this->Init();
   }
 
@@ -227,6 +227,13 @@ void vtkVelodyneHDLReader::SetFileName(const std::string& filename)
 const std::string& vtkVelodyneHDLReader::GetCorrectionsFile()
 {
   return this->CorrectionsFile;
+}
+
+//-----------------------------------------------------------------------------
+void vtkVelodyneHDLReader::SetNumberOfTrailingFrames(int numTrailing)
+{
+  assert(numTrailing >= 0);
+  this->Internal->NumberOfTrailingFrames = numTrailing;
 }
 
 //-----------------------------------------------------------------------------
