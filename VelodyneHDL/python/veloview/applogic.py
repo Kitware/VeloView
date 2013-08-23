@@ -1297,7 +1297,7 @@ def setViewTo(axis,sign):
     viewUp = view.CameraViewUp
     position = view.CameraPosition
 
-    norm = math.sqrt(math.pow(position[0],2) + math.pow(position[1],2) + math.pow(position[2],2))
+    norm = math.sqrt(math.pow(position[0],2) + math.pow(position[1],2) + math.pow(position[2],2))    
 
     if axis == 'X':
         view.CameraViewUp = [0,0,1]
@@ -1308,6 +1308,9 @@ def setViewTo(axis,sign):
     elif axis == 'Z':
         view.CameraViewUp = [0,1,0]
         view.CameraPosition = [0,0,-1*sign*norm]
+
+    view.CameraFocalPoint = [0,0,0]
+    view.CenterOfRotation = [0,0,0]
 
     view.ResetCamera()
     smp.Render()
