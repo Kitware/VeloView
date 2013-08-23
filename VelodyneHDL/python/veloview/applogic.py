@@ -1044,6 +1044,11 @@ def addShortcuts(keySequenceStr, function):
     shortcut.connect("activated()", function)
 
 
+def onTrailingFramesChanged(numFrames):
+    app.reader.NumberOfTrailingFrames = numFrames
+    app.reader.UpdatePipeline()
+
+
 def setupTimeSliderWidget():
 
     frame = QtGui.QWidget()
@@ -1226,6 +1231,7 @@ def setupActions():
     spinBox = QtGui.QSpinBox()
     spinBox.setMinimum(0)
     spinBox.setMaximum(20)
+    spinBox.connect('valueChanged(int)', onTrailingFramesChanged)
 
     app.actions['actionTrailingFramesSelector'] = timeToolBar.addWidget(spinBox)
     app.actions['actionTrailingFramesSelector'].setVisible(True)

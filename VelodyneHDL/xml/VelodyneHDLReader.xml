@@ -28,7 +28,7 @@
         <Documentation>
           Number of frames behind the current frame to show
         </Documentation>
-      </IntVectorPRopert>
+      </IntVectorProperty>
 
       <StringVectorProperty
           name="ZCorrectionsFile"
