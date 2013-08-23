@@ -1224,7 +1224,7 @@ def setupActions():
     timeToolBar = mW.findChild('QToolBar','playbackToolbar')
 
     spinBox = QtGui.QSpinBox()
-    spinBox.setMinimum(1)
+    spinBox.setMinimum(0)
     spinBox.setMaximum(20)
 
     app.actions['actionTrailingFramesSelector'] = timeToolBar.addWidget(spinBox)
