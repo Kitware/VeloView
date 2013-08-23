@@ -21,6 +21,9 @@ find_path(PCAP_INCLUDE_DIR pcap.h DOC "pcap include directory")
 mark_as_advanced(PCAP_LIBRARY PCAP_INCLUDE_DIR)
 include_directories(${PCAP_INCLUDE_DIR})
 
+if(WIN32)
+  set(Boost_USE_STATIC_LIBS ON)
+endif(WIN32)
 
 set(Boost_USE_MULTITHREADED ON)
 find_package(Boost REQUIRED COMPONENTS system thread chrono regex date_time)

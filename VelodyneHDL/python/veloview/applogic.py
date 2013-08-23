@@ -307,33 +307,33 @@ def setRulerCoordinates(mouseEvent):
         currentMouseState = mouseEvent.buttons()
         currentKeyboardState = mouseEvent.modifiers()
 
-        if currentKeyboardState == 33554432 or app.mousePressed: #Shift button pressed
+        if currentMouseState == 1:  #Left button pressed
 
-            if currentMouseState == 1:  #Left button pressed
+            if app.mousePressed == False: #For the first time
 
-                windowInteractor.Disable()
-
-                if app.mousePressed == False: #For the first time
+                if currentKeyboardState == 33554432: #Shift key pressed
 
                     app.mousePressed = True
                     app.ruler.Point1WorldPosition = getPointFromCoordinate([mouseEvent.x(),mouseEvent.y()])
 
-                elif app.mousePressed == True: #Not for the first time
+                    windowInteractor.Disable()
 
-                    app.ruler.Point2WorldPosition = getPointFromCoordinate([mouseEvent.x(),mouseEvent.y()])
-                    showRuler()
-                    smp.Render()
+            elif app.mousePressed == True: #Not for the first time
 
-            elif currentMouseState == 0: #Left button released
+                app.ruler.Point2WorldPosition = getPointFromCoordinate([mouseEvent.x(),mouseEvent.y()])
+                showRuler()
+                smp.Render()
 
-                windowInteractor.Enable()
+        elif currentMouseState == 0: #Left button released
 
-                if  app.mousePressed == True: #For the first time
+            windowInteractor.Enable()
 
-                    app.mousePressed = False
-                    app.ruler.Point2WorldPosition = getPointFromCoordinate([mouseEvent.x(),mouseEvent.y()])
-                    showRuler()
-                    smp.Render()
+            if  app.mousePressed == True: #For the first time
+
+                app.mousePressed = False
+                app.ruler.Point2WorldPosition = getPointFromCoordinate([mouseEvent.x(),mouseEvent.y()])
+                showRuler()
+                smp.Render()
 
     elif measurmentState == False:
 
