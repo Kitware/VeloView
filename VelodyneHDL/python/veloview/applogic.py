@@ -1073,7 +1073,6 @@ def setupTimeSliderWidget():
     app.timeSpinBox = spinBox
 
 
-
 def updateSliderTimeRange():
 
     timeKeeper = getTimeKeeper()
@@ -1226,21 +1225,24 @@ def setupActions():
 
     # Action created #
 
-    timeToolBar = mW.findChild('QToolBar','playbackToolbar')
+    trailingFramesToolBar = mW.findChild('QToolBar','trailingFramesToolbar')
+
+    spinBoxLabel = QtGui.QLabel("Number of trailing frames: ")
+    trailingFramesToolBar.addWidget(spinBoxLabel)
 
     spinBox = QtGui.QSpinBox()
+    spinBox.toolTip = "Number of trailing frames"
     spinBox.setMinimum(0)
     spinBox.setMaximum(20)
-    spinBox.connect('valueChanged(int)', onTrailingFramesChanged)
+    #spinBox.connect('valueChanged(int)', onTrailingFramesChanged)
 
-    app.actions['actionTrailingFramesSelector'] = timeToolBar.addWidget(spinBox)
+    app.actions['actionTrailingFramesSelector'] = trailingFramesToolBar.addWidget(spinBox)
     app.actions['actionTrailingFramesSelector'].setVisible(True)
     app.actions['actionTrailingFramesSelector'].setEnabled(False)
 
     buttons = {}
     for button in getPlaybackToolBar().findChildren('QToolButton'):
         buttons[button.text] = button
-
 
     buttons['Seek Forward'].connect('pressed()', seekForwardPressed)
     buttons['Seek Forward'].connect('released()', seekForwardReleased)
