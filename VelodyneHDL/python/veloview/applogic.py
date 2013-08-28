@@ -212,7 +212,10 @@ def openPCAP(filename, calibrationFile):
 
     # construct the reader, this calls UpdateInformation on the
     # reader which scans the pcap file and emits progress events
-    reader = smp.VelodyneHDLReader(guiName='Data', FileName=filename, CalibrationFile=calibrationFile)
+    reader = smp.VelodyneHDLReader(guiName='Data',
+                                   FileName=filename,
+                                   CalibrationFile=calibrationFile,
+                                   NumberOfTrailingFrames=app.trailingFramesSpinBox.value)
     reader.UpdatePipeline()
 
     handler.RemoveObserver(tag)
@@ -240,7 +243,6 @@ def openPCAP(filename, calibrationFile):
     enableSaveActions()
     addRecentFile(filename)
     app.actions['actionRecord'].setEnabled(False)
-    app.actions['actionTrailingFramesSelector'].setEnabled(True)
 
     resetCamera()
 
@@ -1139,9 +1141,12 @@ def addShortcuts(keySequenceStr, function):
 
 
 def onTrailingFramesChanged(numFrames):
-    app.reader.NumberOfTrailingFrames = numFrames
-    #app.reader.UpdatePipeline()
-    smp.Render()
+    try:
+        app.reader.NumberOfTrailingFrames = numFrames
+        #app.reader.UpdatePipeline()
+        smp.Render()
+    except AttributeError:
+        pass
 
 def setupTimeSliderWidget():
 
@@ -1403,12 +1408,12 @@ def setupActions():
     spinBox = QtGui.QSpinBox()
     spinBox.toolTip = "Number of trailing frames"
     spinBox.setMinimum(0)
-    spinBox.setMaximum(20)
+    spinBox.setMaximum(100)
     spinBox.connect('valueChanged(int)', onTrailingFramesChanged)
+    app.trailingFramesSpinBox = spinBox
 
     app.actions['actionTrailingFramesSelector'] = trailingFramesToolBar.addWidget(spinBox)
     app.actions['actionTrailingFramesSelector'].setVisible(True)
-    app.actions['actionTrailingFramesSelector'].setEnabled(False)
 
     buttons = {}
     for button in getPlaybackToolBar().findChildren('QToolButton'):
