@@ -1140,8 +1140,8 @@ def addShortcuts(keySequenceStr, function):
 
 def onTrailingFramesChanged(numFrames):
     app.reader.NumberOfTrailingFrames = numFrames
-    app.reader.UpdatePipeline()
-
+    #app.reader.UpdatePipeline()
+    smp.Render()
 
 def setupTimeSliderWidget():
 
@@ -1165,7 +1165,6 @@ def setupTimeSliderWidget():
     toolbar.addWidget(frame)
     app.timeSlider = slider
     app.timeSpinBox = spinBox
-
 
 
 def updateSliderTimeRange():
@@ -1396,13 +1395,18 @@ def setupActions():
 
     # Action created #
     timeToolBar = mW.findChild('QToolBar','playbackToolbar')
+    trailingFramesToolBar = mW.findChild('QToolBar','trailingFramesToolbar')
+
+    spinBoxLabel = QtGui.QLabel("Number of trailing frames: ")
+    trailingFramesToolBar.addWidget(spinBoxLabel)
 
     spinBox = QtGui.QSpinBox()
+    spinBox.toolTip = "Number of trailing frames"
     spinBox.setMinimum(0)
     spinBox.setMaximum(20)
     spinBox.connect('valueChanged(int)', onTrailingFramesChanged)
 
-    app.actions['actionTrailingFramesSelector'] = timeToolBar.addWidget(spinBox)
+    app.actions['actionTrailingFramesSelector'] = trailingFramesToolBar.addWidget(spinBox)
     app.actions['actionTrailingFramesSelector'].setVisible(True)
     app.actions['actionTrailingFramesSelector'].setEnabled(False)
 

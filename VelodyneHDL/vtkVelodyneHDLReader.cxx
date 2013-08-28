@@ -234,6 +234,7 @@ void vtkVelodyneHDLReader::SetNumberOfTrailingFrames(int numTrailing)
 {
   assert(numTrailing >= 0);
   this->Internal->NumberOfTrailingFrames = numTrailing;
+  this->Modified();
 }
 
 //-----------------------------------------------------------------------------
