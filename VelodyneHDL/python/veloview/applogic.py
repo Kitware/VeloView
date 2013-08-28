@@ -40,6 +40,7 @@ class AppLogic(object):
         self.createStatusBarWidgets()
         self.setupTimers()
 
+        self.previousProjectionType = 0
         self.mousePressed = False
 
     def setupTimers(self):
@@ -296,52 +297,69 @@ def getPointFromCoordinate(coord, midPlaneDistance = 0.5):
 
     return world1[:3]
 
+def toggleRulerContext():
 
-def setRulerCoordinates(mouseEvent):
+    measurmentState = app.actions['actionMeasure'].isChecked()
 
-    measureButton = getMainWindow().findChildren('QAction','actionMeasure')[0]
-    measurmentState = measureButton.isChecked()
+    mW = getMainWindow()
+    vtkW = mW.findChild('pqQVTKWidget')
+
+    if app.previousProjectionType == 0:
+        toggleProjectionType(False)
 
     if measurmentState == True:
 
-        pqView = smp.GetActiveView()
-        rW = pqView.GetRenderWindow()
-        windowInteractor = rW.GetInteractor()
-        currentMouseState = mouseEvent.buttons()
-        currentKeyboardState = mouseEvent.modifiers()
+        app.actions['actionToggleProjection'].setChecked(True)
+        app.actions['actionToggleProjection'].setDisabled(True)
 
-        if currentKeyboardState == 33554432 or app.mousePressed: #Shift button pressed
-
-            if currentMouseState == 1:  #Left button pressed
-
-                windowInteractor.Disable()
-
-                if app.mousePressed == False: #For the first time
-
-                    app.mousePressed = True
-                    app.ruler.Point1WorldPosition = getPointFromCoordinate([mouseEvent.x(),mouseEvent.y()])
-
-                elif app.mousePressed == True: #Not for the first time
-
-                    app.ruler.Point2WorldPosition = getPointFromCoordinate([mouseEvent.x(),mouseEvent.y()])
-                    showRuler()
-                    smp.Render()
-
-            elif currentMouseState == 0: #Left button released
-
-                windowInteractor.Enable()
-
-                if  app.mousePressed == True: #For the first time
-
-                    app.mousePressed = False
-                    app.ruler.Point2WorldPosition = getPointFromCoordinate([mouseEvent.x(),mouseEvent.y()])
-                    showRuler()
-                    smp.Render()
+        vtkW.connect('mouseEvent(QMouseEvent*)', setRulerCoordinates)
 
     elif measurmentState == False:
 
+        app.actions['actionToggleProjection'].setEnabled(True)
+        app.actions['actionToggleProjection'].setChecked(False)
+
+        vtkW.disconnect('mouseEvent(QMouseEvent*)', setRulerCoordinates)
+
         app.mousePressed = False
         hideRuler()
+
+
+def setRulerCoordinates(mouseEvent):
+
+    pqView = smp.GetActiveView()
+    rW = pqView.GetRenderWindow()
+    windowInteractor = rW.GetInteractor()
+    currentMouseState = mouseEvent.buttons()
+    currentKeyboardState = mouseEvent.modifiers()
+
+    if currentMouseState == 1:  #Left button pressed
+
+        if app.mousePressed == False: #For the first time
+
+            if currentKeyboardState == 67108864: #Control key pressed
+
+                app.mousePressed = True
+                app.ruler.Point1WorldPosition = getPointFromCoordinate([mouseEvent.x(),mouseEvent.y()])
+
+                windowInteractor.Disable()
+
+        elif app.mousePressed == True: #Not for the first time
+
+            app.ruler.Point2WorldPosition = getPointFromCoordinate([mouseEvent.x(),mouseEvent.y()])
+            showRuler()
+            smp.Render()
+
+    elif currentMouseState == 0: #Left button released
+
+        windowInteractor.Enable()
+
+        if  app.mousePressed == True: #For the first time
+
+            app.mousePressed = False
+            app.ruler.Point2WorldPosition = getPointFromCoordinate([mouseEvent.x(),mouseEvent.y()])
+            showRuler()
+            smp.Render()
 
 
 # End Functions related to ruler
@@ -1293,13 +1311,25 @@ def onClearMenu():
     settings.setValue('VelodyneHDLPlugin/RecentFiles', [])
     updateRecentFiles()
 
-def toggleProjectionType():
+def toggleProjectionType(changeFlag = True):
+
     view = smp.GetActiveView()
 
     if view.CameraParallelProjection == 1:
+
         view.CameraParallelProjection = 0
+
+        if changeFlag == True:
+
+            app.previousProjectionType = 0
+
     else:
+
         view.CameraParallelProjection = 1
+
+        if changeFlag == True:
+
+            app.previousProjectionType = 1
 
     smp.Render()
 
@@ -1308,7 +1338,7 @@ def setViewTo(axis,sign):
     viewUp = view.CameraViewUp
     position = view.CameraPosition
 
-    norm = math.sqrt(math.pow(position[0],2) + math.pow(position[1],2) + math.pow(position[2],2))
+    norm = math.sqrt(math.pow(position[0],2) + math.pow(position[1],2) + math.pow(position[2],2))    
 
     if axis == 'X':
         view.CameraViewUp = [0,0,1]
@@ -1319,6 +1349,9 @@ def setViewTo(axis,sign):
     elif axis == 'Z':
         view.CameraViewUp = [0,1,0]
         view.CameraPosition = [0,0,-1*sign*norm]
+
+    view.CameraFocalPoint = [0,0,0]
+    view.CenterOfRotation = [0,0,0]
 
     view.ResetCamera()
     smp.Render()
@@ -1356,10 +1389,7 @@ def myTestFunctionMouse(mouseEvent):
     print(type(mouseEvent.modifiers()))
 
 def setupEventsListener():
-    mW = getMainWindow()
-    vtkW = mW.findChild('pqQVTKWidget')
-
-    vtkW.connect('mouseEvent(QMouseEvent*)', setRulerCoordinates)
+    pass
 
 def setupActions():
 
@@ -1414,6 +1444,8 @@ def setupActions():
 
     app.actions['actionTrailingFramesSelector'] = trailingFramesToolBar.addWidget(spinBox)
     app.actions['actionTrailingFramesSelector'].setVisible(True)
+
+    app.actions['actionMeasure'].connect('triggered()', toggleRulerContext)
 
     buttons = {}
     for button in getPlaybackToolBar().findChildren('QToolButton'):

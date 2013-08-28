@@ -102,7 +102,6 @@
    <addaction name="action_Open"/>
    <addaction name="actionOpen_Sensor_Stream"/>
    <addaction name="actionChoose_Calibration_File"/>
-   <addaction name="actionMeasure"/>
    <addaction name="separator"/>
    <addaction name="actionSelect_All_Points"/>
    <addaction name="actionSpreadsheet"/>
@@ -149,6 +148,7 @@
    </attribute>
    <addaction name="actionReset_Camera"/>
    <addaction name="actionToggleProjection"/>
+   <addaction name="actionMeasure"/>
    <addaction name="separator"/>
    <addaction name="actionSetViewXPlus"/>
    <addaction name="actionSetViewXMinus"/>
@@ -586,7 +586,7 @@
     <string>Measure</string>
    </property>
    <property name="toolTip">
-    <string>Measure the distance between two points: press and release right button of the mouse</string>
+    <string>Measure the distance between two points: Press Control key and keep pressed left button of the mouse two place the two points of the ruler. To use this tool, the orthogonal projection view is obligatory.</string>
    </property>
   </action>
  </widget>
