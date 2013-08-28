@@ -1046,8 +1046,8 @@ def addShortcuts(keySequenceStr, function):
 
 def onTrailingFramesChanged(numFrames):
     app.reader.NumberOfTrailingFrames = numFrames
-    app.reader.UpdatePipeline()
-
+    #app.reader.UpdatePipeline()
+    smp.Render()
 
 def setupTimeSliderWidget():
 
@@ -1234,7 +1234,7 @@ def setupActions():
     spinBox.toolTip = "Number of trailing frames"
     spinBox.setMinimum(0)
     spinBox.setMaximum(20)
-    #spinBox.connect('valueChanged(int)', onTrailingFramesChanged)
+    spinBox.connect('valueChanged(int)', onTrailingFramesChanged)
 
     app.actions['actionTrailingFramesSelector'] = trailingFramesToolBar.addWidget(spinBox)
     app.actions['actionTrailingFramesSelector'].setVisible(True)
