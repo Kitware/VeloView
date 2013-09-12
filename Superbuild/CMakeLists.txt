@@ -125,6 +125,7 @@ include(pythonqt)
 include(paraview)
 include(pcap)
 include(boost)
+include(eigen)
 include(veloview)
 
 process_dependencies()

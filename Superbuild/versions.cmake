@@ -47,3 +47,7 @@ endif()
 add_revision(boost
   URL "http://downloads.sourceforge.net/project/boost/boost/1.50.0/boost_1_50_0.tar.gz"
   URL_MD5 dbc07ab0254df3dda6300fd737b3f264)
+
+add_revision(eigen
+  URL http://vtk.org/files/support/eigen-3.1.2.tar.gz
+  URL_MD5 bb639388192cb80f1ee797f5dbdbe74f)
