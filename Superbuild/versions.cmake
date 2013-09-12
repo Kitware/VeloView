@@ -27,8 +27,8 @@ add_revision(pythonqt
   GIT_TAG patched-3)
 
 add_revision(paraview
-  GIT_REPOSITORY git://github.com/patmarion/ParaView.git
-  GIT_TAG PythonQtPlugin-pv4.0)
+  GIT_REPOSITORY git://github.com/gcasey/ParaView.git
+  GIT_TAG 9c49b39eb360c8fc1865d8bb7a6f19f59d01ed04)
 
 add_revision(veloview
     SOURCE_DIR ${CMAKE_SOURCE_DIR}/..
