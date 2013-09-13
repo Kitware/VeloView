@@ -131,10 +131,31 @@ def openData(filename):
     resetCamera()
 
 
+def GetSelectionSource(proxy=None):
+    """If a selection has exists for the proxy (if proxy is not specified then
+       the active source is used), returns that selection source"""
+    if not proxy:
+        proxy = smp.GetActiveSource()
+    if not proxy:
+        raise RuntimeError, \
+        "GetSelectionSource() needs a proxy argument of that an active source is set."
+    return proxy.GetSelectionInput(proxy.Port)
+
+
 def planeFit():
     import vtkVVModPython as vv
 
-    pd = smp.GetActiveSource().GetClientSideObject().GetOutput()
+    src = smp.GetActiveSource()
+    selection = GetSelectionSource(src)
+
+    extracter = smp.ExtractSelection()
+    extracter.Selection = selection
+    extracter.Input = src
+    smp.Show(extracter)
+    
+    pd = extracter.GetClientSideObject().GetOutput()
+    print pd.GetPoint(0), pd.GetPoint(1)
+    print
 
     origin = range(3)
     normal = range(3)
@@ -146,6 +167,8 @@ def planeFit():
     print mind
     print maxd
     print stddev
+
+    smp.Delete(extracter)
 
 
 def colorByIntensity(sourceProxy):
