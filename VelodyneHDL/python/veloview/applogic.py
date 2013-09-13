@@ -152,10 +152,8 @@ def planeFit():
     extracter.Selection = selection
     extracter.Input = src
     smp.Show(extracter)
-    
+
     pd = extracter.GetClientSideObject().GetOutput()
-    print pd.GetPoint(0), pd.GetPoint(1)
-    print
 
     origin = range(3)
     normal = range(3)
@@ -169,6 +167,7 @@ def planeFit():
     print 'Standard Deviation: ', stddev
 
     smp.Delete(extracter)
+    smp.SetActiveSource(src)
 
 
 def colorByIntensity(sourceProxy):
