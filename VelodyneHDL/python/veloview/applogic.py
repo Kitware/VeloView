@@ -162,11 +162,11 @@ def planeFit():
     mind, maxd, stddev = vtk.mutable(0), vtk.mutable(0), vtk.mutable(0)
 
     vv.vtkPlaneFitter.PlaneFit(pd, origin, normal, mind, maxd, stddev)
-    print origin
-    print normal
-    print mind
-    print maxd
-    print stddev
+    print 'Plane origin: ', origin
+    print 'Plane normal: ', normal
+    print 'Minimum distance: ', mind
+    print 'Maximum distance: ', maxd
+    print 'Standard Deviation: ', stddev
 
     smp.Delete(extracter)
 
