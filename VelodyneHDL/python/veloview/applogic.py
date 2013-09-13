@@ -167,6 +167,7 @@ def planeFit():
     print 'Standard Deviation: ', stddev
 
     smp.Delete(extracter)
+    smp.SetActiveSource(src)
 
 
 def colorByIntensity(sourceProxy):
