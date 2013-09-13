@@ -24,7 +24,7 @@
      <x>0</x>
      <y>0</y>
      <width>1070</width>
-     <height>25</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -149,6 +149,7 @@
    <addaction name="actionReset_Camera"/>
    <addaction name="actionToggleProjection"/>
    <addaction name="actionMeasure"/>
+   <addaction name="actionPlaneFit"/>
    <addaction name="separator"/>
    <addaction name="actionSetViewXPlus"/>
    <addaction name="actionSetViewXMinus"/>
@@ -576,6 +577,11 @@
    </property>
    <property name="toolTip">
     <string>Measure the distance between two points: Press Control key and keep pressed left button of the mouse two place the two points of the ruler. To use this tool, the orthogonal projection view is obligatory.</string>
+   </property>
+  </action>
+  <action name="actionPlaneFit">
+   <property name="text">
+    <string>Plane Fit</string>
    </property>
   </action>
  </widget>

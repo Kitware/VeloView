@@ -131,6 +131,23 @@ def openData(filename):
     resetCamera()
 
 
+def planeFit():
+    import vtkVVModPython as vv
+
+    pd = smp.GetActiveSource().GetClientSideObject().GetOutput()
+
+    origin = range(3)
+    normal = range(3)
+    mind, maxd, stddev = vtk.mutable(0), vtk.mutable(0), vtk.mutable(0)
+
+    vv.vtkPlaneFitter.PlaneFit(pd, origin, normal, mind, maxd, stddev)
+    print origin
+    print normal
+    print mind
+    print maxd
+    print stddev
+
+
 def colorByIntensity(sourceProxy):
 
     if not hasArrayName(sourceProxy, 'intensity'):
@@ -1386,6 +1403,8 @@ def setupActions():
     app.actions = {}
     for a in actions:
         app.actions[a.objectName] = a
+
+    app.actions['actionPlaneFit'].connect('triggered()', planeFit)
 
     app.actions['actionClose'].connect('triggered()', close)
     app.actions['actionPlay'].connect('triggered()', togglePlay)
