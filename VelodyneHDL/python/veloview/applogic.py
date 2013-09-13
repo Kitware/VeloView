@@ -131,6 +131,46 @@ def openData(filename):
     resetCamera()
 
 
+def GetSelectionSource(proxy=None):
+    """If a selection has exists for the proxy (if proxy is not specified then
+       the active source is used), returns that selection source"""
+    if not proxy:
+        proxy = smp.GetActiveSource()
+    if not proxy:
+        raise RuntimeError, \
+        "GetSelectionSource() needs a proxy argument of that an active source is set."
+    return proxy.GetSelectionInput(proxy.Port)
+
+
+def planeFit():
+    import vtkVVModPython as vv
+
+    src = smp.GetActiveSource()
+    selection = GetSelectionSource(src)
+
+    extracter = smp.ExtractSelection()
+    extracter.Selection = selection
+    extracter.Input = src
+    smp.Show(extracter)
+    
+    pd = extracter.GetClientSideObject().GetOutput()
+    print pd.GetPoint(0), pd.GetPoint(1)
+    print
+
+    origin = range(3)
+    normal = range(3)
+    mind, maxd, stddev = vtk.mutable(0), vtk.mutable(0), vtk.mutable(0)
+
+    vv.vtkPlaneFitter.PlaneFit(pd, origin, normal, mind, maxd, stddev)
+    print origin
+    print normal
+    print mind
+    print maxd
+    print stddev
+
+    smp.Delete(extracter)
+
+
 def colorByIntensity(sourceProxy):
 
     if not hasArrayName(sourceProxy, 'intensity'):
@@ -1400,6 +1440,8 @@ def setupActions():
 
     for a in actions:
         app.actions[a.objectName] = a
+
+    app.actions['actionPlaneFit'].connect('triggered()', planeFit)
 
     app.actions['actionClose'].connect('triggered()', close)
     app.actions['actionPlay'].connect('triggered()', togglePlay)

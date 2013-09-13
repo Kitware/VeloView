@@ -24,6 +24,8 @@ include_directories(${PCAP_INCLUDE_DIR})
 find_package(Eigen REQUIRED)
 include_directories(${EIGEN_INCLUDE_DIR})
 
+add_subdirectory(Modules)
+
 if(WIN32 OR APPLE)
   set(Boost_USE_STATIC_LIBS ON)
 endif(WIN32 OR APPLE)
