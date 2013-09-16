@@ -64,6 +64,10 @@ void vtkPlaneFitter::PlaneFit(vtkPointSet* pts, double origin[3], double normal[
   ptdata->DeepCopy(pts->GetPoints()->GetData());
 
   const vtkIdType n = ptdata->GetNumberOfTuples();
+  if(n < 1)
+    {
+    return;
+    }
 
   assert(ptdata->GetNumberOfComponents() == 3);
   Map<MatrixXd> eigpointsraw(static_cast<double*>(ptdata->GetVoidPointer(0)),
@@ -88,6 +92,7 @@ void vtkPlaneFitter::PlaneFit(vtkPointSet* pts, double origin[3], double normal[
 
   VectorXd enormal = svd.matrixV().col(2);
   assert(enormal.size() == 3);
+  assert(std::fabs(enormal.norm() - 1.0) < 1.0e-8);
 
   for(int i = 0; i < 3; ++i)
     {
@@ -95,7 +100,16 @@ void vtkPlaneFitter::PlaneFit(vtkPointSet* pts, double origin[3], double normal[
     }
 
   VectorXd distances = eigpoints * enormal;
+  assert(distances.size() == n);
+
   minDist = distances.minCoeff();
   maxDist = distances.maxCoeff();
-  stdDev = distances.norm() / (n - 1 );
+
+  double sd = 0.0;
+  for(size_t i = 0; i < distances.size(); ++i)
+    {
+    sd += distances[i] * distances[i];
+    }
+
+  stdDev = std::sqrt(sd / (n - 1));
 }
