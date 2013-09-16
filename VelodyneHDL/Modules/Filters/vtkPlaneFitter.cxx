@@ -105,11 +105,5 @@ void vtkPlaneFitter::PlaneFit(vtkPointSet* pts, double origin[3], double normal[
   minDist = distances.minCoeff();
   maxDist = distances.maxCoeff();
 
-  double sd = 0.0;
-  for(size_t i = 0; i < distances.size(); ++i)
-    {
-    sd += distances[i] * distances[i];
-    }
-
-  stdDev = std::sqrt(sd / (n - 1));
+  stdDev = std::sqrt(distances.squaredNorm() / (n-1));
 }
