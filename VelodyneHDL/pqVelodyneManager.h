@@ -47,10 +47,6 @@ public:
   /// Convenience function for getting the main window.
   static QWidget* getMainWindow();
 
-  static pqView* findView(pqPipelineSource *source, int port, const QString &viewType);
-
-  static pqView* getRenderView();
-
   /// Convenience function for destroying a pipeline object and all of its
   /// consumers.
   //static void destroyPipelineSourceAndConsumers(pqPipelineSource *source);
