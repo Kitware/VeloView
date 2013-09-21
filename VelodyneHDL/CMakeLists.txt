@@ -92,12 +92,14 @@ endif()
 list(APPEND servermanager_sources
   vtkVelodyneHDLGridSource.cxx
   vtkVelodyneHDLReader.cxx
+  vtkVelodyneHDLPositionReader.cxx
   vtkVelodyneHDLSource.cxx)
 
 
 list(APPEND servermanager_xml
   xml/VelodyneHDLGridSource.xml
   xml/VelodyneHDLReader.xml
+  xml/VelodyneHDLPositionReader.xml
   xml/VelodyneHDLSource.xml)
 
 list(APPEND gui_xml
@@ -127,6 +129,9 @@ target_link_libraries(PacketFileSender ${deps})
 
 add_executable(TestReader test/TestReader.cxx)
 target_link_libraries(TestReader ${library_name})
+
+add_executable(TestPositionReader test/TestPositionReader.cxx)
+target_link_libraries(TestPositionReader ${library_name})
 
 #########
 set(MOC_HEADERS
