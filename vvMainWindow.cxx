@@ -109,11 +109,24 @@ private:
     // Create a horizontal splitter as the central widget, add views to splitter
     QSplitter* splitter = new QSplitter(Qt::Horizontal);
     window->setCentralWidget(splitter);
+
+    // Add the main widget to the left
     splitter->addWidget(view->getWidget());
+
+    QSplitter* vSplitter = new QSplitter(Qt::Vertical);
+    splitter->addWidget(vSplitter);
+
+    pqView* overheadView = builder->createView(pqRenderView::renderViewType(), server);
+    overheadView->getProxy()->UpdateVTKObjects();
+    // dont add to the splitter just yet
+    // TODO: These sizes should not be absolute things
+    overheadView->getWidget()->setMinimumSize(300, 200);
+    vSplitter->addWidget(overheadView->getWidget());
+    new vvToggleSpreadSheetReaction(this->Ui.actionOverheadView, overheadView);
 
     pqView* spreadsheetView = builder->createView(pqSpreadSheetView::spreadsheetViewType(), server);
     spreadsheetView->getProxy()->UpdateVTKObjects();
-    splitter->addWidget(spreadsheetView->getWidget());
+    vSplitter->addWidget(spreadsheetView->getWidget());
     new vvToggleSpreadSheetReaction(this->Ui.actionSpreadsheet, spreadsheetView);
 
     pqActiveObjects::instance().setActiveView(view);

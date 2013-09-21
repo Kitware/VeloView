@@ -222,6 +222,7 @@ def openPCAP(filename, calibrationFile):
     handler.SetProgressFrequency(freq)
     progressDialog.close()
 
+    # If we read the wrong kind of data abort
     if not hasArrayName(reader, 'intensity'):
         smp.Delete(reader)
         resetCameraToForwardView()
@@ -237,6 +238,20 @@ def openPCAP(filename, calibrationFile):
 
     app.reader = reader
     app.filenameLabel.setText('File: %s' % os.path.basename(filename))
+
+    # update overhead view
+    mainView = smp.GetActiveView()
+    views = smp.GetRenderViews()
+    otherViews = [v for v in views if v != mainView]
+    assert len(otherViews) == 1
+    overheadView = otherViews[0]
+
+    smp.SetActiveView(overheadView)
+    smp.Sphere()
+    smp.Show()
+    smp.Render()
+
+    smp.SetActiveView(mainView)
 
     updateSliderTimeRange()
     enablePlaybackActions()
@@ -1019,16 +1034,6 @@ def saveScreenshot(filename):
 
     # save final screenshot
     composite.save(filename)
-
-
-def getRenderViewWidget():
-    return getPQView(smp.GetRenderView()).getWidget()
-
-
-def getPQView(view):
-    app = PythonQt.paraview.pqApplicationCore.instance()
-    model = app.getServerManagerModel()
-    return PythonQt.paraview.pqPythonQtMethodHelpers.findProxyItem(model, view.SMProxy)
 
 
 def getSpreadSheetViewProxy():
