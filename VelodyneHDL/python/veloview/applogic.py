@@ -40,7 +40,6 @@ class AppLogic(object):
         self.createStatusBarWidgets()
         self.setupTimers()
 
-        self.previousProjectionType = 0
         self.mousePressed = False
 
     def setupTimers(self):
@@ -301,21 +300,10 @@ def toggleRulerContext():
     mW = getMainWindow()
     vtkW = mW.findChild('pqQVTKWidget')
 
-    if app.previousProjectionType == 0:
-        toggleProjectionType(False)
-
     if measurmentState == True:
-
-        app.actions['actionToggleProjection'].setChecked(True)
-        app.actions['actionToggleProjection'].setDisabled(True)
-
         vtkW.connect('mouseEvent(QMouseEvent*)', setRulerCoordinates)
 
     elif measurmentState == False:
-
-        app.actions['actionToggleProjection'].setEnabled(True)
-        app.actions['actionToggleProjection'].setChecked(False)
-
         vtkW.disconnect('mouseEvent(QMouseEvent*)', setRulerCoordinates)
 
         app.mousePressed = False
@@ -1111,6 +1099,7 @@ def start():
     setupEventsListener()
     disablePlaybackActions()
     setSaveActionsEnabled(False)
+    app.actions['actionMeasure'].setEnabled(view.CameraParallelProjection)
     setupStatusBar()
     setupTimeSliderWidget()
     hideColorByComponent()
@@ -1300,25 +1289,16 @@ def onClearMenu():
     settings.setValue('VelodyneHDLPlugin/RecentFiles', [])
     updateRecentFiles()
 
-def toggleProjectionType(changeFlag = True):
+def toggleProjectionType():
 
     view = smp.GetActiveView()
 
-    if view.CameraParallelProjection == 1:
+    view.CameraParallelProjection = not view.CameraParallelProjection
+    if app.actions['actionMeasure'].isChecked():
+        app.actions['actionMeasure'].trigger()
+        app.actions['actionMeasure'].toggle()
 
-        view.CameraParallelProjection = 0
-
-        if changeFlag == True:
-
-            app.previousProjectionType = 0
-
-    else:
-
-        view.CameraParallelProjection = 1
-
-        if changeFlag == True:
-
-            app.previousProjectionType = 1
+    app.actions['actionMeasure'].setEnabled(view.CameraParallelProjection)
 
     smp.Render()
 
