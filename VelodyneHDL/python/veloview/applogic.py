@@ -1441,6 +1441,7 @@ def setupActions():
     app.actions['actionClear_Menu'].connect('triggered()', onClearMenu)
 
     app.actions['actionToggleProjection'].connect('triggered()', toggleProjectionType)
+    app.actions['actionMeasure'].connect('triggered()', toggleRulerContext)
 
     app.actions['actionSetViewXPlus'].connect('triggered()', setViewToXPlus)
     app.actions['actionSetViewXMinus'].connect('triggered()', setViewToXMinus)
@@ -1465,8 +1466,6 @@ def setupActions():
 
     app.actions['actionTrailingFramesSelector'] = trailingFramesToolBar.addWidget(spinBox)
     app.actions['actionTrailingFramesSelector'].setVisible(True)
-
-    app.actions['actionMeasure'].connect('triggered()', toggleRulerContext)
 
     buttons = {}
     for button in getPlaybackToolBar().findChildren('QToolButton'):
