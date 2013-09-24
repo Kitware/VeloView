@@ -301,17 +301,9 @@ def toggleRulerContext():
     vtkW = mW.findChild('pqQVTKWidget')
 
     if measurmentState == True:
-
-        app.actions['actionToggleProjection'].setChecked(True)
-        app.actions['actionToggleProjection'].setDisabled(True)
-
         vtkW.connect('mouseEvent(QMouseEvent*)', setRulerCoordinates)
 
     elif measurmentState == False:
-
-        app.actions['actionToggleProjection'].setEnabled(True)
-        app.actions['actionToggleProjection'].setChecked(False)
-
         vtkW.disconnect('mouseEvent(QMouseEvent*)', setRulerCoordinates)
 
         app.mousePressed = False
@@ -1106,6 +1098,7 @@ def start():
     setupEventsListener()
     disablePlaybackActions()
     setSaveActionsEnabled(False)
+    app.actions['actionMeasure'].setEnabled(view.CameraParallelProjection)
     setupStatusBar()
     setupTimeSliderWidget()
     hideColorByComponent()
@@ -1300,6 +1293,11 @@ def toggleProjectionType():
     view = smp.GetActiveView()
 
     view.CameraParallelProjection = not view.CameraParallelProjection
+    if app.actions['actionMeasure'].isChecked():
+        app.actions['actionMeasure'].trigger()
+        app.actions['actionMeasure'].toggle()
+
+    app.actions['actionMeasure'].setEnabled(view.CameraParallelProjection)
 
     smp.Render()
 
