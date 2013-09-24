@@ -34,6 +34,8 @@ add_external_project(paraview
     -DPARAVIEW_BUILD_PLUGIN_PythonQtPlugin:BOOL=TRUE
     -DPYTHONQT_DIR:PATH=<INSTALL_DIR>
 
+    -DModule_vtklibproj4:BOOL=TRUE
+
     # specify the apple app install prefix. No harm in specifying it for all
     # platforms.
     -DMACOSX_APP_INSTALL_PREFIX:PATH=<INSTALL_DIR>/Applications
