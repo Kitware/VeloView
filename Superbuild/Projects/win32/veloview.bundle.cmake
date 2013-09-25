@@ -69,11 +69,7 @@ if (64bit_build)
   set(CPACK_NSIS_INSTALL_ROOT "$PROGRAMFILES64")
 endif()
 
-
 # install system runtimes.
 set(CMAKE_INSTALL_SYSTEM_RUNTIME_DESTINATION "bin")
 include(InstallRequiredSystemLibraries)
 include(CPack)
-
-
-
