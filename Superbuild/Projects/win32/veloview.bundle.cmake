@@ -17,17 +17,6 @@ install(DIRECTORY "${install_location}/bin/"
         DESTINATION "bin"
         COMPONENT ${AppName})
 
-if(0)
-SET(CPACK_NSIS_EXTRA_INSTALL_COMMANDS 
-  "MessageBox MB_YESNO \\\"Setup will now download/install WinPCAP. Do you want to install WinPCAP? It is needed for VeloView to work.\\\" /SD IDYES IDNO endActiveSync
-NSISdl::download http://www.winpcap.org/install/bin/WinPcap_4_1_2.exe $INSTDIR\\\\WinPcap_4_1_2.exe
-ExecWait \\\"$INSTDIR\\\\WinPcap_4_1_2.exe\\\"
-Delete \\\"$INSTDIR\\\\WinPcap_4_1_2.exe\\\"
-Goto endActiveSync
-endActiveSync:
-")
-endif()
-
 # install python since (since python dlls are not in the install location)
 if (python_ENABLED AND NOT USE_SYSTEM_python)
   # install the Python's modules.
