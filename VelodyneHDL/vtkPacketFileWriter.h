@@ -43,6 +43,7 @@ typedef unsigned __int64 uint64_t;
 # include <stdint.h>
 #endif
 
+#include <vector>
 
 #ifdef _MSC_VER
 
@@ -68,24 +69,16 @@ class vtkPacketFileWriter
 {
 public:
 
+  // note these values are little endian, pcap wants the packet header and
+  //data to be in the platform's native byte order, so assuming little endian.
+  static const unsigned short LidarPacketHeader[21];
+
+  static const unsigned short PositionPacketHeader[21];
+
   vtkPacketFileWriter()
   {
     this->PCAPFile = 0;
     this->PCAPDump = 0;
-
-    this->PacketHeader.caplen = 1248;
-    this->PacketHeader.len = 1248;
-
-    // note these values are little endian, pcap wants the packet header and
-    //data to be in the platform's native byte order, so assuming little endian.
-    unsigned short packetHeader[21] = {
-      0xffff, 0xffff, 0xffff, 0x7660,
-      0x0088, 0x0000, 0x0008, 0x0045,
-      0xd204, 0x0000, 0x0040, 0x11ff,
-      0xaab4, 0xa8c0, 0xc801, 0xffff, // checksum 0xa9b4 //source ip 0xa8c0, 0xc801 is 192.168.1.200
-      0xffff, 0x4009, 0x4009, 0xbe04, 0x0000};
-
-    memcpy(this->PacketBuffer, packetHeader, 42);
   }
 
   ~vtkPacketFileWriter()
@@ -144,18 +137,37 @@ public:
       return false;
       }
 
-    if (dataLength != 1206)
+    const unsigned short* headerData;
+    struct pcap_pkthdr header;
+
+    std::vector<unsigned char> packetBuffer;
+    if (dataLength == 1206)
+      {
+      headerData = LidarPacketHeader;
+      header.caplen = 1248;
+      header.len = 1248;
+      packetBuffer.resize(1248);
+      }
+    else if(dataLength == (554 - 42))
+      {
+      headerData = PositionPacketHeader;
+      header.caplen = 554;
+      header.len = 554;
+      packetBuffer.resize(554);
+      }
+    else
       {
       return false;
       }
 
     struct timeval currentTime;
     gettimeofday(&currentTime, NULL);
-    this->PacketHeader.ts = currentTime;
+    header.ts = currentTime;
 
-    memcpy(this->PacketBuffer + 42, data, dataLength);
+    memcpy(&(packetBuffer[0]), headerData, 42);
+    memcpy(&(packetBuffer[0]) + 42, data, dataLength);
 
-    pcap_dump((u_char *)this->PCAPDump, &this->PacketHeader, this->PacketBuffer);
+    pcap_dump((u_char *)this->PCAPDump, &header, &(packetBuffer[0]));
     return true;
   }
 
@@ -171,8 +183,6 @@ protected:
 
   pcap_t* PCAPFile;
   pcap_dumper_t* PCAPDump;
-  struct pcap_pkthdr PacketHeader;
-  unsigned char PacketBuffer[1248];
 
   std::string FileName;
   std::string LastError;
