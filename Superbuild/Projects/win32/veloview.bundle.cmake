@@ -7,8 +7,8 @@ set (CPACK_NSIS_MENU_LINKS
   "bin/VeloView.exe" "VeloView"
   "doc/VeloView_Developer_Guide.pdf" "Developer Guide")
 
-set(CPACK_PACKAGE_EXECUTABLES "bin/VeloView.exe" "VeloView" ${CPACK_PACKAGE_EXECUTABLES})
-set(CPACK_CREATE_DESKTOP_LINKS "bin/VeloView.exe" ${CPACK_CREATE_DESKTOP_LINKS})
+set(CPACK_PACKAGE_EXECUTABLES "VeloView" "VeloView" ${CPACK_PACKAGE_EXECUTABLES})
+set(CPACK_CREATE_DESKTOP_LINKS "VeloView" ${CPACK_CREATE_DESKTOP_LINKS})
 set(CPACK_NSIS_MODIFY_PATH ON)
 
 set(AppName VeloView)
