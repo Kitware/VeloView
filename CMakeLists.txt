@@ -121,8 +121,6 @@ build_paraview_client(VeloView
   SPLASH_IMAGE "${CMAKE_CURRENT_SOURCE_DIR}/Splash.jpg"
   BUNDLE_ICON "${CMAKE_CURRENT_SOURCE_DIR}/logo.icns"
   APPLICATION_ICON "${CMAKE_CURRENT_SOURCE_DIR}/logo.ico"
-  GUI_CONFIGURATION_XMLS
-    "${CMAKE_CURRENT_SOURCE_DIR}/vvReaders.xml"
   SOURCES
     ${source_files}
     ${moc_source_files}

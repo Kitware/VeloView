@@ -10,11 +10,13 @@ if(ParaView_SOURCE_DIR)
   endif(PARAVIEW_BUILD_QT_GUI)
 
 else(ParaView_SOURCE_DIR)
-
   find_package(ParaView REQUIRED)
   include(${PARAVIEW_USE_FILE})
 
 endif(ParaView_SOURCE_DIR)
+
+vtk_module_load(vtklibproj4)
+include_directories(${vtklibproj4_INCLUDE_DIRS})
 
 find_library(PCAP_LIBRARY pcap DOC "pcap library")
 find_path(PCAP_INCLUDE_DIR pcap.h DOC "pcap include directory")
@@ -83,6 +85,7 @@ if(PARAVIEW_BUILD_QT_GUI)
 
   list(APPEND deps
     pqApplicationComponents
+    ${vtklibproj4_LIBRARIES}
     )
 
 endif()
@@ -99,9 +102,7 @@ list(APPEND servermanager_xml
   xml/VelodyneHDLReader.xml
   xml/VelodyneHDLSource.xml)
 
-
 list(APPEND gui_xml
-  xml/VelodyneHDLReadersGUI.xml
   xml/VelodyneHDLSourcesGUI.xml)
 
 list(APPEND deps
@@ -117,7 +118,8 @@ add_paraview_plugin(${library_name} "1.0"
   GUI_RESOURCE_FILES ${gui_xml}
   GUI_SOURCES ${gui_sources}
   SERVER_MANAGER_XML ${servermanager_xml}
-  SERVER_MANAGER_SOURCES ${servermanager_sources})
+  SERVER_MANAGER_SOURCES ${servermanager_sources}
+  REQUIRED_ON_SERVER)
 
 target_link_libraries(${library_name} LINK_PUBLIC ${deps})
 
@@ -126,8 +128,6 @@ target_link_libraries(PacketFileSender ${deps})
 
 add_executable(TestReader test/TestReader.cxx)
 target_link_libraries(TestReader ${library_name})
-
-
 
 #########
 set(MOC_HEADERS

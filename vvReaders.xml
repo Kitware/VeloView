@@ -1,7 +1,0 @@
-<ParaViewReaders>
-  <ProxyManager type="reader" />
-  <Proxy group="sources" name="PVDReader" />
-  <Proxy group="sources" name="XMLPolyDataReader"/>
-  <Proxy group="sources" name="XMLMultiBlockDataReader" />
-  <Proxy group="sources" name="LegacyVTKFileReader" />
-</ParaViewReaders>

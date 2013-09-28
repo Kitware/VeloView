@@ -40,7 +40,6 @@ class AppLogic(object):
         self.createStatusBarWidgets()
         self.setupTimers()
 
-        self.previousProjectionType = 0
         self.mousePressed = False
 
     def setupTimers(self):
@@ -252,7 +251,10 @@ def openPCAP(filename, calibrationFile):
 
     # construct the reader, this calls UpdateInformation on the
     # reader which scans the pcap file and emits progress events
-    reader = smp.VelodyneHDLReader(guiName='Data', FileName=filename, CalibrationFile=calibrationFile)
+    reader = smp.VelodyneHDLReader(guiName='Data',
+                                   FileName=filename,
+                                   CalibrationFile=calibrationFile,
+                                   NumberOfTrailingFrames=app.trailingFramesSpinBox.value)
     reader.UpdatePipeline()
 
     handler.RemoveObserver(tag)
@@ -340,21 +342,10 @@ def toggleRulerContext():
     mW = getMainWindow()
     vtkW = mW.findChild('pqQVTKWidget')
 
-    if app.previousProjectionType == 0:
-        toggleProjectionType(False)
-
     if measurmentState == True:
-
-        app.actions['actionToggleProjection'].setChecked(True)
-        app.actions['actionToggleProjection'].setDisabled(True)
-
         vtkW.connect('mouseEvent(QMouseEvent*)', setRulerCoordinates)
 
     elif measurmentState == False:
-
-        app.actions['actionToggleProjection'].setEnabled(True)
-        app.actions['actionToggleProjection'].setChecked(False)
-
         vtkW.disconnect('mouseEvent(QMouseEvent*)', setRulerCoordinates)
 
         app.mousePressed = False
@@ -1150,6 +1141,7 @@ def start():
     setupEventsListener()
     disablePlaybackActions()
     setSaveActionsEnabled(False)
+    app.actions['actionMeasure'].setEnabled(view.CameraParallelProjection)
     setupStatusBar()
     setupTimeSliderWidget()
     hideColorByComponent()
@@ -1193,6 +1185,14 @@ def addShortcuts(keySequenceStr, function):
     shortcut = PythonQt.QtGui.QShortcut(PythonQt.QtGui.QKeySequence(keySequenceStr), getMainWindow())
     shortcut.connect("activated()", function)
 
+
+def onTrailingFramesChanged(numFrames):
+    try:
+        app.reader.NumberOfTrailingFrames = numFrames
+        #app.reader.UpdatePipeline()
+        smp.Render()
+    except AttributeError:
+        pass
 
 def setupTimeSliderWidget():
 
@@ -1339,25 +1339,16 @@ def onClearMenu():
     settings.setValue('VelodyneHDLPlugin/RecentFiles', [])
     updateRecentFiles()
 
-def toggleProjectionType(changeFlag = True):
+def toggleProjectionType():
 
     view = smp.GetActiveView()
 
-    if view.CameraParallelProjection == 1:
+    view.CameraParallelProjection = not view.CameraParallelProjection
+    if app.actions['actionMeasure'].isChecked():
+        app.actions['actionMeasure'].trigger()
+        app.actions['actionMeasure'].toggle()
 
-        view.CameraParallelProjection = 0
-
-        if changeFlag == True:
-
-            app.previousProjectionType = 0
-
-    else:
-
-        view.CameraParallelProjection = 1
-
-        if changeFlag == True:
-
-            app.previousProjectionType = 1
+    app.actions['actionMeasure'].setEnabled(view.CameraParallelProjection)
 
     smp.Render()
 
@@ -1421,8 +1412,11 @@ def setupEventsListener():
 
 def setupActions():
 
-    actions = getMainWindow().findChildren('QAction')
+    mW = getMainWindow()
+    actions = mW.findChildren('QAction')
+
     app.actions = {}
+
     for a in actions:
         app.actions[a.objectName] = a
 
@@ -1446,9 +1440,8 @@ def setupActions():
     app.actions['actionVeloViewDeveloperGuide'].connect('triggered()', onDevelopperGuide)
     app.actions['actionClear_Menu'].connect('triggered()', onClearMenu)
 
-    # Added functions #
-
     app.actions['actionToggleProjection'].connect('triggered()', toggleProjectionType)
+    app.actions['actionMeasure'].connect('triggered()', toggleRulerContext)
 
     app.actions['actionSetViewXPlus'].connect('triggered()', setViewToXPlus)
     app.actions['actionSetViewXMinus'].connect('triggered()', setViewToXMinus)
@@ -1457,7 +1450,22 @@ def setupActions():
     app.actions['actionSetViewZPlus'].connect('triggered()', setViewToZPlus)
     app.actions['actionSetViewZMinus'].connect('triggered()', setViewToZMinus)
 
-    app.actions['actionMeasure'].connect('triggered()', toggleRulerContext)
+    # Action created #
+    timeToolBar = mW.findChild('QToolBar','playbackToolbar')
+    trailingFramesToolBar = mW.findChild('QToolBar','trailingFramesToolbar')
+
+    spinBoxLabel = QtGui.QLabel("Number of trailing frames: ")
+    trailingFramesToolBar.addWidget(spinBoxLabel)
+
+    spinBox = QtGui.QSpinBox()
+    spinBox.toolTip = "Number of trailing frames"
+    spinBox.setMinimum(0)
+    spinBox.setMaximum(100)
+    spinBox.connect('valueChanged(int)', onTrailingFramesChanged)
+    app.trailingFramesSpinBox = spinBox
+
+    app.actions['actionTrailingFramesSelector'] = trailingFramesToolBar.addWidget(spinBox)
+    app.actions['actionTrailingFramesSelector'].setVisible(True)
 
     buttons = {}
     for button in getPlaybackToolBar().findChildren('QToolButton'):

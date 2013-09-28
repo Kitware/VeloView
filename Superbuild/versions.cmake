@@ -19,7 +19,7 @@ else()
 endif()
 
 add_revision(qt
-  URL "http://releases.qt-project.org/qt4/source/qt-everywhere-opensource-src-4.8.2.tar.gz"
+  URL "http://download.qt-project.org/archive/qt/4.8/4.8.2/qt-everywhere-opensource-src-4.8.2.tar.gz"
   URL_MD5 3c1146ddf56247e16782f96910a8423b)
 
 add_revision(pythonqt
@@ -28,7 +28,7 @@ add_revision(pythonqt
 
 add_revision(paraview
   GIT_REPOSITORY git://github.com/gcasey/ParaView.git
-  GIT_TAG 9c49b39eb360c8fc1865d8bb7a6f19f59d01ed04)
+  GIT_TAG c566c02a167577530a47f5ccb7a66fd236b4eb8a)
 
 add_revision(veloview
     SOURCE_DIR ${CMAKE_SOURCE_DIR}/..
