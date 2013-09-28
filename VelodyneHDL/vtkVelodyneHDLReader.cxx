@@ -475,7 +475,7 @@ vtkSmartPointer<vtkPolyData> vtkVelodyneHDLReader::GetFrameRange(int startFrame,
 
   if(startFrame < 0)
     {
-    numberOfFrames += startFrame;
+    numberOfFrames -= startFrame;
     startFrame = 0;
     }
   assert(numberOfFrames > 0);
