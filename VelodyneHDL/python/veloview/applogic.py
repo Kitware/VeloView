@@ -152,21 +152,47 @@ def planeFit():
     extracter.Input = src
     smp.Show(extracter)
 
-    pd = extracter.GetClientSideObject().GetOutput()
+    try:
+        pd = extracter.GetClientSideObject().GetOutput()
 
-    origin = range(3)
-    normal = range(3)
-    mind, maxd, stddev = vtk.mutable(0), vtk.mutable(0), vtk.mutable(0)
+        origin = range(3)
+        normal = range(3)
+        mind, maxd, stddev = vtk.mutable(0), vtk.mutable(0), vtk.mutable(0)
 
-    vv.vtkPlaneFitter.PlaneFit(pd, origin, normal, mind, maxd, stddev)
-    print 'Plane origin: ', origin
-    print 'Plane normal: ', normal
-    print 'Minimum distance: ', mind
-    print 'Maximum distance: ', maxd
-    print 'Standard Deviation: ', stddev
+        channelMean = range(32)
+        channelStdDev = range(32)
+        channelNpts = range(32)
 
-    smp.Delete(extracter)
-    smp.SetActiveSource(src)
+        vv.vtkPlaneFitter.PlaneFit(pd, origin, normal, mind, maxd, stddev, channelMean, channelStdDev, channelNpts)
+        rows = [['overall', origin, normal, 0.0, stddev, stddev, pd.GetNumberOfPoints()]]
+        rows = rows + [['%d' % i, origin, normal,
+                        channelMean[i], channelStdDev[i],
+                        math.sqrt(channelMean[i]**2 + channelStdDev[i]**2),
+                        channelNpts[i]]
+                       for i in range(32)]
+
+        def rowconverter(x):
+            try:
+                return '\t'.join(['%.4f' % d for d in x])
+            except TypeError:
+                try:
+                    x = x.get()
+                except AttributeError:
+                    pass
+                if type(x) == float:
+                    return '%.4f' % x
+                elif type(x) in (int, long):
+                    return '%d' % x
+                else:
+                    return x
+
+        print '\t'.join(['channel','originx','originy','originz','normalx','normaly','normalz',
+                         'mean','stddev','RMS','npts'])
+        for r in rows:
+            print '\t'.join([rowconverter(x) for x in r])
+    finally:
+        smp.Delete(extracter)
+        smp.SetActiveSource(src)
 
 
 def colorByIntensity(sourceProxy):
