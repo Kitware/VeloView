@@ -131,17 +131,6 @@ def openData(filename):
     resetCamera()
 
 
-def GetSelectionSource(proxy=None):
-    """If a selection has exists for the proxy (if proxy is not specified then
-       the active source is used), returns that selection source"""
-    if not proxy:
-        proxy = smp.GetActiveSource()
-    if not proxy:
-        raise RuntimeError, \
-        "GetSelectionSource() needs a proxy argument of that an active source is set."
-    return proxy.GetSelectionInput(proxy.Port)
-
-
 def planeFit():
     planefit.fitPlane()
 
