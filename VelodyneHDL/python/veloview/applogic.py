@@ -1426,13 +1426,6 @@ def setViewToZMinus():
     setViewTo('Z',-1)
 
 
-def myTestFunction(test="test"):
-    print(test)
-
-def myTestFunctionMouse(mouseEvent):
-    #print(dir(mouseEvent))
-    print(type(mouseEvent.modifiers()))
-
 def setupEventsListener():
     pass
 
@@ -1480,7 +1473,7 @@ def setupActions():
     timeToolBar = mW.findChild('QToolBar','playbackToolbar')
     trailingFramesToolBar = mW.findChild('QToolBar','trailingFramesToolbar')
 
-    spinBoxLabel = QtGui.QLabel("Number of trailing frames: ")
+    spinBoxLabel = QtGui.QLabel("Trailing frames: ")
     trailingFramesToolBar.addWidget(spinBoxLabel)
 
     spinBox = QtGui.QSpinBox()
