@@ -1361,13 +1361,6 @@ def setViewToZMinus():
     setViewTo('Z',-1)
 
 
-def myTestFunction(test="test"):
-    print(test)
-
-def myTestFunctionMouse(mouseEvent):
-    #print(dir(mouseEvent))
-    print(type(mouseEvent.modifiers()))
-
 def setupEventsListener():
     pass
 
