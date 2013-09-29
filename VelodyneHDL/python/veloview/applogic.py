@@ -1406,7 +1406,7 @@ def setupActions():
     timeToolBar = mW.findChild('QToolBar','playbackToolbar')
     trailingFramesToolBar = mW.findChild('QToolBar','trailingFramesToolbar')
 
-    spinBoxLabel = QtGui.QLabel("Number of trailing frames: ")
+    spinBoxLabel = QtGui.QLabel("Trailing frames: ")
     trailingFramesToolBar.addWidget(spinBoxLabel)
 
     spinBox = QtGui.QSpinBox()
