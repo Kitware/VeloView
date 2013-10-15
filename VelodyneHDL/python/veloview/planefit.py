@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import vtkVVModPython as vvmod
+import VelodyneHDLPluginPython as vvmod
 import paraview.simple as smp
 from paraview import vtk
 import math

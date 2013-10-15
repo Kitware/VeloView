@@ -132,4 +132,4 @@ build_paraview_client(VeloView
 )
 
 # We directly link against the plugin and import them statically.
-target_link_libraries(VeloView VelodyneHDLPlugin VelodyneHDLPython ${PYTHONQTPLUGIN_LIBRARY} ${PYTHONQT_LIBRARIES})
+target_link_libraries(VeloView VelodyneHDLPlugin VelodyneHDLPythonQT ${PYTHONQTPLUGIN_LIBRARY} ${PYTHONQT_LIBRARIES})
