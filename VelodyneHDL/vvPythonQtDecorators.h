@@ -23,7 +23,7 @@
 #include "vvConfigure.h"
 #include "vvSelectFramesDialog.h"
 
-class VelodyneHDLPython_EXPORT vvPythonQtDecorators : public QObject
+class VelodyneHDLPythonQT_EXPORT vvPythonQtDecorators : public QObject
 {
   Q_OBJECT
 
