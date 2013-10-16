@@ -22,15 +22,15 @@
   #define VelodyneHDLPlugin_EXPORT __declspec( dllimport )
  #endif
 
- #if defined(VelodyneHDLPython_EXPORTS)
-  #define VelodyneHDLPython_EXPORT __declspec( dllexport )
+ #if defined(VelodyneHDLPythonQT_EXPORTS)
+  #define VelodyneHDLPythonQT_EXPORT __declspec( dllexport )
  #else
-  #define VelodyneHDLPython_EXPORT __declspec( dllimport )
+  #define VelodyneHDLPythonQT_EXPORT __declspec( dllimport )
  #endif
 
 #else
  #define VelodyneHDLPlugin_EXPORT
- #define VelodyneHDLPython_EXPORT
+ #define VelodyneHDLPythonQT_EXPORT
 #endif
 
 
