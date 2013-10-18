@@ -247,11 +247,17 @@ def openPCAP(filename, calibrationFile):
     overheadView = otherViews[0]
 
     smp.SetActiveView(overheadView)
-    smp.Sphere()
+    posreader = smp.VelodyneHDLPositionReader(guiName="Position",
+                                              FileName=filename)
     smp.Show()
+    smp.Render()
+    overheadView.ResetCamera()
     smp.Render()
 
     smp.SetActiveView(mainView)
+    smp.SetActiveSource(reader)
+
+    app.position = posreader
 
     updateSliderTimeRange()
     enablePlaybackActions()
@@ -923,11 +929,17 @@ def playbackTick():
 
         app.scene.AnimationTime = newTime
 
+        # Get the position data
+        pos = getPosition()
+        if pos:
+            pass
+
 
 def unloadData():
 
     reader = getReader()
     sensor = getSensor()
+    position = getPosition()
 
     if reader is not None:
         smp.Delete(reader)
@@ -937,6 +949,10 @@ def unloadData():
         sensor.Stop()
         smp.Delete(sensor)
         app.sensor = None
+
+    if position is not None:
+        smp.Delete(position)
+        app.position = None
 
     clearSpreadSheetView()
 
@@ -948,6 +964,8 @@ def getReader():
 def getSensor():
     return getattr(app, 'sensor', None)
 
+def getPosition():
+    return getattr(app, 'position', None)
 
 def setCalibrationFile(calibrationFile):
 
