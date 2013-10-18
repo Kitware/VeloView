@@ -42,6 +42,14 @@ class AppLogic(object):
 
         self.mousePressed = False
 
+        mainView = smp.GetActiveView()
+        views = smp.GetRenderViews()
+        otherViews = [v for v in views if v != mainView]
+        assert len(otherViews) == 1
+        overheadView = otherViews[0]
+        self.mainView = mainView
+        self.overheadView = overheadView
+
     def setupTimers(self):
         self.playTimer = QtCore.QTimer()
         self.playTimer.setSingleShot(True)
@@ -240,22 +248,15 @@ def openPCAP(filename, calibrationFile):
     app.filenameLabel.setText('File: %s' % os.path.basename(filename))
 
     # update overhead view
-    mainView = smp.GetActiveView()
-    views = smp.GetRenderViews()
-    otherViews = [v for v in views if v != mainView]
-    assert len(otherViews) == 1
-    overheadView = otherViews[0]
-
-    smp.SetActiveView(overheadView)
+    smp.SetActiveView(app.overheadView)
     posreader = smp.VelodyneHDLPositionReader(guiName="Position",
                                               FileName=filename)
     smp.Show()
 
     smp.Render()
-    overheadView.ResetCamera()
+    app.overheadView.ResetCamera()
     smp.Render()
 
-    spreadSheetView = getSpreadSheetViewProxy()
     c = smp.Contour(posreader, guiName='CurrentPosition')
     c.ContourBy = 'time'
     c.Isosurfaces = [220700]
@@ -270,7 +271,7 @@ def openPCAP(filename, calibrationFile):
     smp.Show()
     smp.Render()
 
-    smp.SetActiveView(mainView)
+    smp.SetActiveView(app.mainView)
     smp.SetActiveSource(reader)
 
     app.position = (posreader, c)
@@ -926,13 +927,7 @@ def updatePosition():
             c = getContour()
             assert c
             c.Isosurfaces = [currentTime]
-            c.UpdatePipeline()
-            mainView = smp.GetActiveView()
-            views = smp.GetRenderViews()
-            otherViews = [v for v in views if v != mainView]
-            assert len(otherViews) == 1
-            overheadView = otherViews[0]
-            smp.Render(view=overheadView)
+            smp.Render(view=app.overheadView)
 
 
 def playbackTick():
