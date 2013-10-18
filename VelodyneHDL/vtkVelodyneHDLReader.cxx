@@ -93,7 +93,6 @@ typedef struct HDLLaserReturn
   unsigned short distance;
   unsigned char intensity;
 } HDLLaserReturn;
-#pragma pack(pop)
 
 struct HDLFiringData
 {
@@ -129,6 +128,7 @@ struct HDLRGB
   uint8_t g;
   uint8_t b;
 };
+#pragma pack(pop)
 
 double *cos_lookup_table_;
 double *sin_lookup_table_;
