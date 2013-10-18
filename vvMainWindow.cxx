@@ -117,6 +117,7 @@ private:
     splitter->addWidget(vSplitter);
 
     pqView* overheadView = builder->createView(pqRenderView::renderViewType(), server);
+//    overheadView->SetInteractionMode("2D");
     overheadView->getProxy()->UpdateVTKObjects();
     // dont add to the splitter just yet
     // TODO: These sizes should not be absolute things

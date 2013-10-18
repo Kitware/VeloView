@@ -250,16 +250,33 @@ def openPCAP(filename, calibrationFile):
     posreader = smp.VelodyneHDLPositionReader(guiName="Position",
                                               FileName=filename)
     smp.Show()
+
     smp.Render()
     overheadView.ResetCamera()
+    smp.Render()
+
+    spreadSheetView = getSpreadSheetViewProxy()
+    c = smp.Contour(posreader, guiName='CurrentPosition')
+    c.ContourBy = 'time'
+    c.Isosurfaces = [220700]
+
+    smp.Show()
+    smp.Render()
+
+    smp.Hide(c)
+    g = smp.Glyph(c, GlyphType='Sphere', guiName='PositionGlyph')
+    g.ScaleMode = 'off'
+    g.GlyphType.Radius = 30.0
+    smp.Show()
     smp.Render()
 
     smp.SetActiveView(mainView)
     smp.SetActiveSource(reader)
 
-    app.position = posreader
+    app.position = (posreader, c)
 
     updateSliderTimeRange()
+    updatePosition()
     enablePlaybackActions()
     enableSaveActions()
     addRecentFile(filename)
@@ -868,21 +885,54 @@ def setPlayMode(mode):
 def gotoStart():
     pollSource()
     app.scene.GoToFirst()
+    updatePosition()
 
 
 def gotoEnd():
     pollSource()
     app.scene.GoToLast()
+    updatePosition()
 
 
 def gotoNext():
     pollSource()
     app.scene.GoToNext()
+    updatePosition()
 
 
 def gotoPrevious():
     pollSource()
     app.scene.GoToPrevious()
+    updatePosition()
+
+
+def updatePosition():
+    reader = getReader()
+    pos = getPosition()
+
+    if reader:
+        pointcloud = reader.GetClientSideObject().GetOutput()
+
+        if pointcloud.GetNumberOfPoints():
+            # TODO: Approximate time, just grabbing the first
+            t = pointcloud.GetPointData().GetScalars('timestamp')
+            currentTime = t.GetTuple1(0)
+
+            trange = pos.GetPointDataInformation().GetArray('time').GetRange()
+
+            # Clamp
+            currentTime = min(max(currentTime, trange[0]+1.0e-1), trange[1]-1.0e-1)
+
+            c = getContour()
+            assert c
+            c.Isosurfaces = [currentTime]
+            c.UpdatePipeline()
+            mainView = smp.GetActiveView()
+            views = smp.GetRenderViews()
+            otherViews = [v for v in views if v != mainView]
+            assert len(otherViews) == 1
+            overheadView = otherViews[0]
+            smp.Render(view=overheadView)
 
 
 def playbackTick():
@@ -928,11 +978,8 @@ def playbackTick():
                 stop()
 
         app.scene.AnimationTime = newTime
-
-        # Get the position data
-        pos = getPosition()
-        if pos:
-            pass
+        # TODO: For sensor as well?
+        updatePosition()
 
 
 def unloadData():
@@ -965,7 +1012,10 @@ def getSensor():
     return getattr(app, 'sensor', None)
 
 def getPosition():
-    return getattr(app, 'position', None)
+    return getattr(app, 'position', (None,None))[0]
+
+def getContour():
+    return getattr(app, 'position', (None,None))[1]
 
 def setCalibrationFile(calibrationFile):
 
