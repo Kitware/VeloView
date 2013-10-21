@@ -251,30 +251,33 @@ def openPCAP(filename, calibrationFile):
     smp.SetActiveView(app.overheadView)
     posreader = smp.VelodyneHDLPositionReader(guiName="Position",
                                               FileName=filename)
-    smp.Show()
+    smp.Show(posreader)
 
-    smp.Render()
-    app.overheadView.ResetCamera()
-    smp.Render()
+    if posreader.GetClientSideObject().GetOutput().GetNumberOfPoints():
 
-    c = smp.Contour(posreader, guiName='CurrentPosition')
-    c.ContourBy = 'time'
-    c.Isosurfaces = [220700]
+        smp.Render()
+        app.overheadView.ResetCamera()
+        smp.Render()
 
-    smp.Show()
-    smp.Render()
+        c = smp.Contour(posreader, guiName='CurrentPosition')
+        c.ContourBy = 'time'
+        c.Isosurfaces = [220700]
 
-    smp.Hide(c)
-    g = smp.Glyph(c, GlyphType='Sphere', guiName='PositionGlyph')
-    g.ScaleMode = 'off'
-    g.GlyphType.Radius = 30.0
-    smp.Show()
-    smp.Render()
+        smp.Show()
+        smp.Render()
+
+        smp.Hide(c)
+        g = smp.Glyph(c, GlyphType='Sphere', guiName='PositionGlyph')
+        g.ScaleMode = 'off'
+        g.GlyphType.Radius = 30.0
+        smp.Show()
+        smp.Render()
+        app.position = (posreader, c, g)
+    else:
+        smp.Delete(posreader)
 
     smp.SetActiveView(app.mainView)
     smp.SetActiveSource(reader)
-
-    app.position = (posreader, c)
 
     updateSliderTimeRange()
     updatePosition()
@@ -911,7 +914,7 @@ def updatePosition():
     reader = getReader()
     pos = getPosition()
 
-    if reader:
+    if reader and pos:
         pointcloud = reader.GetClientSideObject().GetOutput()
 
         if pointcloud.GetNumberOfPoints():
@@ -993,8 +996,18 @@ def unloadData():
         app.sensor = None
 
     if position is not None:
-        smp.Delete(position)
-        app.position = None
+        smp.SetActiveView(app.overheadView)
+        g = getGlyph()
+        c = getContour()
+        smp.SetActiveSource(g)
+        smp.Delete()
+        smp.SetActiveSource(c)
+        smp.Delete()
+        smp.SetActiveSource(position)
+        smp.Delete()
+        smp.SetActiveView(app.mainView)
+
+        app.position = (None, None, None)
 
     clearSpreadSheetView()
 
@@ -1007,10 +1020,13 @@ def getSensor():
     return getattr(app, 'sensor', None)
 
 def getPosition():
-    return getattr(app, 'position', (None,None))[0]
+    return getattr(app, 'position', (None, None, None))[0]
 
 def getContour():
-    return getattr(app, 'position', (None,None))[1]
+    return getattr(app, 'position', (None, None, None))[1]
+
+def getGlyph():
+    return getattr(app, 'position', (None, None, None))[2]
 
 def setCalibrationFile(calibrationFile):
 
