@@ -1017,16 +1017,12 @@ def unloadData():
         for t in toremove:
             app.overheadView.Representations.remove(t)
 
-        smp.SetActiveView(app.overheadView)
         g = getGlyph()
         c = getContour()
-        smp.SetActiveSource(g)
-        smp.Delete()
-        smp.SetActiveSource(c)
-        smp.Delete()
-        smp.SetActiveSource(position)
-        smp.Delete()
-        smp.SetActiveView(app.mainView)
+        smp.Delete(g)
+        smp.Delete(c)
+        smp.Delete(position)
+        smp.Render(app.overheadView)
 
         app.position = (None, None, None)
 
