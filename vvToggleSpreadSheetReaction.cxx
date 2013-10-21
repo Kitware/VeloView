@@ -39,9 +39,5 @@ vvToggleSpreadSheetReaction::~vvToggleSpreadSheetReaction()
 //-----------------------------------------------------------------------------
 void vvToggleSpreadSheetReaction::onToggleSpreadsheet()
 {
-  std::cout << this->View->getWidget()->size().height() << std::endl;
-  std::cout << this->View->getWidget()->sizeHint().height() << std::endl;
-  std::cout << std::endl;
-
   this->View->getWidget()->setVisible(this->Action->isChecked());
 }
