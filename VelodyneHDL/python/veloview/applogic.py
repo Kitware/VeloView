@@ -259,9 +259,11 @@ def openPCAP(filename, calibrationFile):
         app.overheadView.ResetCamera()
         smp.Render()
 
+        trange = posreader.GetPointDataInformation().GetArray('time').GetRange()
+
         c = smp.Contour(posreader, guiName='CurrentPosition')
         c.ContourBy = 'time'
-        c.Isosurfaces = [220700]
+        c.Isosurfaces = trange[0]
 
         smp.Show()
         smp.Render()
