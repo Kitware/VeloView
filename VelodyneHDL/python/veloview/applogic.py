@@ -274,6 +274,20 @@ def openPCAP(filename, calibrationFile):
         g.GlyphType.Radius = 30.0
         smp.Show()
         smp.Render()
+
+        # Setup scalar bar
+        rep = smp.GetDisplayProperties(posreader)
+        rep.ColorArrayName = 'time'
+        rgbPoints = [trange[0], 0.0, 0.0, 1.0,
+                     trange[1], 1.0, 0.0, 0.0]
+        rep.LookupTable = smp.GetLookupTableForArray('time', 1,
+                                                     RGBPoints=rgbPoints,
+                                                     ScalarRangeInitialized=1.0)
+        sb = smp.CreateScalarBar(LookupTable=rep.LookupTable, Title='Time')
+        sb.Orientation = 'Horizontal'
+        sb.Position, sb.Position2 = [.1, .05], [.8, .02]
+        app.overheadView.Representations.append(sb)
+
         app.position = (posreader, c, g)
     else:
         smp.Delete(posreader)
@@ -998,6 +1012,11 @@ def unloadData():
         app.sensor = None
 
     if position is not None:
+        # Cleanup the scalar bar reps
+        toremove = [x for x in app.overheadView.Representations if type(x) == servermanager.rendering.ScalarBarWidgetRepresentation]
+        for t in toremove:
+            app.overheadView.Representations.remove(t)
+
         smp.SetActiveView(app.overheadView)
         g = getGlyph()
         c = getContour()
@@ -1295,6 +1314,7 @@ def forceRender():
 
 def onTimeSliderChanged(frame):
     app.scene.AnimationTime = frame
+    updatePosition()
 
 
 def setupStatusBar():
