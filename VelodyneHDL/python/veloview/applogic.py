@@ -43,6 +43,14 @@ class AppLogic(object):
 
         self.mousePressed = False
 
+        mainView = smp.GetActiveView()
+        views = smp.GetRenderViews()
+        otherViews = [v for v in views if v != mainView]
+        assert len(otherViews) == 1
+        overheadView = otherViews[0]
+        self.mainView = mainView
+        self.overheadView = overheadView
+
     def setupTimers(self):
         self.playTimer = QtCore.QTimer()
         self.playTimer.setSingleShot(True)
@@ -226,6 +234,7 @@ def openPCAP(filename, calibrationFile):
     handler.SetProgressFrequency(freq)
     progressDialog.close()
 
+    # If we read the wrong kind of data abort
     if not hasArrayName(reader, 'intensity'):
         smp.Delete(reader)
         resetCameraToForwardView()
@@ -242,7 +251,56 @@ def openPCAP(filename, calibrationFile):
     app.reader = reader
     app.filenameLabel.setText('File: %s' % os.path.basename(filename))
 
+    # update overhead view
+    smp.SetActiveView(app.overheadView)
+    posreader = smp.VelodyneHDLPositionReader(guiName="Position",
+                                              FileName=filename)
+    smp.Show(posreader)
+
+    if posreader.GetClientSideObject().GetOutput().GetNumberOfPoints():
+
+        smp.Render()
+        app.overheadView.ResetCamera()
+        smp.Render()
+
+        trange = posreader.GetPointDataInformation().GetArray('time').GetRange()
+
+        c = smp.Contour(posreader, guiName='CurrentPosition')
+        c.ContourBy = 'time'
+        c.Isosurfaces = trange[0]
+
+        smp.Show()
+        smp.Render()
+
+        smp.Hide(c)
+        g = smp.Glyph(c, GlyphType='Sphere', guiName='PositionGlyph')
+        g.ScaleMode = 'off'
+        g.GlyphType.Radius = 30.0
+        smp.Show()
+        smp.Render()
+
+        # Setup scalar bar
+        rep = smp.GetDisplayProperties(posreader)
+        rep.ColorArrayName = 'time'
+        rgbPoints = [trange[0], 0.0, 0.0, 1.0,
+                     trange[1], 1.0, 0.0, 0.0]
+        rep.LookupTable = smp.GetLookupTableForArray('time', 1,
+                                                     RGBPoints=rgbPoints,
+                                                     ScalarRangeInitialized=1.0)
+        sb = smp.CreateScalarBar(LookupTable=rep.LookupTable, Title='Time')
+        sb.Orientation = 'Horizontal'
+        sb.Position, sb.Position2 = [.1, .05], [.8, .02]
+        app.overheadView.Representations.append(sb)
+
+        app.position = (posreader, c, g)
+    else:
+        smp.Delete(posreader)
+
+    smp.SetActiveView(app.mainView)
+    smp.SetActiveSource(reader)
+
     updateSliderTimeRange()
+    updatePosition()
     enablePlaybackActions()
     enableSaveActions()
     addRecentFile(filename)
@@ -851,21 +909,48 @@ def setPlayMode(mode):
 def gotoStart():
     pollSource()
     app.scene.GoToFirst()
+    updatePosition()
 
 
 def gotoEnd():
     pollSource()
     app.scene.GoToLast()
+    updatePosition()
 
 
 def gotoNext():
     pollSource()
     app.scene.GoToNext()
+    updatePosition()
 
 
 def gotoPrevious():
     pollSource()
     app.scene.GoToPrevious()
+    updatePosition()
+
+
+def updatePosition():
+    reader = getReader()
+    pos = getPosition()
+
+    if reader and pos:
+        pointcloud = reader.GetClientSideObject().GetOutput()
+
+        if pointcloud.GetNumberOfPoints():
+            # TODO: Approximate time, just grabbing the first
+            t = pointcloud.GetPointData().GetScalars('timestamp')
+            currentTime = t.GetTuple1(0)
+
+            trange = pos.GetPointDataInformation().GetArray('time').GetRange()
+
+            # Clamp
+            currentTime = min(max(currentTime, trange[0]+1.0e-1), trange[1]-1.0e-1)
+
+            c = getContour()
+            assert c
+            c.Isosurfaces = [currentTime]
+            smp.Render(view=app.overheadView)
 
 
 def playbackTick():
@@ -911,12 +996,15 @@ def playbackTick():
                 stop()
 
         app.scene.AnimationTime = newTime
+        # TODO: For sensor as well?
+        updatePosition()
 
 
 def unloadData():
 
     reader = getReader()
     sensor = getSensor()
+    position = getPosition()
 
     if reader is not None:
         smp.Delete(reader)
@@ -926,6 +1014,21 @@ def unloadData():
         sensor.Stop()
         smp.Delete(sensor)
         app.sensor = None
+
+    if position is not None:
+        # Cleanup the scalar bar reps
+        toremove = [x for x in app.overheadView.Representations if type(x) == servermanager.rendering.ScalarBarWidgetRepresentation]
+        for t in toremove:
+            app.overheadView.Representations.remove(t)
+
+        g = getGlyph()
+        c = getContour()
+        smp.Delete(g)
+        smp.Delete(c)
+        smp.Delete(position)
+        smp.Render(app.overheadView)
+
+        app.position = (None, None, None)
 
     clearSpreadSheetView()
 
@@ -937,6 +1040,14 @@ def getReader():
 def getSensor():
     return getattr(app, 'sensor', None)
 
+def getPosition():
+    return getattr(app, 'position', (None, None, None))[0]
+
+def getContour():
+    return getattr(app, 'position', (None, None, None))[1]
+
+def getGlyph():
+    return getattr(app, 'position', (None, None, None))[2]
 
 def setCalibrationFile(calibrationFile):
 
@@ -1023,16 +1134,6 @@ def saveScreenshot(filename):
 
     # save final screenshot
     composite.save(filename)
-
-
-def getRenderViewWidget():
-    return getPQView(smp.GetRenderView()).getWidget()
-
-
-def getPQView(view):
-    app = PythonQt.paraview.pqApplicationCore.instance()
-    model = app.getServerManagerModel()
-    return PythonQt.paraview.pqPythonQtMethodHelpers.findProxyItem(model, view.SMProxy)
 
 
 def getSpreadSheetViewProxy():
@@ -1213,6 +1314,7 @@ def forceRender():
 
 def onTimeSliderChanged(frame):
     app.scene.AnimationTime = frame
+    updatePosition()
 
 
 def setupStatusBar():

@@ -105,6 +105,7 @@
    <addaction name="separator"/>
    <addaction name="actionSelect_All_Points"/>
    <addaction name="actionSpreadsheet"/>
+   <addaction name="actionOverheadView"/>
    <addaction name="actionPython_Console"/>
   </widget>
   <widget class="pqColorToolbar" name="colorToolBar">
@@ -588,6 +589,14 @@
    </property>
    <property name="toolTip">
     <string>Measure the distance between two points: Press Control key and keep pressed left button of the mouse two place the two points of the ruler. To use this tool, the orthogonal projection view is obligatory.</string>
+   </property>
+  </action>
+  <action name="actionOverheadView">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>OverheadView</string>
    </property>
   </action>
   <action name="actionPlaneFit">
