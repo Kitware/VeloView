@@ -271,7 +271,7 @@ def openPCAP(filename, calibrationFile):
         smp.Hide(c)
         g = smp.Glyph(c, GlyphType='Sphere', guiName='PositionGlyph')
         g.ScaleMode = 'off'
-        g.GlyphType.Radius = 30.0
+        g.GlyphType.Radius = 5.0
         smp.Show()
         smp.Render()
 
