@@ -82,7 +82,7 @@ struct PositionPacket
   short temp[3];
   short accelx[3];
   short accely[3];
-  char sentance[72];
+  char sentance[73];
 };
 }
 
@@ -105,6 +105,7 @@ public:
 
   vtkPacketFileReader* Reader;
   int UTMZone;
+  std::string UTMString;
   double Offset[3];
 };
 
@@ -143,7 +144,7 @@ int vtkVelodyneHDLPositionReader::vtkInternal::ProcessHDLPacket(const unsigned c
     memcpy(position.temp + i, data + 14 + i*8 + 2, 2);
     memcpy(position.accelx + i, data + 14 + i*8 + 4, 2);
     memcpy(position.accely + i, data + 14 + i*8 + 6, 2);
-      }
+    }
 
   for(int i = 0; i < 3; ++i)
     {
@@ -169,6 +170,7 @@ int vtkVelodyneHDLPositionReader::vtkInternal::ProcessHDLPacket(const unsigned c
   std::copy(data + 14 + 8 + 8 + 8 + 160 + 4 + 4,
             data + 14 + 8 + 8 + 8 + 160 + 4 + 4 + 72,
             position.sentance);
+  position.sentance[72] = '\0';
 
   return 1;
 }
@@ -384,9 +386,10 @@ int vtkVelodyneHDLPositionReader::RequestData(vtkInformation *request,
         utmparams.push_back("+proj=utm");
         std::stringstream zone;
         zone << "+zone=" << this->Internal->UTMZone;
+        this->Internal->UTMString = zone.str();
         // WARNING: Dont let the string stream pass out of scope until
         // we finish initialization
-        utmparams.push_back(zone.str().c_str());
+        utmparams.push_back(this->Internal->UTMString.c_str());
         if(lat < 0)
           {
           utmparams.push_back("+south");
@@ -458,6 +461,8 @@ int vtkVelodyneHDLPositionReader::RequestData(vtkInformation *request,
   output->GetPointData()->AddArray(lons);
   output->GetPointData()->AddArray(gpsTime);
   output->GetPointData()->AddArray(times);
+
+  proj_free(pj_utm);
 
   return 1;
 }
