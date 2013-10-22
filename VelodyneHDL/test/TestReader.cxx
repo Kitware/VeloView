@@ -68,7 +68,7 @@ int main(int argc, char* argv[])
     reader->Close();
     elapsed = vtkTimerLog::GetUniversalTime() - startTime;
     std::cout << "elapsed time: " << elapsed << std::endl;
-    std::cout << "  frame " << frameId << " has points: " << frame->GetNumberOfPoints() << std::endl;
+    std::cout << "  frame " << frameId << " has points: " << (frame ? frame->GetNumberOfPoints() : 0) << std::endl;
     }
 
   reader->Close();

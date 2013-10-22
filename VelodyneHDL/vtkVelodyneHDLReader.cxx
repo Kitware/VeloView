@@ -511,6 +511,13 @@ vtkSmartPointer<vtkPolyData> vtkVelodyneHDLReader::GetFrame(int frameNumber)
     return 0;
     }
 
+  assert(this->Internal->FilePositions.size() == this->Internal->Skip.size());
+  if(frameNumber < 0 || frameNumber > this->Internal->FilePositions.size())
+    {
+    vtkErrorMacro("Invalid frame requested");
+    return 0;
+    }
+
   const unsigned char* data = 0;
   unsigned int dataLength = 0;
   double timeSinceStart = 0;
