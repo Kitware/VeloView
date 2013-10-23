@@ -332,7 +332,7 @@ int vtkVelodyneHDLPositionReader::RequestData(vtkInformation *request,
   unsigned int dataLength;
   double timeSinceStart;
 
-  PROJ *pj_utm;
+  PROJ *pj_utm = NULL;
   // PROJ *pj_latlong;
   // const char *latlonargs[4] = {"+proj=longlat", "+ellps=WGS84",
   //                              "+datum=WGS84",  "+no_defs" };
@@ -461,8 +461,15 @@ int vtkVelodyneHDLPositionReader::RequestData(vtkInformation *request,
   output->GetPointData()->AddArray(lons);
   output->GetPointData()->AddArray(gpsTime);
   output->GetPointData()->AddArray(times);
+  for(VecMap::iterator it = dataVectors.begin(); it != dataVectors.end(); ++it)
+    {
+    output->GetPointData()->AddArray(it->second);
+    }
 
-  proj_free(pj_utm);
+  if(pj_utm)
+    {
+    proj_free(pj_utm);
+    }
 
   return 1;
 }
