@@ -461,6 +461,10 @@ int vtkVelodyneHDLPositionReader::RequestData(vtkInformation *request,
   output->GetPointData()->AddArray(lons);
   output->GetPointData()->AddArray(gpsTime);
   output->GetPointData()->AddArray(times);
+  for(VecMap::iterator it = dataVectors.begin(); it != dataVectors.end(); ++it)
+    {
+    output->GetPointData()->AddArray(it->second);
+    }
 
   if(pj_utm)
     {
