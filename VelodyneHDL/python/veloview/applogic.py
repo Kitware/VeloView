@@ -424,11 +424,16 @@ def rotateCSVFile(filename):
     writer.writerows(rows)
 
 
+def savePositionCSV(filename):
+    w = smp.DataSetCSVWriter(getPosition(), FileName=filename)
+    w.UpdatePipeline()
+    smp.Delete(w)
+
 def saveCSVCurrentFrame(filename):
     w = smp.DataSetCSVWriter(FileName=filename)
     w.UpdatePipeline()
-    rotateCSVFile(filename)
     smp.Delete(w)
+    rotateCSVFile(filename)
 
 
 def saveCSVAllFrames(filename):
@@ -449,7 +454,6 @@ def saveCSV(filename, timesteps):
     os.makedirs(outDir)
 
     writer = smp.DataSetCSVWriter()
-    view = smp.GetActiveView()
 
     for t in timesteps:
         app.scene.AnimationTime = t
@@ -532,6 +536,11 @@ def onSaveCSV():
                 saveCSVAllFrames(fileName)
             else:
                 saveCSVFrameRange(fileName, frameStart, frameStop)
+
+
+def onSavePosition():
+    fileName = getSaveFileName('Save CSV', 'csv', getDefaultSaveFileName('csv', '-position'))
+    savePositionCSV(fileName)
 
 
 def onSavePCAP():
@@ -757,17 +766,20 @@ def disablePlaybackActions():
     setPlaybackActionsEnabled(False)
 
 
-def setSaveActionsEnabled(enabled):
+def _setSaveActionsEnabled(enabled):
     for action in ('Save_CSV', 'Save_PCAP', 'Export_To_KiwiViewer', 'Close', 'Choose_Calibration_File'):
         app.actions['action'+action].setEnabled(enabled)
 
 
 def enableSaveActions():
-    setSaveActionsEnabled(True)
+    _setSaveActionsEnabled(True)
+    if getPosition():
+        app.actions['actionSave_PositionCSV'].setEnabled(True)
 
 
 def disableSaveActions():
-    setSaveActionsEnabled(False)
+    _setSaveActionsEnabled(False)
+    app.actions['actionSave_PositionCSV'].setEnabled(False)
 
 
 def recordFile(filename):
@@ -1202,7 +1214,7 @@ def start():
     setupActions()
     setupEventsListener()
     disablePlaybackActions()
-    setSaveActionsEnabled(False)
+    disableSaveActions()
     app.actions['actionMeasure'].setEnabled(view.CameraParallelProjection)
     setupStatusBar()
     setupTimeSliderWidget()
@@ -1480,6 +1492,7 @@ def setupActions():
     app.actions['actionPlay'].connect('triggered()', togglePlay)
     app.actions['actionRecord'].connect('triggered()', onRecord)
     app.actions['actionSave_CSV'].connect('triggered()', onSaveCSV)
+    app.actions['actionSave_PositionCSV'].connect('triggered()', onSavePosition)
     app.actions['actionSave_PCAP'].connect('triggered()', onSavePCAP)
     app.actions['actionSave_Screenshot'].connect('triggered()', onSaveScreenshot)
     app.actions['actionExport_To_KiwiViewer'].connect('triggered()', onKiwiViewerExport)
