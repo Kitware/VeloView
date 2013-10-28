@@ -172,6 +172,11 @@ int vtkVelodyneHDLPositionReader::vtkInternal::ProcessHDLPacket(const unsigned c
             position.sentance);
   position.sentance[72] = '\0';
 
+  if(position.sentance[0] == '\0')
+    {
+    return 0;
+    }
+
   return 1;
 }
 
