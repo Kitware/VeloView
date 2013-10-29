@@ -133,11 +133,6 @@ target_link_libraries(${library_name} LINK_PUBLIC ${deps})
 add_executable(PacketFileSender PacketFileSender.cxx)
 target_link_libraries(PacketFileSender ${deps})
 
-add_executable(TestReader test/TestReader.cxx)
-target_link_libraries(TestReader ${library_name})
-
-add_executable(TestPositionReader test/TestPositionReader.cxx)
-target_link_libraries(TestPositionReader ${library_name})
 
 #########
 set(MOC_HEADERS
@@ -220,3 +215,6 @@ else()
 endif()
 
 add_subdirectory(python)
+if(BUILD_TESTING)
+  add_subdirectory(Testing)
+endif()

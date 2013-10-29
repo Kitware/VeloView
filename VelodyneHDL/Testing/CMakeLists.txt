@@ -1,0 +1,5 @@
+add_executable(TestReader TestReader.cxx)
+target_link_libraries(TestReader VelodyneHDLPlugin)
+
+add_executable(TestPositionReader TestPositionReader.cxx)
+target_link_libraries(TestPositionReader VelodyneHDLPlugin)
