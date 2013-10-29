@@ -294,7 +294,7 @@ def openPCAP(filename, calibrationFile):
     smp.SetActiveView(app.mainView)
     smp.SetActiveSource(reader)
 
-    if app.position:
+    if getPosition():
         intp = app.position[0].GetClientSideObject().GetInterpolator()
         objtoshow = smp.VelodyneOffsetFilter()
         objtoshow.GetClientSideObject().SetInterp(intp)
