@@ -63,7 +63,6 @@ if(PARAVIEW_BUILD_QT_GUI)
 
   set(vtk_sources
     vtkPlaneFitter.cxx
-    vtkPlaneFitter.h
     )
 
   QT4_WRAP_CPP(moc_srcs ${MOC_HEADERS})
@@ -153,7 +152,9 @@ add_library(VelodyneHDLPythonQT ${gui_sources})
 target_link_libraries(VelodyneHDLPythonQT ${library_name} ${PYTHONQT_LIBRARIES})
 #########
 
-WRAP_PLUGIN_FOR_PYTHON(VelodyneHDLPlugin ${vtk_sources} )
+list(APPEND wrap_sources ${vtk_sources} ${servermanager_sources})
+
+WRAP_PLUGIN_FOR_PYTHON(VelodyneHDLPlugin "${wrap_sources}" "NOTTHERE")
 
 if (NOT APPLE)
   install(TARGETS VelodyneHDLPlugin
