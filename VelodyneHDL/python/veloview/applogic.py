@@ -1028,6 +1028,10 @@ def unloadData():
     position = getPosition()
 
     if reader is not None:
+        activesrc = smp.GetActiveSource()
+        if reader != activesrc:
+            smp.Delete(activesrc)
+
         smp.Delete(reader)
         app.reader = None
 
