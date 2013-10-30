@@ -30,7 +30,7 @@ class vvAppLogic;
 class QAction;
 class QLabel;
 
-class VelodyneHDLPython_EXPORT pqVelodyneManager : public QObject
+class VelodyneHDLPythonQT_EXPORT pqVelodyneManager : public QObject
 {
 
   Q_OBJECT
