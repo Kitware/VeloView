@@ -36,7 +36,7 @@
 
 class vtkTupleInterpolator;
 
-class vtkVelodyneOffsetFilter : public vtkPolyDataAlgorithm
+class VTK_EXPORT vtkVelodyneOffsetFilter : public vtkPolyDataAlgorithm
 {
 public:
   vtkTypeMacro(vtkVelodyneOffsetFilter, vtkPolyDataAlgorithm);

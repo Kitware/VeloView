@@ -34,7 +34,7 @@
 
 #include <vtkPolyDataAlgorithm.h>
 
-class vtkVelodyneHDLSource : public vtkPolyDataAlgorithm
+class VTK_EXPORT vtkVelodyneHDLSource : public vtkPolyDataAlgorithm
 {
 public:
   vtkTypeMacro(vtkVelodyneHDLSource, vtkPolyDataAlgorithm);
