@@ -124,7 +124,7 @@ int vtkVelodyneOffsetFilter::RequestData(
     std::copy(positiondata, positiondata + 3, offset);
 
     double angle = atan2(positiondata[4], positiondata[3]);
-    angle = (angle > 0 ? angle : (2*M_PI + angle)) * 360 / (2*M_PI);
+    angle = (angle > 0 ? angle : (2*vtkMath::Pi() + angle)) * 360 / (2*vtkMath::Pi());
     angle = -fmod(angle, 360);
 
     transform->RotateZ(angle);
