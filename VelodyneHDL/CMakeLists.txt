@@ -61,6 +61,10 @@ if(PARAVIEW_BUILD_QT_GUI)
   set(resources
     images/resources.qrc)
 
+  set(vtk_sources
+    vtkPlaneFitter.cxx
+    )
+
   QT4_WRAP_CPP(moc_srcs ${MOC_HEADERS})
   QT4_WRAP_UI(ui_srcs ${UI_FILES})
   QT4_ADD_RESOURCES(resource_srcs ${resources})
@@ -116,7 +120,7 @@ set(library_name VelodyneHDLPlugin)
 add_paraview_plugin(${library_name} "1.0"
   GUI_INTERFACES ${gui_interfaces}
   GUI_RESOURCE_FILES ${gui_xml}
-  GUI_SOURCES ${gui_sources}
+  GUI_SOURCES ${gui_sources} ${vtk_sources}
   SERVER_MANAGER_XML ${servermanager_xml}
   SERVER_MANAGER_SOURCES ${servermanager_sources}
   SOURCES vtkPacketFileWriter.cxx
@@ -150,10 +154,13 @@ list(APPEND gui_sources
   vvLoadDataReaction.cxx
   )
 
-add_library(VelodyneHDLPython ${gui_sources})
-target_link_libraries(VelodyneHDLPython ${library_name} ${PYTHONQT_LIBRARIES})
+add_library(VelodyneHDLPythonQT ${gui_sources})
+target_link_libraries(VelodyneHDLPythonQT ${library_name} ${PYTHONQT_LIBRARIES})
 #########
 
+list(APPEND wrap_sources ${vtk_sources} ${servermanager_sources})
+
+WRAP_PLUGIN_FOR_PYTHON(VelodyneHDLPlugin "${wrap_sources}" "NOTTHERE")
 
 if (NOT APPLE)
   install(TARGETS VelodyneHDLPlugin
@@ -161,7 +168,17 @@ if (NOT APPLE)
           LIBRARY DESTINATION ${VV_INSTALL_LIBRARY_DIR}
           COMPONENT Runtime)
 
-  install(TARGETS VelodyneHDLPython
+  install(TARGETS VelodyneHDLPluginPython
+          RUNTIME DESTINATION ${VV_INSTALL_RUNTIME_DIR}
+          LIBRARY DESTINATION ${VV_INSTALL_LIBRARY_DIR}
+          COMPONENT Runtime)
+
+  install(TARGETS VelodyneHDLPluginPythonD
+          RUNTIME DESTINATION ${VV_INSTALL_RUNTIME_DIR}
+          LIBRARY DESTINATION ${VV_INSTALL_LIBRARY_DIR}
+          COMPONENT Runtime)
+
+  install(TARGETS VelodyneHDLPythonQT
           RUNTIME DESTINATION ${VV_INSTALL_RUNTIME_DIR}
           LIBRARY DESTINATION ${VV_INSTALL_LIBRARY_DIR}
           COMPONENT Runtime)
@@ -172,7 +189,17 @@ else()
           LIBRARY DESTINATION ${VV_INSTALL_RUNTIME_DIR}/VeloView.app/Contents/Libraries
           COMPONENT Runtime)
 
-  install(TARGETS VelodyneHDLPython
+  install(TARGETS VelodyneHDLPluginPython
+          RUNTIME DESTINATION ${VV_INSTALL_RUNTIME_DIR}/VeloView.app/Contents/Libraries
+          LIBRARY DESTINATION ${VV_INSTALL_RUNTIME_DIR}/VeloView.app/Contents/Libraries
+          COMPONENT Runtime)
+
+  install(TARGETS VelodyneHDLPluginPythonD
+          RUNTIME DESTINATION ${VV_INSTALL_RUNTIME_DIR}/VeloView.app/Contents/Libraries
+          LIBRARY DESTINATION ${VV_INSTALL_RUNTIME_DIR}/VeloView.app/Contents/Libraries
+          COMPONENT Runtime)
+
+  install(TARGETS VelodyneHDLPythonQT
           RUNTIME DESTINATION ${VV_INSTALL_RUNTIME_DIR}/VeloView.app/Contents/Libraries
           LIBRARY DESTINATION ${VV_INSTALL_RUNTIME_DIR}/VeloView.app/Contents/Libraries
           COMPONENT Runtime)

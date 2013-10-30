@@ -27,6 +27,7 @@ from PythonQt import QtCore, QtGui
 from vtkIOXMLPython import vtkXMLPolyDataWriter
 import kiwiviewerExporter
 import gridAdjustmentDialog
+import planefit
 
 class AppLogic(object):
 
@@ -137,6 +138,9 @@ def openData(filename):
 
     resetCamera()
 
+
+def planeFit():
+    planefit.fitPlane()
 
 def colorByIntensity(sourceProxy):
 
@@ -1487,6 +1491,8 @@ def setupActions():
 
     for a in actions:
         app.actions[a.objectName] = a
+
+    app.actions['actionPlaneFit'].connect('triggered()', planeFit)
 
     app.actions['actionClose'].connect('triggered()', close)
     app.actions['actionPlay'].connect('triggered()', togglePlay)

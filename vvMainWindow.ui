@@ -151,6 +151,7 @@
    <addaction name="actionReset_Camera"/>
    <addaction name="actionToggleProjection"/>
    <addaction name="actionMeasure"/>
+   <addaction name="actionPlaneFit"/>
    <addaction name="separator"/>
    <addaction name="actionSetViewXPlus"/>
    <addaction name="actionSetViewXMinus"/>
@@ -597,6 +598,11 @@
    </property>
    <property name="text">
     <string>OverheadView</string>
+   </property>
+  </action>
+  <action name="actionPlaneFit">
+   <property name="text">
+    <string>Plane Fit</string>
    </property>
   </action>
   <action name="actionSave_PositionCSV">
