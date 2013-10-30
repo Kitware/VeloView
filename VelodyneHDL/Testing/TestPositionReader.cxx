@@ -13,17 +13,20 @@
 // limitations under the License.
 
 
-#include <vtkVelodyneHDLPositionReader.h>
+#include "vtkVelodyneHDLPositionReader.h"
+#include "vtkTestingMacros.h"
+
 #include <vtkNew.h>
 
 #include <string>
 #include <iostream>
+#include <cstdlib>
 
 int main(int argc, char* argv[])
 {
   if (argc < 2)
     {
-    std::cout << "Usage: " << argv[0] << " <pcap file>" << std::endl;
+    std::cout << "Usage: " << argv[0] << " <pcap file> [TEST_SPECS]" << std::endl;
     return 1;
     }
 
@@ -36,6 +39,12 @@ int main(int argc, char* argv[])
 
   vtkSmartPointer<vtkPolyData> poly = reader->GetOutput();
   std::cout << "Number of samples: " << poly->GetNumberOfPoints() << std::endl;
+
+  // Validate arguments
+  if(argc > 2)
+    {
+    ASSERT_EQUALS(poly->GetNumberOfPoints(), atoi(argv[2]));
+    }
 
   return 0;
 }

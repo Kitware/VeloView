@@ -24,6 +24,8 @@ find_package(PythonLibs REQUIRED)
 include(${PARAVIEW_USE_FILE})
 option(BUILD_SHARED_LIBS "Build shared libs" ON)
 
+include(CTest)
+
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 if(UNIX)
   set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")

@@ -52,6 +52,8 @@
 #include "vtkPacketFileReader.h"
 #include "vtkPacketFileWriter.h"
 
+#include "vtkTupleInterpolator.h"
+
 #include <sstream>
 #include <algorithm>
 #include <cmath>
@@ -103,10 +105,13 @@ public:
   int ProcessHDLPacket(const unsigned char *data, unsigned int bytes, PositionPacket& position);
   std::vector<std::string> ParseSentance(const std::string& sentance);
 
+  void InterpolateGPS(vtkPoints* points, vtkDataArray* gpsTime, vtkDataArray* times, vtkDataArray* heading);
+
   vtkPacketFileReader* Reader;
   int UTMZone;
   std::string UTMString;
   double Offset[3];
+  vtkSmartPointer<vtkTupleInterpolator> Interp;
 };
 
 namespace
@@ -172,6 +177,11 @@ int vtkVelodyneHDLPositionReader::vtkInternal::ProcessHDLPacket(const unsigned c
             position.sentance);
   position.sentance[72] = '\0';
 
+  if(position.sentance[0] == '\0')
+    {
+    return 0;
+    }
+
   return 1;
 }
 
@@ -192,6 +202,72 @@ std::vector<std::string> vtkVelodyneHDLPositionReader::vtkInternal::ParseSentanc
     }
 
   return result;
+}
+
+//-----------------------------------------------------------------------------
+vtkTupleInterpolator* vtkVelodyneHDLPositionReader::GetInterpolator()
+{
+  return this->Internal->Interp;
+}
+
+//-----------------------------------------------------------------------------
+void vtkVelodyneHDLPositionReader::vtkInternal::InterpolateGPS(vtkPoints* points, vtkDataArray* gpsTime, vtkDataArray* times, vtkDataArray* heading)
+{
+  // assert(gpsTime is sorted)
+  assert(points->GetNumberOfPoints() == times->GetNumberOfTuples());
+
+  this->Interp = vtkSmartPointer<vtkTupleInterpolator>::New();
+  vtkSmartPointer<vtkTupleInterpolator> interp = this->Interp;
+  interp->SetInterpolationType(1);
+  interp->SetNumberOfComponents(5);
+
+  unsigned int last = 0;
+  for(vtkIdType i = 0; i < times->GetNumberOfTuples(); ++i)
+    {
+    unsigned int currGPS = gpsTime->GetTuple1(i);
+    if(currGPS != last)
+      {
+      int minutes = (currGPS / 100) % 100;
+      int seconds = currGPS % 100;
+
+      double convertedtime = (60.0 * minutes + seconds) * 1.0e6;
+      double pt[5];
+      points->GetPoint(i, pt);
+
+      double angle = M_PI * heading->GetTuple1(i) / 180.0;
+      pt[3] = cos(angle);
+      pt[4] = sin(angle);
+
+      interp->AddTuple(convertedtime, pt);
+      }
+
+    last = currGPS;
+    }
+
+  double mint = interp->GetMinimumT();
+  double maxt = interp->GetMaximumT();
+  double range[2];
+  range[0] = mint;
+  range[1] = maxt;
+
+  for(vtkIdType i = 0; i < times->GetNumberOfTuples(); ++i)
+    {
+    double t = times->GetTuple1(i);
+    vtkMath::ClampValue(&t,range);
+
+    double result[5];
+    interp->InterpolateTuple(t, result);
+
+    double pt[3];
+    std::copy(result, result + 3, pt);
+
+    points->SetPoint(i, pt);
+
+    double angle = atan2(result[4], result[3]);
+    angle = (angle > 0 ? angle : (2*M_PI + angle)) * 360 / (2*M_PI);
+
+    heading->SetTuple1(i, angle);
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -317,6 +393,7 @@ int vtkVelodyneHDLPositionReader::RequestData(vtkInformation *request,
   dataVectors.insert(std::make_pair("accel2y", vtkSmartPointer<vtkDoubleArray>::New()));
   dataVectors.insert(std::make_pair("accel3x", vtkSmartPointer<vtkDoubleArray>::New()));
   dataVectors.insert(std::make_pair("accel3y", vtkSmartPointer<vtkDoubleArray>::New()));
+  dataVectors.insert(std::make_pair("heading", vtkSmartPointer<vtkDoubleArray>::New()));
   for(VecMap::iterator it = dataVectors.begin(); it != dataVectors.end(); ++it)
     {
     it->second->SetName(it->first.c_str());
@@ -360,6 +437,8 @@ int vtkVelodyneHDLPositionReader::RequestData(vtkInformation *request,
 
       double latDegGPRMC = atof(words[3].c_str());
       double lonDegGPRMC = atof(words[5].c_str());
+
+      double heading = atof(words[8].c_str());
 
       double latDegDec = floor(latDegGPRMC / 100);
       double latDegMin = 100 * ((latDegGPRMC / 100) - latDegDec);
@@ -447,6 +526,7 @@ int vtkVelodyneHDLPositionReader::RequestData(vtkInformation *request,
       dataVectors["accel1y"]->InsertNextValue(position.accely[0] * ACCEL_SCALE);
       dataVectors["accel2y"]->InsertNextValue(position.accely[1] * ACCEL_SCALE);
       dataVectors["accel3y"]->InsertNextValue(position.accely[2] * ACCEL_SCALE);
+      dataVectors["heading"]->InsertNextValue(heading);
 
       pointcount++;
       }
@@ -454,6 +534,9 @@ int vtkVelodyneHDLPositionReader::RequestData(vtkInformation *request,
   this->Close();
 
   cells->InsertNextCell(polyLine);
+
+  // Optionall interpolate the GPS values
+  this->Internal->InterpolateGPS(points, gpsTime, times, dataVectors["heading"]);
 
   output->SetPoints(points);
   output->SetLines(cells);

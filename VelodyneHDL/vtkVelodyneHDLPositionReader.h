@@ -36,6 +36,8 @@
 #include <vtkSmartPointer.h>
 #include <string>
 
+class vtkTupleInterpolator;
+
 class VTK_EXPORT vtkVelodyneHDLPositionReader : public vtkPolyDataAlgorithm
 {
 public:
@@ -52,7 +54,7 @@ public:
   //
   int CanReadFile(const char* fname);
 
-//  int GetUTMZone();
+  vtkTupleInterpolator* GetInterpolator();
 
 protected:
 

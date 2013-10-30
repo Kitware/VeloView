@@ -63,7 +63,6 @@ if(PARAVIEW_BUILD_QT_GUI)
 
   set(vtk_sources
     vtkPlaneFitter.cxx
-    vtkPlaneFitter.h
     )
 
   QT4_WRAP_CPP(moc_srcs ${MOC_HEADERS})
@@ -98,6 +97,7 @@ list(APPEND servermanager_sources
   vtkVelodyneHDLGridSource.cxx
   vtkVelodyneHDLReader.cxx
   vtkVelodyneHDLPositionReader.cxx
+  vtkVelodyneOffsetFilter.cxx
   vtkVelodyneHDLSource.cxx)
 
 
@@ -105,6 +105,7 @@ list(APPEND servermanager_xml
   xml/VelodyneHDLGridSource.xml
   xml/VelodyneHDLReader.xml
   xml/VelodyneHDLPositionReader.xml
+  xml/VelodyneOffsetFilter.xml
   xml/VelodyneHDLSource.xml)
 
 list(APPEND gui_xml
@@ -132,11 +133,6 @@ target_link_libraries(${library_name} LINK_PUBLIC ${deps})
 add_executable(PacketFileSender PacketFileSender.cxx)
 target_link_libraries(PacketFileSender ${deps})
 
-add_executable(TestReader test/TestReader.cxx)
-target_link_libraries(TestReader ${library_name})
-
-add_executable(TestPositionReader test/TestPositionReader.cxx)
-target_link_libraries(TestPositionReader ${library_name})
 
 #########
 set(MOC_HEADERS
@@ -159,7 +155,9 @@ add_library(VelodyneHDLPythonQT ${gui_sources})
 target_link_libraries(VelodyneHDLPythonQT ${library_name} ${PYTHONQT_LIBRARIES})
 #########
 
-WRAP_PLUGIN_FOR_PYTHON(VelodyneHDLPlugin ${vtk_sources} )
+list(APPEND wrap_sources ${vtk_sources} ${servermanager_sources})
+
+WRAP_PLUGIN_FOR_PYTHON(VelodyneHDLPlugin "${wrap_sources}" "NOTTHERE")
 
 if (NOT APPLE)
   install(TARGETS VelodyneHDLPlugin
@@ -217,3 +215,6 @@ else()
 endif()
 
 add_subdirectory(python)
+if(BUILD_TESTING)
+  add_subdirectory(Testing)
+endif()
