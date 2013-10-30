@@ -105,7 +105,7 @@ public:
   int ProcessHDLPacket(const unsigned char *data, unsigned int bytes, PositionPacket& position);
   std::vector<std::string> ParseSentance(const std::string& sentance);
 
-  void InterpolateGPS(vtkPoints* points, vtkDataArray* gpsTime, vtkDataArray* times);
+  void InterpolateGPS(vtkPoints* points, vtkDataArray* gpsTime, vtkDataArray* times, vtkDataArray* heading);
 
   vtkPacketFileReader* Reader;
   int UTMZone;
@@ -211,7 +211,7 @@ vtkTupleInterpolator* vtkVelodyneHDLPositionReader::GetInterpolator()
 }
 
 //-----------------------------------------------------------------------------
-void vtkVelodyneHDLPositionReader::vtkInternal::InterpolateGPS(vtkPoints* points, vtkDataArray* gpsTime, vtkDataArray* times)
+void vtkVelodyneHDLPositionReader::vtkInternal::InterpolateGPS(vtkPoints* points, vtkDataArray* gpsTime, vtkDataArray* times, vtkDataArray* heading)
 {
   // assert(gpsTime is sorted)
   assert(points->GetNumberOfPoints() == times->GetNumberOfTuples());
@@ -219,7 +219,7 @@ void vtkVelodyneHDLPositionReader::vtkInternal::InterpolateGPS(vtkPoints* points
   this->Interp = vtkSmartPointer<vtkTupleInterpolator>::New();
   vtkSmartPointer<vtkTupleInterpolator> interp = this->Interp;
   interp->SetInterpolationType(1);
-  interp->SetNumberOfComponents(3);
+  interp->SetNumberOfComponents(5);
 
   unsigned int last = 0;
   for(vtkIdType i = 0; i < times->GetNumberOfTuples(); ++i)
@@ -231,8 +231,13 @@ void vtkVelodyneHDLPositionReader::vtkInternal::InterpolateGPS(vtkPoints* points
       int seconds = currGPS % 100;
 
       double convertedtime = (60.0 * minutes + seconds) * 1.0e6;
-      double pt[3];
+      double pt[5];
       points->GetPoint(i, pt);
+
+      double angle = M_PI * heading->GetTuple1(i) / 180.0;
+      pt[3] = cos(angle);
+      pt[4] = sin(angle);
+
       interp->AddTuple(convertedtime, pt);
       }
 
@@ -250,9 +255,18 @@ void vtkVelodyneHDLPositionReader::vtkInternal::InterpolateGPS(vtkPoints* points
     double t = times->GetTuple1(i);
     vtkMath::ClampValue(&t,range);
 
+    double result[5];
+    interp->InterpolateTuple(t, result);
+
     double pt[3];
-    interp->InterpolateTuple(t, pt);
+    std::copy(result, result + 3, pt);
+
     points->SetPoint(i, pt);
+
+    double angle = atan2(result[4], result[3]);
+    angle = (angle > 0 ? angle : (2*M_PI + angle)) * 360 / (2*M_PI);
+
+    heading->SetTuple1(i, angle);
     }
 }
 
@@ -379,6 +393,7 @@ int vtkVelodyneHDLPositionReader::RequestData(vtkInformation *request,
   dataVectors.insert(std::make_pair("accel2y", vtkSmartPointer<vtkDoubleArray>::New()));
   dataVectors.insert(std::make_pair("accel3x", vtkSmartPointer<vtkDoubleArray>::New()));
   dataVectors.insert(std::make_pair("accel3y", vtkSmartPointer<vtkDoubleArray>::New()));
+  dataVectors.insert(std::make_pair("heading", vtkSmartPointer<vtkDoubleArray>::New()));
   for(VecMap::iterator it = dataVectors.begin(); it != dataVectors.end(); ++it)
     {
     it->second->SetName(it->first.c_str());
@@ -422,6 +437,8 @@ int vtkVelodyneHDLPositionReader::RequestData(vtkInformation *request,
 
       double latDegGPRMC = atof(words[3].c_str());
       double lonDegGPRMC = atof(words[5].c_str());
+
+      double heading = atof(words[8].c_str());
 
       double latDegDec = floor(latDegGPRMC / 100);
       double latDegMin = 100 * ((latDegGPRMC / 100) - latDegDec);
@@ -509,6 +526,7 @@ int vtkVelodyneHDLPositionReader::RequestData(vtkInformation *request,
       dataVectors["accel1y"]->InsertNextValue(position.accely[0] * ACCEL_SCALE);
       dataVectors["accel2y"]->InsertNextValue(position.accely[1] * ACCEL_SCALE);
       dataVectors["accel3y"]->InsertNextValue(position.accely[2] * ACCEL_SCALE);
+      dataVectors["heading"]->InsertNextValue(heading);
 
       pointcount++;
       }
@@ -518,7 +536,7 @@ int vtkVelodyneHDLPositionReader::RequestData(vtkInformation *request,
   cells->InsertNextCell(polyLine);
 
   // Optionall interpolate the GPS values
-  this->Internal->InterpolateGPS(points, gpsTime, times);
+  this->Internal->InterpolateGPS(points, gpsTime, times, dataVectors["heading"]);
 
   output->SetPoints(points);
   output->SetLines(cells);

@@ -37,6 +37,7 @@
 #include "vtkTupleInterpolator.h"
 #include "vtkPointData.h"
 #include "vtkMath.h"
+#include "vtkTransform.h"
 
 //----------------------------------------------------------------------------
 class vtkVelodyneOffsetFilter::vtkInternal
@@ -105,16 +106,34 @@ int vtkVelodyneOffsetFilter::RequestData(
     }
 
   // Rotate
+  vtkNew<vtkTransform> transform;
 
+  assert(times->GetNumberOfTuples() == points->GetNumberOfPoints());
   for(vtkIdType i = 0; i < times->GetNumberOfTuples(); ++i)
     {
+    transform->Identity();
+
     double t = times->GetTuple1(i);
     vtkMath::ClampValue(&t,range);
 
+    assert(this->Internal->Interp->GetNumberOfComponents() == 5);
+    double positiondata[5];
+    this->Internal->Interp->InterpolateTuple(t, positiondata);
+
     double offset[3];
-    this->Internal->Interp->InterpolateTuple(t, offset);
+    std::copy(positiondata, positiondata + 3, offset);
+
+    double angle = atan2(positiondata[4], positiondata[3]);
+    angle = (angle > 0 ? angle : (2*M_PI + angle)) * 360 / (2*M_PI);
+    angle = -fmod(angle, 360);
+
+    transform->RotateZ(angle);
+
     double pt[3];
     points->GetPoint(i, pt);
+
+    transform->TransformPoint(pt, pt);
+
     double offsetpt[3];
     vtkMath::Add(offset, pt, offsetpt);
 
