@@ -97,6 +97,7 @@ list(APPEND servermanager_sources
   vtkVelodyneHDLGridSource.cxx
   vtkVelodyneHDLReader.cxx
   vtkVelodyneHDLPositionReader.cxx
+  vtkVelodyneOffsetFilter.cxx
   vtkVelodyneHDLSource.cxx)
 
 
@@ -104,6 +105,7 @@ list(APPEND servermanager_xml
   xml/VelodyneHDLGridSource.xml
   xml/VelodyneHDLReader.xml
   xml/VelodyneHDLPositionReader.xml
+  xml/VelodyneOffsetFilter.xml
   xml/VelodyneHDLSource.xml)
 
 list(APPEND gui_xml

@@ -229,6 +229,7 @@ def openPCAP(filename, calibrationFile):
                                    CalibrationFile=calibrationFile,
                                    NumberOfTrailingFrames=app.trailingFramesSpinBox.value)
     reader.UpdatePipeline()
+    
 
     handler.RemoveObserver(tag)
     handler.SetProgressFrequency(freq)
@@ -239,12 +240,6 @@ def openPCAP(filename, calibrationFile):
         smp.Delete(reader)
         resetCameraToForwardView()
         return
-
-    rep = smp.Show(reader)
-    rep.InterpolateScalarsBeforeMapping = 0
-    colorByIntensity(reader)
-
-    showSourceInSpreadSheet(reader)
 
     smp.GetActiveView().ViewTime = 0.0
 
@@ -298,6 +293,19 @@ def openPCAP(filename, calibrationFile):
 
     smp.SetActiveView(app.mainView)
     smp.SetActiveSource(reader)
+
+    if app.position:
+        intp = app.position[0].GetClientSideObject().GetInterpolator()
+        objtoshow = smp.VelodyneOffsetFilter()
+        objtoshow.GetClientSideObject().SetInterp(intp)
+    else:
+        objtoshow = reader
+
+    rep = smp.Show(objtoshow)
+    rep.InterpolateScalarsBeforeMapping = 0
+    colorByIntensity(objtoshow)
+
+    showSourceInSpreadSheet(reader)
 
     updateSliderTimeRange()
     updatePosition()
@@ -950,6 +958,7 @@ def updatePosition():
         pointcloud = reader.GetClientSideObject().GetOutput()
 
         if pointcloud.GetNumberOfPoints():
+            # Update the overhead view
             # TODO: Approximate time, just grabbing the first
             t = pointcloud.GetPointData().GetScalars('timestamp')
             currentTime = t.GetTuple1(0)
