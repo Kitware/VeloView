@@ -39,6 +39,7 @@
 #include "vtkUnsignedIntArray.h"
 #include "vtkDataArray.h"
 #include "vtkFloatArray.h"
+#include "vtkMath.h"
 
 #include "vtkPolyData.h"
 #include "vtkInformation.h"
@@ -68,9 +69,6 @@
 #ifdef _MSC_VER
 # include <boost/cstdint.hpp>
 typedef boost::uint8_t uint8_t;
-# ifndef M_PI
-#   define M_PI 3.14159265358979323846
-# endif
 #else
 # include <stdint.h>
 #endif
@@ -234,7 +232,7 @@ void vtkVelodyneHDLPositionReader::vtkInternal::InterpolateGPS(vtkPoints* points
       double pt[5];
       points->GetPoint(i, pt);
 
-      double angle = M_PI * heading->GetTuple1(i) / 180.0;
+      double angle = vtkMath::Pi() * heading->GetTuple1(i) / 180.0;
       pt[3] = cos(angle);
       pt[4] = sin(angle);
 
@@ -264,7 +262,7 @@ void vtkVelodyneHDLPositionReader::vtkInternal::InterpolateGPS(vtkPoints* points
     points->SetPoint(i, pt);
 
     double angle = atan2(result[4], result[3]);
-    angle = (angle > 0 ? angle : (2*M_PI + angle)) * 360 / (2*M_PI);
+    angle = (angle > 0 ? angle : (2*vtkMath::Pi() + angle)) * 360 / (2*vtkMath::Pi());
 
     heading->SetTuple1(i, angle);
     }

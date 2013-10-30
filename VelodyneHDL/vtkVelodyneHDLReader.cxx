@@ -64,9 +64,6 @@
 #ifdef _MSC_VER
 # include <boost/cstdint.hpp>
 typedef boost::uint8_t uint8_t;
-# ifndef M_PI
-#   define M_PI 3.14159265358979323846
-# endif
 #else
 # include <stdint.h>
 #endif
@@ -74,7 +71,7 @@ typedef boost::uint8_t uint8_t;
 namespace
 {
 
-#define HDL_Grabber_toRadians(x) ((x) * M_PI / 180.0)
+#define HDL_Grabber_toRadians(x) ((x) * vtkMath::Pi() / 180.0)
 
 const int HDL_NUM_ROT_ANGLES = 36001;
 const int HDL_LASER_PER_FIRING = 32;
