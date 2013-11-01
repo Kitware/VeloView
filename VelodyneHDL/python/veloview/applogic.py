@@ -135,6 +135,7 @@ def openData(filename):
     app.actions['actionSave_PCAP'].setEnabled(False)
     app.actions['actionChoose_Calibration_File'].setEnabled(False)
     app.actions['actionRecord'].setEnabled(False)
+    app.actions['actionGPSApply'].setEnabled(True)
 
     resetCamera()
 
@@ -200,6 +201,7 @@ def openSensor(calibrationFile):
     smp.Render()
 
     showSourceInSpreadSheet(sensor)
+    app.actions['actionGPSApply'].setEnabled(False)
 
     play()
 
@@ -295,9 +297,7 @@ def openPCAP(filename, calibrationFile):
     smp.SetActiveSource(reader)
 
     if getPosition():
-        intp = app.position[0].GetClientSideObject().GetInterpolator()
-        objtoshow = smp.VelodyneOffsetFilter()
-        objtoshow.GetClientSideObject().SetInterp(intp)
+        objtoshow = applyGPSTransform()
     else:
         objtoshow = reader
 
@@ -351,6 +351,33 @@ def hideRuler():
 def showRuler():
     app.ruler.Visibility = True
     smp.Render()
+
+
+def applyGPSTransform():
+    result = None
+    if not app.actions['actionGPSApply'].isChecked():
+        # Clean up any possible downstream
+        activesrc = smp.GetActiveSource()
+        if getReader() != activesrc:
+            smp.Delete(activesrc)
+        smp.SetActiveSource(getReader())
+
+        result =  getReader()
+    else:
+        assert smp.GetActiveSource() == getReader()
+        if getPosition():
+            intp = app.position[0].GetClientSideObject().GetInterpolator()
+            offsetfilter = smp.VelodyneOffsetFilter()
+            offsetfilter.GetClientSideObject().SetInterp(intp)
+            smp.Hide(getReader())
+            result = offsetfilter
+        else:
+            result = getReader()
+
+    if result:
+        smp.Show(result)
+        colorByIntensity(result)
+    return result
 
 
 def getPointFromCoordinate(coord, midPlaneDistance = 0.5):
@@ -1535,6 +1562,8 @@ def setupActions():
     app.actions['actionSetViewYMinus'].connect('triggered()', setViewToYMinus)
     app.actions['actionSetViewZPlus'].connect('triggered()', setViewToZPlus)
     app.actions['actionSetViewZMinus'].connect('triggered()', setViewToZMinus)
+
+    app.actions['actionGPSApply'].connect('triggered()', applyGPSTransform)
 
     # Action created #
     timeToolBar = mW.findChild('QToolBar','playbackToolbar')
