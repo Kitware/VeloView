@@ -170,6 +170,7 @@
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
+   <addaction name="actionGPSApply"/>
   </widget>
   <action name="actionE_xit">
    <property name="text">
@@ -612,6 +613,14 @@
    </property>
    <property name="text">
     <string>Save Position CSV</string>
+   </property>
+  </action>
+  <action name="actionGPSApply">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>GPSApply</string>
    </property>
   </action>
  </widget>
