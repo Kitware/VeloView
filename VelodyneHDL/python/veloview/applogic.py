@@ -377,6 +377,8 @@ def applyGPSTransform():
     if result:
         smp.Show(result)
         colorByIntensity(result)
+
+    smp.Render()
     return result
 
 
