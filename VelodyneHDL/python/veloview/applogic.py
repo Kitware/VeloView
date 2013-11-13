@@ -231,7 +231,6 @@ def openPCAP(filename, calibrationFile):
                                    CalibrationFile=calibrationFile,
                                    NumberOfTrailingFrames=app.trailingFramesSpinBox.value)
     reader.UpdatePipeline()
-    
 
     handler.RemoveObserver(tag)
     handler.SetProgressFrequency(freq)
@@ -947,10 +946,10 @@ def setPlayMode(mode):
             app.scene.AnimationTime = app.scene.StartTime
 
     else:
-      stopStream()
-      setActionIcon('actionPlay', IconPaths.play)
-      app.playDirection = 1
-      updateSeekButtons()
+        stopStream()
+        setActionIcon('actionPlay', IconPaths.play)
+        app.playDirection = 1
+        updateSeekButtons()
 
 
 def gotoStart():
