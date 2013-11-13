@@ -686,7 +686,6 @@ def onDevelopperGuide():
     for path in paths:
         filename = os.path.join(basePath, path)
         if os.path.isfile(filename):
-            print 'opening', filename
             QtGui.QDesktopServices.openUrl(QtCore.QUrl('file:///%s' % filename, QtCore.QUrl.TolerantMode))
 
 def onUserGuide():
@@ -697,7 +696,6 @@ def onUserGuide():
     for path in paths:
         filename = os.path.join(basePath, path)
         if os.path.isfile(filename):
-            print 'opening', filename
             QtGui.QDesktopServices.openUrl(QtCore.QUrl('file:///%s' % filename, QtCore.QUrl.TolerantMode))
 
 def onAbout():
@@ -723,26 +721,26 @@ def close():
 
 def seekForward():
 
-  if app.playing:
-    if app.playDirection < 0 or app.playDirection == 5:
-        app.playDirection = 0
-    app.playDirection += 1
-    updateSeekButtons()
+    if app.playing:
+        if app.playDirection < 0 or app.playDirection == 5:
+            app.playDirection = 0
+        app.playDirection += 1
+        updateSeekButtons()
 
-  else:
-    gotoNext()
+    else:
+        gotoNext()
 
 
 def seekBackward():
 
-  if app.playing:
-    if app.playDirection > 0 or app.playDirection == -5:
-        app.playDirection = 0
-    app.playDirection -= 1
-    updateSeekButtons()
+    if app.playing:
+        if app.playDirection > 0 or app.playDirection == -5:
+            app.playDirection = 0
+        app.playDirection -= 1
+        updateSeekButtons()
 
-  else:
-    gotoPrevious()
+    else:
+        gotoPrevious()
 
 
 def seekPressTimeout():
