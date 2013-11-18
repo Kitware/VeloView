@@ -24,7 +24,7 @@
      <x>0</x>
      <y>0</y>
      <width>1070</width>
-     <height>24</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -597,11 +597,19 @@
    <property name="checkable">
     <bool>true</bool>
    </property>
+   <property name="icon">
+    <iconset resource="vvResources.qrc">
+     <normaloff>:/vvResources/Icons/map.png</normaloff>:/vvResources/Icons/map.png</iconset>
+   </property>
    <property name="text">
     <string>OverheadView</string>
    </property>
   </action>
   <action name="actionPlaneFit">
+   <property name="icon">
+    <iconset resource="vvResources.qrc">
+     <normaloff>:/vvResources/Icons/planefit.png</normaloff>:/vvResources/Icons/planefit.png</iconset>
+   </property>
    <property name="text">
     <string>Plane Fit</string>
    </property>
@@ -618,6 +626,10 @@
   <action name="actionGPSApply">
    <property name="checkable">
     <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="vvResources.qrc">
+     <normaloff>:/vvResources/Icons/location.png</normaloff>:/vvResources/Icons/location.png</iconset>
    </property>
    <property name="text">
     <string>GPSApply</string>

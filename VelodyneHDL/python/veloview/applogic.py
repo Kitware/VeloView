@@ -77,6 +77,7 @@ class AppLogic(object):
 
 class IconPaths(object):
 
+    trailingFrames = ':/VelodyneHDLPlugin/trailingframes.png'
     play = ':/VelodyneHDLPlugin/media-playback-start.png'
     pause =':/VelodyneHDLPlugin/media-playback-pause.png'
     seekForward = ':/VelodyneHDLPlugin/media-seek-forward.png'
@@ -204,7 +205,6 @@ def openSensor(calibrationFile):
     app.actions['actionGPSApply'].setEnabled(False)
 
     play()
-
 
 def openPCAP(filename, calibrationFile):
 
@@ -1579,7 +1579,8 @@ def setupActions():
     timeToolBar = mW.findChild('QToolBar','playbackToolbar')
     trailingFramesToolBar = mW.findChild('QToolBar','trailingFramesToolbar')
 
-    spinBoxLabel = QtGui.QLabel("Trailing frames: ")
+    spinBoxLabel = QtGui.QLabel()
+    spinBoxLabel.setPixmap(QtGui.QPixmap(IconPaths.trailingFrames))
     trailingFramesToolBar.addWidget(spinBoxLabel)
 
     spinBox = QtGui.QSpinBox()

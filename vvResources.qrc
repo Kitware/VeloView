@@ -2,6 +2,9 @@
     <qresource prefix="/vvResources">
         <file>Icons/logo.png</file>
         <file>Icons/open.png</file>
+        <file>Icons/map.png</file>
+        <file>Icons/location.png</file>
+        <file>Icons/planefit.png</file>
         <file>Icons/pqFrustumSelectionPoint24.png</file>
         <file>Icons/pqSurfaceSelectionPoint24.png</file>
         <file>Icons/pqSpreadsheet16.png</file>
