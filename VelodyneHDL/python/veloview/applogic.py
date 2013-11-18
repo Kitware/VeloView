@@ -354,24 +354,35 @@ def showRuler():
 
 def applyGPSTransform():
     result = None
-    if not app.actions['actionGPSApply'].isChecked():
+
+    reader = getReader()
+
+    # TODO: We probably need to handle our transitions better
+    applyTransforms = app.actions['actionGPSApply'].isChecked()
+
+    if not applyTransforms:
         # Clean up any possible downstream
         activesrc = smp.GetActiveSource()
-        if getReader() != activesrc:
+        if reader != activesrc:
             smp.Delete(activesrc)
-        smp.SetActiveSource(getReader())
+        smp.SetActiveSource(reader)
 
-        result =  getReader()
+        result =  reader
     else:
-        assert smp.GetActiveSource() == getReader()
+        assert smp.GetActiveSource() == reader
         if getPosition():
-            intp = app.position[0].GetClientSideObject().GetInterpolator()
+            intp = getPosition().GetClientSideObject().GetInterpolator()
             offsetfilter = smp.VelodyneOffsetFilter()
+            offsetfilter.RelativeOffset = 1
             offsetfilter.GetClientSideObject().SetInterp(intp)
-            smp.Hide(getReader())
+            smp.Hide(reader)
+
+            # Set the display transform
+            offsetrep = smp.GetRepresentation(offsetfilter)
+
             result = offsetfilter
         else:
-            result = getReader()
+            result = reader
 
     if result:
         smp.Show(result)

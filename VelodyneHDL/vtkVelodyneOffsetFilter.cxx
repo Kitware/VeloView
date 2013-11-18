@@ -44,7 +44,7 @@ class vtkVelodyneOffsetFilter::vtkInternal
 {
 public:
 
-  vtkInternal()
+  vtkInternal() : RelativeOffset(false)
   {
   }
 
@@ -52,6 +52,7 @@ public:
   {
   }
 
+  bool RelativeOffset;
   vtkSmartPointer<vtkTupleInterpolator> Interp;
 };
 
@@ -71,9 +72,34 @@ vtkVelodyneOffsetFilter::~vtkVelodyneOffsetFilter()
 }
 
 //----------------------------------------------------------------------------
+void vtkVelodyneOffsetFilter::SetRelativeOffset(bool relative)
+{
+  this->Internal->RelativeOffset = relative;
+}
+
+//----------------------------------------------------------------------------
+bool vtkVelodyneOffsetFilter::GetRelativeOffset()
+{
+  return this->Internal->RelativeOffset;
+}
+
+
+//----------------------------------------------------------------------------
 void vtkVelodyneOffsetFilter::SetInterp(vtkTupleInterpolator* interp)
 {
   this->Internal->Interp = interp;
+}
+
+//----------------------------------------------------------------------------
+namespace
+{
+  double XYToAngle(double x, double y)
+  {
+    double angle = atan2(x, y);
+    angle = (angle > 0 ? angle : (2*vtkMath::Pi() + angle)) * 360 / (2*vtkMath::Pi());
+    angle = 360 - fmod(angle, 360);
+    return angle;
+  }
 }
 
 //----------------------------------------------------------------------------
@@ -105,8 +131,32 @@ int vtkVelodyneOffsetFilter::RequestData(
     return 0;
     }
 
-  // Rotate
+  // Calculate the relative transform
+  double relativeangle = 0.0;
+  double relativeoffset[3] = {0.0, 0.0, 0.0};
+
+  vtkNew<vtkTransform> relativetransform;
+  relativetransform->PostMultiply();
+  relativetransform->Identity();
+
+  if(this->Internal->RelativeOffset)
+    {
+    double positiondata[5];
+    double lasttime = times->GetTuple1(times->GetNumberOfTuples()-1);
+    this->Internal->Interp->InterpolateTuple(lasttime, positiondata);
+
+    relativeangle = XYToAngle(positiondata[4], positiondata[3]);
+    relativeoffset[0] = positiondata[0];
+    relativeoffset[1] = positiondata[1];
+    relativeoffset[2] = positiondata[2];
+
+    relativetransform->RotateZ(relativeangle);
+    relativetransform->Translate(relativeoffset);
+    relativetransform->Inverse();
+    }
+
   vtkNew<vtkTransform> transform;
+  transform->PostMultiply();
 
   assert(times->GetNumberOfTuples() == points->GetNumberOfPoints());
   for(vtkIdType i = 0; i < times->GetNumberOfTuples(); ++i)
@@ -123,21 +173,17 @@ int vtkVelodyneOffsetFilter::RequestData(
     double offset[3];
     std::copy(positiondata, positiondata + 3, offset);
 
-    double angle = atan2(positiondata[4], positiondata[3]);
-    angle = (angle > 0 ? angle : (2*vtkMath::Pi() + angle)) * 360 / (2*vtkMath::Pi());
-    angle = -fmod(angle, 360);
-
+    double angle = XYToAngle(positiondata[4], positiondata[3]);
     transform->RotateZ(angle);
+    transform->Translate(offset);
 
     double pt[3];
     points->GetPoint(i, pt);
 
     transform->TransformPoint(pt, pt);
+    relativetransform->TransformPoint(pt, pt);
 
-    double offsetpt[3];
-    vtkMath::Add(offset, pt, offsetpt);
-
-    points->SetPoint(i, offsetpt);
+    points->SetPoint(i, pt);
     }
 
   return 1;

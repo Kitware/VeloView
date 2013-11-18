@@ -46,6 +46,9 @@ public:
 
   void SetInterp(vtkTupleInterpolator* interp);
 
+  void SetRelativeOffset(bool relative);
+  bool GetRelativeOffset();
+
 protected:
   virtual int RequestData(vtkInformation *request,
                           vtkInformationVector **inputVector,

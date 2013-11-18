@@ -25,8 +25,16 @@
       <ProxyProperty command="SetInterp"
                      name="Interp"
                      panel_visibility="default">
-        <Documentation>Iterpolator</Documentation>
+        <Documentation>Interpolator</Documentation>
       </ProxyProperty>
+
+      <IntVectorProperty command="SetRelativeOffset"
+                         default_values="0"
+                         name="RelativeOffset"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation> Retransform back to the origin</Documentation>
+      </IntVectorProperty>
 
     </SourceProxy>
   </ProxyGroup>
