@@ -373,7 +373,7 @@ def applyGPSTransform():
         if getPosition():
             intp = getPosition().GetClientSideObject().GetInterpolator()
             offsetfilter = smp.VelodyneOffsetFilter()
-            offsetfilter.RelativeOffset = 1
+            offsetfilter.RelativeOffset = app.actions['actionAbsolute'].isChecked()
             offsetfilter.GetClientSideObject().SetInterp(intp)
             smp.Hide(reader)
 
@@ -391,6 +391,11 @@ def applyGPSTransform():
     smp.Render()
     return result
 
+def setAbsoluteTransform():
+    activesrc = smp.GetActiveSource()
+    if activesrc.GetXMLName() == 'VelodyneOffsetFilter':
+        print 'here'
+        activesrc.RelativeOffset = app.actions['actionAbsolute'].isChecked()
 
 def getPointFromCoordinate(coord, midPlaneDistance = 0.5):
     assert len(coord) == 2
@@ -1574,13 +1579,13 @@ def setupActions():
     app.actions['actionSetViewZMinus'].connect('triggered()', setViewToZMinus)
 
     app.actions['actionGPSApply'].connect('triggered()', applyGPSTransform)
+    app.actions['actionAbsolute'].connect('triggered()', setAbsoluteTransform)
 
     # Action created #
     timeToolBar = mW.findChild('QToolBar','playbackToolbar')
-    trailingFramesToolBar = mW.findChild('QToolBar','trailingFramesToolbar')
+    trailingFramesToolBar = timeToolBar
 
-    spinBoxLabel = QtGui.QLabel()
-    spinBoxLabel.setPixmap(QtGui.QPixmap(IconPaths.trailingFrames))
+    spinBoxLabel = QtGui.QLabel('TF:')
     trailingFramesToolBar.addWidget(spinBoxLabel)
 
     spinBox = QtGui.QSpinBox()

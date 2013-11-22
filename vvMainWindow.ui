@@ -171,6 +171,7 @@
     <bool>false</bool>
    </attribute>
    <addaction name="actionGPSApply"/>
+   <addaction name="actionAbsolute"/>
   </widget>
   <action name="actionE_xit">
    <property name="text">
@@ -633,6 +634,21 @@
    </property>
    <property name="text">
     <string>GPSApply</string>
+   </property>
+  </action>
+  <action name="actionAbsolute">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="vvResources.qrc">
+     <normaloff>:/vvResources/Icons/absolute.png</normaloff>:/vvResources/Icons/absolute.png</iconset>
+   </property>
+   <property name="text">
+    <string>absolute</string>
+   </property>
+   <property name="toolTip">
+    <string>Absolute Coordinates</string>
    </property>
   </action>
  </widget>
