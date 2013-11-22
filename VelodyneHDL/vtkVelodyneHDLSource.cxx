@@ -313,6 +313,7 @@ public:
     while (this->Packets->dequeue(packet))
       {
       this->PacketWriter.WritePacket(reinterpret_cast<const unsigned char*>(packet->c_str()), packet->length());
+
       delete packet;
       }
   }
@@ -399,8 +400,11 @@ public:
 
     //this->Consumer->HandleSensorData(this->RXBuffer, numberOfBytes);
 
-    std::string* packet = new std::string(this->RXBuffer, numberOfBytes);
-    this->Consumer->Enqueue(packet);
+    if( this->Consumer )
+      {
+      std::string* packet = new std::string(this->RXBuffer, numberOfBytes);
+      this->Consumer->Enqueue(packet);
+      }
 
     if (this->Writer)
       {
@@ -410,11 +414,20 @@ public:
 
     this->StartReceive();
 
-    //static unsigned long packetCounter = 0;
-    //if ((++packetCounter % 500) == 0)
-    //  {
-    //  printf("total recv packets %lu\n", packetCounter);
-    //  }
+    if ((++this->PacketCounter % 500) == 0)
+      {
+      std::cout << "RECV packets: " << this->PacketCounter << " on "
+                << this->PortNumber << "[";
+      if(this->Consumer)
+        {
+        std::cout << "C";
+        }
+      if(this->Writer)
+        {
+        std::cout << "W";
+        }
+      std::cout << "]" << std::endl;
+      }
   }
 
   void ThreadLoop()
@@ -424,7 +437,7 @@ public:
     this->IOService.run();
   }
 
-  void Start(int sensorPort)
+  void Start()
   {
     if (this->Thread)
       {
@@ -436,8 +449,8 @@ public:
     this->Socket.reset();
 
     // destinationEndpoint is the socket on this machine where the data packet are received
-    boost::asio::ip::udp::endpoint destinationEndpoint(boost::asio::ip::address_v4::any(), sensorPort);
-    //boost::asio::ip::udp::endpoint destinationEndpoint(boost::asio::ip::address::from_string(destinationIp), sensorPort);
+    boost::asio::ip::udp::endpoint destinationEndpoint(boost::asio::ip::address_v4::any(),
+                                                       this->PortNumber);
 
     try
       {
@@ -451,7 +464,8 @@ public:
 
       try
         {
-        destinationEndpoint = boost::asio::ip::udp::endpoint(boost::asio::ip::address_v4::any(), sensorPort);
+        destinationEndpoint = boost::asio::ip::udp::endpoint(boost::asio::ip::address_v4::any(),
+                                                             this->PortNumber);
 
         this->Socket = boost::shared_ptr<boost::asio::ip::udp::socket>(new boost::asio::ip::udp::socket(this->IOService));
         this->Socket->open(destinationEndpoint.protocol());
@@ -481,8 +495,16 @@ public:
       }
   }
 
+  PacketNetworkSource(int _PortNumber) : PortNumber(_PortNumber),
+                                         ShouldStop(false),
+                                         PacketCounter(0)
+  {
+  }
+
+  int PortNumber;
   bool ShouldStop;
   char RXBuffer[1500];
+  vtkIdType PacketCounter;
 
   boost::asio::io_service IOService;
   boost::shared_ptr<boost::asio::ip::udp::socket> Socket;
@@ -597,11 +619,12 @@ class vtkVelodyneHDLSource::vtkInternal
 {
 public:
 
-  vtkInternal()
+  vtkInternal() : NetworkSource(2368), PositionNetworkSource(8308)
   {
     this->Consumer = boost::shared_ptr<PacketConsumer>(new PacketConsumer);
     this->Writer = boost::shared_ptr<PacketFileWriter>(new PacketFileWriter);
     this->NetworkSource.Consumer = this->Consumer;
+    // Position source does not need a consumer
     this->FileSource.Consumer = this->Consumer;
   }
 
@@ -612,6 +635,7 @@ public:
   boost::shared_ptr<PacketConsumer> Consumer;
   boost::shared_ptr<PacketFileWriter> Writer;
   PacketNetworkSource NetworkSource;
+  PacketNetworkSource PositionNetworkSource;
   PacketFileSource FileSource;
 };
 
@@ -704,13 +728,18 @@ void vtkVelodyneHDLSource::Start()
       }
 
     this->Internal->NetworkSource.Writer.reset();
+    this->Internal->PositionNetworkSource.Writer.reset();
+
     if (this->Internal->Writer->IsOpen())
       {
       this->Internal->NetworkSource.Writer = this->Internal->Writer;
+      this->Internal->PositionNetworkSource.Writer = this->Internal->Writer;
       }
 
     this->Internal->Consumer->Start();
-    this->Internal->NetworkSource.Start(this->SensorPort);
+
+    this->Internal->NetworkSource.Start();
+    this->Internal->PositionNetworkSource.Start();
     }
 }
 
@@ -719,6 +748,7 @@ void vtkVelodyneHDLSource::Stop()
 {
   this->Internal->FileSource.Stop();
   this->Internal->NetworkSource.Stop();
+  this->Internal->PositionNetworkSource.Stop();
   this->Internal->Consumer->Stop();
   this->Internal->Writer->Stop();
 }

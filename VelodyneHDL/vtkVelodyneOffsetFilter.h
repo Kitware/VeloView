@@ -25,69 +25,41 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkVelodyneHDLSource -
+// .NAME vtkVelodyneOffsetFilter -
 // .SECTION Description
 //
 
-#ifndef __vtkVelodyneHDLSource_h
-#define __vtkVelodyneHDLSource_h
+#ifndef __vtkVelodyneOffsetFilter_h
+#define __vtkVelodyneOffsetFilter_h
 
 #include <vtkPolyDataAlgorithm.h>
 
-class VTK_EXPORT vtkVelodyneHDLSource : public vtkPolyDataAlgorithm
+class vtkTupleInterpolator;
+
+class VTK_EXPORT vtkVelodyneOffsetFilter : public vtkPolyDataAlgorithm
 {
 public:
-  vtkTypeMacro(vtkVelodyneHDLSource, vtkPolyDataAlgorithm);
+  vtkTypeMacro(vtkVelodyneOffsetFilter, vtkPolyDataAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent);
 
-  static vtkVelodyneHDLSource *New();
+  static vtkVelodyneOffsetFilter *New();
 
+  void SetInterp(vtkTupleInterpolator* interp);
 
-  void Poll();
-
-  void Start();
-  void Stop();
-
-  int GetCacheSize();
-  void SetCacheSize(int cacheSize);
-
-  void ReadNextFrame();
-
-  const std::string& GetPacketFile();
-  void SetPacketFile(const std::string& filename);
-
-  const std::string& GetCorrectionsFile();
-  void SetCorrectionsFile(const std::string& correctionsFile);
-
-  const std::string& GetOutputFile();
-  void SetOutputFile(const std::string& filename);
-
-  vtkSetMacro(SensorPort, int);
-  vtkGetMacro(SensorPort, int);
+  void SetRelativeOffset(bool relative);
+  bool GetRelativeOffset();
 
 protected:
-
-
-  virtual int RequestInformation(vtkInformation *request,
-                         vtkInformationVector **inputVector,
-                         vtkInformationVector *outputVector);
-
   virtual int RequestData(vtkInformation *request,
                           vtkInformationVector **inputVector,
                           vtkInformationVector *outputVector);
 
-  vtkVelodyneHDLSource();
-  virtual ~vtkVelodyneHDLSource();
-
-
-  int SensorPort;
-  std::string PacketFile;
-  std::string OutputFile;
-  std::string CorrectionsFile;
+  vtkVelodyneOffsetFilter();
+  virtual ~vtkVelodyneOffsetFilter();
 
 private:
-  vtkVelodyneHDLSource(const vtkVelodyneHDLSource&);  // Not implemented.
-  void operator=(const vtkVelodyneHDLSource&);  // Not implemented.
+  vtkVelodyneOffsetFilter(const vtkVelodyneOffsetFilter&);  // Not implemented.
+  void operator=(const vtkVelodyneOffsetFilter&);  // Not implemented.
 
   class vtkInternal;
   vtkInternal * Internal;

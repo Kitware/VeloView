@@ -64,9 +64,6 @@
 #ifdef _MSC_VER
 # include <boost/cstdint.hpp>
 typedef boost::uint8_t uint8_t;
-# ifndef M_PI
-#   define M_PI 3.14159265358979323846
-# endif
 #else
 # include <stdint.h>
 #endif
@@ -74,7 +71,7 @@ typedef boost::uint8_t uint8_t;
 namespace
 {
 
-#define HDL_Grabber_toRadians(x) ((x) * M_PI / 180.0)
+#define HDL_Grabber_toRadians(x) ((x) * vtkMath::Pi() / 180.0)
 
 const int HDL_NUM_ROT_ANGLES = 36001;
 const int HDL_LASER_PER_FIRING = 32;
@@ -93,7 +90,6 @@ typedef struct HDLLaserReturn
   unsigned short distance;
   unsigned char intensity;
 } HDLLaserReturn;
-#pragma pack(pop)
 
 struct HDLFiringData
 {
@@ -129,6 +125,7 @@ struct HDLRGB
   uint8_t g;
   uint8_t b;
 };
+#pragma pack(pop)
 
 double *cos_lookup_table_;
 double *sin_lookup_table_;
@@ -508,6 +505,13 @@ vtkSmartPointer<vtkPolyData> vtkVelodyneHDLReader::GetFrame(int frameNumber)
   if (!this->Internal->Reader)
     {
     vtkErrorMacro("GetFrame() called but packet file reader is not open.");
+    return 0;
+    }
+
+  assert(this->Internal->FilePositions.size() == this->Internal->Skips.size());
+  if(frameNumber < 0 || frameNumber > this->Internal->FilePositions.size())
+    {
+    vtkErrorMacro("Invalid frame requested");
     return 0;
     }
 

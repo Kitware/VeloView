@@ -20,8 +20,11 @@ include(CMake/version.cmake)
 
 find_package(ParaView REQUIRED)
 find_package(PythonInterp REQUIRED)
+find_package(PythonLibs REQUIRED)
 include(${PARAVIEW_USE_FILE})
 option(BUILD_SHARED_LIBS "Build shared libs" ON)
+
+include(CTest)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 if(UNIX)
@@ -131,4 +134,4 @@ build_paraview_client(VeloView
 )
 
 # We directly link against the plugin and import them statically.
-target_link_libraries(VeloView VelodyneHDLPlugin VelodyneHDLPython ${PYTHONQTPLUGIN_LIBRARY} ${PYTHONQT_LIBRARIES})
+target_link_libraries(VeloView VelodyneHDLPlugin VelodyneHDLPythonQT ${PYTHONQTPLUGIN_LIBRARY} ${PYTHONQT_LIBRARIES})

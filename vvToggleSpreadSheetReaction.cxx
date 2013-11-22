@@ -15,6 +15,8 @@
 
 #include <pqView.h>
 
+#include <iostream>
+
 //-----------------------------------------------------------------------------
 vvToggleSpreadSheetReaction::vvToggleSpreadSheetReaction(QAction* action, pqView* view)
   : Superclass(action),

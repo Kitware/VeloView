@@ -1,6 +1,6 @@
 <RCC>
   <qresource prefix="/VelodyneHDLPlugin">
-
+    <file>trailingframes.png</file>
     <file>media-eject.png</file>
     <file>media-playback-pause.png</file>
     <file>media-playback-start.png</file>

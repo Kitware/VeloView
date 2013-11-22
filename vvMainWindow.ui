@@ -47,6 +47,7 @@
     <addaction name="actionExport_To_KiwiViewer"/>
     <addaction name="actionSave_PCAP"/>
     <addaction name="actionSave_CSV"/>
+    <addaction name="actionSave_PositionCSV"/>
     <addaction name="actionSave_Screenshot"/>
     <addaction name="separator"/>
     <addaction name="actionClose"/>
@@ -105,6 +106,7 @@
    <addaction name="separator"/>
    <addaction name="actionSelect_All_Points"/>
    <addaction name="actionSpreadsheet"/>
+   <addaction name="actionOverheadView"/>
    <addaction name="actionPython_Console"/>
   </widget>
   <widget class="pqColorToolbar" name="colorToolBar">
@@ -149,6 +151,7 @@
    <addaction name="actionReset_Camera"/>
    <addaction name="actionToggleProjection"/>
    <addaction name="actionMeasure"/>
+   <addaction name="actionPlaneFit"/>
    <addaction name="separator"/>
    <addaction name="actionSetViewXPlus"/>
    <addaction name="actionSetViewXMinus"/>
@@ -167,6 +170,8 @@
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
+   <addaction name="actionGPSApply"/>
+   <addaction name="actionAbsolute"/>
   </widget>
   <action name="actionE_xit">
    <property name="text">
@@ -587,6 +592,63 @@
    </property>
    <property name="toolTip">
     <string>Measure the distance between two points: Press Control key and keep pressed left button of the mouse two place the two points of the ruler. To use this tool, the orthogonal projection view is obligatory.</string>
+   </property>
+  </action>
+  <action name="actionOverheadView">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="vvResources.qrc">
+     <normaloff>:/vvResources/Icons/map.png</normaloff>:/vvResources/Icons/map.png</iconset>
+   </property>
+   <property name="text">
+    <string>OverheadView</string>
+   </property>
+  </action>
+  <action name="actionPlaneFit">
+   <property name="icon">
+    <iconset resource="vvResources.qrc">
+     <normaloff>:/vvResources/Icons/planefit.png</normaloff>:/vvResources/Icons/planefit.png</iconset>
+   </property>
+   <property name="text">
+    <string>Plane Fit</string>
+   </property>
+  </action>
+  <action name="actionSave_PositionCSV">
+   <property name="icon">
+    <iconset resource="vvResources.qrc">
+     <normaloff>:/vvResources/Icons/pqSpreadsheet16.png</normaloff>:/vvResources/Icons/pqSpreadsheet16.png</iconset>
+   </property>
+   <property name="text">
+    <string>Save Position CSV</string>
+   </property>
+  </action>
+  <action name="actionGPSApply">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="vvResources.qrc">
+     <normaloff>:/vvResources/Icons/location.png</normaloff>:/vvResources/Icons/location.png</iconset>
+   </property>
+   <property name="text">
+    <string>GPSApply</string>
+   </property>
+  </action>
+  <action name="actionAbsolute">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="vvResources.qrc">
+     <normaloff>:/vvResources/Icons/absolute.png</normaloff>:/vvResources/Icons/absolute.png</iconset>
+   </property>
+   <property name="text">
+    <string>absolute</string>
+   </property>
+   <property name="toolTip">
+    <string>Absolute Coordinates</string>
    </property>
   </action>
  </widget>

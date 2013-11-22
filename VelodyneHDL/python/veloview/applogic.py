@@ -27,6 +27,7 @@ from PythonQt import QtCore, QtGui
 from vtkIOXMLPython import vtkXMLPolyDataWriter
 import kiwiviewerExporter
 import gridAdjustmentDialog
+import planefit
 
 class AppLogic(object):
 
@@ -41,6 +42,14 @@ class AppLogic(object):
         self.setupTimers()
 
         self.mousePressed = False
+
+        mainView = smp.GetActiveView()
+        views = smp.GetRenderViews()
+        otherViews = [v for v in views if v != mainView]
+        assert len(otherViews) == 1
+        overheadView = otherViews[0]
+        self.mainView = mainView
+        self.overheadView = overheadView
 
     def setupTimers(self):
         self.playTimer = QtCore.QTimer()
@@ -68,6 +77,7 @@ class AppLogic(object):
 
 class IconPaths(object):
 
+    trailingFrames = ':/VelodyneHDLPlugin/trailingframes.png'
     play = ':/VelodyneHDLPlugin/media-playback-start.png'
     pause =':/VelodyneHDLPlugin/media-playback-pause.png'
     seekForward = ':/VelodyneHDLPlugin/media-seek-forward.png'
@@ -126,9 +136,13 @@ def openData(filename):
     app.actions['actionSave_PCAP'].setEnabled(False)
     app.actions['actionChoose_Calibration_File'].setEnabled(False)
     app.actions['actionRecord'].setEnabled(False)
+    app.actions['actionGPSApply'].setEnabled(True)
 
     resetCamera()
 
+
+def planeFit():
+    planefit.fitPlane()
 
 def colorByIntensity(sourceProxy):
 
@@ -188,9 +202,9 @@ def openSensor(calibrationFile):
     smp.Render()
 
     showSourceInSpreadSheet(sensor)
+    app.actions['actionGPSApply'].setEnabled(False)
 
     play()
-
 
 def openPCAP(filename, calibrationFile):
 
@@ -222,23 +236,78 @@ def openPCAP(filename, calibrationFile):
     handler.SetProgressFrequency(freq)
     progressDialog.close()
 
+    # If we read the wrong kind of data abort
     if not hasArrayName(reader, 'intensity'):
         smp.Delete(reader)
         resetCameraToForwardView()
         return
-
-    rep = smp.Show(reader)
-    rep.InterpolateScalarsBeforeMapping = 0
-    colorByIntensity(reader)
-
-    showSourceInSpreadSheet(reader)
 
     smp.GetActiveView().ViewTime = 0.0
 
     app.reader = reader
     app.filenameLabel.setText('File: %s' % os.path.basename(filename))
 
+    # update overhead view
+    smp.SetActiveView(app.overheadView)
+    posreader = smp.VelodyneHDLPositionReader(guiName="Position",
+                                              FileName=filename)
+    smp.Show(posreader)
+
+    if posreader.GetClientSideObject().GetOutput().GetNumberOfPoints():
+
+        smp.Render()
+        app.overheadView.ResetCamera()
+        smp.Render()
+
+        trange = posreader.GetPointDataInformation().GetArray('time').GetRange()
+
+        c = smp.Contour(posreader, guiName='CurrentPosition')
+        c.ContourBy = 'time'
+        c.Isosurfaces = trange[0]
+
+        smp.Show()
+        smp.Render()
+
+        smp.Hide(c)
+        g = smp.Glyph(c, GlyphType='Sphere', guiName='PositionGlyph')
+        g.ScaleMode = 'off'
+        g.GlyphType.Radius = 5.0
+        smp.Show()
+        smp.Render()
+
+        # Setup scalar bar
+        rep = smp.GetDisplayProperties(posreader)
+        rep.ColorArrayName = 'time'
+        rgbPoints = [trange[0], 0.0, 0.0, 1.0,
+                     trange[1], 1.0, 0.0, 0.0]
+        rep.LookupTable = smp.GetLookupTableForArray('time', 1,
+                                                     RGBPoints=rgbPoints,
+                                                     ScalarRangeInitialized=1.0)
+        sb = smp.CreateScalarBar(LookupTable=rep.LookupTable, Title='Time')
+        sb.Orientation = 'Horizontal'
+        sb.Position, sb.Position2 = [.1, .05], [.8, .02]
+        app.overheadView.Representations.append(sb)
+
+        app.position = (posreader, c, g)
+    else:
+        smp.Delete(posreader)
+
+    smp.SetActiveView(app.mainView)
+    smp.SetActiveSource(reader)
+
+    if getPosition():
+        objtoshow = applyGPSTransform()
+    else:
+        objtoshow = reader
+
+    rep = smp.Show(objtoshow)
+    rep.InterpolateScalarsBeforeMapping = 0
+    colorByIntensity(objtoshow)
+
+    showSourceInSpreadSheet(reader)
+
     updateSliderTimeRange()
+    updatePosition()
     enablePlaybackActions()
     enableSaveActions()
     addRecentFile(filename)
@@ -282,6 +351,51 @@ def showRuler():
     app.ruler.Visibility = True
     smp.Render()
 
+
+def applyGPSTransform():
+    result = None
+
+    reader = getReader()
+
+    # TODO: We probably need to handle our transitions better
+    applyTransforms = app.actions['actionGPSApply'].isChecked()
+
+    if not applyTransforms:
+        # Clean up any possible downstream
+        activesrc = smp.GetActiveSource()
+        if reader != activesrc:
+            smp.Delete(activesrc)
+        smp.SetActiveSource(reader)
+
+        result =  reader
+    else:
+        assert smp.GetActiveSource() == reader
+        if getPosition():
+            intp = getPosition().GetClientSideObject().GetInterpolator()
+            offsetfilter = smp.VelodyneOffsetFilter()
+            offsetfilter.RelativeOffset = app.actions['actionAbsolute'].isChecked()
+            offsetfilter.GetClientSideObject().SetInterp(intp)
+            smp.Hide(reader)
+
+            # Set the display transform
+            offsetrep = smp.GetRepresentation(offsetfilter)
+
+            result = offsetfilter
+        else:
+            result = reader
+
+    if result:
+        smp.Show(result)
+        colorByIntensity(result)
+
+    smp.Render()
+    return result
+
+def setAbsoluteTransform():
+    activesrc = smp.GetActiveSource()
+    if activesrc.GetXMLName() == 'VelodyneOffsetFilter':
+        print 'here'
+        activesrc.RelativeOffset = app.actions['actionAbsolute'].isChecked()
 
 def getPointFromCoordinate(coord, midPlaneDistance = 0.5):
     assert len(coord) == 2
@@ -366,11 +480,16 @@ def rotateCSVFile(filename):
     writer.writerows(rows)
 
 
+def savePositionCSV(filename):
+    w = smp.DataSetCSVWriter(getPosition(), FileName=filename)
+    w.UpdatePipeline()
+    smp.Delete(w)
+
 def saveCSVCurrentFrame(filename):
     w = smp.DataSetCSVWriter(FileName=filename)
     w.UpdatePipeline()
-    rotateCSVFile(filename)
     smp.Delete(w)
+    rotateCSVFile(filename)
 
 
 def saveCSVAllFrames(filename):
@@ -391,7 +510,6 @@ def saveCSV(filename, timesteps):
     os.makedirs(outDir)
 
     writer = smp.DataSetCSVWriter()
-    view = smp.GetActiveView()
 
     for t in timesteps:
         app.scene.AnimationTime = t
@@ -474,6 +592,11 @@ def onSaveCSV():
                 saveCSVAllFrames(fileName)
             else:
                 saveCSVFrameRange(fileName, frameStart, frameStop)
+
+
+def onSavePosition():
+    fileName = getSaveFileName('Save CSV', 'csv', getDefaultSaveFileName('csv', '-position'))
+    savePositionCSV(fileName)
 
 
 def onSavePCAP():
@@ -578,7 +701,6 @@ def onDevelopperGuide():
     for path in paths:
         filename = os.path.join(basePath, path)
         if os.path.isfile(filename):
-            print 'opening', filename
             QtGui.QDesktopServices.openUrl(QtCore.QUrl('file:///%s' % filename, QtCore.QUrl.TolerantMode))
 
 def onUserGuide():
@@ -589,7 +711,6 @@ def onUserGuide():
     for path in paths:
         filename = os.path.join(basePath, path)
         if os.path.isfile(filename):
-            print 'opening', filename
             QtGui.QDesktopServices.openUrl(QtCore.QUrl('file:///%s' % filename, QtCore.QUrl.TolerantMode))
 
 def onAbout():
@@ -615,26 +736,26 @@ def close():
 
 def seekForward():
 
-  if app.playing:
-    if app.playDirection < 0 or app.playDirection == 5:
-        app.playDirection = 0
-    app.playDirection += 1
-    updateSeekButtons()
+    if app.playing:
+        if app.playDirection < 0 or app.playDirection == 5:
+            app.playDirection = 0
+        app.playDirection += 1
+        updateSeekButtons()
 
-  else:
-    gotoNext()
+    else:
+        gotoNext()
 
 
 def seekBackward():
 
-  if app.playing:
-    if app.playDirection > 0 or app.playDirection == -5:
-        app.playDirection = 0
-    app.playDirection -= 1
-    updateSeekButtons()
+    if app.playing:
+        if app.playDirection > 0 or app.playDirection == -5:
+            app.playDirection = 0
+        app.playDirection -= 1
+        updateSeekButtons()
 
-  else:
-    gotoPrevious()
+    else:
+        gotoPrevious()
 
 
 def seekPressTimeout():
@@ -699,17 +820,20 @@ def disablePlaybackActions():
     setPlaybackActionsEnabled(False)
 
 
-def setSaveActionsEnabled(enabled):
+def _setSaveActionsEnabled(enabled):
     for action in ('Save_CSV', 'Save_PCAP', 'Export_To_KiwiViewer', 'Close', 'Choose_Calibration_File'):
         app.actions['action'+action].setEnabled(enabled)
 
 
 def enableSaveActions():
-    setSaveActionsEnabled(True)
+    _setSaveActionsEnabled(True)
+    if getPosition():
+        app.actions['actionSave_PositionCSV'].setEnabled(True)
 
 
 def disableSaveActions():
-    setSaveActionsEnabled(False)
+    _setSaveActionsEnabled(False)
+    app.actions['actionSave_PositionCSV'].setEnabled(False)
 
 
 def recordFile(filename):
@@ -838,30 +962,66 @@ def setPlayMode(mode):
             app.scene.AnimationTime = app.scene.StartTime
 
     else:
-      stopStream()
-      setActionIcon('actionPlay', IconPaths.play)
-      app.playDirection = 1
-      updateSeekButtons()
+        stopStream()
+        setActionIcon('actionPlay', IconPaths.play)
+        app.playDirection = 1
+        updateSeekButtons()
 
 
 def gotoStart():
     pollSource()
     app.scene.GoToFirst()
+    updatePosition()
 
 
 def gotoEnd():
     pollSource()
     app.scene.GoToLast()
+    updatePosition()
 
 
 def gotoNext():
     pollSource()
     app.scene.GoToNext()
+    updatePosition()
 
 
 def gotoPrevious():
     pollSource()
     app.scene.GoToPrevious()
+    updatePosition()
+
+
+def updatePosition():
+    reader = getReader()
+    pos = getPosition()
+
+    if reader and pos:
+        pointcloud = reader.GetClientSideObject().GetOutput()
+
+        if pointcloud.GetNumberOfPoints():
+            # Update the overhead view
+            # TODO: Approximate time, just grabbing the first
+            t = pointcloud.GetPointData().GetScalars('timestamp')
+            currentTime = t.GetTuple1(0)
+
+            trange = pos.GetPointDataInformation().GetArray('time').GetRange()
+
+            # Clamp
+            currentTime = min(max(currentTime, trange[0]+1.0e-1), trange[1]-1.0e-1)
+
+            c = getContour()
+            c.Isosurfaces = [currentTime]
+
+            if app.actions['actionGPSApply'].isChecked() and\
+               not app.actions['actionAbsolute'].isChecked():
+                c.UpdatePipeline()
+                pt = c.GetClientSideObject().GetOutput().GetPoint(0)
+                app.mainView.CenterOfRotation = pt
+            else:
+                app.mainView.CenterOfRotation = [0,0,0]
+
+            smp.Render(view=app.overheadView)
 
 
 def playbackTick():
@@ -907,14 +1067,21 @@ def playbackTick():
                 stop()
 
         app.scene.AnimationTime = newTime
+        # TODO: For sensor as well?
+        updatePosition()
 
 
 def unloadData():
 
     reader = getReader()
     sensor = getSensor()
+    position = getPosition()
 
     if reader is not None:
+        activesrc = smp.GetActiveSource()
+        if reader != activesrc:
+            smp.Delete(activesrc)
+
         smp.Delete(reader)
         app.reader = None
 
@@ -922,6 +1089,21 @@ def unloadData():
         sensor.Stop()
         smp.Delete(sensor)
         app.sensor = None
+
+    if position is not None:
+        # Cleanup the scalar bar reps
+        toremove = [x for x in app.overheadView.Representations if type(x) == servermanager.rendering.ScalarBarWidgetRepresentation]
+        for t in toremove:
+            app.overheadView.Representations.remove(t)
+
+        g = getGlyph()
+        c = getContour()
+        smp.Delete(g)
+        smp.Delete(c)
+        smp.Delete(position)
+        smp.Render(app.overheadView)
+
+        app.position = (None, None, None)
 
     clearSpreadSheetView()
 
@@ -933,6 +1115,14 @@ def getReader():
 def getSensor():
     return getattr(app, 'sensor', None)
 
+def getPosition():
+    return getattr(app, 'position', (None, None, None))[0]
+
+def getContour():
+    return getattr(app, 'position', (None, None, None))[1]
+
+def getGlyph():
+    return getattr(app, 'position', (None, None, None))[2]
 
 def setCalibrationFile(calibrationFile):
 
@@ -1021,16 +1211,6 @@ def saveScreenshot(filename):
     composite.save(filename)
 
 
-def getRenderViewWidget():
-    return getPQView(smp.GetRenderView()).getWidget()
-
-
-def getPQView(view):
-    app = PythonQt.paraview.pqApplicationCore.instance()
-    model = app.getServerManagerModel()
-    return PythonQt.paraview.pqPythonQtMethodHelpers.findProxyItem(model, view.SMProxy)
-
-
 def getSpreadSheetViewProxy():
     for p in smp.servermanager.ProxyManager():
         if p.GetXMLName() == 'SpreadSheetView':
@@ -1101,7 +1281,7 @@ def start():
     setupActions()
     setupEventsListener()
     disablePlaybackActions()
-    setSaveActionsEnabled(False)
+    disableSaveActions()
     app.actions['actionMeasure'].setEnabled(view.CameraParallelProjection)
     setupStatusBar()
     setupTimeSliderWidget()
@@ -1209,6 +1389,7 @@ def forceRender():
 
 def onTimeSliderChanged(frame):
     app.scene.AnimationTime = frame
+    updatePosition()
 
 
 def setupStatusBar():
@@ -1374,10 +1555,13 @@ def setupActions():
     for a in actions:
         app.actions[a.objectName] = a
 
+    app.actions['actionPlaneFit'].connect('triggered()', planeFit)
+
     app.actions['actionClose'].connect('triggered()', close)
     app.actions['actionPlay'].connect('triggered()', togglePlay)
     app.actions['actionRecord'].connect('triggered()', onRecord)
     app.actions['actionSave_CSV'].connect('triggered()', onSaveCSV)
+    app.actions['actionSave_PositionCSV'].connect('triggered()', onSavePosition)
     app.actions['actionSave_PCAP'].connect('triggered()', onSavePCAP)
     app.actions['actionSave_Screenshot'].connect('triggered()', onSaveScreenshot)
     app.actions['actionExport_To_KiwiViewer'].connect('triggered()', onKiwiViewerExport)
@@ -1402,11 +1586,14 @@ def setupActions():
     app.actions['actionSetViewZPlus'].connect('triggered()', setViewToZPlus)
     app.actions['actionSetViewZMinus'].connect('triggered()', setViewToZMinus)
 
+    app.actions['actionGPSApply'].connect('triggered()', applyGPSTransform)
+    app.actions['actionAbsolute'].connect('triggered()', setAbsoluteTransform)
+
     # Action created #
     timeToolBar = mW.findChild('QToolBar','playbackToolbar')
-    trailingFramesToolBar = mW.findChild('QToolBar','trailingFramesToolbar')
+    trailingFramesToolBar = timeToolBar
 
-    spinBoxLabel = QtGui.QLabel("Trailing frames: ")
+    spinBoxLabel = QtGui.QLabel('TF:')
     trailingFramesToolBar.addWidget(spinBoxLabel)
 
     spinBox = QtGui.QSpinBox()
