@@ -1011,8 +1011,16 @@ def updatePosition():
             currentTime = min(max(currentTime, trange[0]+1.0e-1), trange[1]-1.0e-1)
 
             c = getContour()
-            assert c
             c.Isosurfaces = [currentTime]
+
+            if app.actions['actionGPSApply'].isChecked() and\
+               not app.actions['actionAbsolute'].isChecked():
+                c.UpdatePipeline()
+                pt = c.GetClientSideObject().GetOutput().GetPoint(0)
+                app.mainView.CenterOfRotation = pt
+            else:
+                app.mainView.CenterOfRotation = [0,0,0]
+
             smp.Render(view=app.overheadView)
 
 
