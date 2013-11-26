@@ -605,6 +605,9 @@
    <property name="text">
     <string>OverheadView</string>
    </property>
+   <property name="toolTip">
+    <string>Show overhead view of position</string>
+   </property>
   </action>
   <action name="actionPlaneFit">
    <property name="icon">
@@ -613,6 +616,9 @@
    </property>
    <property name="text">
     <string>Plane Fit</string>
+   </property>
+   <property name="toolTip">
+    <string>Plane Fit to selection</string>
    </property>
   </action>
   <action name="actionSave_PositionCSV">
@@ -635,6 +641,9 @@
    <property name="text">
     <string>GPSApply</string>
    </property>
+   <property name="toolTip">
+    <string>Apply geolocation</string>
+   </property>
   </action>
   <action name="actionAbsolute">
    <property name="checkable">
@@ -648,7 +657,7 @@
     <string>absolute</string>
    </property>
    <property name="toolTip">
-    <string>Absolute Coordinates</string>
+    <string>Geolocation in absolute coordinates</string>
    </property>
   </action>
  </widget>
