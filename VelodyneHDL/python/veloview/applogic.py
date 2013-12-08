@@ -51,6 +51,8 @@ class AppLogic(object):
         self.mainView = mainView
         self.overheadView = overheadView
 
+        self.fps = [0,0]
+
     def setupTimers(self):
         self.playTimer = QtCore.QTimer()
         self.playTimer.setSingleShot(True)
@@ -388,7 +390,6 @@ def applyGPSTransform():
 def setAbsoluteTransform():
     activesrc = smp.GetActiveSource()
     if activesrc.GetXMLName() == 'VelodyneOffsetFilter':
-        print 'here'
         activesrc.RelativeOffset = app.actions['actionAbsolute'].isChecked()
 
 def getPointFromCoordinate(coord, midPlaneDistance = 0.5):
@@ -935,8 +936,13 @@ def onPlayTimer():
 
         playbackTick()
 
-        fpsDelayMilliseconds = int(1000 / app.targetFps)
-        elapsedMilliseconds = int((vtk.vtkTimerLog.GetUniversalTime() - startTime)*1000)
+        fpsDelayMilliseconds = int(1000.0 / app.targetFps)
+        elapsedMilliseconds = int((vtk.vtkTimerLog.GetUniversalTime() - startTime)*1000.0)
+
+        fps = 1000/elapsedMilliseconds
+        app.fps[0] += fps
+        app.fps[1] += 1
+
         waitMilliseconds = fpsDelayMilliseconds - elapsedMilliseconds
         app.playTimer.start(max(waitMilliseconds,0))
 
