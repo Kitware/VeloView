@@ -537,6 +537,22 @@ vtkSmartPointer<vtkPolyData> vtkVelodyneHDLReader::GetFrame(int frameNumber)
   return this->Internal->Datasets.back();
 }
 
+namespace
+{
+  template <typename T>
+  T* CreateDataArray(const char* name, vtkIdType np, vtkPolyData* pd)
+  {
+    vtkSmartPointer<T> array = vtkSmartPointer<T>::New();
+    array->Allocate(60000);
+    array->SetName(name);
+    array->SetNumberOfTuples(np);
+
+    pd->GetPointData()->AddArray(array.GetPointer());
+
+    return array.GetPointer();
+  }
+}
+
 //-----------------------------------------------------------------------------
 vtkSmartPointer<vtkPolyData> vtkVelodyneHDLReader::vtkInternal::CreateData(vtkIdType numberOfPoints)
 {
@@ -545,46 +561,18 @@ vtkSmartPointer<vtkPolyData> vtkVelodyneHDLReader::vtkInternal::CreateData(vtkId
   // points
   vtkNew<vtkPoints> points;
   points->SetDataTypeToFloat();
+  points->Allocate(60000);
   points->SetNumberOfPoints(numberOfPoints);
   polyData->SetPoints(points.GetPointer());
   polyData->SetVerts(NewVertexCells(numberOfPoints));
 
   // intensity
-  vtkNew<vtkUnsignedCharArray> intensity;
-  intensity->SetName("intensity");
-  intensity->SetNumberOfTuples(numberOfPoints);
-  polyData->GetPointData()->AddArray(intensity.GetPointer());
-
-  // laser number
-  vtkNew<vtkUnsignedCharArray> laserId;
-  laserId->SetName("laser_id");
-  laserId->SetNumberOfTuples(numberOfPoints);
-  polyData->GetPointData()->AddArray(laserId.GetPointer());
-
-  // azimuth
-  vtkNew<vtkUnsignedShortArray> azimuth;
-  azimuth->SetName("azimuth");
-  azimuth->SetNumberOfTuples(numberOfPoints);
-  polyData->GetPointData()->AddArray(azimuth.GetPointer());
-
-  // range
-  vtkNew<vtkDoubleArray> distance;
-  distance->SetName("distance_m");
-  distance->SetNumberOfTuples(numberOfPoints);
-  polyData->GetPointData()->AddArray(distance.GetPointer());
-
-  // timestamp
-  vtkNew<vtkUnsignedIntArray> timestamp;
-  timestamp->SetName("timestamp");
-  timestamp->SetNumberOfTuples(numberOfPoints);
-  polyData->GetPointData()->AddArray(timestamp.GetPointer());
-
   this->Points = points.GetPointer();
-  this->Intensity = intensity.GetPointer();
-  this->LaserId = laserId.GetPointer();
-  this->Azimuth = azimuth.GetPointer();
-  this->Distance = distance.GetPointer();
-  this->Timestamp = timestamp.GetPointer();
+  this->Intensity = CreateDataArray<vtkUnsignedCharArray>("intensity", numberOfPoints, polyData);
+  this->LaserId = CreateDataArray<vtkUnsignedCharArray>("laser_id", numberOfPoints, polyData);
+  this->Azimuth = CreateDataArray<vtkUnsignedShortArray>("azimuth", numberOfPoints, polyData);
+  this->Distance = CreateDataArray<vtkDoubleArray>("distance_m", numberOfPoints, polyData);
+  this->Timestamp = CreateDataArray<vtkUnsignedIntArray>("timestamp", numberOfPoints, polyData);
 
   return polyData;
 }
