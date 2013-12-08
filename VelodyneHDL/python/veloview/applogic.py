@@ -939,9 +939,10 @@ def onPlayTimer():
         fpsDelayMilliseconds = int(1000.0 / app.targetFps)
         elapsedMilliseconds = int((vtk.vtkTimerLog.GetUniversalTime() - startTime)*1000.0)
 
-        fps = 1000/elapsedMilliseconds
-        app.fps[0] += fps
-        app.fps[1] += 1
+        if elapsedMilliseconds > 0:
+            fps = 1000.0/elapsedMilliseconds
+            app.fps[0] += fps
+            app.fps[1] += 1
 
         waitMilliseconds = fpsDelayMilliseconds - elapsedMilliseconds
         app.playTimer.start(max(waitMilliseconds,0))
