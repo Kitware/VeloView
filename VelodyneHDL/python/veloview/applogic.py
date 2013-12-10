@@ -389,7 +389,7 @@ def applyGPSTransform():
 
 def setAbsoluteTransform():
     activesrc = smp.GetActiveSource()
-    if activesrc.GetXMLName() == 'VelodyneOffsetFilter':
+    if activesrc and activesrc.GetXMLName() == 'VelodyneOffsetFilter':
         activesrc.RelativeOffset = app.actions['actionAbsolute'].isChecked()
 
 def getPointFromCoordinate(coord, midPlaneDistance = 0.5):
@@ -1022,8 +1022,7 @@ def updatePosition():
 
             if app.actions['actionGPSApply'].isChecked() and\
                not app.actions['actionAbsolute'].isChecked():
-                pt = c.GetClientSideObject().GetOutput().GetPoint(0)
-                app.mainView.CenterOfRotation = pt
+                app.mainView.CenterOfRotation = position
             else:
                 app.mainView.CenterOfRotation = [0,0,0]
 
