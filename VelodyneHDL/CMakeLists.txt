@@ -63,6 +63,7 @@ if(PARAVIEW_BUILD_QT_GUI)
 
   set(vtk_sources
     vtkPlaneFitter.cxx
+    vtkWrappedTupleInterpolator.cxx
     )
 
   QT4_WRAP_CPP(moc_srcs ${MOC_HEADERS})

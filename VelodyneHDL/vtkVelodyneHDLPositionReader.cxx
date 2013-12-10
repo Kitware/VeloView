@@ -53,7 +53,7 @@
 #include "vtkPacketFileReader.h"
 #include "vtkPacketFileWriter.h"
 
-#include "vtkTupleInterpolator.h"
+#include "vtkWrappedTupleInterpolator.h"
 
 #include <sstream>
 #include <algorithm>
@@ -109,7 +109,7 @@ public:
   int UTMZone;
   std::string UTMString;
   double Offset[3];
-  vtkSmartPointer<vtkTupleInterpolator> Interp;
+  vtkSmartPointer<vtkWrappedTupleInterpolator> Interp;
 };
 
 namespace
@@ -203,7 +203,7 @@ std::vector<std::string> vtkVelodyneHDLPositionReader::vtkInternal::ParseSentanc
 }
 
 //-----------------------------------------------------------------------------
-vtkTupleInterpolator* vtkVelodyneHDLPositionReader::GetInterpolator()
+vtkWrappedTupleInterpolator* vtkVelodyneHDLPositionReader::GetInterpolator()
 {
   return this->Internal->Interp;
 }
@@ -214,8 +214,8 @@ void vtkVelodyneHDLPositionReader::vtkInternal::InterpolateGPS(vtkPoints* points
   // assert(gpsTime is sorted)
   assert(points->GetNumberOfPoints() == times->GetNumberOfTuples());
 
-  this->Interp = vtkSmartPointer<vtkTupleInterpolator>::New();
-  vtkSmartPointer<vtkTupleInterpolator> interp = this->Interp;
+  this->Interp = vtkSmartPointer<vtkWrappedTupleInterpolator>::New();
+  vtkSmartPointer<vtkWrappedTupleInterpolator> interp = this->Interp;
   interp->SetInterpolationType(1);
   interp->SetNumberOfComponents(5);
 

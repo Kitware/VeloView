@@ -253,6 +253,11 @@ def openPCAP(filename, calibrationFile):
                                               FileName=filename)
     smp.Show(posreader)
 
+    # Create a sphere glpyh
+    g = smp.Sphere()
+    g.Radius = 5.0
+    smp.Show(g)
+
     if posreader.GetClientSideObject().GetOutput().GetNumberOfPoints():
 
         smp.Render()
@@ -261,19 +266,8 @@ def openPCAP(filename, calibrationFile):
 
         trange = posreader.GetPointDataInformation().GetArray('time').GetRange()
 
-        c = smp.Contour(posreader, guiName='CurrentPosition')
-        c.ContourBy = 'time'
-        c.Isosurfaces = trange[0]
-
-        smp.Show()
-        smp.Render()
-
-        smp.Hide(c)
-        g = smp.Glyph(c, GlyphType='Sphere', guiName='PositionGlyph')
-        g.ScaleMode = 'off'
-        g.GlyphType.Radius = 5.0
-        smp.Show()
-        smp.Render()
+        # By construction time zero is at position 0,0,0
+        
 
         # Setup scalar bar
         rep = smp.GetDisplayProperties(posreader)
@@ -288,7 +282,7 @@ def openPCAP(filename, calibrationFile):
         sb.Position, sb.Position2 = [.1, .05], [.8, .02]
         app.overheadView.Representations.append(sb)
 
-        app.position = (posreader, c, g)
+        app.position = (posreader, None, g)
     else:
         smp.Delete(posreader)
 
@@ -944,7 +938,7 @@ def onPlayTimer():
         fpsDelayMilliseconds = int(1000 / app.targetFps)
         elapsedMilliseconds = int((vtk.vtkTimerLog.GetUniversalTime() - startTime)*1000)
         waitMilliseconds = fpsDelayMilliseconds - elapsedMilliseconds
-        app.playTimer.start(waitMilliseconds if waitMilliseconds > 0 else 1)
+        app.playTimer.start(max(waitMilliseconds,0))
 
 
 def setPlayMode(mode):
@@ -1010,18 +1004,21 @@ def updatePosition():
             # Clamp
             currentTime = min(max(currentTime, trange[0]+1.0e-1), trange[1]-1.0e-1)
 
-            c = getContour()
-            c.Isosurfaces = [currentTime]
+            interp = getPosition().GetClientSideObject().GetInterpolator()
+            position = [0.0] * 5
+            interp.InterpolateTuple5(currentTime, position)
+            position = position[:3]
+
+            g = getGlyph()
+            rep = smp.GetRepresentation(g, view=app.overheadView)
+            rep.Position = position
 
             if app.actions['actionGPSApply'].isChecked() and\
                not app.actions['actionAbsolute'].isChecked():
-                c.UpdatePipeline()
                 pt = c.GetClientSideObject().GetOutput().GetPoint(0)
                 app.mainView.CenterOfRotation = pt
             else:
                 app.mainView.CenterOfRotation = [0,0,0]
-
-            smp.Render(view=app.overheadView)
 
 
 def playbackTick():
@@ -1096,10 +1093,6 @@ def unloadData():
         for t in toremove:
             app.overheadView.Representations.remove(t)
 
-        g = getGlyph()
-        c = getContour()
-        smp.Delete(g)
-        smp.Delete(c)
         smp.Delete(position)
         smp.Render(app.overheadView)
 
@@ -1117,9 +1110,6 @@ def getSensor():
 
 def getPosition():
     return getattr(app, 'position', (None, None, None))[0]
-
-def getContour():
-    return getattr(app, 'position', (None, None, None))[1]
 
 def getGlyph():
     return getattr(app, 'position', (None, None, None))[2]
