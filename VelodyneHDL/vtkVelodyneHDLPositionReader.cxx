@@ -193,10 +193,7 @@ std::vector<std::string> vtkVelodyneHDLPositionReader::vtkInternal::ParseSentanc
 
   while(std::getline(sstr, token, ','))
     {
-    if(token.size())
-      {
-      result.push_back(token);
-      }
+    result.push_back(token);
     }
 
   return result;
