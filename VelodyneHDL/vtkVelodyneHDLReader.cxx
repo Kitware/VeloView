@@ -814,7 +814,7 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(unsigned char *data, st
   HDLDataPacket* dataPacket = reinterpret_cast<HDLDataPacket *>(data);
 
   unsigned int azimuthOffset = 0;
-  double translation[3];
+  double translation[3] = {0.0, 0.0, 0.0};
   if(this->Interp)
     {
     double tuple[5];
