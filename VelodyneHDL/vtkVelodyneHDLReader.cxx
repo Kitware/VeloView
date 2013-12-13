@@ -606,15 +606,20 @@ vtkSmartPointer<vtkCellArray> vtkVelodyneHDLReader::vtkInternal::NewVertexCells(
 
 namespace
 {
-void PushFiringData(unsigned char laserId,
+void PushFiringData(const unsigned char laserId,
                     unsigned short azimuth,
-                    unsigned int timestamp,
-                    HDLLaserReturn laserReturn,
-                    HDLLaserCorrection correction,
+                    const unsigned int timestamp,
+                    const HDLLaserReturn laserReturn,
+                    const HDLLaserCorrection correction,
                     vtkVelodyneHDLReader::vtkInternal* internal,
-                    unsigned short azimuthAdjustment,
+                    const unsigned short azimuthAdjustment,
                     const double translation[3])
 {
+  internal->Azimuth->InsertNextValue(azimuth);
+  internal->Intensity->InsertNextValue(laserReturn.intensity);
+  internal->LaserId->InsertNextValue(laserId);
+  internal->Timestamp->InsertNextValue(timestamp);
+
   azimuth = (azimuth + azimuthAdjustment) % 36000;
 
   double cosAzimuth, sinAzimuth;
@@ -636,18 +641,13 @@ void PushFiringData(unsigned char laserId,
   double x = (xyDistance * sinAzimuth - correction.horizontalOffsetCorrection * cosAzimuth);
   double y = (xyDistance * cosAzimuth + correction.horizontalOffsetCorrection * sinAzimuth);
   double z = (distanceM * correction.sinVertCorrection + correction.cosVertOffsetCorrection);
-  unsigned char intensity = laserReturn.intensity;
 
   x += translation[0];
   y += translation[1];
   z += translation[2];
 
   internal->Points->InsertNextPoint(x,y,z);
-  internal->Intensity->InsertNextValue(intensity);
-  internal->LaserId->InsertNextValue(laserId);
-  internal->Azimuth->InsertNextValue(azimuth);
   internal->Distance->InsertNextValue(distanceM);
-  internal->Timestamp->InsertNextValue(timestamp);
 }
 
 }
