@@ -261,6 +261,7 @@ def openPCAP(filename, calibrationFile):
     smp.Show(g)
 
     if posreader.GetClientSideObject().GetOutput().GetNumberOfPoints():
+        reader.GetClientSideObject().SetInterp(posreader.GetClientSideObject().GetInterpolator())
 
         smp.Render()
         app.overheadView.ResetCamera()
