@@ -29,6 +29,16 @@ import kiwiviewerExporter
 import gridAdjustmentDialog
 import planefit
 
+_repCache = {}
+
+def cachedGetRepresentation(src, view):
+    try:
+        return _repCache[(src, view)]
+    except KeyError:
+        rep = smp.GetRepresentation(src, view)
+        _repCache[(src, view)] = rep
+        return rep
+
 class AppLogic(object):
 
     def __init__(self):
@@ -718,6 +728,8 @@ def onAbout():
 
 def close():
 
+    _repCache = {}
+
     stop()
     unloadData()
     resetCameraToForwardView()
@@ -1003,8 +1015,9 @@ def updatePosition():
 
         if pointcloud.GetNumberOfPoints():
             # Update the overhead view
-            # TODO: Approximate time, just grabbing the first
+            # TODO: Approximate time, just grabbing the last
             t = pointcloud.GetPointData().GetScalars('timestamp')
+            #currentTime = t.GetTuple1(t.GetNumberOfTuples() - 1)
             currentTime = t.GetTuple1(0)
 
             trange = pos.GetPointDataInformation().GetArray('time').GetRange()
@@ -1015,11 +1028,25 @@ def updatePosition():
             interp = getPosition().GetClientSideObject().GetInterpolator()
             position = [0.0] * 5
             interp.InterpolateTuple5(currentTime, position)
-            position = position[:3]
+
+            rep = cachedGetRepresentation(reader, view=app.mainView)
+            angle = math.atan2(position[4], position[3])
+            angle = 180 * angle / math.pi
+
+            t = vtk.vtkTransform()
+            t.PostMultiply()
+            t.Translate([-x for x in position[:3]])
+            t.RotateZ(angle)
+
+            rep.Position = t.GetPosition()
+            rep.Orientation = t.GetOrientation()
+
+            #rep.Position = [0.0, 0.0, 0.0]
+            #rep.Orientation = [0.0, 0.0, 0.0]
 
             g = getGlyph()
-            rep = smp.GetRepresentation(g, view=app.overheadView)
-            rep.Position = position
+            rep = cachedGetRepresentation(g, view=app.overheadView)
+            rep.Position = position[:3]
 
             if app.actions['actionGPSApply'].isChecked() and\
                not app.actions['actionAbsolute'].isChecked():
