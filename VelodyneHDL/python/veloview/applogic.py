@@ -148,7 +148,6 @@ def openData(filename):
     app.actions['actionSave_PCAP'].setEnabled(False)
     app.actions['actionChoose_Calibration_File'].setEnabled(False)
     app.actions['actionRecord'].setEnabled(False)
-    app.actions['actionGPSApply'].setEnabled(True)
 
     resetCamera()
 
@@ -214,7 +213,6 @@ def openSensor(calibrationFile):
     smp.Render()
 
     showSourceInSpreadSheet(sensor)
-    app.actions['actionGPSApply'].setEnabled(False)
 
     play()
 
@@ -280,7 +278,6 @@ def openPCAP(filename, calibrationFile):
         trange = posreader.GetPointDataInformation().GetArray('time').GetRange()
 
         # By construction time zero is at position 0,0,0
-        
 
         # Setup scalar bar
         rep = smp.GetDisplayProperties(posreader)
@@ -302,14 +299,9 @@ def openPCAP(filename, calibrationFile):
     smp.SetActiveView(app.mainView)
     smp.SetActiveSource(reader)
 
-    if getPosition():
-        objtoshow = applyGPSTransform()
-    else:
-        objtoshow = reader
-
-    rep = smp.Show(objtoshow)
+    rep = smp.Show(reader)
     rep.InterpolateScalarsBeforeMapping = 0
-    colorByIntensity(objtoshow)
+    colorByIntensity(reader)
 
     showSourceInSpreadSheet(reader)
 
@@ -357,51 +349,6 @@ def hideRuler():
 def showRuler():
     app.ruler.Visibility = True
     smp.Render()
-
-
-def applyGPSTransform():
-    result = None
-
-    reader = getReader()
-
-    # TODO: We probably need to handle our transitions better
-    applyTransforms = app.actions['actionGPSApply'].isChecked()
-
-    if not applyTransforms:
-        # Clean up any possible downstream
-        activesrc = smp.GetActiveSource()
-        if reader != activesrc:
-            smp.Delete(activesrc)
-        smp.SetActiveSource(reader)
-
-        result =  reader
-    else:
-        assert smp.GetActiveSource() == reader
-        if getPosition():
-            intp = getPosition().GetClientSideObject().GetInterpolator()
-            offsetfilter = smp.VelodyneOffsetFilter()
-            offsetfilter.RelativeOffset = app.actions['actionAbsolute'].isChecked()
-            offsetfilter.GetClientSideObject().SetInterp(intp)
-            smp.Hide(reader)
-
-            # Set the display transform
-            offsetrep = smp.GetRepresentation(offsetfilter)
-
-            result = offsetfilter
-        else:
-            result = reader
-
-    if result:
-        smp.Show(result)
-        colorByIntensity(result)
-
-    smp.Render()
-    return result
-
-def setAbsoluteTransform():
-    activesrc = smp.GetActiveSource()
-    if activesrc and activesrc.GetXMLName() == 'VelodyneOffsetFilter':
-        activesrc.RelativeOffset = app.actions['actionAbsolute'].isChecked()
 
 def getPointFromCoordinate(coord, midPlaneDistance = 0.5):
     assert len(coord) == 2
@@ -728,7 +675,7 @@ def onAbout():
 
 def close():
 
-    _repCache = {}
+    _repCache.clear()
 
     stop()
     unloadData()
@@ -1047,12 +994,6 @@ def updatePosition():
             g = getGlyph()
             rep = cachedGetRepresentation(g, view=app.overheadView)
             rep.Position = position[:3]
-
-            if app.actions['actionGPSApply'].isChecked() and\
-               not app.actions['actionAbsolute'].isChecked():
-                app.mainView.CenterOfRotation = position
-            else:
-                app.mainView.CenterOfRotation = [0,0,0]
 
 
 def playbackTick():
@@ -1523,7 +1464,7 @@ def setViewTo(axis,sign):
     viewUp = view.CameraViewUp
     position = view.CameraPosition
 
-    norm = math.sqrt(math.pow(position[0],2) + math.pow(position[1],2) + math.pow(position[2],2))    
+    norm = math.sqrt(math.pow(position[0],2) + math.pow(position[1],2) + math.pow(position[2],2))
 
     if axis == 'X':
         view.CameraViewUp = [0,0,1]
@@ -1610,9 +1551,6 @@ def setupActions():
     app.actions['actionSetViewZPlus'].connect('triggered()', setViewToZPlus)
     app.actions['actionSetViewZMinus'].connect('triggered()', setViewToZMinus)
 
-    app.actions['actionGPSApply'].connect('triggered()', applyGPSTransform)
-    app.actions['actionAbsolute'].connect('triggered()', setAbsoluteTransform)
-
     # Action created #
     timeToolBar = mW.findChild('QToolBar','playbackToolbar')
     trailingFramesToolBar = timeToolBar
@@ -1639,4 +1577,3 @@ def setupActions():
 
     buttons['Seek Backward'].connect('pressed()', seekBackwardPressed)
     buttons['Seek Backward'].connect('released()', seekBackwardReleased)
-
