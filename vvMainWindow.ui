@@ -160,7 +160,7 @@
    <addaction name="actionSetViewZPlus"/>
    <addaction name="actionSetViewZMinus"/>
   </widget>
-  <widget class="QToolBar" name="trailingFramesToolbar">
+  <widget class="QToolBar" name="geolocationToolbar">
    <property name="windowTitle">
     <string>toolBar_2</string>
    </property>
@@ -170,8 +170,6 @@
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
-   <addaction name="actionGPSApply"/>
-   <addaction name="actionAbsolute"/>
   </widget>
   <action name="actionE_xit">
    <property name="text">

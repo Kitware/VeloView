@@ -79,6 +79,9 @@ public:
 
   void SetInterp(vtkWrappedTupleInterpolator* interp);
 
+  int GetApplyTransform();
+  void SetApplyTransform(int apply);
+
   class vtkInternal;
 
 protected:

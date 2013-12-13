@@ -61,6 +61,8 @@ class AppLogic(object):
         self.mainView = mainView
         self.overheadView = overheadView
 
+        self.relativeTransform = False
+
         self.fps = [0,0]
 
     def setupTimers(self):
@@ -977,19 +979,20 @@ def updatePosition():
             interp.InterpolateTuple5(currentTime, position)
 
             rep = cachedGetRepresentation(reader, view=app.mainView)
-            angle = math.atan2(position[4], position[3])
-            angle = 180 * angle / math.pi
+            if app.relativeTransform:
+                angle = math.atan2(position[4], position[3])
+                angle = 180 * angle / math.pi
 
-            t = vtk.vtkTransform()
-            t.PostMultiply()
-            t.Translate([-x for x in position[:3]])
-            t.RotateZ(angle)
+                t = vtk.vtkTransform()
+                t.PostMultiply()
+                t.Translate([-x for x in position[:3]])
+                t.RotateZ(angle)
 
-            rep.Position = t.GetPosition()
-            rep.Orientation = t.GetOrientation()
-
-            #rep.Position = [0.0, 0.0, 0.0]
-            #rep.Orientation = [0.0, 0.0, 0.0]
+                rep.Position = t.GetPosition()
+                rep.Orientation = t.GetOrientation()
+            else:
+                rep.Position = [0.0, 0.0, 0.0]
+                rep.Orientation = [0.0, 0.0, 0.0]
 
             g = getGlyph()
             rep = cachedGetRepresentation(g, view=app.overheadView)
@@ -1244,7 +1247,6 @@ def start():
     resetCameraToForwardView()
 
     setupActions()
-    setupEventsListener()
     disablePlaybackActions()
     disableSaveActions()
     app.actions['actionMeasure'].setEnabled(view.CameraParallelProjection)
@@ -1506,9 +1508,25 @@ def setViewToZPlus():
 def setViewToZMinus():
     setViewTo('Z',-1)
 
+def geolocationChanged(setting):
+    reader = getReader()
+    position = getPosition()
 
-def setupEventsListener():
-    pass
+    if not reader or not position:
+        return
+
+    # 0 - raw
+    # 1 - absolute 
+    # 2 - relative
+
+    # This will make sure the display transfomr is proper
+    app.relativeTransform = (setting == 2)
+    updatePosition()
+
+    if setting >=1:
+        reader.ApplyTransform = 1
+    else:
+        reader.ApplyTransform = 0
 
 def setupActions():
 
@@ -1553,10 +1571,17 @@ def setupActions():
 
     # Action created #
     timeToolBar = mW.findChild('QToolBar','playbackToolbar')
-    trailingFramesToolBar = timeToolBar
+    geolocationToolBar = mW.findChild('QToolBar', 'geolocationToolbar')
+
+    comboBox = QtGui.QComboBox()
+    comboBox.addItem('Relative RAW')
+    comboBox.addItem('Absolute Geolocation')
+    comboBox.addItem('Relative Geolocation')
+    comboBox.connect('currentIndexChanged(int)', geolocationChanged)
+    geolocationToolBar.addWidget(comboBox)
 
     spinBoxLabel = QtGui.QLabel('TF:')
-    trailingFramesToolBar.addWidget(spinBoxLabel)
+    timeToolBar.addWidget(spinBoxLabel)
 
     spinBox = QtGui.QSpinBox()
     spinBox.toolTip = "Number of trailing frames"
@@ -1565,7 +1590,7 @@ def setupActions():
     spinBox.connect('valueChanged(int)', onTrailingFramesChanged)
     app.trailingFramesSpinBox = spinBox
 
-    app.actions['actionTrailingFramesSelector'] = trailingFramesToolBar.addWidget(spinBox)
+    app.actions['actionTrailingFramesSelector'] = timeToolBar.addWidget(spinBox)
     app.actions['actionTrailingFramesSelector'].setVisible(True)
 
     buttons = {}

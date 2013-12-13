@@ -146,6 +146,7 @@ public:
     this->Reader = 0;
     this->SplitCounter = 0;
     this->NumberOfTrailingFrames = 0;
+    this->ApplyTransform = 0;
     this->Init();
   }
 
@@ -171,6 +172,7 @@ public:
 
   int SplitCounter;
   int NumberOfTrailingFrames;
+  int ApplyTransform;
 
   void SplitFrame(bool force=false);
   vtkSmartPointer<vtkPolyData> CreateData(vtkIdType numberOfPoints);
@@ -206,6 +208,18 @@ vtkVelodyneHDLReader::~vtkVelodyneHDLReader()
 const std::string& vtkVelodyneHDLReader::GetFileName()
 {
   return this->FileName;
+}
+
+//-----------------------------------------------------------------------------
+void vtkVelodyneHDLReader::SetApplyTransform(int apply)
+{
+  this->Internal->ApplyTransform = apply;
+}
+
+//-----------------------------------------------------------------------------
+int vtkVelodyneHDLReader::GetApplyTransform()
+{
+  return this->Internal->ApplyTransform;
 }
 
 //-----------------------------------------------------------------------------
@@ -815,7 +829,7 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(unsigned char *data, st
 
   unsigned int azimuthOffset = 0;
   double translation[3] = {0.0, 0.0, 0.0};
-  if(this->Interp)
+  if(this->ApplyTransform && this->Interp)
     {
     double tuple[5];
     this->Interp->InterpolateTuple(dataPacket->gpsTimestamp, tuple);

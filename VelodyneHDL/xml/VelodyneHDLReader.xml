@@ -30,6 +30,17 @@
         </Documentation>
       </IntVectorProperty>
 
+      <IntVectorProperty
+          name="ApplyTransform"
+          animateable="0"
+          command="SetApplyTransform"
+          default_values="0"
+          number_of_elements="1">
+        <Documentation>
+          Apply geolocation data
+        </Documentation>
+      </IntVectorProperty>
+
       <StringVectorProperty
           name="ZCorrectionsFile"
           label="Calibration File"
