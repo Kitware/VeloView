@@ -1519,14 +1519,17 @@ def geolocationChanged(setting):
     # 1 - absolute 
     # 2 - relative
 
-    # This will make sure the display transfomr is proper
-    app.relativeTransform = (setting == 2)
-    updatePosition()
-
+    # Correct the reader settings
     if setting >=1:
         reader.ApplyTransform = 1
     else:
         reader.ApplyTransform = 0
+
+    # This will make sure the display transfomr is proper
+    app.relativeTransform = (setting == 2)
+
+    updatePosition()
+    smp.Render(view=app.mainView)
 
 def setupActions():
 

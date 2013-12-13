@@ -213,6 +213,10 @@ const std::string& vtkVelodyneHDLReader::GetFileName()
 //-----------------------------------------------------------------------------
 void vtkVelodyneHDLReader::SetApplyTransform(int apply)
 {
+  if(apply != this->Internal->ApplyTransform)
+    {
+    this->Modified();
+    }
   this->Internal->ApplyTransform = apply;
 }
 
