@@ -822,7 +822,6 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(unsigned char *data, st
 
     double angle = std::atan2(tuple[4], tuple[3]);
     angle = (angle > 0 ? angle : (2*vtkMath::Pi() + angle));
-    angle = angle - (vtkMath::Pi() / 2.0);
     angle = 180 * angle / vtkMath::Pi();
 
     azimuthOffset = static_cast<unsigned int>(angle * 100);
@@ -854,9 +853,8 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(unsigned char *data, st
       unsigned char laserId = static_cast<unsigned char>(j + offset);
       if (firingData.laserReturns[j].distance != 0.0)
         {
-        const unsigned int offsetRotation = (firingData.rotationalPosition + azimuthOffset) % 36000;
         PushFiringData(laserId,
-                       offsetRotation,
+                       firingData.rotationalPosition,
                        dataPacket->gpsTimestamp,
                        firingData.laserReturns[j],
                        laser_corrections_[j + offset],
