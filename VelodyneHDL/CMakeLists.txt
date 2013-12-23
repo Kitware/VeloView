@@ -30,7 +30,7 @@ if(WIN32 OR APPLE)
   set(Boost_USE_STATIC_LIBS ON)
 endif(WIN32 OR APPLE)
 set(Boost_USE_MULTITHREADED ON)
-find_package(Boost REQUIRED COMPONENTS system thread chrono regex date_time)
+find_package(Boost REQUIRED COMPONENTS system thread chrono regex date_time atomic)
 include_directories(${Boost_INCLUDE_DIRS})
 
 ########################
