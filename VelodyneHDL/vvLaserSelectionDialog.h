@@ -33,6 +33,8 @@ public:
   QVector<int> getLaserSelectionMask();
   void setLaserSelectionMask(const QVector<int>& mask);
 
+  void setVerticalCorrections(const QVector<double>& corrections);
+
 public slots:
   void onItemChanged(QTableWidgetItem*);
   void onToggleSelected();

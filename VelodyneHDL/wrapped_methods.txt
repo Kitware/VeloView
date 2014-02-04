@@ -5,7 +5,8 @@ vvSelectFramesDialog::vvSelectFramesDialog(QWidget*)
 vvLaserSelectionDialog::vvLaserSelectionDialog(QWidget*)
 
 QVector<int> vvLaserSelectionDialog::getLaserSelectionMask();
-void vvLaserSelectionDialog::setLaserSelectionMask(QVector<int>);
+void vvLaserSelectionDialog::setLaserSelectionMask(const QVector<int>&);
+void vvLaserSelectionDialog::setVerticalCorrections(const QVector<double>&);
 
 int vvSelectFramesDialog::frameMode() const;
 void vvSelectFramesDialog::setFrameMode(int);

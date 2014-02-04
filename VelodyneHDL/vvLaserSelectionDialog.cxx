@@ -22,6 +22,8 @@
 
 #include <iostream>
 
+#include <cassert>
+
 //-----------------------------------------------------------------------------
 class vvLaserSelectionDialog::pqInternal : public Ui::vvLaserSelectionDialog
 {
@@ -42,7 +44,7 @@ public:
 
     table->setHorizontalHeaderItem(0, hcheckbox);
 
-    for(size_t i = 0; i < 32; ++i)
+    for(size_t i = 0; i < 64; ++i)
        {
        table->insertRow(i);
 
@@ -163,9 +165,25 @@ QVector<int> vvLaserSelectionDialog::getLaserSelectionMask()
   for(int i = 0; i < this->Internal->Table->rowCount(); ++i)
     {
     QTableWidgetItem* item = this->Internal->Table->item(i, 0);
-    result[i] = (item->checkState() == Qt::Checked);
+    QTableWidgetItem* value = this->Internal->Table->item(i, 2);
+    int channel = value->data(Qt::EditRole).toInt();
+    assert(channel < 64 && channel > 0);
+    result[channel] = (item->checkState() == Qt::Checked);
     }
   return result;
+}
+
+//-----------------------------------------------------------------------------
+void vvLaserSelectionDialog::setVerticalCorrections(const QVector<double>& corrections)
+{
+  for(int i = 0; i < this->Internal->Table->rowCount(); ++i)
+    {
+    QTableWidgetItem* item = this->Internal->Table->item(i, 1);
+    QTableWidgetItem* value = this->Internal->Table->item(i, 2);
+    int channel = value->data(Qt::EditRole).toInt();
+    assert(channel < 64 && channel > 0);
+    item->setData(Qt::EditRole, corrections[channel]);
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -174,7 +192,10 @@ void vvLaserSelectionDialog::setLaserSelectionMask(const QVector<int>& mask)
   for(int i = 0; i < this->Internal->Table->rowCount(); ++i)
     {
     QTableWidgetItem* item = this->Internal->Table->item(i, 0);
-    item->setCheckState(mask[i] ? Qt::Checked : Qt::Unchecked);
+    QTableWidgetItem* value = this->Internal->Table->item(i, 2);
+    int channel = value->data(Qt::EditRole).toInt();
+    assert(channel < 64 && channel > 0);
+    item->setCheckState(mask[channel] ? Qt::Checked : Qt::Unchecked);
     }
 }
 

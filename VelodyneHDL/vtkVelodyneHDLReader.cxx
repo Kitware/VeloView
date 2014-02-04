@@ -307,6 +307,16 @@ void vtkVelodyneHDLReader::GetLaserMask(int LaserMask[64])
     }
 }
 
+
+//-----------------------------------------------------------------------------
+void vtkVelodyneHDLReader::GetVerticalCorrections(double VerticalCorrections[64])
+{
+  for(int i = 0; i < 64; ++i)
+    {
+    VerticalCorrections[i] = this->Internal->laser_corrections_[i].verticalCorrection;
+    }
+}
+
 //-----------------------------------------------------------------------------
 void vtkVelodyneHDLReader::SetDummyProperty(int vtkNotUsed(dummy))
 {

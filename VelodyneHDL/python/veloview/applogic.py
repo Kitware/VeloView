@@ -1392,15 +1392,20 @@ def onLaserMask():
     oldmask = [1] * 64
     reader = getReader()
     sensor = getSensor()
+    corrections = [0] * 64
 
     if reader:
         reader.GetClientSideObject().GetLaserMask(oldmask)
+        reader.GetClientSideObject().GetVerticalCorrections(corrections)
+
     elif sensor:
         sensor.GetClientSideObject().GetLaserMask(oldmask)
+        sensor.GetClientSideObject().GetVerticalCorrections(corrections)
 
     # Need a way to initialize the mask
     dialog = PythonQt.paraview.vvLaserSelectionDialog(getMainWindow())
     dialog.setLaserSelectionMask(oldmask)
+    dialog.setVerticalCorrections(corrections)
     dialog.exec_()
     mask = dialog.getLaserSelectionMask()
 
