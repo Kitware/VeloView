@@ -157,6 +157,28 @@ vvLaserSelectionDialog::vvLaserSelectionDialog(QWidget *p) : QDialog(p)
 }
 
 //-----------------------------------------------------------------------------
+QVector<int> vvLaserSelectionDialog::getLaserSelectionMask()
+{
+  QVector<int> result(64, 1);
+  for(int i = 0; i < this->Internal->Table->rowCount(); ++i)
+    {
+    QTableWidgetItem* item = this->Internal->Table->item(i, 0);
+    result[i] = (item->checkState() == Qt::Checked);
+    }
+  return result;
+}
+
+//-----------------------------------------------------------------------------
+void vvLaserSelectionDialog::setLaserSelectionMask(const QVector<int>& mask)
+{
+  for(int i = 0; i < this->Internal->Table->rowCount(); ++i)
+    {
+    QTableWidgetItem* item = this->Internal->Table->item(i, 0);
+    item->setCheckState(mask[i] ? Qt::Checked : Qt::Unchecked);
+    }
+}
+
+//-----------------------------------------------------------------------------
 vvLaserSelectionDialog::~vvLaserSelectionDialog()
 {
   delete this->Internal;

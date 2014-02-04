@@ -511,10 +511,6 @@ def onNativeFileDialogsAction():
     defaultDir = settings.setValue('VelodyneHDLPlugin/NativeFileDialogs', int(app.actions['actionNative_File_Dialogs'].isChecked()))
 
 
-def getLaserSelectionFromUser():
-    dialog = PythonQt.paraview.vvLaserSelectionDialog(getMainWindow())
-    dialog.exec_()
-
 def getFrameSelectionFromUser(frameStrideVisibility=False):
 
     dialog = PythonQt.paraview.vvSelectFramesDialog(getMainWindow())
@@ -1392,6 +1388,33 @@ def onGridProperties():
         smp.Render()
 
 
+def onLaserMask():
+    oldmask = [1] * 64
+    reader = getReader()
+    sensor = getSensor()
+
+    if reader:
+        reader.GetClientSideObject().GetLaserMask(oldmask)
+    elif sensor:
+        sensor.GetClientSideObject().GetLaserMask(oldmask)
+
+    # Need a way to initialize the mask
+    dialog = PythonQt.paraview.vvLaserSelectionDialog(getMainWindow())
+    dialog.setLaserSelectionMask(oldmask)
+    dialog.exec_()
+    mask = dialog.getLaserSelectionMask()
+
+    if reader:
+        reader.GetClientSideObject().SetLaserMask(mask)
+        reader.DummyProperty = not reader.DummyProperty
+        smp.Render()
+
+    if sensor:
+        sensor.GetClientSideObject().SetLaserMask(mask)
+        sensor.DummyProperty = not sensor.DummyProperty
+        smp.Render()
+
+
 def hideColorByComponent():
     getMainWindow().findChild('pqColorToolbar').findChild('pqDisplayColorWidget').findChildren('QComboBox')[1].hide()
 
@@ -1557,6 +1580,7 @@ def setupActions():
     app.actions['actionExport_To_KiwiViewer'].connect('triggered()', onKiwiViewerExport)
     app.actions['actionReset_Camera'].connect('triggered()', resetCamera)
     app.actions['actionGrid_Properties'].connect('triggered()', onGridProperties)
+    app.actions['actionLaserMask'].connect('triggered()', onLaserMask)
     app.actions['actionSeek_Forward'].connect('triggered()', seekForward)
     app.actions['actionSeek_Backward'].connect('triggered()', seekBackward)
     app.actions['actionGo_To_End'].connect('triggered()', gotoEnd)

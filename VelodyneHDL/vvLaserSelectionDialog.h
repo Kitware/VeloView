@@ -19,6 +19,8 @@
 #include "vvConfigure.h"
 
 class QTableWidgetItem;
+template<typename T>
+class QVector;
 
 class VelodyneHDLPlugin_EXPORT vvLaserSelectionDialog : public QDialog
 {
@@ -27,6 +29,9 @@ public:
 
   vvLaserSelectionDialog(QWidget *p=0);
   virtual ~vvLaserSelectionDialog();
+
+  QVector<int> getLaserSelectionMask();
+  void setLaserSelectionMask(const QVector<int>& mask);
 
 public slots:
   void onItemChanged(QTableWidgetItem*);

@@ -30,6 +30,30 @@
         </Documentation>
       </IntVectorProperty>
 
+<!--
+     <IntVectorProperty
+          name="LaserMask"
+          animateable="0"
+          command="SetLaserMask"
+          default_values="1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1"
+          number_of_elements="64">
+        <Documentation>
+          Number of frames behind the current frame to show
+        </Documentation>
+      </IntVectorProperty>
+-->
+
+      <IntVectorProperty
+          name="DummyProperty"
+          animateable="0"
+          command="SetDummyProperty"
+          default_values="0"
+          number_of_elements="1">
+        <Documentation>
+          A hack to get the filter to refresh, since I cant get the LaserMask to wrap correctly
+        </Documentation>
+      </IntVectorProperty>
+
       <IntVectorProperty
           name="ApplyTransform"
           animateable="0"

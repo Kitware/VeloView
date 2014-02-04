@@ -24,7 +24,7 @@
      <x>0</x>
      <y>0</y>
      <width>1070</width>
-     <height>22</height>
+     <height>24</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -67,6 +67,7 @@
     <addaction name="actionSpreadsheet"/>
     <addaction name="actionMeasurement_Grid"/>
     <addaction name="actionGrid_Properties"/>
+    <addaction name="actionLaserMask"/>
     <addaction name="actionChoose_Calibration_File"/>
     <addaction name="separator"/>
     <addaction name="actionPlay"/>
@@ -354,6 +355,9 @@
   </action>
   <action name="actionMeasurement_Grid">
    <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
     <bool>true</bool>
    </property>
    <property name="text">
@@ -656,6 +660,11 @@
    </property>
    <property name="toolTip">
     <string>Geolocation in absolute coordinates</string>
+   </property>
+  </action>
+  <action name="actionLaserMask">
+   <property name="text">
+    <string>Laser Mask</string>
    </property>
   </action>
  </widget>

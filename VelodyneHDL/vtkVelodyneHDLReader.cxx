@@ -139,7 +139,7 @@ class vtkVelodyneHDLReader::vtkInternal
 {
 public:
 
-  vtkInternal()
+  vtkInternal() : LaserMask(64, true)
   {
     this->Skip = 0;
     this->LastAzimuth = 0;
@@ -162,7 +162,6 @@ public:
   vtkDoubleArray*        Distance;
   vtkUnsignedIntArray* Timestamp;
 
-
   unsigned int LastAzimuth;
 
   std::vector<fpos_t> FilePositions;
@@ -173,6 +172,8 @@ public:
   int SplitCounter;
   int NumberOfTrailingFrames;
   int ApplyTransform;
+
+  std::vector<bool> LaserMask;
 
   void SplitFrame(bool force=false);
   vtkSmartPointer<vtkPolyData> CreateData(vtkIdType numberOfPoints);
@@ -251,6 +252,52 @@ void vtkVelodyneHDLReader::SetFileName(const std::string& filename)
 const std::string& vtkVelodyneHDLReader::GetCorrectionsFile()
 {
   return this->CorrectionsFile;
+}
+
+//-----------------------------------------------------------------------------
+void vtkVelodyneHDLReader::SetLaserMask(int x00, int x01, int x02, int x03, int x04, int x05, int x06, int x07,
+                                        int x08, int x09, int x10, int x11, int x12, int x13, int x14, int x15,
+                                        int x16, int x17, int x18, int x19, int x20, int x21, int x22, int x23,
+                                        int x24, int x25, int x26, int x27, int x28, int x29, int x30, int x31,
+                                        int x32, int x33, int x34, int x35, int x36, int x37, int x38, int x39,
+                                        int x40, int x41, int x42, int x43, int x44, int x45, int x46, int x47,
+                                        int x48, int x49, int x50, int x51, int x52, int x53, int x54, int x55,
+                                        int x56, int x57, int x58, int x59, int x60, int x61, int x62, int x63)
+{
+  int mask[64] = {x00, x01, x02, x03, x04, x05, x06, x07,
+                  x08, x09, x10, x11, x12, x13, x14, x15,
+                  x16, x17, x18, x19, x20, x21, x22, x23,
+                  x24, x25, x26, x27, x28, x29, x30, x31,
+                  x32, x33, x34, x35, x36, x37, x38, x39,
+                  x40, x41, x42, x43, x44, x45, x46, x47,
+                  x48, x49, x50, x51, x52, x53, x54, x55,
+                  x56, x57, x58, x59, x60, x61, x62, x63};
+  this->SetLaserMask(mask);
+}
+
+//-----------------------------------------------------------------------------
+void vtkVelodyneHDLReader::SetLaserMask(int LaserMask[64])
+{
+  for(int i = 0; i < 64; ++i)
+    {
+    this->Internal->LaserMask[i] = LaserMask[i];
+    }
+  this->Modified();
+}
+
+//-----------------------------------------------------------------------------
+void vtkVelodyneHDLReader::GetLaserMask(int LaserMask[64])
+{
+  for(int i = 0; i < 64; ++i)
+    {
+    LaserMask[i] = this->Internal->LaserMask[i];
+    }
+}
+
+//-----------------------------------------------------------------------------
+void vtkVelodyneHDLReader::SetDummyProperty(int vtkNotUsed(dummy))
+{
+  this->Modified();
 }
 
 //-----------------------------------------------------------------------------
@@ -869,7 +916,7 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(unsigned char *data, st
     for (int j = 0; j < HDL_LASER_PER_FIRING; j++)
       {
       unsigned char laserId = static_cast<unsigned char>(j + offset);
-      if (firingData.laserReturns[j].distance != 0.0)
+      if (firingData.laserReturns[j].distance != 0.0 && this->LaserMask[laserId])
         {
         PushFiringData(laserId,
                        firingData.rotationalPosition,

@@ -59,11 +59,24 @@ public:
   //
   int CanReadFile(const char* fname);
 
-
   // Description:
   // Number of frames behind current frame to read.  Zero indicates only
   // show the current frame.  Negative numbers are invalid.
   void SetNumberOfTrailingFrames(int numberTrailing);
+
+  // Description:
+  // TODO: This is not friendly but I dont have a better way to pass 64 values to a filter in
+  // paraview
+  void SetLaserMask(int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int,
+                    int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int,
+                    int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int,
+                    int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int);
+  void SetLaserMask(int LaserMask[64]);
+
+  void GetLaserMask(int LaserMask[64]);
+
+  // A trick to workaround failure to wrap LaserMask
+  void SetDummyProperty(int);
 
   void Open();
   void Close();
