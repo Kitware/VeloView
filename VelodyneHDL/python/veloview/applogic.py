@@ -511,6 +511,10 @@ def onNativeFileDialogsAction():
     defaultDir = settings.setValue('VelodyneHDLPlugin/NativeFileDialogs', int(app.actions['actionNative_File_Dialogs'].isChecked()))
 
 
+def getLaserSelectionFromUser():
+    dialog = PythonQt.paraview.vvLaserSelectionDialog(getMainWindow())
+    dialog.exec_()
+
 def getFrameSelectionFromUser(frameStrideVisibility=False):
 
     dialog = PythonQt.paraview.vvSelectFramesDialog(getMainWindow())

@@ -2,6 +2,7 @@ vvCalibrationDialog::vvCalibrationDialog(QWidget*)
 
 vvSelectFramesDialog::vvSelectFramesDialog(QWidget*)
 
+vvLaserSelectionDialog::vvLaserSelectionDialog(QWidget*)
 
 int vvSelectFramesDialog::frameMode() const;
 void vvSelectFramesDialog::setFrameMode(int);
