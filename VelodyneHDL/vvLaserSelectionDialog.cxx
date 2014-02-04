@@ -22,6 +22,7 @@
 
 #include <iostream>
 
+#include <cmath>
 #include <cassert>
 
 //-----------------------------------------------------------------------------
@@ -184,6 +185,25 @@ void vvLaserSelectionDialog::setVerticalCorrections(const QVector<double>& corre
     assert(channel < 64 && channel > 0);
     item->setData(Qt::EditRole, corrections[channel]);
     }
+
+  bool allSmall = true;
+  for(int i = 32; i < this->Internal->Table->rowCount(); ++i)
+    {
+    QTableWidgetItem* item = this->Internal->Table->item(i, 1);
+    double angle = item->data(Qt::EditRole).toDouble();
+    allSmall = allSmall && std::abs(angle) < 1.0e-8;
+    }
+
+  if(allSmall)
+    {
+    for(int i = 32; i < this->Internal->Table->rowCount(); ++i)
+      {
+      this->Internal->Table->hideRow(i);
+      }
+    }
+
+  // Sort the table
+  this->Internal->Table->sortItems(1);
 }
 
 //-----------------------------------------------------------------------------
