@@ -129,9 +129,6 @@ struct HDLRGB
 };
 #pragma pack(pop)
 
-double *cos_lookup_table_;
-double *sin_lookup_table_;
-HDLLaserCorrection laser_corrections_[HDL_MAX_NUM_LASERS];
 }
 
 //-----------------------------------------------------------------------------
@@ -139,7 +136,7 @@ class vtkVelodyneHDLReader::vtkInternal
 {
 public:
 
-  vtkInternal() : LaserMask(64, true)
+  vtkInternal()
   {
     this->Skip = 0;
     this->LastAzimuth = 0;
@@ -147,7 +144,19 @@ public:
     this->SplitCounter = 0;
     this->NumberOfTrailingFrames = 0;
     this->ApplyTransform = 0;
+
+    this->LaserMask.resize(64, true);
+
+    cos_lookup_table_ = NULL;
+    sin_lookup_table_ = NULL;
+
     this->Init();
+  }
+
+  ~vtkInternal()
+  {
+    delete[] cos_lookup_table_;
+    delete[] sin_lookup_table_;
   }
 
   std::vector<vtkSmartPointer<vtkPolyData> > Datasets;
@@ -174,6 +183,10 @@ public:
   int ApplyTransform;
 
   std::vector<bool> LaserMask;
+
+  double *cos_lookup_table_;
+  double *sin_lookup_table_;
+  HDLLaserCorrection laser_corrections_[HDL_MAX_NUM_LASERS];
 
   void SplitFrame(bool force=false);
   vtkSmartPointer<vtkPolyData> CreateData(vtkIdType numberOfPoints);
@@ -690,8 +703,8 @@ void PushFiringData(const unsigned char laserId,
   double cosAzimuth, sinAzimuth;
   if (correction.azimuthCorrection == 0)
   {
-    cosAzimuth = cos_lookup_table_[azimuth];
-    sinAzimuth = sin_lookup_table_[azimuth];
+    cosAzimuth = internal->cos_lookup_table_[azimuth];
+    sinAzimuth = internal->sin_lookup_table_[azimuth];
   }
   else
   {
@@ -723,8 +736,8 @@ void vtkVelodyneHDLReader::vtkInternal::InitTables()
 {
   if (cos_lookup_table_ == NULL && sin_lookup_table_ == NULL)
     {
-    cos_lookup_table_ = static_cast<double *> (malloc (HDL_NUM_ROT_ANGLES * sizeof (*cos_lookup_table_)));
-    sin_lookup_table_ = static_cast<double *> (malloc (HDL_NUM_ROT_ANGLES * sizeof (*sin_lookup_table_)));
+    cos_lookup_table_ = new double[HDL_NUM_ROT_ANGLES];
+    sin_lookup_table_ = new double[HDL_NUM_ROT_ANGLES];
     for (unsigned int i = 0; i < HDL_NUM_ROT_ANGLES; i++)
       {
       double rad = HDL_Grabber_toRadians(i / 100.0);
