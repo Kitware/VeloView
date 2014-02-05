@@ -241,7 +241,8 @@ def openPCAP(filename, calibrationFile):
     reader = smp.VelodyneHDLReader(guiName='Data',
                                    FileName=filename,
                                    CalibrationFile=calibrationFile,
-                                   NumberOfTrailingFrames=app.trailingFramesSpinBox.value)
+                                   NumberOfTrailingFrames=app.trailingFramesSpinBox.value,
+                                   PointsRatio=app.trailingFramesSpinBox.value)
     reader.UpdatePipeline()
 
     handler.RemoveObserver(tag)
@@ -1297,7 +1298,13 @@ def addShortcuts(keySequenceStr, function):
 def onTrailingFramesChanged(numFrames):
     try:
         app.reader.NumberOfTrailingFrames = numFrames
-        #app.reader.UpdatePipeline()
+        smp.Render()
+    except AttributeError:
+        pass
+
+def onPointsRatioChanged(pr):
+    try:
+        app.reader.PointsRatio = pr
         smp.Render()
     except AttributeError:
         pass
@@ -1628,6 +1635,19 @@ def setupActions():
 
     app.actions['actionTrailingFramesSelector'] = timeToolBar.addWidget(spinBox)
     app.actions['actionTrailingFramesSelector'].setVisible(True)
+
+    pointsRatioLabel = QtGui.QLabel('PR:')
+    timeToolBar.addWidget(pointsRatioLabel)
+
+    pointsRatioBox = QtGui.QSpinBox()
+    pointsRatioBox.toolTip = "PointsRatio Box"
+    pointsRatioBox.setMinimum(0)
+    pointsRatioBox.setMaximum(100)
+    pointsRatioBox.connect('valueChanged(int)', onPointsRatioChanged)
+    app.pointsRatioSpinBox = pointsRatioBox
+
+    app.actions['actionPointsRatioSelector'] = timeToolBar.addWidget(pointsRatioBox)
+    app.actions['actionPointsRatioSelector'].setVisible(True)
 
     buttons = {}
     for button in getPlaybackToolBar().findChildren('QToolButton'):
