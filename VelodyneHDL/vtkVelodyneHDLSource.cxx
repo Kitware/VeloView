@@ -713,6 +713,33 @@ void vtkVelodyneHDLSource::SetCorrectionsFile(const std::string& filename)
   this->Modified();
 }
 
+//-----------------------------------------------------------------------------
+void vtkVelodyneHDLSource::SetLaserMask(int LaserMask[64])
+{
+  this->Internal->Consumer->GetReader()->SetLaserMask(LaserMask);
+  this->Modified();
+}
+
+//-----------------------------------------------------------------------------
+void vtkVelodyneHDLSource::GetLaserMask(int LaserMask[64])
+{
+  this->Internal->Consumer->GetReader()->GetLaserMask(LaserMask);
+}
+
+
+//-----------------------------------------------------------------------------
+void vtkVelodyneHDLSource::GetVerticalCorrections(double VerticalCorrections[64])
+{
+  this->Internal->Consumer->GetReader()->GetVerticalCorrections(VerticalCorrections);
+}
+
+
+//-----------------------------------------------------------------------------
+void vtkVelodyneHDLSource::SetDummyProperty(int vtkNotUsed(dummy))
+{
+  this->Modified();
+}
+
 //----------------------------------------------------------------------------
 void vtkVelodyneHDLSource::Start()
 {

@@ -40,6 +40,17 @@
           </Documentation>
       </StringVectorProperty>
 
+      <IntVectorProperty
+          name="DummyProperty"
+          animateable="0"
+          command="SetDummyProperty"
+          default_values="0"
+          number_of_elements="1">
+        <Documentation>
+          A hack to get the filter to refresh, since I cant get the LaserMask to wrap correctly
+        </Documentation>
+      </IntVectorProperty>
+
       <Property
         name="Poll"
         command="Poll" />
