@@ -80,6 +80,8 @@ public:
   // A trick to workaround failure to wrap LaserMask
   void SetDummyProperty(int);
 
+  void SetPointsRatio(int);
+
   void Open();
   void Close();
   int ReadFrameInformation();

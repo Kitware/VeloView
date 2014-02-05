@@ -144,6 +144,7 @@ public:
     this->SplitCounter = 0;
     this->NumberOfTrailingFrames = 0;
     this->ApplyTransform = 0;
+    this->PointsRatio = 0;
 
     this->LaserMask.resize(64, true);
 
@@ -181,6 +182,8 @@ public:
   int SplitCounter;
   int NumberOfTrailingFrames;
   int ApplyTransform;
+
+  int PointsRatio;
 
   std::vector<bool> LaserMask;
 
@@ -320,6 +323,13 @@ void vtkVelodyneHDLReader::GetVerticalCorrections(double VerticalCorrections[64]
 //-----------------------------------------------------------------------------
 void vtkVelodyneHDLReader::SetDummyProperty(int vtkNotUsed(dummy))
 {
+  this->Modified();
+}
+
+//-----------------------------------------------------------------------------
+void vtkVelodyneHDLReader::SetPointsRatio(int pr)
+{
+  this->Internal->PointsRatio = pr;
   this->Modified();
 }
 
@@ -939,7 +949,8 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(unsigned char *data, st
     for (int j = 0; j < HDL_LASER_PER_FIRING; j++)
       {
       unsigned char laserId = static_cast<unsigned char>(j + offset);
-      if (firingData.laserReturns[j].distance != 0.0 && this->LaserMask[laserId])
+      if (firingData.laserReturns[j].distance != 0.0 && this->LaserMask[laserId] &&
+          (this->PointsRatio <= 1 || i % this->PointsRatio == 0))
         {
         PushFiringData(laserId,
                        firingData.rotationalPosition,

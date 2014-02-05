@@ -55,6 +55,17 @@
       </IntVectorProperty>
 
       <IntVectorProperty
+          name="PointsRatio"
+          animateable="0"
+          command="SetPointsRatio"
+          default_values="0"
+          number_of_elements="1">
+        <Documentation>
+          Skip points set to 2 or higher
+        </Documentation>
+      </IntVectorProperty>
+
+      <IntVectorProperty
           name="ApplyTransform"
           animateable="0"
           command="SetApplyTransform"
