@@ -27,7 +27,7 @@
 =========================================================================*/
 #include "vtkWrappedTupleInterpolator.h"
 
-#include <vtkObjectFactory.h>b
+#include <vtkObjectFactory.h>
 
 //----------------------------------------------------------------------------
 vtkStandardNewMacro(vtkWrappedTupleInterpolator);
