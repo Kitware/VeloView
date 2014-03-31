@@ -160,7 +160,7 @@ vvLaserSelectionDialog::vvLaserSelectionDialog(QWidget *p) : QDialog(p)
 }
 
 //-----------------------------------------------------------------------------
-QVector<int> vvLaserSelectionDialog::getLaserSelectionMask()
+QVector<int> vvLaserSelectionDialog::getLaserSelectionSelector()
 {
   QVector<int> result(64, 1);
   for(int i = 0; i < this->Internal->Table->rowCount(); ++i)
@@ -207,7 +207,7 @@ void vvLaserSelectionDialog::setVerticalCorrections(const QVector<double>& corre
 }
 
 //-----------------------------------------------------------------------------
-void vvLaserSelectionDialog::setLaserSelectionMask(const QVector<int>& mask)
+void vvLaserSelectionDialog::setLaserSelectionSelector(const QVector<int>& mask)
 {
   for(int i = 0; i < this->Internal->Table->rowCount(); ++i)
     {

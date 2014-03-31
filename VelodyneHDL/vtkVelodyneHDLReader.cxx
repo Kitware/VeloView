@@ -146,7 +146,7 @@ public:
     this->ApplyTransform = 0;
     this->PointsRatio = 0;
 
-    this->LaserMask.resize(64, true);
+    this->LaserSelector.resize(64, true);
 
     cos_lookup_table_ = NULL;
     sin_lookup_table_ = NULL;
@@ -185,7 +185,7 @@ public:
 
   int PointsRatio;
 
-  std::vector<bool> LaserMask;
+  std::vector<bool> LaserSelector;
 
   double *cos_lookup_table_;
   double *sin_lookup_table_;
@@ -271,7 +271,7 @@ const std::string& vtkVelodyneHDLReader::GetCorrectionsFile()
 }
 
 //-----------------------------------------------------------------------------
-void vtkVelodyneHDLReader::SetLaserMask(int x00, int x01, int x02, int x03, int x04, int x05, int x06, int x07,
+void vtkVelodyneHDLReader::SetLaserSelector(int x00, int x01, int x02, int x03, int x04, int x05, int x06, int x07,
                                         int x08, int x09, int x10, int x11, int x12, int x13, int x14, int x15,
                                         int x16, int x17, int x18, int x19, int x20, int x21, int x22, int x23,
                                         int x24, int x25, int x26, int x27, int x28, int x29, int x30, int x31,
@@ -288,25 +288,25 @@ void vtkVelodyneHDLReader::SetLaserMask(int x00, int x01, int x02, int x03, int 
                   x40, x41, x42, x43, x44, x45, x46, x47,
                   x48, x49, x50, x51, x52, x53, x54, x55,
                   x56, x57, x58, x59, x60, x61, x62, x63};
-  this->SetLaserMask(mask);
+  this->SetLaserSelector(mask);
 }
 
 //-----------------------------------------------------------------------------
-void vtkVelodyneHDLReader::SetLaserMask(int LaserMask[64])
+void vtkVelodyneHDLReader::SetLaserSelector(int LaserSelector[64])
 {
   for(int i = 0; i < 64; ++i)
     {
-    this->Internal->LaserMask[i] = LaserMask[i];
+    this->Internal->LaserSelector[i] = LaserSelector[i];
     }
   this->Modified();
 }
 
 //-----------------------------------------------------------------------------
-void vtkVelodyneHDLReader::GetLaserMask(int LaserMask[64])
+void vtkVelodyneHDLReader::GetLaserSelector(int LaserSelector[64])
 {
   for(int i = 0; i < 64; ++i)
     {
-    LaserMask[i] = this->Internal->LaserMask[i];
+    LaserSelector[i] = this->Internal->LaserSelector[i];
     }
 }
 
@@ -949,7 +949,7 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(unsigned char *data, st
     for (int j = 0; j < HDL_LASER_PER_FIRING; j++)
       {
       unsigned char laserId = static_cast<unsigned char>(j + offset);
-      if (firingData.laserReturns[j].distance != 0.0 && this->LaserMask[laserId] &&
+      if (firingData.laserReturns[j].distance != 0.0 && this->LaserSelector[laserId] &&
           (this->PointsRatio <= 1 || i % this->PointsRatio == 0))
         {
         PushFiringData(laserId,

@@ -714,16 +714,16 @@ void vtkVelodyneHDLSource::SetCorrectionsFile(const std::string& filename)
 }
 
 //-----------------------------------------------------------------------------
-void vtkVelodyneHDLSource::SetLaserMask(int LaserMask[64])
+void vtkVelodyneHDLSource::SetLaserSelector(int LaserSelector[64])
 {
-  this->Internal->Consumer->GetReader()->SetLaserMask(LaserMask);
+  this->Internal->Consumer->GetReader()->SetLaserSelector(LaserSelector);
   this->Modified();
 }
 
 //-----------------------------------------------------------------------------
-void vtkVelodyneHDLSource::GetLaserMask(int LaserMask[64])
+void vtkVelodyneHDLSource::GetLaserSelector(int LaserSelector[64])
 {
-  this->Internal->Consumer->GetReader()->GetLaserMask(LaserMask);
+  this->Internal->Consumer->GetReader()->GetLaserSelector(LaserSelector);
 }
 
 

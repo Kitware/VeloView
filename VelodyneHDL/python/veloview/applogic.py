@@ -1395,34 +1395,34 @@ def onGridProperties():
         smp.Render()
 
 
-def onLaserMask():
+def onLaserSelector():
     oldmask = [1] * 64
     reader = getReader()
     sensor = getSensor()
     corrections = [0] * 64
 
     if reader:
-        reader.GetClientSideObject().GetLaserMask(oldmask)
+        reader.GetClientSideObject().GetLaserSelector(oldmask)
         reader.GetClientSideObject().GetVerticalCorrections(corrections)
 
     elif sensor:
-        sensor.GetClientSideObject().GetLaserMask(oldmask)
+        sensor.GetClientSideObject().GetLaserSelector(oldmask)
         sensor.GetClientSideObject().GetVerticalCorrections(corrections)
 
     # Need a way to initialize the mask
     dialog = PythonQt.paraview.vvLaserSelectionDialog(getMainWindow())
-    dialog.setLaserSelectionMask(oldmask)
+    dialog.setLaserSelectionSelector(oldmask)
     dialog.setVerticalCorrections(corrections)
     dialog.exec_()
-    mask = dialog.getLaserSelectionMask()
+    mask = dialog.getLaserSelectionSelector()
 
     if reader:
-        reader.GetClientSideObject().SetLaserMask(mask)
+        reader.GetClientSideObject().SetLaserSelector(mask)
         reader.DummyProperty = not reader.DummyProperty
         smp.Render()
 
     if sensor:
-        sensor.GetClientSideObject().SetLaserMask(mask)
+        sensor.GetClientSideObject().SetLaserSelector(mask)
         sensor.DummyProperty = not sensor.DummyProperty
         smp.Render()
 
@@ -1592,7 +1592,7 @@ def setupActions():
     app.actions['actionExport_To_KiwiViewer'].connect('triggered()', onKiwiViewerExport)
     app.actions['actionReset_Camera'].connect('triggered()', resetCamera)
     app.actions['actionGrid_Properties'].connect('triggered()', onGridProperties)
-    app.actions['actionLaserMask'].connect('triggered()', onLaserMask)
+    app.actions['actionLaserSelector'].connect('triggered()', onLaserSelector)
     app.actions['actionSeek_Forward'].connect('triggered()', seekForward)
     app.actions['actionSeek_Backward'].connect('triggered()', seekBackward)
     app.actions['actionGo_To_End'].connect('triggered()', gotoEnd)

@@ -30,8 +30,8 @@ public:
   vvLaserSelectionDialog(QWidget *p=0);
   virtual ~vvLaserSelectionDialog();
 
-  QVector<int> getLaserSelectionMask();
-  void setLaserSelectionMask(const QVector<int>& mask);
+  QVector<int> getLaserSelectionSelector();
+  void setLaserSelectionSelector(const QVector<int>& mask);
 
   void setVerticalCorrections(const QVector<double>& corrections);
 

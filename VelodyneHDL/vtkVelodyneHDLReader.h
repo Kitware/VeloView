@@ -67,17 +67,17 @@ public:
   // Description:
   // TODO: This is not friendly but I dont have a better way to pass 64 values to a filter in
   // paraview
-  void SetLaserMask(int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int,
+  void SetLaserSelector(int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int,
                     int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int,
                     int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int,
                     int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int);
-  void SetLaserMask(int LaserMask[64]);
+  void SetLaserSelector(int LaserSelector[64]);
 
-  void GetLaserMask(int LaserMask[64]);
+  void GetLaserSelector(int LaserSelector[64]);
 
   void GetVerticalCorrections(double LaserAngles[64]);
 
-  // A trick to workaround failure to wrap LaserMask
+  // A trick to workaround failure to wrap LaserSelector
   void SetDummyProperty(int);
 
   void SetPointsRatio(int);

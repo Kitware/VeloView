@@ -67,7 +67,7 @@
     <addaction name="actionSpreadsheet"/>
     <addaction name="actionMeasurement_Grid"/>
     <addaction name="actionGrid_Properties"/>
-    <addaction name="actionLaserMask"/>
+    <addaction name="actionLaserSelector"/>
     <addaction name="actionChoose_Calibration_File"/>
     <addaction name="separator"/>
     <addaction name="actionPlay"/>
@@ -662,9 +662,9 @@
     <string>Geolocation in absolute coordinates</string>
    </property>
   </action>
-  <action name="actionLaserMask">
+  <action name="actionLaserSelector">
    <property name="text">
-    <string>Laser Mask</string>
+    <string>Laser Selector</string>
    </property>
   </action>
  </widget>

@@ -50,14 +50,14 @@ public slots:
     }
 
 
-  QVector<int> getLaserSelectionMask(vvLaserSelectionDialog* inst)
+  QVector<int> getLaserSelectionSelector(vvLaserSelectionDialog* inst)
     {
-    return inst->getLaserSelectionMask();
+    return inst->getLaserSelectionSelector();
     }
 
-  void setLaserSelectionMask(vvLaserSelectionDialog* inst, const QVector<int>& arg0)
+  void setLaserSelectionSelector(vvLaserSelectionDialog* inst, const QVector<int>& arg0)
     {
-    inst->setLaserSelectionMask(arg0);
+    inst->setLaserSelectionSelector(arg0);
     }
 
   void setVerticalCorrections(vvLaserSelectionDialog* inst, const QVector<double>& arg0)

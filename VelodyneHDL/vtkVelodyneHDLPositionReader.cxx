@@ -151,7 +151,7 @@ int vtkVelodyneHDLPositionReader::vtkInternal::ProcessHDLPacket(const unsigned c
 
   for(int i = 0; i < 3; ++i)
     {
-    // Mask only least significant 12 bits
+    // Selector only least significant 12 bits
     position.gyro[i] &= BIT_12_MASK;
     position.temp[i] &= BIT_12_MASK;
     position.accelx[i] &= BIT_12_MASK;
