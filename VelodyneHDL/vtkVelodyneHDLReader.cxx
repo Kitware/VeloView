@@ -950,7 +950,7 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(unsigned char *data, st
       {
       unsigned char laserId = static_cast<unsigned char>(j + offset);
       if (firingData.laserReturns[j].distance != 0.0 && this->LaserSelector[laserId] &&
-          (this->PointsRatio <= 1 || i % this->PointsRatio == 0))
+          (this->PointsRatio == 0 || i % (this->PointsRatio + 1) == 0))
         {
         PushFiringData(laserId,
                        firingData.rotationalPosition,
