@@ -1299,6 +1299,7 @@ def onTrailingFramesChanged(numFrames):
     try:
         app.reader.NumberOfTrailingFrames = numFrames
         smp.Render()
+        smp.Render(getSpreadSheetViewProxy())
     except AttributeError:
         pass
 
@@ -1306,6 +1307,7 @@ def onPointsSkipChanged(pr):
     try:
         app.reader.PointsSkip = pr
         smp.Render()
+        smp.Render(getSpreadSheetViewProxy())
     except AttributeError:
         pass
 
@@ -1420,11 +1422,14 @@ def onLaserSelection():
         reader.GetClientSideObject().SetLaserSelection(mask)
         reader.DummyProperty = not reader.DummyProperty
         smp.Render()
+        smp.Render(getSpreadSheetViewProxy())
+
 
     if sensor:
         sensor.GetClientSideObject().SetLaserSelection(mask)
         sensor.DummyProperty = not sensor.DummyProperty
         smp.Render()
+        smp.Render(getSpreadSheetViewProxy())
 
 
 def hideColorByComponent():
