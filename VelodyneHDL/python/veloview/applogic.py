@@ -1395,18 +1395,18 @@ def onGridProperties():
         smp.Render()
 
 
-def onLaserSelector():
+def onLaserSelection():
     oldmask = [1] * 64
     reader = getReader()
     sensor = getSensor()
     corrections = [0] * 64
 
     if reader:
-        reader.GetClientSideObject().GetLaserSelector(oldmask)
+        reader.GetClientSideObject().GetLaserSelection(oldmask)
         reader.GetClientSideObject().GetVerticalCorrections(corrections)
 
     elif sensor:
-        sensor.GetClientSideObject().GetLaserSelector(oldmask)
+        sensor.GetClientSideObject().GetLaserSelection(oldmask)
         sensor.GetClientSideObject().GetVerticalCorrections(corrections)
 
     # Need a way to initialize the mask
@@ -1417,12 +1417,12 @@ def onLaserSelector():
     mask = dialog.getLaserSelectionSelector()
 
     if reader:
-        reader.GetClientSideObject().SetLaserSelector(mask)
+        reader.GetClientSideObject().SetLaserSelection(mask)
         reader.DummyProperty = not reader.DummyProperty
         smp.Render()
 
     if sensor:
-        sensor.GetClientSideObject().SetLaserSelector(mask)
+        sensor.GetClientSideObject().SetLaserSelection(mask)
         sensor.DummyProperty = not sensor.DummyProperty
         smp.Render()
 
@@ -1592,7 +1592,7 @@ def setupActions():
     app.actions['actionExport_To_KiwiViewer'].connect('triggered()', onKiwiViewerExport)
     app.actions['actionReset_Camera'].connect('triggered()', resetCamera)
     app.actions['actionGrid_Properties'].connect('triggered()', onGridProperties)
-    app.actions['actionLaserSelector'].connect('triggered()', onLaserSelector)
+    app.actions['actionLaserSelection'].connect('triggered()', onLaserSelection)
     app.actions['actionSeek_Forward'].connect('triggered()', seekForward)
     app.actions['actionSeek_Backward'].connect('triggered()', seekBackward)
     app.actions['actionGo_To_End'].connect('triggered()', gotoEnd)

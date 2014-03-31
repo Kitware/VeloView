@@ -65,12 +65,12 @@ public:
   vtkSetMacro(SensorPort, int);
   vtkGetMacro(SensorPort, int);
 
-  void SetLaserSelector(int LaserSelector[64]);
-  void GetLaserSelector(int LaserSelector[64]);
+  void SetLaserSelection(int LaserSelection[64]);
+  void GetLaserSelection(int LaserSelection[64]);
 
   void GetVerticalCorrections(double LaserAngles[64]);
 
-  // A trick to workaround failure to wrap LaserSelector
+  // A trick to workaround failure to wrap LaserSelection
   void SetDummyProperty(int);
 
 protected:

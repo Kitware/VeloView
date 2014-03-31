@@ -32,9 +32,9 @@
 
 <!--
      <IntVectorProperty
-          name="LaserSelector"
+          name="LaserSelection"
           animateable="0"
-          command="SetLaserSelector"
+          command="SetLaserSelection"
           default_values="1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1"
           number_of_elements="64">
         <Documentation>
@@ -50,7 +50,7 @@
           default_values="0"
           number_of_elements="1">
         <Documentation>
-          A hack to get the filter to refresh, since I cant get the LaserSelector to wrap correctly
+          A dummy property to get the filter to refresh
         </Documentation>
       </IntVectorProperty>
 
