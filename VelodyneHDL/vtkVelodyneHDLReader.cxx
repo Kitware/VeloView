@@ -144,7 +144,7 @@ public:
     this->SplitCounter = 0;
     this->NumberOfTrailingFrames = 0;
     this->ApplyTransform = 0;
-    this->PointsRatio = 0;
+    this->PointsSkip = 0;
 
     this->LaserSelector.resize(64, true);
 
@@ -183,7 +183,7 @@ public:
   int NumberOfTrailingFrames;
   int ApplyTransform;
 
-  int PointsRatio;
+  int PointsSkip;
 
   std::vector<bool> LaserSelector;
 
@@ -327,9 +327,9 @@ void vtkVelodyneHDLReader::SetDummyProperty(int vtkNotUsed(dummy))
 }
 
 //-----------------------------------------------------------------------------
-void vtkVelodyneHDLReader::SetPointsRatio(int pr)
+void vtkVelodyneHDLReader::SetPointsSkip(int pr)
 {
-  this->Internal->PointsRatio = pr;
+  this->Internal->PointsSkip = pr;
   this->Modified();
 }
 
@@ -950,7 +950,7 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(unsigned char *data, st
       {
       unsigned char laserId = static_cast<unsigned char>(j + offset);
       if (firingData.laserReturns[j].distance != 0.0 && this->LaserSelector[laserId] &&
-          (this->PointsRatio == 0 || i % (this->PointsRatio + 1) == 0))
+          (this->PointsSkip == 0 || i % (this->PointsSkip + 1) == 0))
         {
         PushFiringData(laserId,
                        firingData.rotationalPosition,

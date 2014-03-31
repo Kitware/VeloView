@@ -242,7 +242,7 @@ def openPCAP(filename, calibrationFile):
                                    FileName=filename,
                                    CalibrationFile=calibrationFile,
                                    NumberOfTrailingFrames=app.trailingFramesSpinBox.value,
-                                   PointsRatio=app.trailingFramesSpinBox.value)
+                                   PointsSkip=app.trailingFramesSpinBox.value)
     reader.UpdatePipeline()
 
     handler.RemoveObserver(tag)
@@ -1302,9 +1302,9 @@ def onTrailingFramesChanged(numFrames):
     except AttributeError:
         pass
 
-def onPointsRatioChanged(pr):
+def onPointsSkipChanged(pr):
     try:
-        app.reader.PointsRatio = pr
+        app.reader.PointsSkip = pr
         smp.Render()
     except AttributeError:
         pass
@@ -1636,18 +1636,18 @@ def setupActions():
     app.actions['actionTrailingFramesSelector'] = timeToolBar.addWidget(spinBox)
     app.actions['actionTrailingFramesSelector'].setVisible(True)
 
-    pointsRatioLabel = QtGui.QLabel('PR:')
-    timeToolBar.addWidget(pointsRatioLabel)
+    pointsSkipLabel = QtGui.QLabel('PR:')
+    timeToolBar.addWidget(pointsSkipLabel)
 
-    pointsRatioBox = QtGui.QSpinBox()
-    pointsRatioBox.toolTip = "PointsRatio Box"
-    pointsRatioBox.setMinimum(0)
-    pointsRatioBox.setMaximum(100)
-    pointsRatioBox.connect('valueChanged(int)', onPointsRatioChanged)
-    app.pointsRatioSpinBox = pointsRatioBox
+    pointsSkipBox = QtGui.QSpinBox()
+    pointsSkipBox.toolTip = "PointsSkip Box"
+    pointsSkipBox.setMinimum(0)
+    pointsSkipBox.setMaximum(100)
+    pointsSkipBox.connect('valueChanged(int)', onPointsSkipChanged)
+    app.pointsSkipSpinBox = pointsSkipBox
 
-    app.actions['actionPointsRatioSelector'] = timeToolBar.addWidget(pointsRatioBox)
-    app.actions['actionPointsRatioSelector'].setVisible(True)
+    app.actions['actionPointsSkipSelector'] = timeToolBar.addWidget(pointsSkipBox)
+    app.actions['actionPointsSkipSelector'].setVisible(True)
 
     buttons = {}
     for button in getPlaybackToolBar().findChildren('QToolButton'):

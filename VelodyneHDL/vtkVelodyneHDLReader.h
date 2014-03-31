@@ -80,7 +80,7 @@ public:
   // A trick to workaround failure to wrap LaserSelector
   void SetDummyProperty(int);
 
-  void SetPointsRatio(int);
+  void SetPointsSkip(int);
 
   void Open();
   void Close();

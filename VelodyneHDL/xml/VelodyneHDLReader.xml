@@ -55,9 +55,9 @@
       </IntVectorProperty>
 
       <IntVectorProperty
-          name="PointsRatio"
+          name="PointsSkip"
           animateable="0"
-          command="SetPointsRatio"
+          command="SetPointsSkip"
           default_values="0"
           number_of_elements="1">
         <Documentation>
