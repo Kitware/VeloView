@@ -1629,6 +1629,7 @@ def setupActions():
     geolocationToolBar.addWidget(comboBox)
 
     spinBoxLabel = QtGui.QLabel('TF:')
+    spinBoxLabel.toolTip = "Number of trailing frames"
     timeToolBar.addWidget(spinBoxLabel)
 
     spinBox = QtGui.QSpinBox()
@@ -1641,11 +1642,12 @@ def setupActions():
     app.actions['actionTrailingFramesSelector'] = timeToolBar.addWidget(spinBox)
     app.actions['actionTrailingFramesSelector'].setVisible(True)
 
-    pointsSkipLabel = QtGui.QLabel('PR:')
+    pointsSkipLabel = QtGui.QLabel('Skip:')
+    pointsSkipLabel.toolTip = "Number of Points to Skip"
     timeToolBar.addWidget(pointsSkipLabel)
 
     pointsSkipBox = QtGui.QSpinBox()
-    pointsSkipBox.toolTip = "PointsSkip Box"
+    pointsSkipBox.toolTip = "Number of Points to Skip"
     pointsSkipBox.setMinimum(0)
     pointsSkipBox.setMaximum(100)
     pointsSkipBox.connect('valueChanged(int)', onPointsSkipChanged)
