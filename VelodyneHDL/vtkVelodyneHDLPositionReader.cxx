@@ -175,11 +175,6 @@ int vtkVelodyneHDLPositionReader::vtkInternal::ProcessHDLPacket(const unsigned c
             position.sentance);
   position.sentance[72] = '\0';
 
-  if(position.sentance[0] == '\0')
-    {
-    return 0;
-    }
-
   return 1;
 }
 
@@ -422,24 +417,33 @@ int vtkVelodyneHDLPositionReader::RequestData(vtkInformation *request,
     if(this->Internal->ProcessHDLPacket(data, dataLength, position))
       {
       std::vector<std::string> words = this->Internal->ParseSentance(position.sentance);
+
+      double gpsUpdateTime;
+      double latDegGPRMC;
+      double lonDegGPRMC;
+      double heading;
+
       if(words.size() != 13 &&
          words.size() != 14)
         {
-        vtkErrorMacro("Invalid GPS Sentance Size: " << words.size());
-        continue;
+        gpsUpdateTime = position.gpsTimestamp;
+        lonDegGPRMC = 0.0;
+        latDegGPRMC = 0.0;
+        heading = 0.0;
         }
-      double gpsUpdateTime = atof(words[1].c_str());
-
-      double latDegGPRMC = atof(words[3].c_str());
-      double lonDegGPRMC = atof(words[5].c_str());
-
-      double heading = atof(words[8].c_str());
+      else
+        {
+        gpsUpdateTime = atof(words[1].c_str());
+        latDegGPRMC = atof(words[3].c_str());
+        lonDegGPRMC = atof(words[5].c_str());
+        heading = atof(words[8].c_str());
+        }
 
       double latDegDec = floor(latDegGPRMC / 100);
       double latDegMin = 100 * ((latDegGPRMC / 100) - latDegDec);
       double lat = latDegDec + latDegMin /  60.0;
 
-      if(words[4][0] == 'S')
+      if(words.size() > 5 && words[4][0] == 'S')
         {
         lat = -lat;
         }
@@ -448,7 +452,7 @@ int vtkVelodyneHDLPositionReader::RequestData(vtkInformation *request,
       double lonDegMin = 100 * ((lonDegGPRMC / 100) - lonDegDec);
       double lon = lonDegDec + lonDegMin /  60.0;
 
-      if(words[6][0] == 'W')
+      if(words.size() > 7 && words[6][0] == 'W')
         {
         lon = -lon;
         }
