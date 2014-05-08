@@ -987,9 +987,7 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(unsigned char *data, st
     HDLFiringData* firingData = &(dataPacket->firingData[i]);
     int offset = (firingData->blockIdentifier == BLOCK_0_TO_31) ? 0 : 32;
 
-    if (firingData->rotationalPosition < this->LastAzimuth
-        )
-        //&& this->CurrentDataset->GetNumberOfPoints())
+    if (firingData->rotationalPosition < this->LastAzimuth)
       {
       this->SplitFrame();
       }
