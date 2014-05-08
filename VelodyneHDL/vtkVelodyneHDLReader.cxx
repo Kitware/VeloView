@@ -200,12 +200,28 @@ public:
   void SetCorrectionsCommon();
   void Init();
   void InitTables();
+
   void ProcessHDLPacket(unsigned char *data, std::size_t bytesReceived);
+
+  void ComputeOrientation(unsigned int timestamp,
+                          unsigned int& azimuthOffset,
+                          double translation[3]);
+
+  // Process the laser return from the firing data
+  // firingData - one of HDL_FIRING_PER_PKT from the packet
+  // j - which laser
+  // offset - either 0 or 32 to support 64-laser systems
+  void ProcessFiring(HDLFiringData* firingData,
+                     int offset,
+                     unsigned int gpsTime,
+                     unsigned int azimuthOffset,
+                     const double translation[3]);
+
   void PushFiringData(const unsigned char laserId,
                       unsigned short azimuth,
                       const unsigned int timestamp,
-                      const HDLLaserReturn laserReturn,
-                      const HDLLaserCorrection correction,
+                      const HDLLaserReturn* laserReturn,
+                      const HDLLaserCorrection* correction,
                       const unsigned short azimuthAdjustment,
                       const double translation[3]);
 };
@@ -712,37 +728,37 @@ vtkSmartPointer<vtkCellArray> vtkVelodyneHDLReader::vtkInternal::NewVertexCells(
 void vtkVelodyneHDLReader::vtkInternal::PushFiringData(const unsigned char laserId,
                                                        unsigned short azimuth,
                                                        const unsigned int timestamp,
-                                                       const HDLLaserReturn laserReturn,
-                                                       const HDLLaserCorrection correction,
+                                                       const HDLLaserReturn* laserReturn,
+                                                       const HDLLaserCorrection* correction,
                                                        const unsigned short azimuthAdjustment,
                                                        const double translation[3])
 {
   this->Azimuth->InsertNextValue(azimuth);
-  this->Intensity->InsertNextValue(laserReturn.intensity);
+  this->Intensity->InsertNextValue(laserReturn->intensity);
   this->LaserId->InsertNextValue(laserId);
   this->Timestamp->InsertNextValue(timestamp);
 
   azimuth = (azimuth + azimuthAdjustment) % 36000;
 
   double cosAzimuth, sinAzimuth;
-  if (correction.azimuthCorrection == 0)
+  if (correction->azimuthCorrection == 0)
   {
     cosAzimuth = this->cos_lookup_table_[azimuth];
     sinAzimuth = this->sin_lookup_table_[azimuth];
   }
   else
   {
-    double azimuthInRadians = HDL_Grabber_toRadians((static_cast<double> (azimuth) / 100.0) - correction.azimuthCorrection);
+    double azimuthInRadians = HDL_Grabber_toRadians((static_cast<double> (azimuth) / 100.0) - correction->azimuthCorrection);
     cosAzimuth = std::cos (azimuthInRadians);
     sinAzimuth = std::sin (azimuthInRadians);
   }
 
-  double distanceM = laserReturn.distance * 0.002 + correction.distanceCorrection;
-  double xyDistance = distanceM * correction.cosVertCorrection - correction.sinVertOffsetCorrection;
+  double distanceM = laserReturn->distance * 0.002 + correction->distanceCorrection;
+  double xyDistance = distanceM * correction->cosVertCorrection - correction->sinVertOffsetCorrection;
 
-  double x = (xyDistance * sinAzimuth - correction.horizontalOffsetCorrection * cosAzimuth);
-  double y = (xyDistance * cosAzimuth + correction.horizontalOffsetCorrection * sinAzimuth);
-  double z = (distanceM * correction.sinVertCorrection + correction.cosVertOffsetCorrection);
+  double x = (xyDistance * sinAzimuth - correction->horizontalOffsetCorrection * cosAzimuth);
+  double y = (xyDistance * cosAzimuth + correction->horizontalOffsetCorrection * sinAzimuth);
+  double z = (distanceM * correction->sinVertCorrection + correction->cosVertOffsetCorrection);
 
   x += translation[0];
   y += translation[1];
@@ -903,21 +919,14 @@ void vtkVelodyneHDLReader::vtkInternal::SplitFrame(bool force)
 }
 
 //-----------------------------------------------------------------------------
-void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(unsigned char *data, std::size_t bytesReceived)
+void vtkVelodyneHDLReader::vtkInternal::ComputeOrientation(unsigned int timestamp,
+                                                           unsigned int& azimuthOffset,
+                                                           double translation[3])
 {
-  if (bytesReceived != 1206)
-    {
-    return;
-    }
-
-  HDLDataPacket* dataPacket = reinterpret_cast<HDLDataPacket *>(data);
-
-  unsigned int azimuthOffset = 0;
-  double translation[3] = {0.0, 0.0, 0.0};
   if(this->ApplyTransform && this->Interp)
     {
     double tuple[5];
-    this->Interp->InterpolateTuple(dataPacket->gpsTimestamp, tuple);
+    this->Interp->InterpolateTuple(timestamp, tuple);
 
     double angle = std::atan2(tuple[4], tuple[3]);
     angle = (angle > 0 ? angle : (2*vtkMath::Pi() + angle));
@@ -929,38 +938,72 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(unsigned char *data, st
     translation[1] = tuple[1];
     translation[2] = tuple[2];
     }
+}
+
+//-----------------------------------------------------------------------------
+void vtkVelodyneHDLReader::vtkInternal::ProcessFiring(HDLFiringData* firingData,
+                                                      int offset,
+                                                      unsigned int gpsTime,
+                                                      unsigned int azimuthOffset,
+                                                      const double translation[3])
+{
+  for (int j = 0; j < HDL_LASER_PER_FIRING; j++)
+    {
+    unsigned char laserId = static_cast<unsigned char>(j + offset);
+    if (firingData->laserReturns[j].distance != 0.0 && this->LaserSelection[laserId])
+      {
+      this->PushFiringData(laserId,
+                           firingData->rotationalPosition,
+                           gpsTime,
+                           &(firingData->laserReturns[j]),
+                           &(laser_corrections_[j + offset]),
+                           azimuthOffset,
+                           translation);
+      }
+    }
+}
+
+//-----------------------------------------------------------------------------
+void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(unsigned char *data, std::size_t bytesReceived)
+{
+  if (bytesReceived != 1206)
+    {
+    return;
+    }
+
+  HDLDataPacket* dataPacket = reinterpret_cast<HDLDataPacket *>(data);
+
+  unsigned int azimuthOffset = 0;
+  double translation[3] = {0.0, 0.0, 0.0};
+  this->ComputeOrientation(dataPacket->gpsTimestamp,
+                           azimuthOffset,
+                           translation);
 
   int i = this->Skip;
   this->Skip = 0;
 
   for ( ; i < HDL_FIRING_PER_PKT; ++i)
     {
-    HDLFiringData firingData = dataPacket->firingData[i];
-    int offset = (firingData.blockIdentifier == BLOCK_0_TO_31) ? 0 : 32;
+    HDLFiringData* firingData = &(dataPacket->firingData[i]);
+    int offset = (firingData->blockIdentifier == BLOCK_0_TO_31) ? 0 : 32;
 
-    if (firingData.rotationalPosition < this->LastAzimuth
+    if (firingData->rotationalPosition < this->LastAzimuth
         )
         //&& this->CurrentDataset->GetNumberOfPoints())
       {
       this->SplitFrame();
       }
 
-    this->LastAzimuth = firingData.rotationalPosition;
+    this->LastAzimuth = firingData->rotationalPosition;
 
-    for (int j = 0; j < HDL_LASER_PER_FIRING; j++)
+    // Skip this firing every PointSkip
+    if(this->PointsSkip == 0 || i % (this->PointsSkip + 1) == 0)
       {
-      unsigned char laserId = static_cast<unsigned char>(j + offset);
-      if (firingData.laserReturns[j].distance != 0.0 && this->LaserSelection[laserId] &&
-          (this->PointsSkip == 0 || i % (this->PointsSkip + 1) == 0))
-        {
-        this->PushFiringData(laserId,
-                             firingData.rotationalPosition,
-                             dataPacket->gpsTimestamp,
-                             firingData.laserReturns[j],
-                             laser_corrections_[j + offset],
-                             azimuthOffset,
-                             translation);
-        }
+      this->ProcessFiring(firingData,
+                          offset,
+                          dataPacket->gpsTimestamp,
+                          azimuthOffset,
+                          translation);
       }
     }
 }
