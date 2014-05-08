@@ -201,6 +201,13 @@ public:
   void Init();
   void InitTables();
   void ProcessHDLPacket(unsigned char *data, std::size_t bytesReceived);
+  void PushFiringData(const unsigned char laserId,
+                      unsigned short azimuth,
+                      const unsigned int timestamp,
+                      const HDLLaserReturn laserReturn,
+                      const HDLLaserCorrection correction,
+                      const unsigned short azimuthAdjustment,
+                      const double translation[3]);
 };
 
 //-----------------------------------------------------------------------------
@@ -701,30 +708,27 @@ vtkSmartPointer<vtkCellArray> vtkVelodyneHDLReader::vtkInternal::NewVertexCells(
   return cellArray;
 }
 
-
-namespace
+//-----------------------------------------------------------------------------
+void vtkVelodyneHDLReader::vtkInternal::PushFiringData(const unsigned char laserId,
+                                                       unsigned short azimuth,
+                                                       const unsigned int timestamp,
+                                                       const HDLLaserReturn laserReturn,
+                                                       const HDLLaserCorrection correction,
+                                                       const unsigned short azimuthAdjustment,
+                                                       const double translation[3])
 {
-void PushFiringData(const unsigned char laserId,
-                    unsigned short azimuth,
-                    const unsigned int timestamp,
-                    const HDLLaserReturn laserReturn,
-                    const HDLLaserCorrection correction,
-                    vtkVelodyneHDLReader::vtkInternal* internal,
-                    const unsigned short azimuthAdjustment,
-                    const double translation[3])
-{
-  internal->Azimuth->InsertNextValue(azimuth);
-  internal->Intensity->InsertNextValue(laserReturn.intensity);
-  internal->LaserId->InsertNextValue(laserId);
-  internal->Timestamp->InsertNextValue(timestamp);
+  this->Azimuth->InsertNextValue(azimuth);
+  this->Intensity->InsertNextValue(laserReturn.intensity);
+  this->LaserId->InsertNextValue(laserId);
+  this->Timestamp->InsertNextValue(timestamp);
 
   azimuth = (azimuth + azimuthAdjustment) % 36000;
 
   double cosAzimuth, sinAzimuth;
   if (correction.azimuthCorrection == 0)
   {
-    cosAzimuth = internal->cos_lookup_table_[azimuth];
-    sinAzimuth = internal->sin_lookup_table_[azimuth];
+    cosAzimuth = this->cos_lookup_table_[azimuth];
+    sinAzimuth = this->sin_lookup_table_[azimuth];
   }
   else
   {
@@ -744,12 +748,9 @@ void PushFiringData(const unsigned char laserId,
   y += translation[1];
   z += translation[2];
 
-  internal->Points->InsertNextPoint(x,y,z);
-  internal->Distance->InsertNextValue(distanceM);
+  this->Points->InsertNextPoint(x,y,z);
+  this->Distance->InsertNextValue(distanceM);
 }
-
-}
-
 
 //-----------------------------------------------------------------------------
 void vtkVelodyneHDLReader::vtkInternal::InitTables()
@@ -952,14 +953,13 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(unsigned char *data, st
       if (firingData.laserReturns[j].distance != 0.0 && this->LaserSelection[laserId] &&
           (this->PointsSkip == 0 || i % (this->PointsSkip + 1) == 0))
         {
-        PushFiringData(laserId,
-                       firingData.rotationalPosition,
-                       dataPacket->gpsTimestamp,
-                       firingData.laserReturns[j],
-                       laser_corrections_[j + offset],
-                       this,
-                       azimuthOffset,
-                       translation);
+        this->PushFiringData(laserId,
+                             firingData.rotationalPosition,
+                             dataPacket->gpsTimestamp,
+                             firingData.laserReturns[j],
+                             laser_corrections_[j + offset],
+                             azimuthOffset,
+                             translation);
         }
       }
     }
