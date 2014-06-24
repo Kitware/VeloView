@@ -21,6 +21,7 @@
 
 #include <map>
 #include <string>
+#include <cmath>
 #include <cstdio>
 
 typedef bool (*TestActionFunction)(vtkSmartPointer<vtkPolyData>&,
@@ -29,6 +30,23 @@ typedef bool (*TestActionFunction)(vtkSmartPointer<vtkPolyData>&,
 typedef std::map<std::string, TestActionFunction> TestActionFunctionMap;
 
 vtkVelodyneHDLReader* reader;
+
+//-----------------------------------------------------------------------------
+bool compare(double a, double b)
+{
+  return std::fabs(a - b) <= 0.00001;
+}
+
+//-----------------------------------------------------------------------------
+template <size_t N>
+bool compare(double (&a)[N], double (&b)[N])
+{
+  for (size_t i = 0; i < N; ++i)
+    {
+    if (!compare(a[i], b[i])) return false;
+    }
+  return true;
+}
 
 //-----------------------------------------------------------------------------
 bool selectFrame(vtkSmartPointer<vtkPolyData>& frame, std::istream& is)
@@ -114,6 +132,41 @@ bool testPointCount(vtkSmartPointer<vtkPolyData>& frame, std::istream& is)
 //-----------------------------------------------------------------------------
 bool testPointValues(vtkSmartPointer<vtkPolyData>& frame, std::istream& is)
 {
+  vtkIdType pointId;
+  double expectedPosition[3];
+  is >> pointId
+     >> expectedPosition[0] >> expectedPosition[1] >> expectedPosition[2];
+  if (!is)
+    {
+    std::cerr << "point_values: missing required argument" << std::endl;
+    return false;
+    }
+
+  vtkPoints* const points = frame->GetPoints();
+
+  if (pointId < 0 || pointId > points->GetNumberOfPoints())
+    {
+    std::cerr << "point_values: point index out of range" << std::endl;
+    return false;
+    }
+
+  double actualPosition[3];
+  points->GetPoint(pointId, actualPosition);
+
+  if (!compare(expectedPosition, actualPosition))
+    {
+    std::cerr << "pount_values: expected "
+              << expectedPosition[0] << ' '
+              << expectedPosition[1] << ' '
+              << expectedPosition[2]
+              << ", got "
+              << actualPosition[0] << ' '
+              << actualPosition[1] << ' '
+              << actualPosition[2] << std::endl;
+    return false;
+    }
+
+  return true;
 }
 
 //-----------------------------------------------------------------------------
