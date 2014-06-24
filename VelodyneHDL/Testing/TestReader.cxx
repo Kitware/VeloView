@@ -44,7 +44,9 @@ bool selectFrame(vtkSmartPointer<vtkPolyData>& frame, std::istream& is)
   std::cout << "read frame " << frameId << "... ";
   const double startTime = vtkTimerLog::GetUniversalTime();
 
+  reader->Open(); // must reset state, or reader crashes 'going backwards'
   frame = reader->GetFrame(frameId);
+  reader->Close();
 
   if (!frame)
     {
@@ -152,8 +154,6 @@ int main(int argc, char* argv[])
 
   vtkSmartPointer<vtkPolyData> frame;
 
-  reader->Open();
-
   if (testScriptFilename.empty())
     {
     std::vector<int> frames;
@@ -168,7 +168,9 @@ int main(int argc, char* argv[])
       {
       int frameId = frames[i];
       startTime = vtkTimerLog::GetUniversalTime();
+      reader->Open(); // must reset state, or reader crashes 'going backwards'
       frame = reader->GetFrame(frameId);
+      reader->Close();
       elapsed = vtkTimerLog::GetUniversalTime() - startTime;
       std::cout << "elapsed time: " << elapsed << std::endl;
       std::cout << "  frame " << frameId << " has points: " << (frame ? frame->GetNumberOfPoints() : 0) << std::endl;
@@ -203,8 +205,6 @@ int main(int argc, char* argv[])
         }
       }
     }
-
-  reader->Close();
 
   return 0;
 }
