@@ -59,26 +59,49 @@ bool selectFrame(vtkSmartPointer<vtkPolyData>& frame, std::istream& is)
 }
 
 //-----------------------------------------------------------------------------
-bool testCount(vtkSmartPointer<vtkPolyData>& frame, std::istream& is)
+bool testFrameCount(vtkSmartPointer<vtkPolyData>& frame, std::istream& is)
+{
+  int expectedCount;
+  is >> expectedCount;
+  if (!is)
+    {
+    std::cerr << "frame_count: missing required argument" << std::endl;
+    return false;
+    }
+
+  const int actualCount = reader->GetNumberOfFrames();
+  if (actualCount != expectedCount)
+    {
+    std::cerr << "frame_count: expected " << expectedCount
+              << ", got " << actualCount << std::endl;
+    return false;
+    }
+
+  return true;
+}
+
+
+//-----------------------------------------------------------------------------
+bool testPointCount(vtkSmartPointer<vtkPolyData>& frame, std::istream& is)
 {
   vtkIdType expectedCount;
   is >> expectedCount;
   if (!is)
     {
-    std::cerr << "count: missing required argument" << std::endl;
+    std::cerr << "point_count: missing required argument" << std::endl;
     return false;
     }
 
   if (!frame)
     {
-    std::cerr << "count: no valid frame" << std::endl;
+    std::cerr << "point_count: no valid frame" << std::endl;
     return false;
     }
 
   const vtkIdType actualCount = frame->GetNumberOfPoints();
   if (actualCount != expectedCount)
     {
-    std::cerr << "count: expected " << expectedCount
+    std::cerr << "point_count: expected " << expectedCount
               << ", got " << actualCount << std::endl;
     return false;
     }
@@ -87,7 +110,7 @@ bool testCount(vtkSmartPointer<vtkPolyData>& frame, std::istream& is)
 }
 
 //-----------------------------------------------------------------------------
-bool testVertex(vtkSmartPointer<vtkPolyData>& frame, std::istream& is)
+bool testPointValues(vtkSmartPointer<vtkPolyData>& frame, std::istream& is)
 {
 }
 
@@ -96,8 +119,9 @@ int main(int argc, char* argv[])
 {
   TestActionFunctionMap testActions;
   testActions["frame"] = &selectFrame;
-  testActions["count"] = &testCount;
-  testActions["vertex"] = &testVertex;
+  testActions["frame_count"] = &testFrameCount;
+  testActions["point_count"] = &testPointCount;
+  testActions["point_values"] = &testPointValues;
 
   const TestActionFunctionMap::const_iterator invalidCommand =
     testActions.end();
