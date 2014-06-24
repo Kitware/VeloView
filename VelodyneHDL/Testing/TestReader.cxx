@@ -19,21 +19,101 @@
 #include <vtkTimerLog.h>
 #include <vtkNew.h>
 
+#include <map>
 #include <string>
 #include <cstdio>
 
+typedef bool (*TestActionFunction)(vtkSmartPointer<vtkPolyData>&,
+                                   std::istream&);
 
+typedef std::map<std::string, TestActionFunction> TestActionFunctionMap;
+
+vtkVelodyneHDLReader* reader;
+
+//-----------------------------------------------------------------------------
+bool selectFrame(vtkSmartPointer<vtkPolyData>& frame, std::istream& is)
+{
+  int frameId;
+  is >> frameId;
+  if (!is)
+    {
+    std::cerr << "frame: missing required argument" << std::endl;
+    return false;
+    }
+
+  std::cout << "read frame " << frameId << "... ";
+  const double startTime = vtkTimerLog::GetUniversalTime();
+
+  frame = reader->GetFrame(frameId);
+
+  if (!frame)
+    {
+    std::cout << "FAILED" << std::endl;
+    return false;
+    }
+
+  const double elapsed = vtkTimerLog::GetUniversalTime() - startTime;
+  std::cout << elapsed << "s" << std::endl;
+
+  return true;
+}
+
+//-----------------------------------------------------------------------------
+bool testCount(vtkSmartPointer<vtkPolyData>& frame, std::istream& is)
+{
+  vtkIdType expectedCount;
+  is >> expectedCount;
+  if (!is)
+    {
+    std::cerr << "count: missing required argument" << std::endl;
+    return false;
+    }
+
+  if (!frame)
+    {
+    std::cerr << "count: no valid frame" << std::endl;
+    return false;
+    }
+
+  const vtkIdType actualCount = frame->GetNumberOfPoints();
+  if (actualCount != expectedCount)
+    {
+    std::cerr << "count: expected " << expectedCount
+              << ", got " << actualCount << std::endl;
+    return false;
+    }
+
+  return true;
+}
+
+//-----------------------------------------------------------------------------
+bool testVertex(vtkSmartPointer<vtkPolyData>& frame, std::istream& is)
+{
+}
+
+//-----------------------------------------------------------------------------
 int main(int argc, char* argv[])
 {
+  TestActionFunctionMap testActions;
+  testActions["frame"] = &selectFrame;
+  testActions["count"] = &testCount;
+  testActions["vertex"] = &testVertex;
+
+  const TestActionFunctionMap::const_iterator invalidCommand =
+    testActions.end();
+
   if (argc < 2)
     {
-    std::cout << "Usage: " << argv[0] << " <pcap file>" << std::endl;
+    std::cout << "Usage: " << argv[0] << " <pcap file> [<expect file>]"
+              << std::endl;
     return 1;
     }
 
-  std::string filename = argv[1];
+  const std::string filename = argv[1];
+  const std::string testScriptFilename = (argc > 2 ? argv[2] : "");
 
-  vtkNew<vtkVelodyneHDLReader> reader;
+  vtkNew<vtkVelodyneHDLReader> _reader;
+  reader = _reader.GetPointer();
 
   reader->SetFileName(filename);
 
@@ -44,31 +124,60 @@ int main(int argc, char* argv[])
   double elapsed = vtkTimerLog::GetUniversalTime() - startTime;
   printf("elapsed time: %f\n", elapsed);
 
-
   printf("number of frames: %d\n", reader->GetNumberOfFrames());
 
   vtkSmartPointer<vtkPolyData> frame;
 
-  std::vector<int> frames;
-  frames.push_back(40);
-  frames.push_back(10);
-  frames.push_back(100);
-  frames.push_back(101);
-  frames.push_back(534);
-  frames.push_back(213);
-
   reader->Open();
 
-  for (int i = 0; i < frames.size(); ++i)
+  if (testScriptFilename.empty())
     {
-    int frameId = frames[i];
-    startTime = vtkTimerLog::GetUniversalTime();
-    reader->Open();
-    frame = reader->GetFrame(frameId);
-    reader->Close();
-    elapsed = vtkTimerLog::GetUniversalTime() - startTime;
-    std::cout << "elapsed time: " << elapsed << std::endl;
-    std::cout << "  frame " << frameId << " has points: " << (frame ? frame->GetNumberOfPoints() : 0) << std::endl;
+    std::vector<int> frames;
+    frames.push_back(40);
+    frames.push_back(10);
+    frames.push_back(100);
+    frames.push_back(101);
+    frames.push_back(534);
+    frames.push_back(213);
+
+    for (int i = 0; i < frames.size(); ++i)
+      {
+      int frameId = frames[i];
+      startTime = vtkTimerLog::GetUniversalTime();
+      frame = reader->GetFrame(frameId);
+      elapsed = vtkTimerLog::GetUniversalTime() - startTime;
+      std::cout << "elapsed time: " << elapsed << std::endl;
+      std::cout << "  frame " << frameId << " has points: " << (frame ? frame->GetNumberOfPoints() : 0) << std::endl;
+      }
+    }
+  else
+    {
+    std::ifstream testScript(testScriptFilename.c_str());
+    for (;;)
+      {
+      // read next command
+      std::string command;
+      testScript >> command;
+      if (testScript.eof()) break;
+
+      // look up command
+      const TestActionFunctionMap::const_iterator iter =
+        testActions.find(command);
+      if (iter == invalidCommand)
+        {
+        std::cerr << "unknown command: '" << command << "'" << std::endl;
+        return 1;
+        }
+      else
+        {
+        // execute command
+        if (!(*iter->second)(frame, testScript))
+          {
+          // command failed
+          return 1;
+          }
+        }
+      }
     }
 
   reader->Close();
