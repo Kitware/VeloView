@@ -1,0 +1,19 @@
+frame_count 19
+
+frame 0
+point_count 27649
+frame 2
+point_count 49485
+frame 8
+point_count 49737
+frame 11
+point_count 49778
+frame 18
+point_count 396
+
+frame 8
+point_count 49737
+point_values     1   0.0218793   7.83493 -1.28724 1
+point_values  4000   4.3412700   8.20269 -1.97267 28
+point_values 16000  77.6108000 -26.72350  3.82785 63
+point_values 49733  -0.0050133   5.74481 -1.79261 1
