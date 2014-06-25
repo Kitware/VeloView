@@ -843,7 +843,7 @@ int vtkVelodyneHDLSource::RequestInformation(vtkInformation *request,
     outInfo->Remove(vtkStreamingDemandDrivenPipeline::TIME_STEPS());
     }
 
-  double timeRange[2] = {0, nTimesteps ? nTimesteps - 1 : 0};
+  double timeRange[2] = {0.0, nTimesteps ? nTimesteps - 1.0 : 0.0};
   outInfo->Set(vtkStreamingDemandDrivenPipeline::TIME_RANGE(), timeRange, 2);
 
   return 1;
