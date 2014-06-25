@@ -16,6 +16,9 @@
 #include <vtkPacketFileReader.h>
 #include <vtkVelodyneHDLSource.h>
 #include <vtkVelodyneHDLReader.h>
+
+#include <vtkDataArray.h>
+#include <vtkPointData.h>
 #include <vtkTimerLog.h>
 #include <vtkNew.h>
 
@@ -34,7 +37,7 @@ vtkVelodyneHDLReader* reader;
 //-----------------------------------------------------------------------------
 bool compare(double a, double b)
 {
-  return std::fabs(a - b) <= 0.00001;
+  return std::fabs(a - b) <= 0.0001;
 }
 
 //-----------------------------------------------------------------------------
@@ -134,8 +137,10 @@ bool testPointValues(vtkSmartPointer<vtkPolyData>& frame, std::istream& is)
 {
   vtkIdType pointId;
   double expectedPosition[3];
+  int expectedIntensity;
   is >> pointId
-     >> expectedPosition[0] >> expectedPosition[1] >> expectedPosition[2];
+     >> expectedPosition[0] >> expectedPosition[1] >> expectedPosition[2]
+     >> expectedIntensity;
   if (!is)
     {
     std::cerr << "point_values: missing required argument" << std::endl;
@@ -143,26 +148,39 @@ bool testPointValues(vtkSmartPointer<vtkPolyData>& frame, std::istream& is)
     }
 
   vtkPoints* const points = frame->GetPoints();
+  vtkDataArray* const intensityData =
+    frame->GetPointData()->GetArray("intensity");
 
   if (pointId < 0 || pointId > points->GetNumberOfPoints())
     {
     std::cerr << "point_values: point index out of range" << std::endl;
     return false;
     }
+  if (!intensityData || intensityData->GetDataSize() < pointId)
+    {
+    std::cerr << "point_values: frame intensity data missing or truncated"
+              << std::endl;
+    }
 
   double actualPosition[3];
   points->GetPoint(pointId, actualPosition);
 
-  if (!compare(expectedPosition, actualPosition))
+  const double actualIntensity =
+    intensityData->GetComponent(pointId, 0);
+
+  if (!compare(expectedPosition, actualPosition) ||
+      !compare(expectedIntensity, actualIntensity))
     {
     std::cerr << "pount_values: expected "
               << expectedPosition[0] << ' '
               << expectedPosition[1] << ' '
-              << expectedPosition[2]
+              << expectedPosition[2] << ' '
+              << expectedIntensity
               << ", got "
               << actualPosition[0] << ' '
               << actualPosition[1] << ' '
-              << actualPosition[2] << std::endl;
+              << actualPosition[2] << ' '
+              << actualIntensity << std::endl;
     return false;
     }
 
