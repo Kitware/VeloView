@@ -99,8 +99,6 @@ public:
   int GetApplyTransform();
   void SetApplyTransform(int apply);
 
-  class vtkInternal;
-
 protected:
   vtkVelodyneHDLReader();
   ~vtkVelodyneHDLReader();
@@ -120,7 +118,7 @@ protected:
   std::string CorrectionsFile;
   std::string FileName;
 
-
+  class vtkInternal;
   vtkInternal* Internal;
 
 private:
