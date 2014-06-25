@@ -146,6 +146,11 @@ public:
     this->ApplyTransform = 0;
     this->PointsSkip = 0;
 
+    for (size_t n = 0; n < HDL_MAX_NUM_LASERS; ++n)
+      {
+      this->LastPointId[n] = -1;
+      }
+
     this->LaserSelection.resize(64, true);
 
     cos_lookup_table_ = NULL;
@@ -171,8 +176,11 @@ public:
   vtkUnsignedShortArray* Azimuth;
   vtkDoubleArray*        Distance;
   vtkUnsignedIntArray* Timestamp;
+  vtkUnsignedIntArray* Flags;
 
   unsigned int LastAzimuth;
+  vtkIdType LastPointId[HDL_MAX_NUM_LASERS];
+  vtkIdType FirstPointIdThisReturn;
 
   std::vector<fpos_t> FilePositions;
   std::vector<int> Skips;
@@ -223,7 +231,8 @@ public:
                       const HDLLaserReturn* laserReturn,
                       const HDLLaserCorrection* correction,
                       const unsigned short azimuthAdjustment,
-                      const double translation[3]);
+                      const double translation[3],
+                      bool dualReturn);
 };
 
 //-----------------------------------------------------------------------------
@@ -389,6 +398,10 @@ void vtkVelodyneHDLReader::SetCorrectionsFile(const std::string& correctionsFile
 //-----------------------------------------------------------------------------
 void vtkVelodyneHDLReader::UnloadData()
 {
+  for (size_t n = 0; n < HDL_MAX_NUM_LASERS; ++n)
+    {
+    this->Internal->LastPointId[n] = -1;
+    }
   this->Internal->LastAzimuth = 0;
   this->Internal->Datasets.clear();
   this->Internal->CurrentDataset = this->Internal->CreateData(0);
@@ -703,6 +716,7 @@ vtkSmartPointer<vtkPolyData> vtkVelodyneHDLReader::vtkInternal::CreateData(vtkId
   this->Azimuth = CreateDataArray<vtkUnsignedShortArray>("azimuth", numberOfPoints, polyData);
   this->Distance = CreateDataArray<vtkDoubleArray>("distance_m", numberOfPoints, polyData);
   this->Timestamp = CreateDataArray<vtkUnsignedIntArray>("timestamp", numberOfPoints, polyData);
+  this->Flags = CreateDataArray<vtkUnsignedIntArray>("dual_flags", numberOfPoints, polyData);
 
   return polyData;
 }
@@ -731,7 +745,8 @@ void vtkVelodyneHDLReader::vtkInternal::PushFiringData(const unsigned char laser
                                                        const HDLLaserReturn* laserReturn,
                                                        const HDLLaserCorrection* correction,
                                                        const unsigned short azimuthAdjustment,
-                                                       const double translation[3])
+                                                       const double translation[3],
+                                                       const bool dualReturn)
 {
   this->Azimuth->InsertNextValue(azimuth);
   this->Intensity->InsertNextValue(laserReturn->intensity);
@@ -766,6 +781,52 @@ void vtkVelodyneHDLReader::vtkInternal::PushFiringData(const unsigned char laser
 
   this->Points->InsertNextPoint(x,y,z);
   this->Distance->InsertNextValue(distanceM);
+
+  if (dualReturn)
+    {
+    const vtkIdType dualPointId = this->LastPointId[laserId];
+    if (dualPointId < this->FirstPointIdThisReturn)
+      {
+      // No matching point from first set (skipped?)
+      this->Flags->InsertNextValue(DUAL_DOUBLED);
+      }
+    else
+      {
+      const int dualIntensity = this->Intensity->GetValue(dualPointId);
+      const double dualDistance = this->Distance->GetValue(dualPointId);
+      unsigned int firstFlags = this->Flags->GetValue(dualPointId);
+      unsigned int secondFlags = 0;
+
+      if (dualIntensity < laserReturn->intensity)
+        {
+        firstFlags &= ~DUAL_INTENSITY_HIGH;
+        secondFlags |= DUAL_INTENSITY_HIGH;
+        }
+      else
+        {
+        firstFlags &= ~DUAL_INTENSITY_LOW;
+        secondFlags |= DUAL_INTENSITY_LOW;
+        }
+
+      if (dualDistance < distanceM)
+        {
+        firstFlags &= ~DUAL_DISTANCE_FAR;
+        secondFlags |= DUAL_DISTANCE_FAR;
+        }
+      else
+        {
+        firstFlags &= ~DUAL_DISTANCE_NEAR;
+        secondFlags |= DUAL_DISTANCE_NEAR;
+        }
+
+      this->Flags->SetValue(dualPointId, firstFlags);
+      this->Flags->InsertNextValue(secondFlags);
+      }
+    }
+  else
+    {
+    this->Flags->InsertNextValue(DUAL_DOUBLED);
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -913,6 +974,11 @@ void vtkVelodyneHDLReader::vtkInternal::SplitFrame(bool force)
     return;
     }
 
+  for (size_t n = 0; n < HDL_MAX_NUM_LASERS; ++n)
+    {
+    this->LastPointId[n] = -1;
+    }
+
   this->CurrentDataset->SetVerts(this->NewVertexCells(this->CurrentDataset->GetNumberOfPoints()));
   this->Datasets.push_back(this->CurrentDataset);
   this->CurrentDataset = this->CreateData(0);
@@ -947,6 +1013,12 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessFiring(HDLFiringData* firingData,
                                                       unsigned int azimuthOffset,
                                                       const double translation[3])
 {
+  const bool dual = (this->LastAzimuth == firingData->rotationalPosition);
+  if (!dual)
+    {
+    this->FirstPointIdThisReturn = this->Points->GetNumberOfPoints();
+    }
+
   for (int j = 0; j < HDL_LASER_PER_FIRING; j++)
     {
     unsigned char laserId = static_cast<unsigned char>(j + offset);
@@ -958,7 +1030,8 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessFiring(HDLFiringData* firingData,
                            &(firingData->laserReturns[j]),
                            &(laser_corrections_[j + offset]),
                            azimuthOffset,
-                           translation);
+                           translation,
+                           dual);
       }
     }
 }
@@ -992,8 +1065,6 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(unsigned char *data, st
       this->SplitFrame();
       }
 
-    this->LastAzimuth = firingData->rotationalPosition;
-
     // Skip this firing every PointSkip
     if(this->PointsSkip == 0 || i % (this->PointsSkip + 1) == 0)
       {
@@ -1003,6 +1074,8 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(unsigned char *data, st
                           azimuthOffset,
                           translation);
       }
+
+    this->LastAzimuth = firingData->rotationalPosition;
     }
 }
 

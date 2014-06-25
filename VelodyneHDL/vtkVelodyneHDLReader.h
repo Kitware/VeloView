@@ -41,6 +41,15 @@ class vtkWrappedTupleInterpolator;
 class VTK_EXPORT vtkVelodyneHDLReader : public vtkPolyDataAlgorithm
 {
 public:
+  enum DualFlag {
+    DUAL_DISTANCE_NEAR = 0x1,   // point with lesser distance
+    DUAL_DISTANCE_FAR = 0x2,    // point with greater distance
+    DUAL_INTENSITY_HIGH = 0x4,  // point with lesser intensity
+    DUAL_INTENSITY_LOW = 0x8,   // point with greater intensity
+    DUAL_DOUBLED = 0xf,         // point is single return
+  };
+
+public:
   static vtkVelodyneHDLReader *New();
   vtkTypeMacro(vtkVelodyneHDLReader, vtkPolyDataAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent);
