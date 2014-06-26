@@ -178,9 +178,9 @@ public:
   vtkUnsignedShortArray* Azimuth;
   vtkDoubleArray*        Distance;
   vtkUnsignedIntArray* Timestamp;
-  vtkUnsignedIntArray* Flags;
-  vtkShortArray* IntensityDelta;
-  vtkDoubleArray* DistanceDelta;
+  vtkUnsignedIntArray* IntensityFlag;
+  vtkUnsignedIntArray* DistanceFlag;
+  vtkSmartPointer<vtkUnsignedIntArray> Flags;
 
   unsigned int LastAzimuth;
   vtkIdType LastPointId[HDL_MAX_NUM_LASERS];
@@ -705,14 +705,18 @@ namespace
   template <typename T>
   T* CreateDataArray(const char* name, vtkIdType np, vtkPolyData* pd)
   {
-    vtkSmartPointer<T> array = vtkSmartPointer<T>::New();
+    T* array = T::New();
     array->Allocate(60000);
     array->SetName(name);
     array->SetNumberOfTuples(np);
 
-    pd->GetPointData()->AddArray(array.GetPointer());
+    if (pd)
+      {
+      pd->GetPointData()->AddArray(array);
+      array->FastDelete();
+      }
 
-    return array.GetPointer();
+    return array;
   }
 }
 
@@ -736,9 +740,9 @@ vtkSmartPointer<vtkPolyData> vtkVelodyneHDLReader::vtkInternal::CreateData(vtkId
   this->Azimuth = CreateDataArray<vtkUnsignedShortArray>("azimuth", numberOfPoints, polyData);
   this->Distance = CreateDataArray<vtkDoubleArray>("distance_m", numberOfPoints, polyData);
   this->Timestamp = CreateDataArray<vtkUnsignedIntArray>("timestamp", numberOfPoints, polyData);
-  this->Flags = CreateDataArray<vtkUnsignedIntArray>("dual_flags", numberOfPoints, polyData);
-  this->IntensityDelta = CreateDataArray<vtkShortArray>("dual_intensity_difference", numberOfPoints, polyData);
-  this->DistanceDelta = CreateDataArray<vtkDoubleArray>("dual_distance_difference", numberOfPoints, polyData);
+  this->DistanceFlag = CreateDataArray<vtkUnsignedIntArray>("dual_relative_distance", numberOfPoints, polyData);
+  this->IntensityFlag = CreateDataArray<vtkUnsignedIntArray>("dual_relative_intensity", numberOfPoints, polyData);
+  this->Flags = CreateDataArray<vtkUnsignedIntArray>("dual_flags", numberOfPoints, 0);
 
   return polyData;
 }
@@ -806,8 +810,8 @@ void vtkVelodyneHDLReader::vtkInternal::PushFiringData(const unsigned char laser
       {
       // No matching point from first set (skipped?)
       this->Flags->InsertNextValue(DUAL_DOUBLED);
-      this->IntensityDelta->InsertNextValue(0);
-      this->DistanceDelta->InsertNextValue(0.0);
+      this->DistanceFlag->InsertNextValue(DUAL_DOUBLED & DUAL_DISTANCE_MASK);
+      this->IntensityFlag->InsertNextValue(DUAL_DOUBLED & DUAL_INTENSITY_MASK);
       }
     else
       {
@@ -850,6 +854,8 @@ void vtkVelodyneHDLReader::vtkInternal::PushFiringData(const unsigned char laser
           {
           // second return does not match filter; skip
           this->Flags->SetValue(dualPointId, firstFlags);
+          this->DistanceFlag->SetValue(dualPointId, firstFlags & DUAL_DISTANCE_MASK);
+          this->IntensityFlag->SetValue(dualPointId, firstFlags & DUAL_INTENSITY_MASK);
           return;
           }
         if (!(firstFlags & this->DualReturnFilter))
@@ -860,28 +866,25 @@ void vtkVelodyneHDLReader::vtkInternal::PushFiringData(const unsigned char laser
           this->Intensity->SetValue(dualPointId, laserReturn->intensity);
           this->Timestamp->SetValue(dualPointId, timestamp);
           this->Flags->SetValue(dualPointId, secondFlags);
+          this->DistanceFlag->SetValue(dualPointId, secondFlags & DUAL_DISTANCE_MASK);
+          this->IntensityFlag->SetValue(dualPointId, secondFlags & DUAL_INTENSITY_MASK);
           return;
           }
         }
 
       this->Flags->SetValue(dualPointId, firstFlags);
+      this->DistanceFlag->SetValue(dualPointId, firstFlags & DUAL_DISTANCE_MASK);
+      this->IntensityFlag->SetValue(dualPointId, firstFlags & DUAL_INTENSITY_MASK);
       this->Flags->InsertNextValue(secondFlags);
-
-      const short meanIntensity = dualIntensity + intensity;
-      const double meanDistance = 0.5 * (dualDistance + distanceM);
-
-      this->IntensityDelta->SetValue(dualPointId, (2 * dualIntensity) - meanIntensity);
-      this->IntensityDelta->InsertNextValue((2 * intensity) - meanIntensity);
-
-      this->DistanceDelta->SetValue(dualPointId, dualDistance - meanDistance);
-      this->DistanceDelta->InsertNextValue(distanceM - meanDistance);
+      this->DistanceFlag->InsertNextValue(secondFlags & DUAL_DISTANCE_MASK);
+      this->IntensityFlag->InsertNextValue(secondFlags & DUAL_INTENSITY_MASK);
       }
     }
   else
     {
     this->Flags->InsertNextValue(DUAL_DOUBLED);
-    this->IntensityDelta->InsertNextValue(0);
-    this->DistanceDelta->InsertNextValue(0.0);
+    this->DistanceFlag->InsertNextValue(DUAL_DOUBLED & DUAL_DISTANCE_MASK);
+    this->IntensityFlag->InsertNextValue(DUAL_DOUBLED & DUAL_INTENSITY_MASK);
     }
 
   this->Azimuth->InsertNextValue(azimuth);

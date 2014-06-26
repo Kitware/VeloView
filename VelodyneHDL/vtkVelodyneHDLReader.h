@@ -47,6 +47,8 @@ public:
     DUAL_INTENSITY_HIGH = 0x4,  // point with lesser intensity
     DUAL_INTENSITY_LOW = 0x8,   // point with greater intensity
     DUAL_DOUBLED = 0xf,         // point is single return
+    DUAL_DISTANCE_MASK = 0x3,
+    DUAL_INTENSITY_MASK = 0xc,
   };
 
 public:
