@@ -138,9 +138,11 @@ bool testPointValues(vtkSmartPointer<vtkPolyData>& frame, std::istream& is)
   vtkIdType pointId;
   double expectedPosition[3];
   int expectedIntensity;
+  int expectedRelativeDistance, expectedRelativeIntensity;
   is >> pointId
      >> expectedPosition[0] >> expectedPosition[1] >> expectedPosition[2]
-     >> expectedIntensity;
+     >> expectedIntensity
+     >> expectedRelativeDistance >> expectedRelativeIntensity;
   if (!is)
     {
     std::cerr << "point_values: missing required argument" << std::endl;
@@ -150,6 +152,10 @@ bool testPointValues(vtkSmartPointer<vtkPolyData>& frame, std::istream& is)
   vtkPoints* const points = frame->GetPoints();
   vtkDataArray* const intensityData =
     frame->GetPointData()->GetArray("intensity");
+  vtkDataArray* const dualDistanceFlagData =
+    frame->GetPointData()->GetArray("dual_relative_distance");
+  vtkDataArray* const dualIntensityFlagData =
+    frame->GetPointData()->GetArray("dual_relative_intensity");
 
   if (pointId < 0 || pointId > points->GetNumberOfPoints())
     {
@@ -161,26 +167,47 @@ bool testPointValues(vtkSmartPointer<vtkPolyData>& frame, std::istream& is)
     std::cerr << "point_values: frame intensity data missing or truncated"
               << std::endl;
     }
+  if (!dualDistanceFlagData || dualDistanceFlagData->GetDataSize() < pointId)
+    {
+    std::cerr << "point_values: frame dual-return relative distance data"
+                 " missing or truncated" << std::endl;
+    }
+  if (!dualIntensityFlagData || dualIntensityFlagData->GetDataSize() < pointId)
+    {
+    std::cerr << "point_values: frame dual-return relative intensity data"
+                 " missing or truncated" << std::endl;
+    }
 
   double actualPosition[3];
   points->GetPoint(pointId, actualPosition);
 
   const double actualIntensity =
     intensityData->GetComponent(pointId, 0);
+  const double actualRelativeDistance =
+    dualDistanceFlagData->GetComponent(pointId, 0);
+  const double actualRelativeInteensity =
+    dualIntensityFlagData->GetComponent(pointId, 0);
 
   if (!compare(expectedPosition, actualPosition) ||
-      !compare(expectedIntensity, actualIntensity))
+      !compare(expectedIntensity, actualIntensity) ||
+      !compare(expectedRelativeDistance, actualRelativeDistance) ||
+      !compare(expectedRelativeIntensity, actualRelativeInteensity))
     {
     std::cerr << "pount_values: expected "
               << expectedPosition[0] << ' '
               << expectedPosition[1] << ' '
               << expectedPosition[2] << ' '
-              << expectedIntensity
+              << expectedIntensity << ' '
+              << expectedRelativeDistance << ' '
+              << expectedRelativeIntensity
               << ", got "
               << actualPosition[0] << ' '
               << actualPosition[1] << ' '
               << actualPosition[2] << ' '
-              << actualIntensity << std::endl;
+              << actualIntensity << ' '
+              << actualRelativeDistance << ' '
+              << actualRelativeInteensity
+              << std::endl;
     return false;
     }
 
