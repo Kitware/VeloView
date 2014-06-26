@@ -64,10 +64,21 @@
      </property>
      <addaction name="actionNative_File_Dialogs"/>
     </widget>
+    <widget class="QMenu" name="menuDualReturnMode">
+     <property name="title">
+      <string>&amp;Dual Return Mode</string>
+     </property>
+     <addaction name="actionDualReturnModeDual"/>
+     <addaction name="actionDualReturnDistanceNear"/>
+     <addaction name="actionDualReturnDistanceFar"/>
+     <addaction name="actionDualReturnIntensityHigh"/>
+     <addaction name="actionDualReturnIntensityLow"/>
+    </widget>
     <addaction name="actionSpreadsheet"/>
     <addaction name="actionMeasurement_Grid"/>
     <addaction name="actionGrid_Properties"/>
     <addaction name="actionLaserSelection"/>
+    <addaction name="menuDualReturnMode"/>
     <addaction name="actionChoose_Calibration_File"/>
     <addaction name="separator"/>
     <addaction name="actionPlay"/>
@@ -665,6 +676,64 @@
   <action name="actionLaserSelection">
    <property name="text">
     <string>Laser Selection</string>
+   </property>
+  </action>
+  <action name="actionDualReturnModeDual">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>&amp;Dual</string>
+   </property>
+   <property name="toolTip">
+    <string>Show both returns of a dual return</string>
+   </property>
+  </action>
+  <action name="actionDualReturnDistanceNear">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>&amp;Near Distance</string>
+   </property>
+   <property name="toolTip">
+    <string>Show nearer distance return of a dual return</string>
+   </property>
+  </action>
+  <action name="actionDualReturnDistanceFar">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>&amp;Far Distance</string>
+   </property>
+   <property name="toolTip">
+    <string>Show farther distance return of a dual return</string>
+   </property>
+  </action>
+  <action name="actionDualReturnIntensityHigh">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>&amp;High Intensity</string>
+   </property>
+   <property name="toolTip">
+    <string>Show higher intensity return of a dual return</string>
+   </property>
+  </action>
+  <action name="actionDualReturnIntensityLow">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>&amp;Low Intensity</string>
+   </property>
+   <property name="toolTip">
+    <string>Show lower intensity return of a dual return</string>
    </property>
   </action>
  </widget>

@@ -29,6 +29,8 @@ import kiwiviewerExporter
 import gridAdjustmentDialog
 import planefit
 
+from VelodyneHDLPluginPython import vtkVelodyneHDLReader
+
 _repCache = {}
 
 def cachedGetRepresentation(src, view):
@@ -1552,6 +1554,34 @@ def setViewToZPlus():
 def setViewToZMinus():
     setViewTo('Z',-1)
 
+def setFilterToDual():
+    setFilterTo(0)
+
+def setFilterToDistanceNear():
+    setFilterTo(vtkVelodyneHDLReader.DUAL_DISTANCE_NEAR)
+
+def setFilterToDistanceFar():
+    setFilterTo(vtkVelodyneHDLReader.DUAL_DISTANCE_FAR)
+
+def setFilterToIntensityHigh():
+    setFilterTo(vtkVelodyneHDLReader.DUAL_INTENSITY_HIGH)
+
+def setFilterToIntensityLow():
+    setFilterTo(vtkVelodyneHDLReader.DUAL_INTENSITY_LOW)
+
+def setFilterTo(mask):
+    reader = getReader()
+    if reader:
+        reader.DualReturnFilter = mask
+        smp.Render()
+        smp.Render(getSpreadSheetViewProxy())
+
+    sensor = getSensor()
+    if sensor:
+        sensor.DualReturnFilter = mask
+        smp.Render()
+        smp.Render(getSpreadSheetViewProxy())
+
 def geolocationChanged(setting):
     reader = getReader()
     position = getPosition()
@@ -1616,6 +1646,12 @@ def setupActions():
     app.actions['actionSetViewYMinus'].connect('triggered()', setViewToYMinus)
     app.actions['actionSetViewZPlus'].connect('triggered()', setViewToZPlus)
     app.actions['actionSetViewZMinus'].connect('triggered()', setViewToZMinus)
+
+    app.actions['actionDualReturnModeDual'].connect('triggered()', setFilterToDual)
+    app.actions['actionDualReturnDistanceNear'].connect('triggered()', setFilterToDistanceNear)
+    app.actions['actionDualReturnDistanceFar'].connect('triggered()', setFilterToDistanceFar)
+    app.actions['actionDualReturnIntensityHigh'].connect('triggered()', setFilterToIntensityHigh)
+    app.actions['actionDualReturnIntensityLow'].connect('triggered()', setFilterToIntensityLow)
 
     # Action created #
     timeToolBar = mW.findChild('QToolBar','playbackToolbar')

@@ -86,6 +86,9 @@ public:
 
   void GetVerticalCorrections(double LaserAngles[64]);
 
+  unsigned int GetDualReturnFilter() const;
+  void SetDualReturnFilter(unsigned int);
+
   // A trick to workaround failure to wrap LaserSelection
   void SetDummyProperty(int);
 

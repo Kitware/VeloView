@@ -55,6 +55,17 @@
       </IntVectorProperty>
 
       <IntVectorProperty
+          name="DualReturnFilter"
+          animateable="0"
+          command="SetDualReturnFilter"
+          default_values="0"
+          number_of_elements="1">
+        <Documentation>
+          Filter mask for dual return
+        </Documentation>
+      </IntVectorProperty>
+
+      <IntVectorProperty
           name="PointsSkip"
           animateable="0"
           command="SetPointsSkip"

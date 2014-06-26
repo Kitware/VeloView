@@ -153,6 +153,7 @@ public:
       }
 
     this->LaserSelection.resize(64, true);
+    this->DualReturnFilter = 0;
 
     cos_lookup_table_ = NULL;
     sin_lookup_table_ = NULL;
@@ -197,6 +198,7 @@ public:
   int PointsSkip;
 
   std::vector<bool> LaserSelection;
+  unsigned int DualReturnFilter;
 
   double *cos_lookup_table_;
   double *sin_lookup_table_;
@@ -345,6 +347,21 @@ void vtkVelodyneHDLReader::GetLaserSelection(int LaserSelection[64])
     }
 }
 
+//-----------------------------------------------------------------------------
+unsigned int vtkVelodyneHDLReader::GetDualReturnFilter() const
+{
+  return this->Internal->DualReturnFilter;
+}
+
+//-----------------------------------------------------------------------------
+void vtkVelodyneHDLReader::SetDualReturnFilter(unsigned int filter)
+{
+  if (this->Internal->DualReturnFilter != filter)
+    {
+    this->Internal->DualReturnFilter = filter;
+    this->Modified();
+    }
+}
 
 //-----------------------------------------------------------------------------
 void vtkVelodyneHDLReader::GetVerticalCorrections(double VerticalCorrections[64])
@@ -825,6 +842,26 @@ void vtkVelodyneHDLReader::vtkInternal::PushFiringData(const unsigned char laser
         {
         firstFlags &= ~DUAL_DISTANCE_NEAR;
         secondFlags |= DUAL_DISTANCE_NEAR;
+        }
+
+      if (this->DualReturnFilter)
+        {
+        if (!(secondFlags & this->DualReturnFilter))
+          {
+          // second return does not match filter; skip
+          this->Flags->SetValue(dualPointId, firstFlags);
+          return;
+          }
+        if (!(firstFlags & this->DualReturnFilter))
+          {
+          // first return does not match filter; replace with second return
+          this->Points->SetPoint(dualPointId, x, y, z);
+          this->Distance->SetValue(dualPointId, distanceM);
+          this->Intensity->SetValue(dualPointId, laserReturn->intensity);
+          this->Timestamp->SetValue(dualPointId, timestamp);
+          this->Flags->SetValue(dualPointId, secondFlags);
+          return;
+          }
         }
 
       this->Flags->SetValue(dualPointId, firstFlags);
