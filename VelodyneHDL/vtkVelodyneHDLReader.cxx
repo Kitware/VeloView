@@ -756,11 +756,6 @@ void vtkVelodyneHDLReader::vtkInternal::PushFiringData(const unsigned char laser
   const vtkIdType thisPointId = this->Points->GetNumberOfPoints();
   const short intensity = laserReturn->intensity;
 
-  this->Azimuth->InsertNextValue(azimuth);
-  this->Intensity->InsertNextValue(laserReturn->intensity);
-  this->LaserId->InsertNextValue(laserId);
-  this->Timestamp->InsertNextValue(timestamp);
-
   azimuth = (azimuth + azimuthAdjustment) % 36000;
 
   double cosAzimuth, sinAzimuth;
@@ -787,9 +782,6 @@ void vtkVelodyneHDLReader::vtkInternal::PushFiringData(const unsigned char laser
   y += translation[1];
   z += translation[2];
 
-  this->Points->InsertNextPoint(x,y,z);
-  this->Distance->InsertNextValue(distanceM);
-
   if (dualReturn)
     {
     const vtkIdType dualPointId = this->LastPointId[laserId];
@@ -806,6 +798,12 @@ void vtkVelodyneHDLReader::vtkInternal::PushFiringData(const unsigned char laser
       const double dualDistance = this->Distance->GetValue(dualPointId);
       unsigned int firstFlags = this->Flags->GetValue(dualPointId);
       unsigned int secondFlags = 0;
+
+      if (dualDistance == distanceM && intensity == dualIntensity)
+      {
+        // ignore duplicate point and leave first with original flags
+        return;
+      }
 
       if (dualIntensity < intensity)
         {
@@ -848,6 +846,14 @@ void vtkVelodyneHDLReader::vtkInternal::PushFiringData(const unsigned char laser
     this->IntensityDelta->InsertNextValue(0);
     this->DistanceDelta->InsertNextValue(0.0);
     }
+
+  this->Azimuth->InsertNextValue(azimuth);
+  this->Intensity->InsertNextValue(laserReturn->intensity);
+  this->LaserId->InsertNextValue(laserId);
+  this->Timestamp->InsertNextValue(timestamp);
+
+  this->Points->InsertNextPoint(x, y, z);
+  this->Distance->InsertNextValue(distanceM);
 
   this->LastPointId[laserId] = thisPointId;
 }
