@@ -154,6 +154,7 @@ public:
 
     this->LaserSelection.resize(64, true);
     this->DualReturnFilter = 0;
+    this->IsDualReturnData = false;
 
     cos_lookup_table_ = NULL;
     sin_lookup_table_ = NULL;
@@ -178,9 +179,11 @@ public:
   vtkUnsignedShortArray* Azimuth;
   vtkDoubleArray*        Distance;
   vtkUnsignedIntArray* Timestamp;
-  vtkUnsignedIntArray* IntensityFlag;
-  vtkUnsignedIntArray* DistanceFlag;
+  vtkSmartPointer<vtkUnsignedIntArray> IntensityFlag;
+  vtkSmartPointer<vtkUnsignedIntArray> DistanceFlag;
   vtkSmartPointer<vtkUnsignedIntArray> Flags;
+
+  bool IsDualReturnData;
 
   unsigned int LastAzimuth;
   vtkIdType LastPointId[HDL_MAX_NUM_LASERS];
@@ -423,6 +426,7 @@ void vtkVelodyneHDLReader::UnloadData()
     this->Internal->LastPointId[n] = -1;
     }
   this->Internal->LastAzimuth = 0;
+  this->Internal->IsDualReturnData = false;
   this->Internal->Datasets.clear();
   this->Internal->CurrentDataset = this->Internal->CreateData(0);
 }
@@ -740,9 +744,15 @@ vtkSmartPointer<vtkPolyData> vtkVelodyneHDLReader::vtkInternal::CreateData(vtkId
   this->Azimuth = CreateDataArray<vtkUnsignedShortArray>("azimuth", numberOfPoints, polyData);
   this->Distance = CreateDataArray<vtkDoubleArray>("distance_m", numberOfPoints, polyData);
   this->Timestamp = CreateDataArray<vtkUnsignedIntArray>("timestamp", numberOfPoints, polyData);
-  this->DistanceFlag = CreateDataArray<vtkUnsignedIntArray>("dual_relative_distance", numberOfPoints, polyData);
-  this->IntensityFlag = CreateDataArray<vtkUnsignedIntArray>("dual_relative_intensity", numberOfPoints, polyData);
+  this->DistanceFlag = CreateDataArray<vtkUnsignedIntArray>("dual_relative_distance", numberOfPoints, 0);
+  this->IntensityFlag = CreateDataArray<vtkUnsignedIntArray>("dual_relative_intensity", numberOfPoints, 0);
   this->Flags = CreateDataArray<vtkUnsignedIntArray>("dual_flags", numberOfPoints, 0);
+
+  if (this->IsDualReturnData)
+    {
+    polyData->GetPointData()->AddArray(this->DistanceFlag.GetPointer());
+    polyData->GetPointData()->AddArray(this->IntensityFlag.GetPointer());
+    }
 
   return polyData;
 }
@@ -1086,6 +1096,13 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessFiring(HDLFiringData* firingData,
   if (!dual)
     {
     this->FirstPointIdThisReturn = this->Points->GetNumberOfPoints();
+    }
+
+  if (dual && !this->IsDualReturnData)
+    {
+    this->IsDualReturnData = true;
+    this->CurrentDataset->GetPointData()->AddArray(this->DistanceFlag.GetPointer());
+    this->CurrentDataset->GetPointData()->AddArray(this->IntensityFlag.GetPointer());
     }
 
   for (int j = 0; j < HDL_LASER_PER_FIRING; j++)
