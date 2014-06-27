@@ -152,6 +152,11 @@ def openData(filename):
     app.actions['actionSave_PCAP'].setEnabled(False)
     app.actions['actionChoose_Calibration_File'].setEnabled(False)
     app.actions['actionRecord'].setEnabled(False)
+    app.actions['actionDualReturnModeDual'].enabled = True
+    app.actions['actionDualReturnDistanceNear'].enabled = True
+    app.actions['actionDualReturnDistanceFar'].enabled = True
+    app.actions['actionDualReturnIntensityHigh'].enabled = True
+    app.actions['actionDualReturnIntensityLow'].enabled = True
 
     resetCamera()
 
@@ -217,6 +222,12 @@ def openSensor(calibrationFile):
     smp.Render()
 
     showSourceInSpreadSheet(sensor)
+
+    app.actions['actionDualReturnModeDual'].enabled = True
+    app.actions['actionDualReturnDistanceNear'].enabled = True
+    app.actions['actionDualReturnDistanceFar'].enabled = True
+    app.actions['actionDualReturnIntensityHigh'].enabled = True
+    app.actions['actionDualReturnIntensityLow'].enabled = True
 
     play()
 
@@ -316,6 +327,11 @@ def openPCAP(filename, calibrationFile):
     enableSaveActions()
     addRecentFile(filename)
     app.actions['actionRecord'].setEnabled(False)
+    app.actions['actionDualReturnModeDual'].enabled = True
+    app.actions['actionDualReturnDistanceNear'].enabled = True
+    app.actions['actionDualReturnDistanceFar'].enabled = True
+    app.actions['actionDualReturnIntensityHigh'].enabled = True
+    app.actions['actionDualReturnIntensityLow'].enabled = True
 
     resetCamera()
 
@@ -692,6 +708,13 @@ def close():
     disablePlaybackActions()
     disableSaveActions()
     app.actions['actionRecord'].setChecked(False)
+    app.actions['actionDualReturnModeDual'].setChecked(True)
+
+    app.actions['actionDualReturnModeDual'].enabled = False
+    app.actions['actionDualReturnDistanceNear'].enabled = False
+    app.actions['actionDualReturnDistanceFar'].enabled = False
+    app.actions['actionDualReturnIntensityHigh'].enabled = False
+    app.actions['actionDualReturnIntensityLow'].enabled = False
 
 
 def seekForward():
