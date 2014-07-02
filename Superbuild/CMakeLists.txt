@@ -114,6 +114,7 @@ include(paraview)
 include(pcap)
 include(boost)
 include(eigen)
+include(liblas)
 include(veloview)
 
 process_dependencies()

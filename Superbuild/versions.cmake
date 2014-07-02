@@ -51,3 +51,7 @@ add_revision(boost
 add_revision(eigen
   URL http://vtk.org/files/support/eigen-3.1.2.tar.gz
   URL_MD5 bb639388192cb80f1ee797f5dbdbe74f)
+
+add_revision(liblas
+  GIT_REPOSITORY git://github.com/libLAS/libLAS
+  GIT_TAG master)
