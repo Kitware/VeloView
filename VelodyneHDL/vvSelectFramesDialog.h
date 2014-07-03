@@ -21,25 +21,33 @@
 class VelodyneHDLPlugin_EXPORT vvSelectFramesDialog : public QDialog
 {
   Q_OBJECT
-public:
+  Q_PROPERTY(int frameMode READ frameMode WRITE setFrameMode)
+  Q_PROPERTY(int frameStart READ frameStart WRITE setFrameStart)
+  Q_PROPERTY(int frameStop READ frameStop WRITE setFrameStop)
+  Q_PROPERTY(int frameStride READ frameStride WRITE setFrameStride)
+  Q_PROPERTY(int frameMinimum WRITE setFrameMinimum)
+  Q_PROPERTY(int frameMaximum WRITE setFrameMaximum)
+  Q_PROPERTY(bool frameStrideVisibility WRITE setFrameStrideVisibility)
+  Q_ENUMS(FrameMode)
 
+public:
   vvSelectFramesDialog(QWidget *p=0);
   virtual ~vvSelectFramesDialog();
 
-  enum
-  {
+  enum FrameMode
+    {
     CURRENT_FRAME = 0,
     ALL_FRAMES,
     FRAME_RANGE
-  };
+    };
 
   int frameMode() const;
-  void setFrameMode(int frameMode);
-
   int frameStart() const;
   int frameStop() const;
   int frameStride() const;
 
+public slots:
+  void setFrameMode(int frameMode);
   void setFrameStart(int frameStart);
   void setFrameStop(int frameStop);
   void setFrameStride(int frameStride);
@@ -53,8 +61,6 @@ public:
   void restoreState();
 
 private:
-
-
   class pqInternal;
   pqInternal* Internal;
 

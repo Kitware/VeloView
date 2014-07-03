@@ -29,6 +29,8 @@ import kiwiviewerExporter
 import gridAdjustmentDialog
 import planefit
 
+from PythonQt.paraview import vvSelectFramesDialog
+
 _repCache = {}
 
 def cachedGetRepresentation(src, view):
@@ -513,30 +515,37 @@ def onNativeFileDialogsAction():
 
 
 def getFrameSelectionFromUser(frameStrideVisibility=False):
+    class FrameOptions(object):
+        pass
 
     dialog = PythonQt.paraview.vvSelectFramesDialog(getMainWindow())
-    dialog.setFrameMinimum(app.scene.StartTime)
-    dialog.setFrameMaximum(app.scene.EndTime)
-    dialog.setFrameStrideVisibility(frameStrideVisibility)
+    dialog.frameMinimum = app.scene.StartTime
+    dialog.frameMaximum = app.scene.EndTime
+    dialog.frameStrideVisibility = frameStrideVisibility
     dialog.restoreState()
-    accepted = dialog.exec_()
-    frameMode = dialog.frameMode()
-    frameStart = dialog.frameStart()
-    frameStop = dialog.frameStop()
-    frameStride = dialog.frameStride()
+
+    if not dialog.exec_():
+        return None
+
+    frameOptions = FrameOptions()
+    frameOptions.mode = dialog.frameMode
+    frameOptions.start = dialog.frameStart
+    frameOptions.stop = dialog.frameStop
+    frameOptions.stride = dialog.frameStride
+
     dialog.setParent(None)
 
-    return accepted, frameMode, frameStart, frameStop, frameStride
+    return frameOptions
 
 
 def onSaveCSV():
 
-    accepted, frameMode, frameStart, frameStop, frameStride = getFrameSelectionFromUser()
-    if not accepted:
+    frameOptions = getFrameSelectionFromUser()
+    if frameOptions is None:
         return
 
 
-    if frameMode == 0:
+    if frameOptions.mode == vvSelectFramesDialog.CURRENT_FRAME:
         fileName = getSaveFileName('Save CSV', 'csv', getDefaultSaveFileName('csv', appendFrameNumber=True))
         if fileName:
             saveCSVCurrentFrame(fileName)
@@ -544,10 +553,10 @@ def onSaveCSV():
     else:
         fileName = getSaveFileName('Save CSV (to zip file)', 'zip', getDefaultSaveFileName('zip'))
         if fileName:
-            if frameMode == 1:
+            if frameOptions.mode == vvSelectFramesDialog.ALL_FRAMES:
                 saveCSVAllFrames(fileName)
             else:
-                saveCSVFrameRange(fileName, frameStart, frameStop)
+                saveCSVFrameRange(fileName, frameOptions.start, frameOptions.stop)
 
 
 def onSavePosition():
@@ -557,22 +566,22 @@ def onSavePosition():
 
 def onSavePCAP():
 
-    accepted, frameMode, frameStart, frameStop, frameStride = getFrameSelectionFromUser()
-    if not accepted:
+    frameOptions = getFrameSelectionFromUser()
+    if frameOptions is None:
         return
 
-    if frameMode == 0:
-        frameStart = frameStop = app.scene.AnimationTime
-    elif frameMode == 1:
-        frameStart = int(app.scene.StartTime)
-        frameStop = int(app.scene.EndTime)
+    if frameOptions.mode == vvSelectFramesDialog.CURRENT_FRAME:
+        frameOptions.start = frameOptions.stop = app.scene.AnimationTime
+    elif frameOptions.mode == vvSelectFramesDialog.ALL_FRAMES:
+        frameOptions.start = int(app.scene.StartTime)
+        frameOptions.stop = int(app.scene.EndTime)
 
-    defaultFileName = getDefaultSaveFileName('pcap', suffix=' (Frame %d to %d)' % (frameStart, frameStop))
+    defaultFileName = getDefaultSaveFileName('pcap', suffix=' (Frame %d to %d)' % (frameOptions.start, frameOptions.stop))
     fileName = getSaveFileName('Save PCAP', 'pcap', defaultFileName)
     if not fileName:
         return
 
-    PythonQt.paraview.pqVelodyneManager.saveFramesToPCAP(getReader().SMProxy, frameStart, frameStop, fileName)
+    PythonQt.paraview.pqVelodyneManager.saveFramesToPCAP(getReader().SMProxy, frameOptions.start, frameOptions.stop, fileName)
 
 
 def onSaveScreenshot():
@@ -584,8 +593,8 @@ def onSaveScreenshot():
 
 def onKiwiViewerExport():
 
-    accepted, frameMode, frameStart, frameStop, frameStride = getFrameSelectionFromUser(frameStrideVisibility=True)
-    if not accepted:
+    frameOptions = getFrameSelectionFromUser(frameStrideVisibility=True)
+    if frameOptions is None:
         return
 
     defaultFileName = getDefaultSaveFileName('zip', suffix=' (KiwiViewer)')
@@ -593,12 +602,12 @@ def onKiwiViewerExport():
     if not fileName:
         return
 
-    if frameMode == 0:
+    if frameOptions.mode == vvSelectFramesDialog.CURRENT_FRAME:
         timesteps = [app.scene.AnimationTime]
-    elif frameMode == 1:
-        timesteps = range(int(app.scene.StartTime), int(app.scene.EndTime) + 1, frameStride)
+    elif frameOptions.mode == vvSelectFramesDialog.ALL_FRAMES:
+        timesteps = range(int(app.scene.StartTime), int(app.scene.EndTime) + 1, frameOptions.stride)
     else:
-        timesteps = range(frameStart, frameStop+1, frameStride)
+        timesteps = range(frameOptions.start, frameOptions.stop+1, frameOptions.stride)
 
     saveToKiwiViewer(fileName, timesteps)
 
