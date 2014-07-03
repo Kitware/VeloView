@@ -18,6 +18,8 @@
 #include <pqApplicationCore.h>
 #include <pqSettings.h>
 
+#include <QMessageBox>
+
 //-----------------------------------------------------------------------------
 class vvSelectFramesDialog::pqInternal : public Ui::vvSelectFramesDialog
 {
@@ -34,8 +36,23 @@ vvSelectFramesDialog::vvSelectFramesDialog(QWidget *p) : QDialog(p)
 //-----------------------------------------------------------------------------
 vvSelectFramesDialog::~vvSelectFramesDialog()
 {
-  this->saveState();
   delete this->Internal;
+}
+
+//-----------------------------------------------------------------------------
+void vvSelectFramesDialog::accept()
+{
+  if (this->Internal->FrameStop->value() < this->Internal->FrameStart->value())
+    {
+    QMessageBox::critical(
+      this, "Invalid frame range",
+      "The requested frame range is not valid. "
+      "The start frame must be less than or equal to the stop frame.");
+    return;
+    }
+
+  this->saveState();
+  QDialog::accept();
 }
 
 //-----------------------------------------------------------------------------
@@ -112,11 +129,13 @@ void vvSelectFramesDialog::setFrameStride(int frameStride)
 void vvSelectFramesDialog::setFrameMinimum(int frameMin)
 {
   this->Internal->FrameStart->setMinimum(frameMin);
+  this->Internal->FrameStop->setMinimum(frameMin);
 }
 
 //-----------------------------------------------------------------------------
 void vvSelectFramesDialog::setFrameMaximum(int frameMax)
 {
+  this->Internal->FrameStart->setMaximum(frameMax);
   this->Internal->FrameStop->setMaximum(frameMax);
 }
 

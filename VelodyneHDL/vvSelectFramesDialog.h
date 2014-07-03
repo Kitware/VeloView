@@ -47,6 +47,8 @@ public:
   int frameStride() const;
 
 public slots:
+  virtual void accept();
+
   void setFrameMode(int frameMode);
   void setFrameStart(int frameStart);
   void setFrameStop(int frameStop);
