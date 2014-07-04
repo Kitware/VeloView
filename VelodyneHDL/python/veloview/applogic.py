@@ -451,7 +451,9 @@ def saveCSVCurrentFrame(filename):
 
 
 def saveLASCurrentFrame(filename):
-    pass # FIXME TODO
+    t = app.scene.AnimationTime
+    PythonQt.paraview.pqVelodyneManager.saveFramesToLAS(
+        getReader().SMProxy, t, t, filename)
 
 
 def saveAllFrames(filename, saveFunction):
@@ -494,7 +496,8 @@ def saveLAS(filename, timesteps):
     os.makedirs(outDir)
 
     for t in sorted(timesteps):
-        pass # FIXME TODO
+        PythonQt.paraview.pqVelodyneManager.saveFramesToLAS(
+            getReader().SMProxy, t, t, (filenameTemplate % t))
 
     kiwiviewerExporter.zipDir(outDir, filename)
     kiwiviewerExporter.shutil.rmtree(tempDir)
@@ -622,7 +625,9 @@ def onSaveLAS():
         if not fileName:
             return
 
-        pass # FIXME TODO
+        proxy = getReader().SMProxy
+        PythonQt.paraview.pqVelodyneManager.saveFramesToLAS(
+            proxy, frameOptions.start, frameOptions.stop, fileName)
 
 
 def onSavePCAP():

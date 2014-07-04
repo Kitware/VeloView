@@ -9,3 +9,4 @@ void vvLaserSelectionDialog::setLaserSelectionSelector(const QVector<int>&);
 void vvLaserSelectionDialog::setVerticalCorrections(const QVector<double>&);
 
 static void pqVelodyneManager::saveFramesToPCAP(vtkSMSourceProxy*, int, int, const QString&);
+static void pqVelodyneManager::saveFramesToLAS(vtkSMSourceProxy*, int, int, const QString&);
