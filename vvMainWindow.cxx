@@ -155,8 +155,8 @@ private:
       this->Ui.actionGo_To_End,
       this->Ui.actionRecord,
       this->Ui.actionMeasurement_Grid,
-      this->Ui.actionSave_Screenshot,
-      this->Ui.actionSave_CSV);
+      this->Ui.actionSaveScreenshot,
+      this->Ui.actionSaveCSV);
     }
 };
 
