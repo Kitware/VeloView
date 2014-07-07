@@ -32,7 +32,9 @@ public:
 //-----------------------------------------------------------------------------
 void vtkLASFileWriter::vtkInternal::Close()
 {
-  // TODO
+  delete this->Writer;
+  this->Writer = 0;
+  this->Stream.close();
 }
 
 //-----------------------------------------------------------------------------
