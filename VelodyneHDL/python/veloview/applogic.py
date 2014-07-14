@@ -136,6 +136,7 @@ def openData(filename):
 
     rep = smp.Show(reader)
     rep.InterpolateScalarsBeforeMapping = 0
+    setDefaultLookupTables(reader)
     colorByIntensity(reader)
 
     showSourceInSpreadSheet(reader)
@@ -164,17 +165,45 @@ def openData(filename):
 def planeFit():
     planefit.fitPlane()
 
+
+def setDefaultLookupTables(sourceProxy):
+
+    # LUT for 'intensity'
+    smp.GetLookupTableForArray(
+      'intensity', 1,
+      ScalarRangeInitialized=1.0,
+      ColorSpace='HSV',
+      RGBPoints=[0.0, 0.0, 0.0, 1.0,
+               100.0, 1.0, 1.0, 0.0,
+               256.0, 1.0, 0.0, 0.0])
+
+    # LUT for 'dual_distance'
+    smp.GetLookupTableForArray(
+      'dual_distance', 1,
+      InterpretValuesAsCategories=True, NumberOfTableValues=3,
+      RGBPoints=[-1.0, 0.1, 0.5, 0.7,
+                  0.0, 0.9, 0.9, 0.9,
+                 +1.0, 0.8, 0.2, 0.3],
+      Annotations=['-1', 'near', '0', 'dual', '1', 'far'])
+
+    # LUT for 'dual_intensity'
+    smp.GetLookupTableForArray(
+      'dual_intensity', 1,
+      InterpretValuesAsCategories=True, NumberOfTableValues=3,
+      RGBPoints=[-1.0, 0.5, 0.2, 0.8,
+                  0.0, 0.6, 0.6, 0.6,
+                 +1.0, 1.0, 0.9, 0.4],
+      Annotations=['-1', 'low', '0', 'dual', '1', 'high'])
+
 def colorByIntensity(sourceProxy):
 
     if not hasArrayName(sourceProxy, 'intensity'):
         return False
 
+    setDefaultLookupTables(sourceProxy)
     rep = smp.GetDisplayProperties(sourceProxy)
     rep.ColorArrayName = 'intensity'
-    rgbPoints = [0.0, 0.0, 0.0, 1.0,
-                 100.0, 1.0, 1.0, 0.0,
-                 256.0, 1.0, 0.0, 0.0]
-    rep.LookupTable = smp.GetLookupTableForArray('intensity', 1, RGBPoints=rgbPoints, ColorSpace="HSV", ScalarRangeInitialized=1.0)
+    rep.LookupTable = smp.GetLookupTableForArray('intensity', 1)
     return True
 
 
@@ -317,6 +346,7 @@ def openPCAP(filename, calibrationFile):
 
     rep = smp.Show(reader)
     rep.InterpolateScalarsBeforeMapping = 0
+    setDefaultLookupTables(reader)
     colorByIntensity(reader)
 
     showSourceInSpreadSheet(reader)
