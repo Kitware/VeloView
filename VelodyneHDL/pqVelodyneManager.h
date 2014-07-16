@@ -67,8 +67,13 @@ public:
 
   void runPython(const QString& statements);
 
-  static void saveFramesToPCAP(vtkSMSourceProxy* proxy, int startFrame, int endFrame, const QString& filename);
+  static void saveFramesToPCAP(vtkSMSourceProxy* proxy,
+                               int startFrame, int endFrame,
+                               const QString& filename);
 
+  static void saveFramesToLAS(vtkSMSourceProxy* proxy,
+                              int startFrame, int endFrame,
+                              const QString& filename);
 
 public slots:
 

@@ -18,11 +18,11 @@
 #include <pqApplicationCore.h>
 #include <pqSettings.h>
 
+#include <QMessageBox>
+
 //-----------------------------------------------------------------------------
 class vvSelectFramesDialog::pqInternal : public Ui::vvSelectFramesDialog
 {
-public:
-
 };
 
 //-----------------------------------------------------------------------------
@@ -36,8 +36,23 @@ vvSelectFramesDialog::vvSelectFramesDialog(QWidget *p) : QDialog(p)
 //-----------------------------------------------------------------------------
 vvSelectFramesDialog::~vvSelectFramesDialog()
 {
-  this->saveState();
   delete this->Internal;
+}
+
+//-----------------------------------------------------------------------------
+void vvSelectFramesDialog::accept()
+{
+  if (this->Internal->FrameStop->value() < this->Internal->FrameStart->value())
+    {
+    QMessageBox::critical(
+      this, "Invalid frame range",
+      "The requested frame range is not valid. "
+      "The start frame must be less than or equal to the stop frame.");
+    return;
+    }
+
+  this->saveState();
+  QDialog::accept();
 }
 
 //-----------------------------------------------------------------------------
@@ -111,22 +126,62 @@ void vvSelectFramesDialog::setFrameStride(int frameStride)
 }
 
 //-----------------------------------------------------------------------------
+int vvSelectFramesDialog::framePack() const
+{
+  if (this->Internal->FilePerFrameButton->isChecked())
+    {
+    return FILE_PER_FRAME;
+    }
+  else
+    {
+    return SINGLE_FILE;
+    }
+}
+
+//-----------------------------------------------------------------------------
+void vvSelectFramesDialog::setFramePack(int framePack)
+{
+  if (framePack == SINGLE_FILE)
+    {
+    this->Internal->SingleFileButton->setChecked(true);
+    }
+  else if (framePack == FILE_PER_FRAME)
+    {
+    this->Internal->FilePerFrameButton->setChecked(true);
+    }
+}
+
+//-----------------------------------------------------------------------------
 void vvSelectFramesDialog::setFrameMinimum(int frameMin)
 {
   this->Internal->FrameStart->setMinimum(frameMin);
+  this->Internal->FrameStop->setMinimum(frameMin);
 }
 
 //-----------------------------------------------------------------------------
 void vvSelectFramesDialog::setFrameMaximum(int frameMax)
 {
+  this->Internal->FrameStart->setMaximum(frameMax);
   this->Internal->FrameStop->setMaximum(frameMax);
 }
 
 //-----------------------------------------------------------------------------
 void vvSelectFramesDialog::setFrameStrideVisibility(bool visible)
 {
-  this->Internal->FrameStride->setVisible(visible);
-  this->Internal->FrameStrideLabel->setVisible(visible);
+  this->Internal->FrameStrideContainer->setVisible(visible);
+}
+
+//-----------------------------------------------------------------------------
+void vvSelectFramesDialog::setFramePackVisibility(bool visible)
+{
+  this->Internal->FramePackContainer->setVisible(visible);
+}
+
+//-----------------------------------------------------------------------------
+void vvSelectFramesDialog::showEvent(QShowEvent* e)
+{
+  QDialog::showEvent(e);
+  this->resize(this->width(), this->minimumSizeHint().height());
 }
 
 //-----------------------------------------------------------------------------
@@ -137,6 +192,7 @@ void vvSelectFramesDialog::saveState()
   settings->setValue("VelodyneHDLPlugin/SelectFramesDialog/Start", this->frameStart());
   settings->setValue("VelodyneHDLPlugin/SelectFramesDialog/Stop", this->frameStop());
   settings->setValue("VelodyneHDLPlugin/SelectFramesDialog/Stride", this->frameStride());
+  settings->setValue("VelodyneHDLPlugin/SelectFramesDialog/Pack", this->framePack());
   settings->setValue("VelodyneHDLPlugin/SelectFramesDialog/Geometry", this->saveGeometry());
 }
 
@@ -149,4 +205,5 @@ void vvSelectFramesDialog::restoreState()
   this->setFrameStart(settings->value("VelodyneHDLPlugin/SelectFramesDialog/Start", 0).toInt());
   this->setFrameStop(settings->value("VelodyneHDLPlugin/SelectFramesDialog/Stop", 10).toInt());
   this->setFrameStride(settings->value("VelodyneHDLPlugin/SelectFramesDialog/Stride", 1).toInt());
+  this->setFramePack(settings->value("VelodyneHDLPlugin/SelectFramesDialog/Pack", SINGLE_FILE).toInt());
 }

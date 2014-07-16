@@ -1,5 +1,6 @@
 <RCC>
   <qresource prefix="/VelodyneHDLPlugin">
+    <file>las.png</file>
     <file>trailingframes.png</file>
     <file>media-eject.png</file>
     <file>media-playback-pause.png</file>
@@ -27,6 +28,5 @@
     <file>velodyne_logo.png</file>
     <file>csv.png</file>
     <file>vvGridAdjustmentDialog.ui</file>
-
   </qresource>
 </RCC>

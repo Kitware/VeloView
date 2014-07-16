@@ -23,6 +23,11 @@ find_path(PCAP_INCLUDE_DIR pcap.h DOC "pcap include directory")
 mark_as_advanced(PCAP_LIBRARY PCAP_INCLUDE_DIR)
 include_directories(${PCAP_INCLUDE_DIR})
 
+find_library(liblas_LIBRARY las DOC "liblas library")
+find_path(liblas_INCLUDE_DIR liblas/version.hpp DOC "liblas include directory")
+mark_as_advanced(liblas_LIBRARY liblas_INCLUDE_DIR)
+include_directories(${liblas_INCLUDE_DIR})
+
 find_package(Eigen REQUIRED)
 include_directories(${EIGEN_INCLUDE_DIR})
 
@@ -115,6 +120,7 @@ list(APPEND gui_xml
 
 list(APPEND deps
   ${PCAP_LIBRARY}
+  ${liblas_LIBRARY}
   ${Boost_LIBRARIES}
   )
 
@@ -127,7 +133,7 @@ add_paraview_plugin(${library_name} "1.0"
   GUI_SOURCES ${gui_sources} ${vtk_sources}
   SERVER_MANAGER_XML ${servermanager_xml}
   SERVER_MANAGER_SOURCES ${servermanager_sources}
-  SOURCES vtkPacketFileWriter.cxx
+  SOURCES vtkLASFileWriter.cxx vtkPacketFileWriter.cxx
   REQUIRED_ON_SERVER)
 
 target_link_libraries(${library_name} LINK_PUBLIC ${deps})

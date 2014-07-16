@@ -33,10 +33,19 @@
     </property>
     <widget class="QMenu" name="menuRecent_Files">
      <property name="title">
-      <string>Recent Files</string>
+      <string>&amp;Recent Files</string>
      </property>
      <addaction name="separator"/>
      <addaction name="actionClear_Menu"/>
+    </widget>
+    <widget class="QMenu" name="menuSaveAs">
+     <property name="title">
+      <string>Save &amp;As</string>
+     </property>
+     <addaction name="actionSavePCAP"/>
+     <addaction name="actionSaveCSV"/>
+     <addaction name="actionSavePositionCSV"/>
+     <addaction name="actionSaveLAS"/>
     </widget>
     <addaction name="action_Open"/>
     <addaction name="actionOpen_Sensor_Stream"/>
@@ -44,11 +53,9 @@
     <addaction name="separator"/>
     <addaction name="menuRecent_Files"/>
     <addaction name="separator"/>
+    <addaction name="menuSaveAs"/>
     <addaction name="actionExport_To_KiwiViewer"/>
-    <addaction name="actionSave_PCAP"/>
-    <addaction name="actionSave_CSV"/>
-    <addaction name="actionSave_PositionCSV"/>
-    <addaction name="actionSave_Screenshot"/>
+    <addaction name="actionSaveScreenshot"/>
     <addaction name="separator"/>
     <addaction name="actionClose"/>
     <addaction name="separator"/>
@@ -344,7 +351,7 @@
   </action>
   <action name="actionClose">
    <property name="text">
-    <string>Close Data</string>
+    <string>&amp;Close Data</string>
    </property>
    <property name="toolTip">
     <string>Close Data</string>
@@ -385,18 +392,18 @@
     <string>Go To End</string>
    </property>
   </action>
-  <action name="actionSave_Screenshot">
+  <action name="actionSaveScreenshot">
    <property name="text">
-    <string>Save Screenshot</string>
+    <string>Save &amp;Screenshot</string>
    </property>
   </action>
-  <action name="actionSave_CSV">
+  <action name="actionSaveCSV">
    <property name="icon">
     <iconset resource="VelodyneHDL/images/resources.qrc">
      <normaloff>:/VelodyneHDLPlugin/csv.png</normaloff>:/VelodyneHDLPlugin/csv.png</iconset>
    </property>
    <property name="text">
-    <string>Save CSV</string>
+    <string>Save &amp;CSV</string>
    </property>
   </action>
   <action name="actionLoop">
@@ -417,7 +424,7 @@
      <normaloff>:/VelodyneHDLPlugin/kiwi_200.png</normaloff>:/VelodyneHDLPlugin/kiwi_200.png</iconset>
    </property>
    <property name="text">
-    <string>Export To KiwiViewer</string>
+    <string>Export To &amp;KiwiViewer</string>
    </property>
    <property name="toolTip">
     <string>Export To KiwiViewer</string>
@@ -428,7 +435,7 @@
     <string>Grid Properties</string>
    </property>
   </action>
-  <action name="actionSave_PCAP">
+  <action name="actionSavePCAP">
    <property name="icon">
     <iconset resource="VelodyneHDL/images/resources.qrc">
      <normaloff>:/VelodyneHDLPlugin/WiresharkDoc-128.png</normaloff>:/VelodyneHDLPlugin/WiresharkDoc-128.png</iconset>
@@ -623,7 +630,7 @@
     <string>Plane Fit to selection</string>
    </property>
   </action>
-  <action name="actionSave_PositionCSV">
+  <action name="actionSavePositionCSV">
    <property name="icon">
     <iconset resource="vvResources.qrc">
      <normaloff>:/vvResources/Icons/pqSpreadsheet16.png</normaloff>:/vvResources/Icons/pqSpreadsheet16.png</iconset>
@@ -665,6 +672,18 @@
   <action name="actionLaserSelection">
    <property name="text">
     <string>Laser Selection</string>
+   </property>
+  </action>
+  <action name="actionSaveLAS">
+   <property name="icon">
+    <iconset resource="VelodyneHDL/images/resources.qrc">
+     <normaloff>:/VelodyneHDLPlugin/las.png</normaloff>:/VelodyneHDLPlugin/las.png</iconset>
+   </property>
+   <property name="text">
+    <string>Save &amp;LAS</string>
+   </property>
+   <property name="toolTip">
+    <string>Save to ASPRS LAS format</string>
    </property>
   </action>
  </widget>

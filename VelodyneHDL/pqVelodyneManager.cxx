@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 #include "pqVelodyneManager.h"
+
+#include "vtkLASFileWriter.h"
 #include "vvLoadDataReaction.h"
 #include "vvCalibrationDialog.h"
 #include "vvPythonQtDecorators.h"
@@ -165,6 +167,33 @@ void pqVelodyneManager::saveFramesToPCAP(vtkSMSourceProxy* proxy, int startFrame
 
   reader->Open();
   reader->DumpFrames(startFrame, endFrame, filename.toAscii().data());
+  reader->Close();
+}
+
+//-----------------------------------------------------------------------------
+void pqVelodyneManager::saveFramesToLAS(vtkSMSourceProxy* proxy,
+                                        int startFrame, int endFrame,
+                                        const QString& filename)
+{
+  if (!proxy)
+    {
+    return;
+    }
+
+  vtkVelodyneHDLReader* reader = vtkVelodyneHDLReader::SafeDownCast(proxy->GetClientSideObject());
+  if (!reader)
+    {
+    return;
+    }
+
+  vtkLASFileWriter writer(qPrintable(filename));
+
+  reader->Open();
+  for (int frame = startFrame; frame <= endFrame; ++frame)
+    {
+    const vtkSmartPointer<vtkPolyData>& data = reader->GetFrame(frame);
+    writer.WriteFrame(data.GetPointer());
+    }
   reader->Close();
 }
 

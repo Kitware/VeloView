@@ -1,5 +1,5 @@
 add_external_project(veloview
-  DEPENDS paraview qt pcap boost eigen
+  DEPENDS paraview qt pcap boost eigen liblas
 
   CMAKE_ARGS
     -DBUILD_SHARED_LIBS:BOOL=ON
