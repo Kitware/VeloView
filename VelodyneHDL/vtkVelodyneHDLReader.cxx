@@ -558,7 +558,8 @@ void vtkVelodyneHDLReader::DumpFrames(int startFrame, int endFrame, const std::s
   while (this->Internal->Reader->NextPacket(data, dataLength, timeSinceStart, &header) &&
          currentFrame <= endFrame)
     {
-    if (dataLength == (1206 + 42))
+    if (dataLength == (1206 + 42) ||
+        dataLength == (512 + 42))
       {
       writer.WritePacket(header, const_cast<unsigned char*>(data));
       }
