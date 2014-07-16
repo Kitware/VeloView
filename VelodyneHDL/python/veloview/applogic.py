@@ -440,11 +440,13 @@ def rotateCSVFile(filename):
 
 def savePositionCSV(filename):
     w = smp.DataSetCSVWriter(getPosition(), FileName=filename)
+    w.Precision = 16
     w.UpdatePipeline()
     smp.Delete(w)
 
 def saveCSVCurrentFrame(filename):
     w = smp.DataSetCSVWriter(FileName=filename)
+    w.Precision = 16
     w.UpdatePipeline()
     smp.Delete(w)
     rotateCSVFile(filename)
@@ -474,6 +476,7 @@ def saveCSV(filename, timesteps):
     os.makedirs(outDir)
 
     writer = smp.DataSetCSVWriter()
+    writer.Precision = 16
 
     for t in timesteps:
         app.scene.AnimationTime = t
