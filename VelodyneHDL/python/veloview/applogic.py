@@ -763,7 +763,7 @@ def getVersionString():
   return QtGui.QApplication.instance().applicationVersion
 
 
-def onDevelopperGuide():
+def onDeveloperGuide():
     basePath = PythonQt.QtGui.QApplication.instance().applicationDirPath()
 
     paths = ['../Resources/VeloView_Developer_Guide.pdf']
@@ -1720,7 +1720,7 @@ def setupActions():
     app.actions['actionGo_To_Start'].connect('triggered()', gotoStart)
     app.actions['actionNative_File_Dialogs'].connect('triggered()', onNativeFileDialogsAction)
     app.actions['actionAbout_VeloView'].connect('triggered()', onAbout)
-    app.actions['actionVeloViewDeveloperGuide'].connect('triggered()', onDevelopperGuide)
+    app.actions['actionVeloViewDeveloperGuide'].connect('triggered()', onDeveloperGuide)
     app.actions['actionClear_Menu'].connect('triggered()', onClearMenu)
 
     app.actions['actionToggleProjection'].connect('triggered()', toggleProjectionType)
