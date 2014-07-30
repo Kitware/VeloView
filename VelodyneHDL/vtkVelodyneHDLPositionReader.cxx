@@ -212,8 +212,10 @@ void vtkVelodyneHDLPositionReader::vtkInternal::InterpolateGPS(vtkPoints* points
   interp->SetNumberOfComponents(5);
 
   unsigned int last = 0;
+  assert(times->GetNumberOfTuples() == gpsTime->GetNumberOfTuples());
   for(vtkIdType i = 0; i < times->GetNumberOfTuples(); ++i)
     {
+    // Convert the GPS time to seconds since top of the hour
     unsigned int currGPS = gpsTime->GetTuple1(i);
     if(currGPS != last)
       {
@@ -459,6 +461,7 @@ int vtkVelodyneHDLPositionReader::RequestData(vtkInformation *request,
 
       if(this->Internal->UTMZone < 0)
         {
+        assert(!pj_utm);
         this->Internal->UTMZone = LatLongToZone(lat, lon);
         std::vector<const char*> utmparams;
         utmparams.push_back("+proj=utm");
@@ -477,6 +480,10 @@ int vtkVelodyneHDLPositionReader::RequestData(vtkInformation *request,
         utmparams.push_back("+units=m");
         utmparams.push_back("+no_defs");
         pj_utm = proj_init(utmparams.size(), const_cast<char**>(&(utmparams[0])));
+        }
+      else
+        {
+        assert(pj_utm);
         }
 
       // Need to convert decimal to minutes
