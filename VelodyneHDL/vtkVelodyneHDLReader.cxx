@@ -53,6 +53,8 @@
 
 #include "vtkWrappedTupleInterpolator.h"
 
+#include <vtkTransform.h>
+
 #include <sstream>
 #include <algorithm>
 #include <cmath>
@@ -163,6 +165,7 @@ public:
   std::vector<vtkSmartPointer<vtkPolyData> > Datasets;
   vtkSmartPointer<vtkPolyData> CurrentDataset;
 
+  vtkNew<vtkTransform> SensorTransform;
   vtkSmartPointer<vtkWrappedTupleInterpolator> Interp;
 
   vtkPoints* Points;
@@ -264,6 +267,19 @@ void vtkVelodyneHDLReader::SetApplyTransform(int apply)
 int vtkVelodyneHDLReader::GetApplyTransform()
 {
   return this->Internal->ApplyTransform;
+}
+
+//-----------------------------------------------------------------------------
+void vtkVelodyneHDLReader::SetSensorTransform(vtkTransform* transform)
+{
+  if (transform)
+    {
+    this->Internal->SensorTransform->DeepCopy(transform);
+    }
+  else
+    {
+    this->Internal->SensorTransform->Identity();
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -757,15 +773,20 @@ void vtkVelodyneHDLReader::vtkInternal::PushFiringData(const unsigned char laser
   double distanceM = laserReturn->distance * 0.002 + correction->distanceCorrection;
   double xyDistance = distanceM * correction->cosVertCorrection - correction->sinVertOffsetCorrection;
 
-  double x = (xyDistance * sinAzimuth - correction->horizontalOffsetCorrection * cosAzimuth);
-  double y = (xyDistance * cosAzimuth + correction->horizontalOffsetCorrection * sinAzimuth);
-  double z = (distanceM * correction->sinVertCorrection + correction->cosVertOffsetCorrection);
+  double pos[3] =
+    {
+    xyDistance * sinAzimuth - correction->horizontalOffsetCorrection * cosAzimuth,
+    xyDistance * cosAzimuth + correction->horizontalOffsetCorrection * sinAzimuth,
+    distanceM * correction->sinVertCorrection + correction->cosVertOffsetCorrection
+    };
 
-  x += translation[0];
-  y += translation[1];
-  z += translation[2];
+  this->SensorTransform->TransformPoint(pos, pos);
 
-  this->Points->InsertNextPoint(x,y,z);
+  pos[0] += translation[0];
+  pos[1] += translation[1];
+  pos[2] += translation[2];
+
+  this->Points->InsertNextPoint(pos);
   this->Distance->InsertNextValue(distanceM);
 }
 
@@ -903,6 +924,7 @@ void vtkVelodyneHDLReader::vtkInternal::Init()
 {
   this->InitTables();
   this->LoadHDL32Corrections();
+  this->SensorTransform->Identity();
 }
 
 //-----------------------------------------------------------------------------

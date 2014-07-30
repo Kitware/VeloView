@@ -14,36 +14,36 @@
 #ifndef __vvCalibrationDialog_h
 #define __vvCalibrationDialog_h
 
-#include <QDialog>
-
 #include "vvConfigure.h"
+
+#include <QDialog>
+#include <QMatrix4x4>
 
 class VelodyneHDLPlugin_EXPORT vvCalibrationDialog : public QDialog
 {
   Q_OBJECT
-public:
 
+public:
   vvCalibrationDialog(QWidget *p=0);
   virtual ~vvCalibrationDialog();
 
-  QString selectedCalibrationFile();
+  Q_INVOKABLE QString selectedCalibrationFile() const;
 
-  QStringList calibrationFiles();
+  Q_INVOKABLE QStringList calibrationFiles() const;
+
+  Q_INVOKABLE QMatrix4x4 sensorTransform() const;
+
+public slots:
+  virtual void accept();
 
 protected slots:
-
   void addFile();
   void removeSelectedFile();
   void onCurrentRowChanged(int row);
 
 private:
-
-  void saveFileList();
-  void saveSelectedRow();
-  void restoreSelectedRow();
-
   class pqInternal;
-  pqInternal* Internal;
+  QScopedPointer<pqInternal> Internal;
 
   Q_DISABLE_COPY(vvCalibrationDialog);
 };

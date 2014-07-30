@@ -235,17 +235,7 @@ void pqVelodyneManager::openData(const QString& filename)
 {
   if (QFileInfo(filename).suffix() == "pcap")
     {
-      vvCalibrationDialog dialog;
-      int accepted = dialog.exec();
-
-      if (!accepted)
-        {
-        return;
-        }
-
-      QString calibrationFile = dialog.selectedCalibrationFile();
-
-      this->runPython(QString("vv.openPCAP('%1', '%2')\n").arg(filename).arg(calibrationFile));
+    this->runPython(QString("vv.openPCAP('%1')\n").arg(filename));
     }
   else
     {
@@ -273,17 +263,7 @@ void pqVelodyneManager::onMeasurementGrid()
 //-----------------------------------------------------------------------------
 void pqVelodyneManager::onOpenSensor()
 {
-  vvCalibrationDialog dialog;
-  int accepted = dialog.exec();
-
-  if (!accepted)
-    {
-    return;
-    }
-
-  QString calibrationFile = dialog.selectedCalibrationFile();
-
-  this->runPython(QString("vv.openSensor('%1')\n").arg(calibrationFile));
+  this->runPython("vv.openSensor()\n");
 }
 
 //-----------------------------------------------------------------------------

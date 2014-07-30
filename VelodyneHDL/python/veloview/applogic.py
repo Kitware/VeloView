@@ -29,7 +29,7 @@ import kiwiviewerExporter
 import gridAdjustmentDialog
 import planefit
 
-from PythonQt.paraview import vvSelectFramesDialog
+from PythonQt.paraview import vvCalibrationDialog, vvSelectFramesDialog
 
 _repCache = {}
 
@@ -197,7 +197,38 @@ def getDefaultSaveFileName(extension, suffix='', appendFrameNumber=False):
         return '%s%s.%s' % (basename, suffix, extension)
 
 
+def chooseCalibration():
+
+    class Calibration(object):
+        def __init__(self, dialog):
+            self.calibrationFile = dialog.selectedCalibrationFile()
+            self.sensorTransform = vtk.vtkTransform()
+
+            qm = dialog.sensorTransform()
+            vm = vtk.vtkMatrix4x4()
+            for row in xrange(4):
+                vm.SetElement(row, 0, qm.row(row).x())
+                vm.SetElement(row, 1, qm.row(row).y())
+                vm.SetElement(row, 2, qm.row(row).z())
+                vm.SetElement(row, 3, qm.row(row).w())
+            self.sensorTransform.SetMatrix(vm)
+
+
+    dialog = vvCalibrationDialog(getMainWindow())
+    if not dialog.exec_():
+        return None
+
+    return Calibration(dialog)
+
+
 def openSensor(calibrationFile):
+
+    calibration = chooseCalibration()
+    if not calibration:
+        return
+
+    calibrationFile = calibration.calibrationFile
+    sensorTransform = calibration.sensorTransform
 
     close()
 
@@ -220,7 +251,14 @@ def openSensor(calibrationFile):
 
     play()
 
-def openPCAP(filename, calibrationFile):
+def openPCAP(filename):
+
+    calibration = chooseCalibration()
+    if not calibration:
+        return
+
+    calibrationFile = calibration.calibrationFile
+    sensorTransform = calibration.sensorTransform
 
     close()
 
@@ -245,6 +283,7 @@ def openPCAP(filename, calibrationFile):
                                    CalibrationFile=calibrationFile,
                                    NumberOfTrailingFrames=app.trailingFramesSpinBox.value,
                                    PointsSkip=app.trailingFramesSpinBox.value)
+    reader.GetClientSideObject().SetSensorTransform(sensorTransform)
     reader.UpdatePipeline()
 
     handler.RemoveObserver(tag)
@@ -1533,7 +1572,7 @@ def openRecentFile(filename):
         return
 
     if os.path.splitext(filename)[1].lower() == '.pcap':
-        openPCAP(filename, calibrationFile='')
+        openPCAP(filename)
     else:
         openData(filename)
 
