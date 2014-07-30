@@ -15,7 +15,6 @@
 
 #include "vtkLASFileWriter.h"
 #include "vvLoadDataReaction.h"
-#include "vvCalibrationDialog.h"
 #include "vvPythonQtDecorators.h"
 
 #include <pqActiveObjects.h>
@@ -221,7 +220,6 @@ void pqVelodyneManager::setup(QAction* openFile, QAction* close, QAction* openSe
   measurementGrid->setChecked(gridVisible);
 
   this->connect(openSensor, SIGNAL(triggered()), SLOT(onOpenSensor()));
-  this->connect(chooseCalibrationFile, SIGNAL(triggered()), SLOT(onChooseCalibrationFile()));
 
   this->connect(measurementGrid, SIGNAL(triggered()), SLOT(onMeasurementGrid()));
 
@@ -264,22 +262,6 @@ void pqVelodyneManager::onMeasurementGrid()
 void pqVelodyneManager::onOpenSensor()
 {
   this->runPython("vv.openSensor()\n");
-}
-
-//-----------------------------------------------------------------------------
-void pqVelodyneManager::onChooseCalibrationFile()
-{
-  vvCalibrationDialog dialog;
-  int accepted = dialog.exec();
-
-  if (!accepted)
-    {
-    return;
-    }
-
-  QString calibrationFile = dialog.selectedCalibrationFile();
-
-  this->runPython(QString("vv.setCalibrationFile('%1')\n").arg(calibrationFile));
 }
 
 //-----------------------------------------------------------------------------

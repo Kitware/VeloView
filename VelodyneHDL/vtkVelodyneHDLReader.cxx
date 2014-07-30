@@ -280,6 +280,7 @@ void vtkVelodyneHDLReader::SetSensorTransform(vtkTransform* transform)
     {
     this->Internal->SensorTransform->Identity();
     }
+  this->Modified();
 }
 
 //-----------------------------------------------------------------------------

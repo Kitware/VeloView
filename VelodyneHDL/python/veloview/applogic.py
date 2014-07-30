@@ -1208,13 +1208,22 @@ def getPosition():
 def getGlyph():
     return getattr(app, 'position', (None, None, None))[2]
 
-def setCalibrationFile(calibrationFile):
+def onChooseCalibrationFile():
+
+    calibration = chooseCalibration()
+    if not calibration:
+        return
+
+    calibrationFile = calibration.calibrationFile
+    sensorTransform = calibration.sensorTransform
 
     reader = getReader()
     sensor = getSensor()
 
     if reader is not None:
+        reader.GetClientSideObject().SetSensorTransform(sensorTransform)
         reader.CalibrationFile = calibrationFile
+        reader.DummyProperty = not reader.DummyProperty
         smp.Render()
 
     elif sensor is not None:
@@ -1714,6 +1723,7 @@ def setupActions():
     app.actions['actionReset_Camera'].connect('triggered()', resetCamera)
     app.actions['actionGrid_Properties'].connect('triggered()', onGridProperties)
     app.actions['actionLaserSelection'].connect('triggered()', onLaserSelection)
+    app.actions['actionChoose_Calibration_File'].connect('triggered()', onChooseCalibrationFile)
     app.actions['actionSeek_Forward'].connect('triggered()', seekForward)
     app.actions['actionSeek_Backward'].connect('triggered()', seekBackward)
     app.actions['actionGo_To_End'].connect('triggered()', gotoEnd)
