@@ -1,0 +1,30 @@
+<ServerManagerConfiguration>
+  <!-- Begin ApplanixReader -->
+  <ProxyGroup name="sources">
+    <SourceProxy name="ApplanixPositionReader" class="vtkApplanixPositionReader" label="Applanix Position Reader">
+      <Documentation
+        short_help="Read Applanix data files."
+        long_help="Read Applanix data files.">
+        Read Applanix data files.
+      </Documentation>
+
+      <StringVectorProperty
+          name="FileName"
+          animateable="0"
+          command="SetFileName"
+          number_of_elements="1">
+          <FileListDomain name="files"/>
+          <Documentation>
+            This property specifies the file name for the reader.
+          </Documentation>
+      </StringVectorProperty>
+
+      <Hints>
+        <ReaderFactory extensions="txt"
+           file_description="Applanix Data File"/>
+      </Hints>
+
+    </SourceProxy>
+  </ProxyGroup>
+  <!-- End ApplanixReader -->
+</ServerManagerConfiguration>

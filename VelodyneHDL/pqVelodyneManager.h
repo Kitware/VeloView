@@ -59,11 +59,9 @@ public:
   pqPipelineSource* source();
 
 
-  void setup(QAction* openFile, QAction* close, QAction* openSensor, QAction* chooseCalibrationFile,
-             QAction* resetView, QAction* play, QAction* seekForward, QAction* seekBackward, QAction* gotoStart, QAction* gotoEnd,
-             QAction* record, QAction* measurementGrid, QAction* saveScreenshot, QAction* saveCSV);
+  void setup();
 
-  void openData(const QString& filename);
+  void openData(const QString& filename, const QString& positionFilename);
 
   void runPython(const QString& statements);
 
@@ -80,7 +78,7 @@ public slots:
   void pythonStartup();
 
   void onOpenSensor();
-  void onMeasurementGrid();
+  void onMeasurementGrid(bool gridVisible);
 
 signals:
 

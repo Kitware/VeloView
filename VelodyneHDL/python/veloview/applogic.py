@@ -251,7 +251,7 @@ def openSensor(calibrationFile):
 
     play()
 
-def openPCAP(filename):
+def openPCAP(filename, positionFilename=None):
 
     calibration = chooseCalibration()
     if not calibration:
@@ -303,11 +303,17 @@ def openPCAP(filename):
 
     # update overhead view
     smp.SetActiveView(app.overheadView)
-    posreader = smp.VelodyneHDLPositionReader(guiName="Position",
-                                              FileName=filename)
+
+    if positionFilename is None:
+        posreader = smp.VelodyneHDLPositionReader(guiName="Position",
+                                                  FileName=filename)
+    else:
+        posreader = smp.ApplanixPositionReader(guiName="Position",
+                                               FileName=positionFilename)
+
     smp.Show(posreader)
 
-    # Create a sphere glpyh
+    # Create a sphere glyph
     g = smp.Sphere()
     g.Radius = 5.0
     smp.Show(g)

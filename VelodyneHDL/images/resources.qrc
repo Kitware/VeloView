@@ -1,5 +1,6 @@
 <RCC>
   <qresource prefix="/VelodyneHDLPlugin">
+    <file>applanix.png</file>
     <file>las.png</file>
     <file>trailingframes.png</file>
     <file>media-eject.png</file>

@@ -47,10 +47,17 @@
      <addaction name="actionSavePositionCSV"/>
      <addaction name="actionSaveLAS"/>
     </widget>
-    <addaction name="action_Open"/>
-    <addaction name="actionOpen_Sensor_Stream"/>
-    <addaction name="actionChoose_Calibration_File"/>
-    <addaction name="separator"/>
+    <widget class="QMenu" name="menu_Open">
+     <property name="title">
+      <string>&amp;Open</string>
+     </property>
+     <addaction name="actionOpenPcap"/>
+     <addaction name="actionOpenApplanix"/>
+     <addaction name="actionOpen_Sensor_Stream"/>
+     <addaction name="separator"/>
+     <addaction name="actionChoose_Calibration_File"/>
+    </widget>
+    <addaction name="menu_Open"/>
     <addaction name="menuRecent_Files"/>
     <addaction name="separator"/>
     <addaction name="menuSaveAs"/>
@@ -108,7 +115,8 @@
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
-   <addaction name="action_Open"/>
+   <addaction name="actionOpenPcap"/>
+   <addaction name="actionOpenApplanix"/>
    <addaction name="actionOpen_Sensor_Stream"/>
    <addaction name="actionChoose_Calibration_File"/>
    <addaction name="separator"/>
@@ -190,13 +198,16 @@
     <string>Ctrl+Q</string>
    </property>
   </action>
-  <action name="action_Open">
+  <action name="actionOpenPcap">
    <property name="icon">
     <iconset resource="VelodyneHDL/images/resources.qrc">
      <normaloff>:/VelodyneHDLPlugin/WiresharkDoc-128.png</normaloff>:/VelodyneHDLPlugin/WiresharkDoc-128.png</iconset>
    </property>
    <property name="text">
-    <string>&amp;Open File</string>
+    <string>&amp;Velodyne Capture File</string>
+   </property>
+   <property name="toolTip">
+    <string>Open a Wireshark-format capture file with data collected from a Velodyne sensor</string>
    </property>
    <property name="statusTip">
     <string>Open Data File</string>
@@ -265,7 +276,7 @@
      <normaloff>:/VelodyneHDLPlugin/angle_icon.png</normaloff>:/VelodyneHDLPlugin/angle_icon.png</iconset>
    </property>
    <property name="text">
-    <string>Choose Calibration File</string>
+    <string>Choose &amp;Calibration File</string>
    </property>
   </action>
   <action name="actionSeek_Backward">
@@ -684,6 +695,18 @@
    </property>
    <property name="toolTip">
     <string>Save to ASPRS LAS format</string>
+   </property>
+  </action>
+  <action name="actionOpenApplanix">
+   <property name="icon">
+    <iconset resource="VelodyneHDL/images/resources.qrc">
+     <normaloff>:/VelodyneHDLPlugin/applanix.png</normaloff>:/VelodyneHDLPlugin/applanix.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Applanix Capture Files</string>
+   </property>
+   <property name="toolTip">
+    <string>Open a text file with position data collected from an Applanix sensor, and Wireshark-format capture file with data collected from a Velodyne sensor</string>
    </property>
   </action>
  </widget>
