@@ -35,6 +35,8 @@
 #include <vtkObjectFactory.h>
 #include <vtkPointData.h>
 #include <vtkPolyLine.h>
+#include <vtkTransform.h>
+#include <vtkTransformInterpolator.h>
 
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
@@ -55,6 +57,8 @@ class vtkApplanixPositionReader::vtkInternal
 {
 public:
   void SetMapping(const std::string& fieldName, vtkNew<vtkDoubleArray>& array);
+
+  vtkNew<vtkTransformInterpolator> Interpolator;
 
   FieldIndexMap Fields;
   FieldDataMap FieldMapping;
@@ -90,6 +94,12 @@ vtkApplanixPositionReader::~vtkApplanixPositionReader()
 {
   delete this->FileName;
   delete this->Internal;
+}
+
+//-----------------------------------------------------------------------------
+vtkTransformInterpolator* vtkApplanixPositionReader::GetInterpolator() const
+{
+  return this->Internal->Interpolator.GetPointer();
 }
 
 //-----------------------------------------------------------------------------
@@ -214,9 +224,13 @@ int vtkApplanixPositionReader::RequestData(
     }
 
   // Verify position information
-  if (eastingData->GetNumberOfTuples() != count ||
+  if (timeData->GetNumberOfTuples() != count ||
+      eastingData->GetNumberOfTuples() != count ||
       northingData->GetNumberOfTuples() != count ||
-      heightData->GetNumberOfTuples() != count)
+      heightData->GetNumberOfTuples() != count ||
+      rollData->GetNumberOfTuples() != count ||
+      pitchData->GetNumberOfTuples() != count ||
+      headingData->GetNumberOfTuples() != count)
     {
     vtkErrorMacro(
       "Failed to extract points: one or more position fields has fewer values"
@@ -224,9 +238,11 @@ int vtkApplanixPositionReader::RequestData(
     return VTK_ERROR;
     }
 
-  // Build polyline
+  // Build polyline and transform interpolator
   points->Allocate(count);
   polyIds->Allocate(count);
+
+  this->Internal->Interpolator->Initialize();
 
   double pos[3] = { 0.0, 0.0, 0.0 };
   double firstPos[3];
@@ -247,6 +263,18 @@ int vtkApplanixPositionReader::RequestData(
 
     points->InsertNextPoint(pos);
     polyIds->InsertNextId(n);
+
+    vtkNew<vtkTransform> transform;
+    transform->PostMultiply();
+    transform->RotateZ(-headingData->GetValue(n));
+    transform->RotateY(rollData->GetValue(n) + 180.0); // FIXME - get from UI
+    transform->RotateX(pitchData->GetValue(n));
+    transform->Translate(pos);
+
+    const double timestamp =
+      std::fmod(timeData->GetValue(n), 3600.0);
+    this->Internal->Interpolator->AddTransform(timestamp,
+                                               transform.GetPointer());
     }
 
   cells->InsertNextCell(polyLine.GetPointer());

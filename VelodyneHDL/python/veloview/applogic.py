@@ -319,7 +319,8 @@ def openPCAP(filename, positionFilename=None):
     smp.Show(g)
 
     if posreader.GetClientSideObject().GetOutput().GetNumberOfPoints():
-        reader.GetClientSideObject().SetInterp(posreader.GetClientSideObject().GetInterpolator())
+        reader.GetClientSideObject().SetInterpolator(
+            posreader.GetClientSideObject().GetInterpolator())
 
         smp.Render()
         app.overheadView.ResetCamera()
@@ -1089,29 +1090,23 @@ def updatePosition():
             # TODO: Approximate time, just grabbing the last
             t = pointcloud.GetPointData().GetScalars('timestamp')
             #currentTime = t.GetTuple1(t.GetNumberOfTuples() - 1)
-            currentTime = t.GetTuple1(0)
+            currentTime = ((t.GetTuple1(0) * 1e-6) + 16) % 3600.0
 
-            trange = pos.GetPointDataInformation().GetArray('time').GetRange()
+            interp = getPosition().GetClientSideObject().GetInterpolator()
+            trange = [interp.GetMinimumT(), interp.GetMaximumT()]
 
             # Clamp
             currentTime = min(max(currentTime, trange[0]+1.0e-1), trange[1]-1.0e-1)
 
-            interp = getPosition().GetClientSideObject().GetInterpolator()
-            position = [0.0] * 5
-            interp.InterpolateTuple5(currentTime, position)
+            position = [0.0] * 3
+            transform = vtk.vtkTransform()
+            interp.InterpolateTransform(currentTime, transform)
+            transform.TransformPoint(position, position)
 
             rep = cachedGetRepresentation(reader, view=app.mainView)
             if app.relativeTransform:
-                angle = math.atan2(position[4], position[3])
-                angle = 180 * angle / math.pi
-
-                t = vtk.vtkTransform()
-                t.PostMultiply()
-                t.Translate([-x for x in position[:3]])
-                t.RotateZ(angle)
-
-                rep.Position = t.GetPosition()
-                rep.Orientation = t.GetOrientation()
+                rep.Position = transform.GetPosition()
+                rep.Orientation = transform.GetOrientation()
             else:
                 rep.Position = [0.0, 0.0, 0.0]
                 rep.Orientation = [0.0, 0.0, 0.0]

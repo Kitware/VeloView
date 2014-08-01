@@ -37,7 +37,7 @@
 #include <string>
 
 class vtkTransform;
-class vtkWrappedTupleInterpolator;
+class vtkTransformInterpolator;
 
 class VTK_EXPORT vtkVelodyneHDLReader : public vtkPolyDataAlgorithm
 {
@@ -95,7 +95,7 @@ public:
   void ProcessHDLPacket(unsigned char *data, unsigned int bytesReceived);
   std::vector<vtkSmartPointer<vtkPolyData> >& GetDatasets();
 
-  void SetInterp(vtkWrappedTupleInterpolator* interp);
+  void SetInterpolator(vtkTransformInterpolator* interpolator);
 
   void SetSensorTransform(vtkTransform*);
 
