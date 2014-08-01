@@ -30,6 +30,7 @@
 
 #include "vtkPacketFileReader.h"
 #include "vtkPacketFileWriter.h"
+#include "vtkVelodyneTransformInterpolator.h"
 
 #include <vtkCellArray.h>
 #include <vtkCellData.h>
@@ -46,7 +47,7 @@
 #include <vtkPolyData.h>
 #include <vtkSmartPointer.h>
 #include <vtkStreamingDemandDrivenPipeline.h>
-#include <vtkTransformInterpolator.h>
+// #include <vtkTransformInterpolator.h>
 #include <vtkUnsignedCharArray.h>
 #include <vtkUnsignedIntArray.h>
 #include <vtkUnsignedShortArray.h>
@@ -164,7 +165,7 @@ public:
   vtkSmartPointer<vtkPolyData> CurrentDataset;
 
   vtkNew<vtkTransform> SensorTransform;
-  vtkSmartPointer<vtkTransformInterpolator> Interp;
+  vtkSmartPointer<vtkVelodyneTransformInterpolator> Interp;
 
   vtkPoints* Points;
   vtkUnsignedCharArray* Intensity;
@@ -279,7 +280,7 @@ void vtkVelodyneHDLReader::SetSensorTransform(vtkTransform* transform)
 
 //-----------------------------------------------------------------------------
 void vtkVelodyneHDLReader::SetInterpolator(
-  vtkTransformInterpolator* interpolator)
+  vtkVelodyneTransformInterpolator* interpolator)
 {
   this->Internal->Interp = interpolator;
 }

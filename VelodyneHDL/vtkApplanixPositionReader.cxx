@@ -28,6 +28,8 @@
 
 #include "vtkApplanixPositionReader.h"
 
+#include "vtkVelodyneTransformInterpolator.h"
+
 #include <vtkCellArray.h>
 #include <vtkDoubleArray.h>
 #include <vtkInformationVector.h>
@@ -36,7 +38,7 @@
 #include <vtkPointData.h>
 #include <vtkPolyLine.h>
 #include <vtkTransform.h>
-#include <vtkTransformInterpolator.h>
+// #include <vtkTransformInterpolator.h>
 
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
@@ -58,7 +60,7 @@ class vtkApplanixPositionReader::vtkInternal
 public:
   void SetMapping(const std::string& fieldName, vtkNew<vtkDoubleArray>& array);
 
-  vtkNew<vtkTransformInterpolator> Interpolator;
+  vtkNew<vtkVelodyneTransformInterpolator> Interpolator;
 
   FieldIndexMap Fields;
   FieldDataMap FieldMapping;
@@ -97,7 +99,7 @@ vtkApplanixPositionReader::~vtkApplanixPositionReader()
 }
 
 //-----------------------------------------------------------------------------
-vtkTransformInterpolator* vtkApplanixPositionReader::GetInterpolator() const
+vtkVelodyneTransformInterpolator* vtkApplanixPositionReader::GetInterpolator() const
 {
   return this->Internal->Interpolator.GetPointer();
 }

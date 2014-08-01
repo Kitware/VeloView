@@ -70,6 +70,7 @@ if(PARAVIEW_BUILD_QT_GUI)
 
   set(vtk_sources
     vtkPlaneFitter.cxx
+    vtkVelodyneTransformInterpolator.cxx
     vtkWrappedTupleInterpolator.cxx
     )
 

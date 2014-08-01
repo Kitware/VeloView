@@ -34,7 +34,7 @@
 
 #include <vtkPolyDataAlgorithm.h>
 
-class vtkTransformInterpolator;
+class vtkVelodyneTransformInterpolator;
 
 class VTK_EXPORT vtkApplanixPositionReader : public vtkPolyDataAlgorithm
 {
@@ -51,7 +51,7 @@ public:
   int CanReadFile(const char* fname) { return 1; }
 
   //Description:
-  vtkTransformInterpolator* GetInterpolator() const;
+  vtkVelodyneTransformInterpolator* GetInterpolator() const;
 
 protected:
   vtkApplanixPositionReader();
