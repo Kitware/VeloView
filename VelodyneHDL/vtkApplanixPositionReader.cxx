@@ -244,6 +244,7 @@ int vtkApplanixPositionReader::RequestData(
   points->Allocate(count);
   polyIds->Allocate(count);
 
+  this->Internal->Interpolator->SetInterpolationTypeToLinear();
   this->Internal->Interpolator->Initialize();
 
   double pos[3] = { 0.0, 0.0, 0.0 };
