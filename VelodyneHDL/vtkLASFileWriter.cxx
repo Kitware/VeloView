@@ -187,15 +187,14 @@ void vtkLASFileWriter::SetTimeRange(double min, double max)
 }
 
 //-----------------------------------------------------------------------------
-void vtkLASFileWriter::SetUTMOrigin(
-  int zone, double easting, double northing, double height)
+void vtkLASFileWriter::SetOrigin(
+  int gcs, double easting, double northing, double height)
 {
   // Set internal UTM offset
   Eigen::Vector3d origin(easting, northing, height);
   this->Internal->Origin = origin;
 
   // Convert offset to output GCS, if a geoconversion is set up
-  int gcs;
 #ifdef PJ_VERSION // 4.8 or later
   if (this->Internal->OutProj)
     {
@@ -210,11 +209,6 @@ void vtkLASFileWriter::SetUTMOrigin(
     gcs = this->Internal->OutGcs;
     }
 #endif
-  else
-    {
-    // UTM North zone based on WGS84
-    gcs = 32600 + zone;
-    }
 
   // Update header
   liblas::Header header = this->Internal->Writer->GetHeader();

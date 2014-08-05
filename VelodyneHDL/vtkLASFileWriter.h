@@ -41,7 +41,7 @@ public:
   ~vtkLASFileWriter();
 
   void SetTimeRange(double min, double max);
-  void SetUTMOrigin(int zone, double easting, double northing, double height);
+  void SetOrigin(int gcs, double easting, double northing, double height);
   void SetGeoConversion(int in, int out);
 
   void WriteFrame(vtkPolyData* data);
