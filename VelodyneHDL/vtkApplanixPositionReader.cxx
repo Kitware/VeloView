@@ -135,6 +135,8 @@ int vtkApplanixPositionReader::RequestData(
   DATA_ARRAY(roll);
   DATA_ARRAY(pitch);
   DATA_ARRAY(heading);
+  vtkNew<vtkIntArray> zoneData;
+  zoneData->SetName("zone");
 
   // Open data file
   std::ifstream f(this->FileName);
@@ -155,6 +157,16 @@ int vtkApplanixPositionReader::RequestData(
     if (line.empty())
       {
       continue;
+      }
+
+    if (boost::starts_with(line, "central meridian"))
+      {
+      std::vector<std::string> parts;
+      boost::algorithm::split(parts, line, boost::is_any_of(" "),
+                              boost::algorithm::token_compress_on);
+
+      zoneData->InsertNextValue(
+        static_cast<int>(186 + boost::lexical_cast<double>(parts[3])) / 6);
       }
 
     if (line[0] == '(')
@@ -286,6 +298,7 @@ int vtkApplanixPositionReader::RequestData(
   output->SetPoints(points.GetPointer());
   output->SetLines(cells.GetPointer());
 
+  output->GetFieldData()->AddArray(zoneData.GetPointer());
   for (FieldDataMap::iterator iter = this->Internal->FieldMapping.begin();
        iter != this->Internal->FieldMapping.end(); ++iter)
     {
