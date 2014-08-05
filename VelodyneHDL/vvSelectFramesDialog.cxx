@@ -152,6 +152,48 @@ void vvSelectFramesDialog::setFramePack(int framePack)
 }
 
 //-----------------------------------------------------------------------------
+int vvSelectFramesDialog::frameTransform() const
+{
+  if (this->Internal->RelativeButton->isChecked())
+    {
+    return RELATIVE_GEOPOSITION;
+    }
+  else if (this->Internal->AbsoluteUtmButton->isChecked())
+    {
+    return ABSOLUTE_GEOPOSITION_UTM;
+    }
+  else if (this->Internal->AbsoluteLatLonButton->isChecked())
+    {
+    return ABSOLUTE_GEOPOSITION_LATLON;
+    }
+  else
+    {
+    return SENSOR;
+    }
+}
+
+//-----------------------------------------------------------------------------
+void vvSelectFramesDialog::setFrameTransform(int frameTransform)
+{
+  if (frameTransform == SENSOR)
+    {
+    this->Internal->SensorButton->setChecked(true);
+    }
+  else if (frameTransform == RELATIVE_GEOPOSITION)
+    {
+    this->Internal->RelativeButton->setChecked(true);
+    }
+  else if (frameTransform == ABSOLUTE_GEOPOSITION_UTM)
+    {
+    this->Internal->AbsoluteUtmButton->setChecked(true);
+    }
+  else if (frameTransform == ABSOLUTE_GEOPOSITION_LATLON)
+    {
+    this->Internal->AbsoluteLatLonButton->setChecked(true);
+    }
+}
+
+//-----------------------------------------------------------------------------
 void vvSelectFramesDialog::setFrameMinimum(int frameMin)
 {
   this->Internal->FrameStart->setMinimum(frameMin);
@@ -193,6 +235,7 @@ void vvSelectFramesDialog::saveState()
   settings->setValue("VelodyneHDLPlugin/SelectFramesDialog/Stop", this->frameStop());
   settings->setValue("VelodyneHDLPlugin/SelectFramesDialog/Stride", this->frameStride());
   settings->setValue("VelodyneHDLPlugin/SelectFramesDialog/Pack", this->framePack());
+  settings->setValue("VelodyneHDLPlugin/SelectFramesDialog/Transform", this->frameTransform());
   settings->setValue("VelodyneHDLPlugin/SelectFramesDialog/Geometry", this->saveGeometry());
 }
 
@@ -206,4 +249,5 @@ void vvSelectFramesDialog::restoreState()
   this->setFrameStop(settings->value("VelodyneHDLPlugin/SelectFramesDialog/Stop", 10).toInt());
   this->setFrameStride(settings->value("VelodyneHDLPlugin/SelectFramesDialog/Stride", 1).toInt());
   this->setFramePack(settings->value("VelodyneHDLPlugin/SelectFramesDialog/Pack", SINGLE_FILE).toInt());
+  this->setFrameTransform(settings->value("VelodyneHDLPlugin/SelectFramesDialog/Transform", SENSOR).toInt());
 }

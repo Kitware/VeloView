@@ -533,7 +533,7 @@ def saveCSV(filename, timesteps):
     kiwiviewerExporter.shutil.rmtree(tempDir)
 
 
-def saveLAS(filename, timesteps):
+def saveLAS(filename, timesteps, transform):
 
     tempDir = kiwiviewerExporter.tempfile.mkdtemp()
     basenameWithoutExtension = os.path.splitext(os.path.basename(filename))[0]
@@ -602,6 +602,7 @@ def getFrameSelectionFromUser(frameStrideVisibility=False, framePackVisibility=F
     frameOptions.stop = dialog.frameStop
     frameOptions.stride = dialog.frameStride
     frameOptions.pack = dialog.framePack
+    frameOptions.transform = dialog.frameTransform
 
     dialog.setParent(None)
 
@@ -618,17 +619,27 @@ def onSaveCSV():
     if frameOptions.mode == vvSelectFramesDialog.CURRENT_FRAME:
         fileName = getSaveFileName('Save CSV', 'csv', getDefaultSaveFileName('csv', appendFrameNumber=True))
         if fileName:
+            oldTransform = transformMode()
+            setTransformMode(1 if frameOptions.transform else 0)
+
             saveCSVCurrentFrame(fileName)
+
+            setTransformMode(oldTransform)
 
     else:
         fileName = getSaveFileName('Save CSV (to zip file)', 'zip', getDefaultSaveFileName('zip'))
         if fileName:
+            oldTransform = transformMode()
+            setTransformMode(1 if frameOptions.transform else 0)
+
             if frameOptions.mode == vvSelectFramesDialog.ALL_FRAMES:
                 saveAllFrames(fileName, saveCSV)
             else:
                 start = frameOptions.start
                 stop = frameOptions.stop
                 saveFrameRange(fileName, start, stop, saveCSV)
+
+            setTransformMode(oldTransform)
 
 
 def onSavePosition():
@@ -651,18 +662,31 @@ def onSaveLAS():
     if frameOptions.mode == vvSelectFramesDialog.CURRENT_FRAME:
         fileName = getSaveFileName('Save LAS', 'las', getDefaultSaveFileName('las', appendFrameNumber=True))
         if fileName:
+            oldTransform = transformMode()
+            setTransformMode(1 if frameOptions.transform else 0)
+
             saveLASCurrentFrame(fileName)
+
+            setTransformMode(oldTransform)
 
     elif frameOptions.pack == vvSelectFramesDialog.FILE_PER_FRAME:
         fileName = getSaveFileName('Save CSV (to zip file)', 'zip',
                                    getDefaultSaveFileName('zip'))
         if fileName:
+            oldTransform = transformMode()
+            setTransformMode(1 if frameOptions.transform else 0)
+
+            def saveTransformedLAS(filename, timesteps):
+                saveLAS(filename, timesteps, frameOptions.transform)
+
             if frameOptions.mode == vvSelectFramesDialog.ALL_FRAMES:
-                saveAllFrames(fileName, saveCSV)
+                saveAllFrames(fileName, saveTransformedLAS)
             else:
                 start = frameOptions.start
                 stop = frameOptions.stop
-                saveFrameRange(fileName, start, stop, saveCSV)
+                saveFrameRange(fileName, start, stop, saveTransformedLAS)
+
+            setTransformMode(oldTransform)
 
     else:
         suffix = ' (Frame %d to %d)' % (frameOptions.start, frameOptions.stop)
@@ -1677,25 +1701,32 @@ def setViewToZPlus():
 def setViewToZMinus():
     setViewTo('Z',-1)
 
-def geolocationChanged(setting):
+def transformMode():
     reader = getReader()
-    position = getPosition()
+    if not reader:
+        return None
 
-    if not reader or not position:
+    if reader.ApplyTransform:
+        if app.relativeTransform:
+            return 2 # relative
+        else:
+            return 1 # absolute
+    return 0 # raw
+
+def setTransformMode(mode):
+    # 0 - raw
+    # 1 - absolute
+    # 2 - relative
+    reader = getReader()
+
+    if not reader or not mode:
         return
 
-    # 0 - raw
-    # 1 - absolute 
-    # 2 - relative
+    reader.ApplyTransform = (mode > 0)
+    app.relativeTransform = (mode == 2)
 
-    # Correct the reader settings
-    if setting >=1:
-        reader.ApplyTransform = 1
-    else:
-        reader.ApplyTransform = 0
-
-    # This will make sure the display transfomr is proper
-    app.relativeTransform = (setting == 2)
+def geolocationChanged(setting):
+    setTransformMode(setting)
 
     updatePosition()
     smp.Render(view=app.mainView)
