@@ -189,7 +189,14 @@ void pqVelodyneManager::saveFramesToLAS(
           northingData && northingData->GetNumberOfTuples() &&
           heightData && heightData->GetNumberOfTuples())
         {
-        writer.SetUTMOrigin(static_cast<int>(zoneData->GetComponent(0, 0)),
+        const int zone = static_cast<int>(zoneData->GetComponent(0, 0));
+
+        if (positionMode == 3) // Absolute lat/lon
+          {
+          writer.SetGeoConversion(32600 + zone, 4326); // ...or 32700?
+          }
+
+        writer.SetUTMOrigin(zone,
                             eastingData->GetComponent(0, 0),
                             northingData->GetComponent(0, 0),
                             heightData->GetComponent(0, 0));

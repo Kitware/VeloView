@@ -17,9 +17,97 @@
 #include <vtkPointData.h>
 #include <vtkPolyData.h>
 
+#include <vtk_libproj4.h>
+
 #include <liblas/liblas.hpp>
 
 #include <Eigen/Dense>
+
+#ifndef PJ_VERSION // 4.8 or later
+#include <cassert>
+#endif
+
+namespace
+{
+
+#ifdef PJ_VERSION // 4.8 or later
+
+//-----------------------------------------------------------------------------
+projPJ CreateProj(int epsg)
+{
+  std::ostringstream ss;
+  ss << "+init=epsg:" << epsg;
+  return pj_init_plus(ss.str().c_str());
+}
+
+//-----------------------------------------------------------------------------
+Eigen::Vector3d ConvertGcs(
+  Eigen::Vector3d p, projPJ inProj, projPJ outProj)
+{
+  if (pj_is_latlong(inProj))
+    {
+    p[0] *= DEG_TO_RAD;
+    p[1] *= DEG_TO_RAD;
+    }
+
+  double* const data = p.data();
+  pj_transform(inProj, outProj, 1, 1, data + 0, data + 1, data + 2);
+
+  if (pj_is_latlong(outProj))
+    {
+    p[0] *= RAD_TO_DEG;
+    p[1] *= RAD_TO_DEG;
+    }
+
+  return p;
+}
+
+#else
+
+//-----------------------------------------------------------------------------
+PROJ* CreateProj(int utmZone, bool south)
+{
+  std::ostringstream ss;
+  ss << "+zone=" << utmZone;
+
+  char buffer[65] = { 0 };
+  strncpy(buffer, ss.str().c_str(), 64);
+
+  std::vector<const char*> utmparams;
+  utmparams.push_back("+proj=utm");
+  utmparams.push_back("+ellps=WGS84");
+  utmparams.push_back("+units=m");
+  utmparams.push_back("+no_defs");
+  utmparams.push_back(buffer);
+  if (south)
+    {
+    utmparams.push_back("+south");
+    }
+
+  return proj_init(utmparams.size(), const_cast<char**>(&(utmparams[0])));
+}
+
+//-----------------------------------------------------------------------------
+Eigen::Vector3d InvertProj(Eigen::Vector3d in, PROJ* proj)
+{
+  // This "lovely little gem" makes an awful lot of assumptions about the input
+  // (some flavor of XY) and output (internal LP, which we assume / hope is
+  // WGS'84) GCS's and what operations are "interesting" (i.e. the assumption
+  // that the Z component does not need to be considered and can be passed
+  // through unaltered). Unfortunately, it's the best we can do with PROJ 4.7
+  // until VTK can be updated to use 4.8. Fortunately, given how we're being
+  // used, our input really ought to always be UTM.
+  PROJ_XY xy;
+  xy.x = in[0];
+  xy.y = in[1];
+
+  const PROJ_LP lp = proj_inv(xy, proj);
+  return Eigen::Vector3d(lp.lam * RAD_TO_DEG, lp.phi * RAD_TO_DEG, in[2]);
+}
+
+#endif
+
+}
 
 //-----------------------------------------------------------------------------
 class vtkLASFileWriter::vtkInternal
@@ -33,6 +121,14 @@ public:
   double MinTime;
   double MaxTime;
   Eigen::Vector3d Origin;
+
+#ifdef PJ_VERSION // 4.8 or later
+  projPJ InProj;
+  projPJ OutProj;
+#else
+  PROJ* Proj;
+#endif
+  int OutGcs;
 };
 
 //-----------------------------------------------------------------------------
@@ -50,6 +146,14 @@ vtkLASFileWriter::vtkLASFileWriter(const char* filename)
   this->Internal->MinTime = -std::numeric_limits<double>::infinity();
   this->Internal->MaxTime = +std::numeric_limits<double>::infinity();
 
+#ifdef PJ_VERSION // 4.8 or later
+  this->Internal->InProj = 0;
+  this->Internal->OutProj = 0;
+#else
+  this->Internal->Proj = 0;
+#endif
+  this->Internal->OutGcs = -1;
+
   this->Internal->Stream.open(
     filename, std::ios::out | std::ios::trunc | std::ios::binary);
 
@@ -64,6 +168,14 @@ vtkLASFileWriter::vtkLASFileWriter(const char* filename)
 vtkLASFileWriter::~vtkLASFileWriter()
 {
   this->Internal->Close();
+
+#ifdef PJ_VERSION // 4.8 or later
+  pj_free(this->Internal->InProj);
+  pj_free(this->Internal->OutProj);
+#else
+  proj_free(this->Internal->Proj);
+#endif
+
   delete this->Internal;
 }
 
@@ -78,15 +190,42 @@ void vtkLASFileWriter::SetTimeRange(double min, double max)
 void vtkLASFileWriter::SetUTMOrigin(
   int zone, double easting, double northing, double height)
 {
+  // Set internal UTM offset
+  Eigen::Vector3d origin(easting, northing, height);
+  this->Internal->Origin = origin;
+
+  // Convert offset to output GCS, if a geoconversion is set up
+  int gcs;
+#ifdef PJ_VERSION // 4.8 or later
+  if (this->Internal->OutProj)
+    {
+    origin =
+      ConvertGcs(origin, this->Internal->InProj, this->Internal->OutProj);
+    gcs = this->Internal->OutGcs;
+    }
+#else
+  if (this->Internal->Proj)
+    {
+    origin = InvertProj(origin, this->Internal->Proj);
+    gcs = this->Internal->OutGcs;
+    }
+#endif
+  else
+    {
+    // UTM North zone based on WGS84
+    gcs = 32600 + zone;
+    }
+
+  // Update header
   liblas::Header header = this->Internal->Writer->GetHeader();
 
-  header.SetOffset(easting, northing, height);
+  header.SetOffset(origin[0], origin[1], origin[2]);
 
   try
     {
     liblas::SpatialReference srs;
     std::ostringstream ss;
-    ss << "EPSG:" << 32600 + zone;
+    ss << "EPSG:" << gcs;
     srs.SetFromUserInput(ss.str());
 
     header.SetSRS(srs);
@@ -98,10 +237,27 @@ void vtkLASFileWriter::SetUTMOrigin(
 
   this->Internal->Writer->SetHeader(header);
   this->Internal->Writer->WriteHeader();
+}
 
-  this->Internal->Origin[0] = easting;
-  this->Internal->Origin[1] = northing;
-  this->Internal->Origin[2] = height;
+//-----------------------------------------------------------------------------
+void vtkLASFileWriter::SetGeoConversion(int in, int out)
+{
+#ifdef PJ_VERSION // 4.8 or later
+  pj_free(this->Internal->InProj);
+  pj_free(this->Internal->OutProj);
+
+  this->Internal->InProj = CreateProj(in);
+  this->Internal->OutProj = CreateProj(out);
+#else
+  // The PROJ 4.7 API makes it near impossible to do generic transforms, hence
+  // InvertProj (see also comments there) is full of assumptions. Assert some
+  // of those assumptions here.
+  assert((in > 32600 && in < 32661) || (in > 32700 && in < 32761));
+  assert(out == 4326);
+
+  proj_free(this->Internal->Proj);
+  this->Internal->Proj = CreateProj(in % 100, in > 32700);
+#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -124,6 +280,18 @@ void vtkLASFileWriter::WriteFrame(vtkPolyData* data)
       Eigen::Vector3d pos;
       points->GetPoint(n, pos.data());
       pos += this->Internal->Origin;
+
+#ifdef PJ_VERSION // 4.8 or later
+      if (this->Internal->OutProj)
+        {
+        pos = ConvertGcs(pos, this->Internal->InProj, this->Internal->OutProj);
+        }
+#else
+      if (this->Internal->Proj)
+        {
+        pos = InvertProj(pos, this->Internal->Proj);
+        }
+#endif
 
       liblas::Point p(&this->Internal->Writer->GetHeader());
       p.SetCoordinates(pos[0], pos[1], pos[2]);
