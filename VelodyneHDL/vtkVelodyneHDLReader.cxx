@@ -279,6 +279,12 @@ void vtkVelodyneHDLReader::SetSensorTransform(vtkTransform* transform)
 }
 
 //-----------------------------------------------------------------------------
+vtkVelodyneTransformInterpolator* vtkVelodyneHDLReader::GetInterpolator() const
+{
+  return this->Internal->Interp;
+}
+
+//-----------------------------------------------------------------------------
 void vtkVelodyneHDLReader::SetInterpolator(
   vtkVelodyneTransformInterpolator* interpolator)
 {

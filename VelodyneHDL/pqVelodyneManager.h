@@ -19,16 +19,20 @@
 
 #include "vvConfigure.h"
 
+class vtkVelodyneHDLReader;
+class vvAppLogic;
+
+class pqPipelineSource;
 class pqServer;
 class pqView;
-class pqPipelineSource;
-class vtkSMSourceProxy;
-class QWidget;
 
-class vvAppLogic;
+class vtkSMSourceProxy;
+
+class vtkPolyData;
 
 class QAction;
 class QLabel;
+class QWidget;
 
 class VelodyneHDLPythonQT_EXPORT pqVelodyneManager : public QObject
 {
@@ -69,9 +73,10 @@ public:
                                int startFrame, int endFrame,
                                const QString& filename);
 
-  static void saveFramesToLAS(vtkSMSourceProxy* proxy,
+  static void saveFramesToLAS(vtkVelodyneHDLReader* reader,
+                              vtkPolyData* position,
                               int startFrame, int endFrame,
-                              const QString& filename);
+                              const QString& filename, int positionMode);
 
 public slots:
 

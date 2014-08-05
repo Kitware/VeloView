@@ -14,6 +14,8 @@
 #include "pqVelodyneManager.h"
 
 #include "vtkLASFileWriter.h"
+#include "vtkVelodyneHDLReader.h"
+#include "vtkVelodyneTransformInterpolator.h"
 #include "vvLoadDataReaction.h"
 #include "vvPythonQtDecorators.h"
 
@@ -34,9 +36,11 @@
 #include <vtkSMPropertyHelper.h>
 #include <vtkSMSourceProxy.h>
 #include <vtkSMViewProxy.h>
+
+#include <vtkFieldData.h>
+#include <vtkPointData.h>
 #include <vtkPythonInterpreter.h>
 #include <vtkTimerLog.h>
-#include <vtkVelodyneHDLReader.h>
 
 #include <QApplication>
 #include <QDir>
@@ -153,22 +157,45 @@ void pqVelodyneManager::saveFramesToPCAP(vtkSMSourceProxy* proxy, int startFrame
 }
 
 //-----------------------------------------------------------------------------
-void pqVelodyneManager::saveFramesToLAS(vtkSMSourceProxy* proxy,
-                                        int startFrame, int endFrame,
-                                        const QString& filename)
+void pqVelodyneManager::saveFramesToLAS(
+  vtkVelodyneHDLReader* reader, vtkPolyData* position,
+  int startFrame, int endFrame, const QString& filename, int positionMode)
 {
-  if (!proxy)
-    {
-    return;
-    }
-
-  vtkVelodyneHDLReader* reader = vtkVelodyneHDLReader::SafeDownCast(proxy->GetClientSideObject());
-  if (!reader)
+  if (!reader || (positionMode > 0 && !position))
     {
     return;
     }
 
   vtkLASFileWriter writer(qPrintable(filename));
+
+  if (positionMode > 0) // not sensor-relative
+    {
+    vtkVelodyneTransformInterpolator* const interp = reader->GetInterpolator();
+    writer.SetTimeRange(interp->GetMinimumT(), interp->GetMaximumT());
+
+    if (positionMode > 1) // Absolute geoposition
+      {
+      vtkDataArray* const zoneData =
+        position->GetFieldData()->GetArray("zone");
+      vtkDataArray* const eastingData =
+        position->GetPointData()->GetArray("easting");
+      vtkDataArray* const northingData =
+        position->GetPointData()->GetArray("northing");
+      vtkDataArray* const heightData =
+        position->GetPointData()->GetArray("height");
+
+      if (zoneData && zoneData->GetNumberOfTuples() &&
+          eastingData && eastingData->GetNumberOfTuples() &&
+          northingData && northingData->GetNumberOfTuples() &&
+          heightData && heightData->GetNumberOfTuples())
+        {
+        writer.SetUTMOrigin(static_cast<int>(zoneData->GetComponent(0, 0)),
+                            eastingData->GetComponent(0, 0),
+                            northingData->GetComponent(0, 0),
+                            heightData->GetComponent(0, 0));
+        }
+      }
+    }
 
   reader->Open();
   for (int frame = startFrame; frame <= endFrame; ++frame)

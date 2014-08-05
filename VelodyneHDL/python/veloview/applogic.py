@@ -496,10 +496,17 @@ def saveCSVCurrentFrame(filename):
     rotateCSVFile(filename)
 
 
-def saveLASCurrentFrame(filename):
-    t = app.scene.AnimationTime
+def saveLASFrames(filename, first, last, transform):
+    reader = getReader().GetClientSideObject()
+    position = getPosition().GetClientSideObject().GetOutput()
+
     PythonQt.paraview.pqVelodyneManager.saveFramesToLAS(
-        getReader().SMProxy, t, t, filename)
+        reader, position, first, last, filename, transform)
+
+
+def saveLASCurrentFrame(filename, transform):
+    t = app.scene.AnimationTime
+    saveLASFrames(filename, t, t, transform)
 
 
 def saveAllFrames(filename, saveFunction):
@@ -542,8 +549,7 @@ def saveLAS(filename, timesteps, transform):
     os.makedirs(outDir)
 
     for t in sorted(timesteps):
-        PythonQt.paraview.pqVelodyneManager.saveFramesToLAS(
-            getReader().SMProxy, t, t, (filenameTemplate % t))
+        saveLASFrames(filenameTemplate % t, t, t, transform)
 
     kiwiviewerExporter.zipDir(outDir, filename)
     kiwiviewerExporter.shutil.rmtree(tempDir)
@@ -665,7 +671,7 @@ def onSaveLAS():
             oldTransform = transformMode()
             setTransformMode(1 if frameOptions.transform else 0)
 
-            saveLASCurrentFrame(fileName)
+            saveLASCurrentFrame(fileName, frameOptions.transform)
 
             setTransformMode(oldTransform)
 
@@ -695,9 +701,13 @@ def onSaveLAS():
         if not fileName:
             return
 
-        proxy = getReader().SMProxy
-        PythonQt.paraview.pqVelodyneManager.saveFramesToLAS(
-            proxy, frameOptions.start, frameOptions.stop, fileName)
+        oldTransform = transformMode()
+        setTransformMode(1 if frameOptions.transform else 0)
+
+        saveLASFrames(fileName, frameOptions.start, frameOptions.stop,
+                      frameOptions.transform)
+
+        setTransformMode(oldTransform)
 
 
 def onSavePCAP():

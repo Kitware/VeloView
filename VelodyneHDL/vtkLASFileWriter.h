@@ -40,6 +40,9 @@ public:
   vtkLASFileWriter(const char* filename);
   ~vtkLASFileWriter();
 
+  void SetTimeRange(double min, double max);
+  void SetUTMOrigin(int zone, double easting, double northing, double height);
+
   void WriteFrame(vtkPolyData* data);
 
 protected:

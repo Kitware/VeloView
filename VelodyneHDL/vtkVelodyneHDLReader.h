@@ -95,6 +95,7 @@ public:
   void ProcessHDLPacket(unsigned char *data, unsigned int bytesReceived);
   std::vector<vtkSmartPointer<vtkPolyData> >& GetDatasets();
 
+  vtkVelodyneTransformInterpolator* GetInterpolator() const;
   void SetInterpolator(vtkVelodyneTransformInterpolator* interpolator);
 
   void SetSensorTransform(vtkTransform*);
