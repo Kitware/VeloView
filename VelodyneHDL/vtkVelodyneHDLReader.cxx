@@ -49,7 +49,6 @@
 #include <vtkStreamingDemandDrivenPipeline.h>
 // #include <vtkTransformInterpolator.h>
 #include <vtkUnsignedCharArray.h>
-#include <vtkUnsignedIntArray.h>
 #include <vtkUnsignedShortArray.h>
 
 #include <vtkTransform.h>
@@ -141,6 +140,8 @@ public:
   {
     this->Skip = 0;
     this->LastAzimuth = 0;
+    this->LastTimestamp = std::numeric_limits<unsigned int>::max();
+    this->TimeAdjust = std::numeric_limits<double>::quiet_NaN();
     this->Reader = 0;
     this->SplitCounter = 0;
     this->NumberOfTrailingFrames = 0;
@@ -171,10 +172,12 @@ public:
   vtkUnsignedCharArray* Intensity;
   vtkUnsignedCharArray* LaserId;
   vtkUnsignedShortArray* Azimuth;
-  vtkDoubleArray*        Distance;
-  vtkUnsignedIntArray* Timestamp;
+  vtkDoubleArray* Distance;
+  vtkDoubleArray* Timestamp;
 
   unsigned int LastAzimuth;
+  unsigned int LastTimestamp;
+  double TimeAdjust;
 
   std::vector<fpos_t> FilePositions;
   std::vector<int> Skips;
@@ -205,7 +208,8 @@ public:
 
   void ProcessHDLPacket(unsigned char *data, std::size_t bytesReceived);
 
-  void ComputeOrientation(unsigned int timestamp, vtkTransform* transform);
+  double ComputeTimestamp(unsigned int tohTime);
+  void ComputeOrientation(double timestamp, vtkTransform* transform);
 
   // Process the laser return from the firing data
   // firingData - one of HDL_FIRING_PER_PKT from the packet
@@ -213,12 +217,12 @@ public:
   // offset - either 0 or 32 to support 64-laser systems
   void ProcessFiring(HDLFiringData* firingData,
                      int offset,
-                     unsigned int gpsTime,
+                     double timestamp,
                      vtkTransform* transform);
 
   void PushFiringData(const unsigned char laserId,
                       unsigned short azimuth,
-                      const unsigned int timestamp,
+                      const double timestamp,
                       const HDLLaserReturn* laserReturn,
                       const HDLLaserCorrection* correction,
                       vtkTransform* transform);
@@ -409,6 +413,9 @@ void vtkVelodyneHDLReader::SetCorrectionsFile(const std::string& correctionsFile
 void vtkVelodyneHDLReader::UnloadData()
 {
   this->Internal->LastAzimuth = 0;
+  this->Internal->LastTimestamp = std::numeric_limits<unsigned int>::max();
+  this->Internal->TimeAdjust = std::numeric_limits<double>::quiet_NaN();
+
   this->Internal->Datasets.clear();
   this->Internal->CurrentDataset = this->Internal->CreateData(0);
 }
@@ -722,7 +729,7 @@ vtkSmartPointer<vtkPolyData> vtkVelodyneHDLReader::vtkInternal::CreateData(vtkId
   this->LaserId = CreateDataArray<vtkUnsignedCharArray>("laser_id", numberOfPoints, polyData);
   this->Azimuth = CreateDataArray<vtkUnsignedShortArray>("azimuth", numberOfPoints, polyData);
   this->Distance = CreateDataArray<vtkDoubleArray>("distance_m", numberOfPoints, polyData);
-  this->Timestamp = CreateDataArray<vtkUnsignedIntArray>("timestamp", numberOfPoints, polyData);
+  this->Timestamp = CreateDataArray<vtkDoubleArray>("timestamp", numberOfPoints, polyData);
 
   return polyData;
 }
@@ -747,7 +754,7 @@ vtkSmartPointer<vtkCellArray> vtkVelodyneHDLReader::vtkInternal::NewVertexCells(
 //-----------------------------------------------------------------------------
 void vtkVelodyneHDLReader::vtkInternal::PushFiringData(const unsigned char laserId,
                                                        unsigned short azimuth,
-                                                       const unsigned int timestamp,
+                                                       const double timestamp,
                                                        const HDLLaserReturn* laserReturn,
                                                        const HDLLaserCorrection* correction,
                                                        vtkTransform* transform)
@@ -941,14 +948,50 @@ void vtkVelodyneHDLReader::vtkInternal::SplitFrame(bool force)
 }
 
 //-----------------------------------------------------------------------------
+double vtkVelodyneHDLReader::vtkInternal::ComputeTimestamp(
+  unsigned int tohTime)
+{
+  static const double hourInMilliseconds = 3600.0 * 1e6;
+
+  if (tohTime < this->LastTimestamp)
+    {
+    if (!std::isfinite(this->TimeAdjust))
+      {
+      // First adjustment; must compute adjustment number
+      if (this->Interp)
+        {
+        const double ts = static_cast<double>(tohTime) * 1e-6;
+        const double hours = (this->Interp->GetMinimumT() - ts) / 3600.0;
+        this->TimeAdjust = std::round(hours) * hourInMilliseconds;
+        }
+      else
+        {
+        // Ought to warn about this, but happens when applogic is checking that
+        // we can read the file :-(
+        this->TimeAdjust = 0;
+        }
+      }
+    else
+      {
+      // Hour has wrapped; add an hour to the update adjustment value
+      this->TimeAdjust += hourInMilliseconds;
+      }
+    }
+
+  this->LastTimestamp = tohTime;
+  return static_cast<double>(tohTime) + this->TimeAdjust;
+}
+
+//-----------------------------------------------------------------------------
 void vtkVelodyneHDLReader::vtkInternal::ComputeOrientation(
-  unsigned int timestamp, vtkTransform* transform)
+  double timestamp, vtkTransform* transform)
 {
   if(this->ApplyTransform && this->Interp)
     {
-    // TODO need timestamp to be in seconds since top of week
-    const double t = (static_cast<double>(timestamp) * 1e-6);
-    this->Interp->InterpolateTransform(std::fmod(t, 3600.0), transform);
+    // NOTE: We store time in milliseconds, but the interpolator uses seconds,
+    //       so we need to adjust here
+    const double t = timestamp * 1e-6;
+    this->Interp->InterpolateTransform(t, transform);
     }
   else
     {
@@ -959,7 +1002,7 @@ void vtkVelodyneHDLReader::vtkInternal::ComputeOrientation(
 //-----------------------------------------------------------------------------
 void vtkVelodyneHDLReader::vtkInternal::ProcessFiring(HDLFiringData* firingData,
                                                       int offset,
-                                                      unsigned int gpsTime,
+                                                      double timestamp,
                                                       vtkTransform* transform)
 {
   for (int j = 0; j < HDL_LASER_PER_FIRING; j++)
@@ -969,7 +1012,7 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessFiring(HDLFiringData* firingData,
       {
       this->PushFiringData(laserId,
                            firingData->rotationalPosition,
-                           gpsTime,
+                           timestamp,
                            &(firingData->laserReturns[j]),
                            &(laser_corrections_[j + offset]),
                            transform);
@@ -988,7 +1031,8 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(unsigned char *data, st
   HDLDataPacket* dataPacket = reinterpret_cast<HDLDataPacket *>(data);
 
   vtkNew<vtkTransform> transform;
-  this->ComputeOrientation(dataPacket->gpsTimestamp, transform.GetPointer());
+  const double timestamp = this->ComputeTimestamp(dataPacket->gpsTimestamp);
+  this->ComputeOrientation(timestamp, transform.GetPointer());
 
   int i = this->Skip;
   this->Skip = 0;
@@ -1008,7 +1052,7 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(unsigned char *data, st
     // Skip this firing every PointSkip
     if(this->PointsSkip == 0 || i % (this->PointsSkip + 1) == 0)
       {
-      this->ProcessFiring(firingData, offset, dataPacket->gpsTimestamp,
+      this->ProcessFiring(firingData, offset, timestamp,
                           transform.GetPointer());
       }
     }
