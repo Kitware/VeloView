@@ -89,6 +89,7 @@ vtkApplanixPositionReader::vtkApplanixPositionReader()
   this->BaseYaw = 0.0;
   this->BaseRoll = 0.0;
   this->BasePitch = 0.0;
+  this->TimeOffset = 16.0; // correct for at least 2012-Jul - 2015-May
 
   this->SetNumberOfInputPorts(0);
   this->SetNumberOfOutputPorts(1);
@@ -289,9 +290,7 @@ int vtkApplanixPositionReader::RequestData(
     transform->RotateX(pitchData->GetValue(n) - this->BasePitch);
     transform->Translate(pos);
 
-    // FIXME make offset configurable, don't apply top-of-hour conversion
-    const double timestamp =
-      std::fmod(timeData->GetValue(n) - 16.0, 3600.0);
+    const double timestamp = timeData->GetValue(n) - this->TimeOffset;
     this->Internal->Interpolator->AddTransform(timestamp,
                                                transform.GetPointer());
     }

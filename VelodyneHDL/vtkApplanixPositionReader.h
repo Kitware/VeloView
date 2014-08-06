@@ -65,6 +65,13 @@ public:
   vtkSetMacro(BasePitch, double);
   vtkGetMacro(BasePitch, double);
 
+  // Description:
+  // Set/Get the time offset adjustment to apply to the time values. This is
+  // meant to correct the offset between GPS time (as provided by the Applanix
+  // sensor) and UTC time (as used by the Velodyne sensor).
+  vtkSetMacro(TimeOffset, double);
+  vtkGetMacro(TimeOffset, double);
+
   //Description:
   int CanReadFile(const char* fname) { return 1; }
 
@@ -84,6 +91,8 @@ protected:
   double BaseYaw;
   double BaseRoll;
   double BasePitch;
+
+  double TimeOffset;
 
   class vtkInternal;
   vtkInternal* Internal;
