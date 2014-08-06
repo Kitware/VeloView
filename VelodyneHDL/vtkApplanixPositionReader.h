@@ -47,6 +47,24 @@ public:
   vtkSetStringMacro(FileName);
   vtkGetStringMacro(FileName);
 
+  // Description:
+  // Set/Get the "base" yaw orientation of the GPS sensor. The value is
+  // subtracted from the reported yaw to get actual yaw.
+  vtkSetMacro(BaseYaw, double);
+  vtkGetMacro(BaseYaw, double);
+
+  // Description:
+  // Set/Get the "base" roll orientation of the GPS sensor. The value is
+  // subtracted from the reported roll to get actual roll.
+  vtkSetMacro(BaseRoll, double);
+  vtkGetMacro(BaseRoll, double);
+
+  // Description:
+  // Set/Get the "base" pitch orientation of the GPS sensor. The value is
+  // subtracted from the reported pitch to get actual pitch.
+  vtkSetMacro(BasePitch, double);
+  vtkGetMacro(BasePitch, double);
+
   //Description:
   int CanReadFile(const char* fname) { return 1; }
 
@@ -62,6 +80,10 @@ protected:
                           vtkInformationVector*);
 
   char* FileName;
+
+  double BaseYaw;
+  double BaseRoll;
+  double BasePitch;
 
   class vtkInternal;
   vtkInternal* Internal;

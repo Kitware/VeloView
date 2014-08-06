@@ -202,6 +202,9 @@ def chooseCalibration():
     class Calibration(object):
         def __init__(self, dialog):
             self.calibrationFile = dialog.selectedCalibrationFile()
+            self.gpsYaw = dialog.gpsYaw()
+            self.gpsRoll = dialog.gpsRoll()
+            self.gpsPitch = dialog.gpsPitch()
             self.sensorTransform = vtk.vtkTransform()
 
             qm = dialog.sensorTransform()
@@ -310,6 +313,9 @@ def openPCAP(filename, positionFilename=None):
     else:
         posreader = smp.ApplanixPositionReader(guiName="Position",
                                                FileName=positionFilename)
+        posreader.BaseYaw = calibration.gpsYaw
+        posreader.BaseRoll = calibration.gpsRoll
+        posreader.BasePitch = calibration.gpsPitch
 
     smp.Show(posreader)
 

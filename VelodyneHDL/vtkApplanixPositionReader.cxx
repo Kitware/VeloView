@@ -86,6 +86,9 @@ vtkApplanixPositionReader::vtkApplanixPositionReader()
 {
   this->Internal = new vtkInternal;
   this->FileName = 0;
+  this->BaseYaw = 0.0;
+  this->BaseRoll = 0.0;
+  this->BasePitch = 0.0;
 
   this->SetNumberOfInputPorts(0);
   this->SetNumberOfOutputPorts(1);
@@ -281,9 +284,9 @@ int vtkApplanixPositionReader::RequestData(
 
     vtkNew<vtkTransform> transform;
     transform->PostMultiply();
-    transform->RotateZ(-headingData->GetValue(n));
-    transform->RotateY(rollData->GetValue(n) + 180.0); // FIXME - get from UI
-    transform->RotateX(pitchData->GetValue(n));
+    transform->RotateZ(-headingData->GetValue(n) - this->BaseYaw);
+    transform->RotateY(rollData->GetValue(n) - this->BaseRoll);
+    transform->RotateX(pitchData->GetValue(n) - this->BasePitch);
     transform->Translate(pos);
 
     const double timestamp =
