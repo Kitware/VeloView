@@ -168,7 +168,7 @@ QVector<int> vvLaserSelectionDialog::getLaserSelectionSelector()
     QTableWidgetItem* item = this->Internal->Table->item(i, 0);
     QTableWidgetItem* value = this->Internal->Table->item(i, 2);
     int channel = value->data(Qt::EditRole).toInt();
-    assert(channel < 64 && channel > 0);
+    assert(channel < 64 && channel >= 0);
     result[channel] = (item->checkState() == Qt::Checked);
     }
   return result;
@@ -182,7 +182,7 @@ void vvLaserSelectionDialog::setVerticalCorrections(const QVector<double>& corre
     QTableWidgetItem* item = this->Internal->Table->item(i, 1);
     QTableWidgetItem* value = this->Internal->Table->item(i, 2);
     int channel = value->data(Qt::EditRole).toInt();
-    assert(channel < 64 && channel > 0);
+    assert(channel < 64 && channel >= 0);
     item->setData(Qt::EditRole, corrections[channel]);
     }
 
@@ -214,7 +214,7 @@ void vvLaserSelectionDialog::setLaserSelectionSelector(const QVector<int>& mask)
     QTableWidgetItem* item = this->Internal->Table->item(i, 0);
     QTableWidgetItem* value = this->Internal->Table->item(i, 2);
     int channel = value->data(Qt::EditRole).toInt();
-    assert(channel < 64 && channel > 0);
+    assert(channel < 64 && channel >= 0);
     item->setCheckState(mask[channel] ? Qt::Checked : Qt::Unchecked);
     }
 }
