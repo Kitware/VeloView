@@ -1130,7 +1130,7 @@ def updatePosition():
             # TODO: Approximate time, just grabbing the last
             t = pointcloud.GetPointData().GetScalars('timestamp')
             #currentTime = t.GetTuple1(t.GetNumberOfTuples() - 1)
-            currentTime = ((t.GetTuple1(0) * 1e-6) + 16) % 3600.0
+            currentTime = (t.GetTuple1(0) * 1e-6) % 3600.0
 
             interp = getPosition().GetClientSideObject().GetInterpolator()
             trange = [interp.GetMinimumT(), interp.GetMaximumT()]

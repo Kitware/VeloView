@@ -289,8 +289,9 @@ int vtkApplanixPositionReader::RequestData(
     transform->RotateX(pitchData->GetValue(n) - this->BasePitch);
     transform->Translate(pos);
 
+    // FIXME make offset configurable, don't apply top-of-hour conversion
     const double timestamp =
-      std::fmod(timeData->GetValue(n), 3600.0);
+      std::fmod(timeData->GetValue(n) - 16.0, 3600.0);
     this->Internal->Interpolator->AddTransform(timestamp,
                                                transform.GetPointer());
     }

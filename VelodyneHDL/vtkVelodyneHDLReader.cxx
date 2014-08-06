@@ -946,8 +946,8 @@ void vtkVelodyneHDLReader::vtkInternal::ComputeOrientation(
 {
   if(this->ApplyTransform && this->Interp)
     {
-    // TODO apply "more correct" UTC -> GPS transform?
-    const double t = (static_cast<double>(timestamp) * 1e-6) + 16;
+    // TODO need timestamp to be in seconds since top of week
+    const double t = (static_cast<double>(timestamp) * 1e-6);
     this->Interp->InterpolateTransform(std::fmod(t, 3600.0), transform);
     }
   else
