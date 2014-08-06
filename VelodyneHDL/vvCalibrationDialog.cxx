@@ -25,47 +25,142 @@
 class vvCalibrationDialog::pqInternal : public Ui::vvCalibrationDialog
 {
 public:
+  pqInternal() : Settings(pqApplicationCore::instance()->settings()) {}
 
+  void saveFileList();
+  void saveSelectedRow();
+  void restoreSelectedRow();
+
+  void saveSensorTransform();
+  void restoreSensorTransform();
+
+  pqSettings* const Settings;
 };
 
 //-----------------------------------------------------------------------------
-vvCalibrationDialog::vvCalibrationDialog(QWidget *p) : QDialog(p)
+void vvCalibrationDialog::pqInternal::saveFileList()
 {
-  this->Internal = new pqInternal;
+  QStringList files;
+  for (int i = 1; i < this->ListWidget->count(); ++i)
+    {
+    files << this->ListWidget->item(i)->text();
+    }
+
+  this->Settings->setValue(
+    "VelodyneHDLPlugin/CalibrationFileDialog/Files", files);
+}
+
+//-----------------------------------------------------------------------------
+void vvCalibrationDialog::pqInternal::saveSelectedRow()
+{
+  this->Settings->setValue(
+    "VelodyneHDLPlugin/CalibrationFileDialog/CurrentRow",
+    this->ListWidget->currentRow());
+}
+
+//-----------------------------------------------------------------------------
+void vvCalibrationDialog::pqInternal::restoreSelectedRow()
+{
+  int row = this->Settings->value(
+              "VelodyneHDLPlugin/CalibrationFileDialog/CurrentRow").toInt();
+  this->ListWidget->setCurrentRow(row);
+}
+
+//-----------------------------------------------------------------------------
+void vvCalibrationDialog::pqInternal::saveSensorTransform()
+{
+  this->Settings->setValue(
+    "VelodyneHDLPlugin/CalibrationFileDialog/SensorOriginX",
+    this->OriginXSpinBox->value());
+  this->Settings->setValue(
+    "VelodyneHDLPlugin/CalibrationFileDialog/SensorOriginY",
+    this->OriginYSpinBox->value());
+  this->Settings->setValue(
+    "VelodyneHDLPlugin/CalibrationFileDialog/SensorOriginZ",
+    this->OriginZSpinBox->value());
+  this->Settings->setValue(
+    "VelodyneHDLPlugin/CalibrationFileDialog/SensorYaw",
+    this->YawSpinBox->value());
+  this->Settings->setValue(
+    "VelodyneHDLPlugin/CalibrationFileDialog/SensorPitch",
+    this->PitchSpinBox->value());
+  this->Settings->setValue(
+    "VelodyneHDLPlugin/CalibrationFileDialog/SensorRoll",
+    this->RollSpinBox->value());
+}
+
+//-----------------------------------------------------------------------------
+void vvCalibrationDialog::pqInternal::restoreSensorTransform()
+{
+  this->OriginXSpinBox->setValue(
+    this->Settings->value(
+      "VelodyneHDLPlugin/CalibrationFileDialog/SensorOriginX",
+      this->OriginXSpinBox->value()).toDouble());
+  this->OriginYSpinBox->setValue(
+    this->Settings->value(
+      "VelodyneHDLPlugin/CalibrationFileDialog/SensorOriginY",
+      this->OriginYSpinBox->value()).toDouble());
+  this->OriginZSpinBox->setValue(
+    this->Settings->value(
+      "VelodyneHDLPlugin/CalibrationFileDialog/SensorOriginZ",
+      this->OriginZSpinBox->value()).toDouble());
+  this->YawSpinBox->setValue(
+    this->Settings->value(
+      "VelodyneHDLPlugin/CalibrationFileDialog/SensorYaw",
+      this->YawSpinBox->value()).toDouble());
+  this->PitchSpinBox->setValue(
+    this->Settings->value(
+      "VelodyneHDLPlugin/CalibrationFileDialog/SensorPitch",
+      this->PitchSpinBox->value()).toDouble());
+  this->RollSpinBox->setValue(
+    this->Settings->value(
+      "VelodyneHDLPlugin/CalibrationFileDialog/SensorRoll",
+      this->RollSpinBox->value()).toDouble());
+}
+
+//-----------------------------------------------------------------------------
+vvCalibrationDialog::vvCalibrationDialog(QWidget *p)
+  : QDialog(p), Internal(new pqInternal)
+{
   this->Internal->setupUi(this);
 
-  this->Internal->ListWidget->addItem("None");
+  this->Internal->ListWidget->addItem("(None)");
   this->Internal->ListWidget->addItems(this->calibrationFiles());
 
-  this->connect(this->Internal->ListWidget, SIGNAL(currentRowChanged(int)), SLOT(onCurrentRowChanged(int)));
-  this->connect(this->Internal->AddButton, SIGNAL(clicked()), SLOT(addFile()));
-  this->connect(this->Internal->RemoveButton, SIGNAL(clicked()), SLOT(removeSelectedFile()));
+  connect(this->Internal->ListWidget, SIGNAL(currentRowChanged(int)),
+          this, SLOT(onCurrentRowChanged(int)));
+  connect(this->Internal->AddButton, SIGNAL(clicked()),
+          this, SLOT(addFile()));
+  connect(this->Internal->RemoveButton, SIGNAL(clicked()),
+          this, SLOT(removeSelectedFile()));
 
-  this->restoreSelectedRow();
+  this->Internal->restoreSelectedRow();
+  this->Internal->restoreSensorTransform();
 
-  pqSettings* settings = pqApplicationCore::instance()->settings();
-  this->restoreGeometry(settings->value("VelodyneHDLPlugin/CalibrationFileDialog/Geometry").toByteArray());
+  const QVariant& geometry =
+    this->Internal->Settings->value(
+      "VelodyneHDLPlugin/CalibrationFileDialog/Geometry");
+  this->restoreGeometry(geometry.toByteArray());
 }
 
 //-----------------------------------------------------------------------------
 vvCalibrationDialog::~vvCalibrationDialog()
 {
-  pqSettings* settings = pqApplicationCore::instance()->settings();
-  settings->setValue("VelodyneHDLPlugin/CalibrationFileDialog/Geometry", this->saveGeometry());
-  delete this->Internal;
+  this->Internal->Settings->setValue(
+    "VelodyneHDLPlugin/CalibrationFileDialog/Geometry", this->saveGeometry());
 }
 
 //-----------------------------------------------------------------------------
-QStringList vvCalibrationDialog::calibrationFiles()
+QStringList vvCalibrationDialog::calibrationFiles() const
 {
-  pqSettings* settings = pqApplicationCore::instance()->settings();
-  return settings->value("VelodyneHDLPlugin/CalibrationFileDialog/Files").toStringList();
+  return this->Internal->Settings->value(
+           "VelodyneHDLPlugin/CalibrationFileDialog/Files").toStringList();
 }
 
 //-----------------------------------------------------------------------------
-QString vvCalibrationDialog::selectedCalibrationFile()
+QString vvCalibrationDialog::selectedCalibrationFile() const
 {
-  int row = this->Internal->ListWidget->currentRow();
+  const int row = this->Internal->ListWidget->currentRow();
   if (row > 0)
     {
     return this->Internal->ListWidget->item(row)->text();
@@ -74,24 +169,45 @@ QString vvCalibrationDialog::selectedCalibrationFile()
 }
 
 //-----------------------------------------------------------------------------
+QMatrix4x4 vvCalibrationDialog::sensorTransform() const
+{
+  QMatrix4x4 transform;
+  transform.rotate(this->Internal->YawSpinBox->value(), 0.0, 0.0, 1.0);
+  transform.rotate(this->Internal->PitchSpinBox->value(), 1.0, 0.0, 0.0);
+  transform.rotate(this->Internal->RollSpinBox->value(), 0.0, 1.0, 0.0);
+  transform.translate(this->Internal->OriginXSpinBox->value(),
+                      this->Internal->OriginYSpinBox->value(),
+                      this->Internal->OriginZSpinBox->value());
+
+  return transform;
+}
+
+//-----------------------------------------------------------------------------
+void vvCalibrationDialog::accept()
+{
+  this->Internal->saveSelectedRow();
+  this->Internal->saveSensorTransform();
+  QDialog::accept();
+}
+
+//-----------------------------------------------------------------------------
 void vvCalibrationDialog::onCurrentRowChanged(int row)
 {
   this->Internal->RemoveButton->setEnabled(row != 0);
-  this->saveSelectedRow();
 }
 
 //-----------------------------------------------------------------------------
 void vvCalibrationDialog::addFile()
 {
-
-  pqSettings* settings = pqApplicationCore::instance()->settings();
-  QString defaultDir = settings->value("VelodyneHDLPlugin/OpenData/DefaultDir", QDir::homePath()).toString();
+  QString defaultDir =
+    this->Internal->Settings->value("VelodyneHDLPlugin/OpenData/DefaultDir",
+                                    QDir::homePath()).toString();
 
 
   QString selectedFiler("*.xml");
-  QString fileName = QFileDialog::getOpenFileName(this, tr("Choose Calibration File"),
-                          defaultDir,
-                          tr("xml (*.xml)"), &selectedFiler);
+  QString fileName = QFileDialog::getOpenFileName(
+                       this, tr("Choose Calibration File"), defaultDir,
+                       tr("xml (*.xml)"), &selectedFiler);
 
   if (fileName.isEmpty())
     {
@@ -99,48 +215,22 @@ void vvCalibrationDialog::addFile()
     }
 
   this->Internal->ListWidget->addItem(fileName);
-  this->Internal->ListWidget->setCurrentRow(this->Internal->ListWidget->count()-1);
-  this->saveFileList();
+  this->Internal->ListWidget->setCurrentRow(
+    this->Internal->ListWidget->count() - 1);
+  this->Internal->saveFileList();
 
-  settings->setValue("VelodyneHDLPlugin/OpenData/DefaultDir", QFileInfo(fileName).absoluteDir().absolutePath());
+  this->Internal->Settings->setValue(
+    "VelodyneHDLPlugin/OpenData/DefaultDir",
+    QFileInfo(fileName).absoluteDir().absolutePath());
 }
 
 //-----------------------------------------------------------------------------
 void vvCalibrationDialog::removeSelectedFile()
 {
-  int row = this->Internal->ListWidget->currentRow();
-  if (row >= 0)
+  const int row = this->Internal->ListWidget->currentRow();
+  if (row > 0)
     {
     delete this->Internal->ListWidget->takeItem(row);
-    this->saveFileList();
+    this->Internal->saveFileList();
     }
-}
-
-//-----------------------------------------------------------------------------
-void vvCalibrationDialog::saveFileList()
-{
-  QStringList files;
-  for (int i = 1; i < this->Internal->ListWidget->count(); ++i)
-    {
-    files << this->Internal->ListWidget->item(i)->text();
-    }
-
-  pqSettings* settings = pqApplicationCore::instance()->settings();
-  settings->setValue("VelodyneHDLPlugin/CalibrationFileDialog/Files", files);
-}
-
-//-----------------------------------------------------------------------------
-void vvCalibrationDialog::saveSelectedRow()
-{
-  pqSettings* settings = pqApplicationCore::instance()->settings();
-  settings->setValue("VelodyneHDLPlugin/CalibrationFileDialog/CurrentRow", this->Internal->ListWidget->currentRow());
-}
-
-//-----------------------------------------------------------------------------
-void vvCalibrationDialog::restoreSelectedRow()
-{
-  pqSettings* settings = pqApplicationCore::instance()->settings();
-  int row = settings->value("VelodyneHDLPlugin/CalibrationFileDialog/CurrentRow").toInt();
-  this->Internal->ListWidget->setCurrentRow(row);
-  this->onCurrentRowChanged(row);
 }

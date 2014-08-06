@@ -80,7 +80,6 @@ public slots:
   void pythonStartup();
 
   void onOpenSensor();
-  void onChooseCalibrationFile();
   void onMeasurementGrid();
 
 signals:

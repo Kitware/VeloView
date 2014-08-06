@@ -29,7 +29,7 @@ import kiwiviewerExporter
 import gridAdjustmentDialog
 import planefit
 
-from PythonQt.paraview import vvSelectFramesDialog
+from PythonQt.paraview import vvCalibrationDialog, vvSelectFramesDialog
 
 _repCache = {}
 
@@ -197,7 +197,38 @@ def getDefaultSaveFileName(extension, suffix='', appendFrameNumber=False):
         return '%s%s.%s' % (basename, suffix, extension)
 
 
+def chooseCalibration():
+
+    class Calibration(object):
+        def __init__(self, dialog):
+            self.calibrationFile = dialog.selectedCalibrationFile()
+            self.sensorTransform = vtk.vtkTransform()
+
+            qm = dialog.sensorTransform()
+            vm = vtk.vtkMatrix4x4()
+            for row in xrange(4):
+                vm.SetElement(row, 0, qm.row(row).x())
+                vm.SetElement(row, 1, qm.row(row).y())
+                vm.SetElement(row, 2, qm.row(row).z())
+                vm.SetElement(row, 3, qm.row(row).w())
+            self.sensorTransform.SetMatrix(vm)
+
+
+    dialog = vvCalibrationDialog(getMainWindow())
+    if not dialog.exec_():
+        return None
+
+    return Calibration(dialog)
+
+
 def openSensor(calibrationFile):
+
+    calibration = chooseCalibration()
+    if not calibration:
+        return
+
+    calibrationFile = calibration.calibrationFile
+    sensorTransform = calibration.sensorTransform
 
     close()
 
@@ -220,7 +251,14 @@ def openSensor(calibrationFile):
 
     play()
 
-def openPCAP(filename, calibrationFile):
+def openPCAP(filename):
+
+    calibration = chooseCalibration()
+    if not calibration:
+        return
+
+    calibrationFile = calibration.calibrationFile
+    sensorTransform = calibration.sensorTransform
 
     close()
 
@@ -245,6 +283,7 @@ def openPCAP(filename, calibrationFile):
                                    CalibrationFile=calibrationFile,
                                    NumberOfTrailingFrames=app.trailingFramesSpinBox.value,
                                    PointsSkip=app.trailingFramesSpinBox.value)
+    reader.GetClientSideObject().SetSensorTransform(sensorTransform)
     reader.UpdatePipeline()
 
     handler.RemoveObserver(tag)
@@ -727,7 +766,7 @@ def getVersionString():
   return QtGui.QApplication.instance().applicationVersion
 
 
-def onDevelopperGuide():
+def onDeveloperGuide():
     basePath = PythonQt.QtGui.QApplication.instance().applicationDirPath()
 
     paths = ['../Resources/VeloView_Developer_Guide.pdf']
@@ -1172,13 +1211,22 @@ def getPosition():
 def getGlyph():
     return getattr(app, 'position', (None, None, None))[2]
 
-def setCalibrationFile(calibrationFile):
+def onChooseCalibrationFile():
+
+    calibration = chooseCalibration()
+    if not calibration:
+        return
+
+    calibrationFile = calibration.calibrationFile
+    sensorTransform = calibration.sensorTransform
 
     reader = getReader()
     sensor = getSensor()
 
     if reader is not None:
+        reader.GetClientSideObject().SetSensorTransform(sensorTransform)
         reader.CalibrationFile = calibrationFile
+        reader.DummyProperty = not reader.DummyProperty
         smp.Render()
 
     elif sensor is not None:
@@ -1536,7 +1584,7 @@ def openRecentFile(filename):
         return
 
     if os.path.splitext(filename)[1].lower() == '.pcap':
-        openPCAP(filename, calibrationFile='')
+        openPCAP(filename)
     else:
         openData(filename)
 
@@ -1678,13 +1726,14 @@ def setupActions():
     app.actions['actionReset_Camera'].connect('triggered()', resetCamera)
     app.actions['actionGrid_Properties'].connect('triggered()', onGridProperties)
     app.actions['actionLaserSelection'].connect('triggered()', onLaserSelection)
+    app.actions['actionChoose_Calibration_File'].connect('triggered()', onChooseCalibrationFile)
     app.actions['actionSeek_Forward'].connect('triggered()', seekForward)
     app.actions['actionSeek_Backward'].connect('triggered()', seekBackward)
     app.actions['actionGo_To_End'].connect('triggered()', gotoEnd)
     app.actions['actionGo_To_Start'].connect('triggered()', gotoStart)
     app.actions['actionNative_File_Dialogs'].connect('triggered()', onNativeFileDialogsAction)
     app.actions['actionAbout_VeloView'].connect('triggered()', onAbout)
-    app.actions['actionVeloViewDeveloperGuide'].connect('triggered()', onDevelopperGuide)
+    app.actions['actionVeloViewDeveloperGuide'].connect('triggered()', onDeveloperGuide)
     app.actions['actionClear_Menu'].connect('triggered()', onClearMenu)
 
     app.actions['actionToggleProjection'].connect('triggered()', toggleProjectionType)

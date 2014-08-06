@@ -15,7 +15,6 @@
 
 #include "vtkLASFileWriter.h"
 #include "vvLoadDataReaction.h"
-#include "vvCalibrationDialog.h"
 #include "vvPythonQtDecorators.h"
 
 #include <pqActiveObjects.h>
@@ -221,7 +220,6 @@ void pqVelodyneManager::setup(QAction* openFile, QAction* close, QAction* openSe
   measurementGrid->setChecked(gridVisible);
 
   this->connect(openSensor, SIGNAL(triggered()), SLOT(onOpenSensor()));
-  this->connect(chooseCalibrationFile, SIGNAL(triggered()), SLOT(onChooseCalibrationFile()));
 
   this->connect(measurementGrid, SIGNAL(triggered()), SLOT(onMeasurementGrid()));
 
@@ -235,17 +233,7 @@ void pqVelodyneManager::openData(const QString& filename)
 {
   if (QFileInfo(filename).suffix() == "pcap")
     {
-      vvCalibrationDialog dialog;
-      int accepted = dialog.exec();
-
-      if (!accepted)
-        {
-        return;
-        }
-
-      QString calibrationFile = dialog.selectedCalibrationFile();
-
-      this->runPython(QString("vv.openPCAP('%1', '%2')\n").arg(filename).arg(calibrationFile));
+    this->runPython(QString("vv.openPCAP('%1')\n").arg(filename));
     }
   else
     {
@@ -273,33 +261,7 @@ void pqVelodyneManager::onMeasurementGrid()
 //-----------------------------------------------------------------------------
 void pqVelodyneManager::onOpenSensor()
 {
-  vvCalibrationDialog dialog;
-  int accepted = dialog.exec();
-
-  if (!accepted)
-    {
-    return;
-    }
-
-  QString calibrationFile = dialog.selectedCalibrationFile();
-
-  this->runPython(QString("vv.openSensor('%1')\n").arg(calibrationFile));
-}
-
-//-----------------------------------------------------------------------------
-void pqVelodyneManager::onChooseCalibrationFile()
-{
-  vvCalibrationDialog dialog;
-  int accepted = dialog.exec();
-
-  if (!accepted)
-    {
-    return;
-    }
-
-  QString calibrationFile = dialog.selectedCalibrationFile();
-
-  this->runPython(QString("vv.setCalibrationFile('%1')\n").arg(calibrationFile));
+  this->runPython("vv.openSensor()\n");
 }
 
 //-----------------------------------------------------------------------------
