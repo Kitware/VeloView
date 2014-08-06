@@ -255,6 +255,15 @@ void vtkLASFileWriter::SetGeoConversion(int in, int out)
 }
 
 //-----------------------------------------------------------------------------
+void vtkLASFileWriter::SetPrecision(double neTol, double hTol)
+{
+  liblas::Header header = this->Internal->Writer->GetHeader();
+  header.SetScale(neTol, neTol, hTol);
+  this->Internal->Writer->SetHeader(header);
+  this->Internal->Writer->WriteHeader();
+}
+
+//-----------------------------------------------------------------------------
 void vtkLASFileWriter::WriteFrame(vtkPolyData* data)
 {
   vtkPoints* const points = data->GetPoints();

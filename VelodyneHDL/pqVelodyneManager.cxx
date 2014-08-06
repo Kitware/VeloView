@@ -195,6 +195,7 @@ void pqVelodyneManager::saveFramesToLAS(
         if (positionMode == 3) // Absolute lat/lon
           {
           writer.SetGeoConversion(gcs, 4326); // ...or 32700?
+          writer.SetPrecision(1e-8); // about 1 mm
           }
 
         writer.SetOrigin(gcs,
