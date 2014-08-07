@@ -52,6 +52,9 @@ add_revision(eigen
   URL http://vtk.org/files/support/eigen-3.1.2.tar.gz
   URL_MD5 bb639388192cb80f1ee797f5dbdbe74f)
 
+#add_revision(liblas
+#  GIT_REPOSITORY git://github.com/libLAS/libLAS
+#  GIT_TAG 6e8657336ba445fcec3c9e70c2ebcd2e25af40b9)
 add_revision(liblas
-  GIT_REPOSITORY git://github.com/libLAS/libLAS
-  GIT_TAG master)
+  GIT_REPOSITORY git://github.com/mwoehlke-kitware/libLAS
+  GIT_TAG fix-windows-stdint)
