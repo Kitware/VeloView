@@ -224,6 +224,10 @@ void vtkLASFileWriter::SetOrigin(
 
     header.SetSRS(srs);
     }
+  catch (std::logic_error)
+    {
+    std::cerr << "failed to set SRS (logic)" << std::endl;
+    }
   catch (std::runtime_error)
     {
     std::cerr << "failed to set SRS" << std::endl;
