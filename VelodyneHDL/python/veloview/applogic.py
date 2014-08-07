@@ -1145,8 +1145,8 @@ def updatePosition():
 
             rep = cachedGetRepresentation(reader, view=app.mainView)
             if app.relativeTransform:
-                rep.Position = transform.GetPosition()
-                rep.Orientation = transform.GetOrientation()
+                rep.Position = transform.GetInverse().GetPosition()
+                rep.Orientation = transform.GetInverse().GetOrientation()
             else:
                 rep.Position = [0.0, 0.0, 0.0]
                 rep.Orientation = [0.0, 0.0, 0.0]
