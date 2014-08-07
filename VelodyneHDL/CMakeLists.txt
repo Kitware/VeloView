@@ -23,7 +23,12 @@ find_path(PCAP_INCLUDE_DIR pcap.h DOC "pcap include directory")
 mark_as_advanced(PCAP_LIBRARY PCAP_INCLUDE_DIR)
 include_directories(${PCAP_INCLUDE_DIR})
 
-find_library(liblas_LIBRARY las DOC "liblas library")
+set(LASNAME las)
+if(WIN32)
+  set(LASNAME liblas)
+endif()
+
+find_library(liblas_LIBRARY ${LASNAME} DOC "liblas library")
 find_path(liblas_INCLUDE_DIR liblas/version.hpp DOC "liblas include directory")
 mark_as_advanced(liblas_LIBRARY liblas_INCLUDE_DIR)
 include_directories(${liblas_INCLUDE_DIR})
