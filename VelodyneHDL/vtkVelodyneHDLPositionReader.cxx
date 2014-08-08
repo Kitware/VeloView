@@ -67,10 +67,6 @@
 
 #include <cmath>
 
-#if __cplusplus < 201103L || (defined(_MSC_VER) && _MSC_VER < 1700)
-namespace std { using ::round; }
-#endif
-
 #ifdef _MSC_VER
 # include <boost/cstdint.hpp>
 typedef boost::uint8_t uint8_t;
