@@ -256,6 +256,8 @@ void vtkLASFileWriter::SetGeoConversion(int in, int out)
   proj_free(this->Internal->Proj);
   this->Internal->Proj = CreateProj(in % 100, in > 32700);
 #endif
+
+  this->Internal->OutGcs = out;
 }
 
 //-----------------------------------------------------------------------------
