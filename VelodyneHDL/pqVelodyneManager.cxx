@@ -49,7 +49,7 @@
 #include <QLabel>
 #include <QMainWindow>
 #include <QTimer>
-
+#include <QProgressDialog>
 
 //-----------------------------------------------------------------------------
 class pqVelodyneManager::pqInternal
@@ -206,9 +206,19 @@ void pqVelodyneManager::saveFramesToLAS(
       }
     }
 
+  QProgressDialog progress("Exporting LAS...", "Abort Export", startFrame, endFrame, getMainWindow());
+  progress.setWindowModality(Qt::WindowModal);
+
   reader->Open();
   for (int frame = startFrame; frame <= endFrame; ++frame)
     {
+    progress.setValue(frame);
+
+    if(progress.wasCanceled())
+      {
+      break;
+      }
+
     const vtkSmartPointer<vtkPolyData>& data = reader->GetFrame(frame);
     writer.WriteFrame(data.GetPointer());
     }
