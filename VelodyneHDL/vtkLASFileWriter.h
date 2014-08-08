@@ -32,9 +32,11 @@
 #ifndef __vtkLASFileWriter_h
 #define __vtkLASFileWriter_h
 
+#include <vtkSystemIncludes.h>
+
 class vtkPolyData;
 
-class vtkLASFileWriter
+class VTK_EXPORT vtkLASFileWriter
 {
 public:
   vtkLASFileWriter(const char* filename);
