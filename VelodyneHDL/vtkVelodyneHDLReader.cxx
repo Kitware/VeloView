@@ -62,11 +62,6 @@
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
 
-
-#if __cplusplus < 201103L || (defined(_MSC_VER) && _MSC_VER < 1700)
-namespace std { using ::round; }
-#endif
-
 #ifdef _MSC_VER
 # include <boost/cstdint.hpp>
 typedef boost::uint8_t uint8_t;
@@ -966,7 +961,7 @@ double vtkVelodyneHDLReader::vtkInternal::ComputeTimestamp(
         {
         const double ts = static_cast<double>(tohTime) * 1e-6;
         const double hours = (this->Interp->GetMinimumT() - ts) / 3600.0;
-        this->TimeAdjust = std::round(hours) * hourInMilliseconds;
+        this->TimeAdjust = vtkMath::Round(hours) * hourInMilliseconds;
         }
       else
         {
