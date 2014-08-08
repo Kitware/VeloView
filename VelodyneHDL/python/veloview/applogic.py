@@ -224,7 +224,7 @@ def chooseCalibration():
     return Calibration(dialog)
 
 
-def openSensor(calibrationFile):
+def openSensor():
 
     calibration = chooseCalibration()
     if not calibration:
