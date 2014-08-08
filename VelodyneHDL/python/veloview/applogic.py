@@ -682,7 +682,7 @@ def onSaveLAS():
             setTransformMode(oldTransform)
 
     elif frameOptions.pack == vvSelectFramesDialog.FILE_PER_FRAME:
-        fileName = getSaveFileName('Save CSV (to zip file)', 'zip',
+        fileName = getSaveFileName('Save LAS (to zip file)', 'zip',
                                    getDefaultSaveFileName('zip'))
         if fileName:
             oldTransform = transformMode()
