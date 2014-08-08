@@ -113,8 +113,8 @@ pqPipelineSource* vvLoadDataReaction::loadData()
   if (this->SeparatePositionFile)
     {
     fileName = QFileDialog::getOpenFileName(
-      pqCoreUtilities::mainWidget(), tr("Open LiDAR File"),
-      defaultDir, "Wireshark Capture (*.pcap);;All files(*)");
+      pqCoreUtilities::mainWidget(), tr("Open LiDAR File"), defaultDir,
+      "Wireshark Capture (*.pcap);;All files(*)");
 
     if (fileName.isEmpty())
       {
@@ -122,8 +122,8 @@ pqPipelineSource* vvLoadDataReaction::loadData()
       }
 
     positionFileName = QFileDialog::getOpenFileName(
-      pqCoreUtilities::mainWidget(), tr("Open Position File"),
-      defaultDir, "Position Data (*.txt);;All files (*)");
+      pqCoreUtilities::mainWidget(), tr("Open Position File"), defaultDir,
+      "Applanix POSCAP Position Data Text Export (*.txt);;All files (*)");
 
     if (positionFileName.isEmpty())
       {

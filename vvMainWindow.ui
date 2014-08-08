@@ -24,7 +24,7 @@
      <x>0</x>
      <y>0</y>
      <width>1070</width>
-     <height>24</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -204,7 +204,7 @@
      <normaloff>:/VelodyneHDLPlugin/WiresharkDoc-128.png</normaloff>:/VelodyneHDLPlugin/WiresharkDoc-128.png</iconset>
    </property>
    <property name="text">
-    <string>&amp;Velodyne Capture File</string>
+    <string>&amp;Capture File</string>
    </property>
    <property name="toolTip">
     <string>Open a Wireshark-format capture file with data collected from a Velodyne sensor</string>
@@ -267,7 +267,7 @@
      <normaloff>:/VelodyneHDLPlugin/velodyne_hdl.png</normaloff>:/VelodyneHDLPlugin/velodyne_hdl.png</iconset>
    </property>
    <property name="text">
-    <string>Open Sensor Stream</string>
+    <string>Sensor &amp;Stream</string>
    </property>
   </action>
   <action name="actionChoose_Calibration_File">
@@ -700,13 +700,13 @@
   <action name="actionOpenApplanix">
    <property name="icon">
     <iconset resource="VelodyneHDL/images/resources.qrc">
-     <normaloff>:/VelodyneHDLPlugin/applanix.png</normaloff>:/VelodyneHDLPlugin/applanix.png</iconset>
+     <normaloff>:/VelodyneHDLPlugin/gps.png</normaloff>:/VelodyneHDLPlugin/gps.png</iconset>
    </property>
    <property name="text">
-    <string>&amp;Applanix Capture Files</string>
+    <string>Capture File with External &amp;Geoposition</string>
    </property>
    <property name="toolTip">
-    <string>Open a text file with position data collected from an Applanix sensor, and Wireshark-format capture file with data collected from a Velodyne sensor</string>
+    <string>Open a text file with POSPAC text-format position data collected from an Applanix sensor, and Wireshark-format capture file with data collected from a Velodyne sensor</string>
    </property>
   </action>
  </widget>
