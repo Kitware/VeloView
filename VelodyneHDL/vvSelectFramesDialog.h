@@ -31,6 +31,7 @@ class VelodyneHDLPlugin_EXPORT vvSelectFramesDialog : public QDialog
   Q_PROPERTY(int frameTransform READ frameTransform WRITE setFrameTransform)
   Q_PROPERTY(bool frameStrideVisibility WRITE setFrameStrideVisibility)
   Q_PROPERTY(bool framePackVisibility WRITE setFramePackVisibility)
+  Q_PROPERTY(bool frameTransformVisibility WRITE setFrameTransformVisibility)
   Q_ENUMS(FrameMode FramePack FrameTransform)
 
 public:
@@ -78,6 +79,7 @@ public slots:
 
   void setFrameStrideVisibility(bool visible);
   void setFramePackVisibility(bool visible);
+  void setFrameTransformVisibility(bool visible);
 
   void saveState();
   void restoreState();

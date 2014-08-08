@@ -594,7 +594,7 @@ def onNativeFileDialogsAction():
     defaultDir = settings.setValue('VelodyneHDLPlugin/NativeFileDialogs', int(app.actions['actionNative_File_Dialogs'].isChecked()))
 
 
-def getFrameSelectionFromUser(frameStrideVisibility=False, framePackVisibility=False):
+def getFrameSelectionFromUser(frameStrideVisibility=False, framePackVisibility=False, frameTransformVisibility=True):
     class FrameOptions(object):
         pass
 
@@ -603,6 +603,7 @@ def getFrameSelectionFromUser(frameStrideVisibility=False, framePackVisibility=F
     dialog.frameMaximum = app.scene.EndTime
     dialog.frameStrideVisibility = frameStrideVisibility
     dialog.framePackVisibility = framePackVisibility
+    dialog.frameTransformVisibility = frameTransformVisibility
     dialog.restoreState()
 
     if not dialog.exec_():
@@ -718,7 +719,7 @@ def onSaveLAS():
 
 def onSavePCAP():
 
-    frameOptions = getFrameSelectionFromUser()
+    frameOptions = getFrameSelectionFromUser(frameTransformVisibility=False)
     if frameOptions is None:
         return
 

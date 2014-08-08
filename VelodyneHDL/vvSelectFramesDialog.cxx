@@ -220,6 +220,12 @@ void vvSelectFramesDialog::setFramePackVisibility(bool visible)
 }
 
 //-----------------------------------------------------------------------------
+void vvSelectFramesDialog::setFrameTransformVisibility(bool visible)
+{
+  this->Internal->FrameTransformContainer->setVisible(visible);
+}
+
+//-----------------------------------------------------------------------------
 void vvSelectFramesDialog::showEvent(QShowEvent* e)
 {
   QDialog::showEvent(e);
