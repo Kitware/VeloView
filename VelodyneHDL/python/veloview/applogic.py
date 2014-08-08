@@ -1735,7 +1735,7 @@ def setTransformMode(mode):
     # 2 - relative
     reader = getReader()
 
-    if not reader:
+    if not reader or mode is None:
         return
 
     reader.ApplyTransform = (mode > 0)
