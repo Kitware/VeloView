@@ -954,7 +954,7 @@ double vtkVelodyneHDLReader::vtkInternal::ComputeTimestamp(
 
   if (tohTime < this->LastTimestamp)
     {
-    if (!std::isfinite(this->TimeAdjust))
+    if (!vtkMath::IsFinite(this->TimeAdjust))
       {
       // First adjustment; must compute adjustment number
       if (this->Interp)
