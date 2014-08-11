@@ -7,6 +7,7 @@
 
 #include "pqVelodyneManager.h"
 #include "vvCalibrationDialog.h"
+#include "vvCropReturnsDialog.h"
 #include "vvLaserSelectionDialog.h"
 #include "vvSelectFramesDialog.h"
 
@@ -20,6 +21,7 @@ public:
     {
     this->registerClassForPythonQt(&pqVelodyneManager::staticMetaObject);
     this->registerClassForPythonQt(&vvCalibrationDialog::staticMetaObject);
+    this->registerClassForPythonQt(&vvCropReturnsDialog::staticMetaObject);
     this->registerClassForPythonQt(&vvLaserSelectionDialog::staticMetaObject);
     this->registerClassForPythonQt(&vvSelectFramesDialog::staticMetaObject);
     }
@@ -35,6 +37,12 @@ public slots:
   vvCalibrationDialog* new_vvCalibrationDialog(QWidget* arg0)
     {
     return new vvCalibrationDialog(arg0);
+    }
+
+
+  vvCropReturnsDialog* new_vvCropReturnsDialog(QWidget* arg0)
+    {
+    return new vvCropReturnsDialog(arg0);
     }
 
 

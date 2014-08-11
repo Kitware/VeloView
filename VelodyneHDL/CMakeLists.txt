@@ -54,6 +54,7 @@ if(PARAVIEW_BUILD_QT_GUI)
 
   set(UI_FILES
     vvCalibrationDialog.ui
+    vvCropReturnsDialog.ui
     vvLaserSelectionDialog.ui
     vvSelectFramesDialog.ui
     )
@@ -61,6 +62,7 @@ if(PARAVIEW_BUILD_QT_GUI)
   set(MOC_HEADERS
     pqVelodyneHDLSource.h
     vvCalibrationDialog.h
+    vvCropReturnsDialog.h
     vvLaserSelectionDialog.h
     vvSelectFramesDialog.h
     )
@@ -91,6 +93,7 @@ if(PARAVIEW_BUILD_QT_GUI)
     ${ui_srcs}
     ${resource_srcs}
     vvCalibrationDialog.cxx
+    vvCropReturnsDialog.cxx
     vvLaserSelectionDialog.cxx
     vvSelectFramesDialog.cxx
     )

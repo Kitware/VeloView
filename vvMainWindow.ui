@@ -83,6 +83,7 @@
     <addaction name="actionGrid_Properties"/>
     <addaction name="actionLaserSelection"/>
     <addaction name="actionChoose_Calibration_File"/>
+    <addaction name="actionCropReturns"/>
     <addaction name="separator"/>
     <addaction name="actionPlay"/>
     <addaction name="actionRecord"/>
@@ -119,6 +120,7 @@
    <addaction name="actionOpenApplanix"/>
    <addaction name="actionOpen_Sensor_Stream"/>
    <addaction name="actionChoose_Calibration_File"/>
+   <addaction name="actionCropReturns"/>
    <addaction name="separator"/>
    <addaction name="actionSelect_All_Points"/>
    <addaction name="actionSpreadsheet"/>
@@ -713,6 +715,15 @@
    </property>
    <property name="toolTip">
     <string>Open a text file with POSPAC text-format position data collected from an Applanix sensor, and Wireshark-format capture file with data collected from a Velodyne sensor</string>
+   </property>
+  </action>
+  <action name="actionCropReturns">
+   <property name="icon">
+    <iconset resource="VelodyneHDL/images/resources.qrc">
+     <normaloff>:/VelodyneHDLPlugin/crop.png</normaloff>:/VelodyneHDLPlugin/crop.png</iconset>
+   </property>
+   <property name="text">
+    <string>Crop Returns...</string>
    </property>
   </action>
  </widget>

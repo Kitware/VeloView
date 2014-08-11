@@ -83,6 +83,10 @@ public:
 
   void SetPointsSkip(int);
 
+  void SetCropReturns(int);
+  void SetCropRegion(double[6]);
+  void SetCropRegion(double, double, double, double, double, double);
+
   void Open();
   void Close();
   int ReadFrameInformation();

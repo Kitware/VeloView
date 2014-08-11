@@ -1,5 +1,6 @@
 <RCC>
   <qresource prefix="/VelodyneHDLPlugin">
+    <file>crop.png</file>
     <file>gps.png</file>
     <file>las.png</file>
     <file>trailingframes.png</file>

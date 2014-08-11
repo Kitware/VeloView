@@ -1,5 +1,7 @@
 vvCalibrationDialog::vvCalibrationDialog(QWidget*)
 
+vvCropReturnsDialog::vvCropReturnsDialog(QWidget*)
+
 vvSelectFramesDialog::vvSelectFramesDialog(QWidget*)
 
 vvLaserSelectionDialog::vvLaserSelectionDialog(QWidget*)

@@ -29,7 +29,7 @@ import kiwiviewerExporter
 import gridAdjustmentDialog
 import planefit
 
-from PythonQt.paraview import vvCalibrationDialog, vvSelectFramesDialog
+from PythonQt.paraview import vvCalibrationDialog, vvCropReturnsDialog, vvSelectFramesDialog
 
 _repCache = {}
 
@@ -151,6 +151,7 @@ def openData(filename):
     addRecentFile(filename)
     app.actions['actionSavePCAP'].setEnabled(False)
     app.actions['actionChoose_Calibration_File'].setEnabled(False)
+    app.actions['actionCropReturns'].setEnabled(False)
     app.actions['actionRecord'].setEnabled(False)
 
     resetCamera()
@@ -941,7 +942,8 @@ def disablePlaybackActions():
 
 
 def _setSaveActionsEnabled(enabled):
-    for action in ('SaveCSV', 'SavePCAP', 'SaveLAS', 'Export_To_KiwiViewer', 'Close', 'Choose_Calibration_File'):
+    for action in ('SaveCSV', 'SavePCAP', 'SaveLAS', 'Export_To_KiwiViewer',
+                   'Close', 'Choose_Calibration_File', 'CropReturns'):
         app.actions['action'+action].setEnabled(enabled)
     getMainWindow().findChild('QMenu', 'menuSaveAs').enabled = enabled
 
@@ -1272,6 +1274,21 @@ def onChooseCalibrationFile():
         sensor.CalibrationFile = calibrationFile
         # no need to render now, calibration file will be used on the next frame
 
+
+def onCropReturns():
+    dialog = vvCropReturnsDialog(getMainWindow())
+    if not dialog.exec_():
+        return
+
+    reader = getReader()
+    # TODO implement for sensor stream
+
+    if reader:
+        reader.CropReturns = dialog.croppingEnabled
+        p1 = dialog.firstCorner
+        p2 = dialog.secondCorner
+        reader.CropRegion = [p1.x(), p2.x(), p1.y(), p2.y(), p1.z(), p2.z()]
+        smp.Render()
 
 def resetCamera():
 
@@ -1773,6 +1790,7 @@ def setupActions():
     app.actions['actionGrid_Properties'].connect('triggered()', onGridProperties)
     app.actions['actionLaserSelection'].connect('triggered()', onLaserSelection)
     app.actions['actionChoose_Calibration_File'].connect('triggered()', onChooseCalibrationFile)
+    app.actions['actionCropReturns'].connect('triggered()', onCropReturns)
     app.actions['actionSeek_Forward'].connect('triggered()', seekForward)
     app.actions['actionSeek_Backward'].connect('triggered()', seekBackward)
     app.actions['actionGo_To_End'].connect('triggered()', gotoEnd)

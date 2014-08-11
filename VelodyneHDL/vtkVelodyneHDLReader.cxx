@@ -146,6 +146,10 @@ public:
     this->NumberOfTrailingFrames = 0;
     this->ApplyTransform = 0;
     this->PointsSkip = 0;
+    this->CropReturns = false;
+    this->CropRegion[0] = this->CropRegion[1] = 0.0;
+    this->CropRegion[2] = this->CropRegion[3] = 0.0;
+    this->CropRegion[4] = this->CropRegion[5] = 0.0;
 
     this->LaserSelection.resize(64, true);
 
@@ -188,6 +192,9 @@ public:
   int ApplyTransform;
 
   int PointsSkip;
+
+  bool CropReturns;
+  double CropRegion[6];
 
   std::vector<bool> LaserSelection;
 
@@ -383,6 +390,36 @@ void vtkVelodyneHDLReader::SetNumberOfTrailingFrames(int numTrailing)
 {
   assert(numTrailing >= 0);
   this->Internal->NumberOfTrailingFrames = numTrailing;
+  this->Modified();
+}
+
+//-----------------------------------------------------------------------------
+void vtkVelodyneHDLReader::SetCropReturns(int crop)
+{
+  if (!this->Internal->CropReturns == !!crop)
+    {
+    this->Internal->CropReturns = crop;
+    this->Modified();
+    }
+}
+
+//-----------------------------------------------------------------------------
+void vtkVelodyneHDLReader::SetCropRegion(double region[6])
+{
+  std::copy(region, region + 6, this->Internal->CropRegion);
+  this->Modified();
+}
+
+//-----------------------------------------------------------------------------
+void vtkVelodyneHDLReader::SetCropRegion(
+  double xl, double xu, double yl, double yu, double zl, double zu)
+{
+  this->Internal->CropRegion[0] = xl;
+  this->Internal->CropRegion[1] = xu;
+  this->Internal->CropRegion[2] = yl;
+  this->Internal->CropRegion[3] = yu;
+  this->Internal->CropRegion[4] = zl;
+  this->Internal->CropRegion[5] = zu;
   this->Modified();
 }
 
@@ -758,11 +795,6 @@ void vtkVelodyneHDLReader::vtkInternal::PushFiringData(const unsigned char laser
                                                        const HDLLaserCorrection* correction,
                                                        vtkTransform* transform)
 {
-  this->Azimuth->InsertNextValue(azimuth);
-  this->Intensity->InsertNextValue(laserReturn->intensity);
-  this->LaserId->InsertNextValue(laserId);
-  this->Timestamp->InsertNextValue(timestamp);
-
   azimuth %= 36000;
 
   double cosAzimuth, sinAzimuth;
@@ -781,6 +813,7 @@ void vtkVelodyneHDLReader::vtkInternal::PushFiringData(const unsigned char laser
   double distanceM = laserReturn->distance * 0.002 + correction->distanceCorrection;
   double xyDistance = distanceM * correction->cosVertCorrection - correction->sinVertOffsetCorrection;
 
+  // Compute raw position
   double pos[3] =
     {
     xyDistance * sinAzimuth - correction->horizontalOffsetCorrection * cosAzimuth,
@@ -788,11 +821,30 @@ void vtkVelodyneHDLReader::vtkInternal::PushFiringData(const unsigned char laser
     distanceM * correction->sinVertCorrection + correction->cosVertOffsetCorrection
     };
 
+  // Apply sensor transform
   this->SensorTransform->TransformPoint(pos, pos);
+
+  // Test if point is cropped
+  if (this->CropReturns)
+    {
+    if (pos[0] >= this->CropRegion[0] && pos[0] <= this->CropRegion[1] &&
+        pos[1] >= this->CropRegion[2] && pos[1] <= this->CropRegion[3] &&
+        pos[2] >= this->CropRegion[4] && pos[2] <= this->CropRegion[5])
+      {
+      return;
+      }
+    }
+
+  // Apply geoposition transform
   transform->TransformPoint(pos, pos);
 
+  // Insert point data
   this->Points->InsertNextPoint(pos);
   this->Distance->InsertNextValue(distanceM);
+  this->Azimuth->InsertNextValue(azimuth);
+  this->Intensity->InsertNextValue(laserReturn->intensity);
+  this->LaserId->InsertNextValue(laserId);
+  this->Timestamp->InsertNextValue(timestamp);
 }
 
 //-----------------------------------------------------------------------------
