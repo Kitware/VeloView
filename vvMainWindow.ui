@@ -144,7 +144,7 @@
     <enum>TopToolBarArea</enum>
    </attribute>
    <attribute name="toolBarBreak">
-    <bool>true</bool>
+    <bool>false</bool>
    </attribute>
    <addaction name="actionGo_To_Start"/>
    <addaction name="actionSeek_Backward"/>
@@ -273,7 +273,7 @@
   <action name="actionChoose_Calibration_File">
    <property name="icon">
     <iconset resource="VelodyneHDL/images/resources.qrc">
-     <normaloff>:/VelodyneHDLPlugin/angle_icon.png</normaloff>:/VelodyneHDLPlugin/angle_icon.png</iconset>
+     <normaloff>:/VelodyneHDLPlugin/calibrate.png</normaloff>:/VelodyneHDLPlugin/calibrate.png</iconset>
    </property>
    <property name="text">
     <string>Choose &amp;Calibration File</string>
@@ -358,6 +358,9 @@
    </property>
    <property name="text">
     <string>Reset Camera</string>
+   </property>
+   <property name="shortcut">
+    <string>R</string>
    </property>
   </action>
   <action name="actionClose">
@@ -597,6 +600,9 @@
   <action name="actionVeloViewUserGuide">
    <property name="text">
     <string>VeloView User Guide</string>
+   </property>
+   <property name="shortcut">
+    <string>F1</string>
    </property>
   </action>
   <action name="actionMeasure">
