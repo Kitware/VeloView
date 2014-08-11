@@ -52,6 +52,11 @@ struct vtkQTransform
         xform->GetOrientationWXYZ(q); //Rotation (in degrees) around unit vector
         q[0] = vtkMath::RadiansFromDegrees(q[0]);
         this->Q.SetRotationAngleAndAxis(q[0], q+1);
+
+        if(this->Q.GetW() < 0.0)
+          {
+          this->Q = this->Q * -1;
+          }
         }
       else
         {
