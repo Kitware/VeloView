@@ -219,6 +219,8 @@ void vtkVelodyneHDLPositionReader::vtkInternal::InterpolateGPS(vtkPoints* points
   double timeOffset = 0.0;
 
   assert(times->GetNumberOfTuples() == gpsTime->GetNumberOfTuples());
+  unsigned int lastGPS = 0;
+  for (vtkIdType i = 0, k = times->GetNumberOfTuples(); i < k; ++i)
     {
     const unsigned int currGPS = gpsTime->GetTuple1(i);
     if (currGPS != lastGPS)
