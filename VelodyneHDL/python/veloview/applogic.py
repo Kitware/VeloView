@@ -29,7 +29,7 @@ import kiwiviewerExporter
 import gridAdjustmentDialog
 import planefit
 
-from PythonQt.paraview import vvCalibrationDialog, vvSelectFramesDialog
+from PythonQt.paraview import vvCalibrationDialog, vvCropReturnsDialog, vvSelectFramesDialog
 
 _repCache = {}
 
@@ -151,6 +151,7 @@ def openData(filename):
     addRecentFile(filename)
     app.actions['actionSavePCAP'].setEnabled(False)
     app.actions['actionChoose_Calibration_File'].setEnabled(False)
+    app.actions['actionCropReturns'].setEnabled(False)
     app.actions['actionRecord'].setEnabled(False)
 
     resetCamera()
@@ -202,6 +203,9 @@ def chooseCalibration():
     class Calibration(object):
         def __init__(self, dialog):
             self.calibrationFile = dialog.selectedCalibrationFile()
+            self.gpsYaw = dialog.gpsYaw()
+            self.gpsRoll = dialog.gpsRoll()
+            self.gpsPitch = dialog.gpsPitch()
             self.sensorTransform = vtk.vtkTransform()
 
             qm = dialog.sensorTransform()
@@ -221,7 +225,7 @@ def chooseCalibration():
     return Calibration(dialog)
 
 
-def openSensor(calibrationFile):
+def openSensor():
 
     calibration = chooseCalibration()
     if not calibration:
@@ -251,7 +255,7 @@ def openSensor(calibrationFile):
 
     play()
 
-def openPCAP(filename):
+def openPCAP(filename, positionFilename=None):
 
     calibration = chooseCalibration()
     if not calibration:
@@ -303,17 +307,27 @@ def openPCAP(filename):
 
     # update overhead view
     smp.SetActiveView(app.overheadView)
-    posreader = smp.VelodyneHDLPositionReader(guiName="Position",
-                                              FileName=filename)
+
+    if positionFilename is None:
+        posreader = smp.VelodyneHDLPositionReader(guiName="Position",
+                                                  FileName=filename)
+    else:
+        posreader = smp.ApplanixPositionReader(guiName="Position",
+                                               FileName=positionFilename)
+        posreader.BaseYaw = calibration.gpsYaw
+        posreader.BaseRoll = calibration.gpsRoll
+        posreader.BasePitch = calibration.gpsPitch
+
     smp.Show(posreader)
 
-    # Create a sphere glpyh
+    # Create a sphere glyph
     g = smp.Sphere()
     g.Radius = 5.0
     smp.Show(g)
 
     if posreader.GetClientSideObject().GetOutput().GetNumberOfPoints():
-        reader.GetClientSideObject().SetInterp(posreader.GetClientSideObject().GetInterpolator())
+        reader.GetClientSideObject().SetInterpolator(
+            posreader.GetClientSideObject().GetInterpolator())
 
         smp.Render()
         app.overheadView.ResetCamera()
@@ -491,10 +505,17 @@ def saveCSVCurrentFrame(filename):
     rotateCSVFile(filename)
 
 
-def saveLASCurrentFrame(filename):
-    t = app.scene.AnimationTime
+def saveLASFrames(filename, first, last, transform):
+    reader = getReader().GetClientSideObject()
+    position = getPosition().GetClientSideObject().GetOutput()
+
     PythonQt.paraview.pqVelodyneManager.saveFramesToLAS(
-        getReader().SMProxy, t, t, filename)
+        reader, position, first, last, filename, transform)
+
+
+def saveLASCurrentFrame(filename, transform):
+    t = app.scene.AnimationTime
+    saveLASFrames(filename, t, t, transform)
 
 
 def saveAllFrames(filename, saveFunction):
@@ -529,7 +550,7 @@ def saveCSV(filename, timesteps):
     kiwiviewerExporter.shutil.rmtree(tempDir)
 
 
-def saveLAS(filename, timesteps):
+def saveLAS(filename, timesteps, transform):
 
     tempDir = kiwiviewerExporter.tempfile.mkdtemp()
     basenameWithoutExtension = os.path.splitext(os.path.basename(filename))[0]
@@ -538,8 +559,7 @@ def saveLAS(filename, timesteps):
     os.makedirs(outDir)
 
     for t in sorted(timesteps):
-        PythonQt.paraview.pqVelodyneManager.saveFramesToLAS(
-            getReader().SMProxy, t, t, (filenameTemplate % t))
+        saveLASFrames(filenameTemplate % t, t, t, transform)
 
     kiwiviewerExporter.zipDir(outDir, filename)
     kiwiviewerExporter.shutil.rmtree(tempDir)
@@ -578,7 +598,7 @@ def onNativeFileDialogsAction():
     defaultDir = settings.setValue('VelodyneHDLPlugin/NativeFileDialogs', int(app.actions['actionNative_File_Dialogs'].isChecked()))
 
 
-def getFrameSelectionFromUser(frameStrideVisibility=False, framePackVisibility=False):
+def getFrameSelectionFromUser(frameStrideVisibility=False, framePackVisibility=False, frameTransformVisibility=True):
     class FrameOptions(object):
         pass
 
@@ -587,6 +607,7 @@ def getFrameSelectionFromUser(frameStrideVisibility=False, framePackVisibility=F
     dialog.frameMaximum = app.scene.EndTime
     dialog.frameStrideVisibility = frameStrideVisibility
     dialog.framePackVisibility = framePackVisibility
+    dialog.frameTransformVisibility = frameTransformVisibility
     dialog.restoreState()
 
     if not dialog.exec_():
@@ -598,6 +619,7 @@ def getFrameSelectionFromUser(frameStrideVisibility=False, framePackVisibility=F
     frameOptions.stop = dialog.frameStop
     frameOptions.stride = dialog.frameStride
     frameOptions.pack = dialog.framePack
+    frameOptions.transform = dialog.frameTransform
 
     dialog.setParent(None)
 
@@ -614,17 +636,27 @@ def onSaveCSV():
     if frameOptions.mode == vvSelectFramesDialog.CURRENT_FRAME:
         fileName = getSaveFileName('Save CSV', 'csv', getDefaultSaveFileName('csv', appendFrameNumber=True))
         if fileName:
+            oldTransform = transformMode()
+            setTransformMode(1 if frameOptions.transform else 0)
+
             saveCSVCurrentFrame(fileName)
+
+            setTransformMode(oldTransform)
 
     else:
         fileName = getSaveFileName('Save CSV (to zip file)', 'zip', getDefaultSaveFileName('zip'))
         if fileName:
+            oldTransform = transformMode()
+            setTransformMode(1 if frameOptions.transform else 0)
+
             if frameOptions.mode == vvSelectFramesDialog.ALL_FRAMES:
                 saveAllFrames(fileName, saveCSV)
             else:
                 start = frameOptions.start
                 stop = frameOptions.stop
                 saveFrameRange(fileName, start, stop, saveCSV)
+
+            setTransformMode(oldTransform)
 
 
 def onSavePosition():
@@ -647,18 +679,31 @@ def onSaveLAS():
     if frameOptions.mode == vvSelectFramesDialog.CURRENT_FRAME:
         fileName = getSaveFileName('Save LAS', 'las', getDefaultSaveFileName('las', appendFrameNumber=True))
         if fileName:
-            saveLASCurrentFrame(fileName)
+            oldTransform = transformMode()
+            setTransformMode(1 if frameOptions.transform else 0)
+
+            saveLASCurrentFrame(fileName, frameOptions.transform)
+
+            setTransformMode(oldTransform)
 
     elif frameOptions.pack == vvSelectFramesDialog.FILE_PER_FRAME:
-        fileName = getSaveFileName('Save CSV (to zip file)', 'zip',
+        fileName = getSaveFileName('Save LAS (to zip file)', 'zip',
                                    getDefaultSaveFileName('zip'))
         if fileName:
+            oldTransform = transformMode()
+            setTransformMode(1 if frameOptions.transform else 0)
+
+            def saveTransformedLAS(filename, timesteps):
+                saveLAS(filename, timesteps, frameOptions.transform)
+
             if frameOptions.mode == vvSelectFramesDialog.ALL_FRAMES:
-                saveAllFrames(fileName, saveCSV)
+                saveAllFrames(fileName, saveTransformedLAS)
             else:
                 start = frameOptions.start
                 stop = frameOptions.stop
-                saveFrameRange(fileName, start, stop, saveCSV)
+                saveFrameRange(fileName, start, stop, saveTransformedLAS)
+
+            setTransformMode(oldTransform)
 
     else:
         suffix = ' (Frame %d to %d)' % (frameOptions.start, frameOptions.stop)
@@ -667,14 +712,18 @@ def onSaveLAS():
         if not fileName:
             return
 
-        proxy = getReader().SMProxy
-        PythonQt.paraview.pqVelodyneManager.saveFramesToLAS(
-            proxy, frameOptions.start, frameOptions.stop, fileName)
+        oldTransform = transformMode()
+        setTransformMode(1 if frameOptions.transform else 0)
+
+        saveLASFrames(fileName, frameOptions.start, frameOptions.stop,
+                      frameOptions.transform)
+
+        setTransformMode(oldTransform)
 
 
 def onSavePCAP():
 
-    frameOptions = getFrameSelectionFromUser()
+    frameOptions = getFrameSelectionFromUser(frameTransformVisibility=False)
     if frameOptions is None:
         return
 
@@ -896,7 +945,8 @@ def disablePlaybackActions():
 
 
 def _setSaveActionsEnabled(enabled):
-    for action in ('SaveCSV', 'SavePCAP', 'SaveLAS', 'Export_To_KiwiViewer', 'Close', 'Choose_Calibration_File'):
+    for action in ('SaveCSV', 'SavePCAP', 'SaveLAS', 'Export_To_KiwiViewer',
+                   'Close', 'Choose_Calibration_File', 'CropReturns'):
         app.actions['action'+action].setEnabled(enabled)
     getMainWindow().findChild('QMenu', 'menuSaveAs').enabled = enabled
 
@@ -1086,29 +1136,23 @@ def updatePosition():
             # TODO: Approximate time, just grabbing the last
             t = pointcloud.GetPointData().GetScalars('timestamp')
             #currentTime = t.GetTuple1(t.GetNumberOfTuples() - 1)
-            currentTime = t.GetTuple1(0)
+            currentTime = t.GetTuple1(0) * 1e-6
 
-            trange = pos.GetPointDataInformation().GetArray('time').GetRange()
+            interp = getPosition().GetClientSideObject().GetInterpolator()
+            trange = [interp.GetMinimumT(), interp.GetMaximumT()]
 
             # Clamp
             currentTime = min(max(currentTime, trange[0]+1.0e-1), trange[1]-1.0e-1)
 
-            interp = getPosition().GetClientSideObject().GetInterpolator()
-            position = [0.0] * 5
-            interp.InterpolateTuple5(currentTime, position)
+            position = [0.0] * 3
+            transform = vtk.vtkTransform()
+            interp.InterpolateTransform(currentTime, transform)
+            transform.TransformPoint(position, position)
 
             rep = cachedGetRepresentation(reader, view=app.mainView)
             if app.relativeTransform:
-                angle = math.atan2(position[4], position[3])
-                angle = 180 * angle / math.pi
-
-                t = vtk.vtkTransform()
-                t.PostMultiply()
-                t.Translate([-x for x in position[:3]])
-                t.RotateZ(angle)
-
-                rep.Position = t.GetPosition()
-                rep.Orientation = t.GetOrientation()
+                rep.Position = transform.GetInverse().GetPosition()
+                rep.Orientation = transform.GetInverse().GetOrientation()
             else:
                 rep.Position = [0.0, 0.0, 0.0]
                 rep.Orientation = [0.0, 0.0, 0.0]
@@ -1233,6 +1277,21 @@ def onChooseCalibrationFile():
         sensor.CalibrationFile = calibrationFile
         # no need to render now, calibration file will be used on the next frame
 
+
+def onCropReturns():
+    dialog = vvCropReturnsDialog(getMainWindow())
+    if not dialog.exec_():
+        return
+
+    reader = getReader()
+    # TODO implement for sensor stream
+
+    if reader:
+        reader.CropReturns = dialog.croppingEnabled
+        p1 = dialog.firstCorner
+        p2 = dialog.secondCorner
+        reader.CropRegion = [p1.x(), p2.x(), p1.y(), p2.y(), p1.z(), p2.z()]
+        smp.Render()
 
 def resetCamera():
 
@@ -1679,25 +1738,32 @@ def setViewToZPlus():
 def setViewToZMinus():
     setViewTo('Z',-1)
 
-def geolocationChanged(setting):
+def transformMode():
     reader = getReader()
-    position = getPosition()
+    if not reader:
+        return None
 
-    if not reader or not position:
+    if reader.ApplyTransform:
+        if app.relativeTransform:
+            return 2 # relative
+        else:
+            return 1 # absolute
+    return 0 # raw
+
+def setTransformMode(mode):
+    # 0 - raw
+    # 1 - absolute
+    # 2 - relative
+    reader = getReader()
+
+    if not reader or mode is None:
         return
 
-    # 0 - raw
-    # 1 - absolute 
-    # 2 - relative
+    reader.ApplyTransform = (mode > 0)
+    app.relativeTransform = (mode == 2)
 
-    # Correct the reader settings
-    if setting >=1:
-        reader.ApplyTransform = 1
-    else:
-        reader.ApplyTransform = 0
-
-    # This will make sure the display transfomr is proper
-    app.relativeTransform = (setting == 2)
+def geolocationChanged(setting):
+    setTransformMode(setting)
 
     updatePosition()
     smp.Render(view=app.mainView)
@@ -1727,6 +1793,7 @@ def setupActions():
     app.actions['actionGrid_Properties'].connect('triggered()', onGridProperties)
     app.actions['actionLaserSelection'].connect('triggered()', onLaserSelection)
     app.actions['actionChoose_Calibration_File'].connect('triggered()', onChooseCalibrationFile)
+    app.actions['actionCropReturns'].connect('triggered()', onCropReturns)
     app.actions['actionSeek_Forward'].connect('triggered()', seekForward)
     app.actions['actionSeek_Backward'].connect('triggered()', seekBackward)
     app.actions['actionGo_To_End'].connect('triggered()', gotoEnd)

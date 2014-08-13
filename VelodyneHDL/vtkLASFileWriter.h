@@ -32,13 +32,20 @@
 #ifndef __vtkLASFileWriter_h
 #define __vtkLASFileWriter_h
 
+#include <vtkSystemIncludes.h>
+
 class vtkPolyData;
 
-class vtkLASFileWriter
+class VTK_EXPORT vtkLASFileWriter
 {
 public:
   vtkLASFileWriter(const char* filename);
   ~vtkLASFileWriter();
+
+  void SetTimeRange(double min, double max);
+  void SetOrigin(int gcs, double easting, double northing, double height);
+  void SetGeoConversion(int in, int out);
+  void SetPrecision(double neTol, double hTol = 1e-3);
 
   void WriteFrame(vtkPolyData* data);
 

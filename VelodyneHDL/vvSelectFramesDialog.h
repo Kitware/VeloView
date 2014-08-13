@@ -28,9 +28,11 @@ class VelodyneHDLPlugin_EXPORT vvSelectFramesDialog : public QDialog
   Q_PROPERTY(int framePack READ framePack WRITE setFramePack)
   Q_PROPERTY(int frameMinimum WRITE setFrameMinimum)
   Q_PROPERTY(int frameMaximum WRITE setFrameMaximum)
+  Q_PROPERTY(int frameTransform READ frameTransform WRITE setFrameTransform)
   Q_PROPERTY(bool frameStrideVisibility WRITE setFrameStrideVisibility)
   Q_PROPERTY(bool framePackVisibility WRITE setFramePackVisibility)
-  Q_ENUMS(FrameMode FramePack)
+  Q_PROPERTY(bool frameTransformVisibility WRITE setFrameTransformVisibility)
+  Q_ENUMS(FrameMode FramePack FrameTransform)
 
 public:
   vvSelectFramesDialog(QWidget *p=0);
@@ -47,12 +49,20 @@ public:
     SINGLE_FILE = 0,
     FILE_PER_FRAME
     };
+  enum FrameTransform
+    {
+    SENSOR = 0,
+    RELATIVE_GEOPOSITION,
+    ABSOLUTE_GEOPOSITION_UTM,
+    ABSOLUTE_GEOPOSITION_LATLON,
+    };
 
   int frameMode() const;
   int frameStart() const;
   int frameStop() const;
   int frameStride() const;
   int framePack() const;
+  int frameTransform() const;
 
 public slots:
   virtual void accept();
@@ -62,12 +72,14 @@ public slots:
   void setFrameStop(int frameStop);
   void setFrameStride(int frameStride);
   void setFramePack(int framePack);
+  void setFrameTransform(int frameTransform);
 
   void setFrameMinimum(int frameMin);
   void setFrameMaximum(int frameMax);
 
   void setFrameStrideVisibility(bool visible);
   void setFramePackVisibility(bool visible);
+  void setFrameTransformVisibility(bool visible);
 
   void saveState();
   void restoreState();

@@ -7,6 +7,7 @@
 
 #include "pqVelodyneManager.h"
 #include "vvCalibrationDialog.h"
+#include "vvCropReturnsDialog.h"
 #include "vvLaserSelectionDialog.h"
 #include "vvSelectFramesDialog.h"
 
@@ -20,6 +21,7 @@ public:
     {
     this->registerClassForPythonQt(&pqVelodyneManager::staticMetaObject);
     this->registerClassForPythonQt(&vvCalibrationDialog::staticMetaObject);
+    this->registerClassForPythonQt(&vvCropReturnsDialog::staticMetaObject);
     this->registerClassForPythonQt(&vvLaserSelectionDialog::staticMetaObject);
     this->registerClassForPythonQt(&vvSelectFramesDialog::staticMetaObject);
     }
@@ -35,6 +37,12 @@ public slots:
   vvCalibrationDialog* new_vvCalibrationDialog(QWidget* arg0)
     {
     return new vvCalibrationDialog(arg0);
+    }
+
+
+  vvCropReturnsDialog* new_vvCropReturnsDialog(QWidget* arg0)
+    {
+    return new vvCropReturnsDialog(arg0);
     }
 
 
@@ -71,9 +79,9 @@ public slots:
     pqVelodyneManager::saveFramesToPCAP(arg0, arg1, arg2, arg3);
     }
 
-  void static_pqVelodyneManager_saveFramesToLAS(vtkSMSourceProxy* arg0, int arg1, int arg2, const QString& arg3)
+  void static_pqVelodyneManager_saveFramesToLAS(vtkVelodyneHDLReader* arg0, vtkPolyData* arg1, int arg2, int arg3, const QString& arg4, int arg5)
     {
-    pqVelodyneManager::saveFramesToLAS(arg0, arg1, arg2, arg3);
+    pqVelodyneManager::saveFramesToLAS(arg0, arg1, arg2, arg3, arg4, arg5);
     }
 
 

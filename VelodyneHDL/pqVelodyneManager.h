@@ -19,16 +19,20 @@
 
 #include "vvConfigure.h"
 
+class vtkVelodyneHDLReader;
+class vvAppLogic;
+
+class pqPipelineSource;
 class pqServer;
 class pqView;
-class pqPipelineSource;
-class vtkSMSourceProxy;
-class QWidget;
 
-class vvAppLogic;
+class vtkSMSourceProxy;
+
+class vtkPolyData;
 
 class QAction;
 class QLabel;
+class QWidget;
 
 class VelodyneHDLPythonQT_EXPORT pqVelodyneManager : public QObject
 {
@@ -59,11 +63,9 @@ public:
   pqPipelineSource* source();
 
 
-  void setup(QAction* openFile, QAction* close, QAction* openSensor, QAction* chooseCalibrationFile,
-             QAction* resetView, QAction* play, QAction* seekForward, QAction* seekBackward, QAction* gotoStart, QAction* gotoEnd,
-             QAction* record, QAction* measurementGrid, QAction* saveScreenshot, QAction* saveCSV);
+  void setup();
 
-  void openData(const QString& filename);
+  void openData(const QString& filename, const QString& positionFilename);
 
   void runPython(const QString& statements);
 
@@ -71,16 +73,17 @@ public:
                                int startFrame, int endFrame,
                                const QString& filename);
 
-  static void saveFramesToLAS(vtkSMSourceProxy* proxy,
+  static void saveFramesToLAS(vtkVelodyneHDLReader* reader,
+                              vtkPolyData* position,
                               int startFrame, int endFrame,
-                              const QString& filename);
+                              const QString& filename, int positionMode);
 
 public slots:
 
   void pythonStartup();
 
   void onOpenSensor();
-  void onMeasurementGrid();
+  void onMeasurementGrid(bool gridVisible);
 
 signals:
 

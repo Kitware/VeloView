@@ -1,4 +1,4 @@
-// Copyright 2013 Velodyne Acoustics, Inc.
+// Copyright 2014 Velodyne Acoustics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,45 +11,38 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#ifndef __vvCalibrationDialog_h
-#define __vvCalibrationDialog_h
+#ifndef __vvCropReturnsDialog_h
+#define __vvCropReturnsDialog_h
 
 #include "vvConfigure.h"
 
 #include <QDialog>
-#include <QMatrix4x4>
+#include <QVector3D>
 
-class VelodyneHDLPlugin_EXPORT vvCalibrationDialog : public QDialog
+class VelodyneHDLPlugin_EXPORT vvCropReturnsDialog : public QDialog
 {
   Q_OBJECT
+  Q_PROPERTY(bool croppingEnabled READ croppingEnabled)
+  Q_PROPERTY(QVector3D firstCorner READ firstCorner)
+  Q_PROPERTY(QVector3D secondCorner READ secondCorner)
 
 public:
-  vvCalibrationDialog(QWidget *p=0);
-  virtual ~vvCalibrationDialog();
+  vvCropReturnsDialog(QWidget *p=0);
+  virtual ~vvCropReturnsDialog();
 
-  Q_INVOKABLE QString selectedCalibrationFile() const;
+  bool croppingEnabled() const;
 
-  Q_INVOKABLE QStringList calibrationFiles() const;
-
-  Q_INVOKABLE QMatrix4x4 sensorTransform() const;
-
-  Q_INVOKABLE double gpsYaw() const;
-  Q_INVOKABLE double gpsRoll() const;
-  Q_INVOKABLE double gpsPitch() const;
+  QVector3D firstCorner() const;
+  QVector3D secondCorner() const;
 
 public slots:
   virtual void accept();
-
-protected slots:
-  void addFile();
-  void removeSelectedFile();
-  void onCurrentRowChanged(int row);
 
 private:
   class pqInternal;
   QScopedPointer<pqInternal> Internal;
 
-  Q_DISABLE_COPY(vvCalibrationDialog);
+  Q_DISABLE_COPY(vvCropReturnsDialog);
 };
 
 #endif

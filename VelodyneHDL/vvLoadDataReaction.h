@@ -27,7 +27,7 @@ class VelodyneHDLPythonQT_EXPORT vvLoadDataReaction : public pqLoadDataReaction
   Q_OBJECT
   typedef pqLoadDataReaction Superclass;
 public:
-  vvLoadDataReaction(QAction* parent);
+  vvLoadDataReaction(QAction* parent, bool separatePositionFile);
   virtual ~vvLoadDataReaction();
 
   // This method uses the default FileOpen dialog (as against the ParaView
@@ -49,7 +49,9 @@ private slots:
 
 private:
   Q_DISABLE_COPY(vvLoadDataReaction);
+
   QPointer<pqPipelineSource> PreviousSource;
+  const bool SeparatePositionFile;
 };
 
 #endif

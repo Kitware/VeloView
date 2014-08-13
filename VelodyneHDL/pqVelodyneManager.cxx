@@ -14,6 +14,8 @@
 #include "pqVelodyneManager.h"
 
 #include "vtkLASFileWriter.h"
+#include "vtkVelodyneHDLReader.h"
+#include "vtkVelodyneTransformInterpolator.h"
 #include "vvLoadDataReaction.h"
 #include "vvPythonQtDecorators.h"
 
@@ -34,9 +36,11 @@
 #include <vtkSMPropertyHelper.h>
 #include <vtkSMSourceProxy.h>
 #include <vtkSMViewProxy.h>
+
+#include <vtkFieldData.h>
+#include <vtkPointData.h>
 #include <vtkPythonInterpreter.h>
 #include <vtkTimerLog.h>
-#include <vtkVelodyneHDLReader.h>
 
 #include <QApplication>
 #include <QDir>
@@ -45,31 +49,11 @@
 #include <QLabel>
 #include <QMainWindow>
 #include <QTimer>
-
+#include <QProgressDialog>
 
 //-----------------------------------------------------------------------------
 class pqVelodyneManager::pqInternal
 {
-public:
-
-  pqInternal()
-  {
-
-  }
-
-  QAction* OpenFile;
-  QAction* Close;
-  QAction* OpenSensor;
-  QAction* ChooseCalibrationFile;
-  QAction* ResetView;
-  QAction* Play;
-  QAction* SeekForward;
-  QAction* SeekBackward;
-  QAction* GotoStart;
-  QAction* GotoEnd;
-  QAction* Record;
-  QAction* MeasurementGrid;
-  QAction* SaveCSV;
 };
 
 //-----------------------------------------------------------------------------
@@ -128,7 +112,10 @@ void pqVelodyneManager::pythonStartup()
       "import veloview.applogic as vv\n"
       "vv.start()\n"));
 
-  this->onMeasurementGrid();
+  pqSettings* const settings = pqApplicationCore::instance()->settings();
+  const QVariant& gridVisible =
+    settings->value("VelodyneHDLPlugin/MeasurementGrid/Visibility", true);
+  this->onMeasurementGrid(gridVisible.toBool());
 
   bool showDialogAtStartup = false;
   if (showDialogAtStartup)
@@ -170,26 +157,68 @@ void pqVelodyneManager::saveFramesToPCAP(vtkSMSourceProxy* proxy, int startFrame
 }
 
 //-----------------------------------------------------------------------------
-void pqVelodyneManager::saveFramesToLAS(vtkSMSourceProxy* proxy,
-                                        int startFrame, int endFrame,
-                                        const QString& filename)
+void pqVelodyneManager::saveFramesToLAS(
+  vtkVelodyneHDLReader* reader, vtkPolyData* position,
+  int startFrame, int endFrame, const QString& filename, int positionMode)
 {
-  if (!proxy)
-    {
-    return;
-    }
-
-  vtkVelodyneHDLReader* reader = vtkVelodyneHDLReader::SafeDownCast(proxy->GetClientSideObject());
-  if (!reader)
+  if (!reader || (positionMode > 0 && !position))
     {
     return;
     }
 
   vtkLASFileWriter writer(qPrintable(filename));
 
+  if (positionMode > 0) // not sensor-relative
+    {
+    vtkVelodyneTransformInterpolator* const interp = reader->GetInterpolator();
+    writer.SetTimeRange(interp->GetMinimumT(), interp->GetMaximumT());
+
+    if (positionMode > 1) // Absolute geoposition
+      {
+      vtkDataArray* const zoneData =
+        position->GetFieldData()->GetArray("zone");
+      vtkDataArray* const eastingData =
+        position->GetPointData()->GetArray("easting");
+      vtkDataArray* const northingData =
+        position->GetPointData()->GetArray("northing");
+      vtkDataArray* const heightData =
+        position->GetPointData()->GetArray("height");
+
+      if (zoneData && zoneData->GetNumberOfTuples() &&
+          eastingData && eastingData->GetNumberOfTuples() &&
+          northingData && northingData->GetNumberOfTuples() &&
+          heightData && heightData->GetNumberOfTuples())
+        {
+        const int gcs = // should in some cases use 32700?
+          32600 + static_cast<int>(zoneData->GetComponent(0, 0));
+
+        if (positionMode == 3) // Absolute lat/lon
+          {
+          writer.SetGeoConversion(gcs, 4326); // ...or 32700?
+          writer.SetPrecision(1e-8); // about 1 mm
+          }
+
+        writer.SetOrigin(gcs,
+                         eastingData->GetComponent(0, 0),
+                         northingData->GetComponent(0, 0),
+                         heightData->GetComponent(0, 0));
+        }
+      }
+    }
+
+  QProgressDialog progress("Exporting LAS...", "Abort Export", startFrame, endFrame, getMainWindow());
+  progress.setWindowModality(Qt::WindowModal);
+
   reader->Open();
   for (int frame = startFrame; frame <= endFrame; ++frame)
     {
+    progress.setValue(frame);
+
+    if(progress.wasCanceled())
+      {
+      break;
+      }
+
     const vtkSmartPointer<vtkPolyData>& data = reader->GetFrame(frame);
     writer.WriteFrame(data.GetPointer());
     }
@@ -197,41 +226,21 @@ void pqVelodyneManager::saveFramesToLAS(vtkSMSourceProxy* proxy,
 }
 
 //-----------------------------------------------------------------------------
-void pqVelodyneManager::setup(QAction* openFile, QAction* close, QAction* openSensor,
-  QAction* chooseCalibrationFile, QAction* resetView, QAction* play, QAction* seekForward, QAction* seekBackward,  QAction* gotoStart, QAction* gotoEnd,
-  QAction* record, QAction* measurementGrid, QAction* saveScreenshot, QAction* saveCSV)
+void pqVelodyneManager::setup()
 {
-  this->Internal->OpenFile = openFile;
-  this->Internal->Close = close;
-  this->Internal->OpenSensor = openSensor;
-  this->Internal->ChooseCalibrationFile = chooseCalibrationFile;
-  this->Internal->ResetView = resetView;
-  this->Internal->Play = play;
-  this->Internal->SeekForward = seekForward;
-  this->Internal->SeekBackward = seekBackward;
-  this->Internal->GotoStart = gotoStart;
-  this->Internal->GotoEnd = gotoEnd;
-  this->Internal->Record = record;
-  this->Internal->MeasurementGrid = measurementGrid;
-  this->Internal->SaveCSV = saveCSV;
-
-  pqSettings* settings = pqApplicationCore::instance()->settings();
-  bool gridVisible = settings->value("VelodyneHDLPlugin/MeasurementGrid/Visibility", true).toBool();
-  measurementGrid->setChecked(gridVisible);
-
-  this->connect(openSensor, SIGNAL(triggered()), SLOT(onOpenSensor()));
-
-  this->connect(measurementGrid, SIGNAL(triggered()), SLOT(onMeasurementGrid()));
-
-  new vvLoadDataReaction(openFile);
-
   QTimer::singleShot(0, this, SLOT(pythonStartup()));
 }
 
 //-----------------------------------------------------------------------------
-void pqVelodyneManager::openData(const QString& filename)
+void pqVelodyneManager::openData(
+  const QString& filename, const QString& positionFilename)
 {
-  if (QFileInfo(filename).suffix() == "pcap")
+  if (!positionFilename.isEmpty())
+    {
+    this->runPython(
+      QString("vv.openPCAP('%1', '%2')\n").arg(filename, positionFilename));
+    }
+  else if (QFileInfo(filename).suffix() == "pcap")
     {
     this->runPython(QString("vv.openPCAP('%1')\n").arg(filename));
     }
@@ -242,9 +251,8 @@ void pqVelodyneManager::openData(const QString& filename)
 }
 
 //-----------------------------------------------------------------------------
-void pqVelodyneManager::onMeasurementGrid()
+void pqVelodyneManager::onMeasurementGrid(bool gridVisible)
 {
-  bool gridVisible = this->Internal->MeasurementGrid->isChecked();
   pqSettings* settings = pqApplicationCore::instance()->settings();
   settings->setValue("VelodyneHDLPlugin/MeasurementGrid/Visibility", gridVisible);
 

@@ -32,7 +32,9 @@ public:
   void restoreSelectedRow();
 
   void saveSensorTransform();
+  void saveGpsTransform();
   void restoreSensorTransform();
+  void restoreGpsTransform();
 
   pqSettings* const Settings;
 };
@@ -90,6 +92,20 @@ void vvCalibrationDialog::pqInternal::saveSensorTransform()
 }
 
 //-----------------------------------------------------------------------------
+void vvCalibrationDialog::pqInternal::saveGpsTransform()
+{
+  this->Settings->setValue(
+    "VelodyneHDLPlugin/CalibrationFileDialog/GpsYaw",
+    this->GpsYawSpinBox->value());
+  this->Settings->setValue(
+    "VelodyneHDLPlugin/CalibrationFileDialog/GpsRoll",
+    this->GpsRollSpinBox->value());
+  this->Settings->setValue(
+    "VelodyneHDLPlugin/CalibrationFileDialog/GpsPitch",
+    this->GpsPitchSpinBox->value());
+}
+
+//-----------------------------------------------------------------------------
 void vvCalibrationDialog::pqInternal::restoreSensorTransform()
 {
   this->OriginXSpinBox->setValue(
@@ -119,6 +135,23 @@ void vvCalibrationDialog::pqInternal::restoreSensorTransform()
 }
 
 //-----------------------------------------------------------------------------
+void vvCalibrationDialog::pqInternal::restoreGpsTransform()
+{
+  this->GpsYawSpinBox->setValue(
+    this->Settings->value(
+      "VelodyneHDLPlugin/CalibrationFileDialog/GpsYaw",
+      this->GpsYawSpinBox->value()).toDouble());
+  this->GpsRollSpinBox->setValue(
+    this->Settings->value(
+      "VelodyneHDLPlugin/CalibrationFileDialog/GpsRoll",
+      this->GpsRollSpinBox->value()).toDouble());
+  this->GpsPitchSpinBox->setValue(
+    this->Settings->value(
+      "VelodyneHDLPlugin/CalibrationFileDialog/GpsPitch",
+      this->GpsPitchSpinBox->value()).toDouble());
+}
+
+//-----------------------------------------------------------------------------
 vvCalibrationDialog::vvCalibrationDialog(QWidget *p)
   : QDialog(p), Internal(new pqInternal)
 {
@@ -136,6 +169,7 @@ vvCalibrationDialog::vvCalibrationDialog(QWidget *p)
 
   this->Internal->restoreSelectedRow();
   this->Internal->restoreSensorTransform();
+  this->Internal->restoreGpsTransform();
 
   const QVariant& geometry =
     this->Internal->Settings->value(
@@ -183,10 +217,29 @@ QMatrix4x4 vvCalibrationDialog::sensorTransform() const
 }
 
 //-----------------------------------------------------------------------------
+double vvCalibrationDialog::gpsYaw() const
+{
+  return this->Internal->GpsYawSpinBox->value();
+}
+
+//-----------------------------------------------------------------------------
+double vvCalibrationDialog::gpsRoll() const
+{
+  return this->Internal->GpsRollSpinBox->value();
+}
+
+//-----------------------------------------------------------------------------
+double vvCalibrationDialog::gpsPitch() const
+{
+  return this->Internal->GpsPitchSpinBox->value();
+}
+
+//-----------------------------------------------------------------------------
 void vvCalibrationDialog::accept()
 {
   this->Internal->saveSelectedRow();
   this->Internal->saveSensorTransform();
+  this->Internal->saveGpsTransform();
   QDialog::accept();
 }
 

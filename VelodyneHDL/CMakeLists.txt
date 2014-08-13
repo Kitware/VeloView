@@ -59,6 +59,7 @@ if(PARAVIEW_BUILD_QT_GUI)
 
   set(UI_FILES
     vvCalibrationDialog.ui
+    vvCropReturnsDialog.ui
     vvLaserSelectionDialog.ui
     vvSelectFramesDialog.ui
     )
@@ -66,6 +67,7 @@ if(PARAVIEW_BUILD_QT_GUI)
   set(MOC_HEADERS
     pqVelodyneHDLSource.h
     vvCalibrationDialog.h
+    vvCropReturnsDialog.h
     vvLaserSelectionDialog.h
     vvSelectFramesDialog.h
     )
@@ -75,6 +77,7 @@ if(PARAVIEW_BUILD_QT_GUI)
 
   set(vtk_sources
     vtkPlaneFitter.cxx
+    vtkVelodyneTransformInterpolator.cxx
     vtkWrappedTupleInterpolator.cxx
     )
 
@@ -95,6 +98,7 @@ if(PARAVIEW_BUILD_QT_GUI)
     ${ui_srcs}
     ${resource_srcs}
     vvCalibrationDialog.cxx
+    vvCropReturnsDialog.cxx
     vvLaserSelectionDialog.cxx
     vvSelectFramesDialog.cxx
     )
@@ -108,6 +112,7 @@ endif()
 
 
 list(APPEND servermanager_sources
+  vtkApplanixPositionReader.cxx
   vtkVelodyneHDLGridSource.cxx
   vtkVelodyneHDLReader.cxx
   vtkVelodyneHDLPositionReader.cxx
@@ -115,6 +120,7 @@ list(APPEND servermanager_sources
 
 
 list(APPEND servermanager_xml
+  xml/ApplanixPositionReader.xml
   xml/VelodyneHDLGridSource.xml
   xml/VelodyneHDLReader.xml
   xml/VelodyneHDLPositionReader.xml

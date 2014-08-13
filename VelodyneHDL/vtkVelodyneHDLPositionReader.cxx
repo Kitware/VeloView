@@ -28,43 +28,44 @@
 
 #include "vtkVelodyneHDLPositionReader.h"
 
-#include "vtkNew.h"
-#include "vtkSmartPointer.h"
-#include "vtkCellData.h"
-#include "vtkCellArray.h"
-#include "vtkUnsignedCharArray.h"
-#include "vtkPoints.h"
-#include "vtkDoubleArray.h"
-#include "vtkUnsignedShortArray.h"
-#include "vtkUnsignedIntArray.h"
-#include "vtkDataArray.h"
-#include "vtkFloatArray.h"
-#include "vtkMath.h"
-
-#include "vtkPolyData.h"
-#include "vtkInformation.h"
-#include "vtkInformationVector.h"
-#include "vtkObjectFactory.h"
-#include "vtkPointData.h"
-#include "vtkMath.h"
-#include "vtkStreamingDemandDrivenPipeline.h"
-#include "vtkPolyLine.h"
-
 #include "vtkPacketFileReader.h"
 #include "vtkPacketFileWriter.h"
+#include "vtkVelodyneTransformInterpolator.h"
 
-#include "vtkWrappedTupleInterpolator.h"
+#include <vtkCellArray.h>
+#include <vtkCellData.h>
+#include <vtkDataArray.h>
+#include <vtkDoubleArray.h>
+#include <vtkFloatArray.h>
+#include <vtkInformation.h>
+#include <vtkInformationVector.h>
+#include <vtkMath.h>
+#include <vtkMath.h>
+#include <vtkNew.h>
+#include <vtkObjectFactory.h>
+#include <vtkPointData.h>
+#include <vtkPoints.h>
+#include <vtkPolyData.h>
+#include <vtkPolyLine.h>
+#include <vtkSmartPointer.h>
+#include <vtkStreamingDemandDrivenPipeline.h>
+#include <vtkTransform.h>
+#include <vtkTupleInterpolator.h>
+#include <vtkUnsignedCharArray.h>
+#include <vtkUnsignedIntArray.h>
+#include <vtkUnsignedShortArray.h>
 
-#include <sstream>
-#include <algorithm>
-#include <cmath>
-#include <map>
+#include <vtk_libproj4.h>
 
 #include <boost/foreach.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
 
-#include "vtk_libproj4.h"
+#include <algorithm>
+#include <map>
+#include <sstream>
+
+#include <cmath>
 
 #ifdef _MSC_VER
 # include <boost/cstdint.hpp>
@@ -109,7 +110,8 @@ public:
   int UTMZone;
   std::string UTMString;
   double Offset[3];
-  vtkSmartPointer<vtkWrappedTupleInterpolator> Interp;
+
+  vtkNew<vtkVelodyneTransformInterpolator> Interp;
 };
 
 namespace
@@ -195,70 +197,65 @@ std::vector<std::string> vtkVelodyneHDLPositionReader::vtkInternal::ParseSentanc
 }
 
 //-----------------------------------------------------------------------------
-vtkWrappedTupleInterpolator* vtkVelodyneHDLPositionReader::GetInterpolator()
+vtkVelodyneTransformInterpolator*
+vtkVelodyneHDLPositionReader::GetInterpolator()
 {
-  return this->Internal->Interp;
+  return this->Internal->Interp.GetPointer();
 }
 
 //-----------------------------------------------------------------------------
-void vtkVelodyneHDLPositionReader::vtkInternal::InterpolateGPS(vtkPoints* points, vtkDataArray* gpsTime, vtkDataArray* times, vtkDataArray* heading)
+void vtkVelodyneHDLPositionReader::vtkInternal::InterpolateGPS(vtkPoints* points, vtkDataArray* gpsTime, vtkDataArray* times, vtkDataArray* headings)
 {
+  vtkNew<vtkTupleInterpolator> headingInterpolator;
+
   // assert(gpsTime is sorted)
   assert(points->GetNumberOfPoints() == times->GetNumberOfTuples());
 
-  this->Interp = vtkSmartPointer<vtkWrappedTupleInterpolator>::New();
-  vtkSmartPointer<vtkWrappedTupleInterpolator> interp = this->Interp;
-  interp->SetInterpolationType(1);
-  interp->SetNumberOfComponents(5);
+  this->Interp->SetInterpolationTypeToLinear();
+  this->Interp->Initialize();
+  headingInterpolator->SetInterpolationTypeToLinear();
+  headingInterpolator->SetNumberOfComponents(2);
 
-  unsigned int last = 0;
+  double timeOffset = 0.0;
+
   assert(times->GetNumberOfTuples() == gpsTime->GetNumberOfTuples());
-  for(vtkIdType i = 0; i < times->GetNumberOfTuples(); ++i)
     {
-    // Convert the GPS time to seconds since top of the hour
-    unsigned int currGPS = gpsTime->GetTuple1(i);
-    if(currGPS != last)
+    const unsigned int currGPS = gpsTime->GetTuple1(i);
+    if (currGPS != lastGPS)
       {
-      int minutes = (currGPS / 100) % 100;
-      int seconds = currGPS % 100;
+      if (currGPS < lastGPS)
+        {
+        // time of day has wrapped; increment time offset
+        timeOffset += 24.0 * 3600.0;
+        }
+      lastGPS = currGPS;
 
-      double convertedtime = (60.0 * minutes + seconds) * 1.0e6;
-      double pt[5];
-      points->GetPoint(i, pt);
+      // Compute time in seconds from decimal-encoded time
+      const int minutes = (currGPS / 100) % 100;
+      const int seconds = currGPS % 100;
+      const double convertedtime = ((60.0 * minutes) + seconds) + timeOffset;
 
-      double angle = vtkMath::Pi() * heading->GetTuple1(i) / 180.0;
-      pt[3] = cos(angle);
-      pt[4] = sin(angle);
+      // Get position and heading
+      double pos[3];
+      points->GetPoint(i, pos);
 
-      interp->AddTuple(convertedtime, pt);
+      const double heading = headings->GetTuple1(i);
+
+      // Compute transform
+      vtkNew<vtkTransform> transform;
+      transform->PostMultiply();
+      transform->RotateZ(-heading/* - this->BaseYaw*/);
+      // transform->RotateY(-this->BaseRoll);
+      // transform->RotateX(-this->BasePitch);
+      transform->Translate(pos);
+
+      this->Interp->AddTransform(convertedtime, transform.GetPointer());
+
+      // Compute heading vector for interpolation
+      double ha = heading * DEG_TO_RAD;
+      double hv[2] = { cos(ha), sin(ha) };
+      headingInterpolator->AddTuple(convertedtime, hv);
       }
-
-    last = currGPS;
-    }
-
-  double mint = interp->GetMinimumT();
-  double maxt = interp->GetMaximumT();
-  double range[2];
-  range[0] = mint;
-  range[1] = maxt;
-
-  for(vtkIdType i = 0; i < times->GetNumberOfTuples(); ++i)
-    {
-    double t = times->GetTuple1(i);
-    vtkMath::ClampValue(&t,range);
-
-    double result[5];
-    interp->InterpolateTuple(t, result);
-
-    double pt[3];
-    std::copy(result, result + 3, pt);
-
-    points->SetPoint(i, pt);
-
-    double angle = atan2(result[4], result[3]);
-    angle = (angle > 0 ? angle : (2*vtkMath::Pi() + angle)) * 360 / (2*vtkMath::Pi());
-
-    heading->SetTuple1(i, angle);
     }
 }
 

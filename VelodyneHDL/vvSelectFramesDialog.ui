@@ -6,140 +6,142 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>324</width>
-    <height>203</height>
+    <width>267</width>
+    <height>407</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Select Frames</string>
   </property>
-  <layout class="QFormLayout" name="formLayout_2">
-   <item row="0" column="0" colspan="2">
-    <widget class="QRadioButton" name="CurrentFrameButton">
-     <property name="text">
-      <string>Current frame</string>
+  <layout class="QVBoxLayout" name="verticalLayout_4">
+   <item>
+    <widget class="QGroupBox" name="groupBox">
+     <property name="title">
+      <string>Frame Selection</string>
      </property>
-     <property name="checked">
-      <bool>true</bool>
-     </property>
-    </widget>
-   </item>
-   <item row="1" column="0" colspan="2">
-    <widget class="QRadioButton" name="AllFramesButton">
-     <property name="text">
-      <string>All frames</string>
-     </property>
-    </widget>
-   </item>
-   <item row="2" column="0" colspan="2">
-    <layout class="QHBoxLayout" name="horizontalLayout">
-     <property name="spacing">
-      <number>0</number>
-     </property>
-     <property name="leftMargin">
-      <number>0</number>
-     </property>
-     <item>
-      <widget class="QRadioButton" name="FrameRangeButton">
-       <property name="text">
-        <string>Frames from </string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QSpinBox" name="FrameStart">
-       <property name="focusPolicy">
-        <enum>Qt::WheelFocus</enum>
-       </property>
-       <property name="maximum">
-        <number>100</number>
-       </property>
-       <property name="value">
-        <number>0</number>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLabel" name="label">
-       <property name="text">
-        <string> to </string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QSpinBox" name="FrameStop">
-       <property name="focusPolicy">
-        <enum>Qt::WheelFocus</enum>
-       </property>
-       <property name="maximum">
-        <number>100</number>
-       </property>
-       <property name="value">
-        <number>10</number>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <spacer name="horizontalSpacer">
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
-       </property>
-       <property name="sizeHint" stdset="0">
-        <size>
-         <width>40</width>
-         <height>20</height>
-        </size>
-       </property>
-      </spacer>
-     </item>
-    </layout>
-   </item>
-   <item row="3" column="0" colspan="2">
-    <widget class="QWidget" name="FrameStrideContainer" native="true">
-     <layout class="QFormLayout" name="formLayout">
-      <property name="margin">
-       <number>0</number>
-      </property>
-      <item row="0" column="0" colspan="2">
-       <widget class="Line" name="FrameStrideDivider">
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="0">
-       <widget class="QLabel" name="FrameStrideLabel">
+     <layout class="QVBoxLayout" name="verticalLayout_2">
+      <item>
+       <widget class="QRadioButton" name="CurrentFrameButton">
         <property name="text">
-         <string>Frame Stride:</string>
+         <string>Current frame</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
         </property>
        </widget>
       </item>
-      <item row="1" column="1">
-       <widget class="QSpinBox" name="FrameStride">
-        <property name="minimum">
-         <number>1</number>
+      <item>
+       <widget class="QRadioButton" name="AllFramesButton">
+        <property name="text">
+         <string>All frames</string>
         </property>
-        <property name="maximum">
-         <number>999</number>
+       </widget>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayout">
+        <property name="spacing">
+         <number>0</number>
         </property>
+        <property name="leftMargin">
+         <number>0</number>
+        </property>
+        <item>
+         <widget class="QRadioButton" name="FrameRangeButton">
+          <property name="text">
+           <string>Frames from </string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QSpinBox" name="FrameStart">
+          <property name="focusPolicy">
+           <enum>Qt::WheelFocus</enum>
+          </property>
+          <property name="maximum">
+           <number>100</number>
+          </property>
+          <property name="value">
+           <number>0</number>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="label">
+          <property name="text">
+           <string> to </string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QSpinBox" name="FrameStop">
+          <property name="focusPolicy">
+           <enum>Qt::WheelFocus</enum>
+          </property>
+          <property name="maximum">
+           <number>100</number>
+          </property>
+          <property name="value">
+           <number>10</number>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <spacer name="horizontalSpacer">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <widget class="QWidget" name="FrameStrideContainer" native="true">
+        <layout class="QFormLayout" name="formLayout">
+         <property name="margin">
+          <number>0</number>
+         </property>
+         <item row="0" column="0" colspan="2">
+          <widget class="Line" name="FrameStrideDivider">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="0">
+          <widget class="QLabel" name="FrameStrideLabel">
+           <property name="text">
+            <string>Frame Stride:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="1">
+          <widget class="QSpinBox" name="FrameStride">
+           <property name="minimum">
+            <number>1</number>
+           </property>
+           <property name="maximum">
+            <number>999</number>
+           </property>
+          </widget>
+         </item>
+        </layout>
        </widget>
       </item>
      </layout>
     </widget>
    </item>
-   <item row="4" column="0" colspan="2">
-    <widget class="QWidget" name="FramePackContainer" native="true">
-     <layout class="QVBoxLayout" name="verticalLayout">
-      <property name="margin">
-       <number>0</number>
-      </property>
-      <item>
-       <widget class="Line" name="FramePackDivider">
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-       </widget>
-      </item>
+   <item>
+    <widget class="QGroupBox" name="FramePackContainer">
+     <property name="title">
+      <string>Archive Mode</string>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout_3">
       <item>
        <widget class="QRadioButton" name="SingleFileButton">
         <property name="text">
@@ -160,7 +162,56 @@
      </layout>
     </widget>
    </item>
-   <item row="5" column="0" colspan="2">
+   <item>
+    <widget class="QGroupBox" name="FrameTransformContainer">
+     <property name="title">
+      <string>Coordinate System</string>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout">
+      <item>
+       <widget class="QRadioButton" name="SensorButton">
+        <property name="toolTip">
+         <string>Write position information relative to the sensor</string>
+        </property>
+        <property name="text">
+         <string>Sensor</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QRadioButton" name="RelativeButton">
+        <property name="toolTip">
+         <string>Write position information transformed for platform orientation and relative position</string>
+        </property>
+        <property name="text">
+         <string>Relative geoposition</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QRadioButton" name="AbsoluteUtmButton">
+        <property name="toolTip">
+         <string>Write position information as absolute geoposition in UTM coordinates</string>
+        </property>
+        <property name="text">
+         <string>Absolute geoposition (UTM)</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QRadioButton" name="AbsoluteLatLonButton">
+        <property name="toolTip">
+         <string>Write position information as absolute geoposition in Lat/Lon</string>
+        </property>
+        <property name="text">
+         <string>Absolute geoposition (Lat/Lon)</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
     <widget class="QDialogButtonBox" name="buttonBox">
      <property name="orientation">
       <enum>Qt::Horizontal</enum>
@@ -181,8 +232,8 @@
    <slot>accept()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>248</x>
-     <y>254</y>
+     <x>252</x>
+     <y>223</y>
     </hint>
     <hint type="destinationlabel">
      <x>157</x>
@@ -197,8 +248,8 @@
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>316</x>
-     <y>260</y>
+     <x>319</x>
+     <y>223</y>
     </hint>
     <hint type="destinationlabel">
      <x>286</x>

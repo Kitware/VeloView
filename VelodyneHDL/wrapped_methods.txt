@@ -1,5 +1,7 @@
 vvCalibrationDialog::vvCalibrationDialog(QWidget*)
 
+vvCropReturnsDialog::vvCropReturnsDialog(QWidget*)
+
 vvSelectFramesDialog::vvSelectFramesDialog(QWidget*)
 
 vvLaserSelectionDialog::vvLaserSelectionDialog(QWidget*)
@@ -9,4 +11,4 @@ void vvLaserSelectionDialog::setLaserSelectionSelector(const QVector<int>&);
 void vvLaserSelectionDialog::setVerticalCorrections(const QVector<double>&);
 
 static void pqVelodyneManager::saveFramesToPCAP(vtkSMSourceProxy*, int, int, const QString&);
-static void pqVelodyneManager::saveFramesToLAS(vtkSMSourceProxy*, int, int, const QString&);
+static void pqVelodyneManager::saveFramesToLAS(vtkVelodyneHDLReader*, vtkPolyData*, int, int, const QString&, int);

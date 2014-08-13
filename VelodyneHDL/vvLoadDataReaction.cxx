@@ -38,8 +38,9 @@
 #include <QDir>
 
 //-----------------------------------------------------------------------------
-vvLoadDataReaction::vvLoadDataReaction(QAction* parentAction)
-  : Superclass(parentAction)
+vvLoadDataReaction::vvLoadDataReaction(
+  QAction* parentAction, bool separatePositionFile)
+  : Superclass(parentAction), SeparatePositionFile(separatePositionFile)
 {
   //QObject::connect(this, SIGNAL(loadedData(pqPipelineSource*)),
   //  this, SLOT(onDataLoaded(pqPipelineSource*)));
@@ -106,29 +107,43 @@ pqPipelineSource* vvLoadDataReaction::loadData()
   pqSettings* settings = pqApplicationCore::instance()->settings();
   QString defaultDir = settings->value("VelodyneHDLPlugin/OpenData/DefaultDir", QDir::homePath()).toString();
 
+  QString positionFileName;
+  QString fileName;
 
-  QString fileName = QFileDialog::getOpenFileName(
-    pqCoreUtilities::mainWidget(), tr("Open File"), defaultDir, filters);
-
-  if (fileName.isEmpty())
+  if (this->SeparatePositionFile)
     {
-    return NULL;
-    }
+    fileName = QFileDialog::getOpenFileName(
+      pqCoreUtilities::mainWidget(), tr("Open LiDAR File"), defaultDir,
+      "Wireshark Capture (*.pcap);;All files(*)");
 
+    if (fileName.isEmpty())
+      {
+      return NULL;
+      }
+
+    positionFileName = QFileDialog::getOpenFileName(
+      pqCoreUtilities::mainWidget(), tr("Open Position File"), defaultDir,
+      "Applanix POSCAP Position Data Text Export (*.txt);;All files (*)");
+
+    if (positionFileName.isEmpty())
+      {
+      return NULL;
+      }
+    }
+  else
+    {
+    fileName = QFileDialog::getOpenFileName(
+      pqCoreUtilities::mainWidget(), tr("Open File"), defaultDir, filters);
+
+    if (fileName.isEmpty())
+      {
+      return NULL;
+      }
+    }
 
   settings->setValue("VelodyneHDLPlugin/OpenData/DefaultDir", QFileInfo(fileName).absoluteDir().absolutePath());
 
+  pqVelodyneManager::instance()->openData(fileName, positionFileName);
 
-  pqVelodyneManager::instance()->openData(fileName);
-
-  /*
- if (!fileName.isEmpty())
-   {
-   QStringList files;
-   files << fileName;
-   return pqLoadDataReaction::loadData(files);
-   }
-  */
-
- return NULL;
+  return NULL;
 }

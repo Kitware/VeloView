@@ -28,26 +28,29 @@
 #include "vvMainWindow.h"
 #include "ui_vvMainWindow.h"
 
-#include "pqActiveObjects.h"
-#include "pqApplicationCore.h"
-#include "pqAutoLoadPluginXMLBehavior.h"
-#include "pqCommandLineOptionsBehavior.h"
-#include "pqCrashRecoveryBehavior.h"
-#include "pqInterfaceTracker.h"
-#include "pqObjectBuilder.h"
-#include "pqPersistentMainWindowStateBehavior.h"
-#include "pqPythonShellReaction.h"
-#include "pqQtMessageHandlerBehavior.h"
-#include "pqRenderView.h"
-#include "pqServer.h"
-#include "pqSpreadSheetView.h"
-#include "pqSpreadSheetVisibilityBehavior.h"
-#include "pqStandardViewModules.h"
-#include "pqVelodyneManager.h"
-#include "vtkPVPlugin.h"
-#include "vtkSMPropertyHelper.h"
+#include "vvLoadDataReaction.h"
 #include "vvSelectionReaction.h"
 #include "vvToggleSpreadSheetReaction.h"
+
+#include <pqActiveObjects.h>
+#include <pqApplicationCore.h>
+#include <pqAutoLoadPluginXMLBehavior.h>
+#include <pqCommandLineOptionsBehavior.h>
+#include <pqCrashRecoveryBehavior.h>
+#include <pqInterfaceTracker.h>
+#include <pqObjectBuilder.h>
+#include <pqPersistentMainWindowStateBehavior.h>
+#include <pqPythonShellReaction.h>
+#include <pqQtMessageHandlerBehavior.h>
+#include <pqRenderView.h>
+#include <pqServer.h>
+#include <pqSettings.h>
+#include <pqSpreadSheetView.h>
+#include <pqSpreadSheetVisibilityBehavior.h>
+#include <pqStandardViewModules.h>
+#include <pqVelodyneManager.h>
+#include <vtkPVPlugin.h>
+#include <vtkSMPropertyHelper.h>
 
 #include <QLabel>
 #include <QSplitter>
@@ -142,21 +145,21 @@ private:
 
     new pqPythonShellReaction(this->Ui.actionPython_Console);
 
-    pqVelodyneManager::instance()->setup(
-      this->Ui.action_Open,
-      this->Ui.actionClose,
-      this->Ui.actionOpen_Sensor_Stream,
-      this->Ui.actionChoose_Calibration_File,
-      this->Ui.actionReset_Camera,
-      this->Ui.actionPlay,
-      this->Ui.actionSeek_Forward,
-      this->Ui.actionSeek_Backward,
-      this->Ui.actionGo_To_Start,
-      this->Ui.actionGo_To_End,
-      this->Ui.actionRecord,
-      this->Ui.actionMeasurement_Grid,
-      this->Ui.actionSaveScreenshot,
-      this->Ui.actionSaveCSV);
+    pqVelodyneManager::instance()->setup();
+
+    pqSettings* const settings = pqApplicationCore::instance()->settings();
+    const QVariant& gridVisible =
+      settings->value("VelodyneHDLPlugin/MeasurementGrid/Visibility", true);
+    this->Ui.actionMeasurement_Grid->setChecked(gridVisible.toBool());
+
+    new vvLoadDataReaction(this->Ui.actionOpenPcap, false);
+    new vvLoadDataReaction(this->Ui.actionOpenApplanix, true);
+
+    connect(this->Ui.actionOpen_Sensor_Stream, SIGNAL(triggered()),
+            pqVelodyneManager::instance(), SLOT(onOpenSensor()));
+
+    connect(this->Ui.actionMeasurement_Grid, SIGNAL(toggled(bool)),
+            pqVelodyneManager::instance(), SLOT(onMeasurementGrid(bool)));
     }
 };
 
