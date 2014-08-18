@@ -122,6 +122,8 @@ public:
   double MaxTime;
   Eigen::Vector3d Origin;
 
+  size_t npoints;
+
 #ifdef PJ_VERSION // 4.8 or later
   projPJ InProj;
   projPJ OutProj;
@@ -154,6 +156,8 @@ vtkLASFileWriter::vtkLASFileWriter(const char* filename)
 #endif
   this->Internal->OutGcs = -1;
 
+  this->Internal->npoints = 0;
+
   this->Internal->Stream.open(
     filename, std::ios::out | std::ios::trunc | std::ios::binary);
 
@@ -167,6 +171,11 @@ vtkLASFileWriter::vtkLASFileWriter(const char* filename)
 //-----------------------------------------------------------------------------
 vtkLASFileWriter::~vtkLASFileWriter()
 {
+  liblas::Header header = this->Internal->Writer->GetHeader();
+  header.SetPointRecordsByReturnCount(0, this->Internal->npoints);
+  this->Internal->Writer->SetHeader(header);
+  this->Internal->Writer->WriteHeader();
+
   this->Internal->Close();
 
 #ifdef PJ_VERSION // 4.8 or later
@@ -310,6 +319,7 @@ void vtkLASFileWriter::WriteFrame(vtkPolyData* data)
       p.SetUserData(static_cast<uint8_t>(laserIdData->GetComponent(n, 0)));
       p.SetTime(time);
 
+      this->Internal->npoints++;
       this->Internal->Writer->WritePoint(p);
       }
     }
