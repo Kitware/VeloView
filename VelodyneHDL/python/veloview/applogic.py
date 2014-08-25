@@ -352,6 +352,10 @@ def openPCAP(filename, positionFilename=None):
 
         app.position = (posreader, None, g)
     else:
+        if positionFilename is not None:
+            QtGui.QMessageBox.warning(getMainWindow(), 'Georeferncing data invalid',
+                                      'File %s is not supported' % positionFilename)
+
         smp.Delete(posreader)
 
     smp.SetActiveView(app.mainView)
