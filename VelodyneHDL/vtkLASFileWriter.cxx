@@ -123,6 +123,8 @@ public:
   Eigen::Vector3d Origin;
 
   size_t npoints;
+  double MinPt[3];
+  double MaxPt[3];
 
 #ifdef PJ_VERSION // 4.8 or later
   projPJ InProj;
@@ -136,6 +138,15 @@ public:
 //-----------------------------------------------------------------------------
 void vtkLASFileWriter::vtkInternal::Close()
 {
+  liblas::Header header = this->Writer->GetHeader();
+
+  header.SetPointRecordsByReturnCount(0, this->npoints);
+  header.SetMin(this->MinPt[0], this->MinPt[1], this->MinPt[2]);
+  header.SetMax(this->MaxPt[0], this->MaxPt[1], this->MaxPt[2]);
+
+  this->Writer->SetHeader(header);
+  this->Writer->WriteHeader();
+
   delete this->Writer;
   this->Writer = 0;
   this->Stream.close();
@@ -158,6 +169,12 @@ vtkLASFileWriter::vtkLASFileWriter(const char* filename)
 
   this->Internal->npoints = 0;
 
+  for(int i = 0; i < 3; ++i)
+    {
+    this->Internal->MaxPt[i] = -std::numeric_limits<double>::max();
+    this->Internal->MinPt[i] = std::numeric_limits<double>::max();
+    }
+
   this->Internal->Stream.open(
     filename, std::ios::out | std::ios::trunc | std::ios::binary);
 
@@ -171,11 +188,6 @@ vtkLASFileWriter::vtkLASFileWriter(const char* filename)
 //-----------------------------------------------------------------------------
 vtkLASFileWriter::~vtkLASFileWriter()
 {
-  liblas::Header header = this->Internal->Writer->GetHeader();
-  header.SetPointRecordsByReturnCount(0, this->Internal->npoints);
-  this->Internal->Writer->SetHeader(header);
-  this->Internal->Writer->WriteHeader();
-
   this->Internal->Close();
 
 #ifdef PJ_VERSION // 4.8 or later
@@ -320,6 +332,19 @@ void vtkLASFileWriter::WriteFrame(vtkPolyData* data)
       p.SetTime(time);
 
       this->Internal->npoints++;
+
+      for(int i = 0; i < 3; ++i)
+        {
+        if(p[i] > this->Internal->MaxPt[i])
+          {
+          this->Internal->MaxPt[i] = p[i];
+          }
+        if(p[i] < this->Internal->MinPt[i])
+          {
+          this->Internal->MinPt[i] = p[i];
+          }
+        }
+
       this->Internal->Writer->WritePoint(p);
       }
     }
