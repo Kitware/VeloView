@@ -138,15 +138,6 @@ public:
 //-----------------------------------------------------------------------------
 void vtkLASFileWriter::vtkInternal::Close()
 {
-  liblas::Header header = this->Writer->GetHeader();
-
-  header.SetPointRecordsByReturnCount(0, this->npoints);
-  header.SetMin(this->MinPt[0], this->MinPt[1], this->MinPt[2]);
-  header.SetMax(this->MaxPt[0], this->MaxPt[1], this->MaxPt[2]);
-
-  this->Writer->SetHeader(header);
-  this->Writer->WriteHeader();
-
   delete this->Writer;
   this->Writer = 0;
   this->Stream.close();
@@ -331,21 +322,67 @@ void vtkLASFileWriter::WriteFrame(vtkPolyData* data)
       p.SetUserData(static_cast<uint8_t>(laserIdData->GetComponent(n, 0)));
       p.SetTime(time);
 
+      this->Internal->Writer->WritePoint(p);
+      }
+    }
+}
+
+//-----------------------------------------------------------------------------
+void vtkLASFileWriter::FlushMetaData()
+{
+  liblas::Header header = this->Internal->Writer->GetHeader();
+
+  header.SetPointRecordsByReturnCount(0, this->Internal->npoints);
+  header.SetMin(this->Internal->MinPt[0], this->Internal->MinPt[1], this->Internal->MinPt[2]);
+  header.SetMax(this->Internal->MaxPt[0], this->Internal->MaxPt[1], this->Internal->MaxPt[2]);
+
+  this->Internal->Writer->SetHeader(header);
+  this->Internal->Writer->WriteHeader();
+}
+
+//-----------------------------------------------------------------------------
+void vtkLASFileWriter::UpdateMetaData(vtkPolyData* data)
+{
+  vtkPoints* const points = data->GetPoints();
+  vtkDataArray* const timestampData =
+    data->GetPointData()->GetArray("timestamp");
+
+  const vtkIdType numPoints = points->GetNumberOfPoints();
+  for (vtkIdType n = 0; n < numPoints; ++n)
+    {
+    const double time = timestampData->GetComponent(n, 0) * 1e-6;
+    if (time >= this->Internal->MinTime && time <= this->Internal->MaxTime)
+      {
+      Eigen::Vector3d pos;
+      points->GetPoint(n, pos.data());
+      pos += this->Internal->Origin;
+
+#ifdef PJ_VERSION // 4.8 or later
+      if (this->Internal->OutProj)
+        {
+        pos = ConvertGcs(pos, this->Internal->InProj, this->Internal->OutProj);
+        }
+#else
+      if (this->Internal->Proj)
+        {
+        pos = InvertProj(pos, this->Internal->Proj);
+        }
+#endif
+
       this->Internal->npoints++;
 
       for(int i = 0; i < 3; ++i)
         {
-        if(p[i] > this->Internal->MaxPt[i])
+        if(pos[i] > this->Internal->MaxPt[i])
           {
-          this->Internal->MaxPt[i] = p[i];
+          this->Internal->MaxPt[i] = pos[i];
           }
-        if(p[i] < this->Internal->MinPt[i])
+        if(pos[i] < this->Internal->MinPt[i])
           {
-          this->Internal->MinPt[i] = p[i];
+          this->Internal->MinPt[i] = pos[i];
           }
         }
 
-      this->Internal->Writer->WritePoint(p);
       }
     }
 }

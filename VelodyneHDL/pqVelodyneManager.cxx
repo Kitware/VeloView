@@ -206,7 +206,9 @@ void pqVelodyneManager::saveFramesToLAS(
       }
     }
 
-  QProgressDialog progress("Exporting LAS...", "Abort Export", startFrame, endFrame, getMainWindow());
+  QProgressDialog progress("Exporting LAS...", "Abort Export",
+                           startFrame, startFrame + (endFrame - startFrame)*2,
+                           getMainWindow());
   progress.setWindowModality(Qt::WindowModal);
 
   reader->Open();
@@ -216,12 +218,30 @@ void pqVelodyneManager::saveFramesToLAS(
 
     if(progress.wasCanceled())
       {
-      break;
+      reader->Close();
+      return;
+      }
+
+    const vtkSmartPointer<vtkPolyData>& data = reader->GetFrame(frame);
+    writer.UpdateMetaData(data.GetPointer());
+    }
+
+  writer.FlushMetaData();
+
+  for (int frame = startFrame; frame <= endFrame; ++frame)
+    {
+    progress.setValue(endFrame + (frame - startFrame));
+
+    if(progress.wasCanceled())
+      {
+      reader->Close();
+      return;
       }
 
     const vtkSmartPointer<vtkPolyData>& data = reader->GetFrame(frame);
     writer.WriteFrame(data.GetPointer());
     }
+
   reader->Close();
 }
 

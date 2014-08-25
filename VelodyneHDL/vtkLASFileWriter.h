@@ -47,6 +47,9 @@ public:
   void SetGeoConversion(int in, int out);
   void SetPrecision(double neTol, double hTol = 1e-3);
 
+  void UpdateMetaData(vtkPolyData* data);
+  void FlushMetaData();
+
   void WriteFrame(vtkPolyData* data);
 
 protected:
