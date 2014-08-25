@@ -317,7 +317,7 @@ void vtkLASFileWriter::WriteFrame(vtkPolyData* data)
       liblas::Point p(&this->Internal->Writer->GetHeader());
       p.SetCoordinates(pos[0], pos[1], pos[2]);
       p.SetIntensity(static_cast<uint16_t>(intensityData->GetComponent(n, 0)));
-      p.SetReturnNumber(0);
+      p.SetReturnNumber(1);
       p.SetNumberOfReturns(1);
       p.SetUserData(static_cast<uint8_t>(laserIdData->GetComponent(n, 0)));
       p.SetTime(time);
