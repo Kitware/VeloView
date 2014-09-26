@@ -540,8 +540,15 @@ int vtkVelodyneHDLPositionReader::RequestData(vtkInformation *request,
 
   cells->InsertNextCell(polyLine);
 
-  // Optionall interpolate the GPS values
-  this->Internal->InterpolateGPS(points, gpsTime, times, dataVectors["heading"]);
+  // Optionally interpolate the GPS values... note that we assume that the
+  // first GPS point is not 0,0 if we have valid GPS data; otherwise we assume
+  // that the GPS data is garbage and ignore it
+  if (lats->GetNumberOfTuples() && lons->GetNumberOfTuples() &&
+      (lats->GetValue(0) != 0.0 || lons->GetValue(0) != 0.0))
+    {
+    this->Internal->InterpolateGPS(points, gpsTime, times,
+                                   dataVectors["heading"]);
+    }
 
   output->SetPoints(points);
   output->SetLines(cells);
