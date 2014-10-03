@@ -1157,7 +1157,7 @@ double vtkVelodyneHDLReader::vtkInternal::ComputeTimestamp(
     if (!vtkMath::IsFinite(this->TimeAdjust))
       {
       // First adjustment; must compute adjustment number
-      if (this->Interp)
+      if (this->Interp && this->Interp->GetNumberOfTransforms())
         {
         const double ts = static_cast<double>(tohTime) * 1e-6;
         const double hours = (this->Interp->GetMinimumT() - ts) / 3600.0;
@@ -1185,7 +1185,7 @@ double vtkVelodyneHDLReader::vtkInternal::ComputeTimestamp(
 void vtkVelodyneHDLReader::vtkInternal::ComputeOrientation(
   double timestamp, vtkTransform* geotransform)
 {
-  if(this->ApplyTransform && this->Interp)
+  if(this->ApplyTransform && this->Interp && this->Interp->GetNumberOfTransforms())
     {
     // NOTE: We store time in milliseconds, but the interpolator uses seconds,
     //       so we need to adjust here
