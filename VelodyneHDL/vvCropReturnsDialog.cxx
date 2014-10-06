@@ -39,6 +39,11 @@ void vvCropReturnsDialog::pqInternal::saveSettings()
   this->Settings->setValue(
     "VelodyneHDLPlugin/CropReturnsDialog/EnableCropping",
     this->CropGroupBox->isChecked());
+
+  this->Settings->setValue(
+    "VelodyneHDLPlugin/CropReturnsDialog/CropInside",
+    this->CropInsideCheckBox->isChecked());
+
   this->Settings->setValue(
     "VelodyneHDLPlugin/CropReturnsDialog/FirstCornerX",
     this->X1SpinBox->value());
@@ -66,6 +71,12 @@ void vvCropReturnsDialog::pqInternal::restoreSettings()
     this->Settings->value(
       "VelodyneHDLPlugin/CropReturnsDialog/EnableCropping",
       this->CropGroupBox->isChecked()).toBool());
+
+  this->CropInsideCheckBox->setChecked(
+    this->Settings->value(
+      "VelodyneHDLPlugin/CropReturnsDialog/CropInside",
+      this->CropInsideCheckBox->isChecked()).toBool());
+
   this->X1SpinBox->setValue(
     this->Settings->value(
       "VelodyneHDLPlugin/CropReturnsDialog/FirstCornerX",
@@ -109,6 +120,12 @@ vvCropReturnsDialog::~vvCropReturnsDialog()
 bool vvCropReturnsDialog::croppingEnabled() const
 {
   return this->Internal->CropGroupBox->isChecked();
+}
+
+//-----------------------------------------------------------------------------
+bool vvCropReturnsDialog::cropInside() const
+{
+  return this->Internal->CropInsideCheckBox->isChecked();
 }
 
 //-----------------------------------------------------------------------------

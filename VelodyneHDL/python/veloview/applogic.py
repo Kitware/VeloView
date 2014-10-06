@@ -1346,6 +1346,7 @@ def onCropReturns():
 
     if reader:
         reader.CropReturns = dialog.croppingEnabled
+        reader.CropInside = dialog.cropInside
         p1 = dialog.firstCorner
         p2 = dialog.secondCorner
         reader.CropRegion = [p1.x(), p2.x(), p1.y(), p2.y(), p1.z(), p2.z()]
