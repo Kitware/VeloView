@@ -314,7 +314,7 @@ void vtkVelodyneHDLReader::SetSensorTransform(vtkTransform* transform)
 {
   if (transform)
     {
-    this->Internal->SensorTransform->DeepCopy(transform);
+    this->Internal->SensorTransform->SetMatrix(transform->GetMatrix());
     }
   else
     {

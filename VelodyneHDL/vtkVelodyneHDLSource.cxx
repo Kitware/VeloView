@@ -146,6 +146,8 @@ public:
 
   void HandleSensorData(const unsigned char* data, unsigned int length)
   {
+    boost::lock_guard<boost::mutex> lock(this->ReaderMutex);
+
     this->HDLReader->ProcessHDLPacket(const_cast<unsigned char*>(data), length);
     if (this->HDLReader->GetDatasets().size())
       {
@@ -156,7 +158,7 @@ public:
 
   vtkSmartPointer<vtkPolyData> GetDatasetForTime(double timeRequest, double& actualTime)
   {
-    boost::lock_guard<boost::mutex> lock(this->Mutex);
+    boost::lock_guard<boost::mutex> lock(this->ConsumerMutex);
 
     size_t stepIndex = this->GetIndexForTime(timeRequest);
     if (stepIndex < this->Timesteps.size())
@@ -170,7 +172,7 @@ public:
 
   std::vector<double> GetTimesteps()
   {
-    boost::lock_guard<boost::mutex> lock(this->Mutex);
+    boost::lock_guard<boost::mutex> lock(this->ConsumerMutex);
     const size_t nTimesteps = this->Timesteps.size();
     std::vector<double> timesteps(nTimesteps, 0);
     for (size_t i = 0; i < nTimesteps; ++i)
@@ -188,14 +190,14 @@ public:
 
   void SetMaxNumberOfDatasets(int nDatasets)
   {
-    boost::lock_guard<boost::mutex> lock(this->Mutex);
+    boost::lock_guard<boost::mutex> lock(this->ConsumerMutex);
     this->MaxNumberOfDatasets = nDatasets;
     this->UpdateDequeSize();
   }
 
   bool CheckForNewData()
   {
-    boost::lock_guard<boost::mutex> lock(this->Mutex);
+    boost::lock_guard<boost::mutex> lock(this->ConsumerMutex);
     bool newData = this->NewData;
     this->NewData = false;
     return newData;
@@ -245,6 +247,9 @@ public:
     return this->HDLReader.GetPointer();
   }
 
+  // Hold this when running reader code code or modifying its internals
+  boost::mutex ReaderMutex;
+
 protected:
 
   void UpdateDequeSize()
@@ -279,7 +284,7 @@ protected:
 
   void HandleNewData(vtkSmartPointer<vtkPolyData> polyData)
   {
-    boost::lock_guard<boost::mutex> lock(this->Mutex);
+    boost::lock_guard<boost::mutex> lock(this->ConsumerMutex);
 
     this->UpdateDequeSize();
     this->Timesteps.push_back(this->LastTime);
@@ -291,8 +296,10 @@ protected:
   bool NewData;
   int MaxNumberOfDatasets;
   double LastTime;
-  boost::mutex Mutex;
-  boost::mutex PacketMutex;
+
+  // Hold this when modifying internals of reader
+  boost::mutex ConsumerMutex;
+
   std::deque<vtkSmartPointer<vtkPolyData> > Datasets;
   std::deque<double> Timesteps;
   vtkNew<vtkVelodyneHDLReader> HDLReader;
@@ -699,6 +706,8 @@ void vtkVelodyneHDLSource::SetOutputFile(const std::string& filename)
 //-----------------------------------------------------------------------------
 const std::string& vtkVelodyneHDLSource::GetCorrectionsFile()
 {
+  boost::lock_guard<boost::mutex> lock(this->Internal->Consumer->ReaderMutex);
+
   return this->Internal->Consumer->GetReader()->GetCorrectionsFile();
 }
 
@@ -710,6 +719,8 @@ void vtkVelodyneHDLSource::SetCorrectionsFile(const std::string& filename)
     return;
     }
 
+  boost::lock_guard<boost::mutex> lock(this->Internal->Consumer->ReaderMutex);
+
   this->Internal->Consumer->GetReader()->SetCorrectionsFile(filename);
   this->Modified();
 }
@@ -717,6 +728,8 @@ void vtkVelodyneHDLSource::SetCorrectionsFile(const std::string& filename)
 //-----------------------------------------------------------------------------
 void vtkVelodyneHDLSource::SetLaserSelection(int LaserSelection[64])
 {
+  boost::lock_guard<boost::mutex> lock(this->Internal->Consumer->ReaderMutex);
+
   this->Internal->Consumer->GetReader()->SetLaserSelection(LaserSelection);
   this->Modified();
 }
@@ -724,6 +737,8 @@ void vtkVelodyneHDLSource::SetLaserSelection(int LaserSelection[64])
 //-----------------------------------------------------------------------------
 void vtkVelodyneHDLSource::GetLaserSelection(int LaserSelection[64])
 {
+  boost::lock_guard<boost::mutex> lock(this->Internal->Consumer->ReaderMutex);
+
   this->Internal->Consumer->GetReader()->GetLaserSelection(LaserSelection);
   this->Modified();
 }
@@ -732,6 +747,8 @@ void vtkVelodyneHDLSource::GetLaserSelection(int LaserSelection[64])
 //-----------------------------------------------------------------------------
 void vtkVelodyneHDLSource::GetVerticalCorrections(double VerticalCorrections[64])
 {
+  boost::lock_guard<boost::mutex> lock(this->Internal->Consumer->ReaderMutex);
+
   this->Internal->Consumer->GetReader()->GetVerticalCorrections(VerticalCorrections);
   this->Modified();
 }
@@ -758,6 +775,8 @@ void vtkVelodyneHDLSource::SetDummyProperty(int vtkNotUsed(dummy))
 //-----------------------------------------------------------------------------
 void vtkVelodyneHDLSource::SetSensorTransform(vtkTransform* transform)
 {
+  boost::lock_guard<boost::mutex> lock(this->Internal->Consumer->ReaderMutex);
+
   this->Internal->Consumer->GetReader()->SetSensorTransform(transform);
   this->Modified();
 }
