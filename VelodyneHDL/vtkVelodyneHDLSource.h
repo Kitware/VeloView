@@ -34,6 +34,8 @@
 
 #include <vtkPolyDataAlgorithm.h>
 
+class vtkTransform;
+
 class VTK_EXPORT vtkVelodyneHDLSource : public vtkPolyDataAlgorithm
 {
 public:
@@ -72,6 +74,8 @@ public:
 
   unsigned int GetDualReturnFilter() const;
   void SetDualReturnFilter(unsigned int);
+
+  void SetSensorTransform(vtkTransform*);
 
   // A trick to workaround failure to wrap LaserSelection
   void SetDummyProperty(int);

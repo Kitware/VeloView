@@ -36,6 +36,7 @@
 #include "vtkStreamingDemandDrivenPipeline.h"
 #include "vtkSmartPointer.h"
 #include "vtkNew.h"
+#include "vtkTransform.h"
 
 #include <boost/thread/thread.hpp>
 #include <boost/asio.hpp>
@@ -724,6 +725,7 @@ void vtkVelodyneHDLSource::SetLaserSelection(int LaserSelection[64])
 void vtkVelodyneHDLSource::GetLaserSelection(int LaserSelection[64])
 {
   this->Internal->Consumer->GetReader()->GetLaserSelection(LaserSelection);
+  this->Modified();
 }
 
 
@@ -731,6 +733,7 @@ void vtkVelodyneHDLSource::GetLaserSelection(int LaserSelection[64])
 void vtkVelodyneHDLSource::GetVerticalCorrections(double VerticalCorrections[64])
 {
   this->Internal->Consumer->GetReader()->GetVerticalCorrections(VerticalCorrections);
+  this->Modified();
 }
 
 //-----------------------------------------------------------------------------
@@ -749,6 +752,13 @@ void vtkVelodyneHDLSource::SetDualReturnFilter(unsigned int filter)
 //-----------------------------------------------------------------------------
 void vtkVelodyneHDLSource::SetDummyProperty(int vtkNotUsed(dummy))
 {
+  this->Modified();
+}
+
+//-----------------------------------------------------------------------------
+void vtkVelodyneHDLSource::SetSensorTransform(vtkTransform* transform)
+{
+  this->Internal->Consumer->GetReader()->SetSensorTransform(transform);
   this->Modified();
 }
 

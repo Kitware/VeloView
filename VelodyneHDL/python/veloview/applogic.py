@@ -272,6 +272,7 @@ def openSensor():
     close()
 
     sensor = smp.VelodyneHDLSource(guiName='Data', CalibrationFile=calibrationFile, CacheSize=100)
+    sensor.GetClientSideObject().SetSensorTransform(sensorTransform)
     sensor.UpdatePipeline()
     sensor.Start()
     rep = smp.Show(sensor)
@@ -1332,6 +1333,7 @@ def onChooseCalibrationFile():
         smp.Render()
 
     elif sensor is not None:
+        sensor.GetClientSideObject().SetSensorTransform(sensorTransform)
         sensor.CalibrationFile = calibrationFile
         # no need to render now, calibration file will be used on the next frame
 
