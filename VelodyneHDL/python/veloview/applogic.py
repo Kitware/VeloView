@@ -295,6 +295,8 @@ def openSensor():
     app.actions['actionDualReturnIntensityHigh'].enabled = True
     app.actions['actionDualReturnIntensityLow'].enabled = True
 
+    onCropReturns(False) # Dont show the dialog just restore settings
+
     play()
 
 def openPCAP(filename, positionFilename=None):
@@ -421,6 +423,8 @@ def openPCAP(filename, positionFilename=None):
     app.actions['actionDualReturnDistanceFar'].enabled = True
     app.actions['actionDualReturnIntensityHigh'].enabled = True
     app.actions['actionDualReturnIntensityLow'].enabled = True
+
+    onCropReturns(False) # Dont show the dialog just restore settings
 
     resetCamera()
 
@@ -1338,9 +1342,9 @@ def onChooseCalibrationFile():
         # no need to render now, calibration file will be used on the next frame
 
 
-def onCropReturns():
+def onCropReturns(show = True):
     dialog = vvCropReturnsDialog(getMainWindow())
-    if not dialog.exec_():
+    if show and not dialog.exec_():
         return
 
     reader = getReader()
