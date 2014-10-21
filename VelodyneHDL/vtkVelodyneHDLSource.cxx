@@ -743,6 +743,45 @@ void vtkVelodyneHDLSource::GetLaserSelection(int LaserSelection[64])
   this->Modified();
 }
 
+//-----------------------------------------------------------------------------
+void vtkVelodyneHDLSource::SetCropReturns(int cr)
+{
+  boost::lock_guard<boost::mutex> lock(this->Internal->Consumer->ReaderMutex);
+
+  this->Internal->Consumer->GetReader()->SetCropReturns(cr);
+  this->Modified();
+}
+
+//-----------------------------------------------------------------------------
+void vtkVelodyneHDLSource::SetCropInside(int ci)
+{
+  boost::lock_guard<boost::mutex> lock(this->Internal->Consumer->ReaderMutex);
+
+  this->Internal->Consumer->GetReader()->SetCropInside(ci);
+  this->Modified();
+}
+
+//-----------------------------------------------------------------------------
+void vtkVelodyneHDLSource::SetCropRegion(double r[6])
+{
+  boost::lock_guard<boost::mutex> lock(this->Internal->Consumer->ReaderMutex);
+
+  this->Internal->Consumer->GetReader()->SetCropRegion(r);
+  this->Modified();
+}
+
+//-----------------------------------------------------------------------------
+void vtkVelodyneHDLSource::SetCropRegion(double xmin, double xmax,
+                                         double ymin, double ymax,
+                                         double zmin, double zmax)
+{
+  boost::lock_guard<boost::mutex> lock(this->Internal->Consumer->ReaderMutex);
+
+  this->Internal->Consumer->GetReader()->SetCropRegion(xmin, xmax,
+                                                       ymin, ymax,
+                                                       zmin, zmax);
+  this->Modified();
+}
 
 //-----------------------------------------------------------------------------
 void vtkVelodyneHDLSource::GetVerticalCorrections(double VerticalCorrections[64])

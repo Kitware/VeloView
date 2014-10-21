@@ -70,6 +70,11 @@ public:
   void SetLaserSelection(int LaserSelection[64]);
   void GetLaserSelection(int LaserSelection[64]);
 
+  void SetCropReturns(int);
+  void SetCropInside(int);
+  void SetCropRegion(double[6]);
+  void SetCropRegion(double, double, double, double, double, double);
+
   void GetVerticalCorrections(double LaserAngles[64]);
 
   unsigned int GetDualReturnFilter() const;

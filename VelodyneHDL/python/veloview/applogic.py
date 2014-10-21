@@ -1345,18 +1345,27 @@ def onChooseCalibrationFile():
 def onCropReturns(show = True):
     dialog = vvCropReturnsDialog(getMainWindow())
     if show and not dialog.exec_():
+        print 'return'
         return
 
     reader = getReader()
-    # TODO implement for sensor stream
-
-    if reader:
+    if reader is not None:
         reader.CropReturns = dialog.croppingEnabled
         reader.CropInside = dialog.cropInside
         p1 = dialog.firstCorner
         p2 = dialog.secondCorner
         reader.CropRegion = [p1.x(), p2.x(), p1.y(), p2.y(), p1.z(), p2.z()]
         smp.Render()
+
+    sensor = getSensor()
+    if sensor is not None:
+        sensor.CropReturns = dialog.croppingEnabled
+        sensor.CropInside = dialog.cropInside
+        p1 = dialog.firstCorner
+        p2 = dialog.secondCorner
+        sensor.CropRegion = [p1.x(), p2.x(), p1.y(), p2.y(), p1.z(), p2.z()]
+        smp.Render()
+
 
 def resetCamera():
 

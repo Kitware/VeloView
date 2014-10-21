@@ -41,6 +41,39 @@
       </StringVectorProperty>
 
       <IntVectorProperty
+          name="CropReturns"
+          animateable="0"
+          command="SetCropReturns"
+          default_values="0"
+          number_of_elements="1">
+        <Documentation>
+          Crop returns
+        </Documentation>
+      </IntVectorProperty>
+
+      <IntVectorProperty
+          name="CropInside"
+          animateable="0"
+          command="SetCropInside"
+          default_values="0"
+          number_of_elements="1">
+        <Documentation>
+          Crop inside
+        </Documentation>
+      </IntVectorProperty>
+
+      <DoubleVectorProperty
+          name="CropRegion"
+          animateable="0"
+          command="SetCropRegion"
+          default_values="0 0 0 0 0 0"
+          number_of_elements="6">
+        <Documentation>
+          Region in which to crop (exclude) returns
+        </Documentation>
+      </DoubleVectorProperty>
+
+      <IntVectorProperty
           name="DummyProperty"
           animateable="0"
           command="SetDummyProperty"
