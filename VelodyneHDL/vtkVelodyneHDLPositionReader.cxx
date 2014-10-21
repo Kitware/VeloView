@@ -233,9 +233,10 @@ void vtkVelodyneHDLPositionReader::vtkInternal::InterpolateGPS(vtkPoints* points
       lastGPS = currGPS;
 
       // Compute time in seconds from decimal-encoded time
+      const int hours = currGPS / 10000;
       const int minutes = (currGPS / 100) % 100;
       const int seconds = currGPS % 100;
-      const double convertedtime = ((60.0 * minutes) + seconds) + timeOffset;
+      const double convertedtime = ((3600* hours) + (60.0 * minutes) + seconds) + timeOffset;
 
       // Get position and heading
       double pos[3];
