@@ -1202,10 +1202,24 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessFiring(HDLFiringData* firingData,
   for (int j = 0; j < HDL_LASER_PER_FIRING; j++)
     {
     unsigned char laserId = static_cast<unsigned char>(j + offset);
+    unsigned short azimuth = firingData->rotationalPosition;
+
+    if(this->CalibrationReportedNumLasers == 16)
+      {
+      assert(offset == 0);
+      if(laserId >= 16)
+        {
+        laserId -= 16;
+        short azimuth_diff = firingData->rotationalPosition - this->LastAzimuth;
+        assert(azimuth_diff >= 0);
+        azimuth += azimuth_diff/2;
+        }
+      }
+
     if (firingData->laserReturns[j].distance != 0.0 && this->LaserSelection[laserId])
       {
       this->PushFiringData(laserId,
-                           firingData->rotationalPosition,
+                           azimuth,
                            timestamp,
                            &(firingData->laserReturns[j]),
                            &(laser_corrections_[j + offset]),
