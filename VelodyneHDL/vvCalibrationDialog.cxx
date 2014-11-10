@@ -20,12 +20,20 @@
 
 #include <QDialog>
 #include <QFileDialog>
+#include <QListWidget>
+#include <QListWidgetItem>
 
 //-----------------------------------------------------------------------------
 class vvCalibrationDialog::pqInternal : public Ui::vvCalibrationDialog
 {
 public:
-  pqInternal() : Settings(pqApplicationCore::instance()->settings()) {}
+  pqInternal() : Settings(pqApplicationCore::instance()->settings())
+  {
+    QString hdl32builtin = QCoreApplication::applicationDirPath() + "/../share/HDL-32.xml";
+    QString vlp16builtin = QCoreApplication::applicationDirPath() + "/../share/VLP-16.xml";
+    this->BuiltInCalibrationFiles << hdl32builtin;
+    this->BuiltInCalibrationFiles << vlp16builtin;
+  }
 
   void saveFileList();
   void saveSelectedRow();
@@ -37,13 +45,14 @@ public:
   void restoreGpsTransform();
 
   pqSettings* const Settings;
+  QStringList BuiltInCalibrationFiles;
 };
 
 //-----------------------------------------------------------------------------
 void vvCalibrationDialog::pqInternal::saveFileList()
 {
   QStringList files;
-  for (int i = 1; i < this->ListWidget->count(); ++i)
+  for (int i = this->BuiltInCalibrationFiles.size()+1; i < this->ListWidget->count(); ++i)
     {
     files << this->ListWidget->item(i)->text();
     }
@@ -151,14 +160,41 @@ void vvCalibrationDialog::pqInternal::restoreGpsTransform()
       this->GpsPitchSpinBox->value()).toDouble());
 }
 
+namespace
+{
+  QListWidgetItem* createEntry(QString path, bool useBaseName)
+  {
+    QFileInfo info(path);
+    QListWidgetItem* wi = new QListWidgetItem();
+    if(useBaseName)
+      {
+      wi->setText(info.baseName());
+      }
+    else
+      {
+      wi->setText(info.fileName());
+      }
+    wi->setToolTip(path);
+    wi->setData(Qt::UserRole, path);
+    return wi;
+  }
+}
+
 //-----------------------------------------------------------------------------
 vvCalibrationDialog::vvCalibrationDialog(QWidget *p)
   : QDialog(p), Internal(new pqInternal)
 {
   this->Internal->setupUi(this);
 
-  this->Internal->ListWidget->addItem("(None)");
-  this->Internal->ListWidget->addItems(this->calibrationFiles());
+  foreach(QString fullname, this->Internal->BuiltInCalibrationFiles)
+    {
+    this->Internal->ListWidget->addItem(createEntry(fullname, true));
+    }
+
+  foreach(QString fullname, this->calibrationFiles())
+    {
+    this->Internal->ListWidget->addItem(createEntry(fullname, false));
+    }
 
   connect(this->Internal->ListWidget, SIGNAL(currentRowChanged(int)),
           this, SLOT(onCurrentRowChanged(int)));
@@ -195,11 +231,7 @@ QStringList vvCalibrationDialog::calibrationFiles() const
 QString vvCalibrationDialog::selectedCalibrationFile() const
 {
   const int row = this->Internal->ListWidget->currentRow();
-  if (row > 0)
-    {
-    return this->Internal->ListWidget->item(row)->text();
-    }
-  return QString();
+  return this->Internal->ListWidget->item(row)->data(Qt::UserRole).toString();
 }
 
 //-----------------------------------------------------------------------------
@@ -246,7 +278,7 @@ void vvCalibrationDialog::accept()
 //-----------------------------------------------------------------------------
 void vvCalibrationDialog::onCurrentRowChanged(int row)
 {
-  this->Internal->RemoveButton->setEnabled(row != 0);
+  this->Internal->RemoveButton->setEnabled(row >= this->Internal->BuiltInCalibrationFiles.size());
 }
 
 //-----------------------------------------------------------------------------
@@ -267,7 +299,7 @@ void vvCalibrationDialog::addFile()
     return;
     }
 
-  this->Internal->ListWidget->addItem(fileName);
+  this->Internal->ListWidget->addItem(createEntry(fileName, false));
   this->Internal->ListWidget->setCurrentRow(
     this->Internal->ListWidget->count() - 1);
   this->Internal->saveFileList();
@@ -281,7 +313,7 @@ void vvCalibrationDialog::addFile()
 void vvCalibrationDialog::removeSelectedFile()
 {
   const int row = this->Internal->ListWidget->currentRow();
-  if (row > 0)
+  if (row >= this->Internal->BuiltInCalibrationFiles.size())
     {
     delete this->Internal->ListWidget->takeItem(row);
     this->Internal->saveFileList();

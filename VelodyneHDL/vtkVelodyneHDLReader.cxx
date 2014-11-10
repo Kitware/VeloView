@@ -173,25 +173,17 @@ public:
     this->CropRegion[2] = this->CropRegion[3] = 0.0;
     this->CropRegion[4] = this->CropRegion[5] = 0.0;
 
-    for (size_t n = 0; n < HDL_MAX_NUM_LASERS; ++n)
-      {
-      this->LastPointId[n] = -1;
-      }
+    std::fill(this->LastPointId, this->LastPointId + HDL_MAX_NUM_LASERS, -1);
 
     this->LaserSelection.resize(64, true);
     this->DualReturnFilter = 0;
     this->IsDualReturnData = false;
-
-    cos_lookup_table_ = NULL;
-    sin_lookup_table_ = NULL;
 
     this->Init();
   }
 
   ~vtkInternal()
   {
-    delete[] cos_lookup_table_;
-    delete[] sin_lookup_table_;
   }
 
   std::vector<vtkSmartPointer<vtkPolyData> > Datasets;
@@ -235,8 +227,8 @@ public:
   std::vector<bool> LaserSelection;
   unsigned int DualReturnFilter;
 
-  double *cos_lookup_table_;
-  double *sin_lookup_table_;
+  std::vector<double> cos_lookup_table_;
+  std::vector<double> sin_lookup_table_;
   HDLLaserCorrection laser_corrections_[HDL_MAX_NUM_LASERS];
 
   void SplitFrame(bool force=false);
@@ -256,8 +248,9 @@ public:
 
   // Process the laser return from the firing data
   // firingData - one of HDL_FIRING_PER_PKT from the packet
-  // j - which laser
   // offset - either 0 or 32 to support 64-laser systems
+  // timestamp - the timestamp of the packet
+  // geotransform - georeferencing transform
   void ProcessFiring(HDLFiringData* firingData,
                      int offset,
                      double timestamp,
@@ -501,10 +494,7 @@ void vtkVelodyneHDLReader::SetCorrectionsFile(const std::string& correctionsFile
 //-----------------------------------------------------------------------------
 void vtkVelodyneHDLReader::UnloadData()
 {
-  for (size_t n = 0; n < HDL_MAX_NUM_LASERS; ++n)
-    {
-    this->Internal->LastPointId[n] = -1;
-    }
+  std::fill(this->Internal->LastPointId, this->Internal->LastPointId + HDL_MAX_NUM_LASERS, -1);
   this->Internal->LastAzimuth = 0;
   this->Internal->LastTimestamp = std::numeric_limits<unsigned int>::max();
   this->Internal->TimeAdjust = std::numeric_limits<double>::quiet_NaN();
@@ -1010,10 +1000,10 @@ void vtkVelodyneHDLReader::vtkInternal::PushFiringData(const unsigned char laser
 //-----------------------------------------------------------------------------
 void vtkVelodyneHDLReader::vtkInternal::InitTables()
 {
-  if (cos_lookup_table_ == NULL && sin_lookup_table_ == NULL)
+  if (cos_lookup_table_.size() == 0 || sin_lookup_table_.size() == 0)
     {
-    cos_lookup_table_ = new double[HDL_NUM_ROT_ANGLES];
-    sin_lookup_table_ = new double[HDL_NUM_ROT_ANGLES];
+    cos_lookup_table_.resize(HDL_NUM_ROT_ANGLES);
+    sin_lookup_table_.resize(HDL_NUM_ROT_ANGLES);
     for (unsigned int i = 0; i < HDL_NUM_ROT_ANGLES; i++)
       {
       double rad = HDL_Grabber_toRadians(i / 100.0);
@@ -1026,7 +1016,6 @@ void vtkVelodyneHDLReader::vtkInternal::InitTables()
 //-----------------------------------------------------------------------------
 void vtkVelodyneHDLReader::vtkInternal::LoadCorrectionsFile(const std::string& correctionsFile)
 {
-
   boost::property_tree::ptree pt;
   try
     {
@@ -1325,11 +1314,11 @@ int vtkVelodyneHDLReader::ReadFrameInformation()
 
     const HDLDataPacket* dataPacket = reinterpret_cast<const HDLDataPacket *>(data);
 
-    unsigned int timeDiff = dataPacket->gpsTimestamp - lastTimestamp;
-    if (timeDiff > 600 && lastTimestamp != 0)
-      {
-      printf("missed %d packets\n",  static_cast<int>(floor((timeDiff/553.0) + 0.5)));
-      }
+//    unsigned int timeDiff = dataPacket->gpsTimestamp - lastTimestamp;
+//    if (timeDiff > 600 && lastTimestamp != 0)
+//      {
+//      printf("missed %d packets\n",  static_cast<int>(floor((timeDiff/553.0) + 0.5)));
+//      }
 
     for (int i = 0; i < HDL_FIRING_PER_PKT; ++i)
       {
