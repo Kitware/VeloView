@@ -57,10 +57,10 @@
 #include <algorithm>
 #include <cmath>
 
-
 #include <boost/foreach.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
+#include <boost/filesystem.hpp>
 
 #ifdef _MSC_VER
 # include <boost/cstdint.hpp>
@@ -235,11 +235,9 @@ public:
   vtkSmartPointer<vtkPolyData> CreateData(vtkIdType numberOfPoints);
   vtkSmartPointer<vtkCellArray> NewVertexCells(vtkIdType numberOfVerts);
 
-  void LoadHDL32Corrections();
-  void LoadCorrectionsFile(const std::string& filename);
-  void SetCorrectionsCommon();
   void Init();
   void InitTables();
+  void LoadCorrectionsFile(const std::string& filename);
 
   void ProcessHDLPacket(unsigned char *data, std::size_t bytesReceived);
 
@@ -477,14 +475,13 @@ void vtkVelodyneHDLReader::SetCorrectionsFile(const std::string& correctionsFile
     return;
     }
 
-  if (correctionsFile.length())
+  if (!boost::filesystem::exists(correctionsFile) ||
+      boost::filesystem::is_directory(correctionsFile))
     {
-    this->Internal->LoadCorrectionsFile(correctionsFile);
+    vtkErrorMacro("Invalid sensor configuration file" << correctionsFile);
+    return;
     }
-  else
-    {
-    this->Internal->LoadHDL32Corrections();
-    }
+  this->Internal->LoadCorrectionsFile(correctionsFile);
 
   this->CorrectionsFile = correctionsFile;
   this->UnloadData();
@@ -1075,46 +1072,6 @@ void vtkVelodyneHDLReader::vtkInternal::LoadCorrectionsFile(const std::string& c
       }
     }
 
-  this->SetCorrectionsCommon();
-}
-
-//-----------------------------------------------------------------------------
-void vtkVelodyneHDLReader::vtkInternal::LoadHDL32Corrections()
-{
-  double hdl32VerticalCorrections[] = {
-    -30.67, -9.3299999, -29.33, -8, -28,
-    -6.6700001, -26.67, -5.3299999, -25.33, -4, -24, -2.6700001, -22.67,
-    -1.33, -21.33, 0, -20, 1.33, -18.67, 2.6700001, -17.33, 4, -16, 5.3299999,
-    -14.67, 6.6700001, -13.33, 8, -12, 9.3299999, -10.67, 10.67 };
-
-  for (int i = 0; i < HDL_LASER_PER_FIRING; i++)
-    {
-    laser_corrections_[i].azimuthCorrection = 0.0;
-    laser_corrections_[i].distanceCorrection = 0.0;
-    laser_corrections_[i].horizontalOffsetCorrection = 0.0;
-    laser_corrections_[i].verticalOffsetCorrection = 0.0;
-    laser_corrections_[i].verticalCorrection = hdl32VerticalCorrections[i];
-    laser_corrections_[i].sinVertCorrection = std::sin (HDL_Grabber_toRadians(hdl32VerticalCorrections[i]));
-    laser_corrections_[i].cosVertCorrection = std::cos (HDL_Grabber_toRadians(hdl32VerticalCorrections[i]));
-    }
-
-  for (int i = HDL_LASER_PER_FIRING; i < HDL_MAX_NUM_LASERS; i++)
-    {
-    laser_corrections_[i].azimuthCorrection = 0.0;
-    laser_corrections_[i].distanceCorrection = 0.0;
-    laser_corrections_[i].horizontalOffsetCorrection = 0.0;
-    laser_corrections_[i].verticalOffsetCorrection = 0.0;
-    laser_corrections_[i].verticalCorrection = 0.0;
-    laser_corrections_[i].sinVertCorrection = 0.0;
-    laser_corrections_[i].cosVertCorrection = 1.0;
-    }
-
-  this->SetCorrectionsCommon();
-}
-
-//-----------------------------------------------------------------------------
-void vtkVelodyneHDLReader::vtkInternal::SetCorrectionsCommon()
-{
   for (int i = 0; i < HDL_MAX_NUM_LASERS; i++)
     {
     HDLLaserCorrection correction = laser_corrections_[i];
@@ -1129,7 +1086,6 @@ void vtkVelodyneHDLReader::vtkInternal::SetCorrectionsCommon()
 void vtkVelodyneHDLReader::vtkInternal::Init()
 {
   this->InitTables();
-  this->LoadHDL32Corrections();
   this->SensorTransform->Identity();
 }
 
