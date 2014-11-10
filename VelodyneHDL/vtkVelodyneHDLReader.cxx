@@ -216,9 +216,16 @@ public:
   vtkPacketFileReader* Reader;
 
   int SplitCounter;
+
+  // Parameters ready by calibration
+  std::vector<double> cos_lookup_table_;
+  std::vector<double> sin_lookup_table_;
+  HDLLaserCorrection laser_corrections_[HDL_MAX_NUM_LASERS];
+  int CalibrationReportedNumLasers;
+
+  // User configurable parameters
   int NumberOfTrailingFrames;
   int ApplyTransform;
-
   int PointsSkip;
 
   bool CropReturns;
@@ -226,10 +233,6 @@ public:
 
   std::vector<bool> LaserSelection;
   unsigned int DualReturnFilter;
-
-  std::vector<double> cos_lookup_table_;
-  std::vector<double> sin_lookup_table_;
-  HDLLaserCorrection laser_corrections_[HDL_MAX_NUM_LASERS];
 
   void SplitFrame(bool force=false);
   vtkSmartPointer<vtkPolyData> CreateData(vtkIdType numberOfPoints);
@@ -1023,6 +1026,23 @@ void vtkVelodyneHDLReader::vtkInternal::LoadCorrectionsFile(const std::string& c
     vtkGenericWarningMacro("LoadCorrectionsFile: error reading calibration file: " << correctionsFile);
     return;
     }
+
+  int enabledCount = 0;
+  BOOST_FOREACH (boost::property_tree::ptree::value_type &v, pt.get_child("boost_serialization.DB.enabled_"))
+    {
+    std::stringstream ss;
+    if(v.first == "item")
+      {
+      ss << v.second.data();
+      int test = 0;
+      ss >> test;
+      if(!ss.fail() && test == 1)
+        {
+        enabledCount++;
+        }
+      }
+    }
+  this->CalibrationReportedNumLasers = enabledCount;
 
   BOOST_FOREACH (boost::property_tree::ptree::value_type &v, pt.get_child("boost_serialization.DB.points_"))
     {
