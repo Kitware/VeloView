@@ -32,6 +32,8 @@
 #include "vtkSMProxy.h"
 #include "vtkSMProxyManager.h"
 #include "vtkSMReaderFactory.h"
+#include "vtkSMRepresentationProxy.h"
+#include "vtkSMPVRepresentationProxy.h"
 
 #include <QFileInfo>
 #include <QFileDialog>
@@ -77,12 +79,13 @@ void vvLoadDataReaction::onDataLoaded(pqPipelineSource* source)
   vtkSMPropertyHelper(repr->getProxy(), "InterpolateScalarsBeforeMapping").Set(0);
 
   // color by "intensity" if array is present.
+  vtkSMPVRepresentationProxy* pvrp = vtkSMPVRepresentationProxy::SafeDownCast(repr->getRepresentationProxy());
   vtkPVDataInformation* info = repr->getInputDataInformation();
   vtkPVArrayInformation* arrayInfo =
     info->GetPointDataInformation()->GetArrayInformation("intensity");
-  if (arrayInfo !=NULL)
+  if (arrayInfo != NULL && pvrp != NULL)
     {
-    repr->colorByArray("intensity", vtkDataObject::FIELD_ASSOCIATION_POINTS);
+    pvrp->SetScalarColoring("intensity", vtkDataObject::FIELD_ASSOCIATION_POINTS);
     }
 
   repr->getProxy()->UpdateVTKObjects();

@@ -71,15 +71,12 @@ mark_as_advanced(PYTHONQTPLUGIN_LIBRARY)
 set (source_files
   vvMainWindow.cxx
   vvMainWindow.h
-  vvSelectionReaction.cxx
-  vvSelectionReaction.h
   vvToggleSpreadSheetReaction.cxx
   vvToggleSpreadSheetReaction.h
   )
 
 qt4_wrap_cpp(moc_source_files
   vvMainWindow.h
-  vvSelectionReaction.h
   vvToggleSpreadSheetReaction.h
   )
 
@@ -134,4 +131,4 @@ build_paraview_client(VeloView
 )
 
 # We directly link against the plugin and import them statically.
-target_link_libraries(VeloView VelodyneHDLPlugin VelodyneHDLPythonQT ${PYTHONQTPLUGIN_LIBRARY} ${PYTHONQT_LIBRARIES})
+target_link_libraries(VeloView LINK_PUBLIC VelodyneHDLPlugin VelodyneHDLPythonQT ${PYTHONQTPLUGIN_LIBRARY} ${PYTHONQT_LIBRARIES})

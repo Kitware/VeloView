@@ -29,7 +29,6 @@
 #include "ui_vvMainWindow.h"
 
 #include "vvLoadDataReaction.h"
-#include "vvSelectionReaction.h"
 #include "vvToggleSpreadSheetReaction.h"
 
 #include <pqActiveObjects.h>
@@ -43,17 +42,19 @@
 #include <pqPythonShellReaction.h>
 #include <pqQtMessageHandlerBehavior.h>
 #include <pqRenderView.h>
+#include <pqRenderViewSelectionReaction.h>
 #include <pqServer.h>
 #include <pqSettings.h>
 #include <pqSpreadSheetView.h>
 #include <pqSpreadSheetVisibilityBehavior.h>
-#include <pqStandardViewModules.h>
 #include <pqVelodyneManager.h>
 #include <vtkPVPlugin.h>
 #include <vtkSMPropertyHelper.h>
 
 #include <QLabel>
 #include <QSplitter>
+
+#include <cassert>
 
 // Declare the plugin to load.
 PV_PLUGIN_IMPORT_INIT(VelodyneHDLPlugin);
@@ -62,9 +63,7 @@ PV_PLUGIN_IMPORT_INIT(PythonQtPlugin);
 class vvMainWindow::pqInternals
 {
 public:
-  Ui::vvMainWindow Ui;
-
-  pqInternals(vvMainWindow* window)
+  pqInternals(vvMainWindow* window) : Ui(), MainView(0)
     {
     this->Ui.setupUi(window);
     this->paraviewInit(window);
@@ -81,6 +80,8 @@ public:
     window->raise();
     window->activateWindow();
     }
+  Ui::vvMainWindow Ui;
+  pqRenderView* MainView;
 
 private:
   void paraviewInit(vvMainWindow* window)
@@ -88,8 +89,8 @@ private:
     pqApplicationCore* core = pqApplicationCore::instance();
 
     // Register ParaView interfaces.
-    pqInterfaceTracker* pgm = core->interfaceTracker();
-    pgm->addInterface(new pqStandardViewModules(pgm));
+//    pqInterfaceTracker* pgm = core->interfaceTracker();
+//    pgm->addInterface(new pqStandardViewModules(pgm));
 
     // Define application behaviors.
     new pqAutoLoadPluginXMLBehavior(window);
@@ -99,8 +100,7 @@ private:
     new pqQtMessageHandlerBehavior(window);
     new pqSpreadSheetVisibilityBehavior(window);
 
-
-    pqServer::setCoincidentTopologyResolutionModeSetting(0);
+//    pqServer::setCoincidentTopologyResolutionModeSetting(0);
 
     // Connect to builtin server.
     pqObjectBuilder* builder = core->getObjectBuilder();
@@ -108,7 +108,9 @@ private:
     pqActiveObjects::instance().setActiveServer(server);
 
     // Create a default view.
-    pqView* view = builder->createView(pqRenderView::renderViewType(), server);
+    pqRenderView* view = qobject_cast<pqRenderView*>(builder->createView(pqRenderView::renderViewType(), server));
+    assert(view);
+    this->MainView = view;
 
     vtkSMPropertyHelper(view->getProxy(),"CenterAxesVisibility").Set(0);
     double bgcolor[3] = {0, 0, 0};
@@ -146,10 +148,16 @@ private:
 
   void setupUi(vvMainWindow* window)
     {
-    new vvSelectionReaction(vvSelectionReaction::SURFACE_POINTS,
-      this->Ui.actionSelect_Visible_Points);
-    new vvSelectionReaction(vvSelectionReaction::ALL_POINTS,
-      this->Ui.actionSelect_All_Points);
+    new pqRenderViewSelectionReaction(
+                                      this->Ui.actionSelect_Visible_Points,
+                                      this->MainView,
+                                      pqRenderViewSelectionReaction::SELECT_SURFACE_POINTS
+                                      );
+    new pqRenderViewSelectionReaction(
+                                      this->Ui.actionSelect_All_Points,
+                                      this->MainView,
+                                      pqRenderViewSelectionReaction::SELECT_FRUSTUM_POINTS
+                                      );
 
     new pqPythonShellReaction(this->Ui.actionPython_Console);
 
