@@ -47,7 +47,7 @@
 #include <vtkPolyData.h>
 #include <vtkSmartPointer.h>
 #include <vtkStreamingDemandDrivenPipeline.h>
-// #include <vtkTransformInterpolator.h>
+#include <vtkUnsignedIntArray.h>
 #include <vtkUnsignedCharArray.h>
 #include <vtkUnsignedShortArray.h>
 
@@ -128,6 +128,28 @@ struct HDLRGB
 };
 #pragma pack(pop)
 
+//-----------------------------------------------------------------------------
+int MapFlags(unsigned int flags, unsigned int low, unsigned int high)
+{
+  return (flags & low ? -1 : flags & high ? 1 : 0);
+}
+
+//-----------------------------------------------------------------------------
+int MapDistanceFlag(unsigned int flags)
+{
+  return MapFlags(flags & vtkVelodyneHDLReader::DUAL_DISTANCE_MASK,
+                  vtkVelodyneHDLReader::DUAL_DISTANCE_NEAR,
+                  vtkVelodyneHDLReader::DUAL_DISTANCE_FAR);
+}
+
+//-----------------------------------------------------------------------------
+int MapIntensityFlag(unsigned int flags)
+{
+  return MapFlags(flags & vtkVelodyneHDLReader::DUAL_INTENSITY_MASK,
+                  vtkVelodyneHDLReader::DUAL_INTENSITY_LOW,
+                  vtkVelodyneHDLReader::DUAL_INTENSITY_HIGH);
+}
+
 }
 
 //-----------------------------------------------------------------------------
@@ -151,7 +173,14 @@ public:
     this->CropRegion[2] = this->CropRegion[3] = 0.0;
     this->CropRegion[4] = this->CropRegion[5] = 0.0;
 
+    for (size_t n = 0; n < HDL_MAX_NUM_LASERS; ++n)
+      {
+      this->LastPointId[n] = -1;
+      }
+
     this->LaserSelection.resize(64, true);
+    this->DualReturnFilter = 0;
+    this->IsDualReturnData = false;
 
     cos_lookup_table_ = NULL;
     sin_lookup_table_ = NULL;
@@ -177,10 +206,17 @@ public:
   vtkUnsignedShortArray* Azimuth;
   vtkDoubleArray* Distance;
   vtkDoubleArray* Timestamp;
+  vtkSmartPointer<vtkIntArray> IntensityFlag;
+  vtkSmartPointer<vtkIntArray> DistanceFlag;
+  vtkSmartPointer<vtkUnsignedIntArray> Flags;
+
+  bool IsDualReturnData;
 
   unsigned int LastAzimuth;
   unsigned int LastTimestamp;
   double TimeAdjust;
+  vtkIdType LastPointId[HDL_MAX_NUM_LASERS];
+  vtkIdType FirstPointIdThisReturn;
 
   std::vector<fpos_t> FilePositions;
   std::vector<int> Skips;
@@ -197,6 +233,7 @@ public:
   double CropRegion[6];
 
   std::vector<bool> LaserSelection;
+  unsigned int DualReturnFilter;
 
   double *cos_lookup_table_;
   double *sin_lookup_table_;
@@ -215,7 +252,7 @@ public:
   void ProcessHDLPacket(unsigned char *data, std::size_t bytesReceived);
 
   double ComputeTimestamp(unsigned int tohTime);
-  void ComputeOrientation(double timestamp, vtkTransform* transform);
+  void ComputeOrientation(double timestamp, vtkTransform* geotransform);
 
   // Process the laser return from the firing data
   // firingData - one of HDL_FIRING_PER_PKT from the packet
@@ -224,14 +261,15 @@ public:
   void ProcessFiring(HDLFiringData* firingData,
                      int offset,
                      double timestamp,
-                     vtkTransform* transform);
+                     vtkTransform* geotransform);
 
   void PushFiringData(const unsigned char laserId,
                       unsigned short azimuth,
                       const double timestamp,
                       const HDLLaserReturn* laserReturn,
                       const HDLLaserCorrection* correction,
-                      vtkTransform* transform);
+                      vtkTransform* geotransform,
+                      bool dualReturn);
 };
 
 //-----------------------------------------------------------------------------
@@ -362,6 +400,21 @@ void vtkVelodyneHDLReader::GetLaserSelection(int LaserSelection[64])
     }
 }
 
+//-----------------------------------------------------------------------------
+unsigned int vtkVelodyneHDLReader::GetDualReturnFilter() const
+{
+  return this->Internal->DualReturnFilter;
+}
+
+//-----------------------------------------------------------------------------
+void vtkVelodyneHDLReader::SetDualReturnFilter(unsigned int filter)
+{
+  if (this->Internal->DualReturnFilter != filter)
+    {
+    this->Internal->DualReturnFilter = filter;
+    this->Modified();
+    }
+}
 
 //-----------------------------------------------------------------------------
 void vtkVelodyneHDLReader::GetVerticalCorrections(double VerticalCorrections[64])
@@ -448,10 +501,15 @@ void vtkVelodyneHDLReader::SetCorrectionsFile(const std::string& correctionsFile
 //-----------------------------------------------------------------------------
 void vtkVelodyneHDLReader::UnloadData()
 {
+  for (size_t n = 0; n < HDL_MAX_NUM_LASERS; ++n)
+    {
+    this->Internal->LastPointId[n] = -1;
+    }
   this->Internal->LastAzimuth = 0;
   this->Internal->LastTimestamp = std::numeric_limits<unsigned int>::max();
   this->Internal->TimeAdjust = std::numeric_limits<double>::quiet_NaN();
 
+  this->Internal->IsDualReturnData = false;
   this->Internal->Datasets.clear();
   this->Internal->CurrentDataset = this->Internal->CreateData(0);
 }
@@ -735,14 +793,18 @@ namespace
   template <typename T>
   T* CreateDataArray(const char* name, vtkIdType np, vtkPolyData* pd)
   {
-    vtkSmartPointer<T> array = vtkSmartPointer<T>::New();
+    T* array = T::New();
     array->Allocate(60000);
     array->SetName(name);
     array->SetNumberOfTuples(np);
 
-    pd->GetPointData()->AddArray(array.GetPointer());
+    if (pd)
+      {
+      pd->GetPointData()->AddArray(array);
+      array->FastDelete();
+      }
 
-    return array.GetPointer();
+    return array;
   }
 }
 
@@ -766,6 +828,15 @@ vtkSmartPointer<vtkPolyData> vtkVelodyneHDLReader::vtkInternal::CreateData(vtkId
   this->Azimuth = CreateDataArray<vtkUnsignedShortArray>("azimuth", numberOfPoints, polyData);
   this->Distance = CreateDataArray<vtkDoubleArray>("distance_m", numberOfPoints, polyData);
   this->Timestamp = CreateDataArray<vtkDoubleArray>("timestamp", numberOfPoints, polyData);
+  this->DistanceFlag = CreateDataArray<vtkIntArray>("dual_distance", numberOfPoints, 0);
+  this->IntensityFlag = CreateDataArray<vtkIntArray>("dual_intensity", numberOfPoints, 0);
+  this->Flags = CreateDataArray<vtkUnsignedIntArray>("dual_flags", numberOfPoints, 0);
+
+  if (this->IsDualReturnData)
+    {
+    polyData->GetPointData()->AddArray(this->DistanceFlag.GetPointer());
+    polyData->GetPointData()->AddArray(this->IntensityFlag.GetPointer());
+    }
 
   return polyData;
 }
@@ -793,9 +864,12 @@ void vtkVelodyneHDLReader::vtkInternal::PushFiringData(const unsigned char laser
                                                        const double timestamp,
                                                        const HDLLaserReturn* laserReturn,
                                                        const HDLLaserCorrection* correction,
-                                                       vtkTransform* transform)
+                                                       vtkTransform* geotransform,
+                                                       const bool dualReturn)
 {
   azimuth %= 36000;
+  const vtkIdType thisPointId = this->Points->GetNumberOfPoints();
+  const short intensity = laserReturn->intensity;
 
   double cosAzimuth, sinAzimuth;
   if (correction->azimuthCorrection == 0)
@@ -835,16 +909,102 @@ void vtkVelodyneHDLReader::vtkInternal::PushFiringData(const unsigned char laser
       }
     }
 
-  // Apply geoposition transform
-  transform->TransformPoint(pos, pos);
+  // Do not add any data before here as this might short-circuit
+  if (dualReturn)
+    {
+    const vtkIdType dualPointId = this->LastPointId[laserId];
+    if (dualPointId < this->FirstPointIdThisReturn)
+      {
+      // No matching point from first set (skipped?)
+      this->Flags->InsertNextValue(DUAL_DOUBLED);
+      this->DistanceFlag->InsertNextValue(0);
+      this->IntensityFlag->InsertNextValue(0);
+      }
+    else
+      {
+      const short dualIntensity = this->Intensity->GetValue(dualPointId);
+      const double dualDistance = this->Distance->GetValue(dualPointId);
+      unsigned int firstFlags = this->Flags->GetValue(dualPointId);
+      unsigned int secondFlags = 0;
 
-  // Insert point data
+      if (dualDistance == distanceM && intensity == dualIntensity)
+      {
+        // ignore duplicate point and leave first with original flags
+        return;
+      }
+
+      if (dualIntensity < intensity)
+        {
+        firstFlags &= ~DUAL_INTENSITY_HIGH;
+        secondFlags |= DUAL_INTENSITY_HIGH;
+        }
+      else
+        {
+        firstFlags &= ~DUAL_INTENSITY_LOW;
+        secondFlags |= DUAL_INTENSITY_LOW;
+        }
+
+      if (dualDistance < distanceM)
+        {
+        firstFlags &= ~DUAL_DISTANCE_FAR;
+        secondFlags |= DUAL_DISTANCE_FAR;
+        }
+      else
+        {
+        firstFlags &= ~DUAL_DISTANCE_NEAR;
+        secondFlags |= DUAL_DISTANCE_NEAR;
+        }
+
+      // We will output only one point so return out of this
+      if (this->DualReturnFilter)
+        {
+        if (!(secondFlags & this->DualReturnFilter))
+          {
+          // second return does not match filter; skip
+          this->Flags->SetValue(dualPointId, firstFlags);
+          this->DistanceFlag->SetValue(dualPointId, MapDistanceFlag(firstFlags));
+          this->IntensityFlag->SetValue(dualPointId, MapIntensityFlag(firstFlags));
+          return;
+          }
+        if (!(firstFlags & this->DualReturnFilter))
+          {
+          // first return does not match filter; replace with second return
+          this->Points->SetPoint(dualPointId, pos);
+          this->Distance->SetValue(dualPointId, distanceM);
+          this->Intensity->SetValue(dualPointId, laserReturn->intensity);
+          this->Timestamp->SetValue(dualPointId, timestamp);
+          this->Flags->SetValue(dualPointId, secondFlags);
+          this->DistanceFlag->SetValue(dualPointId, MapDistanceFlag(secondFlags));
+          this->IntensityFlag->SetValue(dualPointId, MapIntensityFlag(secondFlags));
+          return;
+          }
+        }
+
+      this->Flags->SetValue(dualPointId, firstFlags);
+      this->DistanceFlag->SetValue(dualPointId, MapDistanceFlag(firstFlags));
+      this->IntensityFlag->SetValue(dualPointId, MapIntensityFlag(firstFlags));
+      this->Flags->InsertNextValue(secondFlags);
+      this->DistanceFlag->InsertNextValue(MapDistanceFlag(secondFlags));
+      this->IntensityFlag->InsertNextValue(MapIntensityFlag(secondFlags));
+      }
+    }
+  else
+    {
+    this->Flags->InsertNextValue(DUAL_DOUBLED);
+    this->DistanceFlag->InsertNextValue(0);
+    this->IntensityFlag->InsertNextValue(0);
+    }
+
+  // Apply geoposition transform
+  geotransform->TransformPoint(pos, pos);
   this->Points->InsertNextPoint(pos);
-  this->Distance->InsertNextValue(distanceM);
+
   this->Azimuth->InsertNextValue(azimuth);
   this->Intensity->InsertNextValue(laserReturn->intensity);
   this->LaserId->InsertNextValue(laserId);
   this->Timestamp->InsertNextValue(timestamp);
+  this->Distance->InsertNextValue(distanceM);
+  this->LastPointId[laserId] = thisPointId;
 }
 
 //-----------------------------------------------------------------------------
@@ -993,6 +1153,11 @@ void vtkVelodyneHDLReader::vtkInternal::SplitFrame(bool force)
     return;
     }
 
+  for (size_t n = 0; n < HDL_MAX_NUM_LASERS; ++n)
+    {
+    this->LastPointId[n] = -1;
+    }
+
   this->CurrentDataset->SetVerts(this->NewVertexCells(this->CurrentDataset->GetNumberOfPoints()));
   this->Datasets.push_back(this->CurrentDataset);
   this->CurrentDataset = this->CreateData(0);
@@ -1035,18 +1200,18 @@ double vtkVelodyneHDLReader::vtkInternal::ComputeTimestamp(
 
 //-----------------------------------------------------------------------------
 void vtkVelodyneHDLReader::vtkInternal::ComputeOrientation(
-  double timestamp, vtkTransform* transform)
+  double timestamp, vtkTransform* geotransform)
 {
   if(this->ApplyTransform && this->Interp)
     {
     // NOTE: We store time in milliseconds, but the interpolator uses seconds,
     //       so we need to adjust here
     const double t = timestamp * 1e-6;
-    this->Interp->InterpolateTransform(t, transform);
+    this->Interp->InterpolateTransform(t, geotransform);
     }
   else
     {
-    transform->Identity();
+    geotransform->Identity();
     }
 }
 
@@ -1054,8 +1219,21 @@ void vtkVelodyneHDLReader::vtkInternal::ComputeOrientation(
 void vtkVelodyneHDLReader::vtkInternal::ProcessFiring(HDLFiringData* firingData,
                                                       int offset,
                                                       double timestamp,
-                                                      vtkTransform* transform)
+                                                      vtkTransform* geotransform)
 {
+  const bool dual = (this->LastAzimuth == firingData->rotationalPosition);
+  if (!dual)
+    {
+    this->FirstPointIdThisReturn = this->Points->GetNumberOfPoints();
+    }
+
+  if (dual && !this->IsDualReturnData)
+    {
+    this->IsDualReturnData = true;
+    this->CurrentDataset->GetPointData()->AddArray(this->DistanceFlag.GetPointer());
+    this->CurrentDataset->GetPointData()->AddArray(this->IntensityFlag.GetPointer());
+    }
+
   for (int j = 0; j < HDL_LASER_PER_FIRING; j++)
     {
     unsigned char laserId = static_cast<unsigned char>(j + offset);
@@ -1066,7 +1244,8 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessFiring(HDLFiringData* firingData,
                            timestamp,
                            &(firingData->laserReturns[j]),
                            &(laser_corrections_[j + offset]),
-                           transform);
+                           geotransform,
+                           dual);
       }
     }
 }
@@ -1081,9 +1260,9 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(unsigned char *data, st
 
   HDLDataPacket* dataPacket = reinterpret_cast<HDLDataPacket *>(data);
 
-  vtkNew<vtkTransform> transform;
+  vtkNew<vtkTransform> geotransform;
   const double timestamp = this->ComputeTimestamp(dataPacket->gpsTimestamp);
-  this->ComputeOrientation(timestamp, transform.GetPointer());
+  this->ComputeOrientation(timestamp, geotransform.GetPointer());
 
   int i = this->Skip;
   this->Skip = 0;
@@ -1098,14 +1277,14 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(unsigned char *data, st
       this->SplitFrame();
       }
 
-    this->LastAzimuth = firingData->rotationalPosition;
-
     // Skip this firing every PointSkip
     if(this->PointsSkip == 0 || i % (this->PointsSkip + 1) == 0)
       {
       this->ProcessFiring(firingData, offset, timestamp,
-                          transform.GetPointer());
+                          geotransform.GetPointer());
       }
+
+    this->LastAzimuth = firingData->rotationalPosition;
     }
 }
 

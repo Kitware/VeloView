@@ -30,6 +30,7 @@ import gridAdjustmentDialog
 import planefit
 
 from PythonQt.paraview import vvCalibrationDialog, vvCropReturnsDialog, vvSelectFramesDialog
+from VelodyneHDLPluginPython import vtkVelodyneHDLReader
 
 _repCache = {}
 
@@ -136,6 +137,7 @@ def openData(filename):
 
     rep = smp.Show(reader)
     rep.InterpolateScalarsBeforeMapping = 0
+    setDefaultLookupTables(reader)
     colorByIntensity(reader)
 
     showSourceInSpreadSheet(reader)
@@ -153,6 +155,11 @@ def openData(filename):
     app.actions['actionChoose_Calibration_File'].setEnabled(False)
     app.actions['actionCropReturns'].setEnabled(False)
     app.actions['actionRecord'].setEnabled(False)
+    app.actions['actionDualReturnModeDual'].enabled = True
+    app.actions['actionDualReturnDistanceNear'].enabled = True
+    app.actions['actionDualReturnDistanceFar'].enabled = True
+    app.actions['actionDualReturnIntensityHigh'].enabled = True
+    app.actions['actionDualReturnIntensityLow'].enabled = True
 
     resetCamera()
 
@@ -160,17 +167,45 @@ def openData(filename):
 def planeFit():
     planefit.fitPlane()
 
+
+def setDefaultLookupTables(sourceProxy):
+
+    # LUT for 'intensity'
+    smp.GetLookupTableForArray(
+      'intensity', 1,
+      ScalarRangeInitialized=1.0,
+      ColorSpace='HSV',
+      RGBPoints=[0.0, 0.0, 0.0, 1.0,
+               100.0, 1.0, 1.0, 0.0,
+               256.0, 1.0, 0.0, 0.0])
+
+    # LUT for 'dual_distance'
+    smp.GetLookupTableForArray(
+      'dual_distance', 1,
+      InterpretValuesAsCategories=True, NumberOfTableValues=3,
+      RGBPoints=[-1.0, 0.1, 0.5, 0.7,
+                  0.0, 0.9, 0.9, 0.9,
+                 +1.0, 0.8, 0.2, 0.3],
+      Annotations=['-1', 'near', '0', 'dual', '1', 'far'])
+
+    # LUT for 'dual_intensity'
+    smp.GetLookupTableForArray(
+      'dual_intensity', 1,
+      InterpretValuesAsCategories=True, NumberOfTableValues=3,
+      RGBPoints=[-1.0, 0.5, 0.2, 0.8,
+                  0.0, 0.6, 0.6, 0.6,
+                 +1.0, 1.0, 0.9, 0.4],
+      Annotations=['-1', 'low', '0', 'dual', '1', 'high'])
+
 def colorByIntensity(sourceProxy):
 
     if not hasArrayName(sourceProxy, 'intensity'):
         return False
 
+    setDefaultLookupTables(sourceProxy)
     rep = smp.GetDisplayProperties(sourceProxy)
     rep.ColorArrayName = 'intensity'
-    rgbPoints = [0.0, 0.0, 0.0, 1.0,
-                 100.0, 1.0, 1.0, 0.0,
-                 256.0, 1.0, 0.0, 0.0]
-    rep.LookupTable = smp.GetLookupTableForArray('intensity', 1, RGBPoints=rgbPoints, ColorSpace="HSV", ScalarRangeInitialized=1.0)
+    rep.LookupTable = smp.GetLookupTableForArray('intensity', 1)
     return True
 
 
@@ -252,6 +287,12 @@ def openSensor():
     smp.Render()
 
     showSourceInSpreadSheet(sensor)
+
+    app.actions['actionDualReturnModeDual'].enabled = True
+    app.actions['actionDualReturnDistanceNear'].enabled = True
+    app.actions['actionDualReturnDistanceFar'].enabled = True
+    app.actions['actionDualReturnIntensityHigh'].enabled = True
+    app.actions['actionDualReturnIntensityLow'].enabled = True
 
     play()
 
@@ -363,6 +404,7 @@ def openPCAP(filename, positionFilename=None):
 
     rep = smp.Show(reader)
     rep.InterpolateScalarsBeforeMapping = 0
+    setDefaultLookupTables(reader)
     colorByIntensity(reader)
 
     showSourceInSpreadSheet(reader)
@@ -373,6 +415,11 @@ def openPCAP(filename, positionFilename=None):
     enableSaveActions()
     addRecentFile(filename)
     app.actions['actionRecord'].setEnabled(False)
+    app.actions['actionDualReturnModeDual'].enabled = True
+    app.actions['actionDualReturnDistanceNear'].enabled = True
+    app.actions['actionDualReturnDistanceFar'].enabled = True
+    app.actions['actionDualReturnIntensityHigh'].enabled = True
+    app.actions['actionDualReturnIntensityLow'].enabled = True
 
     resetCamera()
 
@@ -860,6 +907,13 @@ def close():
     disablePlaybackActions()
     disableSaveActions()
     app.actions['actionRecord'].setChecked(False)
+    app.actions['actionDualReturnModeDual'].setChecked(True)
+
+    app.actions['actionDualReturnModeDual'].enabled = False
+    app.actions['actionDualReturnDistanceNear'].enabled = False
+    app.actions['actionDualReturnDistanceFar'].enabled = False
+    app.actions['actionDualReturnIntensityHigh'].enabled = False
+    app.actions['actionDualReturnIntensityLow'].enabled = False
 
 
 def seekForward():
@@ -1742,6 +1796,34 @@ def setViewToZPlus():
 def setViewToZMinus():
     setViewTo('Z',-1)
 
+def setFilterToDual():
+    setFilterTo(0)
+
+def setFilterToDistanceNear():
+    setFilterTo(vtkVelodyneHDLReader.DUAL_DISTANCE_NEAR)
+
+def setFilterToDistanceFar():
+    setFilterTo(vtkVelodyneHDLReader.DUAL_DISTANCE_FAR)
+
+def setFilterToIntensityHigh():
+    setFilterTo(vtkVelodyneHDLReader.DUAL_INTENSITY_HIGH)
+
+def setFilterToIntensityLow():
+    setFilterTo(vtkVelodyneHDLReader.DUAL_INTENSITY_LOW)
+
+def setFilterTo(mask):
+    reader = getReader()
+    if reader:
+        reader.DualReturnFilter = mask
+        smp.Render()
+        smp.Render(getSpreadSheetViewProxy())
+
+    sensor = getSensor()
+    if sensor:
+        sensor.DualReturnFilter = mask
+        smp.Render()
+        smp.Render(getSpreadSheetViewProxy())
+
 def transformMode():
     reader = getReader()
     if not reader:
@@ -1816,6 +1898,12 @@ def setupActions():
     app.actions['actionSetViewYMinus'].connect('triggered()', setViewToYMinus)
     app.actions['actionSetViewZPlus'].connect('triggered()', setViewToZPlus)
     app.actions['actionSetViewZMinus'].connect('triggered()', setViewToZMinus)
+
+    app.actions['actionDualReturnModeDual'].connect('triggered()', setFilterToDual)
+    app.actions['actionDualReturnDistanceNear'].connect('triggered()', setFilterToDistanceNear)
+    app.actions['actionDualReturnDistanceFar'].connect('triggered()', setFilterToDistanceFar)
+    app.actions['actionDualReturnIntensityHigh'].connect('triggered()', setFilterToIntensityHigh)
+    app.actions['actionDualReturnIntensityLow'].connect('triggered()', setFilterToIntensityLow)
 
     # Action created #
     timeToolBar = mW.findChild('QToolBar','playbackToolbar')

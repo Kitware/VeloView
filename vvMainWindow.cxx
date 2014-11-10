@@ -63,11 +63,19 @@ class vvMainWindow::pqInternals
 {
 public:
   Ui::vvMainWindow Ui;
+
   pqInternals(vvMainWindow* window)
     {
     this->Ui.setupUi(window);
     this->paraviewInit(window);
     this->setupUi(window);
+
+    QActionGroup* dualReturnFilterActions = new QActionGroup(window);
+    dualReturnFilterActions->addAction(this->Ui.actionDualReturnModeDual);
+    dualReturnFilterActions->addAction(this->Ui.actionDualReturnDistanceNear);
+    dualReturnFilterActions->addAction(this->Ui.actionDualReturnDistanceFar);
+    dualReturnFilterActions->addAction(this->Ui.actionDualReturnIntensityHigh);
+    dualReturnFilterActions->addAction(this->Ui.actionDualReturnIntensityLow);
 
     window->show();
     window->raise();

@@ -733,6 +733,18 @@ void vtkVelodyneHDLSource::GetVerticalCorrections(double VerticalCorrections[64]
   this->Internal->Consumer->GetReader()->GetVerticalCorrections(VerticalCorrections);
 }
 
+//-----------------------------------------------------------------------------
+unsigned int vtkVelodyneHDLSource::GetDualReturnFilter() const
+{
+  return this->Internal->Consumer->GetReader()->GetDualReturnFilter();
+}
+
+//-----------------------------------------------------------------------------
+void vtkVelodyneHDLSource::SetDualReturnFilter(unsigned int filter)
+{
+  this->Internal->Consumer->GetReader()->SetDualReturnFilter(filter);
+  this->Modified();
+}
 
 //-----------------------------------------------------------------------------
 void vtkVelodyneHDLSource::SetDummyProperty(int vtkNotUsed(dummy))
