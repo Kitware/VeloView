@@ -110,7 +110,7 @@
       </IntVectorProperty>
 
       <StringVectorProperty
-          name="ZCorrectionsFile"
+          name="CorrectionsFile"
           label="Calibration File"
           animateable="0"
           command="SetCorrectionsFile"
