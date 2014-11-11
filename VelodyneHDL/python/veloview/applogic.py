@@ -330,6 +330,7 @@ def openPCAP(filename, positionFilename=None):
                                    PointsSkip=app.trailingFramesSpinBox.value)
     reader.GetClientSideObject().SetSensorTransform(sensorTransform)
     reader.UpdatePipeline()
+    app.scene.UpdateAnimationUsingDataTimeSteps()
 
     handler.RemoveObserver(tag)
     handler.SetProgressFrequency(freq)

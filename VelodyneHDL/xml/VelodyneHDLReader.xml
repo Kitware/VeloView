@@ -122,12 +122,6 @@
       </StringVectorProperty>
 
       <DoubleVectorProperty
-            name="TimeRange"
-                information_only="1" >
-                <TimeRangeInformationHelper/>
-      </DoubleVectorProperty>
-
-      <DoubleVectorProperty
                 name="TimestepValues"
                 information_only="1" >
                 <TimeStepsInformationHelper/>
