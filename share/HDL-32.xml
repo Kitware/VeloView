@@ -553,22 +553,22 @@
 		<item>1</item>
 		<item>1</item>
 		<item>1</item>
-		<item>0</item>
-		<item>0</item>
-		<item>0</item>
-		<item>0</item>
-		<item>0</item>
-		<item>0</item>
-		<item>0</item>
-		<item>0</item>
-		<item>0</item>
-		<item>0</item>
-		<item>0</item>
-		<item>0</item>
-		<item>0</item>
-		<item>0</item>
-		<item>0</item>
-		<item>0</item>
+		<item>1</item>
+		<item>1</item>
+		<item>1</item>
+		<item>1</item>
+		<item>1</item>
+		<item>1</item>
+		<item>1</item>
+		<item>1</item>
+		<item>1</item>
+		<item>1</item>
+		<item>1</item>
+		<item>1</item>
+		<item>1</item>
+		<item>1</item>
+		<item>1</item>
+		<item>1</item>
 		<item>0</item>
 		<item>0</item>
 		<item>0</item>
@@ -604,70 +604,70 @@
 	</enabled_>
 	<intensity_>
 		<count>64</count>
-		<item>1</item>
-		<item>1</item>
-		<item>1</item>
-		<item>1</item>
-		<item>1</item>
-		<item>1</item>
-		<item>1</item>
-		<item>1</item>
-		<item>1</item>
-		<item>1</item>
-		<item>1</item>
-		<item>1</item>
-		<item>1</item>
-		<item>1</item>
-		<item>1</item>
-		<item>1</item>
-		<item>1</item>
-		<item>1</item>
-		<item>1</item>
-		<item>1</item>
-		<item>1</item>
-		<item>1</item>
-		<item>1</item>
-		<item>1</item>
-		<item>1</item>
-		<item>1</item>
-		<item>1</item>
-		<item>1</item>
-		<item>1</item>
-		<item>1</item>
-		<item>1</item>
-		<item>1</item>
-		<item>1</item>
-		<item>1</item>
-		<item>1</item>
-		<item>1</item>
-		<item>1</item>
-		<item>1</item>
-		<item>1</item>
-		<item>1</item>
-		<item>1</item>
-		<item>1</item>
-		<item>1</item>
-		<item>1</item>
-		<item>1</item>
-		<item>1</item>
-		<item>1</item>
-		<item>1</item>
-		<item>1</item>
-		<item>1</item>
-		<item>1</item>
-		<item>1</item>
-		<item>1</item>
-		<item>1</item>
-		<item>1</item>
-		<item>1</item>
-		<item>1</item>
-		<item>1</item>
-		<item>1</item>
-		<item>1</item>
-		<item>1</item>
-		<item>1</item>
-		<item>1</item>
-		<item>1</item>
+		<item>0</item>
+		<item>0</item>
+		<item>0</item>
+		<item>0</item>
+		<item>0</item>
+		<item>0</item>
+		<item>0</item>
+		<item>0</item>
+		<item>0</item>
+		<item>0</item>
+		<item>0</item>
+		<item>0</item>
+		<item>0</item>
+		<item>0</item>
+		<item>0</item>
+		<item>0</item>
+		<item>0</item>
+		<item>0</item>
+		<item>0</item>
+		<item>0</item>
+		<item>0</item>
+		<item>0</item>
+		<item>0</item>
+		<item>0</item>
+		<item>0</item>
+		<item>0</item>
+		<item>0</item>
+		<item>0</item>
+		<item>0</item>
+		<item>0</item>
+		<item>0</item>
+		<item>0</item>
+		<item>0</item>
+		<item>0</item>
+		<item>0</item>
+		<item>0</item>
+		<item>0</item>
+		<item>0</item>
+		<item>0</item>
+		<item>0</item>
+		<item>0</item>
+		<item>0</item>
+		<item>0</item>
+		<item>0</item>
+		<item>0</item>
+		<item>0</item>
+		<item>0</item>
+		<item>0</item>
+		<item>0</item>
+		<item>0</item>
+		<item>0</item>
+		<item>0</item>
+		<item>0</item>
+		<item>0</item>
+		<item>0</item>
+		<item>0</item>
+		<item>0</item>
+		<item>0</item>
+		<item>0</item>
+		<item>0</item>
+		<item>0</item>
+		<item>0</item>
+		<item>0</item>
+		<item>0</item>
 	</intensity_>
 	<minIntensity_>
 		<count>64</count>
@@ -882,7 +882,7 @@
 			<px class_id_reference="9" object_id="_6">
 				<id_>5</id_>
 				<rotCorrection_>0</rotCorrection_>
-				<vertCorrection_>-6.67</vertCorrection_>
+				<vertCorrection_>-6.6700001</vertCorrection_>
 				<distCorrection_>0</distCorrection_>
 				<distCorrectionX_>0</distCorrectionX_>
 				<distCorrectionY_>0</distCorrectionY_>
@@ -910,7 +910,7 @@
 			<px class_id_reference="9" object_id="_8">
 				<id_>7</id_>
 				<rotCorrection_>0</rotCorrection_>
-				<vertCorrection_>-5.33</vertCorrection_>
+				<vertCorrection_>-5.3299999</vertCorrection_>
 				<distCorrection_>0</distCorrection_>
 				<distCorrectionX_>0</distCorrectionX_>
 				<distCorrectionY_>0</distCorrectionY_>
@@ -966,7 +966,7 @@
 			<px class_id_reference="9" object_id="_12">
 				<id_>11</id_>
 				<rotCorrection_>0</rotCorrection_>
-				<vertCorrection_>-2.67</vertCorrection_>
+				<vertCorrection_>-2.6700001</vertCorrection_>
 				<distCorrection_>0</distCorrection_>
 				<distCorrectionX_>0</distCorrectionX_>
 				<distCorrectionY_>0</distCorrectionY_>
@@ -1022,7 +1022,7 @@
 			<px class_id_reference="9" object_id="_16">
 				<id_>15</id_>
 				<rotCorrection_>0</rotCorrection_>
-				<vertCorrection_>0.0</vertCorrection_>
+				<vertCorrection_>0</vertCorrection_>
 				<distCorrection_>0</distCorrection_>
 				<distCorrectionX_>0</distCorrectionX_>
 				<distCorrectionY_>0</distCorrectionY_>
@@ -1036,7 +1036,7 @@
 			<px class_id_reference="9" object_id="_17">
 				<id_>16</id_>
 				<rotCorrection_>0</rotCorrection_>
-				<vertCorrection_>-20.0</vertCorrection_>
+				<vertCorrection_>-20</vertCorrection_>
 				<distCorrection_>0</distCorrection_>
 				<distCorrectionX_>0</distCorrectionX_>
 				<distCorrectionY_>0</distCorrectionY_>
@@ -1078,7 +1078,7 @@
 			<px class_id_reference="9" object_id="_20">
 				<id_>19</id_>
 				<rotCorrection_>0</rotCorrection_>
-				<vertCorrection_>2.67</vertCorrection_>
+				<vertCorrection_>2.6700001</vertCorrection_>
 				<distCorrection_>0</distCorrection_>
 				<distCorrectionX_>0</distCorrectionX_>
 				<distCorrectionY_>0</distCorrectionY_>
@@ -1134,7 +1134,7 @@
 			<px class_id_reference="9" object_id="_24">
 				<id_>23</id_>
 				<rotCorrection_>0</rotCorrection_>
-				<vertCorrection_>5.33</vertCorrection_>
+				<vertCorrection_>5.3299999</vertCorrection_>
 				<distCorrection_>0</distCorrection_>
 				<distCorrectionX_>0</distCorrectionX_>
 				<distCorrectionY_>0</distCorrectionY_>
@@ -1162,7 +1162,7 @@
 			<px class_id_reference="9" object_id="_26">
 				<id_>25</id_>
 				<rotCorrection_>0</rotCorrection_>
-				<vertCorrection_>6.67</vertCorrection_>
+				<vertCorrection_>6.6700001</vertCorrection_>
 				<distCorrection_>0</distCorrection_>
 				<distCorrectionX_>0</distCorrectionX_>
 				<distCorrectionY_>0</distCorrectionY_>
@@ -1218,7 +1218,7 @@
 			<px class_id_reference="9" object_id="_30">
 				<id_>29</id_>
 				<rotCorrection_>0</rotCorrection_>
-				<vertCorrection_>9.33</vertCorrection_>
+				<vertCorrection_>9.3299999</vertCorrection_>
 				<distCorrection_>0</distCorrection_>
 				<distCorrectionX_>0</distCorrectionX_>
 				<distCorrectionY_>0</distCorrectionY_>
