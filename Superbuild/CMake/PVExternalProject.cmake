@@ -44,6 +44,8 @@ function (PVExternalProject_Add name)
 
   # just create a temporary target so we can set target properties.
   add_custom_target(pv-${name})
+  set(binary_dir ${CMAKE_CURRENT_BINARY_DIR}/${name}/src/${name}-build)
+
   _ep_parse_arguments(PVExternalProject_Add pv-${name} _EP_ "${ARGN}")
 
   get_property(has_process_environment TARGET pv-${name}
@@ -99,8 +101,8 @@ function (PVExternalProject_Add name)
       # GNU make recognizes the string "$(MAKE)" as recursive make, so
       # ensure that it appears directly in the makefile.
       string(REGEX REPLACE "^\\$\\(MAKE\\)" "${CMAKE_MAKE_PROGRAM} -j5" build_cmd "${build_cmd}")
-      set_property(TARGET pv-${name} PROPERTY _EP_BUILD_COMMAND "${build_cmd}")
     endif()
+    set_property(TARGET pv-${name} PROPERTY _EP_BUILD_COMMAND "${build_cmd}")
     set(has_build_command 1)
   endif()
 
