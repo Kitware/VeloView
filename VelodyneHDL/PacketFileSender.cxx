@@ -74,31 +74,29 @@ int main(int argc, char* argv[])
 
     while (packetReader.IsOpen())
       {
+      const unsigned char* data = 0;
+      unsigned int dataLength = 0;
+      double timeSinceStart = 0;
+      if (!packetReader.NextPacket(data, dataLength, timeSinceStart))
+        {
+        printf("end of packet file\n");
+        break;
+        }
 
-        const unsigned char* data = 0;
-        unsigned int dataLength = 0;
-        double timeSinceStart = 0;
-        if (!packetReader.NextPacket(data, dataLength, timeSinceStart))
-          {
-          printf("end of packet file\n");
-          break;
-          }
+      if (dataLength != 1206)
+        {
+        continue;
+        }
 
-        if (dataLength != 1206)
-          {
-          continue;
-          }
+      size_t bytesSent = socket.send_to(boost::asio::buffer(data, dataLength), destinationEndpoint);
 
-        size_t bytesSent = socket.send_to(boost::asio::buffer(data, dataLength), destinationEndpoint);
+      if ((++packetCounter % 500) == 0)
+        {
+        printf("total sent packets: %lu\n", packetCounter);
+        }
 
-        if ((++packetCounter % 500) == 0)
-          {
-          printf("total sent packets: %lu\n", packetCounter);
-          }
-
-        boost::this_thread::sleep(boost::posix_time::microseconds(200));
+      boost::this_thread::sleep(boost::posix_time::microseconds(200));
       }
-
     }
   catch( std::exception & e )
     {
