@@ -30,14 +30,13 @@
 // This program reads a pcap file and sends the packets using UDP.
 
 #include "vtkPacketFileReader.h"
+#include "vvPacketSender.h"
 
 #include <string>
 #include <cstdlib>
 #include <iostream>
 
 #include <boost/thread/thread.hpp>
-#include <boost/asio.hpp>
-
 
 int main(int argc, char* argv[])
 {
@@ -46,53 +45,21 @@ int main(int argc, char* argv[])
     std::cout << "Usage: " << argv[0] << " <packet file>" << std::endl;
     return 1;
   }
-
-  std::string filename = argv[1];
-
-  vtkPacketFileReader packetReader;
-  packetReader.Open(filename);
-  if (!packetReader.IsOpen())
-    {
-    std::cout << "Failed to open packet file: " << filename << std::endl;
-    return 1;
-    }
-
+  std::string filename(argv[1]);
 
   try
     {
-
     std::string destinationIp = "127.0.0.1";
     int dataPort = 2368;
-
-    boost::asio::io_service ioService;
-    boost::asio::ip::udp::endpoint destinationEndpoint(boost::asio::ip::address_v4::from_string(destinationIp), dataPort);
-    boost::asio::ip::udp::socket socket(ioService);
-    socket.open(destinationEndpoint.protocol());
+    vvPacketSender sender(filename, destinationIp, dataPort);
     //socket.connect(destinationEndpoint);
 
-    static unsigned long packetCounter = 0;
-
-    while (packetReader.IsOpen())
+    while (!sender.done())
       {
-      const unsigned char* data = 0;
-      unsigned int dataLength = 0;
-      double timeSinceStart = 0;
-      if (!packetReader.NextPacket(data, dataLength, timeSinceStart))
+      sender.pumpPacket();
+      if ((sender.packetCount() % 500) == 0)
         {
-        printf("end of packet file\n");
-        break;
-        }
-
-      if (dataLength != 1206)
-        {
-        continue;
-        }
-
-      size_t bytesSent = socket.send_to(boost::asio::buffer(data, dataLength), destinationEndpoint);
-
-      if ((++packetCounter % 500) == 0)
-        {
-        printf("total sent packets: %lu\n", packetCounter);
+        printf("total sent packets: %lu\n", sender.packetCount());
         }
 
       boost::this_thread::sleep(boost::posix_time::microseconds(200));
