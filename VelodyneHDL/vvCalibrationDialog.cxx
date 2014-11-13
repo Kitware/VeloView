@@ -31,6 +31,10 @@ public:
   {
     QString hdl32builtin = QCoreApplication::applicationDirPath() + "/../share/HDL-32.xml";
     QString vlp16builtin = QCoreApplication::applicationDirPath() + "/../share/VLP-16.xml";
+#ifdef Q_WS_MAC
+    hdl32builtin =  QCoreApplication::applicationDirPath() + "/../Resources/HDL-32.xml";
+    vlp16builtin =  QCoreApplication::applicationDirPath() + "/../Resources/VLP-16.xml";
+#endif
     this->BuiltInCalibrationFiles << hdl32builtin;
     this->BuiltInCalibrationFiles << vlp16builtin;
   }

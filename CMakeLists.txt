@@ -107,9 +107,15 @@ add_subdirectory(VelodyneHDL)
 include_directories(VelodyneHDL)
 
 # Install data files
-configure_file(share/VLP-16.xml ${CMAKE_CURRENT_BINARY_DIR}/share/VLP-16.xml COPYONLY)
-configure_file(share/HDL-32.xml ${CMAKE_CURRENT_BINARY_DIR}/share/HDL-32.xml COPYONLY)
-install(FILES share/VLP-16.xml share/HDL-32.xml DESTINATION share)
+if(NOT APPLE)
+  configure_file(share/VLP-16.xml ${CMAKE_CURRENT_BINARY_DIR}/share/VLP-16.xml COPYONLY)
+  configure_file(share/HDL-32.xml ${CMAKE_CURRENT_BINARY_DIR}/share/HDL-32.xml COPYONLY)
+  install(FILES share/VLP-16.xml share/HDL-32.xml DESTINATION share)
+else()
+  configure_file(share/VLP-16.xml ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/VeloView.app/Contents/Resources/VLP-16.xml COPYONLY)
+  configure_file(share/HDL-32.xml ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/VeloView.app/Contents/Resources/HDL-32.xml COPYONLY)
+  install(FILES share/VLP-16.xml share/HDL-32.xml DESTINATION ${VV_INSTALL_RUNTIME_DIR}/VeloView.app/Contents/Resources)
+endif()
 
 # This ensure that build_paraview_client() adds an "forwarding path" to locate
 # paraview from installed location.
