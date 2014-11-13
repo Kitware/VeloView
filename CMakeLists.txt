@@ -104,10 +104,12 @@ endif()
 
 # Add the reader plugin and any other plugins.
 add_subdirectory(VelodyneHDL)
-
 include_directories(VelodyneHDL)
 
-
+# Install data files
+configure_file(share/VLP-16.xml ${CMAKE_CURRENT_BINARY_DIR}/share/VLP-16.xml COPYONLY)
+configure_file(share/HDL-32.xml ${CMAKE_CURRENT_BINARY_DIR}/share/HDL-32.xml COPYONLY)
+install(FILES share/VLP-16.xml share/HDL-32.xml DESTINATION share)
 
 # This ensure that build_paraview_client() adds an "forwarding path" to locate
 # paraview from installed location.
