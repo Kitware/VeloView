@@ -7,17 +7,6 @@
       </Documentation>
 
       <StringVectorProperty
-          name="PacketFile"
-          animateable="0"
-          command="SetPacketFile"
-          number_of_elements="1">
-          <FileListDomain name="files"/>
-          <Documentation>
-            This property specifies the pcap file to stream.
-          </Documentation>
-      </StringVectorProperty>
-
-      <StringVectorProperty
           name="CorrectionsFile"
           animateable="0"
           label="Calibration File"

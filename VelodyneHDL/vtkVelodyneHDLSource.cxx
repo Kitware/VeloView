@@ -537,105 +537,6 @@ public:
   boost::shared_ptr<PacketFileWriter> Writer;
 };
 
-
-//----------------------------------------------------------------------------
-class PacketFileSource
-{
-public:
-
-  void ThreadLoop()
-  {
-    while (!this->ShouldStop)
-      {
-      if (!this->ReadNextPacket())
-        {
-        break;
-        }
-
-        //boost::this_thread::sleep(boost::posix_time::microseconds(100));
-      }
-  }
-
-  bool Open(const std::string& filename)
-  {
-    if (this->PacketReader.GetFileName() != filename)
-      {
-      this->PacketReader.Close();
-      }
-
-    if (!this->PacketReader.IsOpen())
-      {
-      if (!this->PacketReader.Open(filename))
-        {
-        vtkGenericWarningMacro("Failed to open packet file: " << filename);
-        return false;
-        }
-      }
-
-    return true;
-  }
-
-  bool ReadNextPacket()
-  {
-    const unsigned char* data = 0;
-    unsigned int dataLength = 0;
-    double timeSinceStart = 0;
-    if (!this->PacketReader.NextPacket(data, dataLength, timeSinceStart))
-      {
-      return false;
-      }
-
-    this->Consumer->HandleSensorData(data, dataLength);
-    return true;
-  }
-
-  bool ReadNextFrame()
-  {
-    if (this->Thread)
-      {
-      vtkGenericWarningMacro("ReadNextFrame() called while thread is active.");
-      return false;
-      }
-
-    // todo - handle end of file packets that create a partial frame
-    while (this->ReadNextPacket())
-      {
-      if (this->Consumer->CheckForNewData())
-        {
-        return true;
-        }
-      }
-    return false;
-  }
-
-  void Start(const std::string& filename)
-  {
-    if (this->Thread)
-      {
-      return;
-      }
-
-    this->ShouldStop = false;
-    this->Thread = boost::shared_ptr<boost::thread>(
-      new boost::thread(boost::bind(&PacketFileSource::ThreadLoop, this)));
-  }
-
-  void Stop()
-  {
-    this->ShouldStop = true;
-    if (this->Thread)
-      {
-      this->Thread->join();
-      this->Thread.reset();
-      }
-  }
-
-  bool ShouldStop;
-  vtkPacketFileReader PacketReader;
-  boost::shared_ptr<boost::thread> Thread;
-  boost::shared_ptr<PacketConsumer> Consumer;
-};
-
 } // end namespace
 
 //----------------------------------------------------------------------------
@@ -680,24 +581,6 @@ vtkVelodyneHDLSource::~vtkVelodyneHDLSource()
 {
   this->Stop();
   delete this->Internal;
-}
-
-//-----------------------------------------------------------------------------
-const std::string& vtkVelodyneHDLSource::GetPacketFile()
-{
-  return this->PacketFile;
-}
-
-//-----------------------------------------------------------------------------
-void vtkVelodyneHDLSource::SetPacketFile(const std::string& filename)
-{
-  if (filename == this->GetPacketFile())
-    {
-    return;
-    }
-
-  this->PacketFile = filename;
-  this->Modified();
 }
 
 //-----------------------------------------------------------------------------
@@ -839,37 +722,29 @@ void vtkVelodyneHDLSource::SetSensorTransform(vtkTransform* transform)
 //----------------------------------------------------------------------------
 void vtkVelodyneHDLSource::Start()
 {
-  if (this->PacketFile.length())
+  if (this->OutputFile.length())
     {
-    this->Internal->FileSource.Start(this->PacketFile);
+    this->Internal->Writer->Start(this->OutputFile);
     }
-  else
+
+  this->Internal->NetworkSource.Writer.reset();
+  this->Internal->PositionNetworkSource.Writer.reset();
+
+  if (this->Internal->Writer->IsOpen())
     {
-    if (this->OutputFile.length())
-      {
-      this->Internal->Writer->Start(this->OutputFile);
-      }
-
-    this->Internal->NetworkSource.Writer.reset();
-    this->Internal->PositionNetworkSource.Writer.reset();
-
-    if (this->Internal->Writer->IsOpen())
-      {
-      this->Internal->NetworkSource.Writer = this->Internal->Writer;
-      this->Internal->PositionNetworkSource.Writer = this->Internal->Writer;
-      }
-
-    this->Internal->Consumer->Start();
-
-    this->Internal->NetworkSource.Start();
-    this->Internal->PositionNetworkSource.Start();
+    this->Internal->NetworkSource.Writer = this->Internal->Writer;
+    this->Internal->PositionNetworkSource.Writer = this->Internal->Writer;
     }
+
+  this->Internal->Consumer->Start();
+
+  this->Internal->NetworkSource.Start();
+  this->Internal->PositionNetworkSource.Start();
 }
 
 //----------------------------------------------------------------------------
 void vtkVelodyneHDLSource::Stop()
 {
-  this->Internal->FileSource.Stop();
   this->Internal->NetworkSource.Stop();
   this->Internal->PositionNetworkSource.Stop();
   this->Internal->Consumer->Stop();
@@ -879,18 +754,6 @@ void vtkVelodyneHDLSource::Stop()
 //----------------------------------------------------------------------------
 void vtkVelodyneHDLSource::ReadNextFrame()
 {
-  if (this->PacketFile.length())
-    {
-    if (!this->Internal->FileSource.Open(this->PacketFile))
-      {
-      return;
-      }
-
-    if (this->Internal->FileSource.ReadNextFrame())
-      {
-      this->Modified();
-      }
-    }
 }
 
 

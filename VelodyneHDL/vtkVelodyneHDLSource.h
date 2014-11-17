@@ -55,9 +55,6 @@ public:
 
   void ReadNextFrame();
 
-  const std::string& GetPacketFile();
-  void SetPacketFile(const std::string& filename);
-
   const std::string& GetCorrectionsFile();
   void SetCorrectionsFile(const std::string& correctionsFile);
 
