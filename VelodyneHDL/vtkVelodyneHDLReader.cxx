@@ -448,7 +448,7 @@ void vtkVelodyneHDLReader::SetCropReturns(int crop)
 {
   if (!this->Internal->CropReturns == !!crop)
     {
-    this->Internal->CropReturns = crop;
+    this->Internal->CropReturns = !!crop;
     this->Modified();
     }
 }
@@ -458,7 +458,7 @@ void vtkVelodyneHDLReader::SetCropInside(int crop)
 {
   if (!this->Internal->CropInside == !!crop)
     {
-    this->Internal->CropInside = crop;
+    this->Internal->CropInside = !!crop;
     this->Modified();
     }
 }
@@ -1241,7 +1241,7 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessFiring(HDLFiringData* firingData,
       if(laserId >= 16)
         {
         laserId -= 16;
-        short azimuth_diff = firingData->rotationalPosition - this->LastAzimuth;
+        short azimuth_diff = static_cast<short>(firingData->rotationalPosition) - static_cast<short>(this->LastAzimuth);
         assert(azimuth_diff >= 0);
         azimuth += azimuth_diff/2;
         }
