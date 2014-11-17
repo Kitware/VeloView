@@ -172,6 +172,7 @@ public:
     this->CropRegion[0] = this->CropRegion[1] = 0.0;
     this->CropRegion[2] = this->CropRegion[3] = 0.0;
     this->CropRegion[4] = this->CropRegion[5] = 0.0;
+    this->CorrectionsInitialized = false;
 
     std::fill(this->LastPointId, this->LastPointId + HDL_MAX_NUM_LASERS, -1);
 
@@ -222,6 +223,7 @@ public:
   std::vector<double> sin_lookup_table_;
   HDLLaserCorrection laser_corrections_[HDL_MAX_NUM_LASERS];
   int CalibrationReportedNumLasers;
+  bool CorrectionsInitialized;
 
   // User configurable parameters
   int NumberOfTrailingFrames;
@@ -541,6 +543,11 @@ int vtkVelodyneHDLReader::RequestData(vtkInformation *request,
     return 0;
     }
 
+  if (!this->Internal->CorrectionsInitialized)
+    {
+    vtkErrorMacro("Corrections have not been set");
+    return 0;
+    }
 
   int timestep = 0;
   if (info->Has(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP()))
@@ -706,6 +713,11 @@ vtkSmartPointer<vtkPolyData> vtkVelodyneHDLReader::GetFrameRange(int startFrame,
     vtkErrorMacro("GetFrame() called but packet file reader is not open.");
     return 0;
     }
+  if (!this->Internal->CorrectionsInitialized)
+    {
+    vtkErrorMacro("Corrections have not been set");
+    return 0;
+    }
 
   const unsigned char* data = 0;
   unsigned int dataLength = 0;
@@ -746,6 +758,11 @@ vtkSmartPointer<vtkPolyData> vtkVelodyneHDLReader::GetFrame(int frameNumber)
   if (!this->Internal->Reader)
     {
     vtkErrorMacro("GetFrame() called but packet file reader is not open.");
+    return 0;
+    }
+  if (!this->Internal->CorrectionsInitialized)
+    {
+    vtkErrorMacro("Corrections have not been set");
     return 0;
     }
 
@@ -1100,6 +1117,7 @@ void vtkVelodyneHDLReader::vtkInternal::LoadCorrectionsFile(const std::string& c
     laser_corrections_[i].cosVertOffsetCorrection = correction.verticalOffsetCorrection
                                        * correction.cosVertCorrection;
     }
+  this->CorrectionsInitialized = true;
 }
 
 //-----------------------------------------------------------------------------

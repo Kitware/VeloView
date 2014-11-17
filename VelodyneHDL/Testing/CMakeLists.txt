@@ -12,12 +12,14 @@ add_test(TestReader1 ${CMAKE_BINARY_DIR}/bin/TestPositionReader ${CMAKE_SOURCE_D
 add_test(TestReader2
   ${CMAKE_BINARY_DIR}/bin/TestReader
   ${CMAKE_SOURCE_DIR}/Testing/Data/monterey-first-100-packets.pcap
+  ${CMAKE_SOURCE_DIR}/share/HDL-32.xml
   ${CMAKE_SOURCE_DIR}/Testing/monterey.test
 )
 
 add_test(TestReader3
   ${CMAKE_BINARY_DIR}/bin/TestReader
   ${CMAKE_SOURCE_DIR}/Testing/Data/dual-return-frames-5-to-15.pcap
+  ${CMAKE_SOURCE_DIR}/share/HDL-32.xml
   ${CMAKE_SOURCE_DIR}/Testing/dual.test
 )
 
