@@ -401,7 +401,13 @@ public:
 
   void SocketCallback(const boost::system::error_code& error, std::size_t numberOfBytes)
   {
-    if (this->ShouldStop)
+    bool stopped = false;
+      {
+      boost::lock_guard<boost::mutex> lock(this->StopMutex);
+      stopped = this->ShouldStop;
+      }
+
+    if (stopped)
       {
       return;
       }
@@ -486,18 +492,26 @@ public:
         }
       }
 
+    {
+    boost::lock_guard<boost::mutex> lock(this->StopMutex);
     this->ShouldStop = false;
+    }
     this->Thread = boost::shared_ptr<boost::thread>(
       new boost::thread(boost::bind(&PacketNetworkSource::ThreadLoop, this)));
   }
 
   void Stop()
   {
+    {
+    boost::lock_guard<boost::mutex> lock(this->StopMutex);
     this->ShouldStop = true;
+    }
+
     if (this->Thread)
       {
       this->Socket->close();
       this->IOService.stop();
+
       this->Thread->join();
       this->Thread.reset();
       }
@@ -509,8 +523,10 @@ public:
   {
   }
 
-  int PortNumber;
+  boost::mutex StopMutex;
   bool ShouldStop;
+
+  int PortNumber;
   char RXBuffer[1500];
   vtkIdType PacketCounter;
 
