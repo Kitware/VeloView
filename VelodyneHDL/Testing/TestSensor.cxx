@@ -11,41 +11,37 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-/*=========================================================================
 
-  Program:   Visualization Toolkit
-  Module:    PacketFileSender.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-// .NAME PacketFileSender -
-// .SECTION Description
-// This program reads a pcap file and sends the packets using UDP.
 
 #include "vtkPacketFileReader.h"
+#include "vtkVelodyneHDLSource.h"
+#include "vtkVelodyneHDLReader.h"
 #include "vvPacketSender.h"
 
+#include <vtkDataArray.h>
+#include <vtkPointData.h>
+#include <vtkTimerLog.h>
+#include <vtkNew.h>
+
+#include <map>
 #include <string>
-#include <cstdlib>
-#include <iostream>
+#include <cmath>
+#include <cstdio>
 
-#include <boost/thread/thread.hpp>
+#undef NDEBUG
+#include <cassert>
 
+//-----------------------------------------------------------------------------
 int main(int argc, char* argv[])
 {
-
   if (argc != 2) {
     std::cout << "Usage: " << argv[0] << " <packet file>" << std::endl;
     return 1;
   }
   std::string filename(argv[1]);
+
+  vtkNew<vtkVelodyneHDLSource> source;
+  source->Start();
 
   try
     {
@@ -54,22 +50,24 @@ int main(int argc, char* argv[])
     vvPacketSender sender(filename, destinationIp, dataPort);
     //socket.connect(destinationEndpoint);
 
-    while (!sender.done())
+    for(size_t i = 0; i < 500; ++i)
       {
       sender.pumpPacket();
-      if ((sender.packetCount() % 500) == 0)
-        {
-        printf("total sent packets: %lu\n", sender.packetCount());
-        }
-
-      boost::this_thread::sleep(boost::posix_time::microseconds(200));
       }
+    source->Update();
+    vtkPolyData* result = source->GetOutput();
+
+    while(!sender.done())
+      {
+      sender.pumpPacket();
+      }
+
+    source->Stop();
     }
-  catch( std::exception & e )
+  catch( std::exception& e )
     {
     std::cout << "Caught Exception: " << e.what() << std::endl;
     return 1;
     }
-
   return 0;
 }
