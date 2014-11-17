@@ -392,6 +392,15 @@ public:
 
   void StartReceive()
   {
+    boost::lock_guard<boost::mutex> lock(this->SocketStateMutex);
+    bool stopped = false;
+    stopped = this->ShouldStop;
+
+    if (stopped)
+      {
+      return;
+      }
+
     // expecting exactly 1206 bytes, using a larger buffer so that if a
     // larger packet arrives unexpectedly we'll notice it.
     this->Socket->async_receive(boost::asio::buffer(this->RXBuffer, 1500),
@@ -401,17 +410,6 @@ public:
 
   void SocketCallback(const boost::system::error_code& error, std::size_t numberOfBytes)
   {
-    bool stopped = false;
-      {
-      boost::lock_guard<boost::mutex> lock(this->StopMutex);
-      stopped = this->ShouldStop;
-      }
-
-    if (stopped)
-      {
-      return;
-      }
-
     //this->Consumer->HandleSensorData(this->RXBuffer, numberOfBytes);
 
     if( this->Consumer )
@@ -453,6 +451,8 @@ public:
 
   void Start()
   {
+    boost::lock_guard<boost::mutex> lock(this->SocketStateMutex);
+
     if (this->Thread)
       {
       return;
@@ -492,10 +492,7 @@ public:
         }
       }
 
-    {
-    boost::lock_guard<boost::mutex> lock(this->StopMutex);
     this->ShouldStop = false;
-    }
     this->Thread = boost::shared_ptr<boost::thread>(
       new boost::thread(boost::bind(&PacketNetworkSource::ThreadLoop, this)));
   }
@@ -503,15 +500,15 @@ public:
   void Stop()
   {
     {
-    boost::lock_guard<boost::mutex> lock(this->StopMutex);
+    boost::lock_guard<boost::mutex> lock(this->SocketStateMutex);
     this->ShouldStop = true;
+
+    this->Socket->close();
+    this->IOService.stop();
     }
 
-    if (this->Thread)
+    if(this->Thread)
       {
-      this->Socket->close();
-      this->IOService.stop();
-
       this->Thread->join();
       this->Thread.reset();
       }
@@ -523,16 +520,18 @@ public:
   {
   }
 
-  boost::mutex StopMutex;
+  // This mutex should protext access to any of the following
+  boost::mutex SocketStateMutex;
+  boost::asio::io_service IOService;
+  boost::shared_ptr<boost::asio::ip::udp::socket> Socket;
+  boost::shared_ptr<boost::thread> Thread;
+
   bool ShouldStop;
 
   int PortNumber;
   char RXBuffer[1500];
   vtkIdType PacketCounter;
 
-  boost::asio::io_service IOService;
-  boost::shared_ptr<boost::asio::ip::udp::socket> Socket;
-  boost::shared_ptr<boost::thread> Thread;
   boost::shared_ptr<PacketConsumer> Consumer;
   boost::shared_ptr<PacketFileWriter> Writer;
 };
@@ -550,7 +549,6 @@ public:
     this->Writer = boost::shared_ptr<PacketFileWriter>(new PacketFileWriter);
     this->NetworkSource.Consumer = this->Consumer;
     // Position source does not need a consumer
-    this->FileSource.Consumer = this->Consumer;
   }
 
   ~vtkInternal()
@@ -561,7 +559,6 @@ public:
   boost::shared_ptr<PacketFileWriter> Writer;
   PacketNetworkSource NetworkSource;
   PacketNetworkSource PositionNetworkSource;
-  PacketFileSource FileSource;
 };
 
 //----------------------------------------------------------------------------
