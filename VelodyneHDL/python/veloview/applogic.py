@@ -330,6 +330,7 @@ def openPCAP(filename, positionFilename=None):
                                    PointsSkip=app.trailingFramesSpinBox.value)
     reader.GetClientSideObject().SetSensorTransform(sensorTransform)
     reader.UpdatePipeline()
+    app.scene.UpdateAnimationUsingDataTimeSteps()
 
     handler.RemoveObserver(tag)
     handler.SetProgressFrequency(freq)
@@ -1677,7 +1678,7 @@ def onLaserSelection():
 
 
 def hideColorByComponent():
-    getMainWindow().findChild('pqColorToolbar').findChild('pqDisplayColorWidget').findChildren('QComboBox')[1].hide()
+    getMainWindow().findChild('vvColorToolbar').findChild('pqDisplayColorWidget').findChildren('QComboBox')[1].hide()
 
 
 def addRecentFile(filename):

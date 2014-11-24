@@ -110,7 +110,7 @@
       </IntVectorProperty>
 
       <StringVectorProperty
-          name="ZCorrectionsFile"
+          name="CorrectionsFile"
           label="Calibration File"
           animateable="0"
           command="SetCorrectionsFile"
@@ -120,12 +120,6 @@
             This property specifies the corrections file for a 64 laser sensor.
           </Documentation>
       </StringVectorProperty>
-
-      <DoubleVectorProperty
-            name="TimeRange"
-                information_only="1" >
-                <TimeRangeInformationHelper/>
-      </DoubleVectorProperty>
 
       <DoubleVectorProperty
                 name="TimestepValues"
