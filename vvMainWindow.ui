@@ -24,7 +24,7 @@
      <x>0</x>
      <y>0</y>
      <width>1070</width>
-     <height>21</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -199,6 +199,15 @@
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
+  </widget>
+  <widget class="QDockWidget" name="colorMapEditorDock">
+   <property name="windowTitle">
+    <string>Color Map Editor</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>2</number>
+   </attribute>
+   <widget class="pqColorMapEditor" name="colorMapEditorPanel"/>
   </widget>
   <action name="actionE_xit">
    <property name="text">
@@ -816,6 +825,12 @@
    <class>vvColorToolbar</class>
    <extends>QToolBar</extends>
    <header>vvColorToolbar.h</header>
+  </customwidget>
+  <customwidget>
+   <class>pqColorMapEditor</class>
+   <extends>QWidget</extends>
+   <header>pqColorMapEditor.h</header>
+   <container>1</container>
   </customwidget>
  </customwidgets>
  <resources>

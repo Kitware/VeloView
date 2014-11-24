@@ -47,6 +47,7 @@
 #include <pqSettings.h>
 #include <pqSpreadSheetView.h>
 #include <pqSpreadSheetVisibilityBehavior.h>
+#include <pqStandardPropertyWidgetInterface.h>
 #include <pqVelodyneManager.h>
 #include <vtkPVPlugin.h>
 #include <vtkSMPropertyHelper.h>
@@ -89,8 +90,9 @@ private:
     pqApplicationCore* core = pqApplicationCore::instance();
 
     // Register ParaView interfaces.
-//    pqInterfaceTracker* pgm = core->interfaceTracker();
+    pqInterfaceTracker* pgm = core->interfaceTracker();
 //    pgm->addInterface(new pqStandardViewModules(pgm));
+    pgm->addInterface(new pqStandardPropertyWidgetInterface(pgm));
 
     // Define application behaviors.
     new pqAutoLoadPluginXMLBehavior(window);
@@ -182,6 +184,13 @@ private:
 //-----------------------------------------------------------------------------
 vvMainWindow::vvMainWindow() : Internals (new vvMainWindow::pqInternals(this))
 {
+//  this->tabifyDockWidget(
+//    this->Internal->colorMapEditorDock,
+//    this->Internal->memoryInspectorDock);
+  pqApplicationCore::instance()->registerManager(
+    "COLOR_EDITOR_PANEL", this->Internals->Ui.colorMapEditorDock);
+  this->Internals->Ui.colorMapEditorDock->hide();
+
   PV_PLUGIN_IMPORT(VelodyneHDLPlugin);
   PV_PLUGIN_IMPORT(PythonQtPlugin);
 }
