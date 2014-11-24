@@ -250,10 +250,12 @@ endfunction()
 function(add_external_project_internal name)
   set (cmake_params)
   foreach (flag CMAKE_BUILD_TYPE
+                CMAKE_C_COMPILER
                 CMAKE_C_FLAGS_DEBUG
                 CMAKE_C_FLAGS_MINSIZEREL
                 CMAKE_C_FLAGS_RELEASE
                 CMAKE_C_FLAGS_RELWITHDEBINFO
+                CMAKE_CXX_COMPILER
                 CMAKE_CXX_FLAGS_DEBUG
                 CMAKE_CXX_FLAGS_MINSIZEREL
                 CMAKE_CXX_FLAGS_RELEASE

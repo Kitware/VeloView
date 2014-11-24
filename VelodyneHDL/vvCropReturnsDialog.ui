@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>196</width>
-    <height>157</height>
+    <width>245</width>
+    <height>232</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -136,6 +136,13 @@
          </widget>
         </item>
        </layout>
+      </item>
+      <item row="3" column="1">
+       <widget class="QCheckBox" name="CropInsideCheckBox">
+        <property name="text">
+         <string>Crop Inside</string>
+        </property>
+       </widget>
       </item>
      </layout>
     </widget>

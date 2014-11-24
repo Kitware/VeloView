@@ -23,6 +23,13 @@ add_test(TestReader3
   ${CMAKE_SOURCE_DIR}/Testing/dual.test
 )
 
+add_test(TestReader4
+  ${CMAKE_BINARY_DIR}/bin/TestReader
+  ${CMAKE_SOURCE_DIR}/Testing/Data/vlp-16-test-90deg-1-50-frames.pcap
+  ${CMAKE_SOURCE_DIR}/share/VLP-16.xml
+  ${CMAKE_SOURCE_DIR}/Testing/vlp-16.test
+)
+
 add_test(TestSensor
   ${CMAKE_BINARY_DIR}/bin/TestSensor
   ${CMAKE_SOURCE_DIR}/Testing/Data/monterey-first-100-packets.pcap

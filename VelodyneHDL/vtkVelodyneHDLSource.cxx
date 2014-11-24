@@ -36,6 +36,7 @@
 #include "vtkStreamingDemandDrivenPipeline.h"
 #include "vtkSmartPointer.h"
 #include "vtkNew.h"
+#include "vtkTransform.h"
 
 #include <boost/thread/thread.hpp>
 #include <boost/asio.hpp>
@@ -145,6 +146,8 @@ public:
 
   void HandleSensorData(const unsigned char* data, unsigned int length)
   {
+    boost::lock_guard<boost::mutex> lock(this->ReaderMutex);
+
     this->HDLReader->ProcessHDLPacket(const_cast<unsigned char*>(data), length);
     if (this->HDLReader->GetDatasets().size())
       {
@@ -155,7 +158,7 @@ public:
 
   vtkSmartPointer<vtkPolyData> GetDatasetForTime(double timeRequest, double& actualTime)
   {
-    boost::lock_guard<boost::mutex> lock(this->Mutex);
+    boost::lock_guard<boost::mutex> lock(this->ConsumerMutex);
 
     size_t stepIndex = this->GetIndexForTime(timeRequest);
     if (stepIndex < this->Timesteps.size())
@@ -169,7 +172,7 @@ public:
 
   std::vector<double> GetTimesteps()
   {
-    boost::lock_guard<boost::mutex> lock(this->Mutex);
+    boost::lock_guard<boost::mutex> lock(this->ConsumerMutex);
     const size_t nTimesteps = this->Timesteps.size();
     std::vector<double> timesteps(nTimesteps, 0);
     for (size_t i = 0; i < nTimesteps; ++i)
@@ -187,14 +190,14 @@ public:
 
   void SetMaxNumberOfDatasets(int nDatasets)
   {
-    boost::lock_guard<boost::mutex> lock(this->Mutex);
+    boost::lock_guard<boost::mutex> lock(this->ConsumerMutex);
     this->MaxNumberOfDatasets = nDatasets;
     this->UpdateDequeSize();
   }
 
   bool CheckForNewData()
   {
-    boost::lock_guard<boost::mutex> lock(this->Mutex);
+    boost::lock_guard<boost::mutex> lock(this->ConsumerMutex);
     bool newData = this->NewData;
     this->NewData = false;
     return newData;
@@ -244,6 +247,9 @@ public:
     return this->HDLReader.GetPointer();
   }
 
+  // Hold this when running reader code code or modifying its internals
+  boost::mutex ReaderMutex;
+
 protected:
 
   void UpdateDequeSize()
@@ -278,7 +284,7 @@ protected:
 
   void HandleNewData(vtkSmartPointer<vtkPolyData> polyData)
   {
-    boost::lock_guard<boost::mutex> lock(this->Mutex);
+    boost::lock_guard<boost::mutex> lock(this->ConsumerMutex);
 
     this->UpdateDequeSize();
     this->Timesteps.push_back(this->LastTime);
@@ -290,8 +296,10 @@ protected:
   bool NewData;
   int MaxNumberOfDatasets;
   double LastTime;
-  boost::mutex Mutex;
-  boost::mutex PacketMutex;
+
+  // Hold this when modifying internals of reader
+  boost::mutex ConsumerMutex;
+
   std::deque<vtkSmartPointer<vtkPolyData> > Datasets;
   std::deque<double> Timesteps;
   vtkNew<vtkVelodyneHDLReader> HDLReader;
@@ -384,6 +392,15 @@ public:
 
   void StartReceive()
   {
+    boost::lock_guard<boost::mutex> lock(this->SocketStateMutex);
+    bool stopped = false;
+    stopped = this->ShouldStop;
+
+    if (stopped)
+      {
+      return;
+      }
+
     // expecting exactly 1206 bytes, using a larger buffer so that if a
     // larger packet arrives unexpectedly we'll notice it.
     this->Socket->async_receive(boost::asio::buffer(this->RXBuffer, 1500),
@@ -393,11 +410,6 @@ public:
 
   void SocketCallback(const boost::system::error_code& error, std::size_t numberOfBytes)
   {
-    if (this->ShouldStop)
-      {
-      return;
-      }
-
     //this->Consumer->HandleSensorData(this->RXBuffer, numberOfBytes);
 
     if( this->Consumer )
@@ -439,6 +451,8 @@ public:
 
   void Start()
   {
+    boost::lock_guard<boost::mutex> lock(this->SocketStateMutex);
+
     if (this->Thread)
       {
       return;
@@ -485,11 +499,16 @@ public:
 
   void Stop()
   {
+    {
+    boost::lock_guard<boost::mutex> lock(this->SocketStateMutex);
     this->ShouldStop = true;
-    if (this->Thread)
+
+    this->Socket->close();
+    this->IOService.stop();
+    }
+
+    if(this->Thread)
       {
-      this->Socket->close();
-      this->IOService.stop();
       this->Thread->join();
       this->Thread.reset();
       }
@@ -501,115 +520,20 @@ public:
   {
   }
 
-  int PortNumber;
-  bool ShouldStop;
-  char RXBuffer[1500];
-  vtkIdType PacketCounter;
-
+  // This mutex should protext access to any of the following
+  boost::mutex SocketStateMutex;
   boost::asio::io_service IOService;
   boost::shared_ptr<boost::asio::ip::udp::socket> Socket;
   boost::shared_ptr<boost::thread> Thread;
-  boost::shared_ptr<PacketConsumer> Consumer;
-  boost::shared_ptr<PacketFileWriter> Writer;
-};
-
-
-//----------------------------------------------------------------------------
-class PacketFileSource
-{
-public:
-
-  void ThreadLoop()
-  {
-    while (!this->ShouldStop)
-      {
-      if (!this->ReadNextPacket())
-        {
-        break;
-        }
-
-        //boost::this_thread::sleep(boost::posix_time::microseconds(100));
-      }
-  }
-
-  bool Open(const std::string& filename)
-  {
-    if (this->PacketReader.GetFileName() != filename)
-      {
-      this->PacketReader.Close();
-      }
-
-    if (!this->PacketReader.IsOpen())
-      {
-      if (!this->PacketReader.Open(filename))
-        {
-        vtkGenericWarningMacro("Failed to open packet file: " << filename);
-        return false;
-        }
-      }
-
-    return true;
-  }
-
-  bool ReadNextPacket()
-  {
-    const unsigned char* data = 0;
-    unsigned int dataLength = 0;
-    double timeSinceStart = 0;
-    if (!this->PacketReader.NextPacket(data, dataLength, timeSinceStart))
-      {
-      return false;
-      }
-
-    this->Consumer->HandleSensorData(data, dataLength);
-    return true;
-  }
-
-  bool ReadNextFrame()
-  {
-    if (this->Thread)
-      {
-      vtkGenericWarningMacro("ReadNextFrame() called while thread is active.");
-      return false;
-      }
-
-    // todo - handle end of file packets that create a partial frame
-    while (this->ReadNextPacket())
-      {
-      if (this->Consumer->CheckForNewData())
-        {
-        return true;
-        }
-      }
-    return false;
-  }
-
-  void Start(const std::string& filename)
-  {
-    if (this->Thread)
-      {
-      return;
-      }
-
-    this->ShouldStop = false;
-    this->Thread = boost::shared_ptr<boost::thread>(
-      new boost::thread(boost::bind(&PacketFileSource::ThreadLoop, this)));
-  }
-
-  void Stop()
-  {
-    this->ShouldStop = true;
-    if (this->Thread)
-      {
-      this->Thread->join();
-      this->Thread.reset();
-      }
-  }
 
   bool ShouldStop;
-  vtkPacketFileReader PacketReader;
-  boost::shared_ptr<boost::thread> Thread;
+
+  int PortNumber;
+  char RXBuffer[1500];
+  vtkIdType PacketCounter;
+
   boost::shared_ptr<PacketConsumer> Consumer;
+  boost::shared_ptr<PacketFileWriter> Writer;
 };
 
 } // end namespace
@@ -625,7 +549,6 @@ public:
     this->Writer = boost::shared_ptr<PacketFileWriter>(new PacketFileWriter);
     this->NetworkSource.Consumer = this->Consumer;
     // Position source does not need a consumer
-    this->FileSource.Consumer = this->Consumer;
   }
 
   ~vtkInternal()
@@ -636,7 +559,6 @@ public:
   boost::shared_ptr<PacketFileWriter> Writer;
   PacketNetworkSource NetworkSource;
   PacketNetworkSource PositionNetworkSource;
-  PacketFileSource FileSource;
 };
 
 //----------------------------------------------------------------------------
@@ -656,24 +578,6 @@ vtkVelodyneHDLSource::~vtkVelodyneHDLSource()
 {
   this->Stop();
   delete this->Internal;
-}
-
-//-----------------------------------------------------------------------------
-const std::string& vtkVelodyneHDLSource::GetPacketFile()
-{
-  return this->PacketFile;
-}
-
-//-----------------------------------------------------------------------------
-void vtkVelodyneHDLSource::SetPacketFile(const std::string& filename)
-{
-  if (filename == this->GetPacketFile())
-    {
-    return;
-    }
-
-  this->PacketFile = filename;
-  this->Modified();
 }
 
 //-----------------------------------------------------------------------------
@@ -698,6 +602,8 @@ void vtkVelodyneHDLSource::SetOutputFile(const std::string& filename)
 //-----------------------------------------------------------------------------
 const std::string& vtkVelodyneHDLSource::GetCorrectionsFile()
 {
+  boost::lock_guard<boost::mutex> lock(this->Internal->Consumer->ReaderMutex);
+
   return this->Internal->Consumer->GetReader()->GetCorrectionsFile();
 }
 
@@ -709,6 +615,8 @@ void vtkVelodyneHDLSource::SetCorrectionsFile(const std::string& filename)
     return;
     }
 
+  boost::lock_guard<boost::mutex> lock(this->Internal->Consumer->ReaderMutex);
+
   this->Internal->Consumer->GetReader()->SetCorrectionsFile(filename);
   this->Modified();
 }
@@ -716,6 +624,8 @@ void vtkVelodyneHDLSource::SetCorrectionsFile(const std::string& filename)
 //-----------------------------------------------------------------------------
 void vtkVelodyneHDLSource::SetLaserSelection(int LaserSelection[64])
 {
+  boost::lock_guard<boost::mutex> lock(this->Internal->Consumer->ReaderMutex);
+
   this->Internal->Consumer->GetReader()->SetLaserSelection(LaserSelection);
   this->Modified();
 }
@@ -723,14 +633,59 @@ void vtkVelodyneHDLSource::SetLaserSelection(int LaserSelection[64])
 //-----------------------------------------------------------------------------
 void vtkVelodyneHDLSource::GetLaserSelection(int LaserSelection[64])
 {
+  boost::lock_guard<boost::mutex> lock(this->Internal->Consumer->ReaderMutex);
+
   this->Internal->Consumer->GetReader()->GetLaserSelection(LaserSelection);
+  this->Modified();
 }
 
+//-----------------------------------------------------------------------------
+void vtkVelodyneHDLSource::SetCropReturns(int cr)
+{
+  boost::lock_guard<boost::mutex> lock(this->Internal->Consumer->ReaderMutex);
+
+  this->Internal->Consumer->GetReader()->SetCropReturns(cr);
+  this->Modified();
+}
+
+//-----------------------------------------------------------------------------
+void vtkVelodyneHDLSource::SetCropInside(int ci)
+{
+  boost::lock_guard<boost::mutex> lock(this->Internal->Consumer->ReaderMutex);
+
+  this->Internal->Consumer->GetReader()->SetCropInside(ci);
+  this->Modified();
+}
+
+//-----------------------------------------------------------------------------
+void vtkVelodyneHDLSource::SetCropRegion(double r[6])
+{
+  boost::lock_guard<boost::mutex> lock(this->Internal->Consumer->ReaderMutex);
+
+  this->Internal->Consumer->GetReader()->SetCropRegion(r);
+  this->Modified();
+}
+
+//-----------------------------------------------------------------------------
+void vtkVelodyneHDLSource::SetCropRegion(double xmin, double xmax,
+                                         double ymin, double ymax,
+                                         double zmin, double zmax)
+{
+  boost::lock_guard<boost::mutex> lock(this->Internal->Consumer->ReaderMutex);
+
+  this->Internal->Consumer->GetReader()->SetCropRegion(xmin, xmax,
+                                                       ymin, ymax,
+                                                       zmin, zmax);
+  this->Modified();
+}
 
 //-----------------------------------------------------------------------------
 void vtkVelodyneHDLSource::GetVerticalCorrections(double VerticalCorrections[64])
 {
+  boost::lock_guard<boost::mutex> lock(this->Internal->Consumer->ReaderMutex);
+
   this->Internal->Consumer->GetReader()->GetVerticalCorrections(VerticalCorrections);
+  this->Modified();
 }
 
 //-----------------------------------------------------------------------------
@@ -752,40 +707,41 @@ void vtkVelodyneHDLSource::SetDummyProperty(int vtkNotUsed(dummy))
   this->Modified();
 }
 
+//-----------------------------------------------------------------------------
+void vtkVelodyneHDLSource::SetSensorTransform(vtkTransform* transform)
+{
+  boost::lock_guard<boost::mutex> lock(this->Internal->Consumer->ReaderMutex);
+
+  this->Internal->Consumer->GetReader()->SetSensorTransform(transform);
+  this->Modified();
+}
+
 //----------------------------------------------------------------------------
 void vtkVelodyneHDLSource::Start()
 {
-  if (this->PacketFile.length())
+  if (this->OutputFile.length())
     {
-    this->Internal->FileSource.Start(this->PacketFile);
+    this->Internal->Writer->Start(this->OutputFile);
     }
-  else
+
+  this->Internal->NetworkSource.Writer.reset();
+  this->Internal->PositionNetworkSource.Writer.reset();
+
+  if (this->Internal->Writer->IsOpen())
     {
-    if (this->OutputFile.length())
-      {
-      this->Internal->Writer->Start(this->OutputFile);
-      }
-
-    this->Internal->NetworkSource.Writer.reset();
-    this->Internal->PositionNetworkSource.Writer.reset();
-
-    if (this->Internal->Writer->IsOpen())
-      {
-      this->Internal->NetworkSource.Writer = this->Internal->Writer;
-      this->Internal->PositionNetworkSource.Writer = this->Internal->Writer;
-      }
-
-    this->Internal->Consumer->Start();
-
-    this->Internal->NetworkSource.Start();
-    this->Internal->PositionNetworkSource.Start();
+    this->Internal->NetworkSource.Writer = this->Internal->Writer;
+    this->Internal->PositionNetworkSource.Writer = this->Internal->Writer;
     }
+
+  this->Internal->Consumer->Start();
+
+  this->Internal->NetworkSource.Start();
+  this->Internal->PositionNetworkSource.Start();
 }
 
 //----------------------------------------------------------------------------
 void vtkVelodyneHDLSource::Stop()
 {
-  this->Internal->FileSource.Stop();
   this->Internal->NetworkSource.Stop();
   this->Internal->PositionNetworkSource.Stop();
   this->Internal->Consumer->Stop();
@@ -795,18 +751,6 @@ void vtkVelodyneHDLSource::Stop()
 //----------------------------------------------------------------------------
 void vtkVelodyneHDLSource::ReadNextFrame()
 {
-  if (this->PacketFile.length())
-    {
-    if (!this->Internal->FileSource.Open(this->PacketFile))
-      {
-      return;
-      }
-
-    if (this->Internal->FileSource.ReadNextFrame())
-      {
-      this->Modified();
-      }
-    }
 }
 
 

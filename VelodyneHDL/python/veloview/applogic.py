@@ -272,6 +272,7 @@ def openSensor():
     close()
 
     sensor = smp.VelodyneHDLSource(guiName='Data', CalibrationFile=calibrationFile, CacheSize=100)
+    sensor.GetClientSideObject().SetSensorTransform(sensorTransform)
     sensor.UpdatePipeline()
     sensor.Start()
     rep = smp.Show(sensor)
@@ -293,6 +294,8 @@ def openSensor():
     app.actions['actionDualReturnDistanceFar'].enabled = True
     app.actions['actionDualReturnIntensityHigh'].enabled = True
     app.actions['actionDualReturnIntensityLow'].enabled = True
+
+    onCropReturns(False) # Dont show the dialog just restore settings
 
     play()
 
@@ -421,6 +424,8 @@ def openPCAP(filename, positionFilename=None):
     app.actions['actionDualReturnDistanceFar'].enabled = True
     app.actions['actionDualReturnIntensityHigh'].enabled = True
     app.actions['actionDualReturnIntensityLow'].enabled = True
+
+    onCropReturns(False) # Dont show the dialog just restore settings
 
     resetCamera()
 
@@ -1333,24 +1338,35 @@ def onChooseCalibrationFile():
         smp.Render()
 
     elif sensor is not None:
+        sensor.GetClientSideObject().SetSensorTransform(sensorTransform)
         sensor.CalibrationFile = calibrationFile
         # no need to render now, calibration file will be used on the next frame
 
 
-def onCropReturns():
+def onCropReturns(show = True):
     dialog = vvCropReturnsDialog(getMainWindow())
-    if not dialog.exec_():
+    if show and not dialog.exec_():
+        print 'return'
         return
 
     reader = getReader()
-    # TODO implement for sensor stream
-
-    if reader:
+    if reader is not None:
         reader.CropReturns = dialog.croppingEnabled
+        reader.CropInside = dialog.cropInside
         p1 = dialog.firstCorner
         p2 = dialog.secondCorner
         reader.CropRegion = [p1.x(), p2.x(), p1.y(), p2.y(), p1.z(), p2.z()]
         smp.Render()
+
+    sensor = getSensor()
+    if sensor is not None:
+        sensor.CropReturns = dialog.croppingEnabled
+        sensor.CropInside = dialog.cropInside
+        p1 = dialog.firstCorner
+        p2 = dialog.secondCorner
+        sensor.CropRegion = [p1.x(), p2.x(), p1.y(), p2.y(), p1.z(), p2.z()]
+        smp.Render()
+
 
 def resetCamera():
 

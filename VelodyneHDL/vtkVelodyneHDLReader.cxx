@@ -231,6 +231,7 @@ public:
   int PointsSkip;
 
   bool CropReturns;
+  bool CropInside;
   double CropRegion[6];
 
   std::vector<bool> LaserSelection;
@@ -313,7 +314,7 @@ void vtkVelodyneHDLReader::SetSensorTransform(vtkTransform* transform)
 {
   if (transform)
     {
-    this->Internal->SensorTransform->DeepCopy(transform);
+    this->Internal->SensorTransform->SetMatrix(transform->GetMatrix());
     }
   else
     {
@@ -447,7 +448,17 @@ void vtkVelodyneHDLReader::SetCropReturns(int crop)
 {
   if (!this->Internal->CropReturns == !!crop)
     {
-    this->Internal->CropReturns = crop;
+    this->Internal->CropReturns = !!crop;
+    this->Modified();
+    }
+}
+
+//-----------------------------------------------------------------------------
+void vtkVelodyneHDLReader::SetCropInside(int crop)
+{
+  if (!this->Internal->CropInside == !!crop)
+    {
+    this->Internal->CropInside = !!crop;
     this->Modified();
     }
 }
@@ -908,9 +919,11 @@ void vtkVelodyneHDLReader::vtkInternal::PushFiringData(const unsigned char laser
   // Test if point is cropped
   if (this->CropReturns)
     {
-    if (pos[0] >= this->CropRegion[0] && pos[0] <= this->CropRegion[1] &&
-        pos[1] >= this->CropRegion[2] && pos[1] <= this->CropRegion[3] &&
-        pos[2] >= this->CropRegion[4] && pos[2] <= this->CropRegion[5])
+    bool pointOutsideOfBox = pos[0] >= this->CropRegion[0] && pos[0] <= this->CropRegion[1] &&
+      pos[1] >= this->CropRegion[2] && pos[1] <= this->CropRegion[3] &&
+      pos[2] >= this->CropRegion[4] && pos[2] <= this->CropRegion[5];
+    if ((pointOutsideOfBox && !this->CropInside) ||
+        (!pointOutsideOfBox && this->CropInside))
       {
       return;
       }
@@ -1157,7 +1170,7 @@ double vtkVelodyneHDLReader::vtkInternal::ComputeTimestamp(
     if (!vtkMath::IsFinite(this->TimeAdjust))
       {
       // First adjustment; must compute adjustment number
-      if (this->Interp)
+      if (this->Interp && this->Interp->GetNumberOfTransforms())
         {
         const double ts = static_cast<double>(tohTime) * 1e-6;
         const double hours = (this->Interp->GetMinimumT() - ts) / 3600.0;
@@ -1185,7 +1198,7 @@ double vtkVelodyneHDLReader::vtkInternal::ComputeTimestamp(
 void vtkVelodyneHDLReader::vtkInternal::ComputeOrientation(
   double timestamp, vtkTransform* geotransform)
 {
-  if(this->ApplyTransform && this->Interp)
+  if(this->ApplyTransform && this->Interp && this->Interp->GetNumberOfTransforms())
     {
     // NOTE: We store time in milliseconds, but the interpolator uses seconds,
     //       so we need to adjust here
@@ -1228,7 +1241,7 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessFiring(HDLFiringData* firingData,
       if(laserId >= 16)
         {
         laserId -= 16;
-        short azimuth_diff = firingData->rotationalPosition - this->LastAzimuth;
+        short azimuth_diff = static_cast<short>(firingData->rotationalPosition) - static_cast<short>(this->LastAzimuth);
         assert(azimuth_diff >= 0);
         azimuth += azimuth_diff/2;
         }

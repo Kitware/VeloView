@@ -37,7 +37,7 @@ public:
   bool Done;
   size_t PacketCount;
   boost::asio::ip::udp::endpoint Endpoint;
-
+  boost::asio::io_service IOService;
   };
 
 //-----------------------------------------------------------------------------
@@ -52,8 +52,7 @@ vvPacketSender::vvPacketSender(std::string pcapfile,
     throw std::runtime_error("Unable to open packet file");
     }
 
-  boost::asio::io_service ioService;
-  this->Internal->Socket = new boost::asio::ip::udp::socket(ioService);
+  this->Internal->Socket = new boost::asio::ip::udp::socket(this->Internal->IOService);
   this->Internal->Socket->open(this->Internal->Endpoint.protocol());
 }
 

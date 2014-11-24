@@ -34,6 +34,8 @@
 
 #include <vtkPolyDataAlgorithm.h>
 
+class vtkTransform;
+
 class VTK_EXPORT vtkVelodyneHDLSource : public vtkPolyDataAlgorithm
 {
 public:
@@ -53,9 +55,6 @@ public:
 
   void ReadNextFrame();
 
-  const std::string& GetPacketFile();
-  void SetPacketFile(const std::string& filename);
-
   const std::string& GetCorrectionsFile();
   void SetCorrectionsFile(const std::string& correctionsFile);
 
@@ -68,10 +67,17 @@ public:
   void SetLaserSelection(int LaserSelection[64]);
   void GetLaserSelection(int LaserSelection[64]);
 
+  void SetCropReturns(int);
+  void SetCropInside(int);
+  void SetCropRegion(double[6]);
+  void SetCropRegion(double, double, double, double, double, double);
+
   void GetVerticalCorrections(double LaserAngles[64]);
 
   unsigned int GetDualReturnFilter() const;
   void SetDualReturnFilter(unsigned int);
+
+  void SetSensorTransform(vtkTransform*);
 
   // A trick to workaround failure to wrap LaserSelection
   void SetDummyProperty(int);
