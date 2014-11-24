@@ -244,21 +244,22 @@ int main(int argc, char* argv[])
   const TestActionFunctionMap::const_iterator invalidCommand =
     testActions.end();
 
-  if (argc < 2)
+  if (argc < 3)
     {
-    std::cout << "Usage: " << argv[0] << " <pcap file> [<expect file>]"
+    std::cout << "Usage: " << argv[0] << " <pcap file> <calibration> [<expect file>]"
               << std::endl;
     return 1;
     }
 
   const std::string filename = argv[1];
-  const std::string testScriptFilename = (argc > 2 ? argv[2] : "");
+  const std::string calibrationfilename = argv[2];
+  const std::string testScriptFilename = (argc > 3 ? argv[3] : "");
 
   vtkNew<vtkVelodyneHDLReader> _reader;
   reader = _reader.GetPointer();
 
   reader->SetFileName(filename);
-
+  reader->SetCorrectionsFile(calibrationfilename);
 
   double startTime = vtkTimerLog::GetUniversalTime();
   reader->ReadFrameInformation();

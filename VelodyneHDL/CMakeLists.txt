@@ -81,6 +81,12 @@ if(PARAVIEW_BUILD_QT_GUI)
     vtkWrappedTupleInterpolator.cxx
     )
 
+  set(non_vtk_sources
+    vtkLASFileWriter.cxx
+    vtkPacketFileWriter.cxx
+    vvPacketSender.cxx
+    )
+
   QT4_WRAP_CPP(moc_srcs ${MOC_HEADERS})
   QT4_WRAP_UI(ui_srcs ${UI_FILES})
   QT4_ADD_RESOURCES(resource_srcs ${resources})
@@ -144,13 +150,13 @@ add_paraview_plugin(${library_name} "1.0"
   GUI_SOURCES ${gui_sources} ${vtk_sources}
   SERVER_MANAGER_XML ${servermanager_xml}
   SERVER_MANAGER_SOURCES ${servermanager_sources}
-  SOURCES vtkLASFileWriter.cxx vtkPacketFileWriter.cxx
+  SOURCES ${non_vtk_sources}
   REQUIRED_ON_SERVER)
 
 target_link_libraries(${library_name} LINK_PUBLIC ${deps})
 
 add_executable(PacketFileSender PacketFileSender.cxx)
-target_link_libraries(PacketFileSender ${deps})
+target_link_libraries(PacketFileSender ${library_name} ${deps})
 
 
 #########
