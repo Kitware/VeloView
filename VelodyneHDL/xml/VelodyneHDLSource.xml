@@ -118,6 +118,12 @@
         </Documentation>
       </IntVectorProperty>
 
+      <IntVectorProperty command="GetNumberOfChannels"
+                         information_only="1"
+                         name="NumberOfChannels">
+        <SimpleIntInformationHelper />
+      </IntVectorProperty>
+
    </SourceProxy>
   </ProxyGroup>
 </ServerManagerConfiguration>

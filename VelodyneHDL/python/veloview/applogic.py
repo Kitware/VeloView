@@ -225,7 +225,13 @@ def getDefaultSaveFileName(extension, suffix='', appendFrameNumber=False):
     reader = getReader()
 
     if sensor:
-        return '%s_Velodyne-HDL-Data.%s' % (getTimeStamp(), extension)
+        nchannels =  sensor.GetPropertyValue('NumberOfChannels')
+        base = 'HDL-'
+        if nchannels <= 16:
+            base = 'VLP-'
+        sensortype = base + str(nchannels)
+
+        return '%s_Velodyne-%s-Data.%s' % (getTimeStamp(), sensortype, extension)
     if reader:
         basename =  os.path.splitext(os.path.basename(getReaderFileName()))[0]
         if appendFrameNumber:

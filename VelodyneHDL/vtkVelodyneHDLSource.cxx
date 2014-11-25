@@ -600,6 +600,14 @@ void vtkVelodyneHDLSource::SetOutputFile(const std::string& filename)
 }
 
 //-----------------------------------------------------------------------------
+int vtkVelodyneHDLSource::GetNumberOfChannels()
+{
+  boost::lock_guard<boost::mutex> lock(this->Internal->Consumer->ReaderMutex);
+
+  return this->Internal->Consumer->GetReader()->GetNumberOfChannels();
+}
+
+//-----------------------------------------------------------------------------
 const std::string& vtkVelodyneHDLSource::GetCorrectionsFile()
 {
   boost::lock_guard<boost::mutex> lock(this->Internal->Consumer->ReaderMutex);

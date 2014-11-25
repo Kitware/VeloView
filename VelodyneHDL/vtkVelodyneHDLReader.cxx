@@ -637,6 +637,12 @@ int vtkVelodyneHDLReader::GetNumberOfFrames()
 }
 
 //-----------------------------------------------------------------------------
+int vtkVelodyneHDLReader::GetNumberOfChannels()
+{
+  return this->Internal->CalibrationReportedNumLasers;
+}
+
+//-----------------------------------------------------------------------------
 void vtkVelodyneHDLReader::Open()
 {
   this->Close();

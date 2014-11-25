@@ -71,6 +71,8 @@ public:
   //
   int CanReadFile(const char* fname);
 
+  // Property functions
+
   // Description:
   // Number of frames behind current frame to read.  Zero indicates only
   // show the current frame.  Negative numbers are invalid.
@@ -102,6 +104,9 @@ public:
   void SetCropRegion(double[6]);
   void SetCropRegion(double, double, double, double, double, double);
 
+  int GetNumberOfChannels();
+
+  // I/O and processing functions
   void Open();
   void Close();
   int ReadFrameInformation();
@@ -113,6 +118,8 @@ public:
 
   void ProcessHDLPacket(unsigned char *data, unsigned int bytesReceived);
   std::vector<vtkSmartPointer<vtkPolyData> >& GetDatasets();
+
+  // Transform related functions
 
   vtkVelodyneTransformInterpolator* GetInterpolator() const;
   void SetInterpolator(vtkVelodyneTransformInterpolator* interpolator);

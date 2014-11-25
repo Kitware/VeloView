@@ -138,6 +138,12 @@
                 <TimeStepsInformationHelper/>
       </DoubleVectorProperty>
 
+      <IntVectorProperty command="GetNumberOfChannels"
+                         information_only="1"
+                         name="NumberOfChannels">
+        <SimpleIntInformationHelper />
+      </IntVectorProperty>
+
       <Hints>
         <ReaderFactory extensions="pcap"
            file_description="Velodyne HDL Data File"/>

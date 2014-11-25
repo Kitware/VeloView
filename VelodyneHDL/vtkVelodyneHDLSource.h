@@ -44,7 +44,6 @@ public:
 
   static vtkVelodyneHDLSource *New();
 
-
   void Poll();
 
   void Start();
@@ -81,6 +80,8 @@ public:
 
   // A trick to workaround failure to wrap LaserSelection
   void SetDummyProperty(int);
+
+  int GetNumberOfChannels();
 
 protected:
 
