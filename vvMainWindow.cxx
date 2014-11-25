@@ -36,8 +36,11 @@
 #include <pqAutoLoadPluginXMLBehavior.h>
 #include <pqCommandLineOptionsBehavior.h>
 #include <pqCrashRecoveryBehavior.h>
+#include <pqDataTimeStepBehavior.h>
+#include <pqDefaultViewBehavior.h>
 #include <pqInterfaceTracker.h>
 #include <pqObjectBuilder.h>
+#include "pqObjectPickingBehavior.h"
 #include <pqPersistentMainWindowStateBehavior.h>
 #include <pqPythonShellReaction.h>
 #include <pqQtMessageHandlerBehavior.h>
@@ -47,7 +50,9 @@
 #include <pqSettings.h>
 #include <pqSpreadSheetView.h>
 #include <pqSpreadSheetVisibilityBehavior.h>
+#include <pqSpreadSheetViewDecorator.h>
 #include <pqStandardPropertyWidgetInterface.h>
+#include <pqStandardViewFrameActionsImplementation.h>
 #include <pqVelodyneManager.h>
 #include <vtkPVPlugin.h>
 #include <vtkSMPropertyHelper.h>
@@ -93,14 +98,18 @@ private:
     pqInterfaceTracker* pgm = core->interfaceTracker();
 //    pgm->addInterface(new pqStandardViewModules(pgm));
     pgm->addInterface(new pqStandardPropertyWidgetInterface(pgm));
+    pgm->addInterface(new pqStandardViewFrameActionsImplementation(pgm));
 
     // Define application behaviors.
+    new pqQtMessageHandlerBehavior(window);
+    new pqDataTimeStepBehavior(window);
+    new pqSpreadSheetVisibilityBehavior(window);
+    new pqObjectPickingBehavior(window);
+//    new pqDefaultViewBehavior(window);
+    new pqCrashRecoveryBehavior(window);
     new pqAutoLoadPluginXMLBehavior(window);
     new pqCommandLineOptionsBehavior(window);
-    new pqCrashRecoveryBehavior(window);
     new pqPersistentMainWindowStateBehavior(window);
-    new pqQtMessageHandlerBehavior(window);
-    new pqSpreadSheetVisibilityBehavior(window);
 
 //    pqServer::setCoincidentTopologyResolutionModeSetting(0);
 
@@ -144,6 +153,9 @@ private:
     spreadsheetView->getProxy()->UpdateVTKObjects();
     vSplitter->addWidget(spreadsheetView->getWidget());
     new vvToggleSpreadSheetReaction(this->Ui.actionSpreadsheet, spreadsheetView);
+    pqSpreadSheetView* ssview = qobject_cast<pqSpreadSheetView*>(spreadsheetView);
+    assert(spreadsheetView);
+    new pqSpreadSheetViewDecorator(ssview);
 
     pqActiveObjects::instance().setActiveView(view);
     }
