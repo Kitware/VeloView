@@ -1346,7 +1346,6 @@ def onChooseCalibrationFile():
 def onCropReturns(show = True):
     dialog = vvCropReturnsDialog(getMainWindow())
     if show and not dialog.exec_():
-        print 'return'
         return
 
     reader = getReader()
