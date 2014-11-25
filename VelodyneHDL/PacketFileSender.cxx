@@ -41,29 +41,38 @@
 int main(int argc, char* argv[])
 {
 
-  if (argc != 2) {
-    std::cout << "Usage: " << argv[0] << " <packet file>" << std::endl;
+  if (argc < 2) {
+    std::cout << "Usage: " << argv[0] << " <packet file> [loop]" << std::endl;
     return 1;
   }
   std::string filename(argv[1]);
+
+  int loop = 0;
+  if(argc > 2)
+    {
+    loop = atoi(argv[2]);
+    }
 
   try
     {
     std::string destinationIp = "127.0.0.1";
     int dataPort = 2368;
-    vvPacketSender sender(filename, destinationIp, dataPort);
-    //socket.connect(destinationEndpoint);
-
-    while (!sender.done())
+    do
       {
-      sender.pumpPacket();
-      if ((sender.packetCount() % 500) == 0)
-        {
-        printf("total sent packets: %lu\n", sender.packetCount());
-        }
+      vvPacketSender sender(filename, destinationIp, dataPort);
+      //socket.connect(destinationEndpoint);
 
-      boost::this_thread::sleep(boost::posix_time::microseconds(200));
-      }
+      while (!sender.done())
+        {
+        sender.pumpPacket();
+        if ((sender.packetCount() % 500) == 0)
+          {
+          printf("total sent packets: %lu\n", sender.packetCount());
+          }
+
+        boost::this_thread::sleep(boost::posix_time::microseconds(200));
+        }
+      } while(loop);
     }
   catch( std::exception & e )
     {
