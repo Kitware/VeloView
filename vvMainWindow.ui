@@ -138,7 +138,7 @@
    <addaction name="actionOverheadView"/>
    <addaction name="actionPython_Console"/>
   </widget>
-  <widget class="vvColorToolbar" name="colorToolBar">
+  <widget class="pqColorToolbar" name="colorToolBar">
    <property name="windowTitle">
     <string>Color Controls</string>
    </property>
@@ -822,9 +822,9 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>vvColorToolbar</class>
+   <class>pqColorToolbar</class>
    <extends>QToolBar</extends>
-   <header>vvColorToolbar.h</header>
+   <header>pqColorToolbar.h</header>
   </customwidget>
   <customwidget>
    <class>pqColorMapEditor</class>

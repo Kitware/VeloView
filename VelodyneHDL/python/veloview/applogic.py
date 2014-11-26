@@ -1699,7 +1699,7 @@ def onLaserSelection():
 
 
 def hideColorByComponent():
-    getMainWindow().findChild('vvColorToolbar').findChild('pqDisplayColorWidget').findChildren('QComboBox')[1].hide()
+    getMainWindow().findChild('pqColorToolbar').findChild('pqDisplayColorWidget').findChildren('QComboBox')[1].hide()
 
 
 def addRecentFile(filename):

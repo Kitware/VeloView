@@ -71,20 +71,16 @@ mark_as_advanced(PYTHONQTPLUGIN_LIBRARY)
 set (source_files
   vvMainWindow.cxx
   vvMainWindow.h
-  vvColorToolbar.cxx
-  vvColorToolbar.h
   vvToggleSpreadSheetReaction.cxx
   vvToggleSpreadSheetReaction.h
   )
 
 qt4_wrap_cpp(moc_source_files
-  vvColorToolbar.h
   vvMainWindow.h
   vvToggleSpreadSheetReaction.h
   )
 
 qt4_wrap_ui(ui_source_files
-  vvColorToolbar.ui
   vvMainWindow.ui
   )
 

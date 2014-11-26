@@ -13,10 +13,11 @@
 // limitations under the License.
 
 #include <string>
+#include <vtkSystemIncludes.h>
 
 class vtkPacketFileReader;
 
-class vvPacketSender
+class VTK_EXPORT vvPacketSender
 {
 public:
   vvPacketSender(std::string pcapfile,
