@@ -53,6 +53,10 @@ install(DIRECTORY "${install_location}/lib/paraview-4.2"
         COMPONENT ${AppName}
         PATTERN "*.lib" EXCLUDE)
 
+install(DIRECTORY "${install_location}/share"
+        DESTINATION "share"
+        USE_SOURCE_PERMISSIONS
+        COMPONENT ${AppName})
 
 install(FILES "${wpcap_library_dir}/wpcap.dll"  "${wpcap_library_dir}/Packet.dll"
         DESTINATION "bin"
