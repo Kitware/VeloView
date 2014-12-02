@@ -123,9 +123,21 @@ bool vvCropReturnsDialog::croppingEnabled() const
 }
 
 //-----------------------------------------------------------------------------
+void vvCropReturnsDialog::setCroppingEnabled(bool checked)
+{
+  this->Internal->CropGroupBox->setChecked(checked);
+}
+
+//-----------------------------------------------------------------------------
 bool vvCropReturnsDialog::cropInside() const
 {
   return this->Internal->CropInsideCheckBox->isChecked();
+}
+
+//-----------------------------------------------------------------------------
+void vvCropReturnsDialog::setCropInside(bool checked)
+{
+  this->Internal->CropInsideCheckBox->setChecked(checked);
 }
 
 //-----------------------------------------------------------------------------
@@ -144,6 +156,24 @@ QVector3D vvCropReturnsDialog::secondCorner() const
   return QVector3D(qMax(d->X1SpinBox->value(), d->X2SpinBox->value()),
                    qMax(d->Y1SpinBox->value(), d->Y2SpinBox->value()),
                    qMax(d->Z1SpinBox->value(), d->Z2SpinBox->value()));
+}
+
+//-----------------------------------------------------------------------------
+void vvCropReturnsDialog::setFirstCorner(QVector3D corner)
+{
+  pqInternal* const d = this->Internal.data();
+  d->X1SpinBox->setValue(corner.x());
+  d->Y1SpinBox->setValue(corner.y());
+  d->Z1SpinBox->setValue(corner.z());
+}
+
+//-----------------------------------------------------------------------------
+void vvCropReturnsDialog::setSecondCorner(QVector3D corner)
+{
+  pqInternal* const d = this->Internal.data();
+  d->X2SpinBox->setValue(corner.x());
+  d->Y2SpinBox->setValue(corner.y());
+  d->Z2SpinBox->setValue(corner.z());
 }
 
 //-----------------------------------------------------------------------------

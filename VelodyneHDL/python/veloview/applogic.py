@@ -1336,10 +1336,36 @@ def onChooseCalibrationFile():
 
 def onCropReturns(show = True):
     dialog = vvCropReturnsDialog(getMainWindow())
-    if show and not dialog.exec_():
-        return
+
+    cropEnabled = False
+    cropInside = False
+    firstCorner = QtGui.QVector3D()
+    secondCorner = QtGui.QVector3D()
 
     reader = getReader()
+    sensor = getSensor()
+
+    if reader is not None:
+        cropEnabled = reader.CropReturns
+        cropInside = reader.CropInside
+        firstCorner = QtGui.QVector3D(reader.CropRegion[0], reader.CropRegion[2], reader.CropRegion[4])
+        secondCorner = QtGui.QVector3D(reader.CropRegion[1], reader.CropRegion[3], reader.CropRegion[5])
+
+    if sensor is not None:
+        cropEnabled = sensor.CropReturns
+        cropInside = sensor.CropInside
+        firstCorner = QtGui.QVector3D(sensor.CropRegion[0], sensor.CropRegion[2], sensor.CropRegion[4])
+        secondCorner = QtGui.QVector3D(sensor.CropRegion[1], sensor.CropRegion[3], sensor.CropRegion[5])
+
+    if show:
+        dialog.croppingEnabled = cropEnabled
+        dialog.cropInside = cropInside
+        dialog.firstCorner = firstCorner
+        dialog.secondCorner = secondCorner
+
+        if not dialog.exec_():
+            return
+
     if reader is not None:
         reader.CropReturns = dialog.croppingEnabled
         reader.CropInside = dialog.cropInside
@@ -1348,7 +1374,6 @@ def onCropReturns(show = True):
         reader.CropRegion = [p1.x(), p2.x(), p1.y(), p2.y(), p1.z(), p2.z()]
         smp.Render()
 
-    sensor = getSensor()
     if sensor is not None:
         sensor.CropReturns = dialog.croppingEnabled
         sensor.CropInside = dialog.cropInside
@@ -1667,7 +1692,8 @@ def onLaserSelection(show = True):
     if show:
         dialog.setLaserSelectionSelector(oldmask)
         dialog.setVerticalCorrections(corrections, nchannels)
-        dialog.exec_()
+        if not dialog.exec_():
+            return
     mask = dialog.getLaserSelectionSelector()
 
     if reader:

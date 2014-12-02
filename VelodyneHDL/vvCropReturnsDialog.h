@@ -22,10 +22,10 @@
 class VelodyneHDLPlugin_EXPORT vvCropReturnsDialog : public QDialog
 {
   Q_OBJECT
-  Q_PROPERTY(bool croppingEnabled READ croppingEnabled)
-  Q_PROPERTY(bool cropInside READ cropInside)
-  Q_PROPERTY(QVector3D firstCorner READ firstCorner)
-  Q_PROPERTY(QVector3D secondCorner READ secondCorner)
+  Q_PROPERTY(bool croppingEnabled READ croppingEnabled WRITE setCroppingEnabled)
+  Q_PROPERTY(bool cropInside READ cropInside WRITE setCropInside)
+  Q_PROPERTY(QVector3D firstCorner READ firstCorner WRITE setFirstCorner)
+  Q_PROPERTY(QVector3D secondCorner READ secondCorner WRITE setSecondCorner)
 
 public:
   vvCropReturnsDialog(QWidget *p=0);
@@ -34,8 +34,14 @@ public:
   bool croppingEnabled() const;
   bool cropInside() const;
 
+  void setCroppingEnabled(bool);
+  void setCropInside(bool);
+
   QVector3D firstCorner() const;
   QVector3D secondCorner() const;
+
+  void setFirstCorner(QVector3D);
+  void setSecondCorner(QVector3D);
 
 public slots:
   virtual void accept();
