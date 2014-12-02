@@ -46,6 +46,9 @@ include_directories(${Boost_INCLUDE_DIRS})
 find_package(Boost COMPONENTS atomic)
 list(APPEND ALL_BOOST_LIBRARIES ${Boost_LIBRARIES})
 include_directories(${Boost_INCLUDE_DIRS})
+find_package(Boost COMPONENTS timer)
+list(APPEND ALL_BOOST_LIBRARIES ${Boost_LIBRARIES})
+include_directories(${Boost_INCLUDE_DIRS})
 
 ########################
 # build paraview plugin
