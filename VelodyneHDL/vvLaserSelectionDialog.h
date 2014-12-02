@@ -40,6 +40,9 @@ public slots:
   void onToggleSelected();
   void onEnableDisableAll(int);
 
+public slots:
+  virtual void accept();
+
 private:
 
   class pqInternal;

@@ -93,7 +93,7 @@
    <item row="7" column="1">
     <widget class="QCheckBox" name="saveCheckBox">
      <property name="text">
-      <string>Apply in future sessions\</string>
+      <string>Apply in future sessions</string>
      </property>
      <property name="checked">
       <bool>false</bool>

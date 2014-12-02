@@ -29,56 +29,102 @@
 class vvLaserSelectionDialog::pqInternal : public Ui::vvLaserSelectionDialog
 {
 public:
-  void setup()
-  {
-    QTableWidget* table = this->LaserTable;
-    QAbstractItemModel* model = table->model();
+  pqInternal(): Settings(pqApplicationCore::instance()->settings()) {}
 
-    table->setColumnWidth(0, 32);
-    table->setColumnWidth(1, 128);
-    table->setColumnWidth(3, 128);
+  void setup();
+  void saveSettings();
+  void restoreSettings();
 
-    // Set checkable header
-    QTableWidgetItem* hcheckbox = new QTableWidgetItem();
-    hcheckbox->setCheckState(Qt::Checked);
-    hcheckbox->setFlags(Qt::ItemIsSelectable | Qt::ItemIsUserCheckable | Qt::ItemIsEnabled);
-
-    table->setHorizontalHeaderItem(0, hcheckbox);
-
-    for(size_t i = 0; i < 64; ++i)
-       {
-       table->insertRow(i);
-
-       QTableWidgetItem* checkbox = new QTableWidgetItem();
-       checkbox->setCheckState(Qt::Checked);
-       checkbox->setFlags(Qt::ItemIsSelectable | Qt::ItemIsUserCheckable | Qt::ItemIsEnabled);
-       checkbox->setTextAlignment(Qt::AlignHCenter);
-
-       QTableWidgetItem* verticalAngle = new QTableWidgetItem;
-       verticalAngle->setData(Qt::EditRole, 0.0);
-       verticalAngle->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled);
-
-       QTableWidgetItem* channel = new QTableWidgetItem;
-       channel->setData(Qt::EditRole, QVariant::fromValue(i));
-       channel->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled);
-
-       table->setItem(i, 0, checkbox);
-       table->setItem(i, 1, verticalAngle);
-       table->setItem(i, 2, channel);
-       }
-
-    QTableWidgetItem* leadBox = table->horizontalHeaderItem(0);
-    leadBox->setFlags(Qt::ItemIsUserCheckable);
-
-    this->EnableDisableAll->setTristate(false);
-
-    this->Table = table;
-  }
+  pqSettings* const Settings;
 
 public:
 
   QTableWidget* Table;
 };
+
+//-----------------------------------------------------------------------------
+void vvLaserSelectionDialog::pqInternal::saveSettings()
+{
+  for(int i = 0; i < 64; ++i)
+    {
+    QTableWidgetItem* item = this->Table->item(i, 0);
+    QTableWidgetItem* value = this->Table->item(i, 2);
+    int channel = value->data(Qt::EditRole).toInt();
+
+    bool checked = item->checkState() == Qt::Checked;
+    this->Settings->setValue(QString("VelodyneHDLPlugin/LaserSelectionDialog%1").arg(channel),
+                             checked);
+    }
+}
+
+//-----------------------------------------------------------------------------
+void vvLaserSelectionDialog::pqInternal::restoreSettings()
+{
+  QVector<int> channel2index(64, 0);
+
+  for(int i = 0; i < 64; ++i)
+    {
+    QTableWidgetItem* value = this->Table->item(i, 2);
+    int channel = value->data(Qt::EditRole).toInt();
+    channel2index[channel] = i;
+    }
+
+  for(int c = 0; c < 64; ++c)
+    {
+    bool checked = this->Settings->value(QString("VelodyneHDLPlugin/LaserSelectionDialog%1").arg(c),
+                                         QVariant::fromValue(true)).toBool();
+    int index = channel2index[c];
+
+    QTableWidgetItem* item = this->Table->item(index, 0);
+    item->setCheckState(checked ? Qt::Checked : Qt::Unchecked);
+    }
+}
+
+//-----------------------------------------------------------------------------
+void vvLaserSelectionDialog::pqInternal::setup()
+{
+  QTableWidget* table = this->LaserTable;
+  QAbstractItemModel* model = table->model();
+
+  table->setColumnWidth(0, 32);
+  table->setColumnWidth(1, 128);
+  table->setColumnWidth(3, 128);
+  // Set checkable header
+  QTableWidgetItem* hcheckbox = new QTableWidgetItem();
+  hcheckbox->setCheckState(Qt::Checked);
+  hcheckbox->setFlags(Qt::ItemIsSelectable | Qt::ItemIsUserCheckable | Qt::ItemIsEnabled);
+
+  table->setHorizontalHeaderItem(0, hcheckbox);
+
+  for(size_t i = 0; i < 64; ++i)
+    {
+    table->insertRow(i);
+
+    QTableWidgetItem* checkbox = new QTableWidgetItem();
+    checkbox->setCheckState(Qt::Checked);
+    checkbox->setFlags(Qt::ItemIsSelectable | Qt::ItemIsUserCheckable | Qt::ItemIsEnabled);
+    checkbox->setTextAlignment(Qt::AlignHCenter);
+
+    QTableWidgetItem* verticalAngle = new QTableWidgetItem;
+    verticalAngle->setData(Qt::EditRole, 0.0);
+    verticalAngle->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled);
+
+    QTableWidgetItem* channel = new QTableWidgetItem;
+    channel->setData(Qt::EditRole, QVariant::fromValue(i));
+    channel->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled);
+
+    table->setItem(i, 0, checkbox);
+    table->setItem(i, 1, verticalAngle);
+    table->setItem(i, 2, channel);
+    }
+
+  QTableWidgetItem* leadBox = table->horizontalHeaderItem(0);
+  leadBox->setFlags(Qt::ItemIsUserCheckable);
+
+  this->EnableDisableAll->setTristate(false);
+
+  this->Table = table;
+}
 
 //-----------------------------------------------------------------------------
 void vvLaserSelectionDialog::onToggleSelected()
@@ -146,8 +192,9 @@ vvLaserSelectionDialog::vvLaserSelectionDialog(QWidget *p) : QDialog(p)
 {
   this->Internal = new pqInternal();
   this->Internal->setupUi(this);
-
   this->Internal->setup();
+  this->Internal->restoreSettings();
+
   QObject::connect(this->Internal->Table, SIGNAL(itemChanged(QTableWidgetItem*)),
                    this, SLOT(onItemChanged(QTableWidgetItem*)));
 
@@ -217,4 +264,14 @@ void vvLaserSelectionDialog::setLaserSelectionSelector(const QVector<int>& mask)
 vvLaserSelectionDialog::~vvLaserSelectionDialog()
 {
   delete this->Internal;
+}
+
+//-----------------------------------------------------------------------------
+void vvLaserSelectionDialog::accept()
+{
+  if(this->Internal->saveCheckBox->isChecked())
+    {
+    this->Internal->saveSettings();
+    }
+  QDialog::accept();
 }

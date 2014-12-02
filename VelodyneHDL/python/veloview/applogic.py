@@ -292,6 +292,10 @@ def openSensor():
     app.filenameLabel.setText('Live sensor stream.')
     enablePlaybackActions()
     enableSaveActions()
+
+    onCropReturns(False) # Dont show the dialog just restore settings
+    onLaserSelection(False)
+
     smp.Render()
 
     showSourceInSpreadSheet(sensor)
@@ -301,9 +305,6 @@ def openSensor():
     app.actions['actionDualReturnDistanceFar'].enabled = True
     app.actions['actionDualReturnIntensityHigh'].enabled = True
     app.actions['actionDualReturnIntensityLow'].enabled = True
-
-    onCropReturns(False) # Dont show the dialog just restore settings
-    onLaserSelection(False)
 
     play()
 
@@ -357,6 +358,9 @@ def openPCAP(filename, positionFilename=None):
 
     app.reader = reader
     app.filenameLabel.setText('File: %s' % os.path.basename(filename))
+
+    onCropReturns(False) # Dont show the dialog just restore settings
+    onLaserSelection(False)
 
     # update overhead view
     smp.SetActiveView(app.overheadView)
@@ -432,9 +436,6 @@ def openPCAP(filename, positionFilename=None):
     app.actions['actionDualReturnDistanceFar'].enabled = True
     app.actions['actionDualReturnIntensityHigh'].enabled = True
     app.actions['actionDualReturnIntensityLow'].enabled = True
-
-    onCropReturns(False) # Dont show the dialog just restore settings
-    onLaserSelection(False)
 
     resetCamera()
 
@@ -1663,9 +1664,9 @@ def onLaserSelection(show = True):
 
     # Need a way to initialize the mask
     dialog = PythonQt.paraview.vvLaserSelectionDialog(getMainWindow())
-    dialog.setLaserSelectionSelector(oldmask)
-    dialog.setVerticalCorrections(corrections, nchannels)
     if show:
+        dialog.setLaserSelectionSelector(oldmask)
+        dialog.setVerticalCorrections(corrections, nchannels)
         dialog.exec_()
     mask = dialog.getLaserSelectionSelector()
 
