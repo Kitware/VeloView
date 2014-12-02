@@ -68,9 +68,9 @@ public slots:
     inst->setLaserSelectionSelector(arg0);
     }
 
-  void setVerticalCorrections(vvLaserSelectionDialog* inst, const QVector<double>& arg0)
+  void setVerticalCorrections(vvLaserSelectionDialog* inst, const QVector<double>& arg0, int arg1)
     {
-    inst->setVerticalCorrections(arg0);
+    inst->setVerticalCorrections(arg0, arg1);
     }
 
 

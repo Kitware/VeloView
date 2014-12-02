@@ -175,7 +175,7 @@ QVector<int> vvLaserSelectionDialog::getLaserSelectionSelector()
 }
 
 //-----------------------------------------------------------------------------
-void vvLaserSelectionDialog::setVerticalCorrections(const QVector<double>& corrections)
+void vvLaserSelectionDialog::setVerticalCorrections(const QVector<double>& corrections, int nchannels)
 {
   for(int i = 0; i < this->Internal->Table->rowCount(); ++i)
     {
@@ -186,20 +186,14 @@ void vvLaserSelectionDialog::setVerticalCorrections(const QVector<double>& corre
     item->setData(Qt::EditRole, corrections[channel]);
     }
 
-  bool allSmall = true;
-  for(int i = 32; i < this->Internal->Table->rowCount(); ++i)
+  if(nchannels > this->Internal->Table->rowCount())
     {
-    QTableWidgetItem* item = this->Internal->Table->item(i, 1);
-    double angle = item->data(Qt::EditRole).toDouble();
-    allSmall = allSmall && std::abs(angle) < 1.0e-8;
+    nchannels = this->Internal->Table->rowCount();
     }
 
-  if(allSmall)
+  for(int i = nchannels; i < this->Internal->Table->rowCount(); ++i)
     {
-    for(int i = 32; i < this->Internal->Table->rowCount(); ++i)
-      {
-      this->Internal->Table->hideRow(i);
-      }
+    this->Internal->Table->hideRow(i);
     }
 
   // Sort the table

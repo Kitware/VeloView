@@ -303,6 +303,7 @@ def openSensor():
     app.actions['actionDualReturnIntensityLow'].enabled = True
 
     onCropReturns(False) # Dont show the dialog just restore settings
+    onLaserSelection(False)
 
     play()
 
@@ -433,6 +434,7 @@ def openPCAP(filename, positionFilename=None):
     app.actions['actionDualReturnIntensityLow'].enabled = True
 
     onCropReturns(False) # Dont show the dialog just restore settings
+    onLaserSelection(False)
 
     resetCamera()
 
@@ -1642,25 +1644,29 @@ def onGridProperties():
         smp.Render()
 
 
-def onLaserSelection():
+def onLaserSelection(show = True):
     oldmask = [1] * 64
     reader = getReader()
     sensor = getSensor()
     corrections = [0] * 64
 
+    nchannels = 32
     if reader:
         reader.GetClientSideObject().GetLaserSelection(oldmask)
         reader.GetClientSideObject().GetVerticalCorrections(corrections)
+        nchannels = reader.GetPropertyValue('NumberOfChannels')
 
     elif sensor:
         sensor.GetClientSideObject().GetLaserSelection(oldmask)
         sensor.GetClientSideObject().GetVerticalCorrections(corrections)
+        nchannels = sensor.GetPropertyValue('NumberOfChannels')
 
     # Need a way to initialize the mask
     dialog = PythonQt.paraview.vvLaserSelectionDialog(getMainWindow())
     dialog.setLaserSelectionSelector(oldmask)
-    dialog.setVerticalCorrections(corrections)
-    dialog.exec_()
+    dialog.setVerticalCorrections(corrections, nchannels)
+    if show:
+        dialog.exec_()
     mask = dialog.getLaserSelectionSelector()
 
     if reader:
