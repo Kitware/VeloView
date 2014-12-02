@@ -103,7 +103,7 @@ and then use cmake to configure the superbuild:
 
     mkdir build
     cd build
-    cmake -DENABLE_veloview:BOOL=ON ../veloview/SuperBuild
+    cmake -DENABLE_veloview:BOOL=ON ../veloview/
 
 This will configure the veloview superbuild with the VeloView application enabled,
 and all other options left at default.  For most builds, the default

@@ -15,6 +15,12 @@
 cmake_minimum_required(VERSION 2.8.8 FATAL_ERROR)
 project(VeloView)
 
+option(USE_SUPERBUILD "Use superbuild" ON)
+if(USE_SUPERBUILD)
+  add_subdirectory(Superbuild)
+  return()
+endif()
+
 # Sets VV_VERSION_{MAJOR,MINOR,PATCH}
 include(CMake/version.cmake)
 
