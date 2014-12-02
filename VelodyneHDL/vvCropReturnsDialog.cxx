@@ -149,6 +149,9 @@ QVector3D vvCropReturnsDialog::secondCorner() const
 //-----------------------------------------------------------------------------
 void vvCropReturnsDialog::accept()
 {
-  this->Internal->saveSettings();
+  if(this->Internal->saveCheckBox->isChecked())
+    {
+    this->Internal->saveSettings();
+    }
   QDialog::accept();
 }
