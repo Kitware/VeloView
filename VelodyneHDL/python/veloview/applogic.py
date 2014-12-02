@@ -232,6 +232,7 @@ def getDefaultSaveFileName(extension, suffix='', appendFrameNumber=False):
         sensortype = base + str(nchannels)
 
         return '%s_Velodyne-%s-Data.%s' % (getTimeStamp(), sensortype, extension)
+
     if reader:
         basename =  os.path.splitext(os.path.basename(getReaderFileName()))[0]
         if appendFrameNumber:
@@ -380,9 +381,8 @@ def openPCAP(filename, positionFilename=None):
         reader.GetClientSideObject().SetInterpolator(
             posreader.GetClientSideObject().GetInterpolator())
 
-        smp.Render()
+        smp.Render(app.overheadView)
         app.overheadView.ResetCamera()
-        smp.Render()
 
         trange = posreader.GetPointDataInformation().GetArray('time').GetRange()
 
@@ -402,6 +402,7 @@ def openPCAP(filename, positionFilename=None):
         app.overheadView.Representations.append(sb)
 
         app.position = (posreader, None, g)
+        smp.Render(app.overheadView)
     else:
         if positionFilename is not None:
             QtGui.QMessageBox.warning(getMainWindow(), 'Georeferncing data invalid',
@@ -906,11 +907,12 @@ def onAbout():
 
 
 def close():
-
-    _repCache.clear()
-
     stop()
+    hideRuler()
     unloadData()
+    smp.Render(app.overheadView)
+    app.scene.AnimationTime = 0
+
     resetCameraToForwardView()
     app.filenameLabel.setText('')
     app.statusLabel.setText('')
@@ -1280,37 +1282,17 @@ def playbackTick():
 
 
 def unloadData():
+    _repCache.clear()
 
-    reader = getReader()
-    sensor = getSensor()
-    position = getPosition()
+    for k, src in smp.GetSources().iteritems():
+        if src != app.grid:
+            smp.Delete(src)
 
-    if reader is not None:
-        activesrc = smp.GetActiveSource()
-        if reader != activesrc:
-            smp.Delete(activesrc)
-
-        smp.Delete(reader)
-        app.reader = None
-
-    if sensor is not None:
-        sensor.Stop()
-        smp.Delete(sensor)
-        app.sensor = None
-
-    if position is not None:
-        # Cleanup the scalar bar reps
-        toremove = [x for x in app.overheadView.Representations if type(x) == servermanager.rendering.ScalarBarWidgetRepresentation]
-        for t in toremove:
-            app.overheadView.Representations.remove(t)
-
-        smp.Delete(position)
-        smp.Render(app.overheadView)
-
-        app.position = (None, None, None)
+    toremove = [x for x in app.overheadView.Representations if type(x) == servermanager.rendering.ScalarBarWidgetRepresentation]
+    for t in toremove:
+        app.overheadView.Representations.remove(t)
 
     clearSpreadSheetView()
-
 
 def getReader():
     return getattr(app, 'reader', None)
@@ -1602,9 +1584,6 @@ def setupTimeSliderWidget():
 
 
 def updateSliderTimeRange():
-
-    timeKeeper = getTimeKeeper()
-
     frame = int(app.scene.AnimationTime)
     lastFrame = int(app.scene.EndTime)
 
