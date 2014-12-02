@@ -269,11 +269,13 @@ public:
   // firingData - one of HDL_FIRING_PER_PKT from the packet
   // hdl64offset - either 0 or 32 to support 64-laser systems
   // firingBlock - block of packet for firing [0-11]
+  // azimuthDiff - average azimuth change between firings
   // timestamp - the timestamp of the packet
   // geotransform - georeferencing transform
   void ProcessFiring(HDLFiringData* firingData,
                      int hdl65offset,
                      int firingBlock,
+                     int azimuthDiff,
                      double timestamp,
                      vtkTransform* geotransform);
 
@@ -1238,6 +1240,7 @@ void vtkVelodyneHDLReader::vtkInternal::ComputeOrientation(
 void vtkVelodyneHDLReader::vtkInternal::ProcessFiring(HDLFiringData* firingData,
                                                       int hdl64offset,
                                                       int firingBlock,
+                                                      int azimuthDiff,
                                                       double timestamp,
                                                       vtkTransform* geotransform)
 {
@@ -1260,15 +1263,6 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessFiring(HDLFiringData* firingData,
     unsigned short azimuth = firingData->rotationalPosition;
 
     // Deal with wraparound
-    int azimuth_diff = 0;
-    if(this->LastAzimuth >= 0)
-      {
-      azimuth_diff = (36000 + firingData->rotationalPosition - this->LastAzimuth) % 36000;
-      }
-    assert(azimuth_diff >= 0);
-    //  Not robust enough of a threshold to leave on all the time
-    //  assert(azimuth_diff <  1000);
-
     int firingWithinBlock = 0;
 
     if(this->CalibrationReportedNumLasers == 16)
@@ -1297,7 +1291,7 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessFiring(HDLFiringData* firingData,
       nextblockdsr0 = VLP16AdjustTimeStamp(firingBlock+1,0,0);
       blockdsr0 = VLP16AdjustTimeStamp(firingBlock,0,0);
       }
-    azimuth += vtkMath::Round(azimuth_diff * ((timestampadjustment - blockdsr0) / (nextblockdsr0 - blockdsr0)));
+    azimuth += vtkMath::Round(azimuthDiff * ((timestampadjustment - blockdsr0) / (nextblockdsr0 - blockdsr0)));
     timestamp += vtkMath::Round(timestampadjustment);
 
     if (firingData->laserReturns[dsr].distance != 0.0 && this->LaserSelection[laserId])
@@ -1330,6 +1324,12 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(unsigned char *data, st
   int firingBlock = this->Skip;
   this->Skip = 0;
 
+  int azimuthDiff = ((36000 + dataPacket->firingData[HDL_FIRING_PER_PKT - 1].rotationalPosition -
+                       dataPacket->firingData[0].rotationalPosition) % 36000) / HDL_FIRING_PER_PKT;
+  assert(azimuthDiff >= 0);
+  //  Not robust enough of a threshold to leave on all the time
+  //  assert(azimuthDiff <  1000);
+
   for ( ; firingBlock < HDL_FIRING_PER_PKT; ++firingBlock)
     {
     HDLFiringData* firingData = &(dataPacket->firingData[firingBlock]);
@@ -1346,6 +1346,7 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(unsigned char *data, st
       this->ProcessFiring(firingData,
                           hdl64offset,
                           firingBlock,
+                          azimuthDiff,
                           timestamp,
                           geotransform.GetPointer());
       }
