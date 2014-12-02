@@ -41,6 +41,10 @@ if(WIN32 OR APPLE)
 endif(WIN32 OR APPLE)
 set(Boost_USE_MULTITHREADED ON)
 find_package(Boost REQUIRED COMPONENTS system thread chrono regex date_time filesystem)
+set(ALL_BOOST_LIBRARIES ${Boost_LIBRARIES})
+include_directories(${Boost_INCLUDE_DIRS})
+find_package(Boost COMPONENTS atomic)
+list(APPEND ALL_BOOST_LIBRARIES ${Boost_LIBRARIES})
 include_directories(${Boost_INCLUDE_DIRS})
 
 ########################
@@ -138,7 +142,7 @@ list(APPEND gui_xml
 list(APPEND deps
   ${PCAP_LIBRARY}
   ${liblas_LIBRARY}
-  ${Boost_LIBRARIES}
+  ${ALL_BOOST_LIBRARIES}
   )
 
 
@@ -156,7 +160,7 @@ add_paraview_plugin(${library_name} "1.0"
 target_link_libraries(${library_name} LINK_PUBLIC ${deps})
 
 add_executable(PacketFileSender PacketFileSender.cxx)
-target_link_libraries(PacketFileSender ${library_name} ${deps})
+target_link_libraries(PacketFileSender LINK_PUBLIC ${library_name})
 
 
 #########
