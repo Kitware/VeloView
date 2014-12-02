@@ -1291,14 +1291,14 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessFiring(HDLFiringData* firingData,
       nextblockdsr0 = VLP16AdjustTimeStamp(firingBlock+1,0,0);
       blockdsr0 = VLP16AdjustTimeStamp(firingBlock,0,0);
       }
-    azimuth += vtkMath::Round(azimuthDiff * ((timestampadjustment - blockdsr0) / (nextblockdsr0 - blockdsr0)));
-    timestamp += vtkMath::Round(timestampadjustment);
+    int azimuthadjustment = vtkMath::Round(azimuthDiff * ((timestampadjustment - blockdsr0) / (nextblockdsr0 - blockdsr0)));
+    timestampadjustment = vtkMath::Round(timestampadjustment);
 
     if (firingData->laserReturns[dsr].distance != 0.0 && this->LaserSelection[laserId])
       {
       this->PushFiringData(laserId,
-                           azimuth,
-                           timestamp,
+                           azimuth + azimuthadjustment,
+                           timestamp + timestampadjustment,
                            &(firingData->laserReturns[dsr]),
                            &(laser_corrections_[dsr + hdl64offset]),
                            geotransform,
