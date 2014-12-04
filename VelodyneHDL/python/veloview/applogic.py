@@ -559,14 +559,16 @@ def rotateCSVFile(filename):
 
 
 def savePositionCSV(filename):
-    w = smp.DataSetCSVWriter(getPosition(), FileName=filename)
+    w = smp.CreateWriter(filename, getPosition())
     w.Precision = 16
+    w.FieldAssociation = 'Points'
     w.UpdatePipeline()
     smp.Delete(w)
 
 def saveCSVCurrentFrame(filename):
-    w = smp.DataSetCSVWriter(FileName=filename)
+    w = smp.CreateWriter(filename, smp.GetActiveSource())
     w.Precision = 16
+    w.FieldAssociation = 'Points'
     w.UpdatePipeline()
     smp.Delete(w)
     rotateCSVFile(filename)
@@ -602,7 +604,8 @@ def saveCSV(filename, timesteps):
     filenameTemplate = os.path.join(outDir, basenameWithoutExtension + ' (Frame %04d).csv')
     os.makedirs(outDir)
 
-    writer = smp.DataSetCSVWriter()
+    writer = smp.CreateWriter('tmp.csv', getSensor() or getReader())
+    writer.FieldAssociation = 'Points'
     writer.Precision = 16
 
     for t in timesteps:
