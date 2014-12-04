@@ -70,7 +70,7 @@ void vvCropReturnsDialog::pqInternal::restoreSettings()
   this->CropGroupBox->setChecked(
     this->Settings->value(
       "VelodyneHDLPlugin/CropReturnsDialog/EnableCropping",
-      this->CropGroupBox->isChecked()).toBool());
+      false).toBool());
 
   this->CropInsideCheckBox->setChecked(
     this->Settings->value(
