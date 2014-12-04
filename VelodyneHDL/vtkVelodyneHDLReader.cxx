@@ -940,7 +940,7 @@ void vtkVelodyneHDLReader::vtkInternal::PushFiringData(const unsigned char laser
     };
 
   // Apply sensor transform
-  this->SensorTransform->TransformPoint(pos, pos);
+  this->SensorTransform->InternalTransformPoint(pos, pos);
 
   // Test if point is cropped
   if (this->CropReturns)
@@ -1042,7 +1042,7 @@ void vtkVelodyneHDLReader::vtkInternal::PushFiringData(const unsigned char laser
     }
 
   // Apply geoposition transform
-  geotransform->TransformPoint(pos, pos);
+  geotransform->InternalTransformPoint(pos, pos);
   this->Points->InsertNextPoint(pos);
 
   this->Azimuth->InsertNextValue(azimuth);
@@ -1321,6 +1321,11 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(unsigned char *data, st
   vtkNew<vtkTransform> geotransform;
   const double timestamp = this->ComputeTimestamp(dataPacket->gpsTimestamp);
   this->ComputeOrientation(timestamp, geotransform.GetPointer());
+
+  // Update the transforms here and then call internal
+  // transform
+  this->SensorTransform->Update();
+  geotransform->Update();
 
   int firingBlock = this->Skip;
   this->Skip = 0;
