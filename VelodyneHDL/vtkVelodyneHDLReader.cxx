@@ -1330,11 +1330,18 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(unsigned char *data, st
   int firingBlock = this->Skip;
   this->Skip = 0;
 
-  int azimuthDiff = ((36000 + dataPacket->firingData[HDL_FIRING_PER_PKT - 1].rotationalPosition -
-                       dataPacket->firingData[0].rotationalPosition) % 36000) / HDL_FIRING_PER_PKT;
+  std::vector<int> diffs (HDL_FIRING_PER_PKT - 1);
+  for(int i = 0; i < HDL_FIRING_PER_PKT - 1; ++i)
+    {
+    int localDiff = (36000 + dataPacket->firingData[i+1].rotationalPosition -
+                     dataPacket->firingData[i].rotationalPosition) % 36000;
+    diffs[i] = localDiff;
+    }
+  std::nth_element(diffs.begin(),
+                   diffs.begin() + HDL_FIRING_PER_PKT/2,
+                   diffs.end());
+  int azimuthDiff = diffs[HDL_FIRING_PER_PKT/2];
   assert(azimuthDiff >= 0);
-  //  Not robust enough of a threshold to leave on all the time
-  //  assert(azimuthDiff <  1000);
 
   for ( ; firingBlock < HDL_FIRING_PER_PKT; ++firingBlock)
     {
