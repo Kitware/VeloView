@@ -16,6 +16,13 @@ add_test(TestReaderMonterey
   ${CMAKE_SOURCE_DIR}/Testing/monterey.test
 )
 
+add_test(TestReaderMontereyWithCrop
+  ${CMAKE_BINARY_DIR}/bin/TestReader
+  ${CMAKE_SOURCE_DIR}/Testing/Data/monterey-first-100-packets.pcap
+  ${CMAKE_SOURCE_DIR}/share/HDL-32.xml
+  ${CMAKE_SOURCE_DIR}/Testing/monterey-with-crop.test
+)
+
 add_test(TestReaderDualReturn
   ${CMAKE_BINARY_DIR}/bin/TestReader
   ${CMAKE_SOURCE_DIR}/Testing/Data/dual-return-frames-5-to-15.pcap

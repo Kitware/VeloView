@@ -133,6 +133,24 @@ bool testPointCount(vtkSmartPointer<vtkPolyData>& frame, std::istream& is)
 }
 
 //-----------------------------------------------------------------------------
+bool testCropSettings(vtkSmartPointer<vtkPolyData>& frame, std::istream& is)
+{
+  bool cropEnabled, cropInside;
+  double ptcropregion[6];
+  is >> cropEnabled >> cropInside;
+  for(int i = 0; i < 6; ++i)
+    {
+    is >> ptcropregion[i];
+    }
+
+  reader->SetCropReturns(cropEnabled);
+  reader->SetCropInside(cropInside);
+  reader->SetCropRegion(ptcropregion);
+
+  return true;
+}
+
+//-----------------------------------------------------------------------------
 bool testPointValues(vtkSmartPointer<vtkPolyData>& frame, std::istream& is)
 {
   vtkIdType pointId;
@@ -240,6 +258,7 @@ int main(int argc, char* argv[])
   testActions["frame_count"] = &testFrameCount;
   testActions["point_count"] = &testPointCount;
   testActions["point_values"] = &testPointValues;
+  testActions["crop_settings"] = &testCropSettings;
 
   const TestActionFunctionMap::const_iterator invalidCommand =
     testActions.end();
