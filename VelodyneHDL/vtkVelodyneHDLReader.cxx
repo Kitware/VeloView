@@ -184,6 +184,7 @@ public:
     this->ApplyTransform = 0;
     this->PointsSkip = 0;
     this->CropReturns = false;
+    this->CropInside = false;
     this->CropRegion[0] = this->CropRegion[1] = 0.0;
     this->CropRegion[2] = this->CropRegion[3] = 0.0;
     this->CropRegion[4] = this->CropRegion[5] = 0.0;
