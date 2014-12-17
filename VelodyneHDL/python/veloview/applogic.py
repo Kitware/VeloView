@@ -64,6 +64,7 @@ class AppLogic(object):
         self.mainView = mainView
         self.overheadView = overheadView
 
+        self.transformMode = 0
         self.relativeTransform = False
 
         self.reader = None
@@ -342,8 +343,10 @@ def openPCAP(filename, positionFilename=None):
     reader = smp.VelodyneHDLReader(guiName='Data',
                                    FileName=filename,
                                    CalibrationFile=calibrationFile,
+                                   ApplyTransform=(app.transformMode > 0),
                                    NumberOfTrailingFrames=app.trailingFramesSpinBox.value,
                                    PointsSkip=app.trailingFramesSpinBox.value)
+
     reader.GetClientSideObject().SetSensorTransform(sensorTransform)
     reader.UpdatePipeline()
     app.scene.UpdateAnimationUsingDataTimeSteps()
@@ -1887,10 +1890,9 @@ def setTransformMode(mode):
     # 2 - relative
     reader = getReader()
 
-    if not reader or mode is None:
-        return
-
-    reader.ApplyTransform = (mode > 0)
+    if reader:
+        reader.ApplyTransform = (mode > 0)
+    app.transformMode = mode
     app.relativeTransform = (mode == 2)
 
 def geolocationChanged(setting):
