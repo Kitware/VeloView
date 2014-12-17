@@ -1298,6 +1298,10 @@ def unloadData():
     for t in toremove:
         app.overheadView.Representations.remove(t)
 
+    vv.app.reader = None
+    vv.app.position = (None, None, None)
+    vv.app.sensor = None
+
     clearSpreadSheetView()
 
 def getReader():
