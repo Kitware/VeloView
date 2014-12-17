@@ -66,6 +66,10 @@ class AppLogic(object):
 
         self.relativeTransform = False
 
+        self.reader = None
+        self.position = (None, None, None)
+        self.sensor = None
+
         self.fps = [0,0]
 
     def setupTimers(self):
@@ -1298,9 +1302,9 @@ def unloadData():
     for t in toremove:
         app.overheadView.Representations.remove(t)
 
-    vv.app.reader = None
-    vv.app.position = (None, None, None)
-    vv.app.sensor = None
+    app.reader = None
+    app.position = (None, None, None)
+    app.sensor = None
 
     clearSpreadSheetView()
 
