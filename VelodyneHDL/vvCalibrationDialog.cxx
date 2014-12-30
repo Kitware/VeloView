@@ -56,9 +56,9 @@ public:
 void vvCalibrationDialog::pqInternal::saveFileList()
 {
   QStringList files;
-  for (int i = this->BuiltInCalibrationFiles.size()+1; i < this->ListWidget->count(); ++i)
+  for (int i = this->BuiltInCalibrationFiles.size(); i < this->ListWidget->count(); ++i)
     {
-    files << this->ListWidget->item(i)->text();
+    files << this->ListWidget->item(i)->data(Qt::UserRole).toString();
     }
 
   this->Settings->setValue(
