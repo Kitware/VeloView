@@ -48,7 +48,7 @@ def getObjectMetaData(rep):
     metaData = {}
     if rep.ColorArrayName:
         metaData['color_map'] = colorMapProperties(rep.LookupTable)
-        metaData['color_by'] = rep.ColorArrayName
+        metaData['color_by'] = rep.ColorArrayName[1]
     else:
         metaData['color'] = list(rep.DiffuseColor)
 
