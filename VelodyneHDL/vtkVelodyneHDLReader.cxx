@@ -1245,7 +1245,8 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessFiring(HDLFiringData* firingData,
                                                       double timestamp,
                                                       vtkTransform* geotransform)
 {
-  const bool dual = (this->LastAzimuth == firingData->rotationalPosition);
+  const bool dual = (this->LastAzimuth == firingData->rotationalPosition) &&
+    firingData->blockIdentifier == BLOCK_0_TO_31;
   if (!dual)
     {
     this->FirstPointIdThisReturn = this->Points->GetNumberOfPoints();
