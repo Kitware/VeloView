@@ -925,6 +925,8 @@ def close():
     unloadData()
     smp.Render(app.overheadView)
     app.scene.AnimationTime = 0
+    app.reader = None
+    app.sensor = None
 
     resetCameraToForwardView()
     app.filenameLabel.setText('')
