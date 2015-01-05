@@ -20,7 +20,6 @@
 #include "vvPythonQtDecorators.h"
 
 #include <pqActiveObjects.h>
-#include <pqActiveView.h>
 #include <pqApplicationCore.h>
 #include <pqDataRepresentation.h>
 #include <pqPipelineSource.h>
