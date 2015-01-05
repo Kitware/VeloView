@@ -827,7 +827,8 @@ def onSaveScreenshot():
 
 def onKiwiViewerExport():
 
-    frameOptions = getFrameSelectionFromUser(frameStrideVisibility=True)
+    frameOptions = getFrameSelectionFromUser(frameStrideVisibility=True,
+                                             frameTransformVisibility=False)
     if frameOptions is None:
         return
 
