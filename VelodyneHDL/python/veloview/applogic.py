@@ -928,6 +928,8 @@ def close():
     app.reader = None
     app.sensor = None
 
+    smp.HideUnusedScalarBars()
+
     resetCameraToForwardView()
     app.filenameLabel.setText('')
     app.statusLabel.setText('')
