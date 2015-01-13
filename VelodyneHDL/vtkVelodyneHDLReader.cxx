@@ -195,6 +195,7 @@ public:
     this->LaserSelection.resize(64, true);
     this->DualReturnFilter = 0;
     this->IsDualReturnData = false;
+    this->IsHDL64Data = false;
 
     this->Init();
   }
@@ -220,6 +221,7 @@ public:
   vtkSmartPointer<vtkUnsignedIntArray> Flags;
 
   bool IsDualReturnData;
+  bool IsHDL64Data;
 
   int LastAzimuth;
   unsigned int LastTimestamp;
@@ -533,6 +535,7 @@ void vtkVelodyneHDLReader::UnloadData()
   this->Internal->TimeAdjust = std::numeric_limits<double>::quiet_NaN();
 
   this->Internal->IsDualReturnData = false;
+  this->Internal->IsHDL64Data = false;
   this->Internal->Datasets.clear();
   this->Internal->CurrentDataset = this->Internal->CreateData(0);
 }
@@ -1246,7 +1249,8 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessFiring(HDLFiringData* firingData,
                                                       vtkTransform* geotransform)
 {
   const bool dual = (this->LastAzimuth == firingData->rotationalPosition) &&
-    firingData->blockIdentifier == BLOCK_0_TO_31;
+    (!this->IsHDL64Data);
+
   if (!dual)
     {
     this->FirstPointIdThisReturn = this->Points->GetNumberOfPoints();
@@ -1348,6 +1352,7 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(unsigned char *data, st
     {
     HDLFiringData* firingData = &(dataPacket->firingData[firingBlock]);
     int hdl64offset = (firingData->blockIdentifier == BLOCK_0_TO_31) ? 0 : 32;
+    this->IsHDL64Data |= (hdl64offset > 0);
 
     if (firingData->rotationalPosition < this->LastAzimuth)
       {
