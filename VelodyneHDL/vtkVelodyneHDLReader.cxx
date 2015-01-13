@@ -283,6 +283,7 @@ public:
                      vtkTransform* geotransform);
 
   void PushFiringData(const unsigned char laserId,
+                      const unsigned char rawLaserId,
                       unsigned short azimuth,
                       const double timestamp,
                       const HDLLaserReturn* laserReturn,
@@ -907,6 +908,7 @@ vtkSmartPointer<vtkCellArray> vtkVelodyneHDLReader::vtkInternal::NewVertexCells(
 
 //-----------------------------------------------------------------------------
 void vtkVelodyneHDLReader::vtkInternal::PushFiringData(const unsigned char laserId,
+                                                       const unsigned char rawLaserId,
                                                        unsigned short azimuth,
                                                        const double timestamp,
                                                        const HDLLaserReturn* laserReturn,
@@ -961,7 +963,7 @@ void vtkVelodyneHDLReader::vtkInternal::PushFiringData(const unsigned char laser
   // Do not add any data before here as this might short-circuit
   if (dualReturn)
     {
-    const vtkIdType dualPointId = this->LastPointId[laserId];
+    const vtkIdType dualPointId = this->LastPointId[rawLaserId];
     if (dualPointId < this->FirstPointIdThisReturn)
       {
       // No matching point from first set (skipped?)
@@ -1053,7 +1055,7 @@ void vtkVelodyneHDLReader::vtkInternal::PushFiringData(const unsigned char laser
   this->LaserId->InsertNextValue(laserId);
   this->Timestamp->InsertNextValue(timestamp);
   this->Distance->InsertNextValue(distanceM);
-  this->LastPointId[laserId] = thisPointId;
+  this->LastPointId[rawLaserId] = thisPointId;
 }
 
 //-----------------------------------------------------------------------------
@@ -1265,10 +1267,11 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessFiring(HDLFiringData* firingData,
 
   for (int dsr = 0; dsr < HDL_LASER_PER_FIRING; dsr++)
     {
-    unsigned char laserId = static_cast<unsigned char>(dsr + hdl64offset);
+    unsigned char rawLaserId = static_cast<unsigned char>(dsr + hdl64offset);
+    unsigned char laserId = rawLaserId;
     unsigned short azimuth = firingData->rotationalPosition;
 
-    // Deal with wraparound
+    // Detect VLP-16 data and adjust laser id if necessary
     int firingWithinBlock = 0;
 
     if(this->CalibrationReportedNumLasers == 16)
@@ -1303,6 +1306,7 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessFiring(HDLFiringData* firingData,
     if (firingData->laserReturns[dsr].distance != 0.0 && this->LaserSelection[laserId])
       {
       this->PushFiringData(laserId,
+                           rawLaserId,
                            azimuth + azimuthadjustment,
                            timestamp + timestampadjustment,
                            &(firingData->laserReturns[dsr]),
