@@ -53,9 +53,8 @@ install(DIRECTORY "${install_location}/lib/paraview-${PARAVIEW_VERSION}"
         COMPONENT ${AppName}
         PATTERN "*.lib" EXCLUDE)
 
-install(DIRECTORY "${install_location}/share"
+install(FILES "${install_location}/share/HDL-32.xml" "${install_location}/share/VLP-16.xml"
         DESTINATION "share"
-        USE_SOURCE_PERMISSIONS
         COMPONENT ${AppName})
 
 install(FILES "${wpcap_library_dir}/wpcap.dll"  "${wpcap_library_dir}/Packet.dll"
