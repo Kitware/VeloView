@@ -26,6 +26,7 @@ add_revision(pythonqt
   GIT_REPOSITORY git://github.com/commontk/PythonQt.git
   GIT_TAG patched-3)
 
+set(PARAVIEW_VERSION 4.3)
 add_revision(paraview
   GIT_REPOSITORY git://github.com/Kitware/ParaView.git
   GIT_TAG v4.3.0-RC1)

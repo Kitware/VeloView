@@ -3,7 +3,7 @@ include(CPack)
 
 
 # install all ParaView's shared libraries.
-install(DIRECTORY "${install_location}/lib/paraview-4.2"
+install(DIRECTORY "${install_location}/lib/paraview-${PARAVIEW_VERSION}"
   DESTINATION "lib"
   USE_SOURCE_PERMISSIONS
   COMPONENT superbuild)
