@@ -31,6 +31,9 @@
 #include "vvLoadDataReaction.h"
 #include "vvToggleSpreadSheetReaction.h"
 
+#include <vtkSMProxyManager.h>
+#include <vtkSMSessionProxyManager.h>
+
 #include <pqActiveObjects.h>
 #include <pqApplicationCore.h>
 #include <pqAutoLoadPluginXMLBehavior.h>
@@ -111,12 +114,18 @@ private:
     new pqCommandLineOptionsBehavior(window);
     new pqPersistentMainWindowStateBehavior(window);
 
-//    pqServer::setCoincidentTopologyResolutionModeSetting(0);
-
     // Connect to builtin server.
     pqObjectBuilder* builder = core->getObjectBuilder();
     pqServer* server = builder->createServer(pqServerResource("builtin:"));
     pqActiveObjects::instance().setActiveServer(server);
+
+    // Set default render view settings
+    vtkSMSessionProxyManager* pxm = vtkSMProxyManager::GetProxyManager()->GetActiveSessionProxyManager();
+    vtkSMProxy* renderviewsettings =  pxm->GetProxy("RenderViewSettings");
+    assert(renderviewsettings);
+
+    vtkSMPropertyHelper(renderviewsettings,
+                        "ResolveCoincidentTopology").Set(0);
 
     // Create a default view.
     pqRenderView* view = qobject_cast<pqRenderView*>(builder->createView(pqRenderView::renderViewType(), server));
