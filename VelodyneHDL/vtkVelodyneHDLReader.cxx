@@ -720,6 +720,7 @@ void vtkVelodyneHDLReader::DumpFrames(int startFrame, int endFrame, const std::s
         dataLength == (512 + 42))
       {
       writer.WritePacket(header, const_cast<unsigned char*>(data));
+      }
 
     // dont check for frame counts if it was a GPS packet
     if(dataLength != (1206 + 42))
