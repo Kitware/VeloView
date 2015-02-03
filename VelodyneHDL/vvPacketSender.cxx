@@ -24,26 +24,35 @@ class vvPacketSender::vvInternal
 {
 public:
   vvInternal(std::string destinationIp,
-             int port) : Socket(0),
-                         PacketReader(0),
-                         Done(false),
-                         PacketCount(0),
-                         Endpoint(boost::asio::ip::address_v4::from_string(destinationIp), port)
+             int lidarPort,
+             int positionPort) :
+    LIDARSocket(0),
+    PositionSocket(0),
+    PacketReader(0),
+    Done(false),
+    PacketCount(0),
+    LIDAREndpoint(boost::asio::ip::address_v4::from_string(destinationIp), lidarPort),
+    PositionEndpoint(boost::asio::ip::address_v4::from_string(destinationIp), positionPort)
   {
   }
 
-  boost::asio::ip::udp::socket* Socket;
+  boost::asio::ip::udp::socket* LIDARSocket;
+  boost::asio::ip::udp::socket* PositionSocket;
+
   vtkPacketFileReader* PacketReader;
   bool Done;
   size_t PacketCount;
-  boost::asio::ip::udp::endpoint Endpoint;
+  boost::asio::ip::udp::endpoint LIDAREndpoint;
+  boost::asio::ip::udp::endpoint PositionEndpoint;
   boost::asio::io_service IOService;
   };
 
 //-----------------------------------------------------------------------------
 vvPacketSender::vvPacketSender(std::string pcapfile,
                                std::string destinationIp,
-                               int port) : Internal(new vvPacketSender::vvInternal(destinationIp, port))
+                               int lidarPort,
+                               int positionPort) :
+  Internal(new vvPacketSender::vvInternal(destinationIp, lidarPort, positionPort))
 {
   this->Internal->PacketReader = new vtkPacketFileReader;
   this->Internal->PacketReader->Open(pcapfile);
@@ -52,15 +61,20 @@ vvPacketSender::vvPacketSender(std::string pcapfile,
     throw std::runtime_error("Unable to open packet file");
     }
 
-  this->Internal->Socket = new boost::asio::ip::udp::socket(this->Internal->IOService);
-  this->Internal->Socket->open(this->Internal->Endpoint.protocol());
+  this->Internal->LIDARSocket = new boost::asio::ip::udp::socket(this->Internal->IOService);
+  this->Internal->LIDARSocket->open(this->Internal->LIDAREndpoint.protocol());
+
+  this->Internal->PositionSocket = new boost::asio::ip::udp::socket(this->Internal->IOService);
+  this->Internal->PositionSocket->open(this->Internal->PositionEndpoint.protocol());
+
 }
 
 //-----------------------------------------------------------------------------
 vvPacketSender::~vvPacketSender()
 {
 
-  delete this->Internal->Socket;
+  delete this->Internal->LIDARSocket;
+  delete this->Internal->PositionSocket;
   delete this->Internal;
 }
 
@@ -82,14 +96,18 @@ void vvPacketSender::pumpPacket()
     }
 
   // Recurse until we get to the right kind of packet
-  if (dataLength != 1206)
+  if (dataLength == 1206)
     {
-    return;
+    ++this->Internal->PacketCount;
+    size_t bytesSent = this->Internal->LIDARSocket->send_to(boost::asio::buffer(data, dataLength),
+                                                            this->Internal->LIDAREndpoint);
     }
 
-  ++this->Internal->PacketCount;
-  size_t bytesSent = this->Internal->Socket->send_to(boost::asio::buffer(data, dataLength),
-                                                     this->Internal->Endpoint);
+  if( (dataLength == 512) )
+    {
+    size_t bytesSent = this->Internal->PositionSocket->send_to(boost::asio::buffer(data, dataLength),
+                                                               this->Internal->PositionEndpoint);
+    }
 }
 
 //-----------------------------------------------------------------------------

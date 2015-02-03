@@ -28,19 +28,23 @@
 #include <cmath>
 #include <cstdio>
 
+#include <boost/thread/thread.hpp>
+
 #undef NDEBUG
 #include <cassert>
 
 //-----------------------------------------------------------------------------
 int main(int argc, char* argv[])
 {
-  if (argc != 2) {
-    std::cout << "Usage: " << argv[0] << " <packet file>" << std::endl;
+  if (argc != 3) {
+    std::cout << "Usage: " << argv[0] << " <packet file> <calibration>" << std::endl;
     return 1;
   }
   std::string filename(argv[1]);
+  std::string calibration(argv[2]);
 
   vtkNew<vtkVelodyneHDLSource> source;
+  source->SetCorrectionsFile(calibration);
   source->Start();
 
   try
@@ -53,6 +57,7 @@ int main(int argc, char* argv[])
     for(size_t i = 0; i < 500; ++i)
       {
       sender.pumpPacket();
+      boost::this_thread::sleep(boost::posix_time::microseconds(200));
       }
     source->Update();
     vtkPolyData* result = source->GetOutput();
@@ -60,6 +65,7 @@ int main(int argc, char* argv[])
     while(!sender.done())
       {
       sender.pumpPacket();
+      boost::this_thread::sleep(boost::posix_time::microseconds(200));
       }
 
     source->Stop();

@@ -384,157 +384,173 @@ private:
   boost::shared_ptr<SynchronizedQueue<std::string*> > Packets;
 };
 
-
+class PacketNetworkSource;
 //----------------------------------------------------------------------------
-class PacketNetworkSource
+class PacketReceiver
 {
 public:
+  PacketReceiver(boost::asio::io_service& io, int port, PacketNetworkSource* parent)
+  : Port(port),
+    PacketCounter(0),
+    Socket(io, boost::asio::ip::udp::endpoint(boost::asio::ip::udp::v4(), port)),
+    Parent(parent),
+    IsReceiving(true),
+    ShouldStop(false)
+  {
+    this->StartReceive();
+  }
+
+  ~PacketReceiver()
+  {
+    this->Socket.cancel();
+
+      {
+      boost::unique_lock<boost::mutex> guard(this->IsReceivingMtx);
+      this->ShouldStop = true;
+      while(this->IsReceiving)
+        {
+        this->IsReceivingCond.wait(guard);
+        }
+      }
+  }
 
   void StartReceive()
   {
-    boost::lock_guard<boost::mutex> lock(this->SocketStateMutex);
-    bool stopped = false;
-    stopped = this->ShouldStop;
-
-    if (stopped)
       {
-      return;
+      boost::lock_guard<boost::mutex> guard(this->IsReceivingMtx);
+      this->IsReceiving = true;
       }
 
     // expecting exactly 1206 bytes, using a larger buffer so that if a
     // larger packet arrives unexpectedly we'll notice it.
-    this->Socket->async_receive(boost::asio::buffer(this->RXBuffer, 1500),
-      boost::bind(&PacketNetworkSource::SocketCallback, this,
+    this->Socket.async_receive(boost::asio::buffer(this->RXBuffer, 1500),
+      boost::bind(&PacketReceiver::SocketCallback, this,
       boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
   }
 
-  void SocketCallback(const boost::system::error_code& error, std::size_t numberOfBytes)
-  {
-    //this->Consumer->HandleSensorData(this->RXBuffer, numberOfBytes);
+  void SocketCallback(const boost::system::error_code& error, std::size_t numberOfBytes);
 
+private:
+  int Port;
+  vtkIdType PacketCounter;
+  boost::asio::ip::udp::socket Socket;
+  PacketNetworkSource* Parent;
+  char RXBuffer[1500];
+
+  bool IsReceiving;
+  bool ShouldStop;
+  boost::mutex IsReceivingMtx;
+  boost::condition_variable IsReceivingCond;
+};
+
+//----------------------------------------------------------------------------
+// This class is responsible for the IOService and  two PacketReceiver classes
+class PacketNetworkSource
+{
+public:
+  PacketNetworkSource(boost::shared_ptr<PacketConsumer> _consumer) :
+    IOService(),
+    Thread(),
+    LIDARPortReceiver(),
+    PositionPortReceiver(),
+    Consumer(_consumer),
+    Writer(),
+    DummyWork(new boost::asio::io_service::work(this->IOService))
+  {
+  }
+
+  ~PacketNetworkSource()
+  {
+    this->Stop();
+
+    delete this->DummyWork;
+
+    if(this->Thread)
+      {
+      this->Thread->join();
+      }
+  }
+
+  void QueuePackets(std::string* packet)
+  {
     if( this->Consumer )
       {
-      std::string* packet = new std::string(this->RXBuffer, numberOfBytes);
       this->Consumer->Enqueue(packet);
       }
 
     if (this->Writer)
       {
-      std::string* packet = new std::string(this->RXBuffer, numberOfBytes);
-      this->Writer->Enqueue(packet);
+      std::string* packet2 = new std::string(*packet);
+      this->Writer->Enqueue(packet2);
       }
 
-    this->StartReceive();
-
-    if ((++this->PacketCounter % 500) == 0)
-      {
-      std::cout << "RECV packets: " << this->PacketCounter << " on "
-                << this->PortNumber << "[";
-      if(this->Consumer)
-        {
-        std::cout << "C";
-        }
-      if(this->Writer)
-        {
-        std::cout << "W";
-        }
-      std::cout << "]" << std::endl;
-      }
-  }
-
-  void ThreadLoop()
-  {
-    this->StartReceive();
-    this->IOService.reset();
-    this->IOService.run();
   }
 
   void Start()
   {
-    boost::lock_guard<boost::mutex> lock(this->SocketStateMutex);
-
-    if (this->Thread)
+    if(!this->Thread)
       {
+      std::cout << "Start listen" << std::endl;
+      this->Thread.reset(new boost::thread(boost::bind(&boost::asio::io_service::run, &this->IOService)));
+      }
+
+    if(this->LIDARPortReceiver)
+      {
+      assert(this->PositionPortReceiver);
       return;
       }
 
-    std::string destinationIp = "192.168.3.255";
-
-    this->Socket.reset();
-
-    // destinationEndpoint is the socket on this machine where the data packet are received
-    boost::asio::ip::udp::endpoint destinationEndpoint(boost::asio::ip::address_v4::any(),
-                                                       this->PortNumber);
-
-    try
-      {
-      this->Socket = boost::shared_ptr<boost::asio::ip::udp::socket>(new boost::asio::ip::udp::socket(this->IOService));
-      this->Socket->open(destinationEndpoint.protocol());
-      this->Socket->bind(destinationEndpoint);
-      }
-    catch( std::exception & e )
-      {
-      vtkGenericWarningMacro("Caught exception while binding to " << destinationIp << ": " << e.what());
-
-      try
-        {
-        destinationEndpoint = boost::asio::ip::udp::endpoint(boost::asio::ip::address_v4::any(),
-                                                             this->PortNumber);
-
-        this->Socket = boost::shared_ptr<boost::asio::ip::udp::socket>(new boost::asio::ip::udp::socket(this->IOService));
-        this->Socket->open(destinationEndpoint.protocol());
-        this->Socket->bind(destinationEndpoint);
-        }
-      catch( std::exception & e )
-        {
-        vtkGenericWarningMacro("Caught Exception: " << e.what());
-        return;
-        }
-      }
-
-    this->ShouldStop = false;
-    this->Thread = boost::shared_ptr<boost::thread>(
-      new boost::thread(boost::bind(&PacketNetworkSource::ThreadLoop, this)));
+    // Create work
+    this->LIDARPortReceiver = boost::shared_ptr<PacketReceiver>(new PacketReceiver(this->IOService, 2368, this));
+    this->PositionPortReceiver = boost::shared_ptr<PacketReceiver>(new PacketReceiver(this->IOService, 8308, this));
   }
 
   void Stop()
   {
-    {
-    boost::lock_guard<boost::mutex> lock(this->SocketStateMutex);
-    this->ShouldStop = true;
+    // Kill the receivers
+    this->PositionPortReceiver.reset();
+    this->LIDARPortReceiver.reset();
 
-    this->Socket->close();
-    this->IOService.stop();
-    }
-
-    if(this->Thread)
-      {
-      this->Thread->join();
-      this->Thread.reset();
-      }
   }
 
-  PacketNetworkSource(int _PortNumber) : PortNumber(_PortNumber),
-                                         ShouldStop(false),
-                                         PacketCounter(0)
-  {
-  }
-
-  // This mutex should protext access to any of the following
-  boost::mutex SocketStateMutex;
   boost::asio::io_service IOService;
-  boost::shared_ptr<boost::asio::ip::udp::socket> Socket;
   boost::shared_ptr<boost::thread> Thread;
 
-  bool ShouldStop;
-
-  int PortNumber;
-  char RXBuffer[1500];
-  vtkIdType PacketCounter;
+  boost::shared_ptr<PacketReceiver> LIDARPortReceiver;
+  boost::shared_ptr<PacketReceiver> PositionPortReceiver;
 
   boost::shared_ptr<PacketConsumer> Consumer;
   boost::shared_ptr<PacketFileWriter> Writer;
+
+  boost::asio::io_service::work* DummyWork;
 };
+
+void PacketReceiver::SocketCallback(const boost::system::error_code& error, std::size_t numberOfBytes)
+{
+//  std::cout << "CALLBACK " << this->Port << std::endl;
+  if(error || this->ShouldStop)
+    {
+    // This is called on cancel
+    // TODO: Check other error codes
+      {
+      boost::lock_guard<boost::mutex> guard(this->IsReceivingMtx);
+        this->IsReceiving = false;
+      }
+      this->IsReceivingCond.notify_one();
+
+    return;
+    }
+
+  std::string* packet = new std::string(this->RXBuffer, numberOfBytes);
+  this->Parent->QueuePackets(packet);
+
+  this->StartReceive();
+
+  if ((++this->PacketCounter % 500) == 0)
+    {
+    std::cout << "RECV packets: " << this->PacketCounter << " on " << this->Port << std::endl;;
+    }
+}
 
 } // end namespace
 
@@ -543,12 +559,10 @@ class vtkVelodyneHDLSource::vtkInternal
 {
 public:
 
-  vtkInternal() : NetworkSource(2368), PositionNetworkSource(8308)
+  vtkInternal() : Consumer(new PacketConsumer),
+                  Writer(new PacketFileWriter),
+                  NetworkSource(this->Consumer)
   {
-    this->Consumer = boost::shared_ptr<PacketConsumer>(new PacketConsumer);
-    this->Writer = boost::shared_ptr<PacketFileWriter>(new PacketFileWriter);
-    this->NetworkSource.Consumer = this->Consumer;
-    // Position source does not need a consumer
   }
 
   ~vtkInternal()
@@ -558,7 +572,6 @@ public:
   boost::shared_ptr<PacketConsumer> Consumer;
   boost::shared_ptr<PacketFileWriter> Writer;
   PacketNetworkSource NetworkSource;
-  PacketNetworkSource PositionNetworkSource;
 };
 
 //----------------------------------------------------------------------------
@@ -733,25 +746,21 @@ void vtkVelodyneHDLSource::Start()
     }
 
   this->Internal->NetworkSource.Writer.reset();
-  this->Internal->PositionNetworkSource.Writer.reset();
 
   if (this->Internal->Writer->IsOpen())
     {
     this->Internal->NetworkSource.Writer = this->Internal->Writer;
-    this->Internal->PositionNetworkSource.Writer = this->Internal->Writer;
     }
 
   this->Internal->Consumer->Start();
 
   this->Internal->NetworkSource.Start();
-  this->Internal->PositionNetworkSource.Start();
 }
 
 //----------------------------------------------------------------------------
 void vtkVelodyneHDLSource::Stop()
 {
   this->Internal->NetworkSource.Stop();
-  this->Internal->PositionNetworkSource.Stop();
   this->Internal->Consumer->Stop();
   this->Internal->Writer->Stop();
 }

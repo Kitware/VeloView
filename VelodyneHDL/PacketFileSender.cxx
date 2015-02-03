@@ -61,9 +61,10 @@ int main(int argc, char* argv[])
   try
     {
     int dataPort = 2368;
+    int positionPort = 8308;
     do
       {
-      vvPacketSender sender(filename, destinationIp, dataPort);
+      vvPacketSender sender(filename, destinationIp, dataPort, positionPort);
       //socket.connect(destinationEndpoint);
 
       while (!sender.done())

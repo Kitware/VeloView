@@ -40,4 +40,5 @@ add_test(TestReaderVLP16
 add_test(TestSensor
   ${CMAKE_BINARY_DIR}/bin/TestSensor
   ${CMAKE_SOURCE_DIR}/Testing/Data/monterey-first-100-packets.pcap
-)
+  ${CMAKE_SOURCE_DIR}/share/HDL-32.xml
+  )
