@@ -473,6 +473,7 @@ public:
 
   void QueuePackets(std::string* packet)
   {
+    std::string* packet2 = new std::string(*packet);
     if( this->Consumer )
       {
       this->Consumer->Enqueue(packet);
@@ -480,7 +481,6 @@ public:
 
     if (this->Writer)
       {
-      std::string* packet2 = new std::string(*packet);
       this->Writer->Enqueue(packet2);
       }
 
