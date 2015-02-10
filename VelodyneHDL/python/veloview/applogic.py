@@ -675,7 +675,7 @@ def onNativeFileDialogsAction():
     defaultDir = settings.setValue('VelodyneHDLPlugin/NativeFileDialogs', int(app.actions['actionNative_File_Dialogs'].isChecked()))
 
 
-def getFrameSelectionFromUser(frameStrideVisibility=False, framePackVisibility=False, frameTransformVisibility=True):
+def getFrameSelectionFromUser(frameStrideVisibility=False, framePackVisibility=False, frameTransformVisibility=False):
     class FrameOptions(object):
         pass
 
@@ -743,7 +743,7 @@ def onSavePosition():
 
 def onSaveLAS():
 
-    frameOptions = getFrameSelectionFromUser(framePackVisibility=True)
+    frameOptions = getFrameSelectionFromUser(framePackVisibility=True, frameTransformVisibility=False)
     if frameOptions is None:
         return
 

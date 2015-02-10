@@ -24,7 +24,7 @@
      <x>0</x>
      <y>0</y>
      <width>1070</width>
-     <height>24</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -45,7 +45,6 @@
      <addaction name="actionSavePCAP"/>
      <addaction name="actionSaveCSV"/>
      <addaction name="actionSavePositionCSV"/>
-     <addaction name="actionSaveLAS"/>
     </widget>
     <widget class="QMenu" name="menu_Open">
      <property name="title">
@@ -53,7 +52,6 @@
      </property>
      <addaction name="actionOpen_Sensor_Stream"/>
      <addaction name="actionOpenPcap"/>
-     <addaction name="actionOpenApplanix"/>
      <addaction name="separator"/>
      <addaction name="actionChoose_Calibration_File"/>
     </widget>
@@ -127,9 +125,8 @@
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
-   <addaction name="actionOpen_Sensor_Stream"/>
    <addaction name="actionOpenPcap"/>
-   <addaction name="actionOpenApplanix"/>
+   <addaction name="actionOpen_Sensor_Stream"/>
    <addaction name="actionChoose_Calibration_File"/>
    <addaction name="actionCropReturns"/>
    <addaction name="separator"/>
