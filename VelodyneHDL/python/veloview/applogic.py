@@ -738,7 +738,8 @@ def onSaveCSV():
 
 def onSavePosition():
     fileName = getSaveFileName('Save CSV', 'csv', getDefaultSaveFileName('csv', '-position'))
-    savePositionCSV(fileName)
+    if fileName:
+        savePositionCSV(fileName)
 
 
 def onSaveLAS():
