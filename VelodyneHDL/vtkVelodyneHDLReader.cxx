@@ -940,14 +940,14 @@ void vtkVelodyneHDLReader::vtkInternal::PushFiringData(const unsigned char laser
   }
 
   double distanceM = laserReturn->distance * 0.002 + correction->distanceCorrection;
-  double xyDistance = distanceM * correction->cosVertCorrection - correction->sinVertOffsetCorrection;
+  double xyDistance = distanceM * correction->cosVertCorrection;
 
   // Compute raw position
   double pos[3] =
     {
     xyDistance * sinAzimuth - correction->horizontalOffsetCorrection * cosAzimuth,
     xyDistance * cosAzimuth + correction->horizontalOffsetCorrection * sinAzimuth,
-    distanceM * correction->sinVertCorrection + correction->cosVertOffsetCorrection
+    distanceM * correction->sinVertCorrection + correction->vertOffsetCorrection
     };
 
   // Apply sensor transform
