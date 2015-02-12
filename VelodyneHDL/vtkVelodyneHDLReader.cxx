@@ -947,7 +947,7 @@ void vtkVelodyneHDLReader::vtkInternal::PushFiringData(const unsigned char laser
     {
     xyDistance * sinAzimuth - correction->horizontalOffsetCorrection * cosAzimuth,
     xyDistance * cosAzimuth + correction->horizontalOffsetCorrection * sinAzimuth,
-    distanceM * correction->sinVertCorrection + correction->vertOffsetCorrection
+    distanceM * correction->sinVertCorrection + correction->verticalOffsetCorrection
     };
 
   // Apply sensor transform
