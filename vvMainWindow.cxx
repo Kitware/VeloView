@@ -164,7 +164,9 @@ private:
     new vvToggleSpreadSheetReaction(this->Ui.actionSpreadsheet, spreadsheetView);
     pqSpreadSheetView* ssview = qobject_cast<pqSpreadSheetView*>(spreadsheetView);
     assert(spreadsheetView);
-    new pqSpreadSheetViewDecorator(ssview);
+    pqSpreadSheetViewDecorator* dec = new pqSpreadSheetViewDecorator(ssview);
+    dec->setPrecision(2);
+    dec->setFixedRepresentation(true);
 
     pqActiveObjects::instance().setActiveView(view);
     }
