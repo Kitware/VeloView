@@ -872,6 +872,7 @@ vtkSmartPointer<vtkPolyData> vtkVelodyneHDLReader::vtkInternal::CreateData(vtkId
   points->SetDataTypeToFloat();
   points->Allocate(60000);
   points->SetNumberOfPoints(numberOfPoints);
+  points->GetData()->SetName("Points_m_XYZ");
   polyData->SetPoints(points.GetPointer());
   polyData->SetVerts(NewVertexCells(numberOfPoints));
 
