@@ -216,6 +216,7 @@ public:
   vtkUnsignedShortArray* Azimuth;
   vtkDoubleArray* Distance;
   vtkDoubleArray* Timestamp;
+  vtkUnsignedIntArray* RawTime;
   vtkSmartPointer<vtkIntArray> IntensityFlag;
   vtkSmartPointer<vtkIntArray> DistanceFlag;
   vtkSmartPointer<vtkUnsignedIntArray> Flags;
@@ -280,12 +281,14 @@ public:
                      int firingBlock,
                      int azimuthDiff,
                      double timestamp,
+                     unsigned int rawtime,
                      vtkTransform* geotransform);
 
   void PushFiringData(const unsigned char laserId,
                       const unsigned char rawLaserId,
                       unsigned short azimuth,
                       const double timestamp,
+                      const unsigned int rawtime,
                       const HDLLaserReturn* laserReturn,
                       const HDLLaserCorrection* correction,
                       vtkTransform* geotransform,
@@ -882,7 +885,8 @@ vtkSmartPointer<vtkPolyData> vtkVelodyneHDLReader::vtkInternal::CreateData(vtkId
   this->LaserId = CreateDataArray<vtkUnsignedCharArray>("laser_id", numberOfPoints, polyData);
   this->Azimuth = CreateDataArray<vtkUnsignedShortArray>("azimuth", numberOfPoints, polyData);
   this->Distance = CreateDataArray<vtkDoubleArray>("distance_m", numberOfPoints, polyData);
-  this->Timestamp = CreateDataArray<vtkDoubleArray>("timestamp", numberOfPoints, polyData);
+  this->Timestamp = CreateDataArray<vtkDoubleArray>("adjustedtime", numberOfPoints, polyData);
+  this->RawTime = CreateDataArray<vtkUnsignedIntArray>("timestamp", numberOfPoints, polyData);
   this->DistanceFlag = CreateDataArray<vtkIntArray>("dual_distance", numberOfPoints, 0);
   this->IntensityFlag = CreateDataArray<vtkIntArray>("dual_intensity", numberOfPoints, 0);
   this->Flags = CreateDataArray<vtkUnsignedIntArray>("dual_flags", numberOfPoints, 0);
@@ -918,6 +922,7 @@ void vtkVelodyneHDLReader::vtkInternal::PushFiringData(const unsigned char laser
                                                        const unsigned char rawLaserId,
                                                        unsigned short azimuth,
                                                        const double timestamp,
+                                                       const unsigned int rawtime,
                                                        const HDLLaserReturn* laserReturn,
                                                        const HDLLaserCorrection* correction,
                                                        vtkTransform* geotransform,
@@ -1031,6 +1036,7 @@ void vtkVelodyneHDLReader::vtkInternal::PushFiringData(const unsigned char laser
           this->Distance->SetValue(dualPointId, distanceM);
           this->Intensity->SetValue(dualPointId, laserReturn->intensity);
           this->Timestamp->SetValue(dualPointId, timestamp);
+          this->RawTime->SetValue(dualPointId, rawtime);
           this->Flags->SetValue(dualPointId, secondFlags);
           this->DistanceFlag->SetValue(dualPointId, MapDistanceFlag(secondFlags));
           this->IntensityFlag->SetValue(dualPointId, MapIntensityFlag(secondFlags));
@@ -1061,6 +1067,7 @@ void vtkVelodyneHDLReader::vtkInternal::PushFiringData(const unsigned char laser
   this->Intensity->InsertNextValue(laserReturn->intensity);
   this->LaserId->InsertNextValue(laserId);
   this->Timestamp->InsertNextValue(timestamp);
+  this->RawTime->InsertNextValue(rawtime);
   this->Distance->InsertNextValue(distanceM);
   this->LastPointId[rawLaserId] = thisPointId;
 }
@@ -1255,6 +1262,7 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessFiring(HDLFiringData* firingData,
                                                       int firingBlock,
                                                       int azimuthDiff,
                                                       double timestamp,
+                                                      unsigned int rawtime,
                                                       vtkTransform* geotransform)
 {
   const bool dual = (this->LastAzimuth == firingData->rotationalPosition) &&
@@ -1316,6 +1324,7 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessFiring(HDLFiringData* firingData,
                            rawLaserId,
                            azimuth + azimuthadjustment,
                            timestamp + timestampadjustment,
+                           rawtime + static_cast<unsigned int>(timestampadjustment),
                            &(firingData->laserReturns[dsr]),
                            &(laser_corrections_[dsr + hdl64offset]),
                            geotransform,
@@ -1335,6 +1344,7 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(unsigned char *data, st
   HDLDataPacket* dataPacket = reinterpret_cast<HDLDataPacket *>(data);
 
   vtkNew<vtkTransform> geotransform;
+  const unsigned int rawtime = dataPacket->gpsTimestamp;
   const double timestamp = this->ComputeTimestamp(dataPacket->gpsTimestamp);
   this->ComputeOrientation(timestamp, geotransform.GetPointer());
 
@@ -1378,6 +1388,7 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(unsigned char *data, st
                           firingBlock,
                           azimuthDiff,
                           timestamp,
+                          rawtime,
                           geotransform.GetPointer());
       }
 

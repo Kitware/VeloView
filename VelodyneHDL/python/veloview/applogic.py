@@ -1225,7 +1225,7 @@ def updatePosition():
         if pointcloud.GetNumberOfPoints():
             # Update the overhead view
             # TODO: Approximate time, just grabbing the last
-            t = pointcloud.GetPointData().GetScalars('timestamp')
+            t = pointcloud.GetPointData().GetScalars('adjustedtime')
             #currentTime = t.GetTuple1(t.GetNumberOfTuples() - 1)
             currentTime = t.GetTuple1(0) * 1e-6
 
