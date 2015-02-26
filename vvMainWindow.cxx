@@ -165,7 +165,7 @@ private:
     pqSpreadSheetView* ssview = qobject_cast<pqSpreadSheetView*>(spreadsheetView);
     assert(spreadsheetView);
     pqSpreadSheetViewDecorator* dec = new pqSpreadSheetViewDecorator(ssview);
-    dec->setPrecision(2);
+    dec->setPrecision(3);
     dec->setFixedRepresentation(true);
 
     pqActiveObjects::instance().setActiveView(view);
