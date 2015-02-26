@@ -210,13 +210,13 @@ public:
   vtkNew<vtkTransform> SensorTransform;
   vtkSmartPointer<vtkVelodyneTransformInterpolator> Interp;
 
-  vtkPoints* Points;
-  vtkUnsignedCharArray* Intensity;
-  vtkUnsignedCharArray* LaserId;
-  vtkUnsignedShortArray* Azimuth;
-  vtkDoubleArray* Distance;
-  vtkDoubleArray* Timestamp;
-  vtkUnsignedIntArray* RawTime;
+  vtkSmartPointer<vtkPoints> Points;
+  vtkSmartPointer<vtkUnsignedCharArray> Intensity;
+  vtkSmartPointer<vtkUnsignedCharArray> LaserId;
+  vtkSmartPointer<vtkUnsignedShortArray> Azimuth;
+  vtkSmartPointer<vtkDoubleArray> Distance;
+  vtkSmartPointer<vtkDoubleArray> Timestamp;
+  vtkSmartPointer<vtkUnsignedIntArray> RawTime;
   vtkSmartPointer<vtkIntArray> IntensityFlag;
   vtkSmartPointer<vtkIntArray> DistanceFlag;
   vtkSmartPointer<vtkUnsignedIntArray> Flags;
@@ -848,9 +848,9 @@ vtkSmartPointer<vtkPolyData> vtkVelodyneHDLReader::GetFrame(int frameNumber)
 namespace
 {
   template <typename T>
-  T* CreateDataArray(const char* name, vtkIdType np, vtkPolyData* pd)
+  vtkSmartPointer<T> CreateDataArray(const char* name, vtkIdType np, vtkPolyData* pd)
   {
-    T* array = T::New();
+    vtkSmartPointer<T> array = vtkSmartPointer<T>::New();
     array->Allocate(60000);
     array->SetName(name);
     array->SetNumberOfTuples(np);
@@ -858,7 +858,6 @@ namespace
     if (pd)
       {
       pd->GetPointData()->AddArray(array);
-      array->FastDelete();
       }
 
     return array;
