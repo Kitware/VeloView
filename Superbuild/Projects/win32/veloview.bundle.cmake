@@ -57,10 +57,6 @@ install(FILES "${install_location}/share/HDL-32.xml" "${install_location}/share/
         DESTINATION "share"
         COMPONENT ${AppName})
 
-install(FILES "${wpcap_library_dir}/wpcap.dll"  "${wpcap_library_dir}/Packet.dll"
-        DESTINATION "bin"
-        COMPONENT ${AppName})
-
 install(FILES "${VeloViewSuperBuild_SOURCE_DIR}/../Documentation/VeloView_Developer_Guide.pdf"
         DESTINATION "doc"
         COMPONENT ${AppName})
