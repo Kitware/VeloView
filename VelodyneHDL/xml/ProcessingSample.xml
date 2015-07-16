@@ -1,0 +1,26 @@
+<ServerManagerConfiguration>
+  <ProxyGroup name="filters">
+    <SourceProxy name="ProcessingSample" class="vtkProcessingSample" label="Processing Sample">
+      <Documentation
+         short_help="Apply example of processing to point cloud data."
+         long_help="Apply example of processing to point cloud data.">
+      </Documentation>
+
+      <InputProperty
+         name="Input"
+         port_index="0"
+         command="SetInputConnection">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources"/>
+          <Group name="filters"/>
+        </ProxyGroupDomain>
+        <DataTypeDomain name="input_type">
+          <DataType value="vtkPolyData"/>
+        </DataTypeDomain>
+        <Documentation>
+          Set the input poly data
+        </Documentation>
+      </InputProperty>
+   </SourceProxy>
+  </ProxyGroup>
+</ServerManagerConfiguration>
