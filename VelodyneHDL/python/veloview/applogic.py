@@ -34,6 +34,8 @@ from VelodyneHDLPluginPython import vtkVelodyneHDLReader
 
 _repCache = {}
 
+SAMPLE_PROCESSING_MODE = False
+
 def cachedGetRepresentation(src, view):
     try:
         return _repCache[(src, view)]
@@ -290,6 +292,10 @@ def openSensor():
     rep = smp.Show(sensor)
     rep.InterpolateScalarsBeforeMapping = 0
 
+    if SAMPLE_PROCESSING_MODE:
+        processor = smp.ProcessingSample(reader)
+        prep = smp.Show(processor)
+
     smp.GetActiveView().ViewTime = 0.0
 
     app.sensor = sensor
@@ -350,6 +356,10 @@ def openPCAP(filename, positionFilename=None):
     reader.GetClientSideObject().SetSensorTransform(sensorTransform)
     reader.UpdatePipeline()
     app.scene.UpdateAnimationUsingDataTimeSteps()
+
+    if SAMPLE_PROCESSING_MODE:
+        processor = smp.ProcessingSample(reader)
+        prep = smp.Show(processor)
 
     handler.RemoveObserver(tag)
     handler.SetProgressFrequency(freq)

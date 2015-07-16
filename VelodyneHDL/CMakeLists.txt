@@ -126,6 +126,7 @@ endif()
 
 list(APPEND servermanager_sources
   vtkApplanixPositionReader.cxx
+  vtkProcessingSample.cxx
   vtkVelodyneHDLGridSource.cxx
   vtkVelodyneHDLReader.cxx
   vtkVelodyneHDLPositionReader.cxx
@@ -134,6 +135,7 @@ list(APPEND servermanager_sources
 
 list(APPEND servermanager_xml
   xml/ApplanixPositionReader.xml
+  xml/ProcessingSample.xml
   xml/VelodyneHDLGridSource.xml
   xml/VelodyneHDLReader.xml
   xml/VelodyneHDLPositionReader.xml
