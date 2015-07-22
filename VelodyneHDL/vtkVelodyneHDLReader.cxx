@@ -612,6 +612,7 @@ int vtkVelodyneHDLReader::RequestData(vtkInformation *request,
     {
     output->ShallowCopy(this->GetFrame(timestep));
     }
+
   this->Close();
   return 1;
 }

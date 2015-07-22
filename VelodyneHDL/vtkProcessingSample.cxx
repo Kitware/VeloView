@@ -59,12 +59,18 @@ int vtkProcessingSample::RequestData(
   vtkPolyData *output = vtkPolyData::SafeDownCast(outInfo->Get(vtkDataObject::DATA_OBJECT()));
 
   vtkPoints* points = input->GetPoints();
+  if(!points || !points->GetNumberOfPoints())
+    {
+    return 1;
+    }
+
   Eigen::Vector3d meanpoints;
-  for(vtkIdType i = 0; i < points->GetNumberOfPoints(); ++i) {
+  for(vtkIdType i = 0; i < points->GetNumberOfPoints(); ++i)
+    {
     Eigen::Vector3d point;
     points->GetPoint(i, point.data());
     meanpoints += point;
-  }
+    }
   meanpoints /= points->GetNumberOfPoints();
 
   // Create a sphere at the center location
