@@ -289,12 +289,9 @@ def openSensor():
     sensor.GetClientSideObject().SetSensorTransform(sensorTransform)
     sensor.UpdatePipeline()
     sensor.Start()
-    rep = smp.Show(sensor)
-    rep.InterpolateScalarsBeforeMapping = 0
 
     if SAMPLE_PROCESSING_MODE:
-        processor = smp.ProcessingSample(reader)
-        prep = smp.Show(processor)
+        processor = smp.ProcessingSample(sensor)
 
     smp.GetActiveView().ViewTime = 0.0
 
@@ -307,6 +304,11 @@ def openSensor():
     onCropReturns(False) # Dont show the dialog just restore settings
     onLaserSelection(False)
 
+    rep = smp.Show(sensor)
+    rep.InterpolateScalarsBeforeMapping = 0
+
+    if SAMPLE_PROCESSING_MODE:
+        prep = smp.Show(processor)
     smp.Render()
 
     showSourceInSpreadSheet(sensor)
@@ -353,31 +355,26 @@ def openPCAP(filename, positionFilename=None):
                                    NumberOfTrailingFrames=app.trailingFramesSpinBox.value,
                                    PointsSkip=app.trailingFramesSpinBox.value)
 
+    app.reader = reader
+    app.filenameLabel.setText('File: %s' % os.path.basename(filename))
+    onCropReturns(False) # Dont show the dialog just restore settings
+    onLaserSelection(False)
+
     reader.GetClientSideObject().SetSensorTransform(sensorTransform)
-    reader.UpdatePipeline()
-    app.scene.UpdateAnimationUsingDataTimeSteps()
 
     if SAMPLE_PROCESSING_MODE:
         processor = smp.ProcessingSample(reader)
-        prep = smp.Show(processor)
 
     handler.RemoveObserver(tag)
     handler.SetProgressFrequency(freq)
     progressDialog.close()
 
-    # If we read the wrong kind of data abort
-    if not hasArrayName(reader, 'intensity'):
-        smp.Delete(reader)
-        resetCameraToForwardView()
-        return
-
     smp.GetActiveView().ViewTime = 0.0
 
-    app.reader = reader
-    app.filenameLabel.setText('File: %s' % os.path.basename(filename))
-
-    onCropReturns(False) # Dont show the dialog just restore settings
-    onLaserSelection(False)
+    rep = smp.Show(reader)
+    if SAMPLE_PROCESSING_MODE:
+        prep = smp.Show(processor)
+    app.scene.UpdateAnimationUsingDataTimeSteps()
 
     # update overhead view
     smp.SetActiveView(app.overheadView)
@@ -435,7 +432,6 @@ def openPCAP(filename, positionFilename=None):
     smp.SetActiveView(app.mainView)
     smp.SetActiveSource(reader)
 
-    rep = smp.Show(reader)
     rep.InterpolateScalarsBeforeMapping = 0
     setDefaultLookupTables(reader)
     colorByIntensity(reader)
@@ -1402,7 +1398,8 @@ def onCropReturns(show = True):
         p1 = dialog.firstCorner
         p2 = dialog.secondCorner
         reader.CropRegion = [p1.x(), p2.x(), p1.y(), p2.y(), p1.z(), p2.z()]
-        smp.Render()
+        if show:
+            smp.Render()
 
     if sensor is not None:
         sensor.CropReturns = dialog.croppingEnabled
@@ -1410,7 +1407,8 @@ def onCropReturns(show = True):
         p1 = dialog.firstCorner
         p2 = dialog.secondCorner
         sensor.CropRegion = [p1.x(), p2.x(), p1.y(), p2.y(), p1.z(), p2.z()]
-        smp.Render()
+        if show:
+            smp.Render()
 
 
 def resetCamera():
@@ -1729,15 +1727,17 @@ def onLaserSelection(show = True):
     if reader:
         reader.GetClientSideObject().SetLaserSelection(mask)
         reader.DummyProperty = not reader.DummyProperty
-        smp.Render()
-        smp.Render(getSpreadSheetViewProxy())
+        if show:
+            smp.Render()
+            smp.Render(getSpreadSheetViewProxy())
 
 
     if sensor:
         sensor.GetClientSideObject().SetLaserSelection(mask)
         sensor.DummyProperty = not sensor.DummyProperty
-        smp.Render()
-        smp.Render(getSpreadSheetViewProxy())
+        if show:
+            smp.Render()
+            smp.Render(getSpreadSheetViewProxy())
 
 
 def hideColorByComponent():
