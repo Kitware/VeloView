@@ -179,6 +179,16 @@ setup::
     qt4-dev-tools
     zlib1g-dev
 
+By default, Ubuntu packages version 2.8 of CMake. You will need a later version.
+To upgrade, either build CMake from source or run the following::
+
+    sudo apt-get install software-properties-common
+    sudo add-apt-repository ppa:george-edison55/cmake-3.x
+    sudo apt-get update
+    sudo apt-get install --reinstall cmake
+
+This will install CMake 3.2, which is sufficient to build VeloView.
+
 On Linux, libpcap can either be installed as a package or built from source. If
 you wish to build it from source you will need to apt-get install flex and
 byacc. If you want to use the packaged version, apt-get install libpcap-dev. If
