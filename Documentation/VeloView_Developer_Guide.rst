@@ -199,6 +199,11 @@ Enable the following options in the CMake configuration::
 Also be sure to set the `USE_SYSTEM_pcap` to the appropriate value, depending on
 whether you chose to use the system package or build it from source.
 
+If you have both Qt4 and Qt5 on your system, you will need to choose Qt4 before
+building. To do that, run the following in bash::
+
+    export QT_SELECT=qt4
+
 Then run `make` or `make -jN` as usual to run the superbuild.
 
 
