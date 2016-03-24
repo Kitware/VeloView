@@ -161,6 +161,51 @@ are available (the libraries with the .a extension).  If you are unsure, it is
 better to let the superbuild build Boost for you.
 
 
+Linux build instructions
+------------------------
+
+These steps are for Ubuntu 14.04.4 LTS. First, install the following
+dependencies using the apt-get command. This is the full list used in the tested
+setup:
+
+git
+cmake-curses-gui
+build-essential
+libboost-all-dev
+libxt-dev
+libbz2-dev
+libqt4-dev
+qt4-default
+qt4-dev-tools
+zlib1g-dev
+
+On Linux, libpcap can either be installed as a package or built from source. If
+you wish to build it from source you will need to apt-get install flex and
+byacc. If you want to use the packaged version, apt-get install libpcap-dev. If
+you're unsure, build it from source.
+
+Clone the git repository, and from a separate build directory configure using
+CMake by pointing it at the Superbuild directory:
+
+```
+ccmake <VeloView>/Superbuild
+```
+
+Enable the following options in the CMake configuration:
+
+```
+ENABLE_veloview=ON
+USE_SYSTEM_boost=ON
+USE_SYSTEM_python=ON
+USE_SYSTEM_qt=ON
+```
+
+Also be sure to set the `USE_SYSTEM_pcap` to the appropriate value, depending on
+whether you chose to use the system package or build it from source.
+
+Then run `make` or `make -jN` as usual to run the superbuild.
+
+
 Packaging
 ---------
 
