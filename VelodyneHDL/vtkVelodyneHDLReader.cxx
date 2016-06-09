@@ -1208,6 +1208,10 @@ void vtkVelodyneHDLReader::vtkInternal::Init()
 //-----------------------------------------------------------------------------
 void vtkVelodyneHDLReader::vtkInternal::SplitFrame(bool force)
 {
+  if(this->CurrentDataset->GetNumberOfPoints() == 0)
+    {
+    return;
+    }
   if(this->SplitCounter > 0 && !force)
     {
     this->SplitCounter--;
@@ -1479,7 +1483,7 @@ int vtkVelodyneHDLReader::ReadFrameInformation()
 
   filePositions.push_back(lastFilePosition);
   skips.push_back(0);
-
+  bool IsEmptyFrame = true;
   while (reader.NextPacket(data, dataLength, timeSinceStart))
     {
 
@@ -1501,11 +1505,24 @@ int vtkVelodyneHDLReader::ReadFrameInformation()
       {
       HDLFiringData firingData = dataPacket->firingData[i];
 
+      // Test if all lasers had a positive distance
+      for(int laserID = 0; laserID < HDL_LASER_PER_FIRING; laserID++)
+        {
+        if(firingData.laserReturns[laserID].distance != 0)
+            IsEmptyFrame = false;
+        }
+
       if (firingData.rotationalPosition < lastAzimuth)
         {
-        filePositions.push_back(lastFilePosition);
-        skips.push_back(i);
+        // Add file position if the frame is not empty
+        if(!IsEmptyFrame)
+          {
+          filePositions.push_back(lastFilePosition);
+          skips.push_back(i);
+          }
         this->UpdateProgress(0.0);
+        // We start a new frame, reinitialize the boolean
+        IsEmptyFrame = true;
         }
 
       lastAzimuth = firingData.rotationalPosition;
