@@ -292,7 +292,7 @@ public:
                       const HDLLaserReturn* laserReturn,
                       const HDLLaserCorrection* correction,
                       vtkTransform* geotransform,
-                      bool dualReturn);
+                      const bool hasDualReturn);
 };
 
 //-----------------------------------------------------------------------------
@@ -926,7 +926,7 @@ void vtkVelodyneHDLReader::vtkInternal::PushFiringData(const unsigned char laser
                                                        const HDLLaserReturn* laserReturn,
                                                        const HDLLaserCorrection* correction,
                                                        vtkTransform* geotransform,
-                                                       const bool dualReturn)
+                                                       const bool hasDualReturn)
 {
   azimuth %= 36000;
   const vtkIdType thisPointId = this->Points->GetNumberOfPoints();
@@ -973,7 +973,7 @@ void vtkVelodyneHDLReader::vtkInternal::PushFiringData(const unsigned char laser
     }
 
   // Do not add any data before here as this might short-circuit
-  if (dualReturn)
+  if (hasDualReturn)
     {
     const vtkIdType dualPointId = this->LastPointId[rawLaserId];
     if (dualPointId < this->FirstPointIdThisReturn)
@@ -1338,6 +1338,7 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(unsigned char *data, st
 {
   if (bytesReceived != 1206)
     {
+    // Data-Packet Specifications says that laser-packets are 1206 byte long.
     return;
     }
 
@@ -1415,6 +1416,7 @@ int vtkVelodyneHDLReader::ReadFrameInformation()
 
   std::vector<fpos_t> filePositions;
   std::vector<int> skips;
+  unsigned long long numberOfFiringPackets= 0;
 
   fpos_t lastFilePosition;
   reader.GetFilePosition(&lastFilePosition);
@@ -1432,6 +1434,7 @@ int vtkVelodyneHDLReader::ReadFrameInformation()
       }
 
     const HDLDataPacket* dataPacket = reinterpret_cast<const HDLDataPacket *>(data);
+    numberOfFiringPackets++;
 
 //    unsigned int timeDiff = dataPacket->gpsTimestamp - lastTimestamp;
 //    if (timeDiff > 600 && lastTimestamp != 0)
