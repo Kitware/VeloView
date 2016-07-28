@@ -43,6 +43,8 @@ add_external_project(paraview
 
     -DModule_vtklibproj4:BOOL=TRUE
 
+    -DPQWIDGETS_DISABLE_QTWEBKIT:BOOL=ON
+
     # specify the apple app install prefix. No harm in specifying it for all
     # platforms.
     -DMACOSX_APP_INSTALL_PREFIX:PATH=<INSTALL_DIR>/Applications
