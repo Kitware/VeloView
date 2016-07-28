@@ -9,13 +9,23 @@
 # endif()
 
 if (WIN32)
+  if (64bit_build)
+    add_revision(python
+      URL "http://www.paraview.org/files/dependencies/python+deps.tar.bz2"
+      URL_MD5 "4318b8f771eda5606d9ce7f0be9f82e1")
+  else ()
+    add_revision(python
+      URL "http://www.paraview.org/files/dependencies/python+deps-x32.tar.bz2"
+      URL_MD5 "6ba441784a672e08379d23ddd61146f0")
+  endif ()
+elseif (CROSS_BUILD_STAGE STREQUAL "CROSS")
   add_revision(python
-    URL "http://www.python.org/ftp/python/2.7.3/Python-2.7.3.tgz"
-    URL_MD5 "2cf641732ac23b18d139be077bd906cd")
+    URL "http://www.paraview.org/files/dependencies/Python-2.7.3_CMake-7d1eb56.tar.bz2"
+    URL_MD5 "48121a265837f825b1136ca8cf9bc4cd")
 else()
   add_revision(python
-    URL "http://paraview.org/files/v3.98/dependencies/Python-2.7.2.tgz"
-    URL_MD5 "0ddfe265f1b3d0a8c2459f5bf66894c7")
+    URL "http://paraview.org/files/dependencies/Python-2.7.11.tgz"
+    URL_MD5 "6b6076ec9e93f05dd63e47eb9c15728b")
 endif()
 
 add_revision(qt
