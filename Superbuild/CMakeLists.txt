@@ -88,6 +88,9 @@ string (STRIP "${cflags}"  cflags)
 #  "Turn this ON to build command lines tools alone." OFF)
 
 if (WIN32)
+  # Since it only compile with ninja, let's provide it
+  file(COPY ${SuperBuild_PROJECTS_DIR}/win32/ninja.exe
+       DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
   if ( (NOT "${CMAKE_GENERATOR}" MATCHES "^NMake.*$") OR
        (NOT "${CMAKE_GENERATOR}" MATCHES "^Visual Studio.*$"))
     # not use VS environment. We need to be pointed to nmake and devenv paths
