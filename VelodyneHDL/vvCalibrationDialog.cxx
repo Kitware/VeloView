@@ -34,7 +34,7 @@ public:
 #if defined(_WIN32)
     hdl32builtin = QCoreApplication::applicationDirPath() + "/../share/HDL-32.xml";
     vlp16builtin = QCoreApplication::applicationDirPath() + "/../share/VLP-16.xml";
-#elseif defined(__APPLE__)
+#elif defined(__APPLE__)
     hdl32builtin =  QCoreApplication::applicationDirPath() + "/../Resources/HDL-32.xml";
     vlp16builtin =  QCoreApplication::applicationDirPath() + "/../Resources/VLP-16.xml";
 #else
