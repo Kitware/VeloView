@@ -67,6 +67,12 @@ get_filename_component(paraview_lib_location ${paraview_lib_location} PATH)
 find_library(PYTHONQTPLUGIN_LIBRARY PythonQtPlugin HINTS ${paraview_lib_location}  DOC "ParaView PythonQt plugin library")
 mark_as_advanced(PYTHONQTPLUGIN_LIBRARY)
 
+if(WIN32 AND MSVC)
+  if(MSVC_VERSION GREATER 1699)
+    add_definitions(/D_ALLOW_KEYWORD_MACROS)
+  endif()
+  add_definitions(/Dinline=__inline)
+endif()
 
 set (source_files
   vvMainWindow.cxx
