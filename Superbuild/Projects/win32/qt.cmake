@@ -21,7 +21,7 @@ add_external_project_or_use_system(
                     -nomake tests
                     -qt-libjpeg
                     -qt-libtiff
-                    -webkit
+                    #-webkit 
                     -xmlpatterns
                     -I <INSTALL_DIR>/include
                     -L <INSTALL_DIR>/lib
