@@ -1,1 +1,2 @@
+Superbuild/Projects/patches/*.patch -text
 *.pdf binary
