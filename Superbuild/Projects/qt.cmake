@@ -4,7 +4,6 @@ if (NOT APPLE AND UNIX)
   list (APPEND qt_depends freetype fontconfig png)
   list (APPEND qt_options
                -qt-libpng
-               -qt-libzlib
                -I <INSTALL_DIR>/include/freetype2
                -I <INSTALL_DIR>/include/fontconfig)
   # Fix Qt build failure with GCC 4.1.
@@ -50,7 +49,7 @@ add_external_project_or_use_system(
                       -qt-libjpeg
                       -qt-libtiff
                       -qt-zlib
-                      -webkit
+                      -no-webkit
                       -xmlpatterns
                       -I <INSTALL_DIR>/include
                       -L <INSTALL_DIR>/lib
