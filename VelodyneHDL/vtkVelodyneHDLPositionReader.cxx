@@ -402,7 +402,7 @@ int vtkVelodyneHDLPositionReader::RequestData(vtkInformation *request,
   unsigned int dataLength;
   double timeSinceStart;
 
-  PROJ *pj_utm = NULL;
+  projPJ pj_utm = NULL;
   // PROJ *pj_latlong;
   // const char *latlonargs[4] = {"+proj=longlat", "+ellps=WGS84",
   //                              "+datum=WGS84",  "+no_defs" };
@@ -464,44 +464,41 @@ int vtkVelodyneHDLPositionReader::RequestData(vtkInformation *request,
         {
         assert(!pj_utm);
         this->Internal->UTMZone = LatLongToZone(lat, lon);
-        std::vector<const char*> utmparams;
-        utmparams.push_back("+proj=utm");
+        std::stringstream utmparams;
+        utmparams <<"+proj=utm ";
         std::stringstream zone;
         zone << "+zone=" << this->Internal->UTMZone;
         this->Internal->UTMString = zone.str();
         // WARNING: Dont let the string stream pass out of scope until
         // we finish initialization
-        utmparams.push_back(this->Internal->UTMString.c_str());
+        utmparams << this->Internal->UTMString << " ";
         if(lat < 0)
           {
-          utmparams.push_back("+south");
+          utmparams << "+south ";
           }
 
-        utmparams.push_back("+ellps=WGS84");
-        utmparams.push_back("+units=m");
-        utmparams.push_back("+no_defs");
-        pj_utm = proj_init(utmparams.size(), const_cast<char**>(&(utmparams[0])));
-        }
-      else
-        {
-        assert(pj_utm);
+        utmparams << "+ellps=WGS84 ";
+        utmparams << "+units=m ";
+        utmparams << "+no_defs ";
+        pj_utm = pj_init_plus(utmparams.str().c_str());
         }
 
+      assert(pj_utm);
       // Need to convert decimal to minutes
 
       // PROJ_XY xy;
       // xy.x = lon * DEG_TO_RAD;
       // xy.y = lat * DEG_TO_RAD;
 
-      PROJ_LP lp;
-      lp.phi = lat * DEG_TO_RAD;
-      lp.lam = lon * DEG_TO_RAD;
+      projUV lp;
+      lp.u = lat * DEG_TO_RAD;
+      lp.v = lon * DEG_TO_RAD;
 
-      PROJ_XY xy;
-      xy = proj_fwd( lp, pj_utm);
+      projUV xy;
+      xy = pj_fwd( lp, pj_utm);
 
-      double x = xy.x;
-      double y = xy.y;
+      double x = xy.u;
+      double y = xy.v;
       double z = 0;
 
       if(pointcount == 0)
@@ -565,7 +562,7 @@ int vtkVelodyneHDLPositionReader::RequestData(vtkInformation *request,
 
   if(pj_utm)
     {
-    proj_free(pj_utm);
+    pj_free(pj_utm);
     }
 
   return 1;
