@@ -1,3 +1,7 @@
+set(compiler_platform win32-msvc2012)
+if (false)
+  set(compiler_platform win32-g++)
+endif()
 # fix the zdll.lib issue (qt wants the library to be named differently hence
 # skipping using our zlib on windows. Let qt build its own zlib.)
 add_external_project_or_use_system(
@@ -22,6 +26,8 @@ add_external_project_or_use_system(
                     -qt-libjpeg
                     -qt-libtiff
                     #-webkit 
+                    -no-webkit
+                    -platform ${compiler_platform}
                     -xmlpatterns
                     -I <INSTALL_DIR>/include
                     -L <INSTALL_DIR>/lib
