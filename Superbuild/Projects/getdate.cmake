@@ -63,14 +63,16 @@ macro(GET_DATE)
     # May need adjustment in different locales or for custom date/time formats
     # set in the Windows Control Panel.
     #
-    set(${GD_PREFIX}CMD "cmd")
-    set(${GD_PREFIX}ARGS "/c echo %DATE% %TIME%")
+    set(${GD_PREFIX}CMD "wmic")
+    set(${GD_PREFIX}ARGS "os get localdatetime")
+	# This output the current date-time in following format:
+    #      YYYYMMDDhhmmss.ffffffSzzz
   else()
     #
-    # Match the format returned by default in US English Windows:
+    # Match the format returned by default in wmic:
     #
     set(${GD_PREFIX}CMD "date")
-    set(${GD_PREFIX}ARGS "\"+%a %m/%d/%Y %H:%M:%S.00\"")
+    set(${GD_PREFIX}ARGS "\"+%Y%m%d%H%M%S.000000\"")
   endif()
 
   exec_program("${${GD_PREFIX}CMD}" "." ARGS "${${GD_PREFIX}ARGS}"
@@ -99,16 +101,15 @@ macro(GET_DATE)
     # Extract eight individual components by matching a regex with paren groupings.
     # Use the replace functionality and \\1 thru \\8 to extract components.
     #
-    set(${GD_PREFIX}REGEX "([^ ]+) +([^/]+)/([^/]+)/([^ ]+) +([^:]+):([^:]+):([^\\.]+)\\.(.*)")
+    set(${GD_PREFIX}REGEX ".*([0-9][0-9][0-9][0-9])([0-9][0-9])([0-9][0-9])([0-9][0-9])([0-9][0-9])([0-9][0-9])\\.(.*)")
 
-    string(REGEX REPLACE "${${GD_PREFIX}REGEX}" "\\1" ${GD_PREFIX}DAY_OF_WEEK "${${GD_PREFIX}OV}")
     string(REGEX REPLACE "${${GD_PREFIX}REGEX}" "\\2" ${GD_PREFIX}MONTH "${${GD_PREFIX}OV}")
     string(REGEX REPLACE "${${GD_PREFIX}REGEX}" "\\3" ${GD_PREFIX}DAY "${${GD_PREFIX}OV}")
-    string(REGEX REPLACE "${${GD_PREFIX}REGEX}" "\\4" ${GD_PREFIX}YEAR "${${GD_PREFIX}OV}")
-    string(REGEX REPLACE "${${GD_PREFIX}REGEX}" "\\5" ${GD_PREFIX}HOUR "${${GD_PREFIX}OV}")
-    string(REGEX REPLACE "${${GD_PREFIX}REGEX}" "\\6" ${GD_PREFIX}MINUTE "${${GD_PREFIX}OV}")
-    string(REGEX REPLACE "${${GD_PREFIX}REGEX}" "\\7" ${GD_PREFIX}SECOND "${${GD_PREFIX}OV}")
-    string(REGEX REPLACE "${${GD_PREFIX}REGEX}" "\\8" ${GD_PREFIX}FRACTIONAL_SECOND "${${GD_PREFIX}OV}")
+    string(REGEX REPLACE "${${GD_PREFIX}REGEX}" "\\1" ${GD_PREFIX}YEAR "${${GD_PREFIX}OV}")
+    string(REGEX REPLACE "${${GD_PREFIX}REGEX}" "\\4" ${GD_PREFIX}HOUR "${${GD_PREFIX}OV}")
+    string(REGEX REPLACE "${${GD_PREFIX}REGEX}" "\\5" ${GD_PREFIX}MINUTE "${${GD_PREFIX}OV}")
+    string(REGEX REPLACE "${${GD_PREFIX}REGEX}" "\\6" ${GD_PREFIX}SECOND "${${GD_PREFIX}OV}")
+    string(REGEX REPLACE "${${GD_PREFIX}REGEX}" "\\7" ${GD_PREFIX}FRACTIONAL_SECOND "${${GD_PREFIX}OV}")
 
     #
     # Verify that extracted components don't have anything obviously
