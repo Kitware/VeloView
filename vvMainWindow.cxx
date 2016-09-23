@@ -144,7 +144,7 @@ private:
     window->setCentralWidget(splitter);
 
     // Add the main widget to the left
-    splitter->addWidget(view->getWidget());
+    splitter->addWidget(view->widget());
 
     QSplitter* vSplitter = new QSplitter(Qt::Vertical);
     splitter->addWidget(vSplitter);
@@ -154,13 +154,13 @@ private:
     overheadView->getProxy()->UpdateVTKObjects();
     // dont add to the splitter just yet
     // TODO: These sizes should not be absolute things
-    overheadView->getWidget()->setMinimumSize(300, 200);
-    vSplitter->addWidget(overheadView->getWidget());
+    overheadView->widget()->setMinimumSize(300, 200);
+    vSplitter->addWidget(overheadView->widget());
     new vvToggleSpreadSheetReaction(this->Ui.actionOverheadView, overheadView);
 
     pqView* spreadsheetView = builder->createView(pqSpreadSheetView::spreadsheetViewType(), server);
     spreadsheetView->getProxy()->UpdateVTKObjects();
-    vSplitter->addWidget(spreadsheetView->getWidget());
+    vSplitter->addWidget(spreadsheetView->widget());
     new vvToggleSpreadSheetReaction(this->Ui.actionSpreadsheet, spreadsheetView);
     pqSpreadSheetView* ssview = qobject_cast<pqSpreadSheetView*>(spreadsheetView);
     assert(spreadsheetView);
