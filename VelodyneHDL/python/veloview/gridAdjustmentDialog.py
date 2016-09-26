@@ -40,6 +40,7 @@ def showDialog(mainWindow, grid):
 
     w('GridResolution').setValue(grid.Scale)
     w('GridWidth').setValue(grid.Scale*grid.GridSize)
+    w('GridLineWidth').setValue(grid.LineWidth)
 
     accepted = dialog.exec_()
     if not accepted:
@@ -49,5 +50,6 @@ def showDialog(mainWindow, grid):
     grid.Origin = [-w('SensorOriginX').value, -w('SensorOriginY').value, -w('SensorOriginZ').value]
     grid.Scale = w('GridResolution').value
     grid.GridSize = int(math.ceil(w('GridWidth').value / w('GridResolution').value))
+    grid.LineWidth = w('GridLineWidth').value
 
     return True

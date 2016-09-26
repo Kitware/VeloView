@@ -1511,7 +1511,7 @@ def createGrid(view=None):
     view = view or smp.GetActiveView()
     grid = smp.VelodyneHDLGridSource(guiName='Measurement Grid')
     rep = smp.Show(grid, view)
-    rep.DiffuseColor = [0.2, 0.2, 0.2]
+    rep.LineWidth = grid.LineWidth
     rep.Pickable = 0
     rep.Visibility = 0
     smp.SetActiveSource(None)
@@ -1695,6 +1695,8 @@ def onTimeChanged():
 
 def onGridProperties():
     if gridAdjustmentDialog.showDialog(getMainWindow(), app.grid):
+        rep = smp.Show(app.grid, None)
+        rep.LineWidth = app.grid.LineWidth
         smp.Render()
 
 

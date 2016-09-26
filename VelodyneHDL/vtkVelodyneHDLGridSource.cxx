@@ -49,6 +49,7 @@ vtkVelodyneHDLGridSource::vtkVelodyneHDLGridSource()
 {
   this->GridSize = 10;
   this->Scale = 10.0;
+  this->LineWidth = 1;
 
   this->Origin[0] = 0.0;
   this->Origin[1] = 0.0;

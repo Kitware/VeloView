@@ -48,6 +48,9 @@ public:
   vtkSetMacro(Scale, double);
   vtkGetMacro(Scale, double);
 
+  vtkSetMacro(LineWidth, int);
+  vtkGetMacro(LineWidth, int);
+
   vtkSetVector3Macro(Origin, double);
   vtkGetVector3Macro(Origin, double);
 
@@ -66,6 +69,7 @@ protected:
 
   int GridSize;
   double Scale;
+  int LineWidth;
   double Origin[3];
   double Normal[3];
 
