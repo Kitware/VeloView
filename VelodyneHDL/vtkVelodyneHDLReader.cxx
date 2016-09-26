@@ -103,8 +103,8 @@ struct HDLDataPacket
 {
   HDLFiringData firingData[HDL_FIRING_PER_PKT];
   unsigned int gpsTimestamp;
-  unsigned char blank1;
-  unsigned char blank2;
+  unsigned char dataType;
+  unsigned char dataValue;
 };
 
 struct HDLLaserCorrection
