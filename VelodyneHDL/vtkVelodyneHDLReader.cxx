@@ -31,6 +31,7 @@
 #include "vtkPacketFileReader.h"
 #include "vtkPacketFileWriter.h"
 #include "vtkVelodyneTransformInterpolator.h"
+#include "vtkRollingDataAccumulator.h"
 
 #include <vtkCellArray.h>
 #include <vtkCellData.h>
@@ -52,6 +53,7 @@
 #include <vtkUnsignedShortArray.h>
 
 #include <vtkTransform.h>
+
 
 #include <sstream>
 #include <algorithm>
@@ -217,11 +219,16 @@ public:
     this->IsDualReturnSensorMode = false;
     this->IsHDL64Data = false;
 
+    this->rollingCalibrationData = new vtkRollingDataAccumulator();
     this->Init();
   }
 
   ~vtkInternal()
   {
+    if (this->rollingCalibrationData)
+      {
+        delete this->rollingCalibrationData;
+      }
   }
 
   std::vector<vtkSmartPointer<vtkPolyData> > Datasets;
@@ -263,6 +270,9 @@ public:
   HDLLaserCorrection laser_corrections_[HDL_MAX_NUM_LASERS];
   int CalibrationReportedNumLasers;
   bool CorrectionsInitialized;
+
+  // Sensor parameters presented as rolling data, extracted from enough packets
+  vtkRollingDataAccumulator * rollingCalibrationData;
 
   // User configurable parameters
   int NumberOfTrailingFrames;
@@ -1511,6 +1521,13 @@ int vtkVelodyneHDLReader::ReadFrameInformation()
       lastAzimuth = firingData.rotationalPosition;
       }
 
+    // Accumulate Status byte data
+    if(this->Internal->IsHDL64Data)
+      {
+        this->Internal->rollingCalibrationData->appendData(
+              dataPacket->gpsTimestamp,
+              dataPacket->dataType, dataPacket->dataValue);
+      }
     lastTimestamp = dataPacket->gpsTimestamp;
     reader.GetFilePosition(&lastFilePosition);
     }

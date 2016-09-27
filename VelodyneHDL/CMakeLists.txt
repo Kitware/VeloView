@@ -91,6 +91,7 @@ if(PARAVIEW_BUILD_QT_GUI)
   set(non_vtk_sources
     vtkLASFileWriter.cxx
     vtkPacketFileWriter.cxx
+    vtkRollingDataAccumulator.cxx
     vvPacketSender.cxx
     )
 
