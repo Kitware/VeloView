@@ -171,7 +171,7 @@ int vtkVelodyneHDLPositionReader::vtkInternal::ProcessHDLPacket(const unsigned c
       (position.accely[i] & REMAINDER_12_MASK);
     }
 
-  memcpy(&position.gpsTimestamp, data + 14 + 8+8+8 + 160, 4);
+  memcpy(&position.gpsTimestamp, data + 14 + 3*8 + 160, 4);
 
   std::copy(data + 14 + 8 + 8 + 8 + 160 + 4 + 4,
             data + 14 + 8 + 8 + 8 + 160 + 4 + 4 + 72,
