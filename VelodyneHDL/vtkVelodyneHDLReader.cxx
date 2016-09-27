@@ -165,6 +165,26 @@ double VLP16AdjustTimeStamp(int firingblock,
   return (firingblock * 110.592) + (dsr * 2.304) + (firingwithinblock * 55.296);
 }
 
+//-----------------------------------------------------------------------------
+double HDL64EAdjustTimeStamp(int firingblock,
+                            int dsr,
+                            const bool isDualReturnMode)
+{
+  if (!isDualReturnMode)
+    {
+      const double TimeOffsetMicroSec[4] = {2.34, 2.54, 4.74, 6.0};
+      const int dsr2 = HDL_LASER_PER_FIRING - dsr - 1;
+      return ((HDL_FIRING_PER_PKT - firingblock -1)/ 2 * 48.0)
+          + TimeOffsetMicroSec[(dsr2 % 4)] + (dsr2 / 4) * TimeOffsetMicroSec[3];
+    }
+  else
+    {
+      const double TimeOffsetMicroSec[4] = {3.5, 4.7, 5.9, 7.2};
+      const int dsr2 = HDL_LASER_PER_FIRING - dsr - 1;
+      return ((HDL_FIRING_PER_PKT - firingblock -1) / 4 * 57.6)
+          + TimeOffsetMicroSec[(dsr2 % 4)] + (dsr2 / 4) * TimeOffsetMicroSec[3];
+    }
+}
 }
 
 //-----------------------------------------------------------------------------
@@ -1265,19 +1285,28 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessFiring(HDLFiringData* firingData,
                                                       unsigned int rawtime,
                                                       vtkTransform* geotransform)
 {
-  const bool dual = (this->LastAzimuth == firingData->rotationalPosition) &&
-    (!this->IsHDL64Data);
+  // Here the logic is the following: Each firing in a packet encodes 32 lasers.
+  // Hence two consecutive firings with same azimuth denotes dual-return
+  //    for sensors with 32 dsr or less
+  // For 64 lasers sensors, dual return datas is detected if 3rd firing has same
+  //  rotationalPosition as firing 2.
+  //  Once DualReturnMode is detected, dual returns are firing 3,4 7,8 11,12
+  const bool isThisFiringDualReturnData =
+    (!this->IsHDL64Data)?(this->LastAzimuth == firingData->rotationalPosition):
+    (((this->LastAzimuth == firingData->rotationalPosition) && (firingBlock == 2))
+      || this->IsDualReturnSensorMode && (firingBlock % 4 >=2));
 
-  if (!dual)
-    {
-    this->FirstPointIdOfDualReturnPair = this->Points->GetNumberOfPoints();
-    }
-
-  if (dual && !this->IsDualReturnSensorMode)
+  if (isThisFiringDualReturnData  && !this->IsDualReturnSensorMode)
     {
     this->IsDualReturnSensorMode = true;
     this->CurrentDataset->GetPointData()->AddArray(this->DistanceFlag.GetPointer());
     this->CurrentDataset->GetPointData()->AddArray(this->IntensityFlag.GetPointer());
+    }
+
+  if(!isThisFiringDualReturnData
+       && (!this->IsHDL64Data || (this->IsHDL64Data && ((firingBlock % 4)==0))))
+    {
+    this->FirstPointIdOfDualReturnPair = this->Points->GetNumberOfPoints();
     }
 
   for (int dsr = 0; dsr < HDL_LASER_PER_FIRING; dsr++)
@@ -1299,14 +1328,24 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessFiring(HDLFiringData* firingData,
         }
       }
 
-    // Interpolate azimuth
+    // Interpolate azimuths and timestamps per laser within blocks
     double timestampadjustment, blockdsr0, nextblockdsr0;
+    int azimuthadjustment;
     switch(this->CalibrationReportedNumLasers){
+    case 64:
+      {
+      timestampadjustment = -HDL64EAdjustTimeStamp(firingBlock, dsr, this->IsDualReturnSensorMode);
+      nextblockdsr0 = -HDL64EAdjustTimeStamp(firingBlock + this->IsDualReturnSensorMode?4:2, 0, this->IsDualReturnSensorMode);
+      blockdsr0 = -HDL64EAdjustTimeStamp(firingBlock, 0, this->IsDualReturnSensorMode);
+      azimuthadjustment = vtkMath::Round(azimuthDiff * ((timestampadjustment - blockdsr0) / (nextblockdsr0 - blockdsr0)));
+      break;
+      }
     case 32:
       {
       timestampadjustment = HDL32AdjustTimeStamp(firingBlock, dsr);
       nextblockdsr0 = HDL32AdjustTimeStamp(firingBlock + 1, 0);
       blockdsr0 = HDL32AdjustTimeStamp(firingBlock, 0);
+      azimuthadjustment = vtkMath::Round(azimuthDiff * ((timestampadjustment - blockdsr0) / (nextblockdsr0 - blockdsr0)));
       break;
       }
     case 16:
@@ -1314,6 +1353,7 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessFiring(HDLFiringData* firingData,
       timestampadjustment = VLP16AdjustTimeStamp(firingBlock, laserId, firingWithinBlock);
       nextblockdsr0 = VLP16AdjustTimeStamp(firingBlock+1,0,0);
       blockdsr0 = VLP16AdjustTimeStamp(firingBlock,0,0);
+      azimuthadjustment = vtkMath::Round(azimuthDiff * ((timestampadjustment - blockdsr0) / (nextblockdsr0 - blockdsr0)));
       break;
       }
     default:
@@ -1321,9 +1361,9 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessFiring(HDLFiringData* firingData,
       timestampadjustment = 0.0;
       blockdsr0 = 0.0;
       nextblockdsr0 = 1.0;
+      azimuthadjustment = vtkMath::Round(azimuthDiff * ((timestampadjustment - blockdsr0) / (nextblockdsr0 - blockdsr0)));
       }
     }
-    int azimuthadjustment = vtkMath::Round(azimuthDiff * ((timestampadjustment - blockdsr0) / (nextblockdsr0 - blockdsr0)));
     timestampadjustment = vtkMath::Round(timestampadjustment);
 
     if (firingData->laserReturns[dsr].distance != 0.0 && this->LaserSelection[laserId])
@@ -1336,7 +1376,7 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessFiring(HDLFiringData* firingData,
                            &(firingData->laserReturns[dsr]),
                            &(laser_corrections_[dsr + firingBlockLaserOffset]),
                            geotransform,
-                           dual);
+                           isThisFiringDualReturnData );
       }
     }
 }
@@ -1367,25 +1407,29 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(unsigned char *data, st
   int firingBlock = this->Skip;
   this->Skip = 0;
 
-  // Compute the median of the packet's rotationalPosition differences
+  // Compute the total azimuth advanced during one full firing block
   std::vector<int> diffs (HDL_FIRING_PER_PKT - 1);
   for(int i = 0; i < HDL_FIRING_PER_PKT - 1; ++i)
     {
     int localDiff = (36000 + dataPacket->firingData[i+1].rotationalPosition -
                      dataPacket->firingData[i].rotationalPosition) % 36000;
     diffs[i] = localDiff;
+    this->IsHDL64Data |=
+        (dataPacket->firingData[i+1].blockIdentifier == BLOCK_32_TO_63);
     }
-  std::nth_element(diffs.begin(),
-                   diffs.begin() + HDL_FIRING_PER_PKT/2,
-                   diffs.end());
-  int azimuthDiff = diffs[HDL_FIRING_PER_PKT/2];
-  assert(azimuthDiff >= 0);
+  std::sort(diffs.begin(), diffs.end());
+  // Assume the median of the packet's rotationalPosition differences
+  int azimuthDiff = diffs[HDL_FIRING_PER_PKT / 2];
+  if (this->IsHDL64Data)
+    {
+    azimuthDiff = diffs[HDL_FIRING_PER_PKT - 2];
+    }
+  assert(azimuthDiff > 0);
 
   for ( ; firingBlock < HDL_FIRING_PER_PKT; ++firingBlock)
     {
     HDLFiringData* firingData = &(dataPacket->firingData[firingBlock]);
     int hdl64OffsetIf2ndBlock = (firingData->blockIdentifier == BLOCK_0_TO_31) ? 0 : 32;
-    this->IsHDL64Data |= (hdl64OffsetIf2ndBlock > 0);
 
     if (firingData->rotationalPosition < this->LastAzimuth)
       {
