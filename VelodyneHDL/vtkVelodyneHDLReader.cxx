@@ -281,7 +281,7 @@ public:
   vtkSmartPointer<vtkCellArray> NewVertexCells(vtkIdType numberOfVerts);
 
   void Init();
-  void InitTables();
+  void InitTrigonometricTables();
   void LoadCorrectionsFile(const std::string& filename);
 
   void ProcessHDLPacket(unsigned char *data, std::size_t bytesReceived);
@@ -1093,7 +1093,7 @@ void vtkVelodyneHDLReader::vtkInternal::PushFiringData(const unsigned char laser
 }
 
 //-----------------------------------------------------------------------------
-void vtkVelodyneHDLReader::vtkInternal::InitTables()
+void vtkVelodyneHDLReader::vtkInternal::InitTrigonometricTables()
 {
   if (cos_lookup_table_.size() == 0 || sin_lookup_table_.size() == 0)
     {
@@ -1201,7 +1201,7 @@ void vtkVelodyneHDLReader::vtkInternal::LoadCorrectionsFile(const std::string& c
 //-----------------------------------------------------------------------------
 void vtkVelodyneHDLReader::vtkInternal::Init()
 {
-  this->InitTables();
+  this->InitTrigonometricTables();
   this->SensorTransform->Identity();
 }
 
