@@ -1515,6 +1515,7 @@ def createGrid(view=None):
     grid = smp.VelodyneHDLGridSource(guiName='Measurement Grid')
     rep = smp.Show(grid, view)
     rep.LineWidth = grid.LineWidth
+    rep.DiffuseColor = grid.Color
     rep.Pickable = 0
     rep.Visibility = 0
     smp.SetActiveSource(None)
@@ -1700,6 +1701,7 @@ def onGridProperties():
     if gridAdjustmentDialog.showDialog(getMainWindow(), app.grid):
         rep = smp.Show(app.grid, None)
         rep.LineWidth = app.grid.LineWidth
+        rep.DiffuseColor = app.grid.Color
         smp.Render()
 
 

@@ -44,6 +44,13 @@
         default_values="0.0 0.0 1.0">
       </DoubleVectorProperty>
 
+      <DoubleVectorProperty
+        name="Color"
+        command="SetColor"
+        number_of_elements="3"
+        default_values="0.2 0.2 0.2">
+      </DoubleVectorProperty>
+
     </SourceProxy>
   </ProxyGroup>
   <!-- End vtkVelodyneHDLGridSource -->

@@ -57,6 +57,9 @@ public:
   vtkSetVector3Macro(Normal, double);
   vtkGetVector3Macro(Normal, double);
 
+  vtkSetVector3Macro(Color, double);
+  vtkGetVector3Macro(Color, double);
+
   static vtkSmartPointer<vtkPolyData> CreateGrid(int gridSize, double scale, double origin[3], double normal[3]);
 
 protected:
@@ -72,6 +75,7 @@ protected:
   int LineWidth;
   double Origin[3];
   double Normal[3];
+  double Color[3];
 
 private:
 

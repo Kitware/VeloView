@@ -59,6 +59,10 @@ vtkVelodyneHDLGridSource::vtkVelodyneHDLGridSource()
   this->Normal[1] = 0.0;
   this->Normal[2] = 1.0;
 
+  this->Color[0] = 0.2;
+  this->Color[1] = 0.2;
+  this->Color[2] = 0.2;
+
   this->SetNumberOfInputPorts(0);
   this->SetNumberOfOutputPorts(1);
 }
@@ -117,6 +121,7 @@ int vtkVelodyneHDLGridSource::RequestData(vtkInformation *request,
 
   if (this->GridSize < 1)
     {
+
     vtkErrorMacro("Specified grid size " << this->GridSize << " is out of range.  Must be >= 1.");
     return 0;
     }
