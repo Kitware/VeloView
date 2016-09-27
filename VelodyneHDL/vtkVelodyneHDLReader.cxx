@@ -1425,7 +1425,7 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(unsigned char *data, st
                      dataPacket->firingData[i].rotationalPosition) % 36000;
     diffs[i] = localDiff;
     this->IsHDL64Data |=
-        (dataPacket->firingData[i+1].blockIdentifier == BLOCK_32_TO_63);
+        (dataPacket->firingData[i].blockIdentifier == BLOCK_32_TO_63);
     }
   std::sort(diffs.begin(), diffs.end());
   // Assume the median of the packet's rotationalPosition differences
@@ -1509,16 +1509,18 @@ int vtkVelodyneHDLReader::ReadFrameInformation()
 
     for (int i = 0; i < HDL_FIRING_PER_PKT; ++i)
       {
-      HDLFiringData firingData = dataPacket->firingData[i];
+      const HDLFiringData * firingData = &(dataPacket->firingData[i]);
 
-      if (firingData.rotationalPosition < lastAzimuth)
+
+
+      if (firingData->rotationalPosition < lastAzimuth)
         {
         filePositions.push_back(lastFilePosition);
         skips.push_back(i);
         this->UpdateProgress(0.0);
         }
 
-      lastAzimuth = firingData.rotationalPosition;
+      lastAzimuth = firingData->rotationalPosition;
       }
 
     // Accumulate Status byte data
