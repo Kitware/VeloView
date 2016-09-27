@@ -76,59 +76,7 @@ namespace
 
 #define HDL_Grabber_toRadians(x) ((x) * vtkMath::Pi() / 180.0)
 
-const int HDL_NUM_ROT_ANGLES = 36001;
-const int HDL_LASER_PER_FIRING = 32;
-const int HDL_MAX_NUM_LASERS = 64;
-const int HDL_FIRING_PER_PKT = 12;
 
-enum HDLBlock
-{
-  BLOCK_0_TO_31 = 0xeeff,
-  BLOCK_32_TO_63 = 0xddff
-};
-
-#pragma pack(push, 1)
-typedef struct HDLLaserReturn
-{
-  unsigned short distance;
-  unsigned char intensity;
-} HDLLaserReturn;
-
-struct HDLFiringData
-{
-  unsigned short blockIdentifier;
-  unsigned short rotationalPosition;
-  HDLLaserReturn laserReturns[HDL_LASER_PER_FIRING];
-};
-
-struct HDLDataPacket
-{
-  HDLFiringData firingData[HDL_FIRING_PER_PKT];
-  unsigned int gpsTimestamp;
-  unsigned char dataType;
-  unsigned char dataValue;
-};
-
-struct HDLLaserCorrection
-{
-  double azimuthCorrection;
-  double verticalCorrection;
-  double distanceCorrection;
-  double verticalOffsetCorrection;
-  double horizontalOffsetCorrection;
-  double sinVertCorrection;
-  double cosVertCorrection;
-  double sinVertOffsetCorrection;
-  double cosVertOffsetCorrection;
-};
-
-struct HDLRGB
-{
-  uint8_t r;
-  uint8_t g;
-  uint8_t b;
-};
-#pragma pack(pop)
 
 //-----------------------------------------------------------------------------
 int MapFlags(unsigned int flags, unsigned int low, unsigned int high)
@@ -172,19 +120,21 @@ double HDL64EAdjustTimeStamp(int firingblock,
                             int dsr,
                             const bool isDualReturnMode)
 {
+  const int dsrReversed = vtkVelodyneHDLReader::HDL_LASER_PER_FIRING - dsr - 1;
+  const int firingblockReversed = vtkVelodyneHDLReader::HDL_FIRING_PER_PKT - firingblock - 1;
   if (!isDualReturnMode)
     {
       const double TimeOffsetMicroSec[4] = {2.34, 2.54, 4.74, 6.0};
-      const int dsr2 = HDL_LASER_PER_FIRING - dsr - 1;
-      return ((HDL_FIRING_PER_PKT - firingblock -1)/ 2 * 48.0)
-          + TimeOffsetMicroSec[(dsr2 % 4)] + (dsr2 / 4) * TimeOffsetMicroSec[3];
+      return (firingblockReversed/ 2 * 48.0)
+          + TimeOffsetMicroSec[(dsrReversed % 4)]
+          + (dsrReversed / 4) * TimeOffsetMicroSec[3];
     }
   else
     {
       const double TimeOffsetMicroSec[4] = {3.5, 4.7, 5.9, 7.2};
-      const int dsr2 = HDL_LASER_PER_FIRING - dsr - 1;
-      return ((HDL_FIRING_PER_PKT - firingblock -1) / 4 * 57.6)
-          + TimeOffsetMicroSec[(dsr2 % 4)] + (dsr2 / 4) * TimeOffsetMicroSec[3];
+      return (firingblockReversed / 4 * 57.6)
+          + TimeOffsetMicroSec[(dsrReversed % 4)]
+          + (dsrReversed / 4) * TimeOffsetMicroSec[3];
     }
 }
 }
@@ -1512,6 +1462,8 @@ int vtkVelodyneHDLReader::ReadFrameInformation()
       const HDLFiringData * firingData = &(dataPacket->firingData[i]);
 
 
+      this->Internal->IsHDL64Data |=
+          (firingData->blockIdentifier == BLOCK_32_TO_63);
 
       if (firingData->rotationalPosition < lastAzimuth)
         {
