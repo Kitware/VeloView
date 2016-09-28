@@ -16,6 +16,13 @@
         default_values="10">
       </IntVectorProperty>
 
+      <IntVectorProperty
+        name="LineWidth"
+        command="SetLineWidth"
+        number_of_elements="1"
+        default_values="1">
+      </IntVectorProperty>
+
       <DoubleVectorProperty
         name="Scale"
         command="SetScale"
@@ -35,6 +42,13 @@
         command="SetNormal"
         number_of_elements="3"
         default_values="0.0 0.0 1.0">
+      </DoubleVectorProperty>
+
+      <DoubleVectorProperty
+        name="Color"
+        command="SetColor"
+        number_of_elements="3"
+        default_values="0.2 0.2 0.2">
       </DoubleVectorProperty>
 
     </SourceProxy>

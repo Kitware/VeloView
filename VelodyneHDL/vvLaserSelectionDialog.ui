@@ -13,6 +13,9 @@
   <property name="windowTitle">
    <string>Laser Selection</string>
   </property>
+  <property name="modal">
+   <bool>false</bool>
+  </property>
   <layout class="QGridLayout" name="gridLayout">
    <item row="0" column="1">
     <widget class="QCheckBox" name="EnableDisableAll">
@@ -59,7 +62,7 @@
        <string/>
       </property>
       <property name="textAlignment">
-       <set>AlignHCenter|AlignVCenter|AlignCenter</set>
+       <set>AlignCenter</set>
       </property>
      </column>
      <column>
@@ -67,7 +70,7 @@
        <string>Vertical Angle</string>
       </property>
       <property name="textAlignment">
-       <set>AlignHCenter|AlignVCenter|AlignCenter</set>
+       <set>AlignCenter</set>
       </property>
      </column>
      <column>
@@ -75,7 +78,7 @@
        <string>Channel</string>
       </property>
       <property name="textAlignment">
-       <set>AlignHCenter|AlignVCenter|AlignCenter</set>
+       <set>AlignCenter</set>
       </property>
      </column>
     </widget>
