@@ -102,6 +102,9 @@ public:
     double cosVertCorrection;
     double sinVertOffsetCorrection;
     double cosVertOffsetCorrection;
+
+    short minIntensity;
+    short maxIntensity;
   };
 
   struct HDLRGB

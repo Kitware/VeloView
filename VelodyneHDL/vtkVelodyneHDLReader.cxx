@@ -243,6 +243,7 @@ public:
   void Init();
   void InitTrigonometricTables();
   void LoadCorrectionsFile(const std::string& filename);
+  bool HDL64LoadCorrectionsFromStreamData();
 
   void ProcessHDLPacket(unsigned char *data, std::size_t bytesReceived);
 
@@ -518,6 +519,7 @@ void vtkVelodyneHDLReader::UnloadData()
   this->Internal->LastTimestamp = std::numeric_limits<unsigned int>::max();
   this->Internal->TimeAdjust = std::numeric_limits<double>::quiet_NaN();
 
+  this->Internal->rollingCalibrationData->clear();
   this->Internal->IsDualReturnSensorMode = false;
   this->Internal->IsHDL64Data = false;
   this->Internal->Datasets.clear();
@@ -1481,6 +1483,7 @@ int vtkVelodyneHDLReader::ReadFrameInformation()
         this->Internal->rollingCalibrationData->appendData(
               dataPacket->gpsTimestamp,
               dataPacket->dataType, dataPacket->dataValue);
+        this->Internal->HDL64LoadCorrectionsFromStreamData();
       }
     lastTimestamp = dataPacket->gpsTimestamp;
     reader.GetFilePosition(&lastFilePosition);
@@ -1490,3 +1493,92 @@ int vtkVelodyneHDLReader::ReadFrameInformation()
   this->Internal->Skips = skips;
   return this->GetNumberOfFrames();
 }
+
+#pragma pack(push, 1)
+struct HDLLaserCorrectionByte
+  { // This is the per laser 64-byte struct in the rolling data
+  unsigned char channel;
+  signed short verticalCorrection;    // This is in 100th of degree
+  signed short rotationalCorrection;  // This is in 100th of degree
+  signed short farDistanceCorrection; // This is in millimeter
+
+  unsigned char  dummychar1;
+  unsigned short dummyshort11;
+  unsigned short dummyshort12;
+  unsigned short dummyshort13;
+  unsigned short dummyshort14;
+
+  signed short distanceCorrectionX;
+  signed short distanceCorrectionV;
+  signed short verticalOffset;
+
+  unsigned char horizontalOffsetByte1;
+
+  unsigned char  dummychar2;
+  unsigned short dummyshort21;
+  unsigned short dummyshort22;
+  unsigned short dummyshort23;
+  unsigned short dummyshort24;
+
+  unsigned char horizontalOffsetByte2;
+
+  signed short focalDistance;
+  signed short focalSlope;
+
+  unsigned char minIntensity;
+  unsigned char maxIntensity;
+  };
+#pragma pack(pop)
+//
+bool vtkVelodyneHDLReader::vtkInternal::HDL64LoadCorrectionsFromStreamData()
+  {
+  std::vector<unsigned char> data;
+  if(this->CorrectionsInitialized ||
+     !this->rollingCalibrationData->getAlignedRollingData(data))
+    {
+    return false;
+    }
+  const int strt=12;
+  for (int dsr = 0; dsr < vtkVelodyneHDLReader::HDL_MAX_NUM_LASERS; ++dsr)
+    {
+    const HDLLaserCorrectionByte * correctionStream=
+        reinterpret_cast<const HDLLaserCorrectionByte*>(&data[strt + 64 * dsr]);
+    if (correctionStream->channel != dsr)
+      {
+      return false;
+      }
+    vtkVelodyneHDLReader::HDLLaserCorrection & vvCorrection = laser_corrections_[correctionStream->channel];
+    vvCorrection.verticalCorrection = correctionStream->verticalCorrection / 100.0;
+    vvCorrection.rotationalCorrection = correctionStream->rotationalCorrection / 100.0;
+    vvCorrection.distanceCorrection = correctionStream->farDistanceCorrection / 1000.0;
+
+    vvCorrection.distanceCorrectionX = correctionStream->distanceCorrectionX / 1000.0;
+    vvCorrection.distanceCorrectionY = correctionStream->distanceCorrectionV / 1000.0;
+    vvCorrection.verticalOffsetCorrection = correctionStream->verticalOffset / 1000.0;
+    // The following manipulation is needed because of the two byte for this
+    //  parameter are not side-by-side
+    vvCorrection.horizontalOffsetCorrection =
+        this->rollingCalibrationData->signedShortFromTwoLittleEndianBytes(
+                                correctionStream->horizontalOffsetByte1,
+                                correctionStream->horizontalOffsetByte2) / 1000.0;
+    vvCorrection.focalDistance = correctionStream->focalDistance / 1000.0;
+    vvCorrection.focalSlope = correctionStream->focalSlope / 1000.0;
+    vvCorrection.minIntensity = correctionStream->minIntensity;
+    vvCorrection.maxIntensity = correctionStream->maxIntensity;
+    }
+
+  this->CalibrationReportedNumLasers = 64;
+  for (int i = 0; i < HDL_MAX_NUM_LASERS; i++)
+    {
+    HDLLaserCorrection &correction = laser_corrections_[i];
+    correction.cosVertCorrection =
+        std::cos (HDL_Grabber_toRadians(correction.verticalCorrection));
+    correction.sinVertCorrection =
+        std::sin (HDL_Grabber_toRadians(correction.verticalCorrection));
+    correction.sinVertOffsetCorrection = correction.verticalOffsetCorrection
+                                       * correction.sinVertCorrection;
+    correction.cosVertOffsetCorrection = correction.verticalOffsetCorrection
+                                       * correction.cosVertCorrection;
+    }
+  this->CorrectionsInitialized = true;
+  }

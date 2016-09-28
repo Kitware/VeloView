@@ -15,57 +15,32 @@
 #include "vtkRollingDataAccumulator.h"
 #include "vtkVelodyneHDLReader.h"
 
-#pragma pack(push, 1)
-struct HDLLaserCorrectionByte
-    // This is the 64-byte struct inn the rolling data
-{
-  unsigned char channel;
-  unsigned short verticalCorrection;
-  unsigned short rotationalCorrection;
-  unsigned short farDistanceCorrection;
-
-  unsigned char  dummychar1;
-  unsigned short dummyshort11;
-  unsigned short dummyshort12;
-  unsigned short dummyshort13;
-  unsigned short dummyshort14;
-  unsigned short dummyshort15;
-
-  short distanceCorrectionX;
-  short distanceCorrectionV;
-  short verticalOffset;
-
-  unsigned char horizontalOffsetPart1;
-
-  unsigned short dummyshort21;
-  unsigned short dummyshort22;
-  unsigned short dummyshort23;
-  unsigned short dummyshort24;
-  unsigned short dummyshort25;
-
-  unsigned char horizontalOffsetPart2;
-
-  unsigned short focalDistance;
-  unsigned short focalSlope;
-
-  unsigned char minIntensity;
-  unsigned char maxIntensity;
-};
-
+signed short vtkRollingDataAccumulator::signedShortFromTwoLittleEndianBytes(unsigned char b1,unsigned char b2)
+  {
+  return static_cast<signed short>( (static_cast<unsigned short>(b2) << 8)
+                                    + static_cast<unsigned short>(b1));
+  }
 vtkRollingDataAccumulator::vtkRollingDataAccumulator()
+  : beginMarkerValuePair(0,'5','#')
 {
 }
 
 //--------------------------------------------------------------------------------
 vtkRollingDataAccumulator::~vtkRollingDataAccumulator()
 {
-//  this->Close();
 }
-
+void vtkRollingDataAccumulator::clear()
+  {
+    this->beginPosition.clear();
+    this->accumulatedData.clear();
+    this->accumulatedDataType.clear();
+    this->accumulatedValue.clear();
+  }
 
 void vtkRollingDataAccumulator::appendData(TypeValueDataPair valuePair)
   {
-    if (valuePair.dataType == '5' && valuePair.dataValue == '#')
+    if (valuePair.dataType == this->beginMarkerValuePair.dataType
+        && valuePair.dataValue == this->beginMarkerValuePair.dataValue)
       {
       beginPosition.push_back(this->accumulatedData.size());
       }
@@ -73,10 +48,28 @@ void vtkRollingDataAccumulator::appendData(TypeValueDataPair valuePair)
     this->accumulatedDataType.push_back(valuePair.dataType);
     this->accumulatedValue.push_back(valuePair.dataValue);
   }
-void vtkRollingDataAccumulator::isCalibrationReady()
+bool vtkRollingDataAccumulator::areRollingDataReady() const
   {
-    // We want to have at least twice the data, to be sure.
-    return this->accumulatedData.size() > 4160*2;
+    // We want to have received numberOfRoundNeeded times the data, to be sure.
+    return (this->accumulatedData.size() > this->expectedLength * numberOfRoundNeeded)
+        && (beginPosition.size() > this->numberOfRoundNeeded-1);
+  }
+bool vtkRollingDataAccumulator::getGoodSequenceId(int & idRollingSequence) const
+  {
+    idRollingSequence = 0;
+    while (idRollingSequence<(beginPosition.size()-1) &&
+           (  beginPosition[idRollingSequence]<byteBeforeMarker
+           || ((beginPosition[idRollingSequence+1]-beginPosition[idRollingSequence])
+               !=expectedLength)))
+      {
+      idRollingSequence++;
+      }
+    if (idRollingSequence == beginPosition.size()-1)
+      {
+      idRollingSequence = -1;
+      return false;
+      }
+    return true;
   }
 
 void vtkRollingDataAccumulator::appendData(unsigned int timestamp,
@@ -84,36 +77,16 @@ void vtkRollingDataAccumulator::appendData(unsigned int timestamp,
   {
     this->appendData(TypeValueDataPair(timestamp,dataType,dataValue));
   }
-
-bool vtkRollingDataAccumulator::getDSRCalibrationData()
+bool vtkRollingDataAccumulator::getAlignedRollingData(std::vector<unsigned char> & data) const
   {
-    if(!this->isCalibrationReady())
+    data.clear();
+    int idRollingSequence = 0;
+    if(!this->areRollingDataReady() || !getGoodSequenceId(idRollingSequence))
       {
-        return;
+      return false;
       }
-    long idxStart=beginPosition.front()+12;
-
-    for (int dsr = 0; dsr < HDL_MAX_NUM_LASERS; ++dsr) {
-        HDLLaserCorrectionByte * correctionStream=
-            reinterpret_cast<HDLLaserCorrectionByte>(&accumulatedValue[idxStart]);
-        if (correctionStream->channel != dsr){
-            return false;
-          }
-        HDLLaserCorrection vvCorrection;
-        vvCorrection.verticalCorrection = correctionStream->verticalCorrection/100.0;
-        vvCorrection.rotationalCorrection = correctionStream->rotationalCorrection/100.0;
-        vvCorrection.distanceCorrection = correctionStream->farDistanceCorrection/10.0;
-        
-        vvCorrection.distanceCorrectionX = correctionStream->distanceCorrectionX/10.0;
-        vvCorrection.distanceCorrectionY = correctionStream->distanceCorrectionV/10.0;
-        vvCorrection.verticalOffsetCorrection = correctionStream->verticalOffset/10.0;
-        // The folowing manipulation is needed because of the two byte for this
-        //  parameter are not side-by-side
-        vvCorrection.horizontalOffsetCorrection = reinterpret_cast<signed short>(
-          (static_cast<unsigned short>(correctionStream->horizontalOffsetPart1) << 8)
-          +static_cast<unsigned short>(correctionStream->horizontalOffsetPart2)) /10.0;
-        vvCorrection.focalDistance = correctionStream->focalDistance/10.0;
-        vvCorrection.focalSlope = correctionStream->focalSlope/10.0;
-      }
-
+    data.resize(expectedLength);
+    memcpy(&data[0], &accumulatedValue[beginPosition[idRollingSequence]], expectedLength);
+    return true;
   }
+

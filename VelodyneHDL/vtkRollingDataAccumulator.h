@@ -32,9 +32,12 @@ public:
   void appendData(TypeValueDataPair valuePair);
   void appendData(unsigned int timestamp, unsigned char dataType, unsigned char dataValue);
   void setTotalExpectedDataLength();
-
- //getAccumulatedData();
-
+  bool areRollingDataReady() const;
+  bool getDSRCalibrationData() const;
+  bool getGoodSequenceId(int & idRollingSequence) const;
+  bool getAlignedRollingData(std::vector<unsigned char> & data) const;
+  signed short signedShortFromTwoLittleEndianBytes(unsigned char b1,unsigned char b2);
+  void clear();
   vtkRollingDataAccumulator();
   ~vtkRollingDataAccumulator();
 
@@ -43,8 +46,10 @@ protected:
   std::vector<unsigned char> accumulatedDataType;
   std::vector<unsigned char> accumulatedValue;
   std::vector<long> beginPosition;
-
-  long dataFragmentPositionInPacket;
-  long dataFragmentLength;
+private:
+  static const long expectedLength = 4160;
+  static const int numberOfRoundNeeded = 3;
+  static const int byteBeforeMarker = 6;
+  const TypeValueDataPair beginMarkerValuePair;
 };
 #endif // VTKROLLINGDATAACCUMULATOR_H
