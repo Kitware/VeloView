@@ -216,6 +216,7 @@ public:
     this->DualReturnFilter = 0;
     this->IsDualReturnSensorMode = false;
     this->IsHDL64Data = false;
+    this->skipFirstFrame = true;
 
     this->Init();
   }
@@ -243,6 +244,7 @@ public:
 
   bool IsDualReturnSensorMode;
   bool IsHDL64Data;
+  bool skipFirstFrame;
 
   int LastAzimuth;
   unsigned int LastTimestamp;
@@ -1208,6 +1210,11 @@ void vtkVelodyneHDLReader::vtkInternal::Init()
 //-----------------------------------------------------------------------------
 void vtkVelodyneHDLReader::vtkInternal::SplitFrame(bool force)
 {
+  if(this->skipFirstFrame)
+    {
+    this->skipFirstFrame = false;
+    return;
+    }
   if(this->CurrentDataset->GetNumberOfPoints() == 0)
     {
     return;
@@ -1481,8 +1488,6 @@ int vtkVelodyneHDLReader::ReadFrameInformation()
   reader.GetFilePosition(&lastFilePosition);
 
 
-  filePositions.push_back(lastFilePosition);
-  skips.push_back(0);
   bool IsEmptyFrame = true;
   while (reader.NextPacket(data, dataLength, timeSinceStart))
     {
