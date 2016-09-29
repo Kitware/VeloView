@@ -87,8 +87,9 @@ void vvLaserSelectionDialog::pqInternal::setup()
   QAbstractItemModel* model = table->model();
 
   table->setColumnWidth(0, 32);
+  table->setColumnWidth(1, 64);
 
-  for (int i = 1; i < 13; i++)
+  for (int i = 2; i < 13; i++)
   {
   table->setColumnWidth(i, 128);
   }
@@ -109,7 +110,7 @@ void vvLaserSelectionDialog::pqInternal::setup()
     checkbox->setFlags(Qt::ItemIsSelectable | Qt::ItemIsUserCheckable | Qt::ItemIsEnabled);
     checkbox->setTextAlignment(Qt::AlignHCenter);
 
-    for (int j = 1; j < 12; j++)
+    for (int j = 2; j < 13; j++)
       {
       QTableWidgetItem* values = new QTableWidgetItem;
       values->setData(Qt::EditRole, 0.0);
@@ -125,7 +126,7 @@ void vvLaserSelectionDialog::pqInternal::setup()
 
     table->setItem(i, 0, checkbox);
     
-    table->setItem(i, 12, channel);
+    table->setItem(i, 1, channel);
     }
 
   QTableWidgetItem* leadBox = table->horizontalHeaderItem(0);
@@ -223,10 +224,10 @@ QVector<int> vvLaserSelectionDialog::getLaserSelectionSelector()
   QVector<int> result(64, 1);
   for(int i = 0; i < this->Internal->Table->rowCount(); ++i)
     {
-    QTableWidgetItem* item = this->Internal->Table->item(i, 0);
-    QTableWidgetItem* value = this->Internal->Table->item(i, 12);
+    QTableWidgetItem* value = this->Internal->Table->item(i, 1);
     int channel = value->data(Qt::EditRole).toInt();
     assert(channel < 64 && channel >= 0);
+    QTableWidgetItem* item = this->Internal->Table->item(i, 0);
     result[channel] = (item->checkState() == Qt::Checked);
     }
   return result;
@@ -248,42 +249,42 @@ void vvLaserSelectionDialog::setLasersCorrections(const QVector<double>& vertica
                                                 {
   for(int i = 0; i < this->Internal->Table->rowCount(); ++i)
     {
-    QTableWidgetItem* item = this->Internal->Table->item(i, 1);
-    QTableWidgetItem* value = this->Internal->Table->item(i, 12);
+    QTableWidgetItem* value = this->Internal->Table->item(i, 1);
     int channel = value->data(Qt::EditRole).toInt();
 
     assert(channel < 64 && channel >= 0);
-
+    int col=2;
+    QTableWidgetItem* item = this->Internal->Table->item(i, col++);
     item->setData(Qt::EditRole, verticalCorrection[channel]);
 
-    item = this->Internal->Table->item(i, 2);
+    item = this->Internal->Table->item(i, col++);
     item->setData(Qt::EditRole, rotationalCorrection[channel]);
 
-    item = this->Internal->Table->item(i, 3);
+    item = this->Internal->Table->item(i, col++);
     item->setData(Qt::EditRole, distanceCorrection[channel]);
 
-    item = this->Internal->Table->item(i, 4);
+    item = this->Internal->Table->item(i, col++);
     item->setData(Qt::EditRole, distanceCorrectionX[channel]);
 
-    item = this->Internal->Table->item(i, 5);
+    item = this->Internal->Table->item(i, col++);
     item->setData(Qt::EditRole, distanceCorrectionY[channel]);
 
-    item = this->Internal->Table->item(i, 6);
+    item = this->Internal->Table->item(i, col++);
     item->setData(Qt::EditRole, verticalOffsetCorrection[channel]);
 
-    item = this->Internal->Table->item(i, 7);
+    item = this->Internal->Table->item(i, col++);
     item->setData(Qt::EditRole, horizontalOffsetCorrection[channel]);
 
-    item = this->Internal->Table->item(i, 8);
+    item = this->Internal->Table->item(i, col++);
     item->setData(Qt::EditRole, focalDistance[channel]);
 
-    item = this->Internal->Table->item(i, 9);
+    item = this->Internal->Table->item(i, col++);
     item->setData(Qt::EditRole, focalSlope[channel]);
 
-    item = this->Internal->Table->item(i, 10);
+    item = this->Internal->Table->item(i, col++);
     item->setData(Qt::EditRole, minIntensity[channel]);
 
-    item = this->Internal->Table->item(i, 11);
+    item = this->Internal->Table->item(i, col++);
     item->setData(Qt::EditRole, maxIntensity[channel]);
 
     }
@@ -299,7 +300,7 @@ void vvLaserSelectionDialog::setLasersCorrections(const QVector<double>& vertica
     }
 
   // Sort the table by vertical correction
-  this->Internal->Table->sortItems(1);
+  this->Internal->Table->sortItems(2);
 }
 
 //-----------------------------------------------------------------------------
@@ -308,7 +309,7 @@ void vvLaserSelectionDialog::setLaserSelectionSelector(const QVector<int>& mask)
   for(int i = 0; i < this->Internal->Table->rowCount(); ++i)
     {
     QTableWidgetItem* item = this->Internal->Table->item(i, 0);
-    QTableWidgetItem* value = this->Internal->Table->item(i, 2);
+    QTableWidgetItem* value = this->Internal->Table->item(i, 1);
     int channel = value->data(Qt::EditRole).toInt();
     assert(channel < 64 && channel >= 0);
     item->setCheckState(mask[channel] ? Qt::Checked : Qt::Unchecked);
