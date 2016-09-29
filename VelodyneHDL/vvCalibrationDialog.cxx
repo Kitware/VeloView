@@ -195,6 +195,13 @@ vvCalibrationDialog::vvCalibrationDialog(QWidget *p)
   : QDialog(p), Internal(new pqInternal)
 {
   this->Internal->setupUi(this);
+  QListWidgetItem* liveCalibrationItem = new QListWidgetItem();
+
+  liveCalibrationItem->setText("HDL64 Live Corrections");
+  liveCalibrationItem->setToolTip("Get Corrections from the data stream");
+  liveCalibrationItem->setData(Qt::UserRole, "");
+
+  this->Internal->ListWidget->addItem(liveCalibrationItem);
 
   foreach(QString fullname, this->Internal->BuiltInCalibrationFiles)
     {
