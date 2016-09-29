@@ -122,18 +122,18 @@ struct HDLLaserCorrection  // Internal representation of per-laser correction
   double horizontalOffsetCorrection;
 
   double focalDistance;
-  // In unscaled unit
   double focalSlope;
 
+  short minIntensity;
+  short maxIntensity;
+
+  // precomputed values
   double sinRotationalCorrection;
   double cosRotationalCorrection;
   double sinVertCorrection;
   double cosVertCorrection;
   double sinVertOffsetCorrection;
   double cosVertOffsetCorrection;
-
-  short minIntensity;
-  short maxIntensity;
 };
 
 struct HDLRGB
@@ -1206,36 +1206,43 @@ void vtkVelodyneHDLReader::vtkInternal::LoadCorrectionsFile(const std::string& c
           {
           boost::property_tree::ptree calibrationData = px.second;
           int index = -1;
-          double rotationalCorrection = 0;
-          double vertCorrection = 0;
-          double distCorrection = 0;
-          double vertOffsetCorrection = 0;
-          double horizOffsetCorrection = 0;
+          HDLLaserCorrection xmlData={0};
 
           BOOST_FOREACH (boost::property_tree::ptree::value_type &item, calibrationData)
             {
             if (item.first == "id_")
               index = atoi(item.second.data().c_str());
             if (item.first == "rotCorrection_")
-              rotationalCorrection = atof(item.second.data().c_str());
+              xmlData.rotationalCorrection = atof(item.second.data().c_str());
             if (item.first == "vertCorrection_")
-              vertCorrection = atof(item.second.data().c_str());
+              xmlData.verticalCorrection = atof(item.second.data().c_str());
             if (item.first == "distCorrection_")
-              distCorrection = atof(item.second.data().c_str());
+              xmlData.distanceCorrection = atof(item.second.data().c_str());
+            if (item.first == "distCorrectionX_")
+              xmlData.distanceCorrectionX = atof(item.second.data().c_str());
+            if (item.first == "distCorrectionY_")
+              xmlData.distanceCorrectionY = atof(item.second.data().c_str());
             if (item.first == "vertOffsetCorrection_")
-              vertOffsetCorrection = atof(item.second.data().c_str());
+              xmlData.verticalOffsetCorrection = atof(item.second.data().c_str());
             if (item.first == "horizOffsetCorrection_")
-              horizOffsetCorrection = atof(item.second.data().c_str());
+              xmlData.horizontalOffsetCorrection = atof(item.second.data().c_str());
+            if (item.first == "focalDistance_")
+              xmlData.focalDistance = atof(item.second.data().c_str());
+            if (item.first == "focalSlope_")
+              xmlData.focalSlope = atof(item.second.data().c_str());
             }
           if (index != -1 && index < HDL_MAX_NUM_LASERS)
             {
-            // Stored in degrees in xml
-            laser_corrections_[index].rotationalCorrection = rotationalCorrection;
-            laser_corrections_[index].verticalCorrection = vertCorrection;
-            // Stored in centimeters in xml
-            laser_corrections_[index].distanceCorrection = distCorrection / 100.0;
-            laser_corrections_[index].verticalOffsetCorrection = vertOffsetCorrection / 100.0;
-            laser_corrections_[index].horizontalOffsetCorrection = horizOffsetCorrection / 100.0;
+            laser_corrections_[index]=xmlData;
+            // Angles are already stored in degrees in xml
+            // Distances are stored in centimeters in xml, and we store meters.
+            laser_corrections_[index].distanceCorrection /= 100.0;
+            laser_corrections_[index].distanceCorrectionX /= 100.0;
+            laser_corrections_[index].distanceCorrectionY /= 100.0;
+            laser_corrections_[index].verticalOffsetCorrection /= 100.0;
+            laser_corrections_[index].horizontalOffsetCorrection /= 100.0;
+            laser_corrections_[index].focalDistance /= 100.0;
+            laser_corrections_[index].focalSlope /= 100.0;
             laser_corrections_[index].minIntensity = 0;
             laser_corrections_[index].maxIntensity = 0;
             }
@@ -1244,6 +1251,41 @@ void vtkVelodyneHDLReader::vtkInternal::LoadCorrectionsFile(const std::string& c
       }
     }
 
+  int idx=0;
+  BOOST_FOREACH (boost::property_tree::ptree::value_type &v,
+                 pt.get_child("boost_serialization.DB.minIntensity_"))
+    {
+    std::stringstream ss;
+    if(v.first == "item")
+      {
+      ss << v.second.data();
+      int intensity = 0;
+      ss >> intensity;
+      if(!ss.fail()  && idx < HDL_MAX_NUM_LASERS)
+        {
+        laser_corrections_[idx].minIntensity = intensity;
+        }
+      idx++;
+      }
+    }
+
+  idx=0;
+  BOOST_FOREACH (boost::property_tree::ptree::value_type &v,
+                 pt.get_child("boost_serialization.DB.maxIntensity_"))
+    {
+    std::stringstream ss;
+    if(v.first == "item")
+      {
+      ss << v.second.data();
+      int intensity = 0;
+      ss >> intensity;
+      if(!ss.fail()  && idx < HDL_MAX_NUM_LASERS)
+        {
+        laser_corrections_[idx].maxIntensity = intensity;
+        }
+      idx++;
+      }
+    }
   PrecomputeCorrectionCosSin();
   this->CorrectionsInitialized = true;
 }
