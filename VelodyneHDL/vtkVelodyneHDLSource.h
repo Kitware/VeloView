@@ -71,7 +71,18 @@ public:
   void SetCropRegion(double[6]);
   void SetCropRegion(double, double, double, double, double, double);
 
-  void GetVerticalCorrections(double LaserAngles[64]);
+  void GetLaserCorrections(
+    double verticalCorrection[64],
+    double rotationalCorrection[64],
+    double distanceCorrection[64],
+    double distanceCorrectionX[64],
+    double distanceCorrectionY[64],
+    double verticalOffsetCorrection[64],
+    double horizontalOffsetCorrection[64],
+    double focalDistance[64],
+    double focalSlope[64],
+    double minIntensity[64],
+    double maxIntensity[64]);
 
   unsigned int GetDualReturnFilter() const;
   void SetDualReturnFilter(unsigned int);

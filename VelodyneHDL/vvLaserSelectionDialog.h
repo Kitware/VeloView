@@ -33,7 +33,18 @@ public:
   QVector<int> getLaserSelectionSelector();
   void setLaserSelectionSelector(const QVector<int>& mask);
 
-  void setVerticalCorrections(const QVector<double>& corrections, int nchannels);
+  void setLasersCorrections(const QVector<double>& verticalCorrection,
+                                                  const QVector<double>& rotationalCorrection,
+                                                  const QVector<double>& distanceCorrection,
+                                                  const QVector<double>& distanceCorrectionX,
+                                                  const QVector<double>& distanceCorrectionY,
+                                                  const QVector<double>& verticalOffsetCorrection,
+                                                  const QVector<double>& horizontalOffsetCorrection,
+                                                  const QVector<double>& focalDistance,
+                                                  const QVector<double>& focalSlope,
+                                                  const QVector<double>& minIntensity,
+                                                  const QVector<double>& maxIntensity,
+                                                  int nchannels);
 
 public slots:
   void onItemChanged(QTableWidgetItem*);

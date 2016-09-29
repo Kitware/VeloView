@@ -498,11 +498,32 @@ void vtkVelodyneHDLReader::SetDualReturnFilter(unsigned int filter)
 }
 
 //-----------------------------------------------------------------------------
-void vtkVelodyneHDLReader::GetVerticalCorrections(double VerticalCorrections[64])
+void vtkVelodyneHDLReader::GetLaserCorrections(
+    double verticalCorrection[64],
+    double rotationalCorrection[64],
+    double distanceCorrection[64],
+    double distanceCorrectionX[64],
+    double distanceCorrectionY[64],
+    double verticalOffsetCorrection[64],
+    double horizontalOffsetCorrection[64],
+    double focalDistance[64],
+    double focalSlope[64],
+    double minIntensity[64],
+    double maxIntensity[64]  )
 {
   for(int i = 0; i < 64; ++i)
     {
-    VerticalCorrections[i] = this->Internal->laser_corrections_[i].verticalCorrection;
+    verticalCorrection[i] = this->Internal->laser_corrections_[i].verticalCorrection;
+    rotationalCorrection[i] = this->Internal->laser_corrections_[i].rotationalCorrection;
+    distanceCorrection[i] = this->Internal->laser_corrections_[i].distanceCorrection;
+    distanceCorrectionX[i] = this->Internal->laser_corrections_[i].distanceCorrectionX;
+    distanceCorrectionY[i] = this->Internal->laser_corrections_[i].distanceCorrectionY;
+    verticalOffsetCorrection[i] = this->Internal->laser_corrections_[i].verticalOffsetCorrection;
+    horizontalOffsetCorrection[i] = this->Internal->laser_corrections_[i].horizontalOffsetCorrection;
+    focalDistance[i] = this->Internal->laser_corrections_[i].focalDistance;
+    focalSlope[i] = this->Internal->laser_corrections_[i].focalSlope;
+    minIntensity[i] = this->Internal->laser_corrections_[i].minIntensity;
+    maxIntensity[i] = this->Internal->laser_corrections_[i].maxIntensity;
     }
 }
 
@@ -1366,64 +1387,6 @@ void vtkVelodyneHDLReader::vtkInternal::ComputeCorrectedValues(
   double xyDistance = distanceM * correction->cosVertCorrection
                       - correction->sinVertOffsetCorrection;
 
-#ifdef FALSE
-  if (0)
-    {
-    // Get 2points calibration values, linear interpolation to get distance
-    // correction for X and Y, that means distance correction use different
-    // value at different distance
-    const float D2 = 25.04;
-    const float D1x =  2.4;
-    const float D1y =  1.93;
-    float interpolatedDistanceCorrX = 0;
-    float interpolatedDistanceCorrY = 0;
-    if (correction->distanceCorrectionX.two_pt_correction_available) {
-      if (distanceM < 25.0) // if larger than 25m, no interpolation.
-        {
-        // Calculate temporal X, use absolute value.
-        float xx = abs(xyDistance * sinAzimuth); // - correction->horizontalOffsetCorrection * cosAzimuth);
-        // Calculate temporal Y, use absolute value
-        float yy = abs(xyDistance * cosAzimuth); // + correction->horizontalOffsetCorrection * sinAzimuth);
-        interpolatedDistanceCorrX =
-            (correction->distanceCorrection - correction->distanceCorrectionX)
-            * (xx - D1x) / (D2 - D1x)
-          + correction->distanceCorrectionX;
-        // Remove what was already added
-        interpolatedDistanceCorrX -= correction->distanceCorrection;
-        interpolatedDistanceCorrY =
-          (correction->distanceCorrection - correction->distanceCorrectionY)
-            * (yy - D1y) / (D2 - D1y)
-          + correction->distanceCorrectionY;
-        // Remove what was already added
-        interpolatedDistanceCorrY -= correction->distanceCorrection;
-        }
-    }
-    float distance_x = distanceM + interpolatedDistanceCorrX;
-    /**the new term of 'correction->sinVertOffsetCorrection'
-     * was added to the expression due to the mathemathical
-     * model we used.
-     */
-    xyDistance = distance_x * cos_vert_angle - correction->verticalOffsetCorrection * sin_vert_angle ;
-    ///the expression wiht '-' is proved to be better than the one with '+'
-    x = xyDistance * sinAzimuth - correction->horizontalOffsetCorrection * cosAzimuth;
-
-    float distance_y = distanceM + interpolatedDistanceCorrY;
-    xyDistance = distance_y * cos_vert_angle - correction->verticalOffsetCorrection * sin_vert_angle ;
-    /**the new term of 'vert_offset * sin_vert_angle'
-     * was added to the expression due to the mathemathical
-     * model we used.
-     */
-    y = xyDistance * cosAzimuth + correction->horizontalOffsetCorrection * sinAzimuth;
-
-    // Using distance_y is not symmetric, but the velodyne manual
-    // does this.
-    /**the new term of 'vert_offset * cos_vert_angle'
-     * was added to the expression due to the mathemathical
-     * model we used.
-     */
-    z = distance_y * sin_vert_angle + correction->verticalOffsetCorrection*cos_vert_angle;
-  }
-#endif
   pos[0] = xyDistance * sinAzimuth - correction->horizontalOffsetCorrection * cosAzimuth;
   pos[1] = xyDistance * cosAzimuth + correction->horizontalOffsetCorrection * sinAzimuth;
   pos[2] = distanceM * correction->sinVertCorrection + correction->verticalOffsetCorrection;
