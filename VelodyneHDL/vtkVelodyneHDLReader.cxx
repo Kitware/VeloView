@@ -274,8 +274,13 @@ public:
                       const HDLLaserCorrection* correction,
                       vtkTransform* geotransform,
                       const bool hasDualReturn);
+  void ComputeCorrectedValues(const unsigned short azimuth,
+                              const HDLLaserReturn* laserReturn,
+                              const HDLLaserCorrection* correction,
+                              double pos[3],
+                              double & distanceM ,
+                              short & intensity);
 };
-
 //-----------------------------------------------------------------------------
 vtkStandardNewMacro(vtkVelodyneHDLReader);
 
@@ -912,31 +917,13 @@ void vtkVelodyneHDLReader::vtkInternal::PushFiringData(const unsigned char laser
 {
   azimuth %= 36000;
   const vtkIdType thisPointId = this->Points->GetNumberOfPoints();
-  const short intensity = laserReturn->intensity;
-
-  double cosAzimuth, sinAzimuth;
-  if (correction->rotationalCorrection == 0)
-  {
-    cosAzimuth = this->cos_lookup_table_[azimuth];
-    sinAzimuth = this->sin_lookup_table_[azimuth];
-  }
-  else
-  {
-    double azimuthInRadians = HDL_Grabber_toRadians((static_cast<double> (azimuth) / 100.0) - correction->rotationalCorrection);
-    cosAzimuth = std::cos (azimuthInRadians);
-    sinAzimuth = std::sin (azimuthInRadians);
-  }
-
-  double distanceM = laserReturn->distance * 0.002 + correction->distanceCorrection;
-  double xyDistance = distanceM * correction->cosVertCorrection;
 
   // Compute raw position
-  double pos[3] =
-    {
-    xyDistance * sinAzimuth - correction->horizontalOffsetCorrection * cosAzimuth,
-    xyDistance * cosAzimuth + correction->horizontalOffsetCorrection * sinAzimuth,
-    distanceM * correction->sinVertCorrection + correction->verticalOffsetCorrection
-    };
+  double distanceM;
+  short intensity;
+  double pos[3];
+  ComputeCorrectedValues(azimuth, laserReturn, correction,
+                         pos, distanceM, intensity);
 
   // Apply sensor transform
   this->SensorTransform->InternalTransformPoint(pos, pos);
@@ -1016,7 +1003,7 @@ void vtkVelodyneHDLReader::vtkInternal::PushFiringData(const unsigned char laser
           // first return does not match filter; replace with second return
           this->Points->SetPoint(dualPointId, pos);
           this->Distance->SetValue(dualPointId, distanceM);
-          this->Intensity->SetValue(dualPointId, laserReturn->intensity);
+          this->Intensity->SetValue(dualPointId, intensity);
           this->Timestamp->SetValue(dualPointId, timestamp);
           this->RawTime->SetValue(dualPointId, rawtime);
           this->Flags->SetValue(dualPointId, secondFlags);
@@ -1046,7 +1033,7 @@ void vtkVelodyneHDLReader::vtkInternal::PushFiringData(const unsigned char laser
   this->Points->InsertNextPoint(pos);
 
   this->Azimuth->InsertNextValue(azimuth);
-  this->Intensity->InsertNextValue(laserReturn->intensity);
+  this->Intensity->InsertNextValue(intensity);
   this->LaserId->InsertNextValue(laserId);
   this->Timestamp->InsertNextValue(timestamp);
   this->RawTime->InsertNextValue(rawtime);
@@ -1140,9 +1127,8 @@ void vtkVelodyneHDLReader::vtkInternal::LoadCorrectionsFile(const std::string& c
             laser_corrections_[index].distanceCorrection = distCorrection / 100.0;
             laser_corrections_[index].verticalOffsetCorrection = vertOffsetCorrection / 100.0;
             laser_corrections_[index].horizontalOffsetCorrection = horizOffsetCorrection / 100.0;
-
-            laser_corrections_[index].cosVertCorrection = std::cos (HDL_Grabber_toRadians(laser_corrections_[index].verticalCorrection));
-            laser_corrections_[index].sinVertCorrection = std::sin (HDL_Grabber_toRadians(laser_corrections_[index].verticalCorrection));
+            laser_corrections_[index].minIntensity = 0;
+            laser_corrections_[index].maxIntensity = 0;
             }
           }
         }
@@ -1151,10 +1137,18 @@ void vtkVelodyneHDLReader::vtkInternal::LoadCorrectionsFile(const std::string& c
 
   for (int i = 0; i < HDL_MAX_NUM_LASERS; i++)
     {
-    HDLLaserCorrection correction = laser_corrections_[i];
-    laser_corrections_[i].sinVertOffsetCorrection = correction.verticalOffsetCorrection
+    HDLLaserCorrection &correction = laser_corrections_[i];
+    correction.cosVertCorrection =
+        std::cos (HDL_Grabber_toRadians(correction.verticalCorrection));
+    correction.sinVertCorrection =
+        std::sin (HDL_Grabber_toRadians(correction.verticalCorrection));
+    correction.cosRotationalCorrection =
+        std::cos (HDL_Grabber_toRadians(correction.rotationalCorrection));
+    correction.sinRotationalCorrection =
+        std::sin (HDL_Grabber_toRadians(correction.rotationalCorrection));
+    correction.sinVertOffsetCorrection = correction.verticalOffsetCorrection
                                        * correction.sinVertCorrection;
-    laser_corrections_[i].cosVertOffsetCorrection = correction.verticalOffsetCorrection
+    correction.cosVertOffsetCorrection = correction.verticalOffsetCorrection
                                        * correction.cosVertCorrection;
     }
   this->CorrectionsInitialized = true;
@@ -1237,6 +1231,111 @@ void vtkVelodyneHDLReader::vtkInternal::ComputeOrientation(
     geotransform->Identity();
     }
 }
+
+void vtkVelodyneHDLReader::vtkInternal::ComputeCorrectedValues(
+    const unsigned short azimuth, const HDLLaserReturn* laserReturn,
+    const HDLLaserCorrection* correction, double pos[3], double & distanceM , short & intensity)
+  {
+  intensity = laserReturn->intensity;
+
+  double cosAzimuth, sinAzimuth;
+  if (correction->rotationalCorrection == 0)
+  {
+    cosAzimuth = this->cos_lookup_table_[azimuth];
+    sinAzimuth = this->sin_lookup_table_[azimuth];
+  }
+  else
+  {
+    // realAzimuth = azimuth/100 - rotationalCorrection
+    // cos(a-b) = cos(a)*cos(b) + sin(a)*sin(b)
+    // sin(a-b) = sin(a)*cos(b) - cos(a)*sin(b)
+    cosAzimuth = this->cos_lookup_table_[azimuth] * correction->cosRotationalCorrection
+                 + this->sin_lookup_table_[azimuth] * correction->sinRotationalCorrection;
+    sinAzimuth = this->sin_lookup_table_[azimuth] * correction->cosRotationalCorrection
+                 - this->cos_lookup_table_[azimuth] * correction->sinRotationalCorrection;
+  }
+  // Compute the distance in the xy plane (w/o accounting for rotation)
+  /**the new term of 'vert_offset * sin_vert_angle'
+   * was added to the expression due to the mathemathical
+   * model we used.
+   */
+  double distanceMRaw = laserReturn->distance * 0.002;
+  distanceM = distanceMRaw + correction->distanceCorrection;
+  double xyDistance = distanceM * correction->cosVertCorrection; //- correction->sinVertOffsetCorrection;
+
+#ifdef FALSE
+  if (0)
+    {
+    // Get 2points calibration values, linear interpolation to get distance
+    // correction for X and Y, that means distance correction use different
+    // value at different distance
+    const float D2 = 25.04;
+    const float D1x =  2.4;
+    const float D1y =  1.93;
+    float interpolatedDistanceCorrX = 0;
+    float interpolatedDistanceCorrY = 0;
+    if (correction->distanceCorrectionX.two_pt_correction_available) {
+      if (distanceM < 25.0) // if larger than 25m, no interpolation.
+        {
+        // Calculate temporal X, use absolute value.
+        float xx = abs(xyDistance * sinAzimuth); // - correction->horizontalOffsetCorrection * cosAzimuth);
+        // Calculate temporal Y, use absolute value
+        float yy = abs(xyDistance * cosAzimuth); // + correction->horizontalOffsetCorrection * sinAzimuth);
+        interpolatedDistanceCorrX =
+            (correction->distanceCorrection - correction->distanceCorrectionX)
+            * (xx - D1x) / (D2 - D1x)
+          + correction->distanceCorrectionX;
+        // Remove what was already added
+        interpolatedDistanceCorrX -= correction->distanceCorrection;
+        interpolatedDistanceCorrY =
+          (correction->distanceCorrection - correction->distanceCorrectionY)
+            * (yy - D1y) / (D2 - D1y)
+          + correction->distanceCorrectionY;
+        // Remove what was already added
+        interpolatedDistanceCorrY -= correction->distanceCorrection;
+        }
+    }
+    float distance_x = distanceM + interpolatedDistanceCorrX;
+    /**the new term of 'correction->sinVertOffsetCorrection'
+     * was added to the expression due to the mathemathical
+     * model we used.
+     */
+    xyDistance = distance_x * cos_vert_angle - correction->verticalOffsetCorrection * sin_vert_angle ;
+    ///the expression wiht '-' is proved to be better than the one with '+'
+    x = xyDistance * sinAzimuth - correction->horizontalOffsetCorrection * cosAzimuth;
+
+    float distance_y = distanceM + interpolatedDistanceCorrY;
+    xyDistance = distance_y * cos_vert_angle - correction->verticalOffsetCorrection * sin_vert_angle ;
+    /**the new term of 'vert_offset * sin_vert_angle'
+     * was added to the expression due to the mathemathical
+     * model we used.
+     */
+    y = xyDistance * cosAzimuth + correction->horizontalOffsetCorrection * sinAzimuth;
+
+    // Using distance_y is not symmetric, but the velodyne manual
+    // does this.
+    /**the new term of 'vert_offset * cos_vert_angle'
+     * was added to the expression due to the mathemathical
+     * model we used.
+     */
+    z = distance_y * sin_vert_angle + correction->verticalOffsetCorrection*cos_vert_angle;
+  }
+#endif
+  pos[0] = xyDistance * sinAzimuth - correction->horizontalOffsetCorrection * cosAzimuth;
+  pos[1] = xyDistance * cosAzimuth + correction->horizontalOffsetCorrection * sinAzimuth;
+  pos[2] = distanceM * correction->sinVertCorrection + correction->verticalOffsetCorrection;
+
+  if(correction->minIntensity < correction->maxIntensity)
+    {
+    // Compute corrected intensity
+    double focalOffset = 256.0 * pow(1 - correction->focalDistance / 13.100, 2);
+    intensity += correction->focalSlope *
+               (abs(focalOffset - 256.0f *
+                pow(1.0 - static_cast<double>(laserReturn->distance)/65535.0f, 2)));
+    intensity = std::max( std::min(intensity, correction->maxIntensity),
+                          correction->minIntensity);
+    }
+  }
 
 //-----------------------------------------------------------------------------
 void vtkVelodyneHDLReader::vtkInternal::ProcessFiring(HDLFiringData* firingData,
@@ -1463,7 +1562,6 @@ int vtkVelodyneHDLReader::ReadFrameInformation()
       {
       const HDLFiringData * firingData = &(dataPacket->firingData[i]);
 
-
       this->Internal->IsHDL64Data |=
           (firingData->blockIdentifier == BLOCK_32_TO_63);
 
@@ -1575,6 +1673,10 @@ bool vtkVelodyneHDLReader::vtkInternal::HDL64LoadCorrectionsFromStreamData()
         std::cos (HDL_Grabber_toRadians(correction.verticalCorrection));
     correction.sinVertCorrection =
         std::sin (HDL_Grabber_toRadians(correction.verticalCorrection));
+    correction.cosRotationalCorrection =
+        std::cos (HDL_Grabber_toRadians(correction.rotationalCorrection));
+    correction.sinRotationalCorrection =
+        std::sin (HDL_Grabber_toRadians(correction.rotationalCorrection));
     correction.sinVertOffsetCorrection = correction.verticalOffsetCorrection
                                        * correction.sinVertCorrection;
     correction.cosVertOffsetCorrection = correction.verticalOffsetCorrection

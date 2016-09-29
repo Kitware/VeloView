@@ -98,6 +98,8 @@ public:
     double focalDistance;
     double focalSlope;
 
+    double sinRotationalCorrection;
+    double cosRotationalCorrection;
     double sinVertCorrection;
     double cosVertCorrection;
     double sinVertOffsetCorrection;
