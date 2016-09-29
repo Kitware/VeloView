@@ -234,6 +234,7 @@ public:
     this->DualReturnFilter = 0;
     this->IsDualReturnSensorMode = false;
     this->IsHDL64Data = false;
+    this->distanceResolutionM = 0.002;
 
     this->rollingCalibrationData = new vtkRollingDataAccumulator();
     this->Init();
@@ -298,6 +299,7 @@ public:
   bool CropReturns;
   bool CropInside;
   double CropRegion[6];
+  double distanceResolutionM;
 
   std::vector<bool> LaserSelection;
   unsigned int DualReturnFilter;
@@ -984,10 +986,10 @@ void vtkVelodyneHDLReader::vtkInternal::PushFiringData(const unsigned char laser
 {
   azimuth %= 36000;
   const vtkIdType thisPointId = this->Points->GetNumberOfPoints();
+  short intensity = laserReturn->intensity;
 
   // Compute raw position
   double distanceM;
-  short intensity;
   double pos[3];
   ComputeCorrectedValues(azimuth, laserReturn, correction,
                          pos, distanceM, intensity);
@@ -1137,6 +1139,14 @@ void vtkVelodyneHDLReader::vtkInternal::LoadCorrectionsFile(const std::string& c
     vtkGenericWarningMacro("LoadCorrectionsFile: error reading calibration file: " << correctionsFile);
     return;
     }
+  // Read distLSB if provided
+  BOOST_FOREACH (boost::property_tree::ptree::value_type &v, pt.get_child("boost_serialization.DB"))
+    {
+    if (v.first == "distLSB_")
+      {// Stored in cm in xml
+      distanceResolutionM = atof(v.second.data().c_str()) / 100.0;
+      }
+    }
 
   int enabledCount = 0;
   BOOST_FOREACH (boost::property_tree::ptree::value_type &v, pt.get_child("boost_serialization.DB.enabled_"))
@@ -1187,7 +1197,7 @@ void vtkVelodyneHDLReader::vtkInternal::LoadCorrectionsFile(const std::string& c
             if (item.first == "horizOffsetCorrection_")
               horizOffsetCorrection = atof(item.second.data().c_str());
             }
-          if (index != -1)
+          if (index != -1 && index < HDL_MAX_NUM_LASERS)
             {
             laser_corrections_[index].rotationalCorrection = rotationalCorrection;
             laser_corrections_[index].verticalCorrection = vertCorrection;
@@ -1208,8 +1218,8 @@ void vtkVelodyneHDLReader::vtkInternal::LoadCorrectionsFile(const std::string& c
 void vtkVelodyneHDLReader::vtkInternal::PrecomputeCorrectionCosSin()
   {
 
-    for (int i = 0; i < HDL_MAX_NUM_LASERS; i++)
-      {
+  for (int i = 0; i < HDL_MAX_NUM_LASERS; i++)
+    {
       HDLLaserCorrection &correction = laser_corrections_[i];
       correction.cosVertCorrection =
           std::cos (HDL_Grabber_toRadians(correction.verticalCorrection));
@@ -1220,11 +1230,11 @@ void vtkVelodyneHDLReader::vtkInternal::PrecomputeCorrectionCosSin()
       correction.sinRotationalCorrection =
           std::sin (HDL_Grabber_toRadians(correction.rotationalCorrection));
       correction.sinVertOffsetCorrection = correction.verticalOffsetCorrection
-                                         * correction.sinVertCorrection;
+                                       * correction.sinVertCorrection;
       correction.cosVertOffsetCorrection = correction.verticalOffsetCorrection
-                                         * correction.cosVertCorrection;
-      }
-  }
+                                       * correction.cosVertCorrection;
+    }
+}
 
 //-----------------------------------------------------------------------------
 void vtkVelodyneHDLReader::vtkInternal::Init()
@@ -1331,7 +1341,7 @@ void vtkVelodyneHDLReader::vtkInternal::ComputeCorrectedValues(
    * was added to the expression due to the mathemathical
    * model we used.
    */
-  double distanceMRaw = laserReturn->distance * 0.002;
+  double distanceMRaw = laserReturn->distance * this->distanceResolutionM;
   distanceM = distanceMRaw + correction->distanceCorrection;
   double xyDistance = distanceM * correction->cosVertCorrection; //- correction->sinVertOffsetCorrection;
 
@@ -1453,7 +1463,12 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessFiring(HDLFiringData* firingData,
 
     if(this->CalibrationReportedNumLasers == 16)
       {
-      assert(firingBlockLaserOffset == 0);
+      if(firingBlockLaserOffset == 0)
+        {
+        vtkGenericWarningMacro("Error: Received a UPPERBLOCK firing packet "
+                      "with a VLP-16. Ignoring the firing.");
+        return;
+        }
       if(laserId >= 16)
         {
         laserId -= 16;

@@ -40,6 +40,26 @@ def showDialog(mainWindow, grid):
 
     w('GridResolution').setValue(grid.Scale)
     w('GridWidth').setValue(grid.Scale*grid.GridSize)
+    w('GridLineWidth').setValue(grid.LineWidth)
+
+    r = grid.Color[0] * 255
+    g = grid.Color[1] * 255
+    b = grid.Color[2] * 255
+    w('GridColorPicker').setStyleSheet("background-color: rgb(" + str(r) + "," + str(g) + "," + str(b) +");")
+
+    def pickColor():
+        colorPicker = QtGui.QColorDialog()
+        qColor = colorPicker.getColor()
+
+        if not qColor.isValid():
+            return False
+
+        r = qColor.red()
+        g = qColor.green()
+        b = qColor.blue()
+        w('GridColorPicker').setStyleSheet("background-color: rgb(" + str(r) + "," + str(g) + "," + str(b) +");")
+
+    w('GridColorPicker').connect('clicked()', pickColor)
 
     accepted = dialog.exec_()
     if not accepted:
@@ -49,5 +69,8 @@ def showDialog(mainWindow, grid):
     grid.Origin = [-w('SensorOriginX').value, -w('SensorOriginY').value, -w('SensorOriginZ').value]
     grid.Scale = w('GridResolution').value
     grid.GridSize = int(math.ceil(w('GridWidth').value / w('GridResolution').value))
+    grid.LineWidth = w('GridLineWidth').value
+    color = w('GridColorPicker').palette.color(QtGui.QPalette.Background)
+    grid.Color = [color.redF(), color.greenF(), color.blueF()]
 
     return True

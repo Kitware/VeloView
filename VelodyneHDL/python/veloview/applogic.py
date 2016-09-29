@@ -1336,6 +1336,9 @@ def getPosition():
 def getGlyph():
     return getattr(app, 'position', (None, None, None))[2]
 
+def getLaserSelectionDialog():
+    return getattr(app, 'dialog', None)
+
 def onChooseCalibrationFile():
 
     calibration = chooseCalibration()
@@ -1511,7 +1514,8 @@ def createGrid(view=None):
     view = view or smp.GetActiveView()
     grid = smp.VelodyneHDLGridSource(guiName='Measurement Grid')
     rep = smp.Show(grid, view)
-    rep.DiffuseColor = [0.2, 0.2, 0.2]
+    rep.LineWidth = grid.LineWidth
+    rep.DiffuseColor = grid.Color
     rep.Pickable = 0
     rep.Visibility = 0
     smp.SetActiveSource(None)
@@ -1695,6 +1699,9 @@ def onTimeChanged():
 
 def onGridProperties():
     if gridAdjustmentDialog.showDialog(getMainWindow(), app.grid):
+        rep = smp.Show(app.grid, None)
+        rep.LineWidth = app.grid.LineWidth
+        rep.DiffuseColor = app.grid.Color
         smp.Render()
 
 
@@ -1717,27 +1724,32 @@ def onLaserSelection(show = True):
 
     # Need a way to initialize the mask
     dialog = PythonQt.paraview.vvLaserSelectionDialog(getMainWindow())
+    app.dialog = dialog
+    dialog.connect('accepted()', onLaserSelectionChanged)
     if show:
         dialog.setLaserSelectionSelector(oldmask)
         dialog.setVerticalCorrections(corrections, nchannels)
-        if not dialog.exec_():
-            return
-    mask = dialog.getLaserSelectionSelector()
+        dialog.show()
 
+
+def onLaserSelectionChanged():
+    dialog = getLaserSelectionDialog();
+    reader = getReader()
+    sensor = getSensor()
+
+    mask = dialog.getLaserSelectionSelector()
     if reader:
         reader.GetClientSideObject().SetLaserSelection(mask)
         reader.DummyProperty = not reader.DummyProperty
-        if show:
-            smp.Render()
-            smp.Render(getSpreadSheetViewProxy())
+        smp.Render()
+        smp.Render(getSpreadSheetViewProxy())
 
 
     if sensor:
         sensor.GetClientSideObject().SetLaserSelection(mask)
         sensor.DummyProperty = not sensor.DummyProperty
-        if show:
-            smp.Render()
-            smp.Render(getSpreadSheetViewProxy())
+        smp.Render()
+        smp.Render(getSpreadSheetViewProxy())
 
 
 def hideColorByComponent():
