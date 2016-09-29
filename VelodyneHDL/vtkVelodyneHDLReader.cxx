@@ -913,14 +913,14 @@ void vtkVelodyneHDLReader::vtkInternal::PushFiringData(const unsigned char laser
   const short intensity = laserReturn->intensity;
 
   double cosAzimuth, sinAzimuth;
-  if (correction->azimuthCorrection == 0)
+  if (correction->rotationalCorrection == 0)
   {
     cosAzimuth = this->cos_lookup_table_[azimuth];
     sinAzimuth = this->sin_lookup_table_[azimuth];
   }
   else
   {
-    double azimuthInRadians = HDL_Grabber_toRadians((static_cast<double> (azimuth) / 100.0) - correction->azimuthCorrection);
+    double azimuthInRadians = HDL_Grabber_toRadians((static_cast<double> (azimuth) / 100.0) - correction->rotationalCorrection);
     cosAzimuth = std::cos (azimuthInRadians);
     sinAzimuth = std::sin (azimuthInRadians);
   }
@@ -1110,7 +1110,7 @@ void vtkVelodyneHDLReader::vtkInternal::LoadCorrectionsFile(const std::string& c
           {
           boost::property_tree::ptree calibrationData = px.second;
           int index = -1;
-          double azimuth = 0;
+          double rotationalCorrection = 0;
           double vertCorrection = 0;
           double distCorrection = 0;
           double vertOffsetCorrection = 0;
@@ -1121,7 +1121,7 @@ void vtkVelodyneHDLReader::vtkInternal::LoadCorrectionsFile(const std::string& c
             if (item.first == "id_")
               index = atoi(item.second.data().c_str());
             if (item.first == "rotCorrection_")
-              azimuth = atof(item.second.data().c_str());
+              rotationalCorrection = atof(item.second.data().c_str());
             if (item.first == "vertCorrection_")
               vertCorrection = atof(item.second.data().c_str());
             if (item.first == "distCorrection_")
@@ -1133,7 +1133,7 @@ void vtkVelodyneHDLReader::vtkInternal::LoadCorrectionsFile(const std::string& c
             }
           if (index != -1)
             {
-            laser_corrections_[index].azimuthCorrection = azimuth;
+            laser_corrections_[index].rotationalCorrection = rotationalCorrection;
             laser_corrections_[index].verticalCorrection = vertCorrection;
             laser_corrections_[index].distanceCorrection = distCorrection / 100.0;
             laser_corrections_[index].verticalOffsetCorrection = vertOffsetCorrection / 100.0;
