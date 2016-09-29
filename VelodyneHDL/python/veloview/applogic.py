@@ -1714,12 +1714,15 @@ def onLaserSelection(show = True):
     nchannels = 32
     if reader:
         reader.GetClientSideObject().GetLaserSelection(oldmask)
-        reader.GetClientSideObject().GetVerticalCorrections(corrections)
+        # reader.GetClientSideObject().GetVerticalCorrections(corrections)
+        reader.GetClientSideObject().GetLasersCorrections(columns,corrections)
         nchannels = reader.GetPropertyValue('NumberOfChannels')
 
     elif sensor:
         sensor.GetClientSideObject().GetLaserSelection(oldmask)
-        sensor.GetClientSideObject().GetVerticalCorrections(corrections)
+        # sensor.GetClientSideObject().GetVerticalCorrections(corrections)
+        sensor.GetClientSideObject().GetLasersCorrections(columns,corrections)
+
         nchannels = sensor.GetPropertyValue('NumberOfChannels')
 
     # Need a way to initialize the mask
@@ -1728,7 +1731,8 @@ def onLaserSelection(show = True):
     dialog.connect('accepted()', onLaserSelectionChanged)
     if show:
         dialog.setLaserSelectionSelector(oldmask)
-        dialog.setVerticalCorrections(corrections, nchannels)
+        # dialog.setVerticalCorrections(corrections, nchannels)
+        dialog.setLasersCorrections(columns,corrections,nchannels)
         dialog.show()
 
 
