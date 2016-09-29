@@ -705,14 +705,35 @@ void vtkVelodyneHDLSource::SetCropRegion(double xmin, double xmax,
 }
 
 //-----------------------------------------------------------------------------
-void vtkVelodyneHDLSource::GetVerticalCorrections(double VerticalCorrections[64])
+void vtkVelodyneHDLSource::GetLaserCorrections(
+      double verticalCorrection[64],
+      double rotationalCorrection[64],
+      double distanceCorrection[64],
+      double distanceCorrectionX[64],
+      double distanceCorrectionY[64],
+      double verticalOffsetCorrection[64],
+      double horizontalOffsetCorrection[64],
+      double focalDistance[64],
+      double focalSlope[64],
+      double minIntensity[64],
+      double maxIntensity[64])
 {
   boost::lock_guard<boost::mutex> lock(this->Internal->Consumer->ReaderMutex);
 
-  this->Internal->Consumer->GetReader()->GetVerticalCorrections(VerticalCorrections);
+  this->Internal->Consumer->GetReader()->GetLaserCorrections(
+       verticalCorrection,
+       rotationalCorrection,
+       distanceCorrection,
+       distanceCorrectionX,
+       distanceCorrectionY,
+       verticalOffsetCorrection,
+       horizontalOffsetCorrection,
+       focalDistance,
+       focalSlope,
+       minIntensity,
+       maxIntensity);
   this->Modified();
 }
-
 //-----------------------------------------------------------------------------
 unsigned int vtkVelodyneHDLSource::GetDualReturnFilter() const
 {

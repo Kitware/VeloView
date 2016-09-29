@@ -1709,19 +1709,47 @@ def onLaserSelection(show = True):
     oldmask = [1] * 64
     reader = getReader()
     sensor = getSensor()
-    corrections = [0] * 64
+    verticalCorrection = [0] * 64
+    rotationalCorrection = [0] * 64
+    distanceCorrection = [0] * 64
+    distanceCorrectionX = [0] * 64
+    distanceCorrectionY = [0] * 64
+    verticalOffsetCorrection = [0] * 64
+    horizontalOffsetCorrection = [0] * 64
+    focalDistance = [0] * 64
+    focalSlope = [0] * 64
+    minIntensity = [0] * 64
+    maxIntensity = [0] * 64
 
     nchannels = 32
     if reader:
         reader.GetClientSideObject().GetLaserSelection(oldmask)
-        # reader.GetClientSideObject().GetVerticalCorrections(corrections)
-        reader.GetClientSideObject().GetLasersCorrections(columns,corrections)
+        reader.GetClientSideObject().GetLaserCorrections(verticalCorrection,
+            rotationalCorrection,
+            distanceCorrection,
+            distanceCorrectionX,
+            distanceCorrectionY,
+            verticalOffsetCorrection,
+            horizontalOffsetCorrection,
+            focalDistance,
+            focalSlope,
+            minIntensity,
+            maxIntensity)
         nchannels = reader.GetPropertyValue('NumberOfChannels')
 
     elif sensor:
         sensor.GetClientSideObject().GetLaserSelection(oldmask)
-        # sensor.GetClientSideObject().GetVerticalCorrections(corrections)
-        sensor.GetClientSideObject().GetLasersCorrections(columns,corrections)
+        sensor.GetClientSideObject().GetLaserCorrections(verticalCorrection,
+            rotationalCorrection,
+            distanceCorrection,
+            distanceCorrectionX,
+            distanceCorrectionY,
+            verticalOffsetCorrection,
+            horizontalOffsetCorrection,
+            focalDistance,
+            focalSlope,
+            minIntensity,
+            maxIntensity)
 
         nchannels = sensor.GetPropertyValue('NumberOfChannels')
 
@@ -1731,8 +1759,18 @@ def onLaserSelection(show = True):
     dialog.connect('accepted()', onLaserSelectionChanged)
     if show:
         dialog.setLaserSelectionSelector(oldmask)
-        # dialog.setVerticalCorrections(corrections, nchannels)
-        dialog.setLasersCorrections(columns,corrections,nchannels)
+        dialog.setLasersCorrections(verticalCorrection,
+            rotationalCorrection,
+            distanceCorrection,
+            distanceCorrectionX,
+            distanceCorrectionY,
+            verticalOffsetCorrection,
+            horizontalOffsetCorrection,
+            focalDistance,
+            focalSlope,
+            minIntensity,
+            maxIntensity,
+            nchannels)
         dialog.show()
 
 

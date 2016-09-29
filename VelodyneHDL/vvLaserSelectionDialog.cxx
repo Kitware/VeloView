@@ -87,8 +87,12 @@ void vvLaserSelectionDialog::pqInternal::setup()
   QAbstractItemModel* model = table->model();
 
   table->setColumnWidth(0, 32);
-  table->setColumnWidth(1, 128);
-  table->setColumnWidth(3, 128);
+
+  for (int i = 1; i < 13; i++)
+  {
+  table->setColumnWidth(i, 128);
+  }
+
   // Set checkable header
   QTableWidgetItem* hcheckbox = new QTableWidgetItem();
   hcheckbox->setCheckState(Qt::Checked);
@@ -105,17 +109,23 @@ void vvLaserSelectionDialog::pqInternal::setup()
     checkbox->setFlags(Qt::ItemIsSelectable | Qt::ItemIsUserCheckable | Qt::ItemIsEnabled);
     checkbox->setTextAlignment(Qt::AlignHCenter);
 
-    QTableWidgetItem* verticalAngle = new QTableWidgetItem;
-    verticalAngle->setData(Qt::EditRole, 0.0);
-    verticalAngle->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled);
+    for (int j = 1; j < 12; j++)
+      {
+      QTableWidgetItem* values = new QTableWidgetItem;
+      values->setData(Qt::EditRole, 0.0);
+      values->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled);
+
+      table->setItem(i, j, values);
+      }
+    
 
     QTableWidgetItem* channel = new QTableWidgetItem;
     channel->setData(Qt::EditRole, QVariant::fromValue(i));
     channel->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled);
 
     table->setItem(i, 0, checkbox);
-    table->setItem(i, 1, verticalAngle);
-    table->setItem(i, 2, channel);
+    
+    table->setItem(i, 12, channel);
     }
 
   QTableWidgetItem* leadBox = table->horizontalHeaderItem(0);
@@ -214,7 +224,7 @@ QVector<int> vvLaserSelectionDialog::getLaserSelectionSelector()
   for(int i = 0; i < this->Internal->Table->rowCount(); ++i)
     {
     QTableWidgetItem* item = this->Internal->Table->item(i, 0);
-    QTableWidgetItem* value = this->Internal->Table->item(i, 2);
+    QTableWidgetItem* value = this->Internal->Table->item(i, 12);
     int channel = value->data(Qt::EditRole).toInt();
     assert(channel < 64 && channel >= 0);
     result[channel] = (item->checkState() == Qt::Checked);
@@ -223,15 +233,59 @@ QVector<int> vvLaserSelectionDialog::getLaserSelectionSelector()
 }
 
 //-----------------------------------------------------------------------------
-void vvLaserSelectionDialog::setVerticalCorrections(const QVector<double>& corrections, int nchannels)
-{
+void vvLaserSelectionDialog::setLasersCorrections(const QVector<double>& verticalCorrection,
+                                                const QVector<double>& rotationalCorrection,
+                                                const QVector<double>& distanceCorrection,
+                                                const QVector<double>& distanceCorrectionX,
+                                                const QVector<double>& distanceCorrectionY,
+                                                const QVector<double>& verticalOffsetCorrection,
+                                                const QVector<double>& horizontalOffsetCorrection,
+                                                const QVector<double>& focalDistance,
+                                                const QVector<double>& focalSlope,
+                                                const QVector<double>& minIntensity,
+                                                const QVector<double>& maxIntensity,
+                                                int nchannels)
+                                                {
   for(int i = 0; i < this->Internal->Table->rowCount(); ++i)
     {
     QTableWidgetItem* item = this->Internal->Table->item(i, 1);
-    QTableWidgetItem* value = this->Internal->Table->item(i, 2);
+    QTableWidgetItem* value = this->Internal->Table->item(i, 12);
     int channel = value->data(Qt::EditRole).toInt();
+
     assert(channel < 64 && channel >= 0);
-    item->setData(Qt::EditRole, corrections[channel]);
+
+    item->setData(Qt::EditRole, verticalCorrection[channel]);
+
+    item = this->Internal->Table->item(i, 2);
+    item->setData(Qt::EditRole, rotationalCorrection[channel]);
+
+    item = this->Internal->Table->item(i, 3);
+    item->setData(Qt::EditRole, distanceCorrection[channel]);
+
+    item = this->Internal->Table->item(i, 4);
+    item->setData(Qt::EditRole, distanceCorrectionX[channel]);
+
+    item = this->Internal->Table->item(i, 5);
+    item->setData(Qt::EditRole, distanceCorrectionY[channel]);
+
+    item = this->Internal->Table->item(i, 6);
+    item->setData(Qt::EditRole, verticalOffsetCorrection[channel]);
+
+    item = this->Internal->Table->item(i, 7);
+    item->setData(Qt::EditRole, horizontalOffsetCorrection[channel]);
+
+    item = this->Internal->Table->item(i, 8);
+    item->setData(Qt::EditRole, focalDistance[channel]);
+
+    item = this->Internal->Table->item(i, 9);
+    item->setData(Qt::EditRole, focalSlope[channel]);
+
+    item = this->Internal->Table->item(i, 10);
+    item->setData(Qt::EditRole, minIntensity[channel]);
+
+    item = this->Internal->Table->item(i, 11);
+    item->setData(Qt::EditRole, maxIntensity[channel]);
+
     }
 
   if(nchannels > this->Internal->Table->rowCount())
