@@ -204,6 +204,7 @@ vvLaserSelectionDialog::vvLaserSelectionDialog(QWidget *p) : QDialog(p)
   QObject::connect(this->Internal->EnableDisableAll, SIGNAL(stateChanged(int)),
                    this, SLOT(onEnableDisableAll(int)));
 
+  this->Internal->Table->setSortingEnabled(true);
 }
 
 //-----------------------------------------------------------------------------
@@ -243,7 +244,7 @@ void vvLaserSelectionDialog::setVerticalCorrections(const QVector<double>& corre
     this->Internal->Table->hideRow(i);
     }
 
-  // Sort the table
+  // Sort the table by vertical correction
   this->Internal->Table->sortItems(1);
 }
 
