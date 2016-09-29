@@ -1683,6 +1683,8 @@ int vtkVelodyneHDLReader::ReadFrameInformation()
 #pragma pack(push, 1)
 struct HDLLaserCorrectionByte
   { // This is the per laser 64-byte struct in the rolling data
+  // WARNING data in packets are little-endian, which enables direct casting
+  //  in short ONLY on little-endian machines (Intel & Co are fine)
   unsigned char channel;
   signed short verticalCorrection;    // This is in 100th of degree
   signed short rotationalCorrection;  // This is in 100th of degree
@@ -1724,11 +1726,12 @@ bool vtkVelodyneHDLReader::vtkInternal::HDL64LoadCorrectionsFromStreamData()
     {
     return false;
     }
-  const int strt=12;
+  const int idxDSRDataFromMarker=12;
   for (int dsr = 0; dsr < HDL_MAX_NUM_LASERS; ++dsr)
     {
     const HDLLaserCorrectionByte * correctionStream=
-        reinterpret_cast<const HDLLaserCorrectionByte*>(&data[strt + 64 * dsr]);
+        reinterpret_cast<const HDLLaserCorrectionByte*>
+          (&data[idxDSRDataFromMarker + 64 * dsr]);
     if (correctionStream->channel != dsr)
       {
       return false;
