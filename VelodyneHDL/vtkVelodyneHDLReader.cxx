@@ -242,6 +242,7 @@ public:
 
   void Init();
   void InitTrigonometricTables();
+  void PrecomputeCorrectionCosSin();
   void LoadCorrectionsFile(const std::string& filename);
   bool HDL64LoadCorrectionsFromStreamData();
 
@@ -1135,24 +1136,29 @@ void vtkVelodyneHDLReader::vtkInternal::LoadCorrectionsFile(const std::string& c
       }
     }
 
-  for (int i = 0; i < HDL_MAX_NUM_LASERS; i++)
-    {
-    HDLLaserCorrection &correction = laser_corrections_[i];
-    correction.cosVertCorrection =
-        std::cos (HDL_Grabber_toRadians(correction.verticalCorrection));
-    correction.sinVertCorrection =
-        std::sin (HDL_Grabber_toRadians(correction.verticalCorrection));
-    correction.cosRotationalCorrection =
-        std::cos (HDL_Grabber_toRadians(correction.rotationalCorrection));
-    correction.sinRotationalCorrection =
-        std::sin (HDL_Grabber_toRadians(correction.rotationalCorrection));
-    correction.sinVertOffsetCorrection = correction.verticalOffsetCorrection
-                                       * correction.sinVertCorrection;
-    correction.cosVertOffsetCorrection = correction.verticalOffsetCorrection
-                                       * correction.cosVertCorrection;
-    }
+  PrecomputeCorrectionCosSin();
   this->CorrectionsInitialized = true;
 }
+void vtkVelodyneHDLReader::vtkInternal::PrecomputeCorrectionCosSin()
+  {
+
+    for (int i = 0; i < HDL_MAX_NUM_LASERS; i++)
+      {
+      HDLLaserCorrection &correction = laser_corrections_[i];
+      correction.cosVertCorrection =
+          std::cos (HDL_Grabber_toRadians(correction.verticalCorrection));
+      correction.sinVertCorrection =
+          std::sin (HDL_Grabber_toRadians(correction.verticalCorrection));
+      correction.cosRotationalCorrection =
+          std::cos (HDL_Grabber_toRadians(correction.rotationalCorrection));
+      correction.sinRotationalCorrection =
+          std::sin (HDL_Grabber_toRadians(correction.rotationalCorrection));
+      correction.sinVertOffsetCorrection = correction.verticalOffsetCorrection
+                                         * correction.sinVertCorrection;
+      correction.cosVertOffsetCorrection = correction.verticalOffsetCorrection
+                                         * correction.cosVertCorrection;
+      }
+  }
 
 //-----------------------------------------------------------------------------
 void vtkVelodyneHDLReader::vtkInternal::Init()
@@ -1666,21 +1672,6 @@ bool vtkVelodyneHDLReader::vtkInternal::HDL64LoadCorrectionsFromStreamData()
     }
 
   this->CalibrationReportedNumLasers = 64;
-  for (int i = 0; i < HDL_MAX_NUM_LASERS; i++)
-    {
-    HDLLaserCorrection &correction = laser_corrections_[i];
-    correction.cosVertCorrection =
-        std::cos (HDL_Grabber_toRadians(correction.verticalCorrection));
-    correction.sinVertCorrection =
-        std::sin (HDL_Grabber_toRadians(correction.verticalCorrection));
-    correction.cosRotationalCorrection =
-        std::cos (HDL_Grabber_toRadians(correction.rotationalCorrection));
-    correction.sinRotationalCorrection =
-        std::sin (HDL_Grabber_toRadians(correction.rotationalCorrection));
-    correction.sinVertOffsetCorrection = correction.verticalOffsetCorrection
-                                       * correction.sinVertCorrection;
-    correction.cosVertOffsetCorrection = correction.verticalOffsetCorrection
-                                       * correction.cosVertCorrection;
-    }
+  PrecomputeCorrectionCosSin();
   this->CorrectionsInitialized = true;
   }
