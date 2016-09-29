@@ -216,6 +216,7 @@ public:
     this->DualReturnFilter = 0;
     this->IsDualReturnSensorMode = false;
     this->IsHDL64Data = false;
+    this->distanceResolutionM = 0.002;
 
     this->Init();
   }
@@ -272,6 +273,7 @@ public:
   bool CropReturns;
   bool CropInside;
   double CropRegion[6];
+  double distanceResolutionM;
 
   std::vector<bool> LaserSelection;
   unsigned int DualReturnFilter;
@@ -965,7 +967,7 @@ void vtkVelodyneHDLReader::vtkInternal::PushFiringData(const unsigned char laser
     sinAzimuth = std::sin (azimuthInRadians);
   }
 
-  double distanceM = laserReturn->distance * 0.002 + correction->distanceCorrection;
+  double distanceM = laserReturn->distance * this->distanceResolutionM + correction->distanceCorrection;
   double xyDistance = distanceM * correction->cosVertCorrection;
 
   // Compute raw position
@@ -1120,6 +1122,14 @@ void vtkVelodyneHDLReader::vtkInternal::LoadCorrectionsFile(const std::string& c
     {
     vtkGenericWarningMacro("LoadCorrectionsFile: error reading calibration file: " << correctionsFile);
     return;
+    }
+  // Read distLSB if provided
+  BOOST_FOREACH (boost::property_tree::ptree::value_type &v, pt.get_child("boost_serialization.DB"))
+    {
+    if (v.first == "distLSB_")
+      {// Stored in cm in xml
+      distanceResolutionM = atof(v.second.data().c_str()) / 100.0;
+      }
     }
 
   int enabledCount = 0;
