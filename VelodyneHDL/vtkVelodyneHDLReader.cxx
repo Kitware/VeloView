@@ -1181,7 +1181,7 @@ void vtkVelodyneHDLReader::vtkInternal::LoadCorrectionsFile(const std::string& c
             if (item.first == "horizOffsetCorrection_")
               horizOffsetCorrection = atof(item.second.data().c_str());
             }
-          if (index != -1)
+          if (index != -1 && index < HDL_MAX_NUM_LASERS)
             {
             laser_corrections_[index].azimuthCorrection = azimuth;
             laser_corrections_[index].verticalCorrection = vertCorrection;
