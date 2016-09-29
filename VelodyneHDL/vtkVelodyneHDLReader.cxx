@@ -216,6 +216,7 @@ public:
     this->DualReturnFilter = 0;
     this->IsDualReturnSensorMode = false;
     this->IsHDL64Data = false;
+    this->skipFirstFrame = true;
     this->distanceResolutionM = 0.002;
 
     this->Init();
@@ -244,6 +245,7 @@ public:
 
   bool IsDualReturnSensorMode;
   bool IsHDL64Data;
+  bool skipFirstFrame;
 
   int LastAzimuth;
   unsigned int LastTimestamp;
@@ -1220,6 +1222,15 @@ void vtkVelodyneHDLReader::vtkInternal::Init()
 //-----------------------------------------------------------------------------
 void vtkVelodyneHDLReader::vtkInternal::SplitFrame(bool force)
 {
+  if(this->CurrentDataset->GetNumberOfPoints() == 0)
+    {
+    return;
+    }
+  if(this->skipFirstFrame)
+    {
+    this->skipFirstFrame = false;
+    return;
+    }
   if(this->SplitCounter > 0 && !force)
     {
     this->SplitCounter--;
@@ -1494,9 +1505,7 @@ int vtkVelodyneHDLReader::ReadFrameInformation()
   reader.GetFilePosition(&lastFilePosition);
 
 
-  filePositions.push_back(lastFilePosition);
-  skips.push_back(0);
-
+  bool isEmptyFrame = true;
   while (reader.NextPacket(data, dataLength, timeSinceStart))
     {
 
@@ -1518,16 +1527,27 @@ int vtkVelodyneHDLReader::ReadFrameInformation()
       {
       HDLFiringData firingData = dataPacket->firingData[i];
 
-      if (firingData.rotationalPosition < lastAzimuth)
+      // Test if all lasers had a positive distance
+      for(int laserID = 0; laserID < HDL_LASER_PER_FIRING; laserID++)
         {
-        filePositions.push_back(lastFilePosition);
-        skips.push_back(i);
-        this->UpdateProgress(0.0);
+        if(firingData.laserReturns[laserID].distance != 0)
+            isEmptyFrame = false;
         }
 
+      if (firingData.rotationalPosition < lastAzimuth)
+        {
+        // Add file position if the frame is not empty
+        if(!isEmptyFrame)
+          {
+          filePositions.push_back(lastFilePosition);
+          skips.push_back(i);
+          }
+        this->UpdateProgress(0.0);
+        // We start a new frame, reinitialize the boolean
+        isEmptyFrame = true;
+        }
       lastAzimuth = firingData.rotationalPosition;
       }
-
     lastTimestamp = dataPacket->gpsTimestamp;
     reader.GetFilePosition(&lastFilePosition);
     }
