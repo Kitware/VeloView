@@ -51,71 +51,7 @@ public:
     DUAL_DISTANCE_MASK = 0x3,
     DUAL_INTENSITY_MASK = 0xc,
   };
-  static const int HDL_NUM_ROT_ANGLES = 36001;
-  static const int HDL_LASER_PER_FIRING = 32;
-  static const int HDL_MAX_NUM_LASERS = 64;
-  static const int HDL_FIRING_PER_PKT = 12;
 
-  enum HDLBlock
-  {
-    BLOCK_0_TO_31 = 0xeeff,
-    BLOCK_32_TO_63 = 0xddff
-  };
-
-  #pragma pack(push, 1)
-  typedef struct HDLLaserReturn
-  {
-    unsigned short distance;
-    unsigned char intensity;
-  } HDLLaserReturn;
-
-  struct HDLFiringData
-  {
-    unsigned short blockIdentifier;
-    unsigned short rotationalPosition;
-    HDLLaserReturn laserReturns[HDL_LASER_PER_FIRING];
-  };
-
-  struct HDLDataPacket
-  {
-    HDLFiringData firingData[HDL_FIRING_PER_PKT];
-    unsigned int gpsTimestamp;
-    unsigned char dataType;
-    unsigned char dataValue;
-  };
-
-  struct HDLLaserCorrection
-  {
-    double rotationalCorrection;
-    double verticalCorrection;
-    double distanceCorrection;
-    double distanceCorrectionX;
-    double distanceCorrectionY;
-
-    double verticalOffsetCorrection;
-    double horizontalOffsetCorrection;
-
-    double focalDistance;
-    double focalSlope;
-
-    double sinRotationalCorrection;
-    double cosRotationalCorrection;
-    double sinVertCorrection;
-    double cosVertCorrection;
-    double sinVertOffsetCorrection;
-    double cosVertOffsetCorrection;
-
-    short minIntensity;
-    short maxIntensity;
-  };
-
-  struct HDLRGB
-  {
-    uint8_t r;
-    uint8_t g;
-    uint8_t b;
-  };
-  #pragma pack(pop)
 public:
   static vtkVelodyneHDLReader *New();
   vtkTypeMacro(vtkVelodyneHDLReader, vtkPolyDataAlgorithm);

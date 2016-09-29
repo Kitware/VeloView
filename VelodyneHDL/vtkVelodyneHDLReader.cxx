@@ -54,7 +54,6 @@
 
 #include <vtkTransform.h>
 
-
 #include <sstream>
 #include <algorithm>
 #include <cmath>
@@ -76,7 +75,74 @@ namespace
 
 #define HDL_Grabber_toRadians(x) ((x) * vtkMath::Pi() / 180.0)
 
+static const int HDL_NUM_ROT_ANGLES = 36001;
+static const int HDL_LASER_PER_FIRING = 32;
+static const int HDL_MAX_NUM_LASERS = 64;
+static const int HDL_FIRING_PER_PKT = 12;
 
+enum HDLBlock
+{
+  BLOCK_0_TO_31 = 0xeeff,
+  BLOCK_32_TO_63 = 0xddff
+};
+
+#pragma pack(push, 1)
+typedef struct HDLLaserReturn
+{
+  unsigned short distance;
+  unsigned char intensity;
+} HDLLaserReturn;
+
+struct HDLFiringData
+{
+  unsigned short blockIdentifier;
+  unsigned short rotationalPosition;
+  HDLLaserReturn laserReturns[HDL_LASER_PER_FIRING];
+};
+
+struct HDLDataPacket
+{
+  HDLFiringData firingData[HDL_FIRING_PER_PKT];
+  unsigned int gpsTimestamp;
+  unsigned char dataType;
+  unsigned char dataValue;
+};
+
+struct HDLLaserCorrection  // Internal representation of per-laser correction
+{
+  // In degrees
+  double rotationalCorrection;
+  double verticalCorrection;
+  // In meters
+  double distanceCorrection;
+  double distanceCorrectionX;
+  double distanceCorrectionY;
+
+  double verticalOffsetCorrection;
+  double horizontalOffsetCorrection;
+
+  double focalDistance;
+  // In unscaled unit
+  double focalSlope;
+
+  double sinRotationalCorrection;
+  double cosRotationalCorrection;
+  double sinVertCorrection;
+  double cosVertCorrection;
+  double sinVertOffsetCorrection;
+  double cosVertOffsetCorrection;
+
+  short minIntensity;
+  short maxIntensity;
+};
+
+struct HDLRGB
+{
+  uint8_t r;
+  uint8_t g;
+  uint8_t b;
+};
+#pragma pack(pop)
 
 //-----------------------------------------------------------------------------
 int MapFlags(unsigned int flags, unsigned int low, unsigned int high)
@@ -120,8 +186,8 @@ double HDL64EAdjustTimeStamp(int firingblock,
                             int dsr,
                             const bool isDualReturnMode)
 {
-  const int dsrReversed = vtkVelodyneHDLReader::HDL_LASER_PER_FIRING - dsr - 1;
-  const int firingblockReversed = vtkVelodyneHDLReader::HDL_FIRING_PER_PKT - firingblock - 1;
+  const int dsrReversed = HDL_LASER_PER_FIRING - dsr - 1;
+  const int firingblockReversed = HDL_FIRING_PER_PKT - firingblock - 1;
   if (!isDualReturnMode)
     {
       const double TimeOffsetMicroSec[4] = {2.34, 2.54, 4.74, 6.0};
@@ -1643,7 +1709,7 @@ bool vtkVelodyneHDLReader::vtkInternal::HDL64LoadCorrectionsFromStreamData()
     return false;
     }
   const int strt=12;
-  for (int dsr = 0; dsr < vtkVelodyneHDLReader::HDL_MAX_NUM_LASERS; ++dsr)
+  for (int dsr = 0; dsr < HDL_MAX_NUM_LASERS; ++dsr)
     {
     const HDLLaserCorrectionByte * correctionStream=
         reinterpret_cast<const HDLLaserCorrectionByte*>(&data[strt + 64 * dsr]);
@@ -1651,7 +1717,7 @@ bool vtkVelodyneHDLReader::vtkInternal::HDL64LoadCorrectionsFromStreamData()
       {
       return false;
       }
-    vtkVelodyneHDLReader::HDLLaserCorrection & vvCorrection = laser_corrections_[correctionStream->channel];
+    HDLLaserCorrection & vvCorrection = laser_corrections_[correctionStream->channel];
     vvCorrection.verticalCorrection = correctionStream->verticalCorrection / 100.0;
     vvCorrection.rotationalCorrection = correctionStream->rotationalCorrection / 100.0;
     vvCorrection.distanceCorrection = correctionStream->farDistanceCorrection / 1000.0;
