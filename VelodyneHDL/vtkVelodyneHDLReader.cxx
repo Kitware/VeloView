@@ -216,6 +216,7 @@ public:
     this->DualReturnFilter = 0;
     this->IsDualReturnSensorMode = false;
     this->IsHDL64Data = false;
+    this->distanceResolutionM = 0.002;
 
     this->Init();
   }
@@ -272,6 +273,7 @@ public:
   bool CropReturns;
   bool CropInside;
   double CropRegion[6];
+  double distanceResolutionM;
 
   std::vector<bool> LaserSelection;
   unsigned int DualReturnFilter;
@@ -965,7 +967,7 @@ void vtkVelodyneHDLReader::vtkInternal::PushFiringData(const unsigned char laser
     sinAzimuth = std::sin (azimuthInRadians);
   }
 
-  double distanceM = laserReturn->distance * 0.002 + correction->distanceCorrection;
+  double distanceM = laserReturn->distance * this->distanceResolutionM + correction->distanceCorrection;
   double xyDistance = distanceM * correction->cosVertCorrection;
 
   // Compute raw position
@@ -1121,6 +1123,14 @@ void vtkVelodyneHDLReader::vtkInternal::LoadCorrectionsFile(const std::string& c
     vtkGenericWarningMacro("LoadCorrectionsFile: error reading calibration file: " << correctionsFile);
     return;
     }
+  // Read distLSB if provided
+  BOOST_FOREACH (boost::property_tree::ptree::value_type &v, pt.get_child("boost_serialization.DB"))
+    {
+    if (v.first == "distLSB_")
+      {// Stored in cm in xml
+      distanceResolutionM = atof(v.second.data().c_str()) / 100.0;
+      }
+    }
 
   int enabledCount = 0;
   BOOST_FOREACH (boost::property_tree::ptree::value_type &v, pt.get_child("boost_serialization.DB.enabled_"))
@@ -1171,10 +1181,12 @@ void vtkVelodyneHDLReader::vtkInternal::LoadCorrectionsFile(const std::string& c
             if (item.first == "horizOffsetCorrection_")
               horizOffsetCorrection = atof(item.second.data().c_str());
             }
-          if (index != -1)
+          if (index != -1 && index < HDL_MAX_NUM_LASERS)
             {
+            // Stored in degrees in xml
             laser_corrections_[index].azimuthCorrection = azimuth;
             laser_corrections_[index].verticalCorrection = vertCorrection;
+            // Stored in centimeters in xml
             laser_corrections_[index].distanceCorrection = distCorrection / 100.0;
             laser_corrections_[index].verticalOffsetCorrection = vertOffsetCorrection / 100.0;
             laser_corrections_[index].horizontalOffsetCorrection = horizOffsetCorrection / 100.0;
@@ -1320,7 +1332,12 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessFiring(HDLFiringData* firingData,
 
     if(this->CalibrationReportedNumLasers == 16)
       {
-      assert(firingBlockLaserOffset == 0);
+      if(firingBlockLaserOffset == 0)
+        {
+        vtkGenericWarningMacro("Error: Received a UPPERBLOCK firing packet "
+                      "with a VLP-16. Ignoring the firing.");
+        return;
+        }
       if(laserId >= 16)
         {
         laserId -= 16;
