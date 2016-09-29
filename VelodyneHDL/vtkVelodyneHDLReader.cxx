@@ -1330,7 +1330,12 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessFiring(HDLFiringData* firingData,
 
     if(this->CalibrationReportedNumLasers == 16)
       {
-      assert(firingBlockLaserOffset == 0);
+      if(firingBlockLaserOffset == 0)
+        {
+        vtkGenericWarningMacro("Error: Received a UPPERBLOCK firing packet "
+                      "with a VLP-16. Ignoring the firing.");
+        return;
+        }
       if(laserId >= 16)
         {
         laserId -= 16;
