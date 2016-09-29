@@ -498,11 +498,32 @@ void vtkVelodyneHDLReader::SetDualReturnFilter(unsigned int filter)
 }
 
 //-----------------------------------------------------------------------------
-void vtkVelodyneHDLReader::GetVerticalCorrections(double VerticalCorrections[64])
+void vtkVelodyneHDLReader::GetLaserCorrections(
+    double verticalCorrection[64],
+    double rotationalCorrection[64],
+    double distanceCorrection[64],
+    double distanceCorrectionX[64],
+    double distanceCorrectionY[64],
+    double verticalOffsetCorrection[64],
+    double horizontalOffsetCorrection[64],
+    double focalDistance[64],
+    double focalSlope[64],
+    double minIntensity[64],
+    double maxIntensity[64]  )
 {
   for(int i = 0; i < 64; ++i)
     {
-    VerticalCorrections[i] = this->Internal->laser_corrections_[i].verticalCorrection;
+    verticalCorrection[i] = this->Internal->laser_corrections_[i].verticalCorrection;
+    rotationalCorrection[i] = this->Internal->laser_corrections_[i].rotationalCorrection;
+    distanceCorrection[i] = this->Internal->laser_corrections_[i].distanceCorrection;
+    distanceCorrectionX[i] = this->Internal->laser_corrections_[i].distanceCorrectionX;
+    distanceCorrectionY[i] = this->Internal->laser_corrections_[i].distanceCorrectionY;
+    verticalOffsetCorrection[i] = this->Internal->laser_corrections_[i].verticalOffsetCorrection;
+    horizontalOffsetCorrection[i] = this->Internal->laser_corrections_[i].horizontalOffsetCorrection;
+    focalDistance[i] = this->Internal->laser_corrections_[i].focalDistance;
+    focalSlope[i] = this->Internal->laser_corrections_[i].focalSlope;
+    minIntensity[i] = this->Internal->laser_corrections_[i].minIntensity;
+    maxIntensity[i] = this->Internal->laser_corrections_[i].maxIntensity;
     }
 }
 
