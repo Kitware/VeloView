@@ -1343,7 +1343,8 @@ void vtkVelodyneHDLReader::vtkInternal::ComputeCorrectedValues(
    */
   double distanceMRaw = laserReturn->distance * this->distanceResolutionM;
   distanceM = distanceMRaw + correction->distanceCorrection;
-  double xyDistance = distanceM * correction->cosVertCorrection; //- correction->sinVertOffsetCorrection;
+  double xyDistance = distanceM * correction->cosVertCorrection
+                      - correction->sinVertOffsetCorrection;
 
 #ifdef FALSE
   if (0)
