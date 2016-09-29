@@ -1210,13 +1210,13 @@ void vtkVelodyneHDLReader::vtkInternal::Init()
 //-----------------------------------------------------------------------------
 void vtkVelodyneHDLReader::vtkInternal::SplitFrame(bool force)
 {
+  if(this->CurrentDataset->GetNumberOfPoints() == 0)
+    {
+    return;
+    }
   if(this->skipFirstFrame)
     {
     this->skipFirstFrame = false;
-    return;
-    }
-  if(this->CurrentDataset->GetNumberOfPoints() == 0)
-    {
     return;
     }
   if(this->SplitCounter > 0 && !force)
@@ -1488,7 +1488,7 @@ int vtkVelodyneHDLReader::ReadFrameInformation()
   reader.GetFilePosition(&lastFilePosition);
 
 
-  bool IsEmptyFrame = true;
+  bool isEmptyFrame = true;
   while (reader.NextPacket(data, dataLength, timeSinceStart))
     {
 
@@ -1514,25 +1514,23 @@ int vtkVelodyneHDLReader::ReadFrameInformation()
       for(int laserID = 0; laserID < HDL_LASER_PER_FIRING; laserID++)
         {
         if(firingData.laserReturns[laserID].distance != 0)
-            IsEmptyFrame = false;
+            isEmptyFrame = false;
         }
 
       if (firingData.rotationalPosition < lastAzimuth)
         {
         // Add file position if the frame is not empty
-        if(!IsEmptyFrame)
+        if(!isEmptyFrame)
           {
           filePositions.push_back(lastFilePosition);
           skips.push_back(i);
           }
         this->UpdateProgress(0.0);
         // We start a new frame, reinitialize the boolean
-        IsEmptyFrame = true;
+        isEmptyFrame = true;
         }
-
       lastAzimuth = firingData.rotationalPosition;
       }
-
     lastTimestamp = dataPacket->gpsTimestamp;
     reader.GetFilePosition(&lastFilePosition);
     }
