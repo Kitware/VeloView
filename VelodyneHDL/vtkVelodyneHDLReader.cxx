@@ -571,14 +571,20 @@ void vtkVelodyneHDLReader::SetCorrectionsFile(const std::string& correctionsFile
     {
     return;
     }
-
-  if (!boost::filesystem::exists(correctionsFile) ||
-      boost::filesystem::is_directory(correctionsFile))
+  if (correctionsFile != "")
     {
-    vtkErrorMacro("Invalid sensor configuration file" << correctionsFile);
-    return;
+    if (!boost::filesystem::exists(correctionsFile) ||
+        boost::filesystem::is_directory(correctionsFile))
+      {
+      vtkErrorMacro("Invalid sensor configuration file" << correctionsFile);
+      return;
+      }
+    this->Internal->LoadCorrectionsFile(correctionsFile);
     }
-  this->Internal->LoadCorrectionsFile(correctionsFile);
+  else
+    {
+    this->Internal->CorrectionsInitialized = false;
+    }
 
   this->CorrectionsFile = correctionsFile;
   this->UnloadData();
@@ -1663,8 +1669,9 @@ int vtkVelodyneHDLReader::ReadFrameInformation()
       lastAzimuth = firingData->rotationalPosition;
       }
 
-    // Accumulate Status byte data
-    if(this->Internal->IsHDL64Data)
+    // Accumulate HDL6 Status byte data
+    if(this->Internal->IsHDL64Data
+       && !this->Internal->CorrectionsInitialized)
       {
         this->Internal->rollingCalibrationData->appendData(
               dataPacket->gpsTimestamp,
@@ -1721,8 +1728,7 @@ struct HDLLaserCorrectionByte
 bool vtkVelodyneHDLReader::vtkInternal::HDL64LoadCorrectionsFromStreamData()
   {
   std::vector<unsigned char> data;
-  if(this->CorrectionsInitialized ||
-     !this->rollingCalibrationData->getAlignedRollingData(data))
+  if(!this->rollingCalibrationData->getAlignedRollingData(data))
     {
     return false;
     }
