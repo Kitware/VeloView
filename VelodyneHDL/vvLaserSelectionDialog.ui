@@ -75,7 +75,7 @@
      </column>
      <column>
       <property name="text">
-       <string>Vertical Angle</string>
+       <string>Vertical Corr. (deg)</string>
       </property>
       <property name="textAlignment">
        <set>AlignCenter</set>
@@ -83,7 +83,7 @@
      </column>
      <column>
       <property name="text">
-       <string>Rotational Correction</string>
+       <string>Rotational Corr. (deg)</string>
       </property>
       <property name="textAlignment">
        <set>AlignCenter</set>
@@ -91,7 +91,7 @@
      </column>
      <column>
       <property name="text">
-       <string>Distance Correction</string>
+       <string>Distance Corr. (m)</string>
       </property>
       <property name="textAlignment">
        <set>AlignCenter</set>
@@ -99,7 +99,7 @@
      </column>
      <column>
       <property name="text">
-       <string>Distance Correction X</string>
+       <string>Distance Corr. X (m)</string>
       </property>
       <property name="textAlignment">
        <set>AlignCenter</set>
@@ -107,7 +107,7 @@
      </column>
      <column>
       <property name="text">
-       <string>Distance Correction Y</string>
+       <string>Distance Corr. Y (m)</string>
       </property>
       <property name="textAlignment">
        <set>AlignCenter</set>
@@ -115,7 +115,7 @@
      </column>
      <column>
       <property name="text">
-       <string>Vertical Offset Correction</string>
+       <string>Vertical Offset Corr. (m)</string>
       </property>
       <property name="textAlignment">
        <set>AlignCenter</set>
@@ -123,7 +123,7 @@
      </column>
      <column>
       <property name="text">
-       <string>Horizontal Offset Correction</string>
+       <string>Horizontal Offset Corr. (m)</string>
       </property>
       <property name="textAlignment">
        <set>AlignCenter</set>
