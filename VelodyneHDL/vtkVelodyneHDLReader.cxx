@@ -1718,32 +1718,74 @@ int vtkVelodyneHDLReader::ReadFrameInformation()
 }
 
 #pragma pack(push, 1)
+// Following struct are direct mapping from the manual
+//      "Velodyne, Inc. ©2013  63‐HDL64ES3 REV G" Appendix E. Pages 31-42
 struct HDLLaserCorrectionByte
-  { // This is the per laser 64-byte struct in the rolling data
+  {
+  // This is the per laser 64-byte struct in the rolling data
+  // It corresponds to 4 cycles of (9 HW status bytes + 7 calibration bytes)
   // WARNING data in packets are little-endian, which enables direct casting
   //  in short ONLY on little-endian machines (Intel & Co are fine)
+
+  //Cycle n+0
+  unsigned char hour_cycle0;
+  unsigned char minutes_cycle0;
+  unsigned char seconds_cycle0;
+  unsigned char day_cycle0;
+  unsigned char month_cycle0;
+  unsigned char year_cycle0;
+  unsigned char gpsSignalStatus_cycle0;
+  unsigned char temperature_cycle0;
+  unsigned char firmwareVersion_cycle0;
+  unsigned char warningBit; // 'U' in very first cycle (laser #0)
+  unsigned char reserved1;  // 'N' in very first cycle (laser #0)
+  unsigned char reserved2;  // 'I' in very first cycle (laser #0)
+  unsigned char reserved3;  // 'T' in very first cycle (laser #0)
+  unsigned char reserved4;  // '#' in very first cycle (laser #0)
+  unsigned char upperBlockThreshold;  // only in very first cycle (laser #0)
+  unsigned char lowerBlockThreshold;  // only in very first cycle (laser #0)
+
+  //Cycle n+1
+  unsigned char hour_cycle1;
+  unsigned char minutes_cycle1;
+  unsigned char seconds_cycle1;
+  unsigned char day_cycle1;
+  unsigned char month_cycle1;
+  unsigned char year_cycle1;
+  unsigned char gpsSignalStatus_cycle1;
+  unsigned char temperature_cycle1;
+  unsigned char firmwareVersion_cycle1;
+
   unsigned char channel;
   signed short verticalCorrection;    // This is in 100th of degree
   signed short rotationalCorrection;  // This is in 100th of degree
   signed short farDistanceCorrection; // This is in millimeter
-
-  unsigned char  dummychar1;
-  unsigned short dummyshort11;
-  unsigned short dummyshort12;
-  unsigned short dummyshort13;
-  unsigned short dummyshort14;
+  //Cycle n+2
+  unsigned char hour_cycle2;
+  unsigned char minutes_cycle2;
+  unsigned char seconds_cycle2;
+  unsigned char day_cycle2;
+  unsigned char month_cycle2;
+  unsigned char year_cycle2;
+  unsigned char gpsSignalStatus_cycle2;
+  unsigned char temperature_cycle2;
+  unsigned char firmwareVersion_cycle2;
 
   signed short distanceCorrectionX;
   signed short distanceCorrectionV;
   signed short verticalOffset;
 
   unsigned char horizontalOffsetByte1;
-
-  unsigned char  dummychar2;
-  unsigned short dummyshort21;
-  unsigned short dummyshort22;
-  unsigned short dummyshort23;
-  unsigned short dummyshort24;
+  //Cycle n+3
+  unsigned char hour_cycle3;
+  unsigned char minutes_cycle3;
+  unsigned char seconds_cycle3;
+  unsigned char day_cycle3;
+  unsigned char month_cycle3;
+  unsigned char year_cycle3;
+  unsigned char gpsSignalStatus_cycle3;
+  unsigned char temperature_cycle3;
+  unsigned char firmwareVersion_cycle3;
 
   unsigned char horizontalOffsetByte2;
 
@@ -1753,6 +1795,81 @@ struct HDLLaserCorrectionByte
   unsigned char minIntensity;
   unsigned char maxIntensity;
   };
+
+struct last4cyclesByte{
+  //Cycle n+0
+  unsigned char hour_cycle0;
+  unsigned char minutes_cycle0;
+  unsigned char seconds_cycle0;
+  unsigned char day_cycle0;
+  unsigned char month_cycle0;
+  unsigned char year_cycle0;
+  unsigned char gpsSignalStatus_cycle0;
+  unsigned char temperature_cycle0;
+  unsigned char firmwareVersion_cycle0;
+
+  unsigned char calibration_year;
+  unsigned char calibration_month;
+  unsigned char calibration_day;
+  unsigned char calibration_hour;
+  unsigned char calibration_minutes;
+  unsigned char calibration_seconds;
+  unsigned char humidity;
+  //Cycle n+1
+  unsigned char hour_cycle1;
+  unsigned char minutes_cycle1;
+  unsigned char seconds_cycle1;
+  unsigned char day_cycle1;
+  unsigned char month_cycle1;
+  unsigned char year_cycle1;
+  unsigned char gpsSignalStatus_cycle1;
+  unsigned char temperature_cycle1;
+  unsigned char firmwareVersion_cycle1;
+
+  signed short motorRPM;
+  unsigned short fovStartAngle; // in 100th of degree
+  unsigned short fovEndAngle; // in 100th of degree
+  unsigned char realLifeTimeByte1;
+  //Cycle n+2
+  unsigned char hour_cycle2;
+  unsigned char minutes_cycle2;
+  unsigned char seconds_cycle2;
+  unsigned char day_cycle2;
+  unsigned char month_cycle2;
+  unsigned char year_cycle2;
+  unsigned char gpsSignalStatus_cycle2;
+  unsigned char temperature_cycle2;
+  unsigned char firmwareVersion_cycle2;
+
+  unsigned char realLifeTimeByte2;
+
+  unsigned char sourceIPByte1;
+  unsigned char sourceIPByte2;
+  unsigned char sourceIPByte3;
+  unsigned char sourceIPByte4;
+
+  unsigned char destinationIPByte1;
+  unsigned char destinationIPByte2;
+  //Cycle n+3
+  unsigned char hour_cycle3;
+  unsigned char minutes_cycle3;
+  unsigned char seconds_cycle3;
+  unsigned char day_cycle3;
+  unsigned char month_cycle3;
+  unsigned char year_cycle3;
+  unsigned char gpsSignalStatus_cycle3;
+  unsigned char temperature_cycle3;
+  unsigned char firmwareVersion_cycle3;
+
+  unsigned char destinationIPByte3;
+  unsigned char destinationIPByte4;
+  unsigned char multipleReturnStatus; // 0= Strongest, 1= Last, 2= Both
+  unsigned char reserved3;
+  unsigned char powerLevelStatus;
+  unsigned short calibrationDataCRC;
+
+  };
+
 #pragma pack(pop)
 //
 bool vtkVelodyneHDLReader::vtkInternal::HDL64LoadCorrectionsFromStreamData()
@@ -1762,7 +1879,9 @@ bool vtkVelodyneHDLReader::vtkInternal::HDL64LoadCorrectionsFromStreamData()
     {
     return false;
     }
-  const int idxDSRDataFromMarker=12;
+  const int idxDSRDataFromMarker = static_cast<int>(
+                                     -reinterpret_cast<unsigned long>
+                                    (&((HDLLaserCorrectionByte*)0)->reserved4));
   for (int dsr = 0; dsr < HDL_MAX_NUM_LASERS; ++dsr)
     {
     const HDLLaserCorrectionByte * correctionStream=
@@ -1783,7 +1902,7 @@ bool vtkVelodyneHDLReader::vtkInternal::HDL64LoadCorrectionsFromStreamData()
     // The following manipulation is needed because of the two byte for this
     //  parameter are not side-by-side
     vvCorrection.horizontalOffsetCorrection =
-        this->rollingCalibrationData->signedShortFromTwoLittleEndianBytes(
+        this->rollingCalibrationData->fromTwoLittleEndianBytes<signed short>(
                                 correctionStream->horizontalOffsetByte1,
                                 correctionStream->horizontalOffsetByte2) / 1000.0;
     vvCorrection.focalDistance = correctionStream->focalDistance / 1000.0;

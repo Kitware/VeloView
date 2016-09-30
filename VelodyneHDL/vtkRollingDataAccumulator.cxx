@@ -15,11 +15,6 @@
 #include "vtkRollingDataAccumulator.h"
 #include "vtkVelodyneHDLReader.h"
 
-signed short vtkRollingDataAccumulator::signedShortFromTwoLittleEndianBytes(unsigned char b1,unsigned char b2)
-  {
-  return static_cast<signed short>( (static_cast<unsigned short>(b2) << 8)
-                                    + static_cast<unsigned short>(b1));
-  }
 vtkRollingDataAccumulator::vtkRollingDataAccumulator()
   : beginMarkerValuePair(0,'5','#')
 {

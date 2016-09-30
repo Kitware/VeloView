@@ -36,10 +36,16 @@ public:
   bool getDSRCalibrationData() const;
   bool getGoodSequenceId(int & idRollingSequence) const;
   bool getAlignedRollingData(std::vector<unsigned char> & data) const;
-  signed short signedShortFromTwoLittleEndianBytes(unsigned char b1,unsigned char b2);
   void clear();
   vtkRollingDataAccumulator();
   ~vtkRollingDataAccumulator();
+
+  template <typename T>
+  T fromTwoLittleEndianBytes(unsigned char b1,unsigned char b2)
+    {
+    return static_cast<T>( (static_cast<unsigned short>(b2) << 8)
+                                      + static_cast<unsigned short>(b1));
+    }
 
 protected:
   std::vector<TypeValueDataPair> accumulatedData;
