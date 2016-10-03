@@ -54,6 +54,9 @@ public slots:
 public slots:
   virtual void accept();
 
+signals:
+  void laserSelectionChanged();
+
 private:
 
   class pqInternal;

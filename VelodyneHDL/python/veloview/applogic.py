@@ -1757,6 +1757,7 @@ def onLaserSelection(show = True):
     dialog = PythonQt.paraview.vvLaserSelectionDialog(getMainWindow())
     app.dialog = dialog
     dialog.connect('accepted()', onLaserSelectionChanged)
+    dialog.connect('laserSelectionChanged()', onLaserSelectionChanged)
     if show:
         dialog.setLaserSelectionSelector(oldmask)
         dialog.setLasersCorrections(verticalCorrection,

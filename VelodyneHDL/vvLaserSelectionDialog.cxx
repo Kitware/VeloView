@@ -215,6 +215,9 @@ vvLaserSelectionDialog::vvLaserSelectionDialog(QWidget *p) : QDialog(p)
   QObject::connect(this->Internal->EnableDisableAll, SIGNAL(stateChanged(int)),
                    this, SLOT(onEnableDisableAll(int)));
 
+    QObject::connect(this->Internal->apply, SIGNAL(clicked()),
+                   this, SIGNAL(laserSelectionChanged()));
+
   this->Internal->Table->setSortingEnabled(true);
 }
 
