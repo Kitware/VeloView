@@ -1321,15 +1321,15 @@ void vtkVelodyneHDLReader::vtkInternal::Init()
 //-----------------------------------------------------------------------------
 void vtkVelodyneHDLReader::vtkInternal::SplitFrame(bool force)
 {
-  if(this->CurrentDataset->GetNumberOfPoints() == 0)
-    {
-    return;
-    }
-  if(this->skipFirstFrame)
+  //if(this->CurrentDataset->GetNumberOfPoints() == 0)
+  //  {
+  //  return;
+  //  }
+  /*if(this->skipFirstFrame)
     {
     this->skipFirstFrame = false;
     return;
-    }
+    }*/
   if(this->SplitCounter > 0 && !force)
     {
     this->SplitCounter--;
@@ -1651,7 +1651,8 @@ int vtkVelodyneHDLReader::ReadFrameInformation()
   fpos_t lastFilePosition;
   reader.GetFilePosition(&lastFilePosition);
 
-
+  filePositions.push_back(lastFilePosition);
+  skips.push_back(0);
   bool isEmptyFrame = true;
   while (reader.NextPacket(data, dataLength, timeSinceStart))
     {
