@@ -281,6 +281,7 @@ public:
   int Skip;
   vtkPacketFileReader* Reader;
 
+  // Number of allowed split, for frame-range retrieval.
   int SplitCounter;
 
   // Parameters ready by calibration
@@ -842,7 +843,7 @@ void vtkVelodyneHDLReader::DumpFrames(int startFrame, int endFrame, const std::s
 }
 
 //-----------------------------------------------------------------------------
-vtkSmartPointer<vtkPolyData> vtkVelodyneHDLReader::GetFrameRange(int startFrame, int numberOfFrames)
+vtkSmartPointer<vtkPolyData> vtkVelodyneHDLReader::GetFrameRange(int startFrame, int wantedNumberOfFrames)
 {
   this->UnloadData();
   if (!this->Internal->Reader)
@@ -862,15 +863,15 @@ vtkSmartPointer<vtkPolyData> vtkVelodyneHDLReader::GetFrameRange(int startFrame,
 
   if(startFrame < 0)
     {
-    numberOfFrames -= startFrame;
+    wantedNumberOfFrames -= startFrame;
     startFrame = 0;
     }
-  assert(numberOfFrames > 0);
+  assert(wantedNumberOfFrames > 0);
 
   this->Internal->Reader->SetFilePosition(&this->Internal->FilePositions[startFrame]);
   this->Internal->Skip = this->Internal->Skips[startFrame];
 
-  this->Internal->SplitCounter = numberOfFrames;
+  this->Internal->SplitCounter = wantedNumberOfFrames;
 
   while (this->Internal->Reader->NextPacket(data, dataLength, timeSinceStart))
     {
