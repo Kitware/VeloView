@@ -12,6 +12,9 @@ if (NOT APPLE AND UNIX)
                     ${SuperBuild_PROJECTS_DIR}/patches/qt.src.3rdparty.webkit.Source.WebKit.pri
                     <SOURCE_DIR>/src/3rdparty/webkit/Source/WebKit.pri)
 elseif (APPLE)
+  if (NOT DEFINED CMAKE_OSX_SYSROOT OR NOT DEFINED CMAKE_OSX_ARCHITECTURES)
+    message(FATAL "CMAKE_OSX_SYSROOT or CMAKE_OSX_ARCHITECTURES are not configured")
+  endif()
   list (APPEND qt_options
               -sdk ${CMAKE_OSX_SYSROOT}
               -arch ${CMAKE_OSX_ARCHITECTURES}
