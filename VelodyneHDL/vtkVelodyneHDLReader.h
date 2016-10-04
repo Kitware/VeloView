@@ -140,6 +140,12 @@ public:
   int GetApplyTransform();
   void SetApplyTransform(int apply);
 
+  void appendRollingDataAndTryCorrection(const unsigned char* data);
+
+  bool getIsHDL64Data();
+  bool getCorrectionsInitialized();
+
+
 protected:
   vtkVelodyneHDLReader();
   ~vtkVelodyneHDLReader();

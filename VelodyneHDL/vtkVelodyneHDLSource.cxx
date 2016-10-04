@@ -148,12 +148,22 @@ public:
   {
     boost::lock_guard<boost::mutex> lock(this->ReaderMutex);
 
-    this->HDLReader->ProcessHDLPacket(const_cast<unsigned char*>(data), length);
-    if (this->HDLReader->GetDatasets().size())
+    // Accumulate HDL6 Status byte data
+    if(this->HDLReader->getIsHDL64Data()
+       && !this->HDLReader->getCorrectionsInitialized())
+      {
+        this->HDLReader->appendRollingDataAndTryCorrection(data);
+      }
+    else
+    {
+      this->HDLReader->ProcessHDLPacket(const_cast<unsigned char*>(data), length);
+      if (this->HDLReader->GetDatasets().size())
       {
       this->HandleNewData(this->HDLReader->GetDatasets().back());
       this->HDLReader->GetDatasets().clear();
       }
+    }
+
   }
 
   vtkSmartPointer<vtkPolyData> GetDatasetForTime(double timeRequest, double& actualTime)

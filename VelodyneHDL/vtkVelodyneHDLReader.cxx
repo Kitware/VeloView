@@ -1705,10 +1705,7 @@ int vtkVelodyneHDLReader::ReadFrameInformation()
     if(this->Internal->IsHDL64Data
        && !this->Internal->CorrectionsInitialized)
       {
-        this->Internal->rollingCalibrationData->appendData(
-              dataPacket->gpsTimestamp,
-              dataPacket->dataType, dataPacket->dataValue);
-        this->Internal->HDL64LoadCorrectionsFromStreamData();
+        this->appendRollingDataAndTryCorrection(data);
       }
     lastTimestamp = dataPacket->gpsTimestamp;
     reader.GetFilePosition(&lastFilePosition);
@@ -1917,3 +1914,25 @@ bool vtkVelodyneHDLReader::vtkInternal::HDL64LoadCorrectionsFromStreamData()
   PrecomputeCorrectionCosSin();
   this->CorrectionsInitialized = true;
   }
+
+//-----------------------------------------------------------------------------
+void vtkVelodyneHDLReader::appendRollingDataAndTryCorrection(const unsigned char* data) {
+  const HDLDataPacket* dataPacket = reinterpret_cast<const HDLDataPacket *>(data);
+  this->Internal->rollingCalibrationData->appendData(
+        dataPacket->gpsTimestamp,
+        dataPacket->dataType, dataPacket->dataValue);
+  this->Internal->HDL64LoadCorrectionsFromStreamData();
+}
+
+//-----------------------------------------------------------------------------
+bool vtkVelodyneHDLReader::getIsHDL64Data()
+{
+  return this->Internal->IsHDL64Data;
+}
+
+//-----------------------------------------------------------------------------
+bool vtkVelodyneHDLReader::getCorrectionsInitialized()
+{
+  return this->Internal->CorrectionsInitialized;
+}
+
