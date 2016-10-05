@@ -1657,8 +1657,6 @@ int vtkVelodyneHDLReader::ReadFrameInformation()
   fpos_t lastFilePosition;
   reader.GetFilePosition(&lastFilePosition);
 
-  filePositions.push_back(lastFilePosition);
-  skips.push_back(0);
   bool isEmptyFrame = true;
   while (reader.NextPacket(data, dataLength, timeSinceStart))
     {
