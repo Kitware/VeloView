@@ -593,12 +593,13 @@ void vtkVelodyneHDLReader::SetCropRegion(
 //-----------------------------------------------------------------------------
 void vtkVelodyneHDLReader::SetCorrectionsFile(const std::string& correctionsFile)
 {
-  if (correctionsFile == this->CorrectionsFile)
-    {
-    return;
-    }
+  // Live calibration choice passes an empty string as correctionsFile
   if (correctionsFile != "")
     {
+    if (correctionsFile == this->CorrectionsFile)
+      {
+      return;
+      }
     if (!boost::filesystem::exists(correctionsFile) ||
         boost::filesystem::is_directory(correctionsFile))
       {
