@@ -426,8 +426,12 @@ int vtkVelodyneHDLPositionReader::RequestData(vtkInformation *request,
       double lonDegGPRMC;
       double heading;
 
+	  //Words.size()==13 include RMC format with mode indicator (NMEA = 2.3)
+	  //Words.size()==14 might correspond to another format
+	  //Added : Words.size()==12 include RMC format without mode indicator(NMEA = pre 2.3)
       if(words.size() != 13 &&
-         words.size() != 14)
+         words.size() != 14 &&
+		 words.size() != 12)
         {
         gpsUpdateTime = position.gpsTimestamp;
         lonDegGPRMC = 0.0;
