@@ -290,6 +290,7 @@ public:
   HDLLaserCorrection laser_corrections_[HDL_MAX_NUM_LASERS];
   int CalibrationReportedNumLasers;
   bool CorrectionsInitialized;
+  bool IsCorrectionFromLiveStream;
 
   // Sensor parameters presented as rolling data, extracted from enough packets
   vtkRollingDataAccumulator * rollingCalibrationData;
@@ -605,10 +606,13 @@ void vtkVelodyneHDLReader::SetCorrectionsFile(const std::string& correctionsFile
       return;
       }
     this->Internal->LoadCorrectionsFile(correctionsFile);
+    this->Internal->IsCorrectionFromLiveStream = false;
+
     }
   else
     {
     this->Internal->CorrectionsInitialized = false;
+    this->Internal->IsCorrectionFromLiveStream = true;
     }
 
   this->CorrectionsFile = correctionsFile;
@@ -709,7 +713,9 @@ int vtkVelodyneHDLReader::RequestInformation(vtkInformation *request,
                                      vtkInformationVector **inputVector,
                                      vtkInformationVector *outputVector)
 {
-  if (this->FileName.length() && !this->Internal->FilePositions.size())
+  if (this->FileName.length()
+      && (!this->Internal->FilePositions.size()
+      || this->Internal->IsCorrectionFromLiveStream))
     {
     this->ReadFrameInformation();
     }
@@ -1702,7 +1708,7 @@ int vtkVelodyneHDLReader::ReadFrameInformation()
       }
 
     // Accumulate HDL6 Status byte data
-    if(this->Internal->IsHDL64Data
+    if(this->Internal->IsCorrectionFromLiveStream
        && !this->Internal->CorrectionsInitialized)
       {
         this->appendRollingDataAndTryCorrection(data);
