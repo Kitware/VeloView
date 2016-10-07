@@ -396,17 +396,30 @@ private:
 
 class PacketNetworkSource;
 //----------------------------------------------------------------------------
+/**
+* \class PacketReceiver
+* \brief Defines the protocol used to receive the packet on the network
+* Here it is used to setup an UDP multicast protocol. The packets come from
+* the Velodyne sensor and it exists two differents kind : Position packet which contains 
+* information about the GPS and : Data packet which contains the information about the sensors.
+* @param io The in/out service used to handle the reception of the packets
+* @param port The port address which will receive the packet
+* @param parent 
+*/
 class PacketReceiver
 {
 public:
   PacketReceiver(boost::asio::io_service& io, int port, PacketNetworkSource* parent)
   : Port(port),
     PacketCounter(0),
-    Socket(io, boost::asio::ip::udp::endpoint(boost::asio::ip::udp::v4(), port)),
+    Socket(io),
     Parent(parent),
     IsReceiving(true),
     ShouldStop(false)
   {
+	Socket.open(boost::asio::ip::udp::v4()); //Opening the socket with an UDP v4 protocol
+	Socket.set_option(boost::asio::ip::udp::socket::reuse_address(true)); //Tell the OS we accept to re-use the port address for an other app
+	Socket.bind(boost::asio::ip::udp::endpoint(boost::asio::ip::udp::v4(), port)); //Bind the socket to the right address
     this->StartReceive();
   }
 
@@ -441,15 +454,15 @@ public:
   void SocketCallback(const boost::system::error_code& error, std::size_t numberOfBytes);
 
 private:
-  int Port;
-  vtkIdType PacketCounter;
-  boost::asio::ip::udp::socket Socket;
+  int Port; /*!< Port address which will receive the packet */
+  vtkIdType PacketCounter; /*!< Number of packets received */
+  boost::asio::ip::udp::socket Socket; /*!< Socket : determines the protocol used and the address used for the reception of the packets */
   PacketNetworkSource* Parent;
-  char RXBuffer[1500];
-
-  bool IsReceiving;
-  bool ShouldStop;
-  boost::mutex IsReceivingMtx;
+  char RXBuffer[1500];  /*!< Buffer which will saved the data. Expecting exactly 1206 bytes, using a larger buffer so that 
+						if a larger packet arrives unexpectedly we'll notice it. */
+  bool IsReceiving; /*!< Flag indicating if the socket is receiving packets */
+  bool ShouldStop; /*!< Flag indicating if we should stop the listening */
+  boost::mutex IsReceivingMtx; /*!< Mutex : Block the access of IsReceiving when a thread is seting the flag */
   boost::condition_variable IsReceivingCond;
 };
 
@@ -527,11 +540,11 @@ public:
 
   }
 
-  boost::asio::io_service IOService;
+  boost::asio::io_service IOService; /*!< The in/out service which will handle the Packets */
   boost::shared_ptr<boost::thread> Thread;
 
-  boost::shared_ptr<PacketReceiver> LIDARPortReceiver;
-  boost::shared_ptr<PacketReceiver> PositionPortReceiver;
+  boost::shared_ptr<PacketReceiver> LIDARPortReceiver; /*!< The PacketReceiver configured to receive LIDAR information */
+  boost::shared_ptr<PacketReceiver> PositionPortReceiver; /*!< The PacketReceiver configured to receive GPS information */
 
   boost::shared_ptr<PacketConsumer> Consumer;
   boost::shared_ptr<PacketFileWriter> Writer;

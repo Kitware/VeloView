@@ -54,6 +54,11 @@ public:
     this->Close();
   }
 
+  //This function is called to read a savefile .pcap
+  //1-Open a savefile in the tcpdump/libcap format to read packet
+  //2-A packet filter is then compile to convert an high level filtering 
+  //  expression in a program that can be interpreted by the kernel-level filtering engine
+  //3- The compiled filter is then associate to the capture
   bool Open(const std::string& filename)
   {
     char errbuff[PCAP_ERRBUF_SIZE];
