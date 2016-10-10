@@ -53,6 +53,7 @@ public slots:
 
 public slots:
   virtual void accept();
+  void onDisplayMoreCorrectionsChanged();
 
 signals:
   void laserSelectionChanged();
