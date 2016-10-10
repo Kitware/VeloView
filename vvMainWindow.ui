@@ -14,7 +14,7 @@
    <string>MainWindow</string>
   </property>
   <property name="windowIcon">
-   <iconset resource="vvResources.qrc">
+   <iconset>
     <normaloff>:/vvResources/Icons/logo.png</normaloff>:/vvResources/Icons/logo.png</iconset>
   </property>
   <widget class="QWidget" name="centralwidget"/>
@@ -24,7 +24,7 @@
      <x>0</x>
      <y>0</y>
      <width>1070</width>
-     <height>22</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -219,7 +219,7 @@
   </action>
   <action name="actionOpenPcap">
    <property name="icon">
-    <iconset resource="VelodyneHDL/images/resources.qrc">
+    <iconset>
      <normaloff>:/VelodyneHDLPlugin/WiresharkDoc-128.png</normaloff>:/VelodyneHDLPlugin/WiresharkDoc-128.png</iconset>
    </property>
    <property name="text">
@@ -237,7 +237,7 @@
   </action>
   <action name="actionSelect_Visible_Points">
    <property name="icon">
-    <iconset resource="vvResources.qrc">
+    <iconset>
      <normaloff>:/vvResources/Icons/pqSurfaceSelectionPoint24.png</normaloff>:/vvResources/Icons/pqSurfaceSelectionPoint24.png</iconset>
    </property>
    <property name="text">
@@ -252,7 +252,7 @@
     <bool>true</bool>
    </property>
    <property name="icon">
-    <iconset resource="vvResources.qrc">
+    <iconset>
      <normaloff>:/vvResources/Icons/pqFrustumSelectionPoint24.png</normaloff>:/vvResources/Icons/pqFrustumSelectionPoint24.png</iconset>
    </property>
    <property name="text">
@@ -267,7 +267,7 @@
     <bool>true</bool>
    </property>
    <property name="icon">
-    <iconset resource="vvResources.qrc">
+    <iconset>
      <normaloff>:/vvResources/Icons/pqSpreadsheet16.png</normaloff>:/vvResources/Icons/pqSpreadsheet16.png</iconset>
    </property>
    <property name="text">
@@ -282,7 +282,7 @@
   </action>
   <action name="actionOpen_Sensor_Stream">
    <property name="icon">
-    <iconset resource="VelodyneHDL/images/resources.qrc">
+    <iconset>
      <normaloff>:/VelodyneHDLPlugin/velodyne_hdl.png</normaloff>:/VelodyneHDLPlugin/velodyne_hdl.png</iconset>
    </property>
    <property name="text">
@@ -291,7 +291,7 @@
   </action>
   <action name="actionChoose_Calibration_File">
    <property name="icon">
-    <iconset resource="VelodyneHDL/images/resources.qrc">
+    <iconset>
      <normaloff>:/VelodyneHDLPlugin/calibrate.png</normaloff>:/VelodyneHDLPlugin/calibrate.png</iconset>
    </property>
    <property name="text">
@@ -300,7 +300,7 @@
   </action>
   <action name="actionSeek_Backward">
    <property name="icon">
-    <iconset resource="VelodyneHDL/images/resources.qrc">
+    <iconset>
      <normaloff>:/VelodyneHDLPlugin/media-seek-backward.png</normaloff>:/VelodyneHDLPlugin/media-seek-backward.png</iconset>
    </property>
    <property name="text">
@@ -312,7 +312,7 @@
   </action>
   <action name="actionPlay">
    <property name="icon">
-    <iconset resource="VelodyneHDL/images/resources.qrc">
+    <iconset>
      <normaloff>:/VelodyneHDLPlugin/media-playback-start.png</normaloff>:/VelodyneHDLPlugin/media-playback-start.png</iconset>
    </property>
    <property name="text">
@@ -327,7 +327,7 @@
   </action>
   <action name="actionSeek_Forward">
    <property name="icon">
-    <iconset resource="VelodyneHDL/images/resources.qrc">
+    <iconset>
      <normaloff>:/VelodyneHDLPlugin/media-seek-forward.png</normaloff>:/VelodyneHDLPlugin/media-seek-forward.png</iconset>
    </property>
    <property name="text">
@@ -339,7 +339,7 @@
   </action>
   <action name="actionPause">
    <property name="icon">
-    <iconset resource="VelodyneHDL/images/resources.qrc">
+    <iconset>
      <normaloff>:/VelodyneHDLPlugin/media-playback-pause.png</normaloff>:/VelodyneHDLPlugin/media-playback-pause.png</iconset>
    </property>
    <property name="text">
@@ -351,7 +351,7 @@
     <bool>true</bool>
    </property>
    <property name="icon">
-    <iconset resource="VelodyneHDL/images/resources.qrc">
+    <iconset>
      <normaloff>:/VelodyneHDLPlugin/media-record.png</normaloff>:/VelodyneHDLPlugin/media-record.png</iconset>
    </property>
    <property name="text">
@@ -360,7 +360,7 @@
   </action>
   <action name="actionPython_Console">
    <property name="icon">
-    <iconset resource="vvResources.qrc">
+    <iconset>
      <normaloff>:/vvResources/Icons/python_logo_124.png</normaloff>:/vvResources/Icons/python_logo_124.png</iconset>
    </property>
    <property name="text">
@@ -372,7 +372,7 @@
   </action>
   <action name="actionReset_Camera">
    <property name="icon">
-    <iconset resource="vvResources.qrc">
+    <iconset>
      <normaloff>:/vvResources/Icons/pqResetCamera32.png</normaloff>:/vvResources/Icons/pqResetCamera32.png</iconset>
    </property>
    <property name="text">
@@ -409,7 +409,7 @@
   </action>
   <action name="actionGo_To_Start">
    <property name="icon">
-    <iconset resource="VelodyneHDL/images/resources.qrc">
+    <iconset>
      <normaloff>:/VelodyneHDLPlugin/media-skip-backward.png</normaloff>:/VelodyneHDLPlugin/media-skip-backward.png</iconset>
    </property>
    <property name="text">
@@ -418,7 +418,7 @@
   </action>
   <action name="actionGo_To_End">
    <property name="icon">
-    <iconset resource="VelodyneHDL/images/resources.qrc">
+    <iconset>
      <normaloff>:/VelodyneHDLPlugin/media-skip-forward.png</normaloff>:/VelodyneHDLPlugin/media-skip-forward.png</iconset>
    </property>
    <property name="text">
@@ -432,7 +432,7 @@
   </action>
   <action name="actionSaveCSV">
    <property name="icon">
-    <iconset resource="VelodyneHDL/images/resources.qrc">
+    <iconset>
      <normaloff>:/VelodyneHDLPlugin/csv.png</normaloff>:/VelodyneHDLPlugin/csv.png</iconset>
    </property>
    <property name="text">
@@ -444,7 +444,7 @@
     <bool>true</bool>
    </property>
    <property name="icon">
-    <iconset resource="VelodyneHDL/images/resources.qrc">
+    <iconset>
      <normaloff>:/VelodyneHDLPlugin/media-loop.png</normaloff>:/VelodyneHDLPlugin/media-loop.png</iconset>
    </property>
    <property name="text">
@@ -453,7 +453,7 @@
   </action>
   <action name="actionExport_To_KiwiViewer">
    <property name="icon">
-    <iconset resource="VelodyneHDL/images/resources.qrc">
+    <iconset>
      <normaloff>:/VelodyneHDLPlugin/kiwi_200.png</normaloff>:/VelodyneHDLPlugin/kiwi_200.png</iconset>
    </property>
    <property name="text">
@@ -470,7 +470,7 @@
   </action>
   <action name="actionSavePCAP">
    <property name="icon">
-    <iconset resource="VelodyneHDL/images/resources.qrc">
+    <iconset>
      <normaloff>:/VelodyneHDLPlugin/WiresharkDoc-128.png</normaloff>:/VelodyneHDLPlugin/WiresharkDoc-128.png</iconset>
    </property>
    <property name="text">
@@ -533,7 +533,7 @@
     <bool>true</bool>
    </property>
    <property name="icon">
-    <iconset resource="vvResources.qrc">
+    <iconset>
      <normaloff>:/vvResources/Icons/ViewOrtho.png</normaloff>
      <normalon>:/vvResources/Icons/ViewPerspective.png</normalon>:/vvResources/Icons/ViewOrtho.png</iconset>
    </property>
@@ -546,7 +546,7 @@
   </action>
   <action name="actionSetViewXPlus">
    <property name="icon">
-    <iconset resource="vvResources.qrc">
+    <iconset>
      <normaloff>:/vvResources/Icons/pqXPlus32.png</normaloff>:/vvResources/Icons/pqXPlus32.png</iconset>
    </property>
    <property name="text">
@@ -558,7 +558,7 @@
   </action>
   <action name="actionSetViewXMinus">
    <property name="icon">
-    <iconset resource="vvResources.qrc">
+    <iconset>
      <normaloff>:/vvResources/Icons/pqXMinus32.png</normaloff>:/vvResources/Icons/pqXMinus32.png</iconset>
    </property>
    <property name="text">
@@ -570,7 +570,7 @@
   </action>
   <action name="actionSetViewYPlus">
    <property name="icon">
-    <iconset resource="vvResources.qrc">
+    <iconset>
      <normaloff>:/vvResources/Icons/pqYPlus32.png</normaloff>:/vvResources/Icons/pqYPlus32.png</iconset>
    </property>
    <property name="text">
@@ -582,7 +582,7 @@
   </action>
   <action name="actionSetViewYMinus">
    <property name="icon">
-    <iconset resource="vvResources.qrc">
+    <iconset>
      <normaloff>:/vvResources/Icons/pqYMinus32.png</normaloff>:/vvResources/Icons/pqYMinus32.png</iconset>
    </property>
    <property name="text">
@@ -594,7 +594,7 @@
   </action>
   <action name="actionSetViewZPlus">
    <property name="icon">
-    <iconset resource="vvResources.qrc">
+    <iconset>
      <normaloff>:/vvResources/Icons/pqZPlus32.png</normaloff>:/vvResources/Icons/pqZPlus32.png</iconset>
    </property>
    <property name="text">
@@ -606,7 +606,7 @@
   </action>
   <action name="actionSetViewZMinus">
    <property name="icon">
-    <iconset resource="vvResources.qrc">
+    <iconset>
      <normaloff>:/vvResources/Icons/pqZMinus32.png</normaloff>:/vvResources/Icons/pqZMinus32.png</iconset>
    </property>
    <property name="text">
@@ -629,7 +629,7 @@
     <bool>true</bool>
    </property>
    <property name="icon">
-    <iconset resource="vvResources.qrc">
+    <iconset>
      <normaloff>:/vvResources/Icons/Measurements.png</normaloff>:/vvResources/Icons/Measurements.png</iconset>
    </property>
    <property name="text">
@@ -644,19 +644,19 @@
     <bool>true</bool>
    </property>
    <property name="icon">
-    <iconset resource="vvResources.qrc">
+    <iconset>
      <normaloff>:/vvResources/Icons/map.png</normaloff>:/vvResources/Icons/map.png</iconset>
    </property>
    <property name="text">
     <string>OverheadView</string>
    </property>
    <property name="toolTip">
-    <string>Show overhead view of position</string>
+    <string>Show overhead view of GPS position</string>
    </property>
   </action>
   <action name="actionPlaneFit">
    <property name="icon">
-    <iconset resource="vvResources.qrc">
+    <iconset>
      <normaloff>:/vvResources/Icons/planefit.png</normaloff>:/vvResources/Icons/planefit.png</iconset>
    </property>
    <property name="text">
@@ -668,7 +668,7 @@
   </action>
   <action name="actionSavePositionCSV">
    <property name="icon">
-    <iconset resource="vvResources.qrc">
+    <iconset>
      <normaloff>:/vvResources/Icons/pqSpreadsheet16.png</normaloff>:/vvResources/Icons/pqSpreadsheet16.png</iconset>
    </property>
    <property name="text">
@@ -680,7 +680,7 @@
     <bool>true</bool>
    </property>
    <property name="icon">
-    <iconset resource="vvResources.qrc">
+    <iconset>
      <normaloff>:/vvResources/Icons/location.png</normaloff>:/vvResources/Icons/location.png</iconset>
    </property>
    <property name="text">
@@ -695,7 +695,7 @@
     <bool>true</bool>
    </property>
    <property name="icon">
-    <iconset resource="vvResources.qrc">
+    <iconset>
      <normaloff>:/vvResources/Icons/absolute.png</normaloff>:/vvResources/Icons/absolute.png</iconset>
    </property>
    <property name="text">
@@ -712,7 +712,7 @@
   </action>
   <action name="actionSaveLAS">
    <property name="icon">
-    <iconset resource="VelodyneHDL/images/resources.qrc">
+    <iconset>
      <normaloff>:/VelodyneHDLPlugin/las.png</normaloff>:/VelodyneHDLPlugin/las.png</iconset>
    </property>
    <property name="text">
@@ -724,7 +724,7 @@
   </action>
   <action name="actionOpenApplanix">
    <property name="icon">
-    <iconset resource="VelodyneHDL/images/resources.qrc">
+    <iconset>
      <normaloff>:/VelodyneHDLPlugin/gps.png</normaloff>:/VelodyneHDLPlugin/gps.png</iconset>
    </property>
    <property name="text">
@@ -736,7 +736,7 @@
   </action>
   <action name="actionCropReturns">
    <property name="icon">
-    <iconset resource="VelodyneHDL/images/resources.qrc">
+    <iconset>
      <normaloff>:/VelodyneHDLPlugin/crop.png</normaloff>:/VelodyneHDLPlugin/crop.png</iconset>
    </property>
    <property name="text">
