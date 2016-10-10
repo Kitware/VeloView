@@ -261,6 +261,7 @@ public:
   vtkSmartPointer<vtkUnsignedShortArray> Azimuth;
   vtkSmartPointer<vtkDoubleArray> Distance;
   vtkSmartPointer<vtkDoubleArray> Timestamp;
+  vtkSmartPointer<vtkDoubleArray> VerticalAngle;
   vtkSmartPointer<vtkUnsignedIntArray> RawTime;
   vtkSmartPointer<vtkIntArray> IntensityFlag;
   vtkSmartPointer<vtkIntArray> DistanceFlag;
@@ -984,6 +985,8 @@ vtkSmartPointer<vtkPolyData> vtkVelodyneHDLReader::vtkInternal::CreateData(vtkId
   this->DistanceFlag = CreateDataArray<vtkIntArray>("dual_distance", numberOfPoints, 0);
   this->IntensityFlag = CreateDataArray<vtkIntArray>("dual_intensity", numberOfPoints, 0);
   this->Flags = CreateDataArray<vtkUnsignedIntArray>("dual_flags", numberOfPoints, 0);
+  this->VerticalAngle = CreateDataArray<vtkDoubleArray>("vertical_angle", numberOfPoints, polyData);
+  
 
   if (this->IsDualReturnSensorMode)
     {
@@ -1146,6 +1149,7 @@ void vtkVelodyneHDLReader::vtkInternal::PushFiringData(const unsigned char laser
   this->RawTime->InsertNextValue(rawtime);
   this->Distance->InsertNextValue(distanceM);
   this->LastPointId[rawLaserId] = thisPointId;
+  this->VerticalAngle->InsertNextValue(this->laser_corrections_[laserId].verticalCorrection);
 }
 
 //-----------------------------------------------------------------------------
