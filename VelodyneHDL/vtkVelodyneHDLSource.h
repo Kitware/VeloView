@@ -66,6 +66,9 @@ public:
   void SetLaserSelection(int LaserSelection[64]);
   void GetLaserSelection(int LaserSelection[64]);
 
+  void SetPortSelection(int argLIDARPort, int argGPSPort);
+  void GetPortSelection(int retLIDARPort[1], int retGPSPort[1]);
+
   void SetCropReturns(int);
   void SetCropInside(int);
   void SetCropRegion(double[6]);
@@ -110,6 +113,8 @@ protected:
 
 
   int SensorPort;
+  int LIDARPort; /*!< The used port to receive LIDAR information */
+  int GPSPort; /*!< The used port to receive GPS information */
   std::string PacketFile;
   std::string OutputFile;
   std::string CorrectionsFile;

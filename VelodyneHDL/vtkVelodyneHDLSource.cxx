@@ -404,7 +404,7 @@ class PacketNetworkSource;
 * information about the GPS and : Data packet which contains the information about the sensors.
 * @param io The in/out service used to handle the reception of the packets
 * @param port The port address which will receive the packet
-* @param parent 
+* @param parent  the PacketNetworkSource inherit parent
 */
 class PacketReceiver
 {
@@ -467,18 +467,27 @@ private:
 };
 
 //----------------------------------------------------------------------------
-// This class is responsible for the IOService and  two PacketReceiver classes
+// 
+/**
+* \class PacketReceiver
+* \brief This class is responsible for the IOService and  two PacketReceiver classes
+* @param _consumer boost::shared_ptr<PacketConsumer>
+* @param argLIDARPort The used port to receive the LIDAR information 
+* @param argPositionPort The used port to receive the GPS information 
+*/
 class PacketNetworkSource
 {
 public:
-  PacketNetworkSource(boost::shared_ptr<PacketConsumer> _consumer) :
+  PacketNetworkSource(boost::shared_ptr<PacketConsumer> _consumer, int argLIDARPort, int argGPSPort) :
     IOService(),
     Thread(),
     LIDARPortReceiver(),
     PositionPortReceiver(),
     Consumer(_consumer),
     Writer(),
-    DummyWork(new boost::asio::io_service::work(this->IOService))
+    DummyWork(new boost::asio::io_service::work(this->IOService)),
+    LIDARPort(argLIDARPort),
+    GPSPort(argGPSPort)
   {
   }
 
@@ -528,8 +537,8 @@ public:
       }
 
     // Create work
-    this->LIDARPortReceiver = boost::shared_ptr<PacketReceiver>(new PacketReceiver(this->IOService, 2368, this));
-    this->PositionPortReceiver = boost::shared_ptr<PacketReceiver>(new PacketReceiver(this->IOService, 8308, this));
+    this->LIDARPortReceiver = boost::shared_ptr<PacketReceiver>(new PacketReceiver(this->IOService, LIDARPort, this));
+    this->PositionPortReceiver = boost::shared_ptr<PacketReceiver>(new PacketReceiver(this->IOService, GPSPort, this));
   }
 
   void Stop()
@@ -539,7 +548,8 @@ public:
     this->LIDARPortReceiver.reset();
 
   }
-
+  int LIDARPort; /*!< Default listening port for LIDAR information */
+  int GPSPort;   /*!< Default listening port for GPS information */
   boost::asio::io_service IOService; /*!< The in/out service which will handle the Packets */
   boost::shared_ptr<boost::thread> Thread;
 
@@ -582,13 +592,30 @@ void PacketReceiver::SocketCallback(const boost::system::error_code& error, std:
 } // end namespace
 
 //----------------------------------------------------------------------------
+/**
+* \class vtkVelodyneHDLSource::vtkInternal
+* \brief This class is responsible for Consumer, the Writer and the NetWorkSource classes
+*/
 class vtkVelodyneHDLSource::vtkInternal
 {
 public:
 
   vtkInternal() : Consumer(new PacketConsumer),
                   Writer(new PacketFileWriter),
-                  NetworkSource(this->Consumer)
+                  NetworkSource(this->Consumer,2368,8308)
+  {
+  }
+
+  /**
+* \function vtkVelodyneHDLSource::vtkInternal
+* \brief Constructor allowing customizable listening port 
+* @param argLIDARPort The used port to receive the lidar data
+* @param argPositionPort The used port to receive the GPS data
+*/
+  vtkInternal( int argLIDARPort,
+               int argGPSPort) : Consumer(new PacketConsumer),
+                                      Writer(new PacketFileWriter),
+                                      NetworkSource(this->Consumer,argLIDARPort,argGPSPort)
   {
   }
 
@@ -607,8 +634,10 @@ vtkStandardNewMacro(vtkVelodyneHDLSource);
 //----------------------------------------------------------------------------
 vtkVelodyneHDLSource::vtkVelodyneHDLSource()
 {
-  this->Internal = new vtkInternal;
   this->SensorPort = 2368;
+  this->LIDARPort = 2368; //The default used port
+  this->GPSPort = 8308;   //The default used port
+  this->Internal = new vtkInternal(LIDARPort,GPSPort); 
   this->SetNumberOfInputPorts(0);
   this->SetNumberOfOutputPorts(1);
 }
@@ -685,6 +714,18 @@ void vtkVelodyneHDLSource::GetLaserSelection(int LaserSelection[64])
 
   this->Internal->Consumer->GetReader()->GetLaserSelection(LaserSelection);
   this->Modified();
+}
+
+void vtkVelodyneHDLSource::SetPortSelection(int argLIDARPort, int argGPSPort)
+{
+  this->LIDARPort=argLIDARPort;
+  this->GPSPort=argGPSPort;
+}
+
+void vtkVelodyneHDLSource::GetPortSelection(int retLIDARPort[1], int retGPSPort[1])
+{
+  retLIDARPort[0]=this->LIDARPort;
+  retGPSPort[0]=this->GPSPort;
 }
 
 //-----------------------------------------------------------------------------
