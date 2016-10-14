@@ -203,6 +203,7 @@ vvCalibrationDialog::vvCalibrationDialog(QWidget *p)
 
   this->Internal->PositionGroup->setVisible(false);
   this->Internal->groupBox->setVisible(false);
+  this->Internal->PortGroup->setVisible(false);
 
   this->Internal->ListWidget->addItem(liveCalibrationItem);
 
@@ -226,6 +227,8 @@ vvCalibrationDialog::vvCalibrationDialog(QWidget *p)
           this->Internal->PositionGroup, SLOT(setVisible(bool)));
   connect(this->Internal->AdvancedConfiguration, SIGNAL(toggled(bool)),
           this->Internal->groupBox, SLOT(setVisible(bool)));
+  connect(this->Internal->AdvancedConfiguration, SIGNAL(toggled(bool)),
+          this->Internal->PortGroup, SLOT(setVisible(bool)));
 
   this->Internal->restoreSelectedRow();
   this->Internal->restoreSensorTransform();
