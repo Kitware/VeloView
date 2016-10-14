@@ -205,6 +205,14 @@ vvCalibrationDialog::vvCalibrationDialog(QWidget *p)
   this->Internal->groupBox->setVisible(false);
   this->Internal->PortGroup->setVisible(false);
 
+  this->Internal->LidarSpinBox->setMaximum(65536); //There is 16 bit to encode the ports : from 0 to 65536
+  this->Internal->GPSSpinBox->setMaximum(65536); //There is 16 bit to encode the ports : from 0 to 65536
+  this->Internal->LidarSpinBox->setMinimum(1024); //The port between 0 and 1023 are reserved
+  this->Internal->GPSSpinBox->setMinimum(1024); //The port between 0 and 1023 are reserved
+  this->Internal->LidarSpinBox->setValue(2368); //The default value for the lidar datas
+  this->Internal->GPSSpinBox->setValue(8308); //The default value for the GPS datas
+
+
   this->Internal->ListWidget->addItem(liveCalibrationItem);
 
   foreach(QString fullname, this->Internal->BuiltInCalibrationFiles)
