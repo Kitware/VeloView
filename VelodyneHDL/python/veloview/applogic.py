@@ -255,6 +255,8 @@ def chooseCalibration():
             self.gpsYaw = dialog.gpsYaw()
             self.gpsRoll = dialog.gpsRoll()
             self.gpsPitch = dialog.gpsPitch()
+            self.lidarPort = dialog.lidarPort()
+            self.gpsPort = dialog.gpsPort()
             self.sensorTransform = vtk.vtkTransform()
 
             qm = dialog.sensorTransform()
