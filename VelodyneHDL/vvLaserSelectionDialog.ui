@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1040</width>
+    <width>685</width>
     <height>467</height>
    </rect>
   </property>
@@ -17,26 +17,10 @@
    <bool>false</bool>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="0" column="1">
-    <widget class="QCheckBox" name="EnableDisableAll">
+   <item row="0" column="3">
+    <widget class="QPushButton" name="Toggle">
      <property name="text">
-      <string>Enable/Disable all</string>
-     </property>
-     <property name="checked">
-      <bool>true</bool>
-     </property>
-     <property name="tristate">
-      <bool>false</bool>
-     </property>
-    </widget>
-   </item>
-   <item row="7" column="3">
-    <widget class="QDialogButtonBox" name="buttonBox">
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
-     </property>
-     <property name="standardButtons">
-      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+      <string>&amp;Toggle Selected</string>
      </property>
     </widget>
    </item>
@@ -183,10 +167,33 @@
      </column>
     </widget>
    </item>
-   <item row="0" column="3">
-    <widget class="QPushButton" name="Toggle">
+   <item row="7" column="2">
+    <widget class="QCheckBox" name="DisplayMoreCorrections">
      <property name="text">
-      <string>&amp;Toggle Selected</string>
+      <string>Display more corrections</string>
+     </property>
+    </widget>
+   </item>
+   <item row="7" column="3">
+    <widget class="QDialogButtonBox" name="buttonBox">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+     <property name="standardButtons">
+      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="1">
+    <widget class="QCheckBox" name="EnableDisableAll">
+     <property name="text">
+      <string>Enable/Disable all</string>
+     </property>
+     <property name="checked">
+      <bool>true</bool>
+     </property>
+     <property name="tristate">
+      <bool>false</bool>
      </property>
     </widget>
    </item>

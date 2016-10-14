@@ -135,6 +135,13 @@ void vvLaserSelectionDialog::pqInternal::setup()
   this->EnableDisableAll->setTristate(false);
 
   this->Table = table;
+
+  for (int i = 3; i < 13; i++)
+    {
+    this->Table->setColumnHidden(i,true);
+    }
+  this->Table->horizontalHeader()->setStretchLastSection(false);
+  this->Table->resizeColumnsToContents();
 }
 
 //-----------------------------------------------------------------------------
@@ -218,6 +225,9 @@ vvLaserSelectionDialog::vvLaserSelectionDialog(QWidget *p) : QDialog(p)
 
     QObject::connect(this->Internal->apply, SIGNAL(clicked()),
                    this, SIGNAL(laserSelectionChanged()));
+
+    QObject::connect(this->Internal->DisplayMoreCorrections, SIGNAL(toggled(bool)),
+                   this, SLOT(onDisplayMoreCorrectionsChanged()));
 
   this->Internal->Table->setSortingEnabled(true);
 }
@@ -305,6 +315,8 @@ void vvLaserSelectionDialog::setLasersCorrections(const QVector<double>& vertica
 
   // Sort the table by vertical correction
   this->Internal->Table->sortItems(2);
+  this->Internal->Table->resizeColumnsToContents();
+
 }
 
 //-----------------------------------------------------------------------------
@@ -334,4 +346,14 @@ void vvLaserSelectionDialog::accept()
     this->Internal->saveSettings();
     }
   QDialog::accept();
+}
+
+//-----------------------------------------------------------------------------
+void vvLaserSelectionDialog::onDisplayMoreCorrectionsChanged()
+{
+  for (int i = 3; i < 13; i++)
+    {
+    this->Internal->Table->setColumnHidden(i,!this->Internal->DisplayMoreCorrections->isChecked());
+    }
+  this->Internal->Table->resizeColumnsToContents();
 }
