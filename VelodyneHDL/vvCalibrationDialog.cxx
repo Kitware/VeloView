@@ -201,6 +201,9 @@ vvCalibrationDialog::vvCalibrationDialog(QWidget *p)
   liveCalibrationItem->setToolTip("Get Corrections from the data stream");
   liveCalibrationItem->setData(Qt::UserRole, "");
 
+  this->Internal->PositionGroup->setVisible(false);
+  this->Internal->groupBox->setVisible(false);
+
   this->Internal->ListWidget->addItem(liveCalibrationItem);
 
   foreach(QString fullname, this->Internal->BuiltInCalibrationFiles)
@@ -219,6 +222,10 @@ vvCalibrationDialog::vvCalibrationDialog(QWidget *p)
           this, SLOT(addFile()));
   connect(this->Internal->RemoveButton, SIGNAL(clicked()),
           this, SLOT(removeSelectedFile()));
+  connect(this->Internal->AdvancedConfiguration, SIGNAL(toggled(bool)),
+          this->Internal->PositionGroup, SLOT(setVisible(bool)));
+  connect(this->Internal->AdvancedConfiguration, SIGNAL(toggled(bool)),
+          this->Internal->groupBox, SLOT(setVisible(bool)));
 
   this->Internal->restoreSelectedRow();
   this->Internal->restoreSensorTransform();

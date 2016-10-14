@@ -327,6 +327,13 @@
         </property>
        </widget>
       </item>
+      <item row="2" column="0">
+       <widget class="QCheckBox" name="AdvancedConfiguration">
+        <property name="text">
+         <string>Advanced configuration</string>
+        </property>
+       </widget>
+      </item>
      </layout>
     </widget>
    </item>
