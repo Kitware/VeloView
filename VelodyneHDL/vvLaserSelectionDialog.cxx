@@ -149,6 +149,7 @@ void vvLaserSelectionDialog::onToggleSelected()
       sitem->setCheckState(sitem->checkState() == Qt::Checked ? Qt::Unchecked : Qt::Checked);
       }
     }
+  laserSelectionChanged();
 }
 
 //-----------------------------------------------------------------------------
