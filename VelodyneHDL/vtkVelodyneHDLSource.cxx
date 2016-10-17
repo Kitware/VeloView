@@ -548,8 +548,8 @@ public:
     this->LIDARPortReceiver.reset();
 
   }
-  int LIDARPort; /*!< Default listening port for LIDAR information */
-  int GPSPort;   /*!< Default listening port for GPS information */
+  int LIDARPort; /*!< Listening port for LIDAR information */
+  int GPSPort;   /*!< Listening port for GPS information */
   boost::asio::io_service IOService; /*!< The in/out service which will handle the Packets */
   boost::shared_ptr<boost::thread> Thread;
 

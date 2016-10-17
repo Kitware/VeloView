@@ -42,7 +42,7 @@ int main(int argc, char* argv[])
 {
 
   if (argc < 2) {
-    std::cout << "Usage: " << argv[0] << " <packet file> [loop] [ip]" << std::endl;
+    std::cout << "Usage: " << argv[0] << " <packet file> [loop] [ip] [dataPort] [position Port]" << std::endl;
     return 1;
   }
   std::string filename(argv[1]);
