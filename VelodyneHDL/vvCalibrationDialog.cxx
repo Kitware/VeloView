@@ -51,8 +51,12 @@ public:
 
   void saveSensorTransform();
   void saveGpsTransform();
+  void saveLidarPort();
+  void saveGpsPort();
   void restoreSensorTransform();
   void restoreGpsTransform();
+  void restoreLidarPort();
+  void restoreGpsPort();
 
   pqSettings* const Settings;
   QStringList BuiltInCalibrationFiles;
@@ -86,6 +90,7 @@ void vvCalibrationDialog::pqInternal::restoreSelectedRow()
               "VelodyneHDLPlugin/CalibrationFileDialog/CurrentRow").toInt();
   this->ListWidget->setCurrentRow(row);
 }
+
 
 //-----------------------------------------------------------------------------
 void vvCalibrationDialog::pqInternal::saveSensorTransform()
@@ -125,6 +130,22 @@ void vvCalibrationDialog::pqInternal::saveGpsTransform()
 }
 
 //-----------------------------------------------------------------------------
+void vvCalibrationDialog::pqInternal::saveLidarPort()
+{
+  this->Settings->setValue(
+    "VelodyneHDLPlugin/CalibrationFileDialog/LidarPort",
+    this->LidarPortSpinBox->value());
+}
+
+//-----------------------------------------------------------------------------
+void vvCalibrationDialog::pqInternal::saveGpsPort()
+{
+  this->Settings->setValue(
+    "VelodyneHDLPlugin/CalibrationFileDialog/GpsPort",
+    this->GPSPortSpinBox->value());
+}
+
+//-----------------------------------------------------------------------------
 void vvCalibrationDialog::pqInternal::restoreSensorTransform()
 {
   this->OriginXSpinBox->setValue(
@@ -153,6 +174,8 @@ void vvCalibrationDialog::pqInternal::restoreSensorTransform()
       this->RollSpinBox->value()).toDouble());
 }
 
+
+
 //-----------------------------------------------------------------------------
 void vvCalibrationDialog::pqInternal::restoreGpsTransform()
 {
@@ -168,6 +191,24 @@ void vvCalibrationDialog::pqInternal::restoreGpsTransform()
     this->Settings->value(
       "VelodyneHDLPlugin/CalibrationFileDialog/GpsPitch",
       this->GpsPitchSpinBox->value()).toDouble());
+}
+
+//-----------------------------------------------------------------------------
+void vvCalibrationDialog::pqInternal::restoreLidarPort()
+{
+  this->LidarPortSpinBox->setValue(
+    this->Settings->value(
+    "VelodyneHDLPlugin/CalibrationFileDialog/LidarPort",
+    this->LidarPortSpinBox->value()).toInt());
+}
+
+//-----------------------------------------------------------------------------
+void vvCalibrationDialog::pqInternal::restoreGpsPort()
+{
+  this->GPSPortSpinBox->setValue(
+    this->Settings->value(
+    "VelodyneHDLPlugin/CalibrationFileDialog/GpsPort",
+    this->GPSPortSpinBox->value()).toInt());
 }
 
 namespace
@@ -201,6 +242,18 @@ vvCalibrationDialog::vvCalibrationDialog(QWidget *p)
   liveCalibrationItem->setToolTip("Get Corrections from the data stream");
   liveCalibrationItem->setData(Qt::UserRole, "");
 
+  this->Internal->PositionGroup->setVisible(false);
+  this->Internal->OrientationGroup->setVisible(false);
+  this->Internal->NetworkGroup->setVisible(false);
+
+  this->Internal->LidarPortSpinBox->setMaximum(65536); //There is 16 bit to encode the ports : from 0 to 65536
+  this->Internal->GPSPortSpinBox->setMaximum(65536); //There is 16 bit to encode the ports : from 0 to 65536
+  this->Internal->LidarPortSpinBox->setMinimum(1024); //The port between 0 and 1023 are reserved
+  this->Internal->GPSPortSpinBox->setMinimum(1024); //The port between 0 and 1023 are reserved
+  this->Internal->LidarPortSpinBox->setValue(2368); //The default value for the lidar datas
+  this->Internal->GPSPortSpinBox->setValue(8308); //The default value for the GPS datas
+
+
   this->Internal->ListWidget->addItem(liveCalibrationItem);
 
   foreach(QString fullname, this->Internal->BuiltInCalibrationFiles)
@@ -219,10 +272,19 @@ vvCalibrationDialog::vvCalibrationDialog(QWidget *p)
           this, SLOT(addFile()));
   connect(this->Internal->RemoveButton, SIGNAL(clicked()),
           this, SLOT(removeSelectedFile()));
+  //The advancedConfiguration checkbox hides the three followings groupbox
+  connect(this->Internal->AdvancedConfiguration, SIGNAL(toggled(bool)),
+          this->Internal->PositionGroup, SLOT(setVisible(bool)));
+  connect(this->Internal->AdvancedConfiguration, SIGNAL(toggled(bool)),
+          this->Internal->OrientationGroup, SLOT(setVisible(bool)));
+  connect(this->Internal->AdvancedConfiguration, SIGNAL(toggled(bool)),
+          this->Internal->NetworkGroup, SLOT(setVisible(bool)));
 
   this->Internal->restoreSelectedRow();
   this->Internal->restoreSensorTransform();
   this->Internal->restoreGpsTransform();
+  this->Internal->restoreLidarPort();
+  this->Internal->restoreGpsPort();
 
   const QVariant& geometry =
     this->Internal->Settings->value(
@@ -284,11 +346,25 @@ double vvCalibrationDialog::gpsPitch() const
 }
 
 //-----------------------------------------------------------------------------
+int vvCalibrationDialog::lidarPort() const
+{
+  return this->Internal->LidarPortSpinBox->value();
+}
+
+//-----------------------------------------------------------------------------
+int vvCalibrationDialog::gpsPort() const
+{
+  return this->Internal->GPSPortSpinBox->value();
+}
+
+//-----------------------------------------------------------------------------
 void vvCalibrationDialog::accept()
 {
   this->Internal->saveSelectedRow();
   this->Internal->saveSensorTransform();
   this->Internal->saveGpsTransform();
+  this->Internal->saveLidarPort();
+  this->Internal->saveGpsPort();
   QDialog::accept();
 }
 

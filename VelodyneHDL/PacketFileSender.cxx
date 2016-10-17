@@ -42,13 +42,15 @@ int main(int argc, char* argv[])
 {
 
   if (argc < 2) {
-    std::cout << "Usage: " << argv[0] << " <packet file> [loop] [ip]" << std::endl;
+    std::cout << "Usage: " << argv[0] << " <packet file> [loop] [ip] [dataPort] [position Port]" << std::endl;
     return 1;
   }
   std::string filename(argv[1]);
 
   int loop = 0;
   std::string destinationIp = "127.0.0.1";
+  int dataPort=2368;
+  int positionPort=8308;
   if(argc > 2)
     {
     loop = atoi(argv[2]);
@@ -57,11 +59,14 @@ int main(int argc, char* argv[])
     {
     destinationIp = argv[3];
     }
+  if(argc>5)
+    {
+      dataPort=atoi(argv[4]);
+      positionPort=atoi(argv[5]);
+    }
 
   try
     {
-    int dataPort = 2368;
-    int positionPort = 8308;
     do
       {
       vvPacketSender sender(filename, destinationIp, dataPort, positionPort);

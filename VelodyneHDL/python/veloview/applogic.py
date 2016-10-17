@@ -255,6 +255,8 @@ def chooseCalibration():
             self.gpsYaw = dialog.gpsYaw()
             self.gpsRoll = dialog.gpsRoll()
             self.gpsPitch = dialog.gpsPitch()
+            self.lidarPort = dialog.lidarPort()
+            self.gpsPort = dialog.gpsPort()
             self.sensorTransform = vtk.vtkTransform()
 
             qm = dialog.sensorTransform()
@@ -282,10 +284,14 @@ def openSensor():
 
     calibrationFile = calibration.calibrationFile
     sensorTransform = calibration.sensorTransform
+    LIDARPort = calibration.lidarPort
+    GPSPort = calibration.gpsPort
 
     close()
 
     sensor = smp.VelodyneHDLSource(guiName='Data', CalibrationFile=calibrationFile, CacheSize=100)
+    sensor.GetClientSideObject().SetLIDARPort(LIDARPort)
+    sensor.GetClientSideObject().SetGPSPort(GPSPort)
     sensor.GetClientSideObject().SetSensorTransform(sensorTransform)
     sensor.UpdatePipeline()
     sensor.Start()

@@ -36,6 +36,8 @@ public:
   Q_INVOKABLE double gpsYaw() const;
   Q_INVOKABLE double gpsRoll() const;
   Q_INVOKABLE double gpsPitch() const;
+  Q_INVOKABLE int lidarPort() const;
+  Q_INVOKABLE int gpsPort() const;
 
 public slots:
   virtual void accept();
