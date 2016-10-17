@@ -27,7 +27,7 @@ displayed point cloud can be exported with the touch of a button.
 -   Show multiple frames of data simultaneously (*New in 2.0*)
 -   Show or hide a subset of lasers (*New in 2.0*)
 
-#How to Obtain
+# How to Obtain
 
 Binary installers for VeloView are available as community contributed
 applications:
