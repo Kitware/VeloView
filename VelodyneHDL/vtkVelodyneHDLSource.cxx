@@ -716,18 +716,6 @@ void vtkVelodyneHDLSource::GetLaserSelection(int LaserSelection[64])
   this->Modified();
 }
 
-void vtkVelodyneHDLSource::SetPortSelection(int argLIDARPort, int argGPSPort)
-{
-  this->LIDARPort=argLIDARPort;
-  this->GPSPort=argGPSPort;
-}
-
-void vtkVelodyneHDLSource::GetPortSelection(int retLIDARPort[1], int retGPSPort[1])
-{
-  retLIDARPort[0]=this->LIDARPort;
-  retGPSPort[0]=this->GPSPort;
-}
-
 //-----------------------------------------------------------------------------
 void vtkVelodyneHDLSource::SetCropReturns(int cr)
 {
@@ -842,7 +830,8 @@ void vtkVelodyneHDLSource::Start()
     }
 
   this->Internal->Consumer->Start();
-
+  this->Internal->NetworkSource.LIDARPort=this->LIDARPort;
+  this->Internal->NetworkSource.GPSPort=this->GPSPort;
   this->Internal->NetworkSource.Start();
 }
 

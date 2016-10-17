@@ -49,6 +49,8 @@ int main(int argc, char* argv[])
 
   int loop = 0;
   std::string destinationIp = "127.0.0.1";
+  int dataPort=2368;
+  int positionPort=8308;
   if(argc > 2)
     {
     loop = atoi(argv[2]);
@@ -57,11 +59,14 @@ int main(int argc, char* argv[])
     {
     destinationIp = argv[3];
     }
+  if(argc>5)
+    {
+      dataPort=atoi(argv[4]);
+      positionPort=atoi(argv[5]);
+    }
 
   try
     {
-    int dataPort = 2368;
-    int positionPort = 8308;
     do
       {
       vvPacketSender sender(filename, destinationIp, dataPort, positionPort);

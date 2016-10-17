@@ -63,11 +63,15 @@ public:
   vtkSetMacro(SensorPort, int);
   vtkGetMacro(SensorPort, int);
 
+  vtkSetMacro(LIDARPort, int);
+  vtkGetMacro(LIDARPort, int);
+
+  vtkSetMacro(GPSPort, int);
+  vtkGetMacro(GPSPort, int);
+
   void SetLaserSelection(int LaserSelection[64]);
   void GetLaserSelection(int LaserSelection[64]);
 
-  void SetPortSelection(int argLIDARPort, int argGPSPort);
-  void GetPortSelection(int retLIDARPort[1], int retGPSPort[1]);
 
   void SetCropReturns(int);
   void SetCropInside(int);
