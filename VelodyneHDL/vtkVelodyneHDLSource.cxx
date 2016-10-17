@@ -404,29 +404,47 @@ class PacketNetworkSource;
 * information about the GPS and : Data packet which contains the information about the sensors.
 * @param io The in/out service used to handle the reception of the packets
 * @param port The port address which will receive the packet
+* @param forwardport The port adress which will receive the forwarded packets
+* @param forwarddestinationIp The IP adress of the computer which will receive the forwarded packets
+* @param flagforward  Allow or not the forwarding of the packets
 * @param parent  the PacketNetworkSource inherit parent
 */
 class PacketReceiver
 {
 public:
-  PacketReceiver(boost::asio::io_service& io, int port, PacketNetworkSource* parent)
+  PacketReceiver(boost::asio::io_service& io, int port,int forwardport, std::string forwarddestinationIp, bool flagforward, PacketNetworkSource* parent)
   : Port(port),
     PacketCounter(0),
+    isForwarding(flagforward),
+    ForwardedPort(forwardport),
+    destinationIp(forwarddestinationIp),
+    ForwardEndpoint(boost::asio::ip::address_v4::from_string(forwarddestinationIp), forwardport),
     Socket(io),
+    ForwardedSocket(io),
     Parent(parent),
     IsReceiving(true),
     ShouldStop(false)
   {
-	Socket.open(boost::asio::ip::udp::v4()); //Opening the socket with an UDP v4 protocol
-	Socket.set_option(boost::asio::ip::udp::socket::reuse_address(true)); //Tell the OS we accept to re-use the port address for an other app
-	Socket.bind(boost::asio::ip::udp::endpoint(boost::asio::ip::udp::v4(), port)); //Bind the socket to the right address
+	    Socket.open(boost::asio::ip::udp::v4()); //Opening the socket with an UDP v4 protocol
+	    Socket.set_option(boost::asio::ip::udp::socket::reuse_address(true)); //Tell the OS we accept to re-use the port address for an other app
+	    Socket.bind(boost::asio::ip::udp::endpoint(boost::asio::ip::udp::v4(), port)); //Bind the socket to the right address
+
+
+     if(isForwarding)
+      {
+      ForwardedSocket.open(ForwardEndpoint.protocol()); //Opening the socket with an UDP v4 protocol toward the forwarded ip address and port
+      }
+
     this->StartReceive();
   }
 
   ~PacketReceiver()
   {
     this->Socket.cancel();
-
+    if(isForwarding)
+      {
+      this->ForwardedSocket.cancel();
+      }
       {
       boost::unique_lock<boost::mutex> guard(this->IsReceivingMtx);
       this->ShouldStop = true;
@@ -454,9 +472,14 @@ public:
   void SocketCallback(const boost::system::error_code& error, std::size_t numberOfBytes);
 
 private:
+  bool isForwarding; /*!< Allow or not the forwarding of the packets */
+  boost::asio::ip::udp::endpoint ForwardEndpoint;
   int Port; /*!< Port address which will receive the packet */
+  int ForwardedPort; /*!< Port address which will receive the forwarded packet */
   vtkIdType PacketCounter; /*!< Number of packets received */
+  std::string destinationIp;
   boost::asio::ip::udp::socket Socket; /*!< Socket : determines the protocol used and the address used for the reception of the packets */
+  boost::asio::ip::udp::socket ForwardedSocket; /*!< Socket : determines the protocol used and the address used for the reception of the forwarded packets */
   PacketNetworkSource* Parent;
   char RXBuffer[1500];  /*!< Buffer which will saved the data. Expecting exactly 1206 bytes, using a larger buffer so that 
 						if a larger packet arrives unexpectedly we'll notice it. */
@@ -474,11 +497,20 @@ private:
 * @param _consumer boost::shared_ptr<PacketConsumer>
 * @param argLIDARPort The used port to receive the LIDAR information 
 * @param argPositionPort The used port to receive the GPS information 
+* @param ForwardedLIDARPort_ The port which will receive the lidar forwarded packets
+* @param ForwardedGPSPort_ The port which will receive the gps forwarded packets
+* @param ForwardedIpAddress_ The ip which will receive the forwarded packets
+* @param isForwarding_ Allow the forwarding
 */
 class PacketNetworkSource
 {
 public:
-  PacketNetworkSource(boost::shared_ptr<PacketConsumer> _consumer, int argLIDARPort, int argGPSPort) :
+  PacketNetworkSource(boost::shared_ptr<PacketConsumer> _consumer, 
+                      int argLIDARPort, int argGPSPort, 
+                      int ForwardedLIDARPort_, 
+                      int ForwardedGPSPort_, 
+                      std::string ForwardedIpAddress_, 
+                      bool isForwarding_) :
     IOService(),
     Thread(),
     LIDARPortReceiver(),
@@ -487,7 +519,11 @@ public:
     Writer(),
     DummyWork(new boost::asio::io_service::work(this->IOService)),
     LIDARPort(argLIDARPort),
-    GPSPort(argGPSPort)
+    GPSPort(argGPSPort),
+    ForwardedLIDARPort(ForwardedLIDARPort_),
+    ForwardedGPSPort(ForwardedGPSPort_),
+    ForwardedIpAddress(ForwardedIpAddress_),
+    isForwarding(isForwarding_)
   {
   }
 
@@ -537,8 +573,8 @@ public:
       }
 
     // Create work
-    this->LIDARPortReceiver = boost::shared_ptr<PacketReceiver>(new PacketReceiver(this->IOService, LIDARPort, this));
-    this->PositionPortReceiver = boost::shared_ptr<PacketReceiver>(new PacketReceiver(this->IOService, GPSPort, this));
+    this->LIDARPortReceiver = boost::shared_ptr<PacketReceiver>(new PacketReceiver(this->IOService, LIDARPort,ForwardedLIDARPort,ForwardedIpAddress,isForwarding, this));
+    this->PositionPortReceiver = boost::shared_ptr<PacketReceiver>(new PacketReceiver(this->IOService, GPSPort,ForwardedGPSPort,ForwardedIpAddress,isForwarding, this));
   }
 
   void Stop()
@@ -548,6 +584,10 @@ public:
     this->LIDARPortReceiver.reset();
 
   }
+  bool isForwarding; /*!< Allowing the forward of the packets */
+  std::string ForwardedIpAddress; /*!< Ip of the computer which will receive the forwarded packets */
+  int ForwardedLIDARPort; /*!< Port address which will receive the lidar forwarded packet */
+  int ForwardedGPSPort; /*!< Port address which will receive the Gps forwarded packet */
   int LIDARPort; /*!< Listening port for LIDAR information */
   int GPSPort;   /*!< Listening port for GPS information */
   boost::asio::io_service IOService; /*!< The in/out service which will handle the Packets */
@@ -579,7 +619,16 @@ void PacketReceiver::SocketCallback(const boost::system::error_code& error, std:
     }
 
   std::string* packet = new std::string(this->RXBuffer, numberOfBytes);
+ 
+
+  if(isForwarding)
+    {
+      size_t bytesSent = ForwardedSocket.send_to(boost::asio::buffer( packet->c_str(), numberOfBytes),
+                                                              ForwardEndpoint);
+    }
+
   this->Parent->QueuePackets(packet);
+
 
   this->StartReceive();
 
@@ -606,9 +655,13 @@ public:
 * @param argPositionPort The used port to receive the GPS data
 */
   vtkInternal( int argLIDARPort,
-               int argGPSPort) : Consumer(new PacketConsumer),
+               int argGPSPort,
+               int ForwardedLIDARPort_, 
+               int ForwardedGPSPort_, 
+               std::string ForwardedIpAddress_, 
+               bool isForwarding_) : Consumer(new PacketConsumer),
                                       Writer(new PacketFileWriter),
-                                      NetworkSource(this->Consumer,argLIDARPort,argGPSPort)
+                                      NetworkSource(this->Consumer,argLIDARPort,argGPSPort,ForwardedLIDARPort_, ForwardedGPSPort_,  ForwardedIpAddress_, isForwarding_)
   {
   }
 
@@ -629,7 +682,9 @@ vtkVelodyneHDLSource::vtkVelodyneHDLSource()
 {
   this->LIDARPort = 2368; //The default used port
   this->GPSPort = 8308;   //The default used port
-  this->Internal = new vtkInternal(LIDARPort,GPSPort); 
+  this->isForwarding = false;
+  this->Internal = new vtkInternal(LIDARPort,GPSPort,ForwardedLIDARPort, ForwardedGPSPort, ForwardedIpAddress, isForwarding); 
+ 
   this->SetNumberOfInputPorts(0);
   this->SetNumberOfOutputPorts(1);
 }
@@ -822,8 +877,12 @@ void vtkVelodyneHDLSource::Start()
     }
 
   this->Internal->Consumer->Start();
-  this->Internal->NetworkSource.LIDARPort=this->LIDARPort;
-  this->Internal->NetworkSource.GPSPort=this->GPSPort;
+  this->Internal->NetworkSource.LIDARPort = this->LIDARPort;
+  this->Internal->NetworkSource.GPSPort = this->GPSPort;
+  this->Internal->NetworkSource.ForwardedGPSPort = this->ForwardedGPSPort;
+  this->Internal->NetworkSource.ForwardedLIDARPort = this->ForwardedLIDARPort;
+  this->Internal->NetworkSource.ForwardedIpAddress = this->ForwardedIpAddress;
+  this->Internal->NetworkSource.isForwarding = this->isForwarding;
   this->Internal->NetworkSource.Start();
 }
 

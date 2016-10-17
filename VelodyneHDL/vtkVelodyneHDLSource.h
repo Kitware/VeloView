@@ -66,6 +66,19 @@ public:
   vtkSetMacro(GPSPort, int);
   vtkGetMacro(GPSPort, int);
 
+  vtkSetMacro(ForwardedLIDARPort, int);
+  vtkGetMacro(ForwardedLIDARPort, int);
+
+  vtkSetMacro(ForwardedGPSPort, int);
+  vtkGetMacro(ForwardedGPSPort, int);
+
+  vtkSetMacro(ForwardedIpAddress, std::string);
+  vtkGetMacro(ForwardedIpAddress, std::string);
+
+  vtkSetMacro(isForwarding, bool);
+  vtkGetMacro(isForwarding, bool);
+
+
   void SetLaserSelection(int LaserSelection[64]);
   void GetLaserSelection(int LaserSelection[64]);
 
@@ -114,6 +127,10 @@ protected:
 
   int LIDARPort; /*!< The used port to receive LIDAR information. By default it is 2368 */
   int GPSPort; /*!< The used port to receive GPS information. By default it is 8308 */
+  int ForwardedLIDARPort;  /*!< The used port to receive LIDAR forwarded packets*/
+  int ForwardedGPSPort; /*!< The used port to receive GPS forwarded packets*/
+  std::string ForwardedIpAddress; /*!< The used ip to receive forwarded packets*/
+  bool isForwarding; /*!< Allowing the forwarding of the packets*/
   std::string PacketFile;
   std::string OutputFile;
   std::string CorrectionsFile;
