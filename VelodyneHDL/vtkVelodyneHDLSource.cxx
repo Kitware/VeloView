@@ -599,13 +599,6 @@ void PacketReceiver::SocketCallback(const boost::system::error_code& error, std:
 class vtkVelodyneHDLSource::vtkInternal
 {
 public:
-
-  vtkInternal() : Consumer(new PacketConsumer),
-                  Writer(new PacketFileWriter),
-                  NetworkSource(this->Consumer,2368,8308)
-  {
-  }
-
   /**
 * \function vtkVelodyneHDLSource::vtkInternal
 * \brief Constructor allowing customizable listening port 
@@ -634,7 +627,6 @@ vtkStandardNewMacro(vtkVelodyneHDLSource);
 //----------------------------------------------------------------------------
 vtkVelodyneHDLSource::vtkVelodyneHDLSource()
 {
-  this->SensorPort = 2368;
   this->LIDARPort = 2368; //The default used port
   this->GPSPort = 8308;   //The default used port
   this->Internal = new vtkInternal(LIDARPort,GPSPort); 

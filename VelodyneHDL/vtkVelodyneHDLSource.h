@@ -60,9 +60,6 @@ public:
   const std::string& GetOutputFile();
   void SetOutputFile(const std::string& filename);
 
-  vtkSetMacro(SensorPort, int);
-  vtkGetMacro(SensorPort, int);
-
   vtkSetMacro(LIDARPort, int);
   vtkGetMacro(LIDARPort, int);
 
@@ -115,10 +112,8 @@ protected:
   vtkVelodyneHDLSource();
   virtual ~vtkVelodyneHDLSource();
 
-
-  int SensorPort;
-  int LIDARPort; /*!< The used port to receive LIDAR information */
-  int GPSPort; /*!< The used port to receive GPS information */
+  int LIDARPort; /*!< The used port to receive LIDAR information. By default it is 2368 */
+  int GPSPort; /*!< The used port to receive GPS information. By default it is 8308 */
   std::string PacketFile;
   std::string OutputFile;
   std::string CorrectionsFile;

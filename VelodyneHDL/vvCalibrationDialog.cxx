@@ -244,7 +244,7 @@ vvCalibrationDialog::vvCalibrationDialog(QWidget *p)
 
   this->Internal->PositionGroup->setVisible(false);
   this->Internal->OrientationGroup->setVisible(false);
-  this->Internal->PortGroup->setVisible(false);
+  this->Internal->NetworkGroup->setVisible(false);
 
   this->Internal->LidarPortSpinBox->setMaximum(65536); //There is 16 bit to encode the ports : from 0 to 65536
   this->Internal->GPSPortSpinBox->setMaximum(65536); //There is 16 bit to encode the ports : from 0 to 65536
@@ -278,7 +278,7 @@ vvCalibrationDialog::vvCalibrationDialog(QWidget *p)
   connect(this->Internal->AdvancedConfiguration, SIGNAL(toggled(bool)),
           this->Internal->OrientationGroup, SLOT(setVisible(bool)));
   connect(this->Internal->AdvancedConfiguration, SIGNAL(toggled(bool)),
-          this->Internal->PortGroup, SLOT(setVisible(bool)));
+          this->Internal->NetworkGroup, SLOT(setVisible(bool)));
 
   this->Internal->restoreSelectedRow();
   this->Internal->restoreSensorTransform();
