@@ -38,6 +38,10 @@ public:
   Q_INVOKABLE double gpsPitch() const;
   Q_INVOKABLE int lidarPort() const;
   Q_INVOKABLE int gpsPort() const;
+  Q_INVOKABLE int lidarForwardingPort() const;
+  Q_INVOKABLE int gpsForwardingPort() const;
+  Q_INVOKABLE bool isForwarding() const;
+  Q_INVOKABLE char* ipAddressForwarding();
 
 public slots:
   virtual void accept();

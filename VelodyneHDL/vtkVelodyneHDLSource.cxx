@@ -682,7 +682,10 @@ vtkVelodyneHDLSource::vtkVelodyneHDLSource()
 {
   this->LIDARPort = 2368; //The default used port
   this->GPSPort = 8308;   //The default used port
-  this->isForwarding = false;
+  this->isForwarding = true;
+  this->ForwardedLIDARPort = 5555;
+  this->ForwardedGPSPort = 5556;
+  this->ForwardedIpAddress = "10.33.0.21";
   this->Internal = new vtkInternal(LIDARPort,GPSPort,ForwardedLIDARPort, ForwardedGPSPort, ForwardedIpAddress, isForwarding); 
  
   this->SetNumberOfInputPorts(0);
@@ -876,6 +879,7 @@ void vtkVelodyneHDLSource::Start()
     this->Internal->NetworkSource.Writer = this->Internal->Writer;
     }
 
+  ForwardedIpAddress=std::string(temporaryForwardedIpAddress);
   this->Internal->Consumer->Start();
   this->Internal->NetworkSource.LIDARPort = this->LIDARPort;
   this->Internal->NetworkSource.GPSPort = this->GPSPort;

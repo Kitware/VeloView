@@ -53,10 +53,17 @@ public:
   void saveGpsTransform();
   void saveLidarPort();
   void saveGpsPort();
+  void saveLidarForwardingPort();
+  void saveGPSForwardingPort();
+  void saveEnableForwarding();
+
   void restoreSensorTransform();
   void restoreGpsTransform();
   void restoreLidarPort();
   void restoreGpsPort();
+  void restoreLidarForwardingPort();
+  void restoreGPSForwardingPort();
+  void restoreEnableForwarding();
 
   pqSettings* const Settings;
   QStringList BuiltInCalibrationFiles;
@@ -146,6 +153,30 @@ void vvCalibrationDialog::pqInternal::saveGpsPort()
 }
 
 //-----------------------------------------------------------------------------
+void vvCalibrationDialog::pqInternal::saveGPSForwardingPort()
+{
+  this->Settings->setValue(
+    "VelodyneHDLPlugin/CalibrationFileDialog/GpsForwardingPort",
+    this->GPSForwardingPortSpinBox->value());
+}
+
+//-----------------------------------------------------------------------------
+void vvCalibrationDialog::pqInternal::saveLidarForwardingPort()
+{
+  this->Settings->setValue(
+    "VelodyneHDLPlugin/CalibrationFileDialog/LidarForwardingPort",
+    this->LidarForwardingPortSpinBox->value());
+}
+
+//-----------------------------------------------------------------------------
+void vvCalibrationDialog::pqInternal::saveEnableForwarding()
+{
+  this->Settings->setValue(
+    "VelodyneHDLPlugin/CalibrationFileDialog/saveEnableForwarding",
+    this->EnableForwardingCheckBox->isChecked());
+}
+
+//-----------------------------------------------------------------------------
 void vvCalibrationDialog::pqInternal::restoreSensorTransform()
 {
   this->OriginXSpinBox->setValue(
@@ -211,6 +242,33 @@ void vvCalibrationDialog::pqInternal::restoreGpsPort()
     this->GPSPortSpinBox->value()).toInt());
 }
 
+//-----------------------------------------------------------------------------
+void vvCalibrationDialog::pqInternal::restoreGPSForwardingPort()
+{
+  this->GPSForwardingPortSpinBox->setValue(
+    this->Settings->value(
+    "VelodyneHDLPlugin/CalibrationFileDialog/GpsForwardingPort",
+    this->GPSForwardingPortSpinBox->value()).toInt());
+}
+
+//-----------------------------------------------------------------------------
+void vvCalibrationDialog::pqInternal::restoreLidarForwardingPort()
+{
+  this->LidarForwardingPortSpinBox->setValue(
+    this->Settings->value(
+    "VelodyneHDLPlugin/CalibrationFileDialog/LidarForwardingPort",
+    this->LidarForwardingPortSpinBox->value()).toInt());
+}
+
+//-----------------------------------------------------------------------------
+void vvCalibrationDialog::pqInternal::restoreEnableForwarding()
+{
+  this->EnableForwardingCheckBox->setChecked(
+    this->Settings->value(
+    "VelodyneHDLPlugin/CalibrationFileDialog/EnableForwarding",
+    this->EnableForwardingCheckBox->isChecked()).toBool());
+}
+
 namespace
 {
   QListWidgetItem* createEntry(QString path, bool useBaseName)
@@ -245,13 +303,26 @@ vvCalibrationDialog::vvCalibrationDialog(QWidget *p)
   this->Internal->PositionGroup->setVisible(false);
   this->Internal->OrientationGroup->setVisible(false);
   this->Internal->NetworkGroup->setVisible(false);
+  this->Internal->NetworkForwardingGroup->setVisible(false);
 
+  //set maximum
   this->Internal->LidarPortSpinBox->setMaximum(65536); //There is 16 bit to encode the ports : from 0 to 65536
   this->Internal->GPSPortSpinBox->setMaximum(65536); //There is 16 bit to encode the ports : from 0 to 65536
+  this->Internal->GPSForwardingPortSpinBox->setMaximum(65536); //There is 16 bit to encode the ports : from 0 to 65536
+  this->Internal->LidarForwardingPortSpinBox->setMaximum(65536); //There is 16 bit to encode the ports : from 0 to 65536
+  this->Internal->ipAddresslineEdit->setMaxLength(15); //"255.255.255.255"
+  //set minimum
   this->Internal->LidarPortSpinBox->setMinimum(1024); //The port between 0 and 1023 are reserved
   this->Internal->GPSPortSpinBox->setMinimum(1024); //The port between 0 and 1023 are reserved
+  this->Internal->GPSForwardingPortSpinBox->setMinimum(1024); //The port between 0 and 1023 are reserved
+  this->Internal->LidarForwardingPortSpinBox->setMinimum(1024); //The port between 0 and 1023 are reserved
+  //set value
   this->Internal->LidarPortSpinBox->setValue(2368); //The default value for the lidar datas
   this->Internal->GPSPortSpinBox->setValue(8308); //The default value for the GPS datas
+  this->Internal->GPSForwardingPortSpinBox->setValue(10001); //The default value for the forwarded gps datas
+  this->Internal->LidarForwardingPortSpinBox->setValue(10000); //The default value for the forwarded lidar datas
+  this->Internal->EnableForwardingCheckBox->setChecked(false);
+  this->Internal->ipAddresslineEdit->setText("0.0.0.0");
 
 
   this->Internal->ListWidget->addItem(liveCalibrationItem);
@@ -279,12 +350,17 @@ vvCalibrationDialog::vvCalibrationDialog(QWidget *p)
           this->Internal->OrientationGroup, SLOT(setVisible(bool)));
   connect(this->Internal->AdvancedConfiguration, SIGNAL(toggled(bool)),
           this->Internal->NetworkGroup, SLOT(setVisible(bool)));
+  connect(this->Internal->AdvancedConfiguration, SIGNAL(toggled(bool)),
+          this->Internal->NetworkForwardingGroup, SLOT(setVisible(bool)));
 
   this->Internal->restoreSelectedRow();
   this->Internal->restoreSensorTransform();
   this->Internal->restoreGpsTransform();
   this->Internal->restoreLidarPort();
   this->Internal->restoreGpsPort();
+  //this->Internal->restoreEnableForwarding();
+  this->Internal->restoreGPSForwardingPort();
+  this->Internal->restoreLidarForwardingPort();
 
   const QVariant& geometry =
     this->Internal->Settings->value(
@@ -358,6 +434,29 @@ int vvCalibrationDialog::gpsPort() const
 }
 
 //-----------------------------------------------------------------------------
+int vvCalibrationDialog::lidarForwardingPort() const
+{
+  return this->Internal->LidarForwardingPortSpinBox->value();
+}
+
+//-----------------------------------------------------------------------------
+int vvCalibrationDialog::gpsForwardingPort() const
+{
+  return this->Internal->GPSForwardingPortSpinBox->value();
+}
+
+//-----------------------------------------------------------------------------
+bool vvCalibrationDialog::isForwarding() const
+{
+  return this->Internal->EnableForwardingCheckBox->isChecked();
+}
+
+char* vvCalibrationDialog::ipAddressForwarding() 
+{
+  return const_cast<char*>(this->Internal->ipAddresslineEdit->text().toStdString().c_str());
+}
+
+//-----------------------------------------------------------------------------
 void vvCalibrationDialog::accept()
 {
   this->Internal->saveSelectedRow();
@@ -365,6 +464,9 @@ void vvCalibrationDialog::accept()
   this->Internal->saveGpsTransform();
   this->Internal->saveLidarPort();
   this->Internal->saveGpsPort();
+  this->Internal->saveLidarForwardingPort();
+  this->Internal->saveGPSForwardingPort();
+  this->Internal->saveEnableForwarding();
   QDialog::accept();
 }
 
