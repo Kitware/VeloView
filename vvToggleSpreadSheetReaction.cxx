@@ -14,6 +14,8 @@
 #include "vvToggleSpreadSheetReaction.h"
 
 #include <pqView.h>
+#include <pqSpreadSheetView.h>
+#include <pqSpreadSheetViewModel.h>
 
 #include <iostream>
 
@@ -40,4 +42,11 @@ vvToggleSpreadSheetReaction::~vvToggleSpreadSheetReaction()
 void vvToggleSpreadSheetReaction::onToggleSpreadsheet()
 {
   this->View->widget()->setVisible(this->Action->isChecked());
+
+  if(this->View->inherits("pqSpreadSheetView"))
+    {
+    pqSpreadSheetView* ssview = qobject_cast<pqSpreadSheetView*>(this->View);
+
+    ssview->getViewModel()->sortSection(1,Qt::SortOrder::AscendingOrder);
+    }
 }
