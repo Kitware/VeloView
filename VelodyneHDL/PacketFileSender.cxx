@@ -41,14 +41,14 @@
 int main(int argc, char* argv[])
 {
 
-  /*if (argc < 2) {
+  if (argc < 2) {
     std::cout << "Usage: " << argv[0] << " <packet file> [loop] [ip] [dataPort] [position Port]" << std::endl;
     return 1;
-  }*/
-  //std::string filename(argv[1]);
+  }
+  std::string filename(argv[1]);
 
-  int loop = 1;
-  std::string destinationIp = "10.33.0.20";
+  int loop = 0;
+  std::string destinationIp = "127.0.0.1";
   int dataPort=2368;
   int positionPort=8308;
   if(argc > 2)
@@ -69,8 +69,7 @@ int main(int argc, char* argv[])
     {
     do
       {
-      vvPacketSender sender("D:\NMEA 2dot3 compliant GPRMC.pcap", destinationIp, dataPort, positionPort);
-      //socket.connect(destinationEndpoint);
+      vvPacketSender sender(filename, destinationIp, dataPort, positionPort);
 
       while (!sender.done())
         {
