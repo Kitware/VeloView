@@ -324,6 +324,10 @@ vvCalibrationDialog::vvCalibrationDialog(QWidget *p)
   this->Internal->EnableForwardingCheckBox->setChecked(false);
   this->Internal->ipAddresslineEdit->setText("0.0.0.0");
 
+  //disable by defaut because Enable Forwarding is unchecked
+  this->Internal->GPSForwardingPortSpinBox->setDisabled(true);
+  this->Internal->LidarForwardingPortSpinBox->setDisabled(true);
+  this->Internal->ipAddresslineEdit->setDisabled(true);
 
   this->Internal->ListWidget->addItem(liveCalibrationItem);
 
@@ -352,6 +356,12 @@ vvCalibrationDialog::vvCalibrationDialog(QWidget *p)
           this->Internal->NetworkGroup, SLOT(setVisible(bool)));
   connect(this->Internal->AdvancedConfiguration, SIGNAL(toggled(bool)),
           this->Internal->NetworkForwardingGroup, SLOT(setVisible(bool)));
+  connect(this->Internal->EnableForwardingCheckBox, SIGNAL(toggled(bool)),
+          this->Internal->GPSForwardingPortSpinBox, SLOT(setEnabled(bool)));
+  connect(this->Internal->EnableForwardingCheckBox, SIGNAL(toggled(bool)),
+          this->Internal->LidarForwardingPortSpinBox, SLOT(setEnabled(bool)));
+  connect(this->Internal->EnableForwardingCheckBox, SIGNAL(toggled(bool)),
+          this->Internal->ipAddresslineEdit, SLOT(setEnabled(bool)));
 
   this->Internal->restoreSelectedRow();
   this->Internal->restoreSensorTransform();
@@ -451,9 +461,9 @@ bool vvCalibrationDialog::isForwarding() const
   return this->Internal->EnableForwardingCheckBox->isChecked();
 }
 
-char* vvCalibrationDialog::ipAddressForwarding() 
+QString vvCalibrationDialog::ipAddressForwarding() const
 {
-  return const_cast<char*>(this->Internal->ipAddresslineEdit->text().toStdString().c_str());
+  return this->Internal->ipAddresslineEdit->text();
 }
 
 //-----------------------------------------------------------------------------

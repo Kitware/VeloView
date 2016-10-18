@@ -33,7 +33,6 @@
 #define __vtkVelodyneHDLSource_h
 
 #include <vtkPolyDataAlgorithm.h>
-#include <QString.h>
 
 class vtkTransform;
 
@@ -61,6 +60,9 @@ public:
   const std::string& GetOutputFile();
   void SetOutputFile(const std::string& filename);
 
+  const std::string& GetForwardedIpAddress();
+  void SetForwardedIpAddress(const std::string& ipAddress);
+
   vtkSetMacro(LIDARPort, int);
   vtkGetMacro(LIDARPort, int);
 
@@ -72,12 +74,6 @@ public:
 
   vtkSetMacro(ForwardedGPSPort, int);
   vtkGetMacro(ForwardedGPSPort, int);
-
-  vtkSetMacro(ForwardedIpAddress, std::string);
-  vtkGetMacro(ForwardedIpAddress, std::string);
-
-  vtkSetMacro(temporaryForwardedIpAddress, char*);
-  vtkGetMacro(temporaryForwardedIpAddress, char*);
 
   vtkSetMacro(isForwarding, bool);
   vtkGetMacro(isForwarding, bool);
@@ -134,7 +130,6 @@ protected:
   int ForwardedLIDARPort;  /*!< The used port to receive LIDAR forwarded packets*/
   int ForwardedGPSPort; /*!< The used port to receive GPS forwarded packets*/
   std::string ForwardedIpAddress; /*!< The used ip to receive forwarded packets*/
-  char* temporaryForwardedIpAddress; /*!< This pointer will contain the text of the QEditLine, do not delete !*/
   bool isForwarding; /*!< Allowing the forwarding of the packets*/
   std::string PacketFile;
   std::string OutputFile;

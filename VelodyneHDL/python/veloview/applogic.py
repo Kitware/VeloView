@@ -303,7 +303,7 @@ def openSensor():
     sensor.GetClientSideObject().SetForwardedGPSPort(GPSForwardingPort)
     sensor.GetClientSideObject().SetForwardedLIDARPort(LIDARForwardingPort)
     sensor.GetClientSideObject().SetisForwarding(isForwarding)
-    #sensorGetClientSideObject().temporaryForwardedIpAddress(ipAddressForwarding)
+    sensor.GetClientSideObject().SetForwardedIpAddress(ipAddressForwarding)
     sensor.GetClientSideObject().SetSensorTransform(sensorTransform)
     sensor.UpdatePipeline()
     sensor.Start()

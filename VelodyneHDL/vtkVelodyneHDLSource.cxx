@@ -429,22 +429,14 @@ public:
 	    Socket.set_option(boost::asio::ip::udp::socket::reuse_address(true)); //Tell the OS we accept to re-use the port address for an other app
 	    Socket.bind(boost::asio::ip::udp::endpoint(boost::asio::ip::udp::v4(), port)); //Bind the socket to the right address
 
-
-     if(isForwarding)
-      {
-      ForwardedSocket.open(ForwardEndpoint.protocol()); //Opening the socket with an UDP v4 protocol toward the forwarded ip address and port
-      }
-
+     ForwardedSocket.open(ForwardEndpoint.protocol()); //Opening the socket with an UDP v4 protocol toward the forwarded ip address and port
     this->StartReceive();
   }
 
   ~PacketReceiver()
   {
     this->Socket.cancel();
-    if(isForwarding)
-      {
-      this->ForwardedSocket.cancel();
-      }
+    this->ForwardedSocket.cancel();
       {
       boost::unique_lock<boost::mutex> guard(this->IsReceivingMtx);
       this->ShouldStop = true;
@@ -685,7 +677,7 @@ vtkVelodyneHDLSource::vtkVelodyneHDLSource()
   this->isForwarding = true;
   this->ForwardedLIDARPort = 5555;
   this->ForwardedGPSPort = 5556;
-  this->ForwardedIpAddress = "10.33.0.21";
+  this->ForwardedIpAddress = "0.0.0.0";
   this->Internal = new vtkInternal(LIDARPort,GPSPort,ForwardedLIDARPort, ForwardedGPSPort, ForwardedIpAddress, isForwarding); 
  
   this->SetNumberOfInputPorts(0);
@@ -746,6 +738,22 @@ void vtkVelodyneHDLSource::SetCorrectionsFile(const std::string& filename)
 
   this->Internal->Consumer->GetReader()->SetCorrectionsFile(filename);
   this->Modified();
+}
+
+//-----------------------------------------------------------------------------
+const std::string& vtkVelodyneHDLSource::GetForwardedIpAddress()
+{
+  return this->ForwardedIpAddress;
+}
+
+//-----------------------------------------------------------------------------
+void vtkVelodyneHDLSource::SetForwardedIpAddress(const std::string& ipAddress)
+{
+  if (ipAddress == this->ForwardedIpAddress)
+    {
+    return;
+    }
+  this->ForwardedIpAddress=ipAddress;
 }
 
 //-----------------------------------------------------------------------------
@@ -878,8 +886,8 @@ void vtkVelodyneHDLSource::Start()
     {
     this->Internal->NetworkSource.Writer = this->Internal->Writer;
     }
+  //this->ForwardedIpAddress=this->temporaryForwardedIpAddress.toStdString();
 
-  ForwardedIpAddress=std::string(temporaryForwardedIpAddress);
   this->Internal->Consumer->Start();
   this->Internal->NetworkSource.LIDARPort = this->LIDARPort;
   this->Internal->NetworkSource.GPSPort = this->GPSPort;

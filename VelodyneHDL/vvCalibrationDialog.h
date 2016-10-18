@@ -41,7 +41,7 @@ public:
   Q_INVOKABLE int lidarForwardingPort() const;
   Q_INVOKABLE int gpsForwardingPort() const;
   Q_INVOKABLE bool isForwarding() const;
-  Q_INVOKABLE char* ipAddressForwarding();
+  Q_INVOKABLE QString ipAddressForwarding() const;
 
 public slots:
   virtual void accept();
