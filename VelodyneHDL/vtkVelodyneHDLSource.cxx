@@ -430,6 +430,7 @@ public:
     Socket.bind(boost::asio::ip::udp::endpoint(boost::asio::ip::udp::v4(), port)); //Bind the socket to the right address
 
     ForwardedSocket.open(ForwardEndpoint.protocol()); //Opening the socket with an UDP v4 protocol toward the forwarded ip address and port
+    ForwardedSocket.set_option(boost::asio::ip::multicast::enable_loopback(true)); //Allow to send the packet on the same machine
     this->StartReceive();
   }
 
