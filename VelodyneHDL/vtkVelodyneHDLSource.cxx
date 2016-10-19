@@ -896,6 +896,17 @@ void vtkVelodyneHDLSource::Start()
     this->Internal->NetworkSource.Writer = this->Internal->Writer;
     }
 
+  //Check if the IP address is valid
+  {
+    boost::system::error_code ec;
+    boost::asio::ip::address::from_string( this->ForwardedIpAddress, ec );
+    if( ec ) 
+      {
+        this->ForwardedIpAddress = "0.0.0.0";
+        this->isForwarding = false;
+      }
+  }
+
   this->Internal->Consumer->Start();
   this->Internal->NetworkSource.LIDARPort = this->LIDARPort;
   this->Internal->NetworkSource.GPSPort = this->GPSPort;
