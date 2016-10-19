@@ -293,6 +293,12 @@ namespace
 vvCalibrationDialog::vvCalibrationDialog(QWidget *p)
   : QDialog(p), Internal(new pqInternal)
 {
+  int minAllowedPort = 1024; //The port between 0 and 1023 are reserved
+  int maxAllowedPort = 65535; //There is 16 bit to encode the ports : from 0 to 65535
+  QString defaultIpAddress = "0.0.0.0";
+  int defaultLidarPort = 2368; //The port between 0 and 1023 are reserved
+  int defaultGpsPort = 8308; //There is 16 bit to encode the ports : from 0 to 65535
+
   this->Internal->setupUi(this);
   QListWidgetItem* liveCalibrationItem = new QListWidgetItem();
 
@@ -306,28 +312,22 @@ vvCalibrationDialog::vvCalibrationDialog(QWidget *p)
   this->Internal->NetworkForwardingGroup->setVisible(false);
 
   //set maximum
-  this->Internal->LidarPortSpinBox->setMaximum(65536); //There is 16 bit to encode the ports : from 0 to 65536
-  this->Internal->GPSPortSpinBox->setMaximum(65536); //There is 16 bit to encode the ports : from 0 to 65536
-  this->Internal->GPSForwardingPortSpinBox->setMaximum(65536); //There is 16 bit to encode the ports : from 0 to 65536
-  this->Internal->LidarForwardingPortSpinBox->setMaximum(65536); //There is 16 bit to encode the ports : from 0 to 65536
+  this->Internal->LidarPortSpinBox->setMaximum(maxAllowedPort);
+  this->Internal->GPSPortSpinBox->setMaximum(maxAllowedPort);
+  this->Internal->GPSForwardingPortSpinBox->setMaximum(maxAllowedPort);
+  this->Internal->LidarForwardingPortSpinBox->setMaximum(maxAllowedPort);
   this->Internal->ipAddresslineEdit->setMaxLength(15); //"255.255.255.255"
   //set minimum
-  this->Internal->LidarPortSpinBox->setMinimum(1024); //The port between 0 and 1023 are reserved
-  this->Internal->GPSPortSpinBox->setMinimum(1024); //The port between 0 and 1023 are reserved
-  this->Internal->GPSForwardingPortSpinBox->setMinimum(1024); //The port between 0 and 1023 are reserved
-  this->Internal->LidarForwardingPortSpinBox->setMinimum(1024); //The port between 0 and 1023 are reserved
+  this->Internal->LidarPortSpinBox->setMinimum(minAllowedPort);
+  this->Internal->GPSPortSpinBox->setMinimum(minAllowedPort);
+  this->Internal->GPSForwardingPortSpinBox->setMinimum(minAllowedPort);
+  this->Internal->LidarForwardingPortSpinBox->setMinimum(minAllowedPort);
   //set value
-  this->Internal->LidarPortSpinBox->setValue(2368); //The default value for the lidar datas
-  this->Internal->GPSPortSpinBox->setValue(8308); //The default value for the GPS datas
-  this->Internal->GPSForwardingPortSpinBox->setValue(10001); //The default value for the forwarded gps datas
-  this->Internal->LidarForwardingPortSpinBox->setValue(10000); //The default value for the forwarded lidar datas
-  this->Internal->EnableForwardingCheckBox->setChecked(false);
-  this->Internal->ipAddresslineEdit->setText("0.0.0.0");
-
-  //disable by defaut because Enable Forwarding is unchecked
-  this->Internal->GPSForwardingPortSpinBox->setDisabled(true);
-  this->Internal->LidarForwardingPortSpinBox->setDisabled(true);
-  this->Internal->ipAddresslineEdit->setDisabled(true);
+  this->Internal->LidarPortSpinBox->setValue(defaultLidarPort);
+  this->Internal->GPSPortSpinBox->setValue(defaultGpsPort);
+  this->Internal->GPSForwardingPortSpinBox->setValue(defaultGpsPort);
+  this->Internal->LidarForwardingPortSpinBox->setValue(defaultLidarPort);
+  this->Internal->ipAddresslineEdit->setText(defaultIpAddress);
 
   this->Internal->ListWidget->addItem(liveCalibrationItem);
 
@@ -362,6 +362,12 @@ vvCalibrationDialog::vvCalibrationDialog(QWidget *p)
           this->Internal->LidarForwardingPortSpinBox, SLOT(setEnabled(bool)));
   connect(this->Internal->EnableForwardingCheckBox, SIGNAL(toggled(bool)),
           this->Internal->ipAddresslineEdit, SLOT(setEnabled(bool)));
+
+  //We set the checkBox EnableForwardingCheckBox by default and then
+  //use the click() method so that the setted connections will disable 
+  //the forwarding configurations by default
+  this->Internal->EnableForwardingCheckBox->setChecked(true);
+  this->Internal->EnableForwardingCheckBox->click();
 
   this->Internal->restoreSelectedRow();
   this->Internal->restoreSensorTransform();

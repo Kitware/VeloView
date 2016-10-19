@@ -412,10 +412,10 @@ class PacketNetworkSource;
 class PacketReceiver
 {
 public:
-  PacketReceiver(boost::asio::io_service& io, int port,int forwardport, std::string forwarddestinationIp, bool flagforward, PacketNetworkSource* parent)
+  PacketReceiver(boost::asio::io_service& io, int port,int forwardport, std::string forwarddestinationIp, bool isforwarding, PacketNetworkSource* parent)
   : Port(port),
     PacketCounter(0),
-    isForwarding(flagforward),
+    isForwarding(isforwarding),
     ForwardedPort(forwardport),
     destinationIp(forwarddestinationIp),
     ForwardEndpoint(boost::asio::ip::address_v4::from_string(forwarddestinationIp), forwardport),
@@ -425,11 +425,11 @@ public:
     IsReceiving(true),
     ShouldStop(false)
   {
-	    Socket.open(boost::asio::ip::udp::v4()); //Opening the socket with an UDP v4 protocol
-	    Socket.set_option(boost::asio::ip::udp::socket::reuse_address(true)); //Tell the OS we accept to re-use the port address for an other app
-	    Socket.bind(boost::asio::ip::udp::endpoint(boost::asio::ip::udp::v4(), port)); //Bind the socket to the right address
+    Socket.open(boost::asio::ip::udp::v4()); //Opening the socket with an UDP v4 protocol
+    Socket.set_option(boost::asio::ip::udp::socket::reuse_address(true)); //Tell the OS we accept to re-use the port address for an other app
+    Socket.bind(boost::asio::ip::udp::endpoint(boost::asio::ip::udp::v4(), port)); //Bind the socket to the right address
 
-     ForwardedSocket.open(ForwardEndpoint.protocol()); //Opening the socket with an UDP v4 protocol toward the forwarded ip address and port
+    ForwardedSocket.open(ForwardEndpoint.protocol()); //Opening the socket with an UDP v4 protocol toward the forwarded ip address and port
     this->StartReceive();
   }
 
@@ -611,16 +611,15 @@ void PacketReceiver::SocketCallback(const boost::system::error_code& error, std:
     }
 
   std::string* packet = new std::string(this->RXBuffer, numberOfBytes);
- 
 
   if(isForwarding)
     {
-      size_t bytesSent = ForwardedSocket.send_to(boost::asio::buffer( packet->c_str(), numberOfBytes),
-                                                              ForwardEndpoint);
+      size_t bytesSent = ForwardedSocket.send_to(boost::asio::buffer( 
+                                                 packet->c_str(), numberOfBytes),
+                                                 ForwardEndpoint);
     }
 
   this->Parent->QueuePackets(packet);
-
 
   this->StartReceive();
 
@@ -653,7 +652,12 @@ public:
                std::string ForwardedIpAddress_, 
                bool isForwarding_) : Consumer(new PacketConsumer),
                                       Writer(new PacketFileWriter),
-                                      NetworkSource(this->Consumer,argLIDARPort,argGPSPort,ForwardedLIDARPort_, ForwardedGPSPort_,  ForwardedIpAddress_, isForwarding_)
+                                      NetworkSource(this->Consumer,
+                                                    argLIDARPort,
+                                                    argGPSPort,ForwardedLIDARPort_,
+                                                    ForwardedGPSPort_,
+                                                    ForwardedIpAddress_,
+                                                    isForwarding_)
   {
   }
 
@@ -678,7 +682,12 @@ vtkVelodyneHDLSource::vtkVelodyneHDLSource()
   this->ForwardedLIDARPort = 5555;
   this->ForwardedGPSPort = 5556;
   this->ForwardedIpAddress = "0.0.0.0";
-  this->Internal = new vtkInternal(LIDARPort,GPSPort,ForwardedLIDARPort, ForwardedGPSPort, ForwardedIpAddress, isForwarding); 
+  this->Internal = new vtkInternal(LIDARPort,
+                                   GPSPort,
+                                   ForwardedLIDARPort,
+                                   ForwardedGPSPort,
+                                   ForwardedIpAddress,
+                                   isForwarding); 
  
   this->SetNumberOfInputPorts(0);
   this->SetNumberOfOutputPorts(1);
@@ -886,7 +895,6 @@ void vtkVelodyneHDLSource::Start()
     {
     this->Internal->NetworkSource.Writer = this->Internal->Writer;
     }
-  //this->ForwardedIpAddress=this->temporaryForwardedIpAddress.toStdString();
 
   this->Internal->Consumer->Start();
   this->Internal->NetworkSource.LIDARPort = this->LIDARPort;

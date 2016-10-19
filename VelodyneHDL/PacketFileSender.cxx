@@ -70,6 +70,7 @@ int main(int argc, char* argv[])
     do
       {
       vvPacketSender sender(filename, destinationIp, dataPort, positionPort);
+      //socket.connect(destinationEndpoint);
 
       while (!sender.done())
         {
