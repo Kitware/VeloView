@@ -293,11 +293,10 @@ namespace
 vvCalibrationDialog::vvCalibrationDialog(QWidget *p)
   : QDialog(p), Internal(new pqInternal)
 {
-  int minAllowedPort = 1024; //The port between 0 and 1023 are reserved
-  int maxAllowedPort = 65535; //There is 16 bit to encode the ports : from 0 to 65535
+  const int minAllowedPort = 1024; //The port between 0 and 1023 are reserved
   QString defaultIpAddress = "0.0.0.0";
-  int defaultLidarPort = 2368; //The port between 0 and 1023 are reserved
-  int defaultGpsPort = 8308; //There is 16 bit to encode the ports : from 0 to 65535
+  const int defaultLidarPort = 2368; //The port between 0 and 1023 are reserved
+  const int defaultGpsPort = 8308; //There is 16 bit to encode the ports : from 0 to 65535
 
   this->Internal->setupUi(this);
   QListWidgetItem* liveCalibrationItem = new QListWidgetItem();
@@ -306,17 +305,12 @@ vvCalibrationDialog::vvCalibrationDialog(QWidget *p)
   liveCalibrationItem->setToolTip("Get Corrections from the data stream");
   liveCalibrationItem->setData(Qt::UserRole, "");
 
+  //Set the visibility 
   this->Internal->PositionGroup->setVisible(false);
   this->Internal->OrientationGroup->setVisible(false);
   this->Internal->NetworkGroup->setVisible(false);
   this->Internal->NetworkForwardingGroup->setVisible(false);
 
-  //set maximum
-  this->Internal->LidarPortSpinBox->setMaximum(maxAllowedPort);
-  this->Internal->GPSPortSpinBox->setMaximum(maxAllowedPort);
-  this->Internal->GPSForwardingPortSpinBox->setMaximum(maxAllowedPort);
-  this->Internal->LidarForwardingPortSpinBox->setMaximum(maxAllowedPort);
-  this->Internal->ipAddresslineEdit->setMaxLength(15); //"255.255.255.255"
   //set minimum
   this->Internal->LidarPortSpinBox->setMinimum(minAllowedPort);
   this->Internal->GPSPortSpinBox->setMinimum(minAllowedPort);
@@ -362,12 +356,6 @@ vvCalibrationDialog::vvCalibrationDialog(QWidget *p)
           this->Internal->LidarForwardingPortSpinBox, SLOT(setEnabled(bool)));
   connect(this->Internal->EnableForwardingCheckBox, SIGNAL(toggled(bool)),
           this->Internal->ipAddresslineEdit, SLOT(setEnabled(bool)));
-
-  //We set the checkBox EnableForwardingCheckBox by default and then
-  //use the click() method so that the setted connections will disable 
-  //the forwarding configurations by default
-  this->Internal->EnableForwardingCheckBox->setChecked(true);
-  this->Internal->EnableForwardingCheckBox->click();
 
   this->Internal->restoreSelectedRow();
   this->Internal->restoreSensorTransform();
