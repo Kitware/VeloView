@@ -257,6 +257,10 @@ def chooseCalibration():
             self.gpsPitch = dialog.gpsPitch()
             self.lidarPort = dialog.lidarPort()
             self.gpsPort = dialog.gpsPort()
+            self.gpsForwardingPort = dialog.gpsForwardingPort()
+            self.lidarForwardingPort = dialog.lidarForwardingPort()
+            self.isForwarding = dialog.isForwarding()
+            self.ipAddressForwarding = dialog.ipAddressForwarding()
             self.sensorTransform = vtk.vtkTransform()
 
             qm = dialog.sensorTransform()
@@ -286,12 +290,20 @@ def openSensor():
     sensorTransform = calibration.sensorTransform
     LIDARPort = calibration.lidarPort
     GPSPort = calibration.gpsPort
+    LIDARForwardingPort = calibration.lidarForwardingPort
+    GPSForwardingPort = calibration.gpsForwardingPort
+    isForwarding = calibration.isForwarding
+    ipAddressForwarding = calibration.ipAddressForwarding
 
     close()
 
     sensor = smp.VelodyneHDLSource(guiName='Data', CalibrationFile=calibrationFile, CacheSize=100)
     sensor.GetClientSideObject().SetLIDARPort(LIDARPort)
     sensor.GetClientSideObject().SetGPSPort(GPSPort)
+    sensor.GetClientSideObject().SetForwardedGPSPort(GPSForwardingPort)
+    sensor.GetClientSideObject().SetForwardedLIDARPort(LIDARForwardingPort)
+    sensor.GetClientSideObject().SetisForwarding(isForwarding)
+    sensor.GetClientSideObject().SetForwardedIpAddress(ipAddressForwarding)
     sensor.GetClientSideObject().SetSensorTransform(sensorTransform)
     sensor.UpdatePipeline()
     sensor.Start()

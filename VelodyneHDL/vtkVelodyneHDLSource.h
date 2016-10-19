@@ -60,11 +60,24 @@ public:
   const std::string& GetOutputFile();
   void SetOutputFile(const std::string& filename);
 
+  const std::string& GetForwardedIpAddress();
+  void SetForwardedIpAddress(const std::string& ipAddress);
+
   vtkSetMacro(LIDARPort, int);
   vtkGetMacro(LIDARPort, int);
 
   vtkSetMacro(GPSPort, int);
   vtkGetMacro(GPSPort, int);
+
+  vtkSetMacro(ForwardedLIDARPort, int);
+  vtkGetMacro(ForwardedLIDARPort, int);
+
+  vtkSetMacro(ForwardedGPSPort, int);
+  vtkGetMacro(ForwardedGPSPort, int);
+
+  vtkSetMacro(isForwarding, bool);
+  vtkGetMacro(isForwarding, bool);
+
 
   void SetLaserSelection(int LaserSelection[64]);
   void GetLaserSelection(int LaserSelection[64]);
@@ -112,8 +125,12 @@ protected:
   vtkVelodyneHDLSource();
   virtual ~vtkVelodyneHDLSource();
 
-  int LIDARPort; /*!< The used port to receive LIDAR information. By default it is 2368 */
-  int GPSPort; /*!< The used port to receive GPS information. By default it is 8308 */
+  int LIDARPort; /*!< The port to receive LIDAR information. Default is 2368 */
+  int GPSPort; /*!< The port to receive GPS information. Default is 8308 */
+  int ForwardedLIDARPort;  /*!< The port to send LIDAR forwarded packets*/
+  int ForwardedGPSPort; /*!< The port to send GPS forwarded packets*/
+  std::string ForwardedIpAddress; /*!< The ip to send forwarded packets*/
+  bool isForwarding; /*!< Allowing the forwarding of the packets*/
   std::string PacketFile;
   std::string OutputFile;
   std::string CorrectionsFile;
