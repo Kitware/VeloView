@@ -280,6 +280,9 @@
         <property name="enabled">
          <bool>false</bool>
         </property>
+        <property name="text">
+         <string>127.0.0.1</string>
+        </property>
         <property name="maxLength">
          <number>15</number>
         </property>

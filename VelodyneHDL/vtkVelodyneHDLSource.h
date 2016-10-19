@@ -125,11 +125,11 @@ protected:
   vtkVelodyneHDLSource();
   virtual ~vtkVelodyneHDLSource();
 
-  int LIDARPort; /*!< The used port to receive LIDAR information. By default it is 2368 */
-  int GPSPort; /*!< The used port to receive GPS information. By default it is 8308 */
-  int ForwardedLIDARPort;  /*!< The used port to receive LIDAR forwarded packets*/
-  int ForwardedGPSPort; /*!< The used port to receive GPS forwarded packets*/
-  std::string ForwardedIpAddress; /*!< The used ip to receive forwarded packets*/
+  int LIDARPort; /*!< The port to receive LIDAR information. Default is 2368 */
+  int GPSPort; /*!< The port to receive GPS information. Default is 8308 */
+  int ForwardedLIDARPort;  /*!< The port to send LIDAR forwarded packets*/
+  int ForwardedGPSPort; /*!< The port to send GPS forwarded packets*/
+  std::string ForwardedIpAddress; /*!< The ip to send forwarded packets*/
   bool isForwarding; /*!< Allowing the forwarding of the packets*/
   std::string PacketFile;
   std::string OutputFile;

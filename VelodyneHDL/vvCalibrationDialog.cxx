@@ -294,7 +294,6 @@ vvCalibrationDialog::vvCalibrationDialog(QWidget *p)
   : QDialog(p), Internal(new pqInternal)
 {
   const int minAllowedPort = 1024; //The port between 0 and 1023 are reserved
-  QString defaultIpAddress = "0.0.0.0";
   const int defaultLidarPort = 2368; //The port between 0 and 1023 are reserved
   const int defaultGpsPort = 8308; //There is 16 bit to encode the ports : from 0 to 65535
 
@@ -321,7 +320,6 @@ vvCalibrationDialog::vvCalibrationDialog(QWidget *p)
   this->Internal->GPSPortSpinBox->setValue(defaultGpsPort);
   this->Internal->GPSForwardingPortSpinBox->setValue(defaultGpsPort);
   this->Internal->LidarForwardingPortSpinBox->setValue(defaultLidarPort);
-  this->Internal->ipAddresslineEdit->setText(defaultIpAddress);
 
   this->Internal->ListWidget->addItem(liveCalibrationItem);
 
