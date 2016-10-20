@@ -2033,6 +2033,7 @@ def setupActions():
     geolocationLabel = QtGui.QLabel();
     geolocationLabel.setText("Frame Mapping: ")
     geolocationLabel.setVisible(isFrameMappingEnabled)
+    geolocationLabel.toolTip = "Display the frames using geolocation datas if available."
     geolocationToolBar.addWidget(geolocationLabel)
 
     comboBox = QtGui.QComboBox()
