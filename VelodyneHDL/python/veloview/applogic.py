@@ -2028,19 +2028,19 @@ def setupActions():
     geolocationToolBar = mW.findChild('QToolBar', 'geolocationToolbar')
 
     # Adding the relative frame mapping dropdown menu
-    isRelativeFrameMappingEnabled = False;
+    isFrameMappingEnabled = True;
 
     geolocationLabel = QtGui.QLabel();
-    geolocationLabel.setText("Relative Frame Mapping: ")
-    geolocationLabel.setVisible(isRelativeFrameMappingEnabled)
+    geolocationLabel.setText("Frame Mapping: ")
+    geolocationLabel.setVisible(isFrameMappingEnabled)
     geolocationToolBar.addWidget(geolocationLabel)
 
     comboBox = QtGui.QComboBox()
-    comboBox.addItem('Relative RAW')
+    comboBox.addItem('None (RAW data)')
     comboBox.addItem('Absolute Geolocation')
     comboBox.addItem('Relative Geolocation')
     comboBox.connect('currentIndexChanged(int)', geolocationChanged)
-    comboBox.setVisible(isRelativeFrameMappingEnabled)
+    comboBox.setVisible(isFrameMappingEnabled)
     geolocationToolBar.addWidget(comboBox)
 
     spinBoxLabel = QtGui.QLabel('TF:')
