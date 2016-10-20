@@ -1453,7 +1453,7 @@ void vtkVelodyneHDLReader::vtkInternal::ComputeCorrectedValues(
   pos[1] = xyDistance * cosAzimuth + correction->horizontalOffsetCorrection * sinAzimuth;
   pos[2] = distanceM * correction->sinVertCorrection + correction->verticalOffsetCorrection;
 
-  if(correction->minIntensity < correction->maxIntensity)
+  if(false && (correction->minIntensity < correction->maxIntensity))
     {
     // Compute corrected intensity
     double focalOffset = 256.0 * pow(1 - correction->focalDistance / 13.100, 2);
