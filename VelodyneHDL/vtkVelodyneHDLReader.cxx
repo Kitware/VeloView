@@ -227,6 +227,10 @@ public:
     this->CropRegion[2] = this->CropRegion[3] = 0.0;
     this->CropRegion[4] = this->CropRegion[5] = 0.0;
     this->CorrectionsInitialized = false;
+    this->currentRpm = 0;
+    this->isFirstPacketOfCurrentFrame = true;
+    this->firstTimestamp = 0;
+    this->firstAngle = 0;
 
     std::fill(this->LastPointId, this->LastPointId + HDL_MAX_NUM_LASERS, -1);
 
@@ -270,10 +274,15 @@ public:
   bool IsDualReturnSensorMode;
   bool IsHDL64Data;
   bool skipFirstFrame;
-
+  
   int LastAzimuth;
   unsigned int LastTimestamp;
+  double currentRpm;
+  std::vector<double> RpmByFrames;
   double TimeAdjust;
+  bool isFirstPacketOfCurrentFrame;
+  double firstTimestamp;
+  int firstAngle;
   vtkIdType LastPointId[HDL_MAX_NUM_LASERS];
   vtkIdType FirstPointIdOfDualReturnPair;
 
@@ -482,6 +491,12 @@ void vtkVelodyneHDLReader::GetLaserSelection(int LaserSelection[64])
     {
     LaserSelection[i] = this->Internal->LaserSelection[i];
     }
+}
+
+//-----------------------------------------------------------------------------
+double vtkVelodyneHDLReader::GetCurrentRpm()
+{
+  return this->Internal->currentRpm;
 }
 
 //-----------------------------------------------------------------------------
@@ -1584,6 +1599,14 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(unsigned char *data, st
   const unsigned int rawtime = dataPacket->gpsTimestamp;
   const double timestamp = this->ComputeTimestamp(dataPacket->gpsTimestamp);
   this->ComputeOrientation(timestamp, geotransform.GetPointer());
+  double deltaRotation = 0;
+  double deltaTime = 0;
+  if(this->isFirstPacketOfCurrentFrame)
+    {
+      this->firstAngle = dataPacket->firingData[0].rotationalPosition;
+      this->firstTimestamp = static_cast<double>(rawtime);//timestamp;
+      this->isFirstPacketOfCurrentFrame=false;
+    }
 
   // Update the transforms here and then call internal
   // transform
@@ -1619,9 +1642,14 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(unsigned char *data, st
 
     if (firingData->rotationalPosition < this->LastAzimuth)
       {
+      vtkSmartPointer<vtkDoubleArray> rpmData = vtkSmartPointer<vtkDoubleArray>::New();
+      rpmData->SetNumberOfComponents(1); //One scalar, the RPM
+      rpmData->SetName("RotationPerMinute"); 
+      rpmData->InsertNextTuple(&this->currentRpm);
+      this->CurrentDataset->GetFieldData()->AddArray(rpmData);
       this->SplitFrame();
+      this->isFirstPacketOfCurrentFrame=true;
       }
-
     // Skip this firing every PointSkip
     if(this->PointsSkip == 0 || firingBlock % (this->PointsSkip + 1) == 0)
       {
@@ -1633,8 +1661,13 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(unsigned char *data, st
                           rawtime,
                           geotransform.GetPointer());
       }
-
     this->LastAzimuth = firingData->rotationalPosition;
+    deltaRotation = static_cast<double>(this->LastAzimuth - this->firstAngle)/(36000.0f); //in number of lap
+    deltaTime = (static_cast<double>(rawtime)-firstTimestamp)/(1000000*60); //in minutes
+    if(deltaTime!=0)
+      {
+        this->currentRpm = deltaRotation/deltaTime;
+      }
     }
 }
 
