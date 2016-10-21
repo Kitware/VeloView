@@ -3,7 +3,7 @@
 # Sets VV_VERSION_{MAJOR,MINOR,PATCH}
 include(${VeloViewSuperBuild_SOURCE_DIR}/../CMake/version.cmake)
 set(VV_VERSION "${VV_VERSION_MAJOR}.${VV_VERSION_MINOR}")
-set(VV_VERSION_SUFFIX)
+set(VV_VERSION_SUFFIX "RC3")
 
 # Sets GD_YEAR, GD_MONTH, GD_DAY
 include(${VeloViewSuperBuild_SOURCE_DIR}/Projects/getdate.cmake)
