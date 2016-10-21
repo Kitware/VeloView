@@ -2027,22 +2027,12 @@ def setupActions():
     timeToolBar = mW.findChild('QToolBar','playbackToolbar')
     geolocationToolBar = mW.findChild('QToolBar', 'geolocationToolbar')
 
-    # Adding the relative frame mapping dropdown menu
-    isFrameMappingEnabled = True;
+    # Adding the relative frame mapping dropdown menu tooltips
 
-    geolocationLabel = QtGui.QLabel();
-    geolocationLabel.setText("Frame Mapping: ")
-    geolocationLabel.setVisible(isFrameMappingEnabled)
-    geolocationLabel.toolTip = "Display the frames using geolocation datas if available."
-    geolocationToolBar.addWidget(geolocationLabel)
-
-    comboBox = QtGui.QComboBox()
-    comboBox.addItem('None (RAW data)')
-    comboBox.addItem('Absolute Geolocation')
-    comboBox.addItem('Relative Geolocation')
-    comboBox.connect('currentIndexChanged(int)', geolocationChanged)
-    comboBox.setVisible(isFrameMappingEnabled)
-    geolocationToolBar.addWidget(comboBox)
+    comboBox = findQObjectByName(QtGui.QApplication.allWidgets(), 'geolocationComboBox') 
+    comboBox.setItemData(0, "No mapping: Each frame is at the origin", 3)
+    comboBox.setItemData(1, "Use GPS geolocation to get each frame absolute location, the first frame is shown at origin", 3)
+    comboBox.setItemData(2, "Use GPS geolocation to get each frame absolute location, the current frame is shown at origin", 3)
 
     spinBoxLabel = QtGui.QLabel('TF:')
     spinBoxLabel.toolTip = "Number of trailing frames"
