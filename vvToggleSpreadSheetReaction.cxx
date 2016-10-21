@@ -14,6 +14,8 @@
 #include "vvToggleSpreadSheetReaction.h"
 
 #include <pqView.h>
+#include <pqSpreadSheetView.h>
+#include <pqSpreadSheetViewModel.h>
 
 #include <iostream>
 
@@ -23,6 +25,18 @@ vvToggleSpreadSheetReaction::vvToggleSpreadSheetReaction(QAction* action, pqView
   Action(action),
   View(view)
 {
+  //Hidding X, Y & Z columns by default
+  if(this->View->inherits("pqSpreadSheetView"))
+  {
+  pqSpreadSheetView* ssview = qobject_cast<pqSpreadSheetView*>(this->View);
+
+  //X
+  ssview->getViewModel()->setVisible(2,false);
+  //Y
+  ssview->getViewModel()->setVisible(3,false);
+  //Z
+  ssview->getViewModel()->setVisible(4,false);
+  }
 
   QObject::connect(
     this->Action, SIGNAL(triggered()),

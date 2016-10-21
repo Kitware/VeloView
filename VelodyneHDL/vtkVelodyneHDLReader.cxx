@@ -256,6 +256,9 @@ public:
   vtkSmartPointer<vtkVelodyneTransformInterpolator> Interp;
 
   vtkSmartPointer<vtkPoints> Points;
+  vtkSmartPointer<vtkDoubleArray> PointsX;
+  vtkSmartPointer<vtkDoubleArray> PointsY;
+  vtkSmartPointer<vtkDoubleArray> PointsZ;
   vtkSmartPointer<vtkUnsignedCharArray> Intensity;
   vtkSmartPointer<vtkUnsignedCharArray> LaserId;
   vtkSmartPointer<vtkUnsignedShortArray> Azimuth;
@@ -976,6 +979,9 @@ vtkSmartPointer<vtkPolyData> vtkVelodyneHDLReader::vtkInternal::CreateData(vtkId
 
   // intensity
   this->Points = points.GetPointer();
+  this->PointsX = CreateDataArray<vtkDoubleArray>("X", numberOfPoints, polyData);
+  this->PointsY = CreateDataArray<vtkDoubleArray>("Y", numberOfPoints, polyData);
+  this->PointsZ = CreateDataArray<vtkDoubleArray>("Z", numberOfPoints, polyData);
   this->Intensity = CreateDataArray<vtkUnsignedCharArray>("intensity", numberOfPoints, polyData);
   this->LaserId = CreateDataArray<vtkUnsignedCharArray>("laser_id", numberOfPoints, polyData);
   this->Azimuth = CreateDataArray<vtkUnsignedShortArray>("azimuth", numberOfPoints, polyData);
@@ -1141,7 +1147,9 @@ void vtkVelodyneHDLReader::vtkInternal::PushFiringData(const unsigned char laser
   // Apply geoposition transform
   geotransform->InternalTransformPoint(pos, pos);
   this->Points->InsertNextPoint(pos);
-
+  this->PointsX->InsertNextValue(pos[0]);
+  this->PointsY->InsertNextValue(pos[1]);
+  this->PointsZ->InsertNextValue(pos[2]);
   this->Azimuth->InsertNextValue(azimuth);
   this->Intensity->InsertNextValue(intensity);
   this->LaserId->InsertNextValue(laserId);
