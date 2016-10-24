@@ -1001,6 +1001,13 @@ vtkSmartPointer<vtkPolyData> vtkVelodyneHDLReader::vtkInternal::CreateData(vtkId
   this->IntensityFlag = CreateDataArray<vtkIntArray>("dual_intensity", numberOfPoints, 0);
   this->Flags = CreateDataArray<vtkUnsignedIntArray>("dual_flags", numberOfPoints, 0);
   this->VerticalAngle = CreateDataArray<vtkDoubleArray>("vertical_angle", numberOfPoints, polyData);
+
+  //FieldData : RPM
+  vtkSmartPointer<vtkDoubleArray> rpmData = vtkSmartPointer<vtkDoubleArray>::New();
+  rpmData->SetNumberOfComponents(1); //One scalar, the RPM
+  rpmData->SetName("RotationPerMinute"); 
+  rpmData->InsertNextTuple(&this->currentRpm);
+  polyData->GetFieldData()->AddArray(rpmData);
   
 
   if (this->IsDualReturnSensorMode)
@@ -1603,7 +1610,9 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(unsigned char *data, st
   double deltaTime = 0;
   if(this->isFirstPacketOfCurrentFrame)
     {
-      this->firstAngle = dataPacket->firingData[0].rotationalPosition;
+      //We actually take the last angle of the first firing of the first packet
+      //For some reasons the first angle is near 360 degre
+      this->firstAngle = dataPacket->firingData[HDL_FIRING_PER_PKT-1].rotationalPosition;
       this->firstTimestamp = static_cast<double>(rawtime);//timestamp;
       this->isFirstPacketOfCurrentFrame=false;
     }
@@ -1642,11 +1651,6 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(unsigned char *data, st
 
     if (firingData->rotationalPosition < this->LastAzimuth)
       {
-      vtkSmartPointer<vtkDoubleArray> rpmData = vtkSmartPointer<vtkDoubleArray>::New();
-      rpmData->SetNumberOfComponents(1); //One scalar, the RPM
-      rpmData->SetName("RotationPerMinute"); 
-      rpmData->InsertNextTuple(&this->currentRpm);
-      this->CurrentDataset->GetFieldData()->AddArray(rpmData);
       this->SplitFrame();
       this->isFirstPacketOfCurrentFrame=true;
       }
@@ -1661,13 +1665,17 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(unsigned char *data, st
                           rawtime,
                           geotransform.GetPointer());
       }
-    this->LastAzimuth = firingData->rotationalPosition;
     deltaRotation = static_cast<double>(this->LastAzimuth - this->firstAngle)/(36000.0f); //in number of lap
     deltaTime = (static_cast<double>(rawtime)-firstTimestamp)/(1000000*60); //in minutes
     if(deltaTime!=0)
       {
         this->currentRpm = deltaRotation/deltaTime;
+        if(!this->isFirstPacketOfCurrentFrame)
+        {
+          this->CurrentDataset->GetFieldData()->GetArray("RotationPerMinute")->SetTuple1(0,this->currentRpm);
+        }
       }
+    this->LastAzimuth = firingData->rotationalPosition;
     }
 }
 
