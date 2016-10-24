@@ -143,9 +143,13 @@ def showRPM():
 
     if rpmArray:
         rpm = rpmArray.GetTuple1(0)
-        app.text.Text = str(rpm)
+        app.text.Text = str(int(rpm)) + "RPM"
     else:
-        app.text.Text = ""
+        app.text.Text = "No RPM"
+
+    textRepresentation = smp.GetRepresentation(app.text)
+    textRepresentation.FontSize = 8
+    textRepresentation.Color = [1,1,0]
 
     smp.Show(app.text)
     smp.Render()
