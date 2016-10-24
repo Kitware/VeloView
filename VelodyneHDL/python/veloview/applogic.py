@@ -75,6 +75,8 @@ class AppLogic(object):
 
         self.fps = [0,0]
 
+        self.text = None
+
     def setupTimers(self):
         self.playTimer = QtCore.QTimer()
         self.playTimer.setSingleShot(True)
@@ -132,6 +134,22 @@ def hasArrayName(sourceProxy, arrayName):
             return True
     return False
 
+def showRPM():
+
+    if app.text == None:
+        app.text = smp.Text()
+
+    rpmArray = getReader().GetClientSideObject().GetOutput().GetFieldData().GetArray('RotationPerMinute')
+
+    if rpmArray:
+        rpm = rpmArray.GetTuple1(0)
+        app.text.Text = str(rpm)
+    else:
+        app.text.Text = ""
+
+    smp.Show(app.text)
+    smp.Render()
+
 
 def openData(filename):
 
@@ -148,6 +166,8 @@ def openData(filename):
     colorByIntensity(reader)
 
     showSourceInSpreadSheet(reader)
+
+    showRPM()
 
     smp.GetActiveView().ViewTime = 0.0
 
@@ -469,7 +489,6 @@ def openPCAP(filename, positionFilename=None):
     app.actions['actionDualReturnIntensityLow'].enabled = True
 
     resetCamera()
-
 
 def hideMeasurementGrid():
     rep = smp.GetDisplayProperties(app.grid)
@@ -1275,6 +1294,8 @@ def updatePosition():
             g = getGlyph()
             rep = cachedGetRepresentation(g, view=app.overheadView)
             rep.Position = position[:3]
+
+    showRPM()
 
 
 def playbackTick():
