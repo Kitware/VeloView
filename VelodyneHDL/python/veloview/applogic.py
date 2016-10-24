@@ -1200,8 +1200,15 @@ def onPlayTimer():
         startTime = vtk.vtkTimerLog.GetUniversalTime()
 
         playbackTick()
-
-        fpsDelayMilliseconds = int(1000.0 / app.targetFps)
+        targetRealTimeFps = app.targetFps
+		
+        if getReader():
+            rpmArray = getReader().GetClientSideObject().GetOutput().GetFieldData().GetArray('RotationPerMinute')
+            if rpmArray:
+                rpm = rpmArray.GetTuple1(0)
+                targetRealTimeFps = rpm/60
+        
+        fpsDelayMilliseconds = int(1000.0 / targetRealTimeFps)
         elapsedMilliseconds = int((vtk.vtkTimerLog.GetUniversalTime() - startTime)*1000.0)
 
         if elapsedMilliseconds > 0:
