@@ -1522,9 +1522,9 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessFiring(HDLFiringData* firingData,
 
   for (int dsr = 0; dsr < HDL_LASER_PER_FIRING; dsr++)
     {
-    unsigned char rawLaserId = static_cast<unsigned char>(dsr + firingBlockLaserOffset);
+    const unsigned char rawLaserId = static_cast<unsigned char>(dsr + firingBlockLaserOffset);
     unsigned char laserId = rawLaserId;
-    unsigned short azimuth = firingData->rotationalPosition;
+    const unsigned short azimuth = firingData->rotationalPosition;
 
     // Detect VLP-16 data and adjust laser id if necessary
     int firingWithinBlock = 0;
