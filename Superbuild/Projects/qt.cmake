@@ -12,9 +12,13 @@ if (NOT APPLE AND UNIX)
                     ${SuperBuild_PROJECTS_DIR}/patches/qt.src.3rdparty.webkit.Source.WebKit.pri
                     <SOURCE_DIR>/src/3rdparty/webkit/Source/WebKit.pri)
 elseif (APPLE)
+  if (NOT DEFINED CMAKE_OSX_SYSROOT OR NOT DEFINED CMAKE_OSX_ARCHITECTURES)
+    message(FATAL "CMAKE_OSX_SYSROOT or CMAKE_OSX_ARCHITECTURES are not configured")
+  endif()
   list (APPEND qt_options
-              -sdk ${CMAKE_OSX_SYSROOT}
+              #-sdk ${CMAKE_OSX_SYSROOT} #corewlan is failing on 10.9 with 10.11 sdk
               -arch ${CMAKE_OSX_ARCHITECTURES}
+              -platform unsupported/macx-clang-libc++
               -qt-libpng
               -system-zlib
               )
@@ -23,6 +27,11 @@ elseif (APPLE)
   #find . -name "*.pro" -exec sed -i -e "s:/Developer/SDKs/:.*:g" {} \;
   set (patch_command
        PATCH_COMMAND /usr/bin/find . -name "*.pro" -exec sed -i -e "s:/Developer/SDKs/:.*:g" {} +)
+  add_external_project_step(qt-patch-osx
+    COMMAND git apply --whitespace=fix ${SuperBuild_PROJECTS_DIR}/patches/qt.elcapitan-macossdk.patch
+    WORKING_DIRECTORY <SOURCE_DIR>
+    DEPENDEES patch
+    DEPENDERS configure)
 endif()
 set(qt_EXTRA_CONFIGURATION_OPTIONS ""
     CACHE STRING "Extra arguments to be passed to Qt when configuring.")
@@ -37,10 +46,15 @@ add_external_project_or_use_system(
                       -no-dbus
                       -nomake demos
                       -nomake examples
+                      -nomake tests
+                      -nomake tools
+                      -nomake docs
                       -no-multimedia
                       -no-openssl
                       -no-phonon
+                      -no-qt3support
                       -no-xinerama
+                      -no-script
                       -no-scripttools
                       -no-svg
                       -no-declarative-debug
@@ -50,7 +64,7 @@ add_external_project_or_use_system(
                       -qt-libtiff
                       -qt-zlib
                       -no-webkit
-                      -xmlpatterns
+                      #-xmlpatterns
                       -I <INSTALL_DIR>/include
                       -L <INSTALL_DIR>/lib
                       ${qt_options}

@@ -17,6 +17,6 @@ install(CODE "
                \"\${CMAKE_INSTALL_PREFIX}/VeloView.app\"
                \"${install_location}/lib\"
                \"${SuperBuild_BINARY_DIR}/paraview/src/paraview-build/lib\"
-               \"${install_location}/plugins\")
+               \"${install_location}/Applications/paraview.app/Contents/Plugins\")
    "
    COMPONENT superbuild)
