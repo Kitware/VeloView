@@ -46,10 +46,15 @@ add_external_project_or_use_system(
                       -no-dbus
                       -nomake demos
                       -nomake examples
+                      -nomake tests
+                      -nomake tools
+                      -nomake docs
                       -no-multimedia
                       -no-openssl
                       -no-phonon
+                      -no-qt3support
                       -no-xinerama
+                      -no-script
                       -no-scripttools
                       -no-svg
                       -no-declarative-debug
@@ -59,7 +64,7 @@ add_external_project_or_use_system(
                       -qt-libtiff
                       -qt-zlib
                       -no-webkit
-                      -xmlpatterns
+                      #-xmlpatterns
                       -I <INSTALL_DIR>/include
                       -L <INSTALL_DIR>/lib
                       ${qt_options}
