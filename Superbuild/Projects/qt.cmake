@@ -16,8 +16,9 @@ elseif (APPLE)
     message(FATAL "CMAKE_OSX_SYSROOT or CMAKE_OSX_ARCHITECTURES are not configured")
   endif()
   list (APPEND qt_options
-              -sdk ${CMAKE_OSX_SYSROOT}
+              #-sdk ${CMAKE_OSX_SYSROOT} #corewlan is failing on 10.9 with 10.11 sdk
               -arch ${CMAKE_OSX_ARCHITECTURES}
+              -platform unsupported/macx-clang-libc++
               -qt-libpng
               -system-zlib
               )
