@@ -228,9 +228,8 @@ public:
     this->CropRegion[4] = this->CropRegion[5] = 0.0;
     this->CorrectionsInitialized = false;
     this->currentRpm = 0;
-    this->isFirstPacketOfCurrentFrame = true;
     this->firstTimestamp = 0;
-    this->firstAngle = 0;
+    this->firstAngle = std::numeric_limits<int>::max();
 
     std::fill(this->LastPointId, this->LastPointId + HDL_MAX_NUM_LASERS, -1);
 
@@ -274,13 +273,11 @@ public:
   bool IsDualReturnSensorMode;
   bool IsHDL64Data;
   bool skipFirstFrame;
-  
   int LastAzimuth;
   unsigned int LastTimestamp;
   double currentRpm;
   std::vector<double> RpmByFrames;
   double TimeAdjust;
-  bool isFirstPacketOfCurrentFrame;
   double firstTimestamp;
   int firstAngle;
   vtkIdType LastPointId[HDL_MAX_NUM_LASERS];
@@ -1004,9 +1001,10 @@ vtkSmartPointer<vtkPolyData> vtkVelodyneHDLReader::vtkInternal::CreateData(vtkId
 
   //FieldData : RPM
   vtkSmartPointer<vtkDoubleArray> rpmData = vtkSmartPointer<vtkDoubleArray>::New();
-  rpmData->SetNumberOfComponents(1); //One scalar, the RPM
+  rpmData->SetNumberOfTuples(1); //One tuple
+  rpmData->SetNumberOfComponents(1); //One value per tuple, the scalar
   rpmData->SetName("RotationPerMinute"); 
-  rpmData->InsertNextTuple(&this->currentRpm);
+  rpmData->SetTuple1(0,this->currentRpm);
   polyData->GetFieldData()->AddArray(rpmData);
   
 
@@ -1606,16 +1604,6 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(unsigned char *data, st
   const unsigned int rawtime = dataPacket->gpsTimestamp;
   const double timestamp = this->ComputeTimestamp(dataPacket->gpsTimestamp);
   this->ComputeOrientation(timestamp, geotransform.GetPointer());
-  double deltaRotation = 0;
-  double deltaTime = 0;
-  if(this->isFirstPacketOfCurrentFrame)
-    {
-      //We actually take the last angle of the first firing of the first packet
-      //For some reasons the first angle is near 360 degre
-      this->firstAngle = dataPacket->firingData[HDL_FIRING_PER_PKT-1].rotationalPosition;
-      this->firstTimestamp = static_cast<double>(rawtime);//timestamp;
-      this->isFirstPacketOfCurrentFrame=false;
-    }
 
   // Update the transforms here and then call internal
   // transform
@@ -1644,6 +1632,14 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(unsigned char *data, st
     }
   assert(azimuthDiff > 0);
 
+  //If it is the first packet of the current frame (ie : the first angle is not defined yet)
+  if(this->firstAngle >= std::numeric_limits<int>::max()-1)
+    {
+    //Save the "first angle" of the frame = last angle of the first packet
+    this->firstAngle = dataPacket->firingData[HDL_FIRING_PER_PKT-1].rotationalPosition;
+    //Save the first timestamp of the frame = timestamp of the first packet
+    this->firstTimestamp = timestamp;//timestamp;
+    }
   for ( ; firingBlock < HDL_FIRING_PER_PKT; ++firingBlock)
     {
     HDLFiringData* firingData = &(dataPacket->firingData[firingBlock]);
@@ -1651,8 +1647,17 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(unsigned char *data, st
 
     if (firingData->rotationalPosition < this->LastAzimuth)
       {
+      //At the end of a frame : 
+      //Compute the deltaAngle / deltaTime (in rpm)
+      double deltaRotation = static_cast<double>(this->LastAzimuth - this->firstAngle)/(36000.0f); //in number of lap
+      double deltaTime = (static_cast<double>(timestamp)-firstTimestamp)/(1000000*60); //in minutes
+      this->currentRpm = deltaRotation/deltaTime;
+      //Put the current rpm in a FieldData attached to the current dataset
+      this->CurrentDataset->GetFieldData()->GetArray("RotationPerMinute")->SetTuple1(0,this->currentRpm);
+      //Create a new dataset (new frame)
       this->SplitFrame();
-      this->isFirstPacketOfCurrentFrame=true;
+      //Indicate that the next packet will be the first of the current frame
+      this->firstAngle = std::numeric_limits<int>::max();
       }
     // Skip this firing every PointSkip
     if(this->PointsSkip == 0 || firingBlock % (this->PointsSkip + 1) == 0)
@@ -1664,16 +1669,6 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(unsigned char *data, st
                           timestamp,
                           rawtime,
                           geotransform.GetPointer());
-      }
-    deltaRotation = static_cast<double>(this->LastAzimuth - this->firstAngle)/(36000.0f); //in number of lap
-    deltaTime = (static_cast<double>(rawtime)-firstTimestamp)/(1000000*60); //in minutes
-    if(deltaTime!=0)
-      {
-        this->currentRpm = deltaRotation/deltaTime;
-        if(!this->isFirstPacketOfCurrentFrame)
-        {
-          this->CurrentDataset->GetFieldData()->GetArray("RotationPerMinute")->SetTuple1(0,this->currentRpm);
-        }
       }
     this->LastAzimuth = firingData->rotationalPosition;
     }
