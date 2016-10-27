@@ -1139,6 +1139,8 @@ void vtkVelodyneHDLReader::vtkInternal::PushFiringData(const unsigned char laser
         if (!(firstFlags & this->DualReturnFilter))
           {
           // first return does not match filter; replace with second return
+          // Apply geoposition transform
+          geotransform->InternalTransformPoint(pos, pos);
           this->Points->SetPoint(dualPointId, pos);
           this->Distance->SetValue(dualPointId, distanceM);
           this->Intensity->SetValue(dualPointId, intensity);
