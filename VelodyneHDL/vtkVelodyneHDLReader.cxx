@@ -273,6 +273,7 @@ public:
   bool IsDualReturnSensorMode;
   bool IsHDL64Data;
   bool skipFirstFrame;
+
   int LastAzimuth;
   unsigned int LastTimestamp;
   double currentRpm;
@@ -1650,14 +1651,15 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(unsigned char *data, st
       {
       //At the end of a frame : 
       //Compute the deltaAngle / deltaTime (in rpm)
-      double deltaRotation = static_cast<double>(this->LastAzimuth - this->firstAngle)/(36000.0f); //in number of lap
-      double deltaTime = (static_cast<double>(timestamp)-firstTimestamp)/(1000000*60); //in minutes
+      double deltaRotation = static_cast<double>(this->LastAzimuth - this->firstAngle)/(36000.0); //in number of lap
+      double deltaTime = (static_cast<double>(timestamp)-firstTimestamp)/(60e6); //in minutes
       this->currentRpm = deltaRotation/deltaTime;
       //Put the current rpm in a FieldData attached to the current dataset
       this->CurrentDataset->GetFieldData()->GetArray("RotationPerMinute")->SetTuple1(0,this->currentRpm);
       //Create a new dataset (new frame)
       this->SplitFrame();
       }
+
     // Skip this firing every PointSkip
     if(this->PointsSkip == 0 || firingBlock % (this->PointsSkip + 1) == 0)
       {
@@ -1669,6 +1671,7 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(unsigned char *data, st
                           rawtime,
                           geotransform.GetPointer());
       }
+
     this->LastAzimuth = firingData->rotationalPosition;
     }
 }

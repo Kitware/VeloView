@@ -476,6 +476,7 @@ def openPCAP(filename, positionFilename=None):
 
     resetCamera()
 
+
 def hideMeasurementGrid():
     rep = smp.GetDisplayProperties(app.grid)
     rep.Visibility = 0
