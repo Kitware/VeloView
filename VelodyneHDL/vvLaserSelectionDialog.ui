@@ -71,7 +71,7 @@
      </column>
      <column>
       <property name="text">
-       <string>Channel</string>
+       <string>Channel (Firing Order)</string>
       </property>
       <property name="textAlignment">
        <set>AlignCenter</set>
