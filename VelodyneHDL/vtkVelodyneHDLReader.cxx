@@ -175,17 +175,33 @@ int MapIntensityFlag(unsigned int flags)
 
 //-----------------------------------------------------------------------------
   double HDL32AdjustTimeStamp(int firingblock,
-                              int dsr)
+                              int dsr,
+                              const bool isDualReturnMode)
 {
-  return (firingblock * 46.08) + (dsr * 1.152);
+  if (!isDualReturnMode)
+    {
+    return (firingblock * 46.08) + (dsr * 1.152);
+    }
+  else
+    {
+    return (firingblock / 2 * 46.08) + (dsr * 1.152);
+    }
 }
 
 //-----------------------------------------------------------------------------
 double VLP16AdjustTimeStamp(int firingblock,
                             int dsr,
-                            int firingwithinblock)
+                            int firingwithinblock,
+                            const bool isDualReturnMode)
 {
+  if (!isDualReturnMode)
+    {
   return (firingblock * 110.592) + (dsr * 2.304) + (firingwithinblock * 55.296);
+    }
+  else
+    {
+    return (firingblock / 2 * 110.592) + (dsr * 2.304) + (firingwithinblock * 55.296);
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -1522,7 +1538,7 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessFiring(HDLFiringData* firingData,
         }
       }
 
-    // Interpolate azimuths and timestamps per laser within blocks
+    // Interpolate azimuths and timestamps per laser within firing blocks
     double timestampadjustment, blockdsr0, nextblockdsr0;
     int azimuthadjustment;
     switch(this->CalibrationReportedNumLasers){
@@ -1536,17 +1552,17 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessFiring(HDLFiringData* firingData,
       }
     case 32:
       {
-      timestampadjustment = HDL32AdjustTimeStamp(firingBlock, dsr);
-      nextblockdsr0 = HDL32AdjustTimeStamp(firingBlock + 1, 0);
-      blockdsr0 = HDL32AdjustTimeStamp(firingBlock, 0);
+      timestampadjustment = HDL32AdjustTimeStamp(firingBlock, dsr,this->IsDualReturnSensorMode);
+      nextblockdsr0 = HDL32AdjustTimeStamp(firingBlock + this->IsDualReturnSensorMode?2:1, 0, this->IsDualReturnSensorMode);
+      blockdsr0 = HDL32AdjustTimeStamp(firingBlock, 0, this->IsDualReturnSensorMode);
       azimuthadjustment = vtkMath::Round(azimuthDiff * ((timestampadjustment - blockdsr0) / (nextblockdsr0 - blockdsr0)));
       break;
       }
     case 16:
       {
-      timestampadjustment = VLP16AdjustTimeStamp(firingBlock, laserId, firingWithinBlock);
-      nextblockdsr0 = VLP16AdjustTimeStamp(firingBlock+1,0,0);
-      blockdsr0 = VLP16AdjustTimeStamp(firingBlock,0,0);
+      timestampadjustment = VLP16AdjustTimeStamp(firingBlock, laserId, firingWithinBlock, this->IsDualReturnSensorMode);
+      nextblockdsr0 = VLP16AdjustTimeStamp(firingBlock + this->IsDualReturnSensorMode?2:1, 0, 0, this->IsDualReturnSensorMode);
+      blockdsr0 = VLP16AdjustTimeStamp(firingBlock, 0, 0, this->IsDualReturnSensorMode);
       azimuthadjustment = vtkMath::Round(azimuthDiff * ((timestampadjustment - blockdsr0) / (nextblockdsr0 - blockdsr0)));
       break;
       }
