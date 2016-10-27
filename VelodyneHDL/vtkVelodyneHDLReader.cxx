@@ -641,6 +641,7 @@ void vtkVelodyneHDLReader::UnloadData()
   this->Internal->LastAzimuth = -1;
   this->Internal->LastTimestamp = std::numeric_limits<unsigned int>::max();
   this->Internal->TimeAdjust = std::numeric_limits<double>::quiet_NaN();
+  this->Internal->firstAngle = std::numeric_limits<int>::max();
 
   this->Internal->rollingCalibrationData->clear();
   this->Internal->IsDualReturnSensorMode = false;
@@ -1633,7 +1634,7 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(unsigned char *data, st
   assert(azimuthDiff > 0);
 
   //If it is the first packet of the current frame (ie : the first angle is not defined yet)
-  if(this->firstAngle >= std::numeric_limits<int>::max()-1)
+  if(this->firstAngle >= std::numeric_limits<int>::max())
     {
     //Save the "first angle" of the frame = last angle of the first packet
     this->firstAngle = dataPacket->firingData[HDL_FIRING_PER_PKT-1].rotationalPosition;
@@ -1656,8 +1657,6 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(unsigned char *data, st
       this->CurrentDataset->GetFieldData()->GetArray("RotationPerMinute")->SetTuple1(0,this->currentRpm);
       //Create a new dataset (new frame)
       this->SplitFrame();
-      //Indicate that the next packet will be the first of the current frame
-      this->firstAngle = std::numeric_limits<int>::max();
       }
     // Skip this firing every PointSkip
     if(this->PointsSkip == 0 || firingBlock % (this->PointsSkip + 1) == 0)
