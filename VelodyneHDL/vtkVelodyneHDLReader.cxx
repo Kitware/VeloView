@@ -205,6 +205,21 @@ double VLP16AdjustTimeStamp(int firingblock,
 }
 
 //-----------------------------------------------------------------------------
+double VLP32AdjustTimeStamp(int firingblock,
+                            int dsr,
+                            const bool isDualReturnMode)
+{
+  if (!isDualReturnMode)
+    {
+    return (firingblock * 55.296) + (dsr / 2) * 2.304;
+    }
+  else
+    {
+    return (firingblock / 2 * 55.296) + (dsr / 2) * 2.304;
+    }
+}
+
+//-----------------------------------------------------------------------------
 double HDL64EAdjustTimeStamp(int firingblock,
                             int dsr,
                             const bool isDualReturnMode)
@@ -1551,9 +1566,18 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessFiring(HDLFiringData* firingData,
       }
     case 32:
       {
-      timestampadjustment = HDL32AdjustTimeStamp(firingBlock, dsr,this->IsDualReturnSensorMode);
-      nextblockdsr0 = HDL32AdjustTimeStamp(firingBlock + this->IsDualReturnSensorMode?2:1, 0, this->IsDualReturnSensorMode);
-      blockdsr0 = HDL32AdjustTimeStamp(firingBlock, 0, this->IsDualReturnSensorMode);
+      if (this->ReportedSensor == VLP32)
+        {
+        timestampadjustment = VLP32AdjustTimeStamp(firingBlock, dsr,this->IsDualReturnSensorMode);
+        nextblockdsr0 = VLP32AdjustTimeStamp(firingBlock + this->IsDualReturnSensorMode?2:1, 0, this->IsDualReturnSensorMode);
+        blockdsr0 = VLP32AdjustTimeStamp(firingBlock, 0, this->IsDualReturnSensorMode);
+        }
+      else
+        {
+        timestampadjustment = HDL32AdjustTimeStamp(firingBlock, dsr,this->IsDualReturnSensorMode);
+        nextblockdsr0 = HDL32AdjustTimeStamp(firingBlock + this->IsDualReturnSensorMode?2:1, 0, this->IsDualReturnSensorMode);
+        blockdsr0 = HDL32AdjustTimeStamp(firingBlock, 0, this->IsDualReturnSensorMode);
+        }
       break;
       }
     case 16:
