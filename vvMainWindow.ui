@@ -88,6 +88,7 @@
     </widget>
     <addaction name="actionSpreadsheet"/>
     <addaction name="actionMeasurement_Grid"/>
+    <addaction name="actionShowRPM"/>
     <addaction name="actionGrid_Properties"/>
     <addaction name="actionLaserSelection"/>
     <addaction name="menuDualReturnMode"/>
@@ -836,6 +837,20 @@
    </property>
    <property name="toolTip">
     <string>Show lower intensity return of a dual return</string>
+   </property>
+  </action>
+  <action name="actionShowRPM">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Show RPM</string>
+   </property>
+   <property name="toolTip">
+    <string>Display the rotations per minute</string>
    </property>
   </action>
  </widget>

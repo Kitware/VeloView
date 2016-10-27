@@ -89,6 +89,8 @@ public:
 
   void GetLaserSelection(int LaserSelection[64]);
 
+  double GetCurrentRpm();
+
   void GetLaserCorrections(
       double verticalCorrection[64],
       double rotationalCorrection[64],

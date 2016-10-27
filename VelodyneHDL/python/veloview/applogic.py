@@ -75,6 +75,9 @@ class AppLogic(object):
 
         self.fps = [0,0]
 
+        self.text = None
+
+
     def setupTimers(self):
         self.playTimer = QtCore.QTimer()
         self.playTimer.setSingleShot(True)
@@ -167,6 +170,7 @@ def openData(filename):
     app.actions['actionDualReturnDistanceFar'].enabled = True
     app.actions['actionDualReturnIntensityHigh'].enabled = True
     app.actions['actionDualReturnIntensityLow'].enabled = True
+    app.actions['actionShowRPM'].enabled = True
 
     resetCamera()
 
@@ -336,6 +340,7 @@ def openSensor():
     app.actions['actionDualReturnDistanceFar'].enabled = True
     app.actions['actionDualReturnIntensityHigh'].enabled = True
     app.actions['actionDualReturnIntensityLow'].enabled = True
+    app.actions['actionShowRPM'].enabled = True
 
     play()
 
@@ -467,6 +472,7 @@ def openPCAP(filename, positionFilename=None):
     app.actions['actionDualReturnDistanceFar'].enabled = True
     app.actions['actionDualReturnIntensityHigh'].enabled = True
     app.actions['actionDualReturnIntensityLow'].enabled = True
+    app.actions['actionShowRPM'].enabled = True
 
     resetCamera()
 
@@ -1181,8 +1187,15 @@ def onPlayTimer():
         startTime = vtk.vtkTimerLog.GetUniversalTime()
 
         playbackTick()
-
-        fpsDelayMilliseconds = int(1000.0 / app.targetFps)
+        targetRealTimeFps = app.targetFps
+		
+        if getReader():
+            rpmArray = getReader().GetClientSideObject().GetOutput().GetFieldData().GetArray('RotationPerMinute')
+            if rpmArray:
+                rpm = rpmArray.GetTuple1(0)
+                targetRealTimeFps = rpm/60
+        
+        fpsDelayMilliseconds = int(1000.0 / targetRealTimeFps)
         elapsedMilliseconds = int((vtk.vtkTimerLog.GetUniversalTime() - startTime)*1000.0)
 
         if elapsedMilliseconds > 0:
@@ -1275,6 +1288,8 @@ def updatePosition():
             g = getGlyph()
             rep = cachedGetRepresentation(g, view=app.overheadView)
             rep.Position = position[:3]
+
+    showRPM()
 
 
 def playbackTick():
@@ -1886,6 +1901,15 @@ def toggleProjectionType():
 
     smp.Render()
 
+
+def toggleRPM():
+
+    r = smp.GetRepresentation(app.text)
+    r.Visibility = app.actions['actionShowRPM'].isChecked()
+
+    smp.Render()
+
+
 def setViewTo(axis,sign):
     view = smp.GetActiveView()
     viewUp = view.CameraViewUp
@@ -2040,6 +2064,7 @@ def setupActions():
     app.actions['actionDualReturnDistanceFar'].connect('triggered()', setFilterToDistanceFar)
     app.actions['actionDualReturnIntensityHigh'].connect('triggered()', setFilterToIntensityHigh)
     app.actions['actionDualReturnIntensityLow'].connect('triggered()', setFilterToIntensityLow)
+    app.actions['actionShowRPM'].connect('triggered()', toggleRPM)
 
     # Action created #
     timeToolBar = mW.findChild('QToolBar','playbackToolbar')
@@ -2089,3 +2114,29 @@ def setupActions():
 
     buttons['Seek Backward'].connect('pressed()', seekBackwardPressed)
     buttons['Seek Backward'].connect('released()', seekBackwardReleased)
+
+
+def showRPM():
+
+    # Create the text object containing the RPM when the function is called for the first time only
+
+    if app.text == None:
+        app.text = smp.Text()
+
+    rpmArray = getReader().GetClientSideObject().GetOutput().GetFieldData().GetArray('RotationPerMinute')
+
+    if rpmArray:
+        rpm = rpmArray.GetTuple1(0)
+        app.text.Text = str(int(rpm)) + " RPM"
+    else:
+        app.text.Text = "No RPM"
+
+    # Set text style
+
+    textRepresentation = smp.GetRepresentation(app.text)
+    textRepresentation.Visibility = app.actions['actionShowRPM'].isChecked()
+
+    textRepresentation.FontSize = 8
+    textRepresentation.Color = [1,1,0]
+
+    smp.Render()

@@ -227,6 +227,9 @@ public:
     this->CropRegion[2] = this->CropRegion[3] = 0.0;
     this->CropRegion[4] = this->CropRegion[5] = 0.0;
     this->CorrectionsInitialized = false;
+    this->currentRpm = 0;
+    this->firstTimestamp = 0;
+    this->firstAngle = std::numeric_limits<int>::max();
 
     std::fill(this->LastPointId, this->LastPointId + HDL_MAX_NUM_LASERS, -1);
 
@@ -276,7 +279,11 @@ public:
 
   int LastAzimuth;
   unsigned int LastTimestamp;
+  double currentRpm;
+  std::vector<double> RpmByFrames;
   double TimeAdjust;
+  double firstTimestamp;
+  int firstAngle;
   vtkIdType LastPointId[HDL_MAX_NUM_LASERS];
   vtkIdType FirstPointIdOfDualReturnPair;
 
@@ -488,6 +495,12 @@ void vtkVelodyneHDLReader::GetLaserSelection(int LaserSelection[64])
 }
 
 //-----------------------------------------------------------------------------
+double vtkVelodyneHDLReader::GetCurrentRpm()
+{
+  return this->Internal->currentRpm;
+}
+
+//-----------------------------------------------------------------------------
 unsigned int vtkVelodyneHDLReader::GetDualReturnFilter() const
 {
   return this->Internal->DualReturnFilter;
@@ -632,6 +645,7 @@ void vtkVelodyneHDLReader::UnloadData()
   this->Internal->LastAzimuth = -1;
   this->Internal->LastTimestamp = std::numeric_limits<unsigned int>::max();
   this->Internal->TimeAdjust = std::numeric_limits<double>::quiet_NaN();
+  this->Internal->firstAngle = std::numeric_limits<int>::max();
 
   this->Internal->rollingCalibrationData->clear();
   this->Internal->IsDualReturnSensorMode = false;
@@ -992,6 +1006,14 @@ vtkSmartPointer<vtkPolyData> vtkVelodyneHDLReader::vtkInternal::CreateData(vtkId
   this->IntensityFlag = CreateDataArray<vtkIntArray>("dual_intensity", numberOfPoints, 0);
   this->Flags = CreateDataArray<vtkUnsignedIntArray>("dual_flags", numberOfPoints, 0);
   this->VerticalAngle = CreateDataArray<vtkDoubleArray>("vertical_angle", numberOfPoints, polyData);
+
+  //FieldData : RPM
+  vtkSmartPointer<vtkDoubleArray> rpmData = vtkSmartPointer<vtkDoubleArray>::New();
+  rpmData->SetNumberOfTuples(1); //One tuple
+  rpmData->SetNumberOfComponents(1); //One value per tuple, the scalar
+  rpmData->SetName("RotationPerMinute"); 
+  rpmData->SetTuple1(0,this->currentRpm);
+  polyData->GetFieldData()->AddArray(rpmData);
   
 
   if (this->IsDualReturnSensorMode)
@@ -1620,6 +1642,14 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(unsigned char *data, st
     }
   assert(azimuthDiff > 0);
 
+  //If it is the first packet of the current frame (ie : the first angle is not defined yet)
+  if(this->firstAngle >= std::numeric_limits<int>::max())
+    {
+    //Save the "first angle" of the frame = last angle of the first packet
+    this->firstAngle = dataPacket->firingData[HDL_FIRING_PER_PKT-1].rotationalPosition;
+    //Save the first timestamp of the frame = timestamp of the first packet
+    this->firstTimestamp = timestamp;//timestamp;
+    }
   for ( ; firingBlock < HDL_FIRING_PER_PKT; ++firingBlock)
     {
     HDLFiringData* firingData = &(dataPacket->firingData[firingBlock]);
@@ -1627,6 +1657,14 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(unsigned char *data, st
 
     if (firingData->rotationalPosition < this->LastAzimuth)
       {
+      //At the end of a frame : 
+      //Compute the deltaAngle / deltaTime (in rpm)
+      double deltaRotation = static_cast<double>(this->LastAzimuth - this->firstAngle)/(36000.0); //in number of lap
+      double deltaTime = (static_cast<double>(timestamp)-firstTimestamp)/(60e6); //in minutes
+      this->currentRpm = deltaRotation/deltaTime;
+      //Put the current rpm in a FieldData attached to the current dataset
+      this->CurrentDataset->GetFieldData()->GetArray("RotationPerMinute")->SetTuple1(0,this->currentRpm);
+      //Create a new dataset (new frame)
       this->SplitFrame();
       }
 
