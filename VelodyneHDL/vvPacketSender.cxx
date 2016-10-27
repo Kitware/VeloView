@@ -79,11 +79,11 @@ vvPacketSender::~vvPacketSender()
 }
 
 //-----------------------------------------------------------------------------
-void vvPacketSender::pumpPacket()
+double vvPacketSender::pumpPacket()
 {
   if(this->Internal->Done)
     {
-    return;
+    return std::numeric_limits<double>::max();
     }
 
   const unsigned char* data = 0;
@@ -92,7 +92,7 @@ void vvPacketSender::pumpPacket()
   if (!this->Internal->PacketReader->NextPacket(data, dataLength, timeSinceStart))
     {
     this->Internal->Done = true;
-    return;
+    return timeSinceStart;
     }
 
   // Recurse until we get to the right kind of packet
@@ -108,6 +108,8 @@ void vvPacketSender::pumpPacket()
     size_t bytesSent = this->Internal->PositionSocket->send_to(boost::asio::buffer(data, dataLength),
                                                                this->Internal->PositionEndpoint);
     }
+
+  return timeSinceStart;
 }
 
 //-----------------------------------------------------------------------------

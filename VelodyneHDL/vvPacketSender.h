@@ -26,7 +26,7 @@ public:
                  int positionport = 8308);
   ~vvPacketSender();
 
-  void pumpPacket();
+  double pumpPacket();
   bool done() const;
   size_t packetCount() const;
 

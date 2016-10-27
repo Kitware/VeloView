@@ -42,12 +42,13 @@ int main(int argc, char* argv[])
 {
 
   if (argc < 2) {
-    std::cout << "Usage: " << argv[0] << " <packet file> [loop] [ip] [dataPort] [position Port]" << std::endl;
+    std::cout << "Usage: " << argv[0] << " <packet file> [loop] [ip] [dataPort] [position Port] [isRealTime]" << std::endl;
     return 1;
   }
   std::string filename(argv[1]);
 
   int loop = 0;
+  int isRealTime = 0;
   std::string destinationIp = "127.0.0.1";
   int dataPort=2368;
   int positionPort=8308;
@@ -64,6 +65,10 @@ int main(int argc, char* argv[])
       dataPort=atoi(argv[4]);
       positionPort=atoi(argv[5]);
     }
+  if(argc>7)
+    {
+      isRealTime = atoi(argv[6]);
+    }
 
   try
     {
@@ -71,16 +76,28 @@ int main(int argc, char* argv[])
       {
       vvPacketSender sender(filename, destinationIp, dataPort, positionPort);
       //socket.connect(destinationEndpoint);
-
+      bool isFirstPacket = true;
+      double currentTimeStamp = 0;
+      double previousTimeStamp = 0;
+      double timeToWait = 0;
       while (!sender.done())
         {
-        sender.pumpPacket();
+        currentTimeStamp = sender.pumpPacket();
+        timeToWait = (currentTimeStamp - previousTimeStamp)*1000000;
+        previousTimeStamp = currentTimeStamp;
+        if(isFirstPacket)
+          {
+            isFirstPacket = false;
+            timeToWait = 200;
+          }
         if ((sender.packetCount() % 500) == 0)
           {
-          printf("total sent packets: %lu\n", sender.packetCount());
+          printf("total sent packets: %lu \n", sender.packetCount());
           }
-
-        boost::this_thread::sleep(boost::posix_time::microseconds(200));
+        if(isRealTime)
+          boost::this_thread::sleep(boost::posix_time::microseconds(timeToWait));
+        else
+          boost::this_thread::sleep(boost::posix_time::microseconds(200));
         }
       } while(loop);
     }
