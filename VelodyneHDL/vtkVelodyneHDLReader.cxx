@@ -104,8 +104,8 @@ struct HDLDataPacket
 {
   HDLFiringData firingData[HDL_FIRING_PER_PKT];
   unsigned int gpsTimestamp;
-  unsigned char dataType;
-  unsigned char dataValue;
+  unsigned char factoryField1;
+  unsigned char factoryField2;
 };
 
 struct HDLLaserCorrection  // Internal representation of per-laser correction
@@ -1929,7 +1929,7 @@ void vtkVelodyneHDLReader::appendRollingDataAndTryCorrection(const unsigned char
   const HDLDataPacket* dataPacket = reinterpret_cast<const HDLDataPacket *>(data);
   this->Internal->rollingCalibrationData->appendData(
         dataPacket->gpsTimestamp,
-        dataPacket->dataType, dataPacket->dataValue);
+        dataPacket->factoryField1, dataPacket->factoryField2);
   this->Internal->HDL64LoadCorrectionsFromStreamData();
 }
 
