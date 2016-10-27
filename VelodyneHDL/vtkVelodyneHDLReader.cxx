@@ -1547,7 +1547,6 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessFiring(HDLFiringData* firingData,
       timestampadjustment = -HDL64EAdjustTimeStamp(firingBlock, dsr, this->IsDualReturnSensorMode);
       nextblockdsr0 = -HDL64EAdjustTimeStamp(firingBlock + this->IsDualReturnSensorMode?4:2, 0, this->IsDualReturnSensorMode);
       blockdsr0 = -HDL64EAdjustTimeStamp(firingBlock, 0, this->IsDualReturnSensorMode);
-      azimuthadjustment = vtkMath::Round(azimuthDiff * ((timestampadjustment - blockdsr0) / (nextblockdsr0 - blockdsr0)));
       break;
       }
     case 32:
@@ -1555,7 +1554,6 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessFiring(HDLFiringData* firingData,
       timestampadjustment = HDL32AdjustTimeStamp(firingBlock, dsr,this->IsDualReturnSensorMode);
       nextblockdsr0 = HDL32AdjustTimeStamp(firingBlock + this->IsDualReturnSensorMode?2:1, 0, this->IsDualReturnSensorMode);
       blockdsr0 = HDL32AdjustTimeStamp(firingBlock, 0, this->IsDualReturnSensorMode);
-      azimuthadjustment = vtkMath::Round(azimuthDiff * ((timestampadjustment - blockdsr0) / (nextblockdsr0 - blockdsr0)));
       break;
       }
     case 16:
@@ -1563,7 +1561,6 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessFiring(HDLFiringData* firingData,
       timestampadjustment = VLP16AdjustTimeStamp(firingBlock, laserId, firingWithinBlock, this->IsDualReturnSensorMode);
       nextblockdsr0 = VLP16AdjustTimeStamp(firingBlock + this->IsDualReturnSensorMode?2:1, 0, 0, this->IsDualReturnSensorMode);
       blockdsr0 = VLP16AdjustTimeStamp(firingBlock, 0, 0, this->IsDualReturnSensorMode);
-      azimuthadjustment = vtkMath::Round(azimuthDiff * ((timestampadjustment - blockdsr0) / (nextblockdsr0 - blockdsr0)));
       break;
       }
     default:
@@ -1571,9 +1568,9 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessFiring(HDLFiringData* firingData,
       timestampadjustment = 0.0;
       blockdsr0 = 0.0;
       nextblockdsr0 = 1.0;
-      azimuthadjustment = vtkMath::Round(azimuthDiff * ((timestampadjustment - blockdsr0) / (nextblockdsr0 - blockdsr0)));
       }
     }
+    azimuthadjustment = vtkMath::Round(azimuthDiff * ((timestampadjustment - blockdsr0) / (nextblockdsr0 - blockdsr0)));
     timestampadjustment = vtkMath::Round(timestampadjustment);
 
     if (firingData->laserReturns[dsr].distance != 0.0 && this->LaserSelection[laserId])
