@@ -2117,7 +2117,7 @@ def setupActions():
 
 def showRPM():
 
-    # Create text object if it's not yet created
+    # Create the text object containing the RPM when the function is called for the first time only
 
     if app.text == None:
         app.text = smp.Text()
@@ -2126,7 +2126,7 @@ def showRPM():
 
     if rpmArray:
         rpm = rpmArray.GetTuple1(0)
-        app.text.Text = str(int(rpm)) + "RPM"
+        app.text.Text = str(int(rpm)) + " RPM"
     else:
         app.text.Text = "No RPM"
 
