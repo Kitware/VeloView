@@ -196,6 +196,28 @@
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
+   <widget class="QLabel" name="geolocationLabel">
+     <property name="text">
+      <string>Frame Mapping:</string>
+     </property>
+    </widget>
+    <widget class="QComboBox" name="geolocationComboBox">
+     <item>
+      <property name="text">
+       <string>None (RAW Data)</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>Absolute Geolocation</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>Relative Geolocation</string>
+      </property>
+     </item>
+    </widget>
   </widget>
   <widget class="QDockWidget" name="colorMapEditorDock">
    <property name="windowTitle">
