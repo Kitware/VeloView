@@ -86,6 +86,13 @@ enum HDLBlock
   BLOCK_32_TO_63 = 0xddff
 };
 
+enum SensorType
+{
+  HDL32E = 0x21,
+  VLP16  = 0x22,
+  VLP32  = 0x23,
+};
+
 #pragma pack(push, 1)
 typedef struct HDLLaserReturn
 {
@@ -268,6 +275,7 @@ public:
   vtkSmartPointer<vtkUnsignedIntArray> Flags;
 
   bool IsDualReturnSensorMode;
+  SensorType ReportedSensor;
   bool IsHDL64Data;
   bool skipFirstFrame;
 
@@ -1603,6 +1611,12 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(unsigned char *data, st
     this->IsHDL64Data |=
         (dataPacket->firingData[i].blockIdentifier == BLOCK_32_TO_63);
     }
+
+  if(!IsHDL64Data){
+    this->ReportedSensor = static_cast<SensorType>(dataPacket->factoryField2);
+    //bool dualReturnMode = dataPacket->factoryField1;
+  }
+
   std::sort(diffs.begin(), diffs.end());
   // Assume the median of the packet's rotationalPosition differences
   int azimuthDiff = diffs[HDL_FIRING_PER_PKT / 2];
