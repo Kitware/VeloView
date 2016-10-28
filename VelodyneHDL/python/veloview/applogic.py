@@ -2080,7 +2080,7 @@ def setupActions():
     comboBox.setItemData(1, "Use GPS geolocation to get each frame absolute location, the first frame is shown at origin", 3)
     comboBox.setItemData(2, "Use GPS geolocation to get each frame absolute location, the current frame is shown at origin", 3)
     
-    PlaybackSpeedLabel = QtGui.QLabel('speed: x')
+    PlaybackSpeedLabel = QtGui.QLabel('Speed: x')
     PlaybackSpeedLabel.setObjectName('PlaybackSpeedLabel')
     timeToolBar.addWidget(PlaybackSpeedLabel)
     
