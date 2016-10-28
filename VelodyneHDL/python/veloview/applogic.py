@@ -1195,7 +1195,8 @@ def onPlayTimer():
                 rpm = rpmArray.GetTuple1(0)
                 targetRealTimeFps = rpm/60
         
-        app.PlaybackSpeed
+        speedMultiplier = float(str(app.PlaybackSpeed.currentText))
+        targetRealTimeFps = speedMultiplier*targetRealTimeFps
         
         fpsDelayMilliseconds = int(1000.0 / targetRealTimeFps)
         elapsedMilliseconds = int((vtk.vtkTimerLog.GetUniversalTime() - startTime)*1000.0)
@@ -2079,16 +2080,22 @@ def setupActions():
     comboBox.setItemData(1, "Use GPS geolocation to get each frame absolute location, the first frame is shown at origin", 3)
     comboBox.setItemData(2, "Use GPS geolocation to get each frame absolute location, the current frame is shown at origin", 3)
     
+    PlaybackSpeedLabel = QtGui.QLabel('speed: x')
+    PlaybackSpeedLabel.setObjectName('PlaybackSpeedLabel')
+    timeToolBar.addWidget(PlaybackSpeedLabel)
+    
     PlaybackSpeedComboBox = QtGui.QComboBox()
     PlaybackSpeedComboBox.setObjectName('PlaybackSpeedCombobox')
     PlaybackSpeedComboBox.toolTip = "Playback speed multiplier"
-    PlaybackSpeedComboBox.addItem("x0.1")
-    PlaybackSpeedComboBox.addItem("x0.5")
-    PlaybackSpeedComboBox.addItem("x1")
-    PlaybackSpeedComboBox.addItem("x1.5")
-    PlaybackSpeedComboBox.addItem("x2")
-    PlaybackSpeedComboBox.addItem("x4")
-    PlaybackSpeedComboBox.addItem("x8")
+    PlaybackSpeedComboBox.addItem("0.1")
+    PlaybackSpeedComboBox.addItem("0.5")
+    PlaybackSpeedComboBox.addItem("1")
+    PlaybackSpeedComboBox.addItem("1.5")
+    PlaybackSpeedComboBox.addItem("2")
+    PlaybackSpeedComboBox.addItem("4")
+    PlaybackSpeedComboBox.addItem("8")
+    PlaybackSpeedComboBox.addItem("16")
+    PlaybackSpeedComboBox.setCurrentIndex(2)
     timeToolBar.addWidget(PlaybackSpeedComboBox)
     app.PlaybackSpeed = PlaybackSpeedComboBox
     
