@@ -92,6 +92,12 @@ enum SensorType
   VLP16  = 0x22,
   VLP32  = 0x23,
 };
+enum DualReturnSensorMode
+{
+  STRONGEST_RETURN = 0x37,
+  LAST_RETURN  = 0x38,
+  DUAL_RETURN  = 0x39,
+};
 
 #pragma pack(push, 1)
 typedef struct HDLLaserReturn
@@ -307,6 +313,7 @@ public:
 
   bool IsDualReturnSensorMode;
   SensorType ReportedSensor;
+  DualReturnSensorMode ReportedSensorReturnMode;
   bool IsHDL64Data;
   bool skipFirstFrame;
 
@@ -1651,7 +1658,8 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(unsigned char *data, st
 
   if(!IsHDL64Data){
     this->ReportedSensor = static_cast<SensorType>(dataPacket->factoryField2);
-    //bool dualReturnMode = dataPacket->factoryField1;
+    this->ReportedSensorReturnMode = static_cast<DualReturnSensorMode>(dataPacket->factoryField1);
+    this->IsDualReturnSensorMode = (this->ReportedSensorReturnMode == DUAL_RETURN);
   }
 
   std::sort(diffs.begin(), diffs.end());
