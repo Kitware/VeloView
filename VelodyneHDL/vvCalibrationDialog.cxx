@@ -29,20 +29,22 @@ class vvCalibrationDialog::pqInternal : public Ui::vvCalibrationDialog
 public:
   pqInternal() : Settings(pqApplicationCore::instance()->settings())
   {
-    QString hdl32builtin = QCoreApplication::applicationDirPath() + "/../share/HDL-32.xml";
-    QString vlp16builtin = QCoreApplication::applicationDirPath() + "/../share/VLP-16.xml";
+    const unsigned int nFile = 7; // WARNING update this accordingly.
+    const char* filenames[nFile]={"HDL-32.xml","VLP-16.xml","VLP-32a.xml","VLP-32b.xml","VLP-32c.xml","Puck Hi-Res.xml","Puck LITE.xml"};
+    std::vector<QString> calibrationBuiltIn(filenames, filenames + nFile);
+    QString prefix;
 #if defined(_WIN32)
-    hdl32builtin = QCoreApplication::applicationDirPath() + "/../share/HDL-32.xml";
-    vlp16builtin = QCoreApplication::applicationDirPath() + "/../share/VLP-16.xml";
+    prefix = QCoreApplication::applicationDirPath() + "/../share/";
 #elif defined(__APPLE__)
-    hdl32builtin =  QCoreApplication::applicationDirPath() + "/../Resources/HDL-32.xml";
-    vlp16builtin =  QCoreApplication::applicationDirPath() + "/../Resources/VLP-16.xml";
+    prefix = QCoreApplication::applicationDirPath() + "/../Resources/";
 #else
-    hdl32builtin =  QCoreApplication::applicationDirPath() + "/../../share/HDL-32.xml";
-    vlp16builtin =  QCoreApplication::applicationDirPath() + "/../../share/VLP-16.xml";
+    prefix = QCoreApplication::applicationDirPath() + "/../../share/";
 #endif
-    this->BuiltInCalibrationFiles << hdl32builtin;
-    this->BuiltInCalibrationFiles << vlp16builtin;
+    for(size_t k=0;k<calibrationBuiltIn.size();++k)
+      {
+        calibrationBuiltIn[k] = prefix + calibrationBuiltIn[k];
+        this->BuiltInCalibrationFiles << calibrationBuiltIn[k];
+      }
   }
 
   void saveFileList();

@@ -86,6 +86,19 @@ enum HDLBlock
   BLOCK_32_TO_63 = 0xddff
 };
 
+enum SensorType
+{
+  HDL32E = 0x21,
+  VLP16  = 0x22,
+  VLP32  = 0x23,
+};
+enum DualReturnSensorMode
+{
+  STRONGEST_RETURN = 0x37,
+  LAST_RETURN  = 0x38,
+  DUAL_RETURN  = 0x39,
+};
+
 #pragma pack(push, 1)
 typedef struct HDLLaserReturn
 {
@@ -104,8 +117,8 @@ struct HDLDataPacket
 {
   HDLFiringData firingData[HDL_FIRING_PER_PKT];
   unsigned int gpsTimestamp;
-  unsigned char dataType;
-  unsigned char dataValue;
+  unsigned char factoryField1;
+  unsigned char factoryField2;
 };
 
 struct HDLLaserCorrection  // Internal representation of per-laser correction
@@ -168,17 +181,48 @@ int MapIntensityFlag(unsigned int flags)
 
 //-----------------------------------------------------------------------------
   double HDL32AdjustTimeStamp(int firingblock,
-                              int dsr)
+                              int dsr,
+                              const bool isDualReturnMode)
 {
-  return (firingblock * 46.08) + (dsr * 1.152);
+  if (!isDualReturnMode)
+    {
+    return (firingblock * 46.08) + (dsr * 1.152);
+    }
+  else
+    {
+    return (firingblock / 2 * 46.08) + (dsr * 1.152);
+    }
 }
 
 //-----------------------------------------------------------------------------
 double VLP16AdjustTimeStamp(int firingblock,
                             int dsr,
-                            int firingwithinblock)
+                            int firingwithinblock,
+                            const bool isDualReturnMode)
 {
+  if (!isDualReturnMode)
+    {
   return (firingblock * 110.592) + (dsr * 2.304) + (firingwithinblock * 55.296);
+    }
+  else
+    {
+    return (firingblock / 2 * 110.592) + (dsr * 2.304) + (firingwithinblock * 55.296);
+    }
+}
+
+//-----------------------------------------------------------------------------
+double VLP32AdjustTimeStamp(int firingblock,
+                            int dsr,
+                            const bool isDualReturnMode)
+{
+  if (!isDualReturnMode)
+    {
+    return (firingblock * 55.296) + (dsr / 2) * 2.304;
+    }
+  else
+    {
+    return (firingblock / 2 * 55.296) + (dsr / 2) * 2.304;
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -274,6 +318,8 @@ public:
   vtkSmartPointer<vtkUnsignedIntArray> Flags;
 
   bool IsDualReturnSensorMode;
+  SensorType ReportedSensor;
+  DualReturnSensorMode ReportedSensorReturnMode;
   bool IsHDL64Data;
   bool skipFirstFrame;
 
@@ -1546,7 +1592,7 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessFiring(HDLFiringData* firingData,
         }
       }
 
-    // Interpolate azimuths and timestamps per laser within blocks
+    // Interpolate azimuths and timestamps per laser within firing blocks
     double timestampadjustment, blockdsr0, nextblockdsr0;
     int azimuthadjustment;
     switch(this->CalibrationReportedNumLasers){
@@ -1555,23 +1601,29 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessFiring(HDLFiringData* firingData,
       timestampadjustment = -HDL64EAdjustTimeStamp(firingBlock, dsr, this->IsDualReturnSensorMode);
       nextblockdsr0 = -HDL64EAdjustTimeStamp(firingBlock + this->IsDualReturnSensorMode?4:2, 0, this->IsDualReturnSensorMode);
       blockdsr0 = -HDL64EAdjustTimeStamp(firingBlock, 0, this->IsDualReturnSensorMode);
-      azimuthadjustment = vtkMath::Round(azimuthDiff * ((timestampadjustment - blockdsr0) / (nextblockdsr0 - blockdsr0)));
       break;
       }
     case 32:
       {
-      timestampadjustment = HDL32AdjustTimeStamp(firingBlock, dsr);
-      nextblockdsr0 = HDL32AdjustTimeStamp(firingBlock + 1, 0);
-      blockdsr0 = HDL32AdjustTimeStamp(firingBlock, 0);
-      azimuthadjustment = vtkMath::Round(azimuthDiff * ((timestampadjustment - blockdsr0) / (nextblockdsr0 - blockdsr0)));
+      if (this->ReportedSensor == VLP32)
+        {
+        timestampadjustment = VLP32AdjustTimeStamp(firingBlock, dsr,this->IsDualReturnSensorMode);
+        nextblockdsr0 = VLP32AdjustTimeStamp(firingBlock + this->IsDualReturnSensorMode?2:1, 0, this->IsDualReturnSensorMode);
+        blockdsr0 = VLP32AdjustTimeStamp(firingBlock, 0, this->IsDualReturnSensorMode);
+        }
+      else
+        {
+        timestampadjustment = HDL32AdjustTimeStamp(firingBlock, dsr,this->IsDualReturnSensorMode);
+        nextblockdsr0 = HDL32AdjustTimeStamp(firingBlock + this->IsDualReturnSensorMode?2:1, 0, this->IsDualReturnSensorMode);
+        blockdsr0 = HDL32AdjustTimeStamp(firingBlock, 0, this->IsDualReturnSensorMode);
+        }
       break;
       }
     case 16:
       {
-      timestampadjustment = VLP16AdjustTimeStamp(firingBlock, laserId, firingWithinBlock);
-      nextblockdsr0 = VLP16AdjustTimeStamp(firingBlock+1,0,0);
-      blockdsr0 = VLP16AdjustTimeStamp(firingBlock,0,0);
-      azimuthadjustment = vtkMath::Round(azimuthDiff * ((timestampadjustment - blockdsr0) / (nextblockdsr0 - blockdsr0)));
+      timestampadjustment = VLP16AdjustTimeStamp(firingBlock, laserId, firingWithinBlock, this->IsDualReturnSensorMode);
+      nextblockdsr0 = VLP16AdjustTimeStamp(firingBlock + this->IsDualReturnSensorMode?2:1, 0, 0, this->IsDualReturnSensorMode);
+      blockdsr0 = VLP16AdjustTimeStamp(firingBlock, 0, 0, this->IsDualReturnSensorMode);
       break;
       }
     default:
@@ -1579,9 +1631,9 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessFiring(HDLFiringData* firingData,
       timestampadjustment = 0.0;
       blockdsr0 = 0.0;
       nextblockdsr0 = 1.0;
-      azimuthadjustment = vtkMath::Round(azimuthDiff * ((timestampadjustment - blockdsr0) / (nextblockdsr0 - blockdsr0)));
       }
     }
+    azimuthadjustment = vtkMath::Round(azimuthDiff * ((timestampadjustment - blockdsr0) / (nextblockdsr0 - blockdsr0)));
     timestampadjustment = vtkMath::Round(timestampadjustment);
 
     if (firingData->laserReturns[dsr].distance != 0.0 && this->LaserSelection[laserId])
@@ -1635,6 +1687,13 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(unsigned char *data, st
     this->IsHDL64Data |=
         (dataPacket->firingData[i].blockIdentifier == BLOCK_32_TO_63);
     }
+
+  if(!IsHDL64Data){
+    this->ReportedSensor = static_cast<SensorType>(dataPacket->factoryField2);
+    this->ReportedSensorReturnMode = static_cast<DualReturnSensorMode>(dataPacket->factoryField1);
+    this->IsDualReturnSensorMode = (this->ReportedSensorReturnMode == DUAL_RETURN);
+  }
+
   std::sort(diffs.begin(), diffs.end());
   // Assume the median of the packet's rotationalPosition differences
   int azimuthDiff = diffs[HDL_FIRING_PER_PKT / 2];
@@ -1977,7 +2036,7 @@ void vtkVelodyneHDLReader::appendRollingDataAndTryCorrection(const unsigned char
   const HDLDataPacket* dataPacket = reinterpret_cast<const HDLDataPacket *>(data);
   this->Internal->rollingCalibrationData->appendData(
         dataPacket->gpsTimestamp,
-        dataPacket->dataType, dataPacket->dataValue);
+        dataPacket->factoryField1, dataPacket->factoryField2);
   this->Internal->HDL64LoadCorrectionsFromStreamData();
 }
 
