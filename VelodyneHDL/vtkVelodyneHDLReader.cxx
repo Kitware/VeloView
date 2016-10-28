@@ -234,7 +234,7 @@ double HDL64EAdjustTimeStamp(int firingblock,
   const int firingblockReversed = HDL_FIRING_PER_PKT - firingblock - 1;
   if (!isDualReturnMode)
     {
-      const double TimeOffsetMicroSec[4] = {2.34, 2.54, 4.74, 6.0};
+      const double TimeOffsetMicroSec[4] = {2.34, 3.54, 4.74, 6.0};
       return (firingblockReversed/ 2 * 48.0)
           + TimeOffsetMicroSec[(dsrReversed % 4)]
           + (dsrReversed / 4) * TimeOffsetMicroSec[3];
