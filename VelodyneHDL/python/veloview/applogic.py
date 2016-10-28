@@ -1195,6 +1195,8 @@ def onPlayTimer():
                 rpm = rpmArray.GetTuple1(0)
                 targetRealTimeFps = rpm/60
         
+        app.PlaybackSpeed
+        
         fpsDelayMilliseconds = int(1000.0 / targetRealTimeFps)
         elapsedMilliseconds = int((vtk.vtkTimerLog.GetUniversalTime() - startTime)*1000.0)
 
@@ -2076,7 +2078,20 @@ def setupActions():
     comboBox.setItemData(0, "No mapping: Each frame is at the origin", 3)
     comboBox.setItemData(1, "Use GPS geolocation to get each frame absolute location, the first frame is shown at origin", 3)
     comboBox.setItemData(2, "Use GPS geolocation to get each frame absolute location, the current frame is shown at origin", 3)
-
+    
+    PlaybackSpeedComboBox = QtGui.QComboBox()
+    PlaybackSpeedComboBox.setObjectName('PlaybackSpeedCombobox')
+    PlaybackSpeedComboBox.toolTip = "Playback speed multiplier"
+    PlaybackSpeedComboBox.addItem("x0.1")
+    PlaybackSpeedComboBox.addItem("x0.5")
+    PlaybackSpeedComboBox.addItem("x1")
+    PlaybackSpeedComboBox.addItem("x1.5")
+    PlaybackSpeedComboBox.addItem("x2")
+    PlaybackSpeedComboBox.addItem("x4")
+    PlaybackSpeedComboBox.addItem("x8")
+    timeToolBar.addWidget(PlaybackSpeedComboBox)
+    app.PlaybackSpeed = PlaybackSpeedComboBox
+    
     spinBoxLabel = QtGui.QLabel('TF:')
     spinBoxLabel.toolTip = "Number of trailing frames"
     timeToolBar.addWidget(spinBoxLabel)
