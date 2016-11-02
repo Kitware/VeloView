@@ -9,7 +9,7 @@ determine_version(${VeloViewSuperBuild_SOURCE_DIR} ${GIT_EXECUTABLE} "VV")
 # Sets GD_YEAR, GD_MONTH, GD_DAY
 include(${VeloViewSuperBuild_SOURCE_DIR}/Projects/getdate.cmake)
 GET_DATE()
-set(PACKAGE_TIMESTAMP "${GD_DAY}${GD_MONTH}${GD_YEAR}")
+set(PACKAGE_TIMESTAMP "${GD_YEAR}${GD_MONTH}${GD_DAY}")
 
 # Enable CPack packaging.
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "VeloView")
