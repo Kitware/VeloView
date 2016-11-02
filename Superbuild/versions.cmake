@@ -9,7 +9,7 @@
 # endif()
 
 if (WIN32)
-  if (64bit_build)
+  if (VV_BUILD_ARCHITECTURE EQUAL 64)
     add_revision(python
       URL "http://www.paraview.org/files/dependencies/python+deps.tar.bz2"
       URL_MD5 "4318b8f771eda5606d9ce7f0be9f82e1")
