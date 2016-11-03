@@ -245,13 +245,21 @@ void vtkVelodyneHDLPositionReader::vtkInternal::InterpolateGPS(vtkPoints* points
 
       const double heading = headings->GetTuple1(i);
 
+     //Check the input data
+      bool isTranslationFinite = vtkMath::IsFinite(pos[0])&&
+                                 vtkMath::IsFinite(pos[1])&&
+                                 vtkMath::IsFinite(pos[2]);
+      bool isRotationFinite = vtkMath::IsFinite(heading);
+
       // Compute transform
       vtkNew<vtkTransform> transform;
       transform->PostMultiply();
-      transform->RotateZ(-heading/* - this->BaseYaw*/);
+      if(isRotationFinite)
+        transform->RotateZ(-heading/* - this->BaseYaw*/);
       // transform->RotateY(-this->BaseRoll);
       // transform->RotateX(-this->BasePitch);
-      transform->Translate(pos);
+      if(isTranslationFinite)
+        transform->Translate(pos);
 
       this->Interp->AddTransform(convertedtime, transform.GetPointer());
 
