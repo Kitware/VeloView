@@ -234,7 +234,7 @@ double HDL64EAdjustTimeStamp(int firingblock,
   const int firingblockReversed = HDL_FIRING_PER_PKT - firingblock - 1;
   if (!isDualReturnMode)
     {
-      const double TimeOffsetMicroSec[4] = {2.34, 2.54, 4.74, 6.0};
+      const double TimeOffsetMicroSec[4] = {2.34, 3.54, 4.74, 6.0};
       return (firingblockReversed/ 2 * 48.0)
           + TimeOffsetMicroSec[(dsrReversed % 4)]
           + (dsrReversed / 4) * TimeOffsetMicroSec[3];
@@ -1769,6 +1769,7 @@ int vtkVelodyneHDLReader::ReadFrameInformation()
   fpos_t lastFilePosition;
   reader.GetFilePosition(&lastFilePosition);
 
+  bool IsHDL64Data = false;
   bool isEmptyFrame = true;
   while (reader.NextPacket(data, dataLength, timeSinceStart))
     {
@@ -1791,8 +1792,7 @@ int vtkVelodyneHDLReader::ReadFrameInformation()
       {
       const HDLFiringData & firingData = dataPacket->firingData[i];
 
-      this->Internal->IsHDL64Data |=
-          (firingData.blockIdentifier == BLOCK_32_TO_63);
+      IsHDL64Data |= (firingData.blockIdentifier == BLOCK_32_TO_63);
 
       // Test if all lasers had a positive distance
       for(int laserID = 0; laserID < HDL_LASER_PER_FIRING; laserID++)
@@ -1817,8 +1817,8 @@ int vtkVelodyneHDLReader::ReadFrameInformation()
       lastAzimuth = firingData.rotationalPosition;
       }
 
-    // Accumulate HDL6 Status byte data
-    if(this->Internal->IsCorrectionFromLiveStream
+    // Accumulate HDL64 Status byte data
+    if(IsHDL64Data && this->Internal->IsCorrectionFromLiveStream
        && !this->Internal->CorrectionsInitialized)
       {
         this->appendRollingDataAndTryCorrection(data);
