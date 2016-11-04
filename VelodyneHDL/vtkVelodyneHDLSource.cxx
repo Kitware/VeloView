@@ -47,7 +47,7 @@
 //----------------------------------------------------------------------------
 namespace
 {
-
+  static const int NBR_PACKETS_SAVED = 100;
   template<typename T>
   class SynchronizedQueue
   {
@@ -412,7 +412,9 @@ class PacketNetworkSource;
 class PacketReceiver
 {
 public:
-  PacketReceiver(boost::asio::io_service& io, int port,int forwardport, std::string forwarddestinationIp, bool isforwarding, PacketNetworkSource* parent)
+  PacketReceiver(boost::asio::io_service& io, int port,int forwardport,
+                 std::string forwarddestinationIp, bool isforwarding,  
+                 PacketNetworkSource* parent, std::string filenameCrashAnalysis_, int bytesPerPacket_)
   : Port(port),
     PacketCounter(0),
     isForwarding(isforwarding),
@@ -423,7 +425,9 @@ public:
     ForwardedSocket(io),
     Parent(parent),
     IsReceiving(true),
-    ShouldStop(false)
+    ShouldStop(false),
+    filenameCrashAnalysis(filenameCrashAnalysis_),
+    bytesPerPacket(bytesPerPacket_)
   {
     Socket.open(boost::asio::ip::udp::v4()); //Opening the socket with an UDP v4 protocol
     Socket.set_option(boost::asio::ip::udp::socket::reuse_address(true)); //Tell the OS we accept to re-use the port address for an other app
@@ -431,11 +435,16 @@ public:
 
     ForwardedSocket.open(ForwardEndpoint.protocol()); //Opening the socket with an UDP v4 protocol toward the forwarded ip address and port
     ForwardedSocket.set_option(boost::asio::ip::multicast::enable_loopback(true)); //Allow to send the packet on the same machine
+
+    //Opening crash analysis file
+    this->fileCrashAnalysis.open(filenameCrashAnalysis, ios::out | ios::binary);
+
     this->StartReceive();
   }
 
   ~PacketReceiver()
   {
+    this->fileCrashAnalysis.close();
     this->Socket.cancel();
     this->ForwardedSocket.cancel();
       {
@@ -480,6 +489,10 @@ private:
   bool ShouldStop; /*!< Flag indicating if we should stop the listening */
   boost::mutex IsReceivingMtx; /*!< Mutex : Block the access of IsReceiving when a thread is seting the flag */
   boost::condition_variable IsReceivingCond;
+  std::string filenameCrashAnalysis; /*!< Flag indicating if we should stop the listening */
+  std::ofstream fileCrashAnalysis;
+  boost::mutex IsWriting;
+  int bytesPerPacket;
 };
 
 //----------------------------------------------------------------------------
@@ -566,8 +579,8 @@ public:
       }
 
     // Create work
-    this->LIDARPortReceiver = boost::shared_ptr<PacketReceiver>(new PacketReceiver(this->IOService, LIDARPort,ForwardedLIDARPort,ForwardedIpAddress,isForwarding, this));
-    this->PositionPortReceiver = boost::shared_ptr<PacketReceiver>(new PacketReceiver(this->IOService, GPSPort,ForwardedGPSPort,ForwardedIpAddress,isForwarding, this));
+    this->LIDARPortReceiver = boost::shared_ptr<PacketReceiver>(new PacketReceiver(this->IOService, LIDARPort,ForwardedLIDARPort,ForwardedIpAddress,isForwarding, this,"LidarLastData.bin",1206));
+    this->PositionPortReceiver = boost::shared_ptr<PacketReceiver>(new PacketReceiver(this->IOService, GPSPort,ForwardedGPSPort,ForwardedIpAddress,isForwarding, this,"GPSLastData.bin",512));
   }
 
   void Stop()
@@ -610,7 +623,6 @@ void PacketReceiver::SocketCallback(const boost::system::error_code& error, std:
 
     return;
     }
-
   std::string* packet = new std::string(this->RXBuffer, numberOfBytes);
 
   if(isForwarding)
@@ -618,6 +630,14 @@ void PacketReceiver::SocketCallback(const boost::system::error_code& error, std:
       size_t bytesSent = ForwardedSocket.send_to(boost::asio::buffer( 
                                                  packet->c_str(), numberOfBytes),
                                                  ForwardEndpoint);
+    }
+  if(this->fileCrashAnalysis.is_open())
+    {
+      boost::unique_lock<boost::mutex> scoped_lock(this->IsWriting);
+      this->fileCrashAnalysis.write(packet->c_str(),this->bytesPerPacket);
+      this->fileCrashAnalysis.flush();
+      std::streampos pos = static_cast<std::streampos>( (this->PacketCounter % NBR_PACKETS_SAVED)*this->bytesPerPacket);
+      this->fileCrashAnalysis.seekp(pos);
     }
 
   this->Parent->QueuePackets(packet);
