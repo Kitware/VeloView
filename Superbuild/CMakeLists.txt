@@ -7,14 +7,24 @@ set (SuperBuild_BINARY_DIR ${VeloViewSuperBuild_BINARY_DIR})
 
 include(CMakeDependentOption)
 
+#------------------------------------------------------------------------------
+# Set a default build type if none was specified
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+  message(STATUS "Setting build type to 'RelWithDebInfo' as none was specified.")
+  set(CMAKE_BUILD_TYPE RelWithDebInfo CACHE STRING "Choose the type of build." FORCE)
+  # Set the possible values of build type for cmake-gui
+  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release"
+    "MinSizeRel" "RelWithDebInfo")
+endif()
+
 #-----------------------------------------------------------------------------
 # Collect information about the build platform.
 include(CheckTypeSize)
 check_type_size(void* VOID_PTR_SIZE BUILTIN_TYPES_ONLY)
 if (VOID_PTR_SIZE EQUAL 8)
-  set (64bit_build TRUE)
+  set(VV_BUILD_ARCHITECTURE "64")
 else ()
-  set (64bit_build FALSE)
+  set(VV_BUILD_ARCHITECTURE "32")
 endif()
 
 set (platform)
@@ -30,12 +40,7 @@ endif()
 
 # Set suffix to be used for generating archives. This ensures that the package
 # files have decent names that we can directly upload to the website.
-set (package_suffix "${CMAKE_SYSTEM_NAME}")
-if (64bit_build)
-  set (package_suffix "${package_suffix}-64bit")
-else ()
-  set (package_suffix "${package_suffix}-32bit")
-endif()
+set (package_suffix "${CMAKE_SYSTEM_NAME}-${VV_BUILD_ARCHITECTURE}bit")
 
 #-----------------------------------------------------------------------------
 # Setup CMAKE_MODULE_PATH so that platform specific configurations are processed
@@ -46,6 +51,7 @@ set (CMAKE_MODULE_PATH
   "${SuperBuild_PROJECTS_DIR}"
   "${SuperBuild_CMAKE_DIR}"
   "${CMAKE_CURRENT_SOURCE_DIR}"
+  "${CMAKE_CURRENT_SOURCE_DIR}/../CMake"
   ${CMAKE_MODULE_PATH})
 
 #-----------------------------------------------------------------------------

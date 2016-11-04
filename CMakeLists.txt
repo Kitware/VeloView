@@ -15,16 +15,48 @@
 cmake_minimum_required(VERSION 2.8.8 FATAL_ERROR)
 project(VeloView)
 
-# Sets VV_VERSION_{MAJOR,MINOR,PATCH}
-include(CMake/version.cmake)
+# Disallow in-source build
+if ("${VeloView_SOURCE_DIR}"  STREQUAL "${VeloView_BINARY_DIR}")
+  message(FATAL_ERROR
+    "VeloView requires an out of source Build. "
+    "Please create a separate binary directory and run CMake there.")
+endif()
+
+#------------------------------------------------------------------------------
+# Set a default build type if none was specified
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+  message(STATUS "Setting build type to 'Debug' as none was specified.")
+  set(CMAKE_BUILD_TYPE Debug CACHE STRING "Choose the type of build." FORCE)
+  # Set the possible values of build type for cmake-gui
+  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release"
+    "MinSizeRel" "RelWithDebInfo")
+endif()
+
+#-------------------------------------------------------------------------------
+set (VeloView_CMAKE_DIR "${VeloView_SOURCE_DIR}/CMake")
+set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${VeloView_CMAKE_DIR})
+
+include(Git)
+include(ParaViewDetermineVersion)
+# Sets VV_VERSION_{MAJOR,MINOR,PATCH} using PARAVIEW determine_version
+file(STRINGS version.txt version_txt)
+extract_version_components("${version_txt}" "VV")
+determine_version(${VeloView_SOURCE_DIR} ${GIT_EXECUTABLE} "VV")
+
+# Is this a 32 bit or 64bit build. Display this in about dialog.
+if ("${CMAKE_SIZEOF_VOID_P}" EQUAL 8)
+  set(VV_BUILD_ARCHITECTURE "64")
+else()
+  set(VV_BUILD_ARCHITECTURE "32")
+endif()
+
+include(CTest)
 
 find_package(ParaView REQUIRED)
 find_package(PythonInterp REQUIRED)
 find_package(PythonLibs REQUIRED)
 include(${PARAVIEW_USE_FILE})
 option(BUILD_SHARED_LIBS "Build shared libs" ON)
-
-include(CTest)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 if(UNIX)
@@ -56,9 +88,7 @@ endif()
 set(VV_INSTALL_ARCHIVE_DIR
     lib/veloview-${VV_VERSION_MAJOR}.${VV_VERSION_MINOR})
 
-
 # Find and include PythonQt
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/CMake)
 find_package(PythonQt REQUIRED)
 
 # Find the PythonQt plugin library in ParaView lib directory
@@ -139,7 +169,7 @@ endif()
 set (PARAVIEW_INSTALL_LIB_DIR "lib/paraview-${PARAVIEW_VERSION_MAJOR}.${PARAVIEW_VERSION_MINOR}")
 
 build_paraview_client(VeloView
-  TITLE "VeloView"
+  TITLE "VeloView ${VV_VERSION_FULL} ${VV_BUILD_ARCHITECTURE}-bit"
   ORGANIZATION "Velodyne Lidar"
   VERSION_MAJOR ${VV_VERSION_MAJOR}
   VERSION_MINOR ${VV_VERSION_MINOR}
