@@ -58,6 +58,8 @@ public:
   void saveLidarForwardingPort();
   void saveGPSForwardingPort();
   void saveEnableForwarding();
+  void saveAdvancedConfiguration();
+  void saveForwardIpAddress();
 
   void restoreSensorTransform();
   void restoreGpsTransform();
@@ -66,6 +68,8 @@ public:
   void restoreLidarForwardingPort();
   void restoreGPSForwardingPort();
   void restoreEnableForwarding();
+  void restoreAdvancedConfiguration();
+  void restoreForwardIpAddress();
 
   pqSettings* const Settings;
   QStringList BuiltInCalibrationFiles;
@@ -174,8 +178,24 @@ void vvCalibrationDialog::pqInternal::saveLidarForwardingPort()
 void vvCalibrationDialog::pqInternal::saveEnableForwarding()
 {
   this->Settings->setValue(
-    "VelodyneHDLPlugin/CalibrationFileDialog/saveEnableForwarding",
+    "VelodyneHDLPlugin/CalibrationFileDialog/EnableForwarding",
     this->EnableForwardingCheckBox->isChecked());
+}
+
+//-----------------------------------------------------------------------------
+void vvCalibrationDialog::pqInternal::saveAdvancedConfiguration()
+{
+  this->Settings->setValue(
+    "VelodyneHDLPlugin/CalibrationFileDialog/AdvancedConfiguration",
+    this->AdvancedConfiguration->isChecked());
+}
+
+//-----------------------------------------------------------------------------
+void vvCalibrationDialog::pqInternal::saveForwardIpAddress()
+{
+  this->Settings->setValue(
+    "VelodyneHDLPlugin/CalibrationFileDialog/ForwardIpAddress",
+    this->ipAddresslineEdit->text());
 }
 
 //-----------------------------------------------------------------------------
@@ -265,10 +285,21 @@ void vvCalibrationDialog::pqInternal::restoreLidarForwardingPort()
 //-----------------------------------------------------------------------------
 void vvCalibrationDialog::pqInternal::restoreEnableForwarding()
 {
-  this->EnableForwardingCheckBox->setChecked(
-    this->Settings->value(
-    "VelodyneHDLPlugin/CalibrationFileDialog/EnableForwarding",
-    this->EnableForwardingCheckBox->isChecked()).toBool());
+  bool tempIsChecked = this->Settings->value("VelodyneHDLPlugin/CalibrationFileDialog/EnableForwarding").toBool();
+  this->EnableForwardingCheckBox->setChecked(tempIsChecked);
+}
+
+//-----------------------------------------------------------------------------
+void vvCalibrationDialog::pqInternal::restoreAdvancedConfiguration()
+{
+  bool tempIsChecked = this->Settings->value("VelodyneHDLPlugin/CalibrationFileDialog/AdvancedConfiguration").toBool();
+  this->AdvancedConfiguration->setChecked(tempIsChecked);
+}
+
+//-----------------------------------------------------------------------------
+void vvCalibrationDialog::pqInternal::restoreForwardIpAddress()
+{
+  this->ipAddresslineEdit->setText(this->Settings->value("VelodyneHDLPlugin/CalibrationFileDialog/ForwardIpAddress").toString());
 }
 
 namespace
@@ -362,9 +393,11 @@ vvCalibrationDialog::vvCalibrationDialog(QWidget *p)
   this->Internal->restoreGpsTransform();
   this->Internal->restoreLidarPort();
   this->Internal->restoreGpsPort();
-  //this->Internal->restoreEnableForwarding();
+  this->Internal->restoreEnableForwarding();
   this->Internal->restoreGPSForwardingPort();
   this->Internal->restoreLidarForwardingPort();
+  this->Internal->restoreForwardIpAddress();
+  this->Internal->restoreAdvancedConfiguration();
 
   const QVariant& geometry =
     this->Internal->Settings->value(
@@ -471,6 +504,8 @@ void vvCalibrationDialog::accept()
   this->Internal->saveLidarForwardingPort();
   this->Internal->saveGPSForwardingPort();
   this->Internal->saveEnableForwarding();
+  this->Internal->saveAdvancedConfiguration();
+  this->Internal->saveForwardIpAddress();
   QDialog::accept();
 }
 
