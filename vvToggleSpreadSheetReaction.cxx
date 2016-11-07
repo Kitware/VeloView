@@ -25,17 +25,13 @@ vvToggleSpreadSheetReaction::vvToggleSpreadSheetReaction(QAction* action, pqView
   Action(action),
   View(view)
 {
-  //Hidding X, Y & Z columns by default
+  //Hidding the XYZ grouped coordinates column by default
   if(this->View->inherits("pqSpreadSheetView"))
   {
   pqSpreadSheetView* ssview = qobject_cast<pqSpreadSheetView*>(this->View);
 
-  //X
-  ssview->getViewModel()->setVisible(2,false);
-  //Y
-  ssview->getViewModel()->setVisible(3,false);
-  //Z
-  ssview->getViewModel()->setVisible(4,false);
+  //XYZ column
+  ssview->getViewModel()->setVisible(1,false);
   }
 
   QObject::connect(
