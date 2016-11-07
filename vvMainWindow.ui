@@ -106,10 +106,16 @@
     <property name="title">
      <string>Help</string>
     </property>
+    <action name="actionResetConfigurationFile">
+     <property name="text">
+      <string>Reset configuration file</string>
+     </property>
+    </action>
     <addaction name="actionAbout_VeloView"/>
     <addaction name="separator"/>
     <addaction name="actionVeloViewUserGuide"/>
     <addaction name="actionVeloViewDeveloperGuide"/>
+    <addaction name="actionResetConfigurationFile"/>
    </widget>
    <addaction name="menu_File"/>
    <addaction name="menuTools"/>
