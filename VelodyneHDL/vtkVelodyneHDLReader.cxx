@@ -1052,7 +1052,7 @@ vtkSmartPointer<vtkPolyData> vtkVelodyneHDLReader::vtkInternal::CreateData(vtkId
   this->DistanceFlag = CreateDataArray<vtkIntArray>("dual_distance", numberOfPoints, 0);
   this->IntensityFlag = CreateDataArray<vtkIntArray>("dual_intensity", numberOfPoints, 0);
   this->Flags = CreateDataArray<vtkUnsignedIntArray>("dual_flags", numberOfPoints, 0);
-  this->DualReturnMatching = CreateDataArray<vtkIdTypeArray>("DualReturnMatching", numberOfPoints, 0);
+  this->DualReturnMatching = CreateDataArray<vtkIdTypeArray>("dual_return_matching", numberOfPoints, 0);
   this->VerticalAngle = CreateDataArray<vtkDoubleArray>("vertical_angle", numberOfPoints, polyData);
 
   //FieldData : RPM
