@@ -67,5 +67,5 @@ add_revision(eigen
 #  GIT_REPOSITORY git://github.com/libLAS/libLAS
 #  GIT_TAG 6e8657336ba445fcec3c9e70c2ebcd2e25af40b9)
 add_revision(liblas
-  GIT_REPOSITORY git://github.com/mwoehlke-kitware/libLAS.git
+  GIT_REPOSITORY git://github.com/bastienjacquet/libLAS.git
   GIT_TAG fix-windows-stdint)
