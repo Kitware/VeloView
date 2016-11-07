@@ -201,6 +201,8 @@ private:
 
     connect(this->Ui.actionMeasurement_Grid, SIGNAL(toggled(bool)),
             pqVelodyneManager::instance(), SLOT(onMeasurementGrid(bool)));
+    connect(this->Ui.actionResetConfigurationFile, SIGNAL(triggered()),
+            pqVelodyneManager::instance(), SLOT(onResetCalibrationFile()));
     }
 };
 

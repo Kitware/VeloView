@@ -144,6 +144,13 @@ void pqVelodyneManager::runPython(const QString& statements)
 }
 
 //-----------------------------------------------------------------------------
+void pqVelodyneManager::onResetCalibrationFile()
+{
+  pqSettings* const Settings = pqApplicationCore::instance()->settings();
+  Settings->clear();
+}
+
+//-----------------------------------------------------------------------------
 void pqVelodyneManager::saveFramesToPCAP(vtkSMSourceProxy* proxy, int startFrame, int endFrame, const QString& filename)
 {
   if (!proxy)

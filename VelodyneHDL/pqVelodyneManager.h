@@ -84,6 +84,7 @@ public slots:
 
   void onOpenSensor();
   void onMeasurementGrid(bool gridVisible);
+  void onResetCalibrationFile();
 
 signals:
 
