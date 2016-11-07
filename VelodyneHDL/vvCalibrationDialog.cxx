@@ -302,6 +302,12 @@ void vvCalibrationDialog::pqInternal::restoreForwardIpAddress()
   this->ipAddresslineEdit->setText(this->Settings->value("VelodyneHDLPlugin/CalibrationFileDialog/ForwardIpAddress").toString());
 }
 
+//-----------------------------------------------------------------------------
+void vvCalibrationDialog::clearAdvancedSettings()
+{
+  this->setDefaultConfiguration();
+}
+
 namespace
 {
   QListWidgetItem* createEntry(QString path, bool useBaseName)
@@ -326,33 +332,13 @@ namespace
 vvCalibrationDialog::vvCalibrationDialog(QWidget *p)
   : QDialog(p), Internal(new pqInternal)
 {
-  const int minAllowedPort = 1024; //The port between 0 and 1023 are reserved
-  const int defaultLidarPort = 2368; //The port between 0 and 1023 are reserved
-  const int defaultGpsPort = 8308; //There is 16 bit to encode the ports : from 0 to 65535
-
   this->Internal->setupUi(this);
+  this->setDefaultConfiguration();
   QListWidgetItem* liveCalibrationItem = new QListWidgetItem();
 
   liveCalibrationItem->setText("HDL64 Live Corrections");
   liveCalibrationItem->setToolTip("Get Corrections from the data stream");
   liveCalibrationItem->setData(Qt::UserRole, "");
-
-  //Set the visibility 
-  this->Internal->PositionGroup->setVisible(false);
-  this->Internal->OrientationGroup->setVisible(false);
-  this->Internal->NetworkGroup->setVisible(false);
-  this->Internal->NetworkForwardingGroup->setVisible(false);
-
-  //set minimum
-  this->Internal->LidarPortSpinBox->setMinimum(minAllowedPort);
-  this->Internal->GPSPortSpinBox->setMinimum(minAllowedPort);
-  this->Internal->GPSForwardingPortSpinBox->setMinimum(minAllowedPort);
-  this->Internal->LidarForwardingPortSpinBox->setMinimum(minAllowedPort);
-  //set value
-  this->Internal->LidarPortSpinBox->setValue(defaultLidarPort);
-  this->Internal->GPSPortSpinBox->setValue(defaultGpsPort);
-  this->Internal->GPSForwardingPortSpinBox->setValue(defaultGpsPort);
-  this->Internal->LidarForwardingPortSpinBox->setValue(defaultLidarPort);
 
   this->Internal->ListWidget->addItem(liveCalibrationItem);
 
@@ -387,6 +373,8 @@ vvCalibrationDialog::vvCalibrationDialog(QWidget *p)
           this->Internal->LidarForwardingPortSpinBox, SLOT(setEnabled(bool)));
   connect(this->Internal->EnableForwardingCheckBox, SIGNAL(toggled(bool)),
           this->Internal->ipAddresslineEdit, SLOT(setEnabled(bool)));
+  connect(this->Internal->ClearSettingsPushButton, SIGNAL(clicked()),
+          this,SLOT(clearAdvancedSettings()));
 
   this->Internal->restoreSelectedRow();
   this->Internal->restoreSensorTransform();
@@ -410,6 +398,49 @@ vvCalibrationDialog::~vvCalibrationDialog()
 {
   this->Internal->Settings->setValue(
     "VelodyneHDLPlugin/CalibrationFileDialog/Geometry", this->saveGeometry());
+}
+
+//-----------------------------------------------------------------------------
+void vvCalibrationDialog::setDefaultConfiguration()
+{
+  const double defaultSensorValue = 0.00;
+  const int minAllowedPort = 1024; //The port between 0 and 1023 are reserved
+  const int defaultLidarPort = 2368; //The port between 0 and 1023 are reserved
+  const int defaultGpsPort = 8308; //There is 16 bit to encode the ports : from 0 to 65535
+  const QString defaultIpAddress = "127.0.0.1"; //Local host
+
+  //Set the visibility 
+  this->Internal->PositionGroup->setVisible(false);
+  this->Internal->OrientationGroup->setVisible(false);
+  this->Internal->NetworkGroup->setVisible(false);
+  this->Internal->NetworkForwardingGroup->setVisible(false);
+
+  //set minimum
+  this->Internal->LidarPortSpinBox->setMinimum(minAllowedPort);
+  this->Internal->GPSPortSpinBox->setMinimum(minAllowedPort);
+  this->Internal->GPSForwardingPortSpinBox->setMinimum(minAllowedPort);
+  this->Internal->LidarForwardingPortSpinBox->setMinimum(minAllowedPort);
+  //set value
+  //network configuration values
+  this->Internal->LidarPortSpinBox->setValue(defaultLidarPort);
+  this->Internal->GPSPortSpinBox->setValue(defaultGpsPort);
+  this->Internal->GPSForwardingPortSpinBox->setValue(defaultGpsPort);
+  this->Internal->LidarForwardingPortSpinBox->setValue(defaultLidarPort);
+  this->Internal->ipAddresslineEdit->setText(defaultIpAddress);
+  this->Internal->AdvancedConfiguration->setChecked(false);
+  this->Internal->EnableForwardingCheckBox->setChecked(false);
+  //lidar orientation values
+  this->Internal->PitchSpinBox->setValue(defaultSensorValue);
+  this->Internal->YawSpinBox->setValue(defaultSensorValue);
+  this->Internal->RollSpinBox->setValue(defaultSensorValue);
+  //Lidar origin values
+  this->Internal->OriginXSpinBox->setValue(defaultSensorValue);
+  this->Internal->OriginYSpinBox->setValue(defaultSensorValue);
+  this->Internal->OriginZSpinBox->setValue(defaultSensorValue);
+  //GPS orientation values
+  this->Internal->GpsYawSpinBox->setValue(defaultSensorValue);
+  this->Internal->GpsRollSpinBox->setValue(defaultSensorValue);
+  this->Internal->GpsPitchSpinBox->setValue(defaultSensorValue);
 }
 
 //-----------------------------------------------------------------------------
