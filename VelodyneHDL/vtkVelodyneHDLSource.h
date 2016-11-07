@@ -78,6 +78,8 @@ public:
   vtkSetMacro(isForwarding, bool);
   vtkGetMacro(isForwarding, bool);
 
+  vtkSetMacro(isCrashAnalysing, bool);
+  vtkGetMacro(isCrashAnalysing, bool);
 
   void SetLaserSelection(int LaserSelection[64]);
   void GetLaserSelection(int LaserSelection[64]);
@@ -131,6 +133,7 @@ protected:
   int ForwardedGPSPort; /*!< The port to send GPS forwarded packets*/
   std::string ForwardedIpAddress; /*!< The ip to send forwarded packets*/
   bool isForwarding; /*!< Allowing the forwarding of the packets*/
+  bool isCrashAnalysing;
   std::string PacketFile;
   std::string OutputFile;
   std::string CorrectionsFile;

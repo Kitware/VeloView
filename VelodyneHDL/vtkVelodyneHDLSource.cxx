@@ -40,6 +40,7 @@
 
 #include <boost/thread/thread.hpp>
 #include <boost/asio.hpp>
+#include <pqApplicationCore.h>
 
 #include <queue>
 #include <deque>
@@ -47,7 +48,7 @@
 //----------------------------------------------------------------------------
 namespace
 {
-  static const int NBR_PACKETS_SAVED = 100;
+  static const int NBR_PACKETS_SAVED = 1000;
   template<typename T>
   class SynchronizedQueue
   {
@@ -402,19 +403,24 @@ class PacketNetworkSource;
 * Here it is used to setup an UDP multicast protocol. The packets come from
 * the Velodyne sensor and it exists two differents kind : Position packet which contains 
 * information about the GPS and : Data packet which contains the information about the sensors.
+* The packet receiver can forward the received packets and/or store them in a output bin file
 * @param io The in/out service used to handle the reception of the packets
 * @param port The port address which will receive the packet
 * @param forwardport The port adress which will receive the forwarded packets
 * @param forwarddestinationIp The IP adress of the computer which will receive the forwarded packets
 * @param flagforward  Allow or not the forwarding of the packets
 * @param parent  the PacketNetworkSource inherit parent
+* @param filenameCrashAnalysis_ the name of the output file
+* @param bytesPerPacket_ the number of bytes per packets
+* @param isCrashAnalysing_ Enable the crash analysing
 */
 class PacketReceiver
 {
 public:
   PacketReceiver(boost::asio::io_service& io, int port,int forwardport,
                  std::string forwarddestinationIp, bool isforwarding,  
-                 PacketNetworkSource* parent, std::string filenameCrashAnalysis_, int bytesPerPacket_)
+                 PacketNetworkSource* parent, std::string filenameCrashAnalysis_,
+                 int bytesPerPacket_, bool isCrashAnalysing_)
   : Port(port),
     PacketCounter(0),
     isForwarding(isforwarding),
@@ -427,7 +433,8 @@ public:
     IsReceiving(true),
     ShouldStop(false),
     filenameCrashAnalysis(filenameCrashAnalysis_),
-    bytesPerPacket(bytesPerPacket_)
+    bytesPerPacket(bytesPerPacket_),
+    isCrashAnalysing(isCrashAnalysing_)
   {
     Socket.open(boost::asio::ip::udp::v4()); //Opening the socket with an UDP v4 protocol
     Socket.set_option(boost::asio::ip::udp::socket::reuse_address(true)); //Tell the OS we accept to re-use the port address for an other app
@@ -437,7 +444,10 @@ public:
     ForwardedSocket.set_option(boost::asio::ip::multicast::enable_loopback(true)); //Allow to send the packet on the same machine
 
     //Opening crash analysis file
-    this->fileCrashAnalysis.open(filenameCrashAnalysis, ios::out | ios::binary);
+    if(isCrashAnalysing)
+    {
+      this->fileCrashAnalysis.open(filenameCrashAnalysis, ios::out | ios::binary);
+    }
 
     this->StartReceive();
   }
@@ -493,6 +503,7 @@ private:
   std::ofstream fileCrashAnalysis;
   boost::mutex IsWriting;
   int bytesPerPacket;
+  bool isCrashAnalysing;
 };
 
 //----------------------------------------------------------------------------
@@ -516,7 +527,8 @@ public:
                       int ForwardedLIDARPort_, 
                       int ForwardedGPSPort_, 
                       std::string ForwardedIpAddress_, 
-                      bool isForwarding_) :
+                      bool isForwarding_,
+                      bool isCrashAnalysing_) :
     IOService(),
     Thread(),
     LIDARPortReceiver(),
@@ -529,7 +541,8 @@ public:
     ForwardedLIDARPort(ForwardedLIDARPort_),
     ForwardedGPSPort(ForwardedGPSPort_),
     ForwardedIpAddress(ForwardedIpAddress_),
-    isForwarding(isForwarding_)
+    isForwarding(isForwarding_),
+    isCrashAnalysing(isCrashAnalysing_)
   {
   }
 
@@ -579,8 +592,10 @@ public:
       }
 
     // Create work
-    this->LIDARPortReceiver = boost::shared_ptr<PacketReceiver>(new PacketReceiver(this->IOService, LIDARPort,ForwardedLIDARPort,ForwardedIpAddress,isForwarding, this,"LidarLastData.bin",1206));
-    this->PositionPortReceiver = boost::shared_ptr<PacketReceiver>(new PacketReceiver(this->IOService, GPSPort,ForwardedGPSPort,ForwardedIpAddress,isForwarding, this,"GPSLastData.bin",512));
+    this->LIDARPortReceiver = boost::shared_ptr<PacketReceiver>(new PacketReceiver(this->IOService, LIDARPort,ForwardedLIDARPort,
+                                                                ForwardedIpAddress,isForwarding, this,"LidarLastData.bin",1206, isCrashAnalysing));
+    this->PositionPortReceiver = boost::shared_ptr<PacketReceiver>(new PacketReceiver(this->IOService, GPSPort,ForwardedGPSPort,
+                                                                ForwardedIpAddress,isForwarding, this,"GPSLastData.bin",512, isCrashAnalysing));
   }
 
   void Stop()
@@ -590,6 +605,7 @@ public:
     this->LIDARPortReceiver.reset();
 
   }
+  bool isCrashAnalysing;
   bool isForwarding; /*!< Allowing the forward of the packets */
   std::string ForwardedIpAddress; /*!< Ip of the computer which will receive the forwarded packets */
   int ForwardedLIDARPort; /*!< Port address which will receive the lidar forwarded packet */
@@ -671,14 +687,16 @@ public:
                int ForwardedLIDARPort_, 
                int ForwardedGPSPort_, 
                std::string ForwardedIpAddress_, 
-               bool isForwarding_) : Consumer(new PacketConsumer),
+               bool isForwarding_,
+               bool isCrashAnalysing_) : Consumer(new PacketConsumer),
                                       Writer(new PacketFileWriter),
                                       NetworkSource(this->Consumer,
                                                     argLIDARPort,
                                                     argGPSPort,ForwardedLIDARPort_,
                                                     ForwardedGPSPort_,
                                                     ForwardedIpAddress_,
-                                                    isForwarding_)
+                                                    isForwarding_,
+                                                    isCrashAnalysing_)
   {
   }
 
@@ -703,12 +721,14 @@ vtkVelodyneHDLSource::vtkVelodyneHDLSource()
   this->ForwardedLIDARPort = 5555;
   this->ForwardedGPSPort = 5556;
   this->ForwardedIpAddress = "0.0.0.0";
+  this->isCrashAnalysing = false;
   this->Internal = new vtkInternal(LIDARPort,
                                    GPSPort,
                                    ForwardedLIDARPort,
                                    ForwardedGPSPort,
                                    ForwardedIpAddress,
-                                   isForwarding); 
+                                   isForwarding,
+                                   isCrashAnalysing); 
  
   this->SetNumberOfInputPorts(0);
   this->SetNumberOfOutputPorts(1);
@@ -935,6 +955,7 @@ void vtkVelodyneHDLSource::Start()
   this->Internal->NetworkSource.ForwardedLIDARPort = this->ForwardedLIDARPort;
   this->Internal->NetworkSource.ForwardedIpAddress = this->ForwardedIpAddress;
   this->Internal->NetworkSource.isForwarding = this->isForwarding;
+  this->Internal->NetworkSource.isCrashAnalysing = this->isCrashAnalysing;
   this->Internal->NetworkSource.Start();
 }
 
