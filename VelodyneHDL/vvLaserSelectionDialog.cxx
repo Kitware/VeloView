@@ -261,6 +261,7 @@ void vvLaserSelectionDialog::setLasersCorrections(const QVector<double>& vertica
                                                 const QVector<double>& maxIntensity,
                                                 int nchannels)
                                                 {
+
   for(int i = 0; i < this->Internal->Table->rowCount(); ++i)
     {
     QTableWidgetItem* value = this->Internal->Table->item(i, 1);
@@ -356,4 +357,16 @@ void vvLaserSelectionDialog::onDisplayMoreCorrectionsChanged()
     this->Internal->Table->setColumnHidden(i,!this->Internal->DisplayMoreCorrections->isChecked());
     }
   this->Internal->Table->resizeColumnsToContents();
+}
+
+//-----------------------------------------------------------------------------
+bool vvLaserSelectionDialog::isDisplayMoreSelectionsChecked()
+{
+  return this->Internal->DisplayMoreCorrections->isChecked();
+}
+
+//-----------------------------------------------------------------------------
+void vvLaserSelectionDialog::setDisplayMoreSelectionsChecked(bool state)
+{
+  this->Internal->DisplayMoreCorrections->setChecked(state);
 }

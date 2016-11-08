@@ -33,6 +33,9 @@ public:
   QVector<int> getLaserSelectionSelector();
   void setLaserSelectionSelector(const QVector<int>& mask);
 
+  bool isDisplayMoreSelectionsChecked();
+  void setDisplayMoreSelectionsChecked(bool state);
+
   void setLasersCorrections(const QVector<double>& verticalCorrection,
                                                   const QVector<double>& rotationalCorrection,
                                                   const QVector<double>& distanceCorrection,
