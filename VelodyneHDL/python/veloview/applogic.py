@@ -2073,12 +2073,27 @@ def setupActions():
     timeToolBar = mW.findChild('QToolBar','playbackToolbar')
     geolocationToolBar = mW.findChild('QToolBar', 'geolocationToolbar')
 
-    # Adding the relative frame mapping dropdown menu tooltips
+    # Creating and adding the geolocation label to the geolocation toolbar
 
-    comboBox = findQObjectByName(QtGui.QApplication.allWidgets(), 'geolocationComboBox') 
-    comboBox.setItemData(0, "No mapping: Each frame is at the origin", 3)
-    comboBox.setItemData(1, "Use GPS geolocation to get each frame absolute location, the first frame is shown at origin", 3)
-    comboBox.setItemData(2, "Use GPS geolocation to get each frame absolute location, the current frame is shown at origin", 3)
+    geolocationLabel = QtGui.QLabel('Frame Mapping: ')
+    geolocationToolBar.addWidget(geolocationLabel)
+
+    # Creating the geolocation combobox
+
+    geolocationComboBox = QtGui.QComboBox()
+
+    #Adding the different entries
+
+    geolocationComboBox.addItem('None (RAW Data)')
+    geolocationComboBox.setItemData(0, "No mapping: Each frame is at the origin", 3)
+
+    geolocationComboBox.addItem('Absolute Geolocation')
+    geolocationComboBox.setItemData(1, "Use GPS geolocation to get each frame absolute location, the first frame is shown at origin", 3)
+
+    geolocationComboBox.addItem('Relative Geolocation')
+    geolocationComboBox.setItemData(2, "Use GPS geolocation to get each frame absolute location, the current frame is shown at origin", 3)
+
+    geolocationToolBar.addWidget(geolocationComboBox)
     
     PlaybackSpeedLabel = QtGui.QLabel('Speed: x')
     PlaybackSpeedLabel.setObjectName('PlaybackSpeedLabel')
