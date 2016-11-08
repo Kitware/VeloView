@@ -9,7 +9,7 @@
 # endif()
 
 if (WIN32)
-  if (64bit_build)
+  if (VV_BUILD_ARCHITECTURE EQUAL 64)
     add_revision(python
       URL "http://www.paraview.org/files/dependencies/python+deps.tar.bz2"
       URL_MD5 "4318b8f771eda5606d9ce7f0be9f82e1")
@@ -67,5 +67,5 @@ add_revision(eigen
 #  GIT_REPOSITORY git://github.com/libLAS/libLAS
 #  GIT_TAG 6e8657336ba445fcec3c9e70c2ebcd2e25af40b9)
 add_revision(liblas
-  GIT_REPOSITORY git://github.com/mwoehlke-kitware/libLAS.git
+  GIT_REPOSITORY git://github.com/bastienjacquet/libLAS.git
   GIT_TAG fix-windows-stdint)

@@ -419,8 +419,7 @@ class PacketReceiver
 public:
   PacketReceiver(boost::asio::io_service& io, int port,int forwardport,
                  std::string forwarddestinationIp, bool isforwarding,  
-                 PacketNetworkSource* parent, std::string filenameCrashAnalysis_,
-                 int bytesPerPacket_, bool isCrashAnalysing_)
+                 PacketNetworkSource* parent)
   : Port(port),
     PacketCounter(0),
     isForwarding(isforwarding),
@@ -431,10 +430,7 @@ public:
     ForwardedSocket(io),
     Parent(parent),
     IsReceiving(true),
-    ShouldStop(false),
-    filenameCrashAnalysis(filenameCrashAnalysis_),
-    bytesPerPacket(bytesPerPacket_),
-    isCrashAnalysing(isCrashAnalysing_)
+    ShouldStop(false)
   {
     Socket.open(boost::asio::ip::udp::v4()); //Opening the socket with an UDP v4 protocol
     Socket.set_option(boost::asio::ip::udp::socket::reuse_address(true)); //Tell the OS we accept to re-use the port address for an other app
@@ -442,19 +438,14 @@ public:
 
     ForwardedSocket.open(ForwardEndpoint.protocol()); //Opening the socket with an UDP v4 protocol toward the forwarded ip address and port
     ForwardedSocket.set_option(boost::asio::ip::multicast::enable_loopback(true)); //Allow to send the packet on the same machine
-
-    //Opening crash analysis file
-    if(isCrashAnalysing)
-    {
-      this->fileCrashAnalysis.open(filenameCrashAnalysis, ios::out | ios::binary);
-    }
-
-    this->StartReceive();
   }
 
   ~PacketReceiver()
   {
-    this->fileCrashAnalysis.close();
+    if(this->fileCrashAnalysis.is_open())
+    {
+      this->fileCrashAnalysis.close();
+    }
     this->Socket.cancel();
     this->ForwardedSocket.cancel();
       {
@@ -480,6 +471,18 @@ public:
       boost::bind(&PacketReceiver::SocketCallback, this,
       boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
   }
+
+  void EnableCrashAnalysing(std::string filenameCrashAnalysis_, int bytesPerPacket_, bool isCrashAnalysing_)
+    {
+      this->filenameCrashAnalysis = filenameCrashAnalysis_;
+      this->bytesPerPacket = bytesPerPacket_;
+      this->isCrashAnalysing = isCrashAnalysing_;
+      //Opening crash analysis file
+      if(isCrashAnalysing)
+      {
+        this->fileCrashAnalysis.open(filenameCrashAnalysis, ios::out | ios::binary);
+      }
+    }
 
   void SocketCallback(const boost::system::error_code& error, std::size_t numberOfBytes);
 
@@ -593,9 +596,18 @@ public:
 
     // Create work
     this->LIDARPortReceiver = boost::shared_ptr<PacketReceiver>(new PacketReceiver(this->IOService, LIDARPort,ForwardedLIDARPort,
-                                                                ForwardedIpAddress,isForwarding, this,"LidarLastData.bin",1206, isCrashAnalysing));
+                                                                ForwardedIpAddress,isForwarding, this));
     this->PositionPortReceiver = boost::shared_ptr<PacketReceiver>(new PacketReceiver(this->IOService, GPSPort,ForwardedGPSPort,
-                                                                ForwardedIpAddress,isForwarding, this,"GPSLastData.bin",512, isCrashAnalysing));
+                                                                ForwardedIpAddress,isForwarding, this));
+
+    if(isCrashAnalysing)
+      {
+      this->LIDARPortReceiver->EnableCrashAnalysing("LidarLastData.bin",1206, isCrashAnalysing);
+      this->PositionPortReceiver->EnableCrashAnalysing("GPSLastData.bin",512, isCrashAnalysing);
+      }
+
+    this->LIDARPortReceiver->StartReceive();
+    this->PositionPortReceiver->StartReceive();
   }
 
   void Stop()

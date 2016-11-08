@@ -209,6 +209,9 @@ private:
 
     connect(this->Ui.actionEnableCrashAnalysis, SIGNAL(toggled(bool)),
             pqVelodyneManager::instance(), SLOT(onEnableCrashAnalysis(bool)));
+
+    connect(this->Ui.actionResetConfigurationFile, SIGNAL(triggered()),
+            pqVelodyneManager::instance(), SLOT(onResetCalibrationFile()));
     }
 };
 

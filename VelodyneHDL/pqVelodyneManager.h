@@ -85,6 +85,7 @@ public slots:
   void onOpenSensor();
   void onMeasurementGrid(bool gridVisible);
   void onEnableCrashAnalysis(bool crashAnalysisEnabled);
+  void onResetCalibrationFile();
 
 signals:
 

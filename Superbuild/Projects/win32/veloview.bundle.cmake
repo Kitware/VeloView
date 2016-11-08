@@ -64,7 +64,7 @@ install(FILES "${VeloViewSuperBuild_SOURCE_DIR}/../Documentation/VeloView_Develo
 #------------------------------------------------------------------------------
 set (CPACK_NSIS_MUI_ICON "${CMAKE_CURRENT_LIST_DIR}/InstallerIcon.ico")
 
-if (64bit_build)
+if (VV_BUILD_ARCHITECTURE EQUAL 64)
   set(CPACK_NSIS_INSTALL_ROOT "$PROGRAMFILES64")
 endif()
 

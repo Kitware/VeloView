@@ -316,6 +316,7 @@ public:
   vtkSmartPointer<vtkIntArray> IntensityFlag;
   vtkSmartPointer<vtkIntArray> DistanceFlag;
   vtkSmartPointer<vtkUnsignedIntArray> Flags;
+  vtkSmartPointer<vtkIdTypeArray> DualReturnMatching;
 
   bool IsDualReturnSensorMode;
   SensorType ReportedSensor;
@@ -1051,6 +1052,7 @@ vtkSmartPointer<vtkPolyData> vtkVelodyneHDLReader::vtkInternal::CreateData(vtkId
   this->DistanceFlag = CreateDataArray<vtkIntArray>("dual_distance", numberOfPoints, 0);
   this->IntensityFlag = CreateDataArray<vtkIntArray>("dual_intensity", numberOfPoints, 0);
   this->Flags = CreateDataArray<vtkUnsignedIntArray>("dual_flags", numberOfPoints, 0);
+  this->DualReturnMatching = CreateDataArray<vtkIdTypeArray>("dual_return_matching", numberOfPoints, 0);
   this->VerticalAngle = CreateDataArray<vtkDoubleArray>("vertical_angle", numberOfPoints, polyData);
 
   //FieldData : RPM
@@ -1066,6 +1068,7 @@ vtkSmartPointer<vtkPolyData> vtkVelodyneHDLReader::vtkInternal::CreateData(vtkId
     {
     polyData->GetPointData()->AddArray(this->DistanceFlag.GetPointer());
     polyData->GetPointData()->AddArray(this->IntensityFlag.GetPointer());
+    polyData->GetPointData()->AddArray(this->DualReturnMatching.GetPointer());
     }
 
   return polyData;
@@ -1134,6 +1137,7 @@ void vtkVelodyneHDLReader::vtkInternal::PushFiringData(const unsigned char laser
       // No matching point from first set (skipped?)
       this->Flags->InsertNextValue(DUAL_DOUBLED);
       this->DistanceFlag->InsertNextValue(0);
+      this->DualReturnMatching->InsertNextValue(-1); //std::numeric_limits<vtkIdType>::quiet_NaN()
       this->IntensityFlag->InsertNextValue(0);
       }
     else
@@ -1205,6 +1209,10 @@ void vtkVelodyneHDLReader::vtkInternal::PushFiringData(const unsigned char laser
       this->Flags->InsertNextValue(secondFlags);
       this->DistanceFlag->InsertNextValue(MapDistanceFlag(secondFlags));
       this->IntensityFlag->InsertNextValue(MapIntensityFlag(secondFlags));
+      //The first return indicates the dual return 
+      //and the dual return indicates the first return
+      this->DualReturnMatching->InsertNextValue(dualPointId);
+      this->DualReturnMatching->SetValue(dualPointId,thisPointId);
       }
     }
   else
@@ -1212,6 +1220,7 @@ void vtkVelodyneHDLReader::vtkInternal::PushFiringData(const unsigned char laser
     this->Flags->InsertNextValue(DUAL_DOUBLED);
     this->DistanceFlag->InsertNextValue(0);
     this->IntensityFlag->InsertNextValue(0);
+    this->DualReturnMatching->InsertNextValue(-1); //std::numeric_limits<vtkIdType>::quiet_NaN()
     }
 
   // Apply geoposition transform
@@ -1560,6 +1569,7 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessFiring(HDLFiringData* firingData,
     this->IsDualReturnSensorMode = true;
     this->CurrentDataset->GetPointData()->AddArray(this->DistanceFlag.GetPointer());
     this->CurrentDataset->GetPointData()->AddArray(this->IntensityFlag.GetPointer());
+    this->CurrentDataset->GetPointData()->AddArray(this->DualReturnMatching.GetPointer());
     }
 
   if(!isThisFiringDualReturnData

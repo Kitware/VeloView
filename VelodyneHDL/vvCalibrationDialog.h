@@ -43,6 +43,9 @@ public:
   Q_INVOKABLE bool isForwarding() const;
   Q_INVOKABLE QString ipAddressForwarding() const;
 
+protected:
+  void setDefaultConfiguration();
+
 public slots:
   virtual void accept();
 
@@ -50,6 +53,7 @@ protected slots:
   void addFile();
   void removeSelectedFile();
   void onCurrentRowChanged(int row);
+  void clearAdvancedSettings();
 
 private:
   class pqInternal;

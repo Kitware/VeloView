@@ -245,13 +245,25 @@ void vtkVelodyneHDLPositionReader::vtkInternal::InterpolateGPS(vtkPoints* points
 
       const double heading = headings->GetTuple1(i);
 
+     //Check the input data
+      bool isTranslationFinite = vtkMath::IsFinite(pos[0])&&
+                                 vtkMath::IsFinite(pos[1])&&
+                                 vtkMath::IsFinite(pos[2]);
+      bool isRotationFinite = vtkMath::IsFinite(heading);
+
       // Compute transform
       vtkNew<vtkTransform> transform;
       transform->PostMultiply();
-      transform->RotateZ(-heading/* - this->BaseYaw*/);
+      if(isRotationFinite)
+        transform->RotateZ(-heading/* - this->BaseYaw*/);
+      else
+        vtkGenericWarningMacro("Error in GPS rotation");
       // transform->RotateY(-this->BaseRoll);
       // transform->RotateX(-this->BasePitch);
-      transform->Translate(pos);
+      if(isTranslationFinite)
+        transform->Translate(pos);
+      else
+        vtkGenericWarningMacro("Error in GPS position");
 
       this->Interp->AddTransform(convertedtime, transform.GetPointer());
 
@@ -426,12 +438,12 @@ int vtkVelodyneHDLPositionReader::RequestData(vtkInformation *request,
       double lonDegGPRMC;
       double heading;
 
-	  //Words.size()==13 include RMC format with mode indicator (NMEA = 2.3)
-	  //Words.size()==14 might correspond to another format
-	  //Added : Words.size()==12 include RMC format without mode indicator(NMEA = pre 2.3)
+      //Words.size()==13 include RMC format with mode indicator (NMEA = 2.3)
+      //Words.size()==14 might correspond to another format
+      //Words.size()==12 include RMC format without mode indicator(NMEA = pre 2.3)
       if(words.size() != 13 &&
          words.size() != 14 &&
-		 words.size() != 12)
+         words.size() != 12)
         {
         gpsUpdateTime = position.gpsTimestamp;
         lonDegGPRMC = 0.0;
@@ -495,11 +507,16 @@ int vtkVelodyneHDLPositionReader::RequestData(vtkInformation *request,
       // xy.y = lat * DEG_TO_RAD;
 
       projUV lp;
-      lp.u = lat * DEG_TO_RAD;
-      lp.v = lon * DEG_TO_RAD;
+      lp.u = lon * DEG_TO_RAD;
+      lp.v = lat * DEG_TO_RAD;
 
       projUV xy;
       xy = pj_fwd( lp, pj_utm);
+      if(pj_utm->ctx->last_errno !=0)
+        {
+        vtkGenericWarningMacro(
+        "Error : WGS84 projection failed, this will create a GPS error. Please check the latitude and longitude inputs");
+        }
 
       double x = xy.u;
       double y = xy.v;

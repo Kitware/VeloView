@@ -922,7 +922,7 @@ def exportToDirectory(outDir, timesteps):
 
 
 def getVersionString():
-  return QtGui.QApplication.instance().applicationVersion
+  return " ".join(getMainWindow().windowTitle.split(" ")[1:])
 
 
 def onDeveloperGuide():

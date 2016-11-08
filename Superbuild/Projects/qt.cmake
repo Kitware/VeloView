@@ -72,7 +72,7 @@ add_external_project_or_use_system(
     ${patch_command}
 )
 
-if ((NOT 64bit_build) AND UNIX AND (NOT APPLE))
+if ((VV_BUILD_ARCHITECTURE EQUAL 32) AND UNIX AND (NOT APPLE))
   # on 32-bit builds, we are incorrectly ending with QT_POINTER_SIZE chosen as
   # 8 (instead of 4) with GCC4.1 toolchain on old debians. This patch overcomes
   # that.
