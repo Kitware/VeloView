@@ -38,9 +38,12 @@
 #include "vtkNew.h"
 #include "vtkTransform.h"
 
+#include <boost/filesystem.hpp>
 #include <boost/thread/thread.hpp>
 #include <boost/asio.hpp>
 #include <pqApplicationCore.h>
+
+#include <stdlib.h>
 
 #include <queue>
 #include <deque>
@@ -602,8 +605,32 @@ public:
 
     if(isCrashAnalysing)
       {
-      this->LIDARPortReceiver->EnableCrashAnalysing("LidarLastData.bin",1206, isCrashAnalysing);
-      this->PositionPortReceiver->EnableCrashAnalysing("GPSLastData.bin",512, isCrashAnalysing);
+      std::string appDir;
+
+      //the home directory path is contained in the HOME environment variable on UNIX systems
+      if (getenv("HOME"))
+        {
+        appDir = getenv("HOME");
+        appDir += "/VeloView/";
+        }
+      else
+        {
+        //On Windows, it's a concatanation of 2 environment variables
+        appDir = getenv("HOMEDRIVE");
+        appDir += getenv("HOMEPATH");
+        appDir += "\\VeloView\\";
+        }
+
+      // Checking if the application directory exists in the home directory and create it otherwise
+      boost::filesystem::path appDirPath(appDir.c_str());
+
+      if(!boost::filesystem::is_directory(appDirPath))
+        {
+        boost::filesystem::create_directory(appDirPath);
+        }
+
+      this->LIDARPortReceiver->EnableCrashAnalysing(appDir + "LidarLastData.bin",1206, isCrashAnalysing);
+      this->PositionPortReceiver->EnableCrashAnalysing(appDir + "GPSLastData.bin",512, isCrashAnalysing);
       }
 
     this->LIDARPortReceiver->StartReceive();
