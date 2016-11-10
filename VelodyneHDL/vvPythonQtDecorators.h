@@ -68,6 +68,16 @@ public slots:
     inst->setLaserSelectionSelector(arg0);
     }
 
+  bool isDisplayMoreSelectionsChecked(vvLaserSelectionDialog* inst)
+    {
+    return inst->isDisplayMoreSelectionsChecked();
+    }
+
+  void setDisplayMoreSelectionsChecked(vvLaserSelectionDialog* inst, bool arg0)
+    {
+    inst->setDisplayMoreSelectionsChecked(arg0);
+    }
+
   void setLasersCorrections(vvLaserSelectionDialog* inst, const QVector<double>& arg0,
                                                           const QVector<double>& arg1,
                                                           const QVector<double>& arg2,

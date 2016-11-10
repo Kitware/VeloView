@@ -77,6 +77,7 @@ class AppLogic(object):
 
         self.text = None
 
+        self.laserSelectionDialog = None
 
     def setupTimers(self):
         self.playTimer = QtCore.QTimer()
@@ -284,6 +285,21 @@ def chooseCalibration():
     return Calibration(dialog)
 
 
+def restoreLaserSelectionDialog():
+
+    reopenLaserSelectionDialog = False
+    isDisplayMoreSelectionsChecked = False
+
+    if app.laserSelectionDialog != None:
+        reopenLaserSelectionDialog = app.laserSelectionDialog.isVisible()
+        isDisplayMoreSelectionsChecked = app.laserSelectionDialog.isDisplayMoreSelectionsChecked()
+        app.laserSelectionDialog.close()
+        app.laserSelectionDialog = None
+
+    onLaserSelection(reopenLaserSelectionDialog)
+    app.laserSelectionDialog.setDisplayMoreSelectionsChecked(isDisplayMoreSelectionsChecked)
+
+
 def openSensor():
 
     calibration = chooseCalibration()
@@ -382,7 +398,11 @@ def openPCAP(filename, positionFilename=None):
     app.reader = reader
     app.filenameLabel.setText('File: %s' % os.path.basename(filename))
     onCropReturns(False) # Dont show the dialog just restore settings
-    onLaserSelection(False)
+
+    # Resetting laser selection dialog according to the opened PCAP file
+    # and restoring the dialog visibility afterward
+
+    restoreLaserSelectionDialog()
 
     reader.GetClientSideObject().SetSensorTransform(sensorTransform)
 
@@ -476,6 +496,7 @@ def openPCAP(filename, positionFilename=None):
     app.actions['actionShowRPM'].enabled = True
 
     resetCamera()
+
 
 
 def hideMeasurementGrid():
@@ -1374,7 +1395,7 @@ def getGlyph():
     return getattr(app, 'position', (None, None, None))[2]
 
 def getLaserSelectionDialog():
-    return getattr(app, 'dialog', None)
+    return getattr(app, 'laserSelectionDialog', None)
 
 def onChooseCalibrationFile():
 
@@ -1790,26 +1811,31 @@ def onLaserSelection(show = True):
 
         nchannels = sensor.GetPropertyValue('NumberOfChannels')
 
+    # Initializing the laser selection dialog
+    if app.laserSelectionDialog == None:
+        app.laserSelectionDialog = PythonQt.paraview.vvLaserSelectionDialog(getMainWindow())
+        app.laserSelectionDialog.connect('accepted()', onLaserSelectionChanged)
+        app.laserSelectionDialog.connect('laserSelectionChanged()', onLaserSelectionChanged)
+
     # Need a way to initialize the mask
-    dialog = PythonQt.paraview.vvLaserSelectionDialog(getMainWindow())
-    app.dialog = dialog
-    dialog.connect('accepted()', onLaserSelectionChanged)
-    dialog.connect('laserSelectionChanged()', onLaserSelectionChanged)
+    app.laserSelectionDialog.setLaserSelectionSelector(oldmask)
+
+    app.laserSelectionDialog.setLasersCorrections(verticalCorrection,
+        rotationalCorrection,
+        distanceCorrection,
+        distanceCorrectionX,
+        distanceCorrectionY,
+        verticalOffsetCorrection,
+        horizontalOffsetCorrection,
+        focalDistance,
+        focalSlope,
+        minIntensity,
+        maxIntensity,
+        nchannels)
+
+    app.laserSelectionDialog.onDisplayMoreCorrectionsChanged()
     if show:
-        dialog.setLaserSelectionSelector(oldmask)
-        dialog.setLasersCorrections(verticalCorrection,
-            rotationalCorrection,
-            distanceCorrection,
-            distanceCorrectionX,
-            distanceCorrectionY,
-            verticalOffsetCorrection,
-            horizontalOffsetCorrection,
-            focalDistance,
-            focalSlope,
-            minIntensity,
-            maxIntensity,
-            nchannels)
-        dialog.show()
+        app.laserSelectionDialog.show()
 
 
 def onLaserSelectionChanged():
