@@ -144,6 +144,15 @@ void pqVelodyneManager::runPython(const QString& statements)
 }
 
 //-----------------------------------------------------------------------------
+void pqVelodyneManager::onEnableCrashAnalysis(bool crashAnalysisEnabled)
+{
+  pqSettings* const Settings = pqApplicationCore::instance()->settings();
+  Settings->setValue(
+    "VelodyneHDLPlugin/MainWindow/EnableCrashAnalysis",
+    crashAnalysisEnabled);
+}
+
+//-----------------------------------------------------------------------------
 void pqVelodyneManager::onResetCalibrationFile()
 {
   pqSettings* const Settings = pqApplicationCore::instance()->settings();

@@ -193,6 +193,11 @@ private:
       settings->value("VelodyneHDLPlugin/MeasurementGrid/Visibility", true);
     this->Ui.actionMeasurement_Grid->setChecked(gridVisible.toBool());
 
+    this->Ui.actionEnableCrashAnalysis->setChecked(
+    settings->value(
+    "VelodyneHDLPlugin/MainWindow/EnableCrashAnalysis",
+    this->Ui.actionEnableCrashAnalysis->isChecked()).toBool());
+
     new vvLoadDataReaction(this->Ui.actionOpenPcap, false);
     new vvLoadDataReaction(this->Ui.actionOpenApplanix, true);
 
@@ -201,6 +206,10 @@ private:
 
     connect(this->Ui.actionMeasurement_Grid, SIGNAL(toggled(bool)),
             pqVelodyneManager::instance(), SLOT(onMeasurementGrid(bool)));
+
+    connect(this->Ui.actionEnableCrashAnalysis, SIGNAL(toggled(bool)),
+            pqVelodyneManager::instance(), SLOT(onEnableCrashAnalysis(bool)));
+
     connect(this->Ui.actionResetConfigurationFile, SIGNAL(triggered()),
             pqVelodyneManager::instance(), SLOT(onResetCalibrationFile()));
     }

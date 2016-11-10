@@ -307,6 +307,7 @@ def openSensor():
     sensor.GetClientSideObject().SetForwardedGPSPort(GPSForwardingPort)
     sensor.GetClientSideObject().SetForwardedLIDARPort(LIDARForwardingPort)
     sensor.GetClientSideObject().SetisForwarding(isForwarding)
+    sensor.GetClientSideObject().SetisCrashAnalysing(app.EnableCrashAnalysis)
     sensor.GetClientSideObject().SetForwardedIpAddress(ipAddressForwarding)
     sensor.GetClientSideObject().SetSensorTransform(sensorTransform)
     sensor.UpdatePipeline()
@@ -1912,6 +1913,11 @@ def toggleRPM():
 
     smp.Render()
 
+    
+def toggleCrashAnalysis():
+
+    app.EnableCrashAnalysis = app.actions['actionEnableCrashAnalysis'].isChecked()
+
 
 def setViewTo(axis,sign):
     view = smp.GetActiveView()
@@ -2068,6 +2074,8 @@ def setupActions():
     app.actions['actionDualReturnIntensityHigh'].connect('triggered()', setFilterToIntensityHigh)
     app.actions['actionDualReturnIntensityLow'].connect('triggered()', setFilterToIntensityLow)
     app.actions['actionShowRPM'].connect('triggered()', toggleRPM)
+    app.actions['actionEnableCrashAnalysis'].connect('triggered()',toggleCrashAnalysis)
+    app.EnableCrashAnalysis = app.actions['actionEnableCrashAnalysis'].isChecked()
 
     # Action created #
     timeToolBar = mW.findChild('QToolBar','playbackToolbar')
