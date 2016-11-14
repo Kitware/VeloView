@@ -284,6 +284,7 @@ public:
     this->IsHDL64Data = false;
     this->skipFirstFrame = true;
     this->distanceResolutionM = 0.002;
+    this->areIntensitiesCorrected = false;
 
     this->rollingCalibrationData = new vtkRollingDataAccumulator();
     this->Init();
@@ -324,6 +325,7 @@ public:
   DualReturnSensorMode ReportedSensorReturnMode;
   bool IsHDL64Data;
   bool skipFirstFrame;
+  bool areIntensitiesCorrected;
 
   int LastAzimuth;
   unsigned int LastTimestamp;
@@ -1564,7 +1566,7 @@ void vtkVelodyneHDLReader::vtkInternal::ComputeCorrectedValues(
   pos[1] = xyDistance * cosAzimuth + correction->horizontalOffsetCorrection * sinAzimuth;
   pos[2] = distanceM * correction->sinVertCorrection + correction->verticalOffsetCorrection;
 
-  if(this->IsHDL64Data && (correction->minIntensity < correction->maxIntensity))
+  if(this->areIntensitiesCorrected && this->IsHDL64Data && (correction->minIntensity < correction->maxIntensity))
     {
     // Compute corrected intensity
       // Please refer to the manual:
@@ -2076,7 +2078,7 @@ bool vtkVelodyneHDLReader::vtkInternal::HDL64LoadCorrectionsFromStreamData()
                                 correctionStream->horizontalOffsetByte2) / 1000.0;
     vvCorrection.focalDistance = correctionStream->focalDistance / 1000.0;
     vvCorrection.focalSlope = correctionStream->focalSlope / 1000.0;
-    vvCorrection.closeSlope = 0;
+    vvCorrection.closeSlope = correctionStream->focalSlope / 1000.0;
     vvCorrection.minIntensity = correctionStream->minIntensity;
     vvCorrection.maxIntensity = correctionStream->maxIntensity;
     }
@@ -2107,3 +2109,19 @@ bool vtkVelodyneHDLReader::getCorrectionsInitialized()
   return this->Internal->CorrectionsInitialized;
 }
 
+//-----------------------------------------------------------------------------
+const bool& vtkVelodyneHDLReader::GetAreIntensitiesCorrected()
+{
+  return this->Internal->areIntensitiesCorrected;
+}
+
+//-----------------------------------------------------------------------------
+void vtkVelodyneHDLReader::SetIntensitiesCorrected(const bool& state)
+{
+  if (state != this->Internal->areIntensitiesCorrected)
+  {
+    this->Modified();
+  }
+
+  this->Internal->areIntensitiesCorrected = state;
+}

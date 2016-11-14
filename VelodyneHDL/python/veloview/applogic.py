@@ -2049,6 +2049,13 @@ def geolocationChanged(setting):
     updatePosition()
     smp.Render(view=app.mainView)
 
+def intensitiesCorrectedChanged():
+    reader = getReader()
+    reader.GetClientSideObject().SetIntensitiesCorrected(app.actions['actionCorrectIntensityValues'].isChecked())
+
+    updatePosition()
+    smp.Render(view=app.mainView)
+
 def setupActions():
 
     mW = getMainWindow()
@@ -2101,6 +2108,7 @@ def setupActions():
     app.actions['actionDualReturnIntensityLow'].connect('triggered()', setFilterToIntensityLow)
     app.actions['actionShowRPM'].connect('triggered()', toggleRPM)
     app.actions['actionEnableCrashAnalysis'].connect('triggered()',toggleCrashAnalysis)
+    app.actions['actionCorrectIntensityValues'].connect('triggered()',intensitiesCorrectedChanged)
     app.EnableCrashAnalysis = app.actions['actionEnableCrashAnalysis'].isChecked()
 
     # Action created #

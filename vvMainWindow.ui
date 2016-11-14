@@ -90,6 +90,7 @@
     <addaction name="actionMeasurement_Grid"/>
     <addaction name="actionShowRPM"/>
     <addaction name="actionGrid_Properties"/>
+    <addaction name="actionCorrectIntensityValues"/>
     <addaction name="actionLaserSelection"/>
     <addaction name="menuDualReturnMode"/>
     <addaction name="actionChoose_Calibration_File"/>
@@ -847,6 +848,14 @@
    </property>
    <property name="toolTip">
     <string>Enable the crash analysis</string>
+   </property>
+  </action>
+  <action name="actionCorrectIntensityValues">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Correct Intensity Values</string>
    </property>
   </action>
  </widget>
