@@ -1564,7 +1564,7 @@ void vtkVelodyneHDLReader::vtkInternal::ComputeCorrectedValues(
   pos[1] = xyDistance * cosAzimuth + correction->horizontalOffsetCorrection * sinAzimuth;
   pos[2] = distanceM * correction->sinVertCorrection + correction->verticalOffsetCorrection;
 
-  if((correction->minIntensity < correction->maxIntensity))
+  if(this->IsHDL64Data && (correction->minIntensity < correction->maxIntensity))
     {
     // Compute corrected intensity
       // Please refer to the manual:
@@ -1585,6 +1585,7 @@ void vtkVelodyneHDLReader::vtkInternal::ComputeCorrectedValues(
       }
     intensity = static_cast<short>(std::max( std::min(static_cast<double>(intensity), 255.0),1.0));
     }
+ 
   }
 
 //-----------------------------------------------------------------------------
