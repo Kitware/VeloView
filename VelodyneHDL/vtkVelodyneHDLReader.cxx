@@ -1569,23 +1569,33 @@ void vtkVelodyneHDLReader::vtkInternal::ComputeCorrectedValues(
   if(this->areIntensitiesCorrected && this->IsHDL64Data && (correction->minIntensity < correction->maxIntensity))
     {
     // Compute corrected intensity
-      // Please refer to the manual:
-//      "Velodyne, Inc. ©2013  63‐HDL64ES3 REV G" Appendix F. Pages 45-46
-      //PLease note: in the manual, focalDistance is in centimeters, distance is the raw short from the laser
-      // & the graph is in meter
-    double focalOffset = 255.0 * pow(1.0 - correction->focalDistance / 131.0, 2);
-    double insideAbsValue = focalOffset - 255.0 *
+
+    /* Please refer to the manual:
+      "Velodyne, Inc. ©2013  63‐HDL64ES3 REV G" Appendix F. Pages 45-46
+      PLease note: in the manual, focalDistance is in centimeters, distance is the raw short from the laser
+      & the graph is in meter */
+
+    // Casting the input values to double for the computation
+
+    double computedIntensity = static_cast<double>(intensity);
+    double minIntensity = static_cast<double>(correction->minIntensity);
+    double maxIntensity = static_cast<double>(correction->maxIntensity);
+
+    computedIntensity = (computedIntensity - minIntensity) / (maxIntensity - minIntensity) *255.0;
+    double focalOffset = pow(1.0 - correction->focalDistance / 131.0, 2);
+    double insideAbsValue = focalOffset -
                 pow(1.0 - static_cast<double>(laserReturn->distance)/65535.0f, 2);
 
     if (insideAbsValue > 0)
       {
-      intensity += correction->focalSlope * (abs(insideAbsValue));
+      computedIntensity += computedIntensity * correction->focalSlope * (abs(insideAbsValue));
       }
     else
       {
-      intensity += correction->closeSlope * (abs(insideAbsValue));
+      computedIntensity += computedIntensity * correction->closeSlope * (abs(insideAbsValue));
       }
-    intensity = static_cast<short>(std::max( std::min(static_cast<double>(intensity), 255.0),1.0));
+    computedIntensity = std::max( std::min(computedIntensity, 255.0),1.0);
+    intensity = static_cast<short>(computedIntensity);
     }
  
   }
