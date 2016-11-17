@@ -2118,10 +2118,11 @@ const bool& vtkVelodyneHDLReader::GetAreIntensitiesCorrected()
 //-----------------------------------------------------------------------------
 void vtkVelodyneHDLReader::SetIntensitiesCorrected(const bool& state)
 {
-  if (state != this->Internal->areIntensitiesCorrected)
-  {
-    this->Modified();
-  }
 
-  this->Internal->areIntensitiesCorrected = state;
+  if (state != this->Internal->areIntensitiesCorrected)
+    {
+    this->Internal->areIntensitiesCorrected = state;
+    this->Modified();
+    }
+
 }
