@@ -2051,9 +2051,15 @@ def geolocationChanged(setting):
 
 def intensitiesCorrectedChanged():
     reader = getReader()
-    reader.GetClientSideObject().SetIntensitiesCorrected(app.actions['actionCorrectIntensityValues'].isChecked())
+    sensor = getSensor()
 
-    updatePosition()
+    if sensor is not None:
+        sensor.GetClientSideObject().SetIntensitiesCorrected(app.actions['actionCorrectIntensityValues'].isChecked())
+    if reader is not None:
+        reader.GetClientSideObject().SetIntensitiesCorrected(app.actions['actionCorrectIntensityValues'].isChecked())
+
+
+    # updatePosition()
     smp.Render(view=app.mainView)
 
 def setupActions():
