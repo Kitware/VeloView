@@ -1581,20 +1581,28 @@ void vtkVelodyneHDLReader::vtkInternal::ComputeCorrectedValues(
     double minIntensity = static_cast<double>(correction->minIntensity);
     double maxIntensity = static_cast<double>(correction->maxIntensity);
 
+    //Rescale the intensity between 0 and 255
     computedIntensity = (computedIntensity - minIntensity) / (maxIntensity - minIntensity) *255.0;
-    double focalOffset = pow(1.0 - correction->focalDistance / 131.0, 2);
-    double insideAbsValue = focalOffset -
-                pow(1.0 - static_cast<double>(laserReturn->distance)/65535.0f, 2);
+
+    if (computedIntensity < 0)
+      {
+      computedIntensity = 0;
+      }
+
+    double focalOffset = 256*pow(1.0 - correction->focalDistance / 131.0, 2);
+    double insideAbsValue = std::abs(focalOffset -
+                256*pow(1.0 - static_cast<double>(laserReturn->distance)/65535.0f, 2));
 
     if (insideAbsValue > 0)
       {
-      computedIntensity += computedIntensity * correction->focalSlope * (abs(insideAbsValue));
+      computedIntensity = computedIntensity + correction->focalSlope * insideAbsValue;
       }
     else
       {
-      computedIntensity += computedIntensity * correction->closeSlope * (abs(insideAbsValue));
+      computedIntensity = computedIntensity + correction->closeSlope * insideAbsValue;
       }
     computedIntensity = std::max( std::min(computedIntensity, 255.0),1.0);
+
     intensity = static_cast<short>(computedIntensity);
     }
  
