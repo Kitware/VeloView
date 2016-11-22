@@ -481,6 +481,8 @@ def openPCAP(filename, positionFilename=None):
     setDefaultLookupTables(reader)
     colorByIntensity(reader)
 
+    app.text = smp.Text()
+
     showSourceInSpreadSheet(reader)
 
     updateSliderTimeRange()
@@ -983,6 +985,7 @@ def close():
     app.scene.AnimationTime = 0
     app.reader = None
     app.sensor = None
+    app.Text = None
 
     smp.HideUnusedScalarBars()
 
@@ -2206,11 +2209,6 @@ def setupActions():
 
 
 def showRPM():
-
-    # Create the text object containing the RPM when the function is called for the first time only
-
-    if app.text == None:
-        app.text = smp.Text()
 
     rpmArray = getReader().GetClientSideObject().GetOutput().GetFieldData().GetArray('RotationPerMinute')
 
