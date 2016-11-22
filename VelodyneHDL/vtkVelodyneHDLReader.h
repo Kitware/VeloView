@@ -157,6 +157,8 @@ public:
   bool getIsHDL64Data();
   bool getCorrectionsInitialized();
 
+  bool isReportedSensorAndCalibrationFileConsistent(bool shouldWarn);
+  void updateReportedSensor(const unsigned char* data);
 
 protected:
   vtkVelodyneHDLReader();
@@ -176,6 +178,7 @@ protected:
 
   std::string CorrectionsFile;
   std::string FileName;
+  bool ShouldCheckSensor;
 
   class vtkInternal;
   vtkInternal* Internal;

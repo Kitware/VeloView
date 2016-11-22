@@ -144,6 +144,7 @@ public:
   PacketConsumer()
   {
     this->NewData = false;
+    this->ShouldCheckSensor = true;
     this->MaxNumberOfDatasets = 1000;
     this->LastTime = 0.0;
   }
@@ -162,6 +163,13 @@ public:
         }
       else
         {
+        // We check the sensor type when the initialization is done
+        if(this->ShouldCheckSensor)
+          {
+          this->HDLReader->updateReportedSensor(data);
+          this->HDLReader->isReportedSensorAndCalibrationFileConsistent(true);
+          this->ShouldCheckSensor = false;
+          }
         this->HDLReader->ProcessHDLPacket(const_cast<unsigned char*>(data), length);
         if (this->HDLReader->GetDatasets().size())
           {
@@ -317,6 +325,7 @@ protected:
     this->LastTime += 1.0;
   }
 
+  bool ShouldCheckSensor;
   bool NewData;
   int MaxNumberOfDatasets;
   double LastTime;

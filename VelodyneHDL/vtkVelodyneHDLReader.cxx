@@ -91,6 +91,9 @@ enum SensorType
   HDL32E = 0x21,
   VLP16  = 0x22,
   VLP32  = 0x23,
+  //Work around : this is not defined by any specification
+  //But it is usefull to define
+  HDL64  = 0xa0,
 };
 enum DualReturnSensorMode
 {
@@ -733,6 +736,8 @@ void vtkVelodyneHDLReader::UnloadData()
   this->Internal->IsHDL64Data = false;
   this->Internal->Datasets.clear();
   this->Internal->CurrentDataset = this->Internal->CreateData(0);
+
+  this->ShouldCheckSensor = true;
 }
 
 //-----------------------------------------------------------------------------
@@ -790,6 +795,29 @@ int vtkVelodyneHDLReader::RequestData(vtkInformation *request,
     vtkErrorMacro("Cannot meet timestep request: " << timestep << ".  Have " << this->GetNumberOfFrames() << " datasets.");
     output->ShallowCopy(this->Internal->CreateData(0));
     return 0;
+    }
+
+  //check if the reported sensor is consistent with the calibration sensor
+  if(this->ShouldCheckSensor)
+    {
+    const unsigned char* data;
+    unsigned int dataLength;
+    double timeSinceStart;
+    //Open the .pcap
+    this->Open();
+    //set the position to the first full frame
+    this->Internal->Reader->SetFilePosition(&this->Internal->FilePositions[1]);
+    this->Internal->Skip = this->Internal->Skips[1];
+    //Read the data of a packet
+    this->Internal->Reader->NextPacket(data, dataLength, timeSinceStart);
+    //Update the sensor type
+    this->updateReportedSensor(data);
+    //Compare the number of lasers from calibration and from sensor
+    this->isReportedSensorAndCalibrationFileConsistent(true);
+    //close the .pcap file
+    this->Close();
+    //check is done
+    this->ShouldCheckSensor = false;
     }
 
   this->Open();
@@ -1715,8 +1743,8 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessFiring(HDLFiringData* firingData,
       {
       if(firingBlockLaserOffset != 0)
         {
-        vtkGenericWarningMacro("Error: Received a UPPERBLOCK firing packet "
-                      "with a VLP-16. Ignoring the firing.");
+        vtkGenericWarningMacro("Error: Received a HDL-64 UPPERBLOCK firing packet "
+                      "with a VLP-16 calibration file. Ignoring the firing.");
         return;
         }
       if(laserId >= 16)
@@ -1970,6 +1998,72 @@ int vtkVelodyneHDLReader::ReadFrameInformation()
   this->Internal->FilePositions = filePositions;
   this->Internal->Skips = skips;
   return this->GetNumberOfFrames();
+}
+
+//-----------------------------------------------------------------------------
+void vtkVelodyneHDLReader::updateReportedSensor(const unsigned char* data)
+{
+  const HDLDataPacket* dataPacket = reinterpret_cast<const HDLDataPacket *>(data);
+
+  // Since factoryField2 contains the rolling data in HDL64
+  // We check the number of laser by analysing the packets
+  this->Internal->IsHDL64Data = false;
+  for(int i = 0; i < HDL_FIRING_PER_PKT; ++i)
+    {
+    this->Internal->IsHDL64Data |=
+        (dataPacket->firingData[i].blockIdentifier == BLOCK_32_TO_63);
+    }
+
+  if(this->Internal->IsHDL64Data)
+    {
+    // Starting with HDL64, factoryField2 is not anymore the sensorType
+    this->Internal->ReportedSensor = HDL64;
+    return;
+    }
+  else
+    {
+    this->Internal->ReportedSensor = static_cast<SensorType>(dataPacket->factoryField2);
+    }
+}
+
+//-----------------------------------------------------------------------------
+bool vtkVelodyneHDLReader::isReportedSensorAndCalibrationFileConsistent(bool shouldWarn)
+{
+  int reportedSensorNumberLaser = 0;
+  //Get the number of laser from sensor type
+  switch (this->Internal->ReportedSensor)
+    {
+    case HDL32E:
+      reportedSensorNumberLaser = 32;
+      break;
+    case VLP16:
+      reportedSensorNumberLaser = 16;
+      break;
+    case VLP32:
+      reportedSensorNumberLaser = 32;
+      break;
+    case HDL64:
+      reportedSensorNumberLaser = 64;
+      break;
+    default:
+      reportedSensorNumberLaser = 0;
+      break;
+    }
+
+  //compare the numbers of lasers
+  if(reportedSensorNumberLaser != this->Internal->CalibrationReportedNumLasers)
+    {
+    if(shouldWarn)
+      {
+      std::stringstream warningMessage;
+      warningMessage << "Reported number of lasers is " << reportedSensorNumberLaser;
+      warningMessage << " whereas calibration number of laser is " << this->Internal->CalibrationReportedNumLasers;
+      vtkGenericWarningMacro(<<warningMessage.str());
+      }
+    return false;
+    }
+
+  return true;
 }
 
 #pragma pack(push, 1)
