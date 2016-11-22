@@ -69,6 +69,11 @@ public:
 
   //Description:
   //
+  const bool& GetAreIntensitiesCorrected();
+  void SetIntensitiesCorrected(const bool& state);
+
+  //Description:
+  //
   int CanReadFile(const char* fname);
 
   // Property functions

@@ -1096,3 +1096,9 @@ void vtkVelodyneHDLSource::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os,indent);
 }
+
+//-----------------------------------------------------------------------------
+void vtkVelodyneHDLSource::SetIntensitiesCorrected(const bool& state)
+{
+  this->Internal->Consumer->GetReader()->SetIntensitiesCorrected(state);
+}

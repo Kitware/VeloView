@@ -113,6 +113,8 @@ public:
 
   int GetNumberOfChannels();
 
+  void SetIntensitiesCorrected(const bool& state);
+
 protected:
 
 

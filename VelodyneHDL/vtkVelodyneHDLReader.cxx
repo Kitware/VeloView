@@ -136,6 +136,7 @@ struct HDLLaserCorrection  // Internal representation of per-laser correction
 
   double focalDistance;
   double focalSlope;
+  double closeSlope; // Used in HDL-64 only
 
   short minIntensity;
   short maxIntensity;
@@ -283,6 +284,7 @@ public:
     this->IsHDL64Data = false;
     this->skipFirstFrame = true;
     this->distanceResolutionM = 0.002;
+    this->areIntensitiesCorrected = false;
 
     this->rollingCalibrationData = new vtkRollingDataAccumulator();
     this->Init();
@@ -323,6 +325,7 @@ public:
   DualReturnSensorMode ReportedSensorReturnMode;
   bool IsHDL64Data;
   bool skipFirstFrame;
+  bool areIntensitiesCorrected;
 
   int LastAzimuth;
   unsigned int LastTimestamp;
@@ -1294,6 +1297,32 @@ void vtkVelodyneHDLReader::vtkInternal::LoadCorrectionsFile(const std::string& c
     }
   this->CalibrationReportedNumLasers = enabledCount;
 
+  // Getting min & max intensities from XML
+  int laserId = 0;
+  int minIntensity[64], maxIntensity[64];
+  BOOST_FOREACH (boost::property_tree::ptree::value_type &v, pt.get_child("boost_serialization.DB.minIntensity_"))
+    {
+    std::stringstream ss;
+    if(v.first == "item")
+      {
+      ss << v.second.data();
+      ss >> minIntensity[laserId];
+      laserId++;
+      }
+    }
+
+  laserId = 0;
+  BOOST_FOREACH (boost::property_tree::ptree::value_type &v, pt.get_child("boost_serialization.DB.maxIntensity_"))
+  {
+  std::stringstream ss;
+  if(v.first == "item")
+    {
+    ss << v.second.data();
+    ss >> maxIntensity[laserId];
+    laserId++;
+    }
+  }
+
   BOOST_FOREACH (boost::property_tree::ptree::value_type &v, pt.get_child("boost_serialization.DB.points_"))
     {
     if (v.first == "item")
@@ -1329,6 +1358,8 @@ void vtkVelodyneHDLReader::vtkInternal::LoadCorrectionsFile(const std::string& c
               xmlData.focalDistance = atof(item.second.data().c_str());
             if (item.first == "focalSlope_")
               xmlData.focalSlope = atof(item.second.data().c_str());
+            if (item.first == "closeSlope_")
+              xmlData.closeSlope = atof(item.second.data().c_str());
             }
           if (index != -1 && index < HDL_MAX_NUM_LASERS)
             {
@@ -1342,8 +1373,11 @@ void vtkVelodyneHDLReader::vtkInternal::LoadCorrectionsFile(const std::string& c
             laser_corrections_[index].horizontalOffsetCorrection /= 100.0;
             laser_corrections_[index].focalDistance /= 100.0;
             laser_corrections_[index].focalSlope /= 100.0;
-            laser_corrections_[index].minIntensity = 0;
-            laser_corrections_[index].maxIntensity = 0;
+            laser_corrections_[index].closeSlope /= 100.0;
+            if(laser_corrections_[index].closeSlope == 0.0)
+              laser_corrections_[index].closeSlope = laser_corrections_[index].focalSlope;
+            laser_corrections_[index].minIntensity = minIntensity[index];
+            laser_corrections_[index].maxIntensity = maxIntensity[index];
             }
           }
         }
@@ -1532,16 +1566,46 @@ void vtkVelodyneHDLReader::vtkInternal::ComputeCorrectedValues(
   pos[1] = xyDistance * cosAzimuth + correction->horizontalOffsetCorrection * sinAzimuth;
   pos[2] = distanceM * correction->sinVertCorrection + correction->verticalOffsetCorrection;
 
-  if(false && (correction->minIntensity < correction->maxIntensity))
+  if(this->areIntensitiesCorrected && this->IsHDL64Data && (correction->minIntensity < correction->maxIntensity))
     {
     // Compute corrected intensity
-    double focalOffset = 256.0 * pow(1 - correction->focalDistance / 13.100, 2);
-    intensity += correction->focalSlope *
-               (abs(focalOffset - 256.0f *
-                pow(1.0 - static_cast<double>(laserReturn->distance)/65535.0f, 2)));
-    intensity = std::max( std::min(intensity, correction->maxIntensity),
-                          correction->minIntensity);
+
+    /* Please refer to the manual:
+      "Velodyne, Inc. ©2013  63‐HDL64ES3 REV G" Appendix F. Pages 45-46
+      PLease note: in the manual, focalDistance is in centimeters, distance is the raw short from the laser
+      & the graph is in meter */
+
+    // Casting the input values to double for the computation
+
+    double computedIntensity = static_cast<double>(intensity);
+    double minIntensity = static_cast<double>(correction->minIntensity);
+    double maxIntensity = static_cast<double>(correction->maxIntensity);
+
+    //Rescale the intensity between 0 and 255
+    computedIntensity = (computedIntensity - minIntensity) / (maxIntensity - minIntensity) *255.0;
+
+    if (computedIntensity < 0)
+      {
+      computedIntensity = 0;
+      }
+
+    double focalOffset = 256*pow(1.0 - correction->focalDistance / 131.0, 2);
+    double insideAbsValue = std::abs(focalOffset -
+                256*pow(1.0 - static_cast<double>(laserReturn->distance)/65535.0f, 2));
+
+    if (insideAbsValue > 0)
+      {
+      computedIntensity = computedIntensity + correction->focalSlope * insideAbsValue;
+      }
+    else
+      {
+      computedIntensity = computedIntensity + correction->closeSlope * insideAbsValue;
+      }
+    computedIntensity = std::max( std::min(computedIntensity, 255.0),1.0);
+
+    intensity = static_cast<short>(computedIntensity);
     }
+ 
   }
 
 //-----------------------------------------------------------------------------
@@ -2032,6 +2096,7 @@ bool vtkVelodyneHDLReader::vtkInternal::HDL64LoadCorrectionsFromStreamData()
                                 correctionStream->horizontalOffsetByte2) / 1000.0;
     vvCorrection.focalDistance = correctionStream->focalDistance / 1000.0;
     vvCorrection.focalSlope = correctionStream->focalSlope / 1000.0;
+    vvCorrection.closeSlope = correctionStream->focalSlope / 1000.0;
     vvCorrection.minIntensity = correctionStream->minIntensity;
     vvCorrection.maxIntensity = correctionStream->maxIntensity;
     }
@@ -2062,3 +2127,20 @@ bool vtkVelodyneHDLReader::getCorrectionsInitialized()
   return this->Internal->CorrectionsInitialized;
 }
 
+//-----------------------------------------------------------------------------
+const bool& vtkVelodyneHDLReader::GetAreIntensitiesCorrected()
+{
+  return this->Internal->areIntensitiesCorrected;
+}
+
+//-----------------------------------------------------------------------------
+void vtkVelodyneHDLReader::SetIntensitiesCorrected(const bool& state)
+{
+
+  if (state != this->Internal->areIntensitiesCorrected)
+    {
+    this->Internal->areIntensitiesCorrected = state;
+    this->Modified();
+    }
+
+}
