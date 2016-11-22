@@ -209,6 +209,16 @@ def setDefaultLookupTables(sourceProxy):
                  +1.0, 1.0, 0.9, 0.4],
       Annotations=['-1', 'low', '0', 'dual', '1', 'high'])
 
+    # LUT for 'color_from_XML'
+    rgbRaw = [0] * 256
+    sourceProxy.GetClientSideObject().GetXMLColorTable(rgbRaw)
+
+    smp.GetLookupTableForArray(
+      'color_from_XML', 1,
+      ScalarRangeInitialized=1.0,
+      ColorSpace='RGB',
+      RGBPoints=rgbRaw)
+
 def colorByIntensity(sourceProxy):
 
     if not hasArrayName(sourceProxy, 'intensity'):
