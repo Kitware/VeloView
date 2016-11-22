@@ -358,6 +358,7 @@ def openSensor():
     app.actions['actionDualReturnIntensityHigh'].enabled = True
     app.actions['actionDualReturnIntensityLow'].enabled = True
     app.actions['actionShowRPM'].enabled = True
+    app.actions['actionCorrectIntensityValues'].enabled = True
 
     play()
 
@@ -494,6 +495,7 @@ def openPCAP(filename, positionFilename=None):
     app.actions['actionDualReturnIntensityHigh'].enabled = True
     app.actions['actionDualReturnIntensityLow'].enabled = True
     app.actions['actionShowRPM'].enabled = True
+    app.actions['actionCorrectIntensityValues'].enabled = True
 
     resetCamera()
 
@@ -999,6 +1001,7 @@ def close():
     app.actions['actionDualReturnDistanceFar'].enabled = False
     app.actions['actionDualReturnIntensityHigh'].enabled = False
     app.actions['actionDualReturnIntensityLow'].enabled = False
+    app.actions['actionCorrectIntensityValues'].enabled = False
 
 
 def seekForward():
@@ -2058,9 +2061,10 @@ def intensitiesCorrectedChanged():
     if reader is not None:
         reader.GetClientSideObject().SetIntensitiesCorrected(app.actions['actionCorrectIntensityValues'].isChecked())
 
+    # Workaround to force the refresh for all the views
+    seekForward()
+    seekBackward()
 
-    # updatePosition()
-    smp.Render(view=app.mainView)
 
 def setupActions():
 
