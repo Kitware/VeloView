@@ -65,7 +65,7 @@ endfunction()
 
 # Extracts components from a version string. See determine_version() for usage.
 function(extract_version_components version_string var_prefix)
-  string(REGEX MATCH "([0-9]+)\\.([0-9]+)\\.([0-9]+)[-]*(.*)"
+  string(REGEX MATCH "([0-9]+)\\.([0-9]+)\\.([0-9]+)[-]*([^-]*)[-]*(.*)"
     version_matches "${version_string}")
   if(CMAKE_MATCH_0)
     set(full ${CMAKE_MATCH_0})
