@@ -12,8 +12,9 @@ if (NOT APPLE AND UNIX)
                     ${SuperBuild_PROJECTS_DIR}/patches/qt.src.3rdparty.webkit.Source.WebKit.pri
                     <SOURCE_DIR>/src/3rdparty/webkit/Source/WebKit.pri)
 elseif (APPLE)
-  if (NOT DEFINED CMAKE_OSX_SYSROOT OR NOT DEFINED CMAKE_OSX_ARCHITECTURES)
-    message(FATAL "CMAKE_OSX_SYSROOT or CMAKE_OSX_ARCHITECTURES are not configured")
+  if ((NOT DEFINED CMAKE_OSX_SYSROOT OR CMAKE_OSX_SYSROOT STREQUAL "")
+      OR (NOT DEFINED CMAKE_OSX_ARCHITECTURES OR CMAKE_OSX_ARCHITECTURES STREQUAL ""))
+    message(FATAL_ERROR "CMAKE_OSX_SYSROOT or CMAKE_OSX_ARCHITECTURES are not configured")
   endif()
   list (APPEND qt_options
               #-sdk ${CMAKE_OSX_SYSROOT} #corewlan is failing on 10.9 with 10.11 sdk
@@ -47,7 +48,7 @@ add_external_project_or_use_system(
                       -nomake demos
                       -nomake examples
                       -nomake tests
-                      -nomake tools
+                      #-nomake tools
                       -nomake docs
                       -no-multimedia
                       -no-openssl
