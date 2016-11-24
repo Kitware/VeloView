@@ -2204,21 +2204,17 @@ def setupActions():
     app.actions['actionCorrectIntensityValues'].connect('triggered()',intensitiesCorrectedChanged)
     app.EnableCrashAnalysis = app.actions['actionEnableCrashAnalysis'].isChecked()
 
-    # Action created #
-    timeToolBar = mW.findChild('QToolBar','playbackToolbar')
+    # Setup and add the geolocation toolbar
     geolocationToolBar = mW.findChild('QToolBar', 'geolocationToolbar')
 
     # Creating and adding the geolocation label to the geolocation toolbar
-
     geolocationLabel = QtGui.QLabel('Frame Mapping: ')
     geolocationToolBar.addWidget(geolocationLabel)
 
     # Creating the geolocation combobox
-
     geolocationComboBox = QtGui.QComboBox()
 
     #Adding the different entries
-
     geolocationComboBox.addItem('None (RAW Data)')
     geolocationComboBox.setItemData(0, "No mapping: Each frame is at the origin", 3)
 
@@ -2229,7 +2225,13 @@ def setupActions():
     geolocationComboBox.setItemData(2, "Use GPS geolocation to get each frame absolute location, the current frame is shown at origin", 3)
 
     geolocationToolBar.addWidget(geolocationComboBox)
+
+    # Set default toolbar visibility
+    geolocationToolBar.visible = False
     
+    # Setup and add the playback speed control toolbar
+    timeToolBar = mW.findChild('QToolBar','playbackToolbar')
+
     PlaybackSpeedLabel = QtGui.QLabel('Speed: x')
     PlaybackSpeedLabel.setObjectName('PlaybackSpeedLabel')
     timeToolBar.addWidget(PlaybackSpeedLabel)
