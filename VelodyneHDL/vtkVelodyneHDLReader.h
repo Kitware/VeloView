@@ -109,6 +109,8 @@ public:
       double minIntensity[64],
       double maxIntensity[64]);
 
+  void GetXMLColorTable(double XMLColorTable[]);
+
   unsigned int GetDualReturnFilter() const;
   void SetDualReturnFilter(unsigned int);
 

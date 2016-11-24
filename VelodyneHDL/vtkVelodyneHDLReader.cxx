@@ -349,6 +349,7 @@ public:
   std::vector<double> cos_lookup_table_;
   std::vector<double> sin_lookup_table_;
   HDLLaserCorrection laser_corrections_[HDL_MAX_NUM_LASERS];
+  double XMLColorTable[64][3];
   int CalibrationReportedNumLasers;
   bool CorrectionsInitialized;
   bool IsCorrectionFromLiveStream;
@@ -593,6 +594,19 @@ void vtkVelodyneHDLReader::GetLaserCorrections(
     focalSlope[i] = this->Internal->laser_corrections_[i].focalSlope;
     minIntensity[i] = this->Internal->laser_corrections_[i].minIntensity;
     maxIntensity[i] = this->Internal->laser_corrections_[i].maxIntensity;
+    }
+}
+
+//-----------------------------------------------------------------------------
+void vtkVelodyneHDLReader::GetXMLColorTable(double XMLColorTable[256])
+{
+  for(int i = 0; i < 64; ++i)
+    {
+    XMLColorTable[i*4] = static_cast<double>(i)/63.0 * 255.0;
+    for (int j = 0; j < 3; ++j)
+      {
+      XMLColorTable[i*4+j+1] = this->Internal->XMLColorTable[i][j];
+      }
     }
 }
 
@@ -1277,6 +1291,28 @@ void vtkVelodyneHDLReader::vtkInternal::LoadCorrectionsFile(const std::string& c
     if (v.first == "distLSB_")
       {// Stored in cm in xml
       distanceResolutionM = atof(v.second.data().c_str()) / 100.0;
+      }
+    }
+
+  int i, j;
+  i = 0;
+  BOOST_FOREACH (boost::property_tree::ptree::value_type &p, pt.get_child("boost_serialization.DB.colors_"))
+    {
+    if(p.first == "item")
+      {
+      j = 0;
+      BOOST_FOREACH (boost::property_tree::ptree::value_type &v, p.second.get_child("rgb"))
+          if(v.first == "item")
+          {
+            std::stringstream ss;
+            double val;
+            ss << v.second.data();
+            ss >> val;
+
+            XMLColorTable[i][j] = val;
+            j++;
+          }
+      i++;
       }
     }
 

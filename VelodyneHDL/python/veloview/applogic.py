@@ -180,7 +180,69 @@ def planeFit():
     planefit.fitPlane()
 
 
+def findPresetByName(name):
+    presets = servermanager.vtkSMTransferFunctionPresets()
+
+    numberOfPresets = presets.GetNumberOfPresets()
+
+    for i in range(0,numberOfPresets):
+        currentName = presets.GetPresetName(i)
+        if currentName == name:
+            return i
+
+    return -1
+
+
+def createDSRColorsPreset():
+
+    dsrColorIndex = findPresetByName("DSR Colors")
+
+    if dsrColorIndex == -1:
+        rcolor = [0,        0,         0,         0,         0,         0,         0,         0,         0,         0,         0,         0,         0,         0,         0,
+                  0,         0,         0,         0,         0,         0,         0,         0,         0,    0.0625,    0.1250,    0.1875,    0.2500,    0.3125,    0.3750,
+                  0.4375,    0.5000,    0.5625,    0.6250,    0.6875,    0.7500,    0.8125,    0.8750,    0.9375,    1.0000,    1.0000,    1.0000,    1.0000,    1.0000,    1.0000,
+                  1.0000,    1.0000,    1.0000,    1.0000,    1.0000,    1.0000,    1.0000,    1.0000,    1.0000 ,   1.0000,    1.0000,    0.9375,    0.8750,    0.8125,    0.7500,
+                  0.6875,    0.6250,    0.5625,    0.5000]
+
+        gcolor = [0,         0,         0,         0,         0,         0 ,        0,         0,    0.0625,    0.1250,    0.1875,    0.2500,    0.3125,    0.3750,    0.4375,
+                  0.5000,    0.5625,    0.6250,    0.6875,    0.7500,    0.8125,    0.8750,    0.9375,    1.0000,    1.0000,    1.0000,    1.0000,    1.0000,    1.0000,    1.0000,
+                  1.0000,    1.0000,    1.0000,    1.0000,   1.0000,    1.0000,    1.0000,    1.0000,    1.0000,    1.0000,    0.9375,    0.8750,    0.8125,    0.7500,    0.6875,
+                  0.6250,    0.5625,    0.5000,    0.4375,    0.3750,    0.3125,    0.2500,    0.1875,    0.1250,    0.0625,         0,         0,         0,         0,         0,
+                  0,         0,         0,         0]
+
+        bcolor = [0.5625,    0.6250,    0.6875,    0.7500,    0.8125,    0.8750,    0.9375,    1.0000,    1.0000,    1.0000,    1.0000,    1.0000,    1.0000,    1.0000,    1.0000,
+                  1.0000,    1.0000,    1.0000,    1.0000,    1.0000,    1.0000,    1.0000,    1.0000,    1.0000,    0.9375,    0.8750,    0.8125,    0.7500,    0.6875,    0.6250,
+                  0.5625,    0.5000,    0.4375,    0.3750,    0.3125,    0.2500,   0.1875,    0.1250,    0.0625,         0,         0,         0,         0,         0,         0,
+                  0,         0 ,        0,         0,         0,         0,         0,         0,         0 ,        0 ,        0 ,        0,         0 ,        0 ,        0,
+                  0,         0,         0,         0]
+
+        intensityColor = [0] * 256
+
+        for i in range(0,63):
+            index = i/63.0*255.0
+
+            intensityColor[i*4] = index
+            intensityColor[i*4+1] = rcolor[i]
+            intensityColor[i*4+2] = gcolor[i]
+            intensityColor[i*4+3] = bcolor[i]
+            i = i + 1
+
+        presets = servermanager.vtkSMTransferFunctionPresets()
+
+        intensityString = ',\n'.join(map(str, intensityColor))
+
+        intensityJSON = "{\n\"ColorSpace\" : \"RGB\",\n\"Name\" : \"DSR\",\n\"NanColor\" : [ 1, 1, 0 ],\n\"RGBPoints\" : [\n"+ intensityString + "\n]\n}"
+
+        presets.AddPreset("DSR Colors",intensityJSON)
+
+
 def setDefaultLookupTables(sourceProxy):
+    createDSRColorsPreset()
+
+    presets = servermanager.vtkSMTransferFunctionPresets()
+
+    dsrIndex = findPresetByName("DSR Colors")
+    presetDSR = presets.GetPresetAsString(dsrIndex)
 
     # LUT for 'intensity'
     smp.GetLookupTableForArray(
@@ -208,6 +270,16 @@ def setDefaultLookupTables(sourceProxy):
                   0.0, 0.6, 0.6, 0.6,
                  +1.0, 1.0, 0.9, 0.4],
       Annotations=['-1', 'low', '0', 'dual', '1', 'high'])
+
+    # LUT for 'color_from_XML'
+    rgbRaw = [0] * 256
+    sourceProxy.GetClientSideObject().GetXMLColorTable(rgbRaw)
+
+    smp.GetLookupTableForArray(
+      'color_from_XML', 1,
+      ScalarRangeInitialized=1.0,
+      ColorSpace='RGB',
+      RGBPoints=rgbRaw)
 
 def colorByIntensity(sourceProxy):
 
@@ -2132,21 +2204,17 @@ def setupActions():
     app.actions['actionCorrectIntensityValues'].connect('triggered()',intensitiesCorrectedChanged)
     app.EnableCrashAnalysis = app.actions['actionEnableCrashAnalysis'].isChecked()
 
-    # Action created #
-    timeToolBar = mW.findChild('QToolBar','playbackToolbar')
+    # Setup and add the geolocation toolbar
     geolocationToolBar = mW.findChild('QToolBar', 'geolocationToolbar')
 
     # Creating and adding the geolocation label to the geolocation toolbar
-
     geolocationLabel = QtGui.QLabel('Frame Mapping: ')
     geolocationToolBar.addWidget(geolocationLabel)
 
     # Creating the geolocation combobox
-
     geolocationComboBox = QtGui.QComboBox()
 
     #Adding the different entries
-
     geolocationComboBox.addItem('None (RAW Data)')
     geolocationComboBox.setItemData(0, "No mapping: Each frame is at the origin", 3)
 
@@ -2157,7 +2225,13 @@ def setupActions():
     geolocationComboBox.setItemData(2, "Use GPS geolocation to get each frame absolute location, the current frame is shown at origin", 3)
 
     geolocationToolBar.addWidget(geolocationComboBox)
+
+    # Set default toolbar visibility
+    geolocationToolBar.visible = False
     
+    # Setup and add the playback speed control toolbar
+    timeToolBar = mW.findChild('QToolBar','playbackToolbar')
+
     PlaybackSpeedLabel = QtGui.QLabel('Speed: x')
     PlaybackSpeedLabel.setObjectName('PlaybackSpeedLabel')
     timeToolBar.addWidget(PlaybackSpeedLabel)
