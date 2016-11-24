@@ -858,7 +858,7 @@
     <bool>false</bool>
    </property>
    <property name="text">
-    <string>Correct Intensity Values</string>
+    <string>Apply HDL-64E Intensity Corrections</string>
    </property>
   </action>
  </widget>
