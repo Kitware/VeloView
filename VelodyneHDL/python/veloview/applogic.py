@@ -475,7 +475,6 @@ def openPCAP(filename, positionFilename=None):
         smp.Delete(posreader)
 
     smp.SetActiveView(app.mainView)
-    smp.SetActiveSource(reader)
 
     rep.InterpolateScalarsBeforeMapping = 0
     setDefaultLookupTables(reader)
@@ -486,7 +485,6 @@ def openPCAP(filename, positionFilename=None):
     showSourceInSpreadSheet(reader)
 
     updateSliderTimeRange()
-    updatePosition()
     enablePlaybackActions()
     enableSaveActions()
     addRecentFile(filename)
@@ -499,6 +497,8 @@ def openPCAP(filename, positionFilename=None):
     app.actions['actionShowRPM'].enabled = True
     app.actions['actionCorrectIntensityValues'].enabled = True
 
+    smp.SetActiveSource(reader)
+    updatePosition()
     resetCamera()
 
 
@@ -1868,6 +1868,14 @@ def hideColorByComponent():
     getMainWindow().findChild('vvColorToolbar').findChild('pqDisplayColorWidget').findChildren('QComboBox')[1].hide()
 
 
+def adjustScalarBarRangeLabelFormat():
+    arrayName = getMainWindow().findChild('vvColorToolbar').findChild('pqDisplayColorWidget').findChild('QComboBox').currentText
+    if arrayName != '' and app.actions['actionScalarBarVisibility'].isChecked():
+        sb = smp.GetScalarBar(smp.GetLookupTableForArray(arrayName, []))
+        sb.RangeLabelFormat = '%g'
+        smp.Render()
+
+
 def addRecentFile(filename):
 
     recentFiles = getRecentFiles()
@@ -2206,6 +2214,10 @@ def setupActions():
 
     buttons['Seek Backward'].connect('pressed()', seekBackwardPressed)
     buttons['Seek Backward'].connect('released()', seekBackwardReleased)
+
+    displayWidget = getMainWindow().findChild('vvColorToolbar').findChild('pqDisplayColorWidget')
+    displayWidget.connect('arraySelectionChanged ()',adjustScalarBarRangeLabelFormat)
+    app.actions['actionScalarBarVisibility'].connect('triggered()',adjustScalarBarRangeLabelFormat)
 
 
 def showRPM():
