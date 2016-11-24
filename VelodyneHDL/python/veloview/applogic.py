@@ -475,7 +475,6 @@ def openPCAP(filename, positionFilename=None):
         smp.Delete(posreader)
 
     smp.SetActiveView(app.mainView)
-    smp.SetActiveSource(reader)
 
     rep.InterpolateScalarsBeforeMapping = 0
     setDefaultLookupTables(reader)
@@ -486,7 +485,6 @@ def openPCAP(filename, positionFilename=None):
     showSourceInSpreadSheet(reader)
 
     updateSliderTimeRange()
-    updatePosition()
     enablePlaybackActions()
     enableSaveActions()
     addRecentFile(filename)
@@ -499,6 +497,8 @@ def openPCAP(filename, positionFilename=None):
     app.actions['actionShowRPM'].enabled = True
     app.actions['actionCorrectIntensityValues'].enabled = True
 
+    smp.SetActiveSource(reader)
+    updatePosition()
     resetCamera()
 
 
