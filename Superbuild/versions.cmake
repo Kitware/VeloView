@@ -62,6 +62,19 @@ add_revision(boost
 add_revision(eigen
   URL http://vtk.org/files/support/eigen-3.1.2.tar.gz
   URL_MD5 bb639388192cb80f1ee797f5dbdbe74f)
+  
+add_revision(zlib
+  URL "http://www.paraview.org/files/dependencies/zlib-1.2.7.tar.gz"
+  URL_MD5 60df6a37c56e7c1366cca812414f7b85)
+# NOTE: if updating zlib version, fix patch in zlib.cmake
+
+add_revision(png
+  URL "http://paraview.org/files/dependencies/libpng-1.4.8.tar.gz"
+  URL_MD5 49c6e05be5fa88ed815945d7ca7d4aa9)
+
+add_revision(pcl
+  GIT_REPOSITORY git://github.com/gcasey/pcl.git
+  GIT_TAG 16405ab234889f45ffddfed7ec0701c1bf2ec042)
 
 #add_revision(liblas
 #  GIT_REPOSITORY git://github.com/libLAS/libLAS
@@ -69,3 +82,11 @@ add_revision(eigen
 add_revision(liblas
   GIT_REPOSITORY git://github.com/bastienjacquet/libLAS.git
   GIT_TAG fix-windows-stdint)
+
+add_revision(qhull
+    GIT_REPOSITORY git://github.com/qhull/qhull.git
+    GIT_TAG master)
+
+add_revision(flann
+  GIT_REPOSITORY git://github.com/gcasey/flann.git
+  GIT_TAG 6f6eabaf4e3741f556a12255a0d750b35bf166c0)

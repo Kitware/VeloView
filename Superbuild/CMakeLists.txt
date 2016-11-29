@@ -122,6 +122,22 @@ set (CM_PROJECTS_ALL)
 
 # Include all optional projects. These are the ones user can pick and choose.
 # Some of these allow using system libraries too.
+#Plug-in PCL
+if (WIN32) # Only available for windows for now
+    include(pcl)
+endif()
+
+# If pcl has been enabled, include flann, zlib, png and qhull
+if (pcl_ENABLED)
+    message("PCL enabled, you will have to enable flann, zlib, png and qhull")
+    message("Notice that pcl can only be build in Release mode")
+    include(flann)
+    include(zlib)
+    include(png)
+    include(qhull)
+endif()
+
+#Veloview
 include(qt)
 include(python)
 include(pythonqt)

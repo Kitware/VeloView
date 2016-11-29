@@ -24,6 +24,11 @@ find_path(PCAP_INCLUDE_DIR pcap.h DOC "pcap include directory")
 mark_as_advanced(PCAP_LIBRARY PCAP_INCLUDE_DIR)
 include_directories(${PCAP_INCLUDE_DIR})
 
+#PCL plugin
+find_package(PCL REQUIRED)
+include_directories(${PCL_INCLUDE_DIRS})
+add_definitions(${PCL_DEFINITIONS})
+
 set(LASNAME las)
 if(WIN32)
   set(LASNAME liblas)
@@ -84,6 +89,7 @@ if(PARAVIEW_BUILD_QT_GUI)
     images/resources.qrc)
 
   set(vtk_sources
+    vtkPCLConversions.cxx
     vtkPlaneFitter.cxx
     vtkVelodyneTransformInterpolator.cxx
     vtkWrappedTupleInterpolator.cxx
@@ -150,6 +156,7 @@ list(APPEND deps
   ${PCAP_LIBRARY}
   ${liblas_LIBRARY}
   ${ALL_BOOST_LIBRARIES}
+  ${PCL_LIBRARIES}
   )
 
 
