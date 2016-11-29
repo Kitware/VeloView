@@ -94,7 +94,7 @@ string (STRIP "${cflags}"  cflags)
 #  "Turn this ON to build command lines tools alone." OFF)
 
 if (WIN32)
-  # Since it only compile with ninja, let's provide it
+  # Since we only support superbuild compilation with ninja, let's provide it
   file(COPY ${SuperBuild_PROJECTS_DIR}/win32/ninja.exe
        DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
   if ( (NOT "${CMAKE_GENERATOR}" MATCHES "^NMake.*$") OR

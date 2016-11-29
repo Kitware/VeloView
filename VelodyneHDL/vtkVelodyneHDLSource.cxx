@@ -483,7 +483,7 @@ public:
       //Opening crash analysis file
       if(isCrashAnalysing)
       {
-        this->fileCrashAnalysis.open(filenameCrashAnalysis, ios::out | ios::binary);
+        this->fileCrashAnalysis.open(filenameCrashAnalysis.c_str(), ios::out | ios::binary);
       }
     }
 
