@@ -1,6 +1,10 @@
+#SET(CPACK_GENERATOR "DEB")
+#SET(CPACK_DEBIAN_PACKAGE_MAINTAINER "David Oroshnik <doroshnik@velodyne.com>") #required
+#SET(CPACK_DEBIAN_PACKAGE_DEPENDS "libc6 (>= 2.3.1-6), libqt4-core (>= 4.8.4), libqt4-core (>= 4.8.4), python (>= 2.7)")
+#SET(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
+
 include(veloview.bundle.common)
 include(CPack)
-
 
 # install all ParaView's shared libraries.
 install(DIRECTORY "${install_location}/lib/paraview-${PARAVIEW_VERSION}"
