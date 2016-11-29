@@ -45,4 +45,4 @@ else()
   set(CPACK_PACKAGE_FILE_NAME
       "${CPACK_PACKAGE_NAME}-${VV_VERSION_FULL}-${package_suffix}")
 endif()
-message("Bundled package name will be: ${CPACK_PACKAGE_FILE_NAME}" )
+message(STATUS "Bundled package name will be: ${CPACK_PACKAGE_FILE_NAME}" )
