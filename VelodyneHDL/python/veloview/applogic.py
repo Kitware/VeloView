@@ -271,15 +271,17 @@ def setDefaultLookupTables(sourceProxy):
                  +1.0, 1.0, 0.9, 0.4],
       Annotations=['-1', 'low', '0', 'dual', '1', 'high'])
 
-    # LUT for 'color_from_XML'
-    rgbRaw = [0] * 256
-    sourceProxy.GetClientSideObject().GetXMLColorTable(rgbRaw)
+    # LUT for 'laser_id'. This LUT is extracted from the XML calibration file
+    # which doesn't exist in live stream mode
+    if False and getReader() is not None:
+        rgbRaw = [0] * 256
+        sourceProxy.GetClientSideObject().GetXMLColorTable(rgbRaw)
 
-    smp.GetLookupTableForArray(
-      'color_from_XML', 1,
-      ScalarRangeInitialized=1.0,
-      ColorSpace='RGB',
-      RGBPoints=rgbRaw)
+        smp.GetLookupTableForArray(
+          'laser_id', 1,
+          ScalarRangeInitialized=1.0,
+          ColorSpace='RGB',
+          RGBPoints=rgbRaw)
 
 def colorByIntensity(sourceProxy):
 
