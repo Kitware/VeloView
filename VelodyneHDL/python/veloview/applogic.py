@@ -273,7 +273,7 @@ def setDefaultLookupTables(sourceProxy):
 
     # LUT for 'laser_id'. This LUT is extracted from the XML calibration file
     # which doesn't exist in live stream mode
-    if getReader() is not None:
+    if False and getReader() is not None:
         rgbRaw = [0] * 256
         sourceProxy.GetClientSideObject().GetXMLColorTable(rgbRaw)
 
