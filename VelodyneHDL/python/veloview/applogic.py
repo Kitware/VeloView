@@ -434,6 +434,11 @@ def openSensor():
     app.actions['actionShowRPM'].enabled = True
     app.actions['actionCorrectIntensityValues'].enabled = True
 
+    #Auto adjustment of the grid size with the distance resolution
+    app.distanceResolutionM = sensor.GetClientSideObject().GetDistanceResolutionM()
+    app.grid = createGrid()
+    showMeasurementGrid()
+
     play()
 
 def openPCAP(filename, positionFilename=None):
@@ -570,6 +575,11 @@ def openPCAP(filename, positionFilename=None):
     app.actions['actionDualReturnIntensityLow'].enabled = True
     app.actions['actionShowRPM'].enabled = True
     app.actions['actionCorrectIntensityValues'].enabled = True
+
+    #Auto adjustment of the grid size with the distance resolution
+    app.distanceResolutionM = reader.GetClientSideObject().GetDistanceResolutionM()
+    app.grid = createGrid()
+    showMeasurementGrid()
 
     smp.SetActiveSource(reader)
     updatePosition()
@@ -1651,6 +1661,7 @@ def createGrid(view=None):
 
     view = view or smp.GetActiveView()
     grid = smp.VelodyneHDLGridSource(guiName='Measurement Grid')
+    grid.GetClientSideObject().SetGridSize(int(5000 * app.distanceResolutionM))
     rep = smp.Show(grid, view)
     rep.LineWidth = grid.LineWidth
     rep.DiffuseColor = grid.Color
@@ -1688,6 +1699,7 @@ def start():
     view.UseGradientBackground = True
     smp._DisableFirstRenderCameraReset()
     smp.GetActiveView().LODThreshold = 1e100
+    app.distanceResolutionM = 0.002
     app.grid = createGrid()
     app.ruler = createRuler()
 

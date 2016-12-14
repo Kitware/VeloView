@@ -1856,6 +1856,12 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(unsigned char *data, st
 }
 
 //-----------------------------------------------------------------------------
+double vtkVelodyneHDLReader::GetDistanceResolutionM()
+{
+  return this->Internal->distanceResolutionM;
+}
+
+//-----------------------------------------------------------------------------
 int vtkVelodyneHDLReader::ReadFrameInformation()
 {
   vtkPacketFileReader reader;
