@@ -151,21 +151,28 @@ public:
   void HandleSensorData(const unsigned char* data, unsigned int length)
   {
     boost::lock_guard<boost::mutex> lock(this->ReaderMutex);
-
-    // Accumulate HDL6 Status byte data
-    if(this->HDLReader->getIsHDL64Data()
-       && !this->HDLReader->getCorrectionsInitialized())
+    //LiDAR data
+    if(length == 1206)
+    {
+      // Accumulate HDL6 Status byte data
+      if(this->HDLReader->getIsHDL64Data()
+         && !this->HDLReader->getCorrectionsInitialized())
+        {
+          this->HDLReader->appendRollingDataAndTryCorrection(data);
+        }
+      else
       {
-        this->HDLReader->appendRollingDataAndTryCorrection(data);
+        this->HDLReader->ProcessHDLPacket(const_cast<unsigned char*>(data), length);
+        if (this->HDLReader->GetDatasets().size())
+        {
+        this->HandleNewData(this->HDLReader->GetDatasets().back());
+        this->HDLReader->GetDatasets().clear();
+        }
       }
+    }
     else
     {
-      this->HDLReader->ProcessHDLPacket(const_cast<unsigned char*>(data), length);
-      if (this->HDLReader->GetDatasets().size())
-      {
-      this->HandleNewData(this->HDLReader->GetDatasets().back());
-      this->HDLReader->GetDatasets().clear();
-      }
+      //other data
     }
 
   }
@@ -701,7 +708,7 @@ void PacketReceiver::SocketCallback(const boost::system::error_code& error, std:
 
   if ((++this->PacketCounter % 500) == 0)
     {
-    std::cout << "RECV packets: " << this->PacketCounter << " on " << this->Port << std::endl;;
+    //std::cout << "RECV packets: " << this->PacketCounter << " on " << this->Port << std::endl;;
     }
 }
 
