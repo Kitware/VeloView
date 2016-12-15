@@ -151,30 +151,29 @@ public:
   void HandleSensorData(const unsigned char* data, unsigned int length)
   {
     boost::lock_guard<boost::mutex> lock(this->ReaderMutex);
-    //LiDAR data
+    // Firing data packet
     if(length == 1206)
-    {
-      // Accumulate HDL6 Status byte data
+      {
+      // Accumulate HDL64 Status byte data while correction are not initialized
       if(this->HDLReader->getIsHDL64Data()
-         && !this->HDLReader->getCorrectionsInitialized())
+          && !this->HDLReader->getCorrectionsInitialized())
         {
-          this->HDLReader->appendRollingDataAndTryCorrection(data);
+        this->HDLReader->appendRollingDataAndTryCorrection(data);
         }
       else
-      {
+        {
         this->HDLReader->ProcessHDLPacket(const_cast<unsigned char*>(data), length);
         if (this->HDLReader->GetDatasets().size())
-        {
-        this->HandleNewData(this->HDLReader->GetDatasets().back());
-        this->HDLReader->GetDatasets().clear();
+          {
+          this->HandleNewData(this->HDLReader->GetDatasets().back());
+          this->HDLReader->GetDatasets().clear();
+          }
         }
       }
-    }
     else
-    {
-      //other data
-    }
-
+      {
+      // Placeholder for future implementation
+      }
   }
 
   vtkSmartPointer<vtkPolyData> GetDatasetForTime(double timeRequest, double& actualTime)
@@ -706,9 +705,9 @@ void PacketReceiver::SocketCallback(const boost::system::error_code& error, std:
 
   this->StartReceive();
 
-  if ((++this->PacketCounter % 500) == 0)
+  if ((++this->PacketCounter % 5000) == 0)
     {
-    //std::cout << "RECV packets: " << this->PacketCounter << " on " << this->Port << std::endl;;
+    std::cout << "RECV packets: " << this->PacketCounter << " on " << this->Port << std::endl;;
     }
 }
 
