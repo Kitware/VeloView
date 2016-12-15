@@ -35,7 +35,9 @@
 #include <string>
 #include <cstdlib>
 #include <iostream>
-
+#include <chrono>
+#include <ctime>
+#include <thread>
 #include <boost/thread/thread.hpp>
 
 int main(int argc, char* argv[])
@@ -70,6 +72,21 @@ int main(int argc, char* argv[])
       speed = static_cast<double>(atof(argv[6]));
     }
 
+  //The sensor send one packet every 553 microseconds
+  int timeToWait = static_cast<int>(1 / speed * 553);
+
+  //The timers resolution is only 1000 microsecond
+  //But we need to send packets every 553 microseconds
+  //Thus, we send packet by group of 100 and then wait
+  //55 300 microseconds
+  int NumberPacketsByPool = 20;
+
+  //Calibration of the sleep
+  std::chrono::time_point<std::chrono::system_clock> T1, T2;
+  std::chrono::duration<double> elapsedTime;
+  double timeMicroSecond = 0;
+
+  std::cout << "Start sending" << std::endl;
   try
     {
     do
@@ -79,25 +96,24 @@ int main(int argc, char* argv[])
       bool isFirstPacket = true;
       double currentTimeStamp = 0;
       double previousTimeStamp = 0;
-      double timeToWait = 0;
       while (!sender.done())
         {
-        currentTimeStamp = sender.pumpPacket();
-        //timeToWait is the elapsed time between the packets (n-1) and n
-        //It is used to wait before sending the packet n+1
-        //Hence, there is an offset.
-        timeToWait = ((currentTimeStamp - previousTimeStamp)*1e6)/speed;
-        previousTimeStamp = currentTimeStamp;
-        if(isFirstPacket)
+        sender.pumpPacket();
+
+        if ((sender.packetCount() % 1000) == 0)
           {
-            isFirstPacket = false;
-            timeToWait = 200;
+          T2 = std::chrono::high_resolution_clock::now();
+          elapsedTime = T2 - T1;
+          std::cout << "total sent packets : " << sender.packetCount();
+          std::cout <<" Elapsed time per packets : " << elapsedTime.count() * 1e6 / 1000 << " microsecond" << std::endl;
+          T1 = std::chrono::high_resolution_clock::now();
+          //printf("total sent packets: %lu\t, time between packets : %f\n", sender.packetCount(),timeToWait/1e6);
           }
-        if ((sender.packetCount() % 500) == 0)
+        //boost::this_thread::sleep(boost::posix_time::microseconds(553));
+        if ((sender.packetCount() % NumberPacketsByPool) == 0)
           {
-          printf("total sent packets: %lu\t, time between packets : %f\n", sender.packetCount(),timeToWait/1e6);
+            std::this_thread::sleep_for(std::chrono::microseconds(NumberPacketsByPool * timeToWait));
           }
-        boost::this_thread::sleep(boost::posix_time::microseconds(timeToWait));
         }
       } while(loop);
     }
