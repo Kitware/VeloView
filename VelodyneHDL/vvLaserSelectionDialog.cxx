@@ -40,6 +40,7 @@ public:
 public:
 
   QTableWidget* Table;
+  int numVisibleRows;
 };
 
 //-----------------------------------------------------------------------------
@@ -100,6 +101,8 @@ void vvLaserSelectionDialog::pqInternal::setup()
   hcheckbox->setFlags(Qt::ItemIsSelectable | Qt::ItemIsUserCheckable | Qt::ItemIsEnabled);
 
   table->setHorizontalHeaderItem(0, hcheckbox);
+
+  numVisibleRows = 64;
 
   for(size_t i = 0; i < 64; ++i)
     {
@@ -304,16 +307,28 @@ void vvLaserSelectionDialog::setLasersCorrections(const QVector<double>& vertica
 
     }
 
-  if(nchannels > this->Internal->Table->rowCount())
+  // Display the number of rows according to the number of channels
+  if (nchannels != this->Internal->numVisibleRows)
     {
-    nchannels = this->Internal->Table->rowCount();
-    }
+    this->Internal->numVisibleRows = nchannels;
 
-  for(int i = nchannels; i < this->Internal->Table->rowCount(); ++i)
-    {
-    this->Internal->Table->hideRow(i);
-    }
+    // Sort the table by channel. It's important for hiding the right rows later
+    this->Internal->Table->sortItems(1);
 
+    for(int i = 0; i < this->Internal->Table->rowCount(); ++i)
+      {
+        // Display the number of rows according to the number of channels
+        if (i < this->Internal->numVisibleRows)
+          {
+          this->Internal->Table->showRow(i);
+          }
+        // Hide the remaining rows
+        else
+          {
+          this->Internal->Table->hideRow(i);
+          }
+      }
+    }
   // Sort the table by vertical correction
   this->Internal->Table->sortItems(2);
   this->Internal->Table->resizeColumnsToContents();
