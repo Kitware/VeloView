@@ -574,6 +574,11 @@ def openPCAP(filename, positionFilename=None):
     smp.SetActiveSource(reader)
     updatePosition()
     resetCamera()
+    
+    #Remove the Rotation per minute from color label comboBox
+    ComboBox = getMainWindow().findChild('vvColorToolbar').findChild('pqDisplayColorWidget').findChildren('QComboBox')[0]
+    n = ComboBox.findText('RotationPerMinute')
+    ComboBox.removeItem(n)
 
 
 
