@@ -1500,6 +1500,8 @@ def onChooseCalibrationFile():
         sensor.CalibrationFile = calibrationFile
         # no need to render now, calibration file will be used on the next frame
 
+    restoreLaserSelectionDialog()
+
 
 def onCropReturns(show = True):
     dialog = vvCropReturnsDialog(getMainWindow())
