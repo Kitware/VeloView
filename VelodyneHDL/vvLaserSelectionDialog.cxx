@@ -40,6 +40,9 @@ public:
 public:
 
   QTableWidget* Table;
+
+  // The actual number of rows to be displayed.
+  // This number is equal to the number of channels.
   int numVisibleRows;
 };
 
@@ -168,8 +171,9 @@ void vvLaserSelectionDialog::onItemChanged(QTableWidgetItem* item)
   // Set enable/disable all based on all checked
   bool allChecked = true;
   bool noneChecked = true;
-  //
-  for(int i = 0; i < this->Internal->Table->rowCount(); ++i)
+  // Iterate over visible rows to choose in whch state the enable/disable
+  // all checkbox should pass
+  for(int i = 0; i < this->Internal->numVisibleRows; ++i)
     {
     QTableWidgetItem* item = this->Internal->Table->item(i, 0);
     allChecked = allChecked && item->checkState() == Qt::Checked;
@@ -201,7 +205,7 @@ void vvLaserSelectionDialog::onEnableDisableAll(int state)
   if(state != Qt::PartiallyChecked)
     {
     // enable all
-    for(int i = 0; i < this->Internal->Table->rowCount(); ++i)
+    for(int i = 0; i < this->Internal->numVisibleRows; ++i)
       {
       QTableWidgetItem* item = this->Internal->Table->item(i, 0);
       item->setCheckState(Qt::CheckState(state));
@@ -245,7 +249,7 @@ QVector<int> vvLaserSelectionDialog::getLaserSelectionSelector()
     int channel = value->data(Qt::EditRole).toInt();
     assert(channel < 64 && channel >= 0);
     QTableWidgetItem* item = this->Internal->Table->item(i, 0);
-    result[channel] = (item->checkState() == Qt::Checked);
+    result[channel] = (item->checkState() == Qt::Checked) && !this->Internal->Table->isRowHidden(i);
     }
   return result;
 }
@@ -344,7 +348,7 @@ void vvLaserSelectionDialog::setLaserSelectionSelector(const QVector<int>& mask)
     QTableWidgetItem* value = this->Internal->Table->item(i, 1);
     int channel = value->data(Qt::EditRole).toInt();
     assert(channel < 64 && channel >= 0);
-    item->setCheckState(mask[channel] ? Qt::Checked : Qt::Unchecked);
+    item->setCheckState(mask[channel] && !this->Internal->Table->isRowHidden(i) ? Qt::Checked : Qt::Unchecked);
     }
 }
 
