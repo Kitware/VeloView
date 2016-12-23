@@ -54,6 +54,9 @@ public slots:
   void onToggleSelected();
   void onEnableDisableAll(int);
 
+protected slots:
+  void saveSortIndicator();
+
 public slots:
   virtual void accept();
   void onDisplayMoreCorrectionsChanged();
