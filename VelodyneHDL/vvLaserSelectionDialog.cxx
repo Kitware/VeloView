@@ -44,6 +44,12 @@ public:
   // The actual number of rows to be displayed.
   // This number is equal to the number of channels.
   int numVisibleRows;
+
+  // Store the current sorting column id and order. This way, we're
+  // able to restore it when the calibration file or the opened file changes
+  // or when the application is restarted.
+  int sortingColumnId;
+  Qt::SortOrder sortingColumnOrder;
 };
 
 //-----------------------------------------------------------------------------
@@ -59,6 +65,10 @@ void vvLaserSelectionDialog::pqInternal::saveSettings()
     this->Settings->setValue(QString("VelodyneHDLPlugin/LaserSelectionDialog%1").arg(channel),
                              checked);
     }
+  this->Settings->setValue(QString("VelodyneHDLPlugin/LaserSelectionDialogSortingColumnId"),
+                             this->sortingColumnId);
+  this->Settings->setValue(QString("VelodyneHDLPlugin/LaserSelectionDialogSortingColumnOrder"),
+                             this->sortingColumnOrder);
 }
 
 //-----------------------------------------------------------------------------
@@ -81,6 +91,16 @@ void vvLaserSelectionDialog::pqInternal::restoreSettings()
 
     QTableWidgetItem* item = this->Table->item(index, 0);
     item->setCheckState(checked ? Qt::Checked : Qt::Unchecked);
+    }
+
+  int sortingColumnId = this->Settings->value(QString("VelodyneHDLPlugin/LaserSelectionDialogSortingColumnId")).toInt();
+  Qt::SortOrder sortingColumnOrder = Qt::SortOrder(this->Settings->
+                                       value(QString("VelodyneHDLPlugin/LaserSelectionDialogSortingColumnOrder")).toInt());
+
+  if (sortingColumnId > 0)
+    {
+    this->sortingColumnId = sortingColumnId;
+    this->sortingColumnOrder = sortingColumnOrder;
     }
 }
 
@@ -148,6 +168,10 @@ void vvLaserSelectionDialog::pqInternal::setup()
     }
   this->Table->horizontalHeader()->setStretchLastSection(false);
   this->Table->resizeColumnsToContents();
+
+  // Default sort order set to vertical correction
+  this->sortingColumnId = 2;
+  this->sortingColumnOrder = Qt::AscendingOrder;
 }
 
 //-----------------------------------------------------------------------------
@@ -235,6 +259,12 @@ vvLaserSelectionDialog::vvLaserSelectionDialog(QWidget *p) : QDialog(p)
 
     QObject::connect(this->Internal->DisplayMoreCorrections, SIGNAL(toggled(bool)),
                    this, SLOT(onDisplayMoreCorrectionsChanged()));
+
+  QObject::connect(this, SIGNAL(accepted()),
+    this, SLOT(saveSortIndicator()));
+
+  QObject::connect(this, SIGNAL(rejected()),
+    this, SLOT(saveSortIndicator()));
 
   this->Internal->Table->setSortingEnabled(true);
 }
@@ -333,8 +363,8 @@ void vvLaserSelectionDialog::setLasersCorrections(const QVector<double>& vertica
           }
       }
     }
-  // Sort the table by vertical correction
-  this->Internal->Table->sortItems(2);
+  // Sort the table by prefered sort order, or by vertical correction by default
+  this->Internal->Table->sortItems(this->Internal->sortingColumnId, this->Internal->sortingColumnOrder);
   this->Internal->Table->resizeColumnsToContents();
 
 }
@@ -388,4 +418,12 @@ bool vvLaserSelectionDialog::isDisplayMoreSelectionsChecked()
 void vvLaserSelectionDialog::setDisplayMoreSelectionsChecked(bool state)
 {
   this->Internal->DisplayMoreCorrections->setChecked(state);
+}
+
+//-----------------------------------------------------------------------------
+void vvLaserSelectionDialog::saveSortIndicator()
+{
+  this->Internal->sortingColumnId = this->Internal->Table->horizontalHeader()->sortIndicatorSection();
+  this->Internal->sortingColumnOrder = this->Internal->Table->horizontalHeader()->sortIndicatorOrder();
+  this->Internal->saveSettings();
 }
