@@ -47,7 +47,7 @@ vtkStandardNewMacro(vtkVelodyneHDLGridSource);
 //-----------------------------------------------------------------------------
 vtkVelodyneHDLGridSource::vtkVelodyneHDLGridSource()
 {
-  this->GridSize = 10;
+  this->GridNbTicks = 10;
   this->Scale = 10.0;
   this->LineWidth = 1;
 
@@ -73,16 +73,16 @@ vtkVelodyneHDLGridSource::~vtkVelodyneHDLGridSource()
 }
 
 //-----------------------------------------------------------------------------
-vtkSmartPointer<vtkPolyData> vtkVelodyneHDLGridSource::CreateGrid(int gridSize, double scale, double origin[3], double normal[3])
+vtkSmartPointer<vtkPolyData> vtkVelodyneHDLGridSource::CreateGrid(int gridNbTicks, double scale, double origin[3], double normal[3])
 {
   vtkNew<vtkPlaneSource> plane;
   vtkNew<vtkExtractEdges> edges;
   vtkNew<vtkAppendPolyData> append;
 
-  plane->SetOrigin(-gridSize*scale, -gridSize*scale, 0.0);
-  plane->SetPoint1(gridSize*scale, -gridSize*scale, 0.0);
-  plane->SetPoint2(-gridSize*scale, gridSize*scale, 0.0);
-  plane->SetResolution(gridSize*2, gridSize*2);
+  plane->SetOrigin(-gridNbTicks*scale, -gridNbTicks*scale, 0.0);
+  plane->SetPoint1(gridNbTicks*scale, -gridNbTicks*scale, 0.0);
+  plane->SetPoint2(-gridNbTicks*scale, gridNbTicks*scale, 0.0);
+  plane->SetResolution(gridNbTicks*2, gridNbTicks*2);
   plane->SetCenter(origin);
   plane->SetNormal(normal);
 
@@ -92,7 +92,7 @@ vtkSmartPointer<vtkPolyData> vtkVelodyneHDLGridSource::CreateGrid(int gridSize, 
   double arcStartVector[3];
   vtkMath::Perpendiculars (normal, arcStartVector, NULL, 0);
 
-  for (int i = 1; i <= gridSize; ++i)
+  for (int i = 1; i <= gridNbTicks; ++i)
     {
     double startPoint[3] = {arcStartVector[0]*i*scale, arcStartVector[1]*i*scale, arcStartVector[2]*i*scale};
     vtkNew<vtkArcSource> arc;
@@ -119,14 +119,14 @@ int vtkVelodyneHDLGridSource::RequestData(vtkInformation *request,
   vtkPolyData *output = vtkPolyData::GetData(outputVector);
   vtkInformation *info = outputVector->GetInformationObject(0);
 
-  if (this->GridSize < 1)
+  if (this->GridNbTicks < 1)
     {
 
-    vtkErrorMacro("Specified grid size " << this->GridSize << " is out of range.  Must be >= 1.");
+    vtkErrorMacro("Specified grid size " << this->GridNbTicks << " is out of range.  Must be >= 1.");
     return 0;
     }
 
-  output->ShallowCopy(this->CreateGrid(this->GridSize, this->Scale, this->Origin, this->Normal));
+  output->ShallowCopy(this->CreateGrid(this->GridNbTicks, this->Scale, this->Origin, this->Normal));
   return 1;
 }
 
@@ -134,5 +134,5 @@ int vtkVelodyneHDLGridSource::RequestData(vtkInformation *request,
 void vtkVelodyneHDLGridSource::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
-  os << indent << "GridSize: " << this->GridSize << endl;
+  os << indent << "GridSize: " << this->GridNbTicks << endl;
 }

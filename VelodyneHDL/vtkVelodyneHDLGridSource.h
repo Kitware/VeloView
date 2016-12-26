@@ -42,8 +42,8 @@ public:
   vtkTypeMacro(vtkVelodyneHDLGridSource, vtkPolyDataAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent);
 
-  vtkSetMacro(GridSize, int);
-  vtkGetMacro(GridSize, int);
+  vtkSetMacro(GridNbTicks, int);
+  vtkGetMacro(GridNbTicks, int);
 
   vtkSetMacro(Scale, double);
   vtkGetMacro(Scale, double);
@@ -60,7 +60,7 @@ public:
   vtkSetVector3Macro(Color, double);
   vtkGetVector3Macro(Color, double);
 
-  static vtkSmartPointer<vtkPolyData> CreateGrid(int gridSize, double scale, double origin[3], double normal[3]);
+  static vtkSmartPointer<vtkPolyData> CreateGrid(int gridNbTicks, double scale, double origin[3], double normal[3]);
 
 protected:
   vtkVelodyneHDLGridSource();
@@ -70,7 +70,8 @@ protected:
                   vtkInformationVector **,
                   vtkInformationVector *);
 
-  int GridSize;
+  //width of the grid in number of square
+  int GridNbTicks;
   double Scale;
   int LineWidth;
   double Origin[3];
