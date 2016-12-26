@@ -18,6 +18,60 @@
 #include <boost/thread/thread.hpp>
 #include <boost/asio.hpp>
 
+const int HDL_NUM_ROT_ANGLES = 36001;
+const int HDL_LASER_PER_FIRING = 32;
+const int HDL_MAX_NUM_LASERS = 64;
+const int HDL_FIRING_PER_PKT = 12;
+
+enum HDLBlock
+{
+  BLOCK_0_TO_31 = 0xeeff,
+  BLOCK_32_TO_63 = 0xddff
+};
+
+#pragma pack(push, 1)
+typedef struct HDLLaserReturn
+{
+  unsigned short distance;
+  unsigned char intensity;
+} HDLLaserReturn;
+
+struct HDLFiringData
+{
+  unsigned short blockIdentifier;
+  unsigned short rotationalPosition;
+  HDLLaserReturn laserReturns[HDL_LASER_PER_FIRING];
+};
+
+struct HDLDataPacket
+{
+  HDLFiringData firingData[HDL_FIRING_PER_PKT];
+  unsigned int gpsTimestamp;
+  unsigned char blank1;
+  unsigned char blank2;
+};
+
+struct HDLLaserCorrection
+{
+  double azimuthCorrection;
+  double verticalCorrection;
+  double distanceCorrection;
+  double verticalOffsetCorrection;
+  double horizontalOffsetCorrection;
+  double sinVertCorrection;
+  double cosVertCorrection;
+  double sinVertOffsetCorrection;
+  double cosVertOffsetCorrection;
+};
+
+struct HDLRGB
+{
+  uint8_t r;
+  uint8_t g;
+  uint8_t b;
+};
+#pragma pack(pop)
+
 
 //-----------------------------------------------------------------------------
 class vvPacketSender::vvInternal
@@ -31,6 +85,7 @@ public:
     PacketReader(0),
     Done(false),
     PacketCount(0),
+    lastTimestamp(0),
     LIDAREndpoint(boost::asio::ip::address_v4::from_string(destinationIp), lidarPort),
     PositionEndpoint(boost::asio::ip::address_v4::from_string(destinationIp), positionPort)
   {
@@ -41,6 +96,7 @@ public:
 
   vtkPacketFileReader* PacketReader;
   bool Done;
+  unsigned int lastTimestamp;
   size_t PacketCount;
   boost::asio::ip::udp::endpoint LIDAREndpoint;
   boost::asio::ip::udp::endpoint PositionEndpoint;
@@ -66,20 +122,18 @@ vvPacketSender::vvPacketSender(std::string pcapfile,
 
   this->Internal->PositionSocket = new boost::asio::ip::udp::socket(this->Internal->IOService);
   this->Internal->PositionSocket->open(this->Internal->PositionEndpoint.protocol());
-
 }
 
 //-----------------------------------------------------------------------------
 vvPacketSender::~vvPacketSender()
 {
-
   delete this->Internal->LIDARSocket;
   delete this->Internal->PositionSocket;
   delete this->Internal;
 }
 
 //-----------------------------------------------------------------------------
-double vvPacketSender::pumpPacket()
+int vvPacketSender::pumpPacket()
 {
   if(this->Internal->Done)
     {
@@ -89,6 +143,7 @@ double vvPacketSender::pumpPacket()
   const unsigned char* data = 0;
   unsigned int dataLength = 0;
   double timeSinceStart = 0;
+  int timeDiff = 0;
   if (!this->Internal->PacketReader->NextPacket(data, dataLength, timeSinceStart))
     {
     this->Internal->Done = true;
@@ -98,6 +153,9 @@ double vvPacketSender::pumpPacket()
   // Recurse until we get to the right kind of packet
   if (dataLength == 1206)
     {
+    const HDLDataPacket* dataPacket = reinterpret_cast<const HDLDataPacket *>(data);
+    timeDiff = static_cast<int>(dataPacket->gpsTimestamp) - static_cast<int>(this->Internal->lastTimestamp);
+    this->Internal->lastTimestamp = dataPacket->gpsTimestamp;
     ++this->Internal->PacketCount;
     size_t bytesSent = this->Internal->LIDARSocket->send_to(boost::asio::buffer(data, dataLength),
                                                             this->Internal->LIDAREndpoint);
@@ -109,7 +167,7 @@ double vvPacketSender::pumpPacket()
                                                                this->Internal->PositionEndpoint);
     }
 
-  return timeSinceStart;
+  return timeDiff;
 }
 
 //-----------------------------------------------------------------------------
