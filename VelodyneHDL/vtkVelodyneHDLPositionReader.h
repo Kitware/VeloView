@@ -49,6 +49,7 @@ public:
   //
   const std::string& GetFileName();
   void SetFileName(const std::string& filename);
+  void SetShouldWarnOnWeirdGPSData(bool ShouldWarnOnWeirdGPSData_);
 
   //Description:
   //
@@ -78,7 +79,7 @@ protected:
   vtkInternal* Internal;
 
 private:
-
+  bool ShouldWarnOnWeirdGPSData;
   vtkVelodyneHDLPositionReader(const vtkVelodyneHDLPositionReader&);
   void operator = (const vtkVelodyneHDLPositionReader&);
 

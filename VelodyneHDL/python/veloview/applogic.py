@@ -513,6 +513,7 @@ def openPCAP(filename, positionFilename=None):
         posreader.BaseRoll = calibration.gpsRoll
         posreader.BasePitch = calibration.gpsPitch
 
+    posreader.GetClientSideObject().SetShouldWarnOnWeirdGPSData(app.geolocationToolBar.visible)
     smp.Show(posreader)
 
     # Create a sphere glyph
@@ -584,6 +585,11 @@ def openPCAP(filename, positionFilename=None):
     smp.SetActiveSource(reader)
     updatePosition()
     resetCamera()
+    
+    #Remove the Rotation per minute from color label comboBox
+    ComboBox = getMainWindow().findChild('vvColorToolbar').findChild('pqDisplayColorWidget').findChildren('QComboBox')[0]
+    n = ComboBox.findText('RotationPerMinute')
+    ComboBox.removeItem(n)
 
 
 
@@ -2244,6 +2250,7 @@ def setupActions():
 
     # Set default toolbar visibility
     geolocationToolBar.visible = False
+    app.geolocationToolBar = geolocationToolBar
     
     # Setup and add the playback speed control toolbar
     timeToolBar = mW.findChild('QToolBar','playbackToolbar')

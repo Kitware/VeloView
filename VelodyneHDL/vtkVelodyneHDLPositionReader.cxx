@@ -198,6 +198,12 @@ std::vector<std::string> vtkVelodyneHDLPositionReader::vtkInternal::ParseSentanc
 }
 
 //-----------------------------------------------------------------------------
+void vtkVelodyneHDLPositionReader::SetShouldWarnOnWeirdGPSData(bool ShouldWarnOnWeirdGPSData_)
+{
+  this->ShouldWarnOnWeirdGPSData = ShouldWarnOnWeirdGPSData_;
+}
+
+//-----------------------------------------------------------------------------
 vtkVelodyneTransformInterpolator*
 vtkVelodyneHDLPositionReader::GetInterpolator()
 {
@@ -512,7 +518,7 @@ int vtkVelodyneHDLPositionReader::RequestData(vtkInformation *request,
 
       projUV xy;
       xy = pj_fwd( lp, pj_utm);
-      if(pj_utm->ctx->last_errno !=0)
+      if(pj_utm->ctx->last_errno !=0 && this->ShouldWarnOnWeirdGPSData)
         {
         vtkGenericWarningMacro(
         "Error : WGS84 projection failed, this will create a GPS error. Please check the latitude and longitude inputs");
