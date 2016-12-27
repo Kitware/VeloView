@@ -110,7 +110,10 @@
     </property>
     <action name="actionResetConfigurationFile">
      <property name="text">
-      <string>Reset configuration file</string>
+      <string>Reset Veloview settings</string>
+     </property>
+     <property name="iconText">
+      <string>This will reset all veloview settings by default</string>
      </property>
     </action>
     <addaction name="actionAbout_VeloView"/>

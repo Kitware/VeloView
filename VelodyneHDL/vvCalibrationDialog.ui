@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>462</width>
-    <height>457</height>
+    <height>463</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -217,8 +217,11 @@
       </item>
       <item row="2" column="2">
        <widget class="QPushButton" name="ClearSettingsPushButton">
+        <property name="toolTip">
+         <string>Reset the advanced configuration by default</string>
+        </property>
         <property name="text">
-         <string>Clear advanced settings</string>
+         <string>Reset advanced configuration</string>
         </property>
        </widget>
       </item>
