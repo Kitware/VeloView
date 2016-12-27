@@ -508,6 +508,7 @@ def openPCAP(filename, positionFilename=None):
         posreader.BaseRoll = calibration.gpsRoll
         posreader.BasePitch = calibration.gpsPitch
 
+    posreader.GetClientSideObject().SetShouldWarnOnWeirdGPSData(app.geolocationToolBar.visible)
     smp.Show(posreader)
 
     # Create a sphere glyph
@@ -2235,6 +2236,7 @@ def setupActions():
 
     # Set default toolbar visibility
     geolocationToolBar.visible = False
+    app.geolocationToolBar = geolocationToolBar
     
     # Setup and add the playback speed control toolbar
     timeToolBar = mW.findChild('QToolBar','playbackToolbar')
