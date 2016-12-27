@@ -217,6 +217,10 @@ public:
     return newData;
   }
 
+  double GetDistanceResolutionM()
+  {
+    return this->HDLReader->GetDistanceResolutionM();
+  }
 
   void ThreadLoop()
   {
@@ -1019,6 +1023,12 @@ void vtkVelodyneHDLSource::Poll()
     {
     this->Modified();
     }
+}
+
+//----------------------------------------------------------------------------
+double vtkVelodyneHDLSource::GetDistanceResolutionM()
+{
+  return this->Internal->Consumer->GetDistanceResolutionM();
 }
 
 //----------------------------------------------------------------------------

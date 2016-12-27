@@ -84,6 +84,7 @@ public:
   void SetLaserSelection(int LaserSelection[64]);
   void GetLaserSelection(int LaserSelection[64]);
 
+  double GetDistanceResolutionM();
 
   void SetCropReturns(int);
   void SetCropInside(int);

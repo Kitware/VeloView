@@ -39,7 +39,7 @@ def showDialog(mainWindow, grid):
     w('SensorOriginZ').setValue(-grid.Origin[2])
 
     w('GridResolution').setValue(grid.Scale)
-    w('GridWidth').setValue(grid.Scale*grid.GridSize)
+    w('GridWidth').setValue(grid.Scale*grid.GridNbTicks)
     w('GridLineWidth').setValue(grid.LineWidth)
 
     r = grid.Color[0] * 255
@@ -68,7 +68,7 @@ def showDialog(mainWindow, grid):
     grid.Normal = [w('SensorUpX').value, w('SensorUpY').value, w('SensorUpZ').value]
     grid.Origin = [-w('SensorOriginX').value, -w('SensorOriginY').value, -w('SensorOriginZ').value]
     grid.Scale = w('GridResolution').value
-    grid.GridSize = int(math.ceil(w('GridWidth').value / w('GridResolution').value))
+    grid.GridNbTicks = int(math.ceil(w('GridWidth').value / w('GridResolution').value))
     grid.LineWidth = w('GridLineWidth').value
     color = w('GridColorPicker').palette.color(QtGui.QPalette.Background)
     grid.Color = [color.redF(), color.greenF(), color.blueF()]

@@ -10,8 +10,8 @@
 
 
       <IntVectorProperty
-        name="GridSize"
-        command="SetGridSize"
+        name="GridNbTicks"
+        command="SetGridNbTicks"
         number_of_elements="1"
         default_values="10">
       </IntVectorProperty>

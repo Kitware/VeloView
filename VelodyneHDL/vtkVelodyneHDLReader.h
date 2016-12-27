@@ -96,6 +96,8 @@ public:
 
   double GetCurrentRpm();
 
+  double GetDistanceResolutionM();
+
   void GetLaserCorrections(
       double verticalCorrection[64],
       double rotationalCorrection[64],
