@@ -313,6 +313,8 @@ public:
   vtkInternal()
   {
     this->CropMode = Cartesian;
+    this->HasDualReturn = false;
+    this->ShouldAddDualReturnArray = false;
     this->SensorPowerMode = 0;
     this->Skip = 0;
     this->LastAzimuth = -1;
@@ -376,6 +378,8 @@ public:
   vtkSmartPointer<vtkIntArray> DistanceFlag;
   vtkSmartPointer<vtkUnsignedIntArray> Flags;
   vtkSmartPointer<vtkIdTypeArray> DualReturnMatching;
+  vtkSmartPointer<vtkDoubleArray> SelectedDualReturn;
+  bool ShouldAddDualReturnArray;
 
   bool IsDualReturnSensorMode;
   SensorType ReportedSensor;
@@ -441,6 +445,7 @@ public:
   void PrecomputeCorrectionCosSin();
   void LoadCorrectionsFile(const std::string& filename);
   bool HDL64LoadCorrectionsFromStreamData();
+  bool HasDualReturn;
 
   void ProcessHDLPacket(unsigned char *data, std::size_t bytesReceived);
 
@@ -783,6 +788,7 @@ void vtkVelodyneHDLReader::UnloadData()
   this->Internal->IsHDL64Data = false;
   this->Internal->Datasets.clear();
   this->Internal->CurrentDataset = this->Internal->CreateData(0);
+  this->Internal->HasDualReturn = false;
 
   this->ShouldCheckSensor = true;
 }
@@ -877,6 +883,10 @@ int vtkVelodyneHDLReader::RequestData(vtkInformation *request,
   else
     {
     output->ShallowCopy(this->GetFrame(timestep));
+    if(this->Internal->ShouldAddDualReturnArray)
+      {
+      output->GetPointData()->AddArray(this->Internal->SelectedDualReturn);
+      }
     }
 
   this->Close();
@@ -913,6 +923,12 @@ int vtkVelodyneHDLReader::CanReadFile(const char *fname)
 {
   return 1;
 }
+
+//-----------------------------------------------------------------------------
+ void vtkVelodyneHDLReader::SetShouldAddDualReturnArray(bool input)
+ {
+   this->Internal->ShouldAddDualReturnArray = input;
+ }
 
 //-----------------------------------------------------------------------------
 void vtkVelodyneHDLReader::ProcessHDLPacket(unsigned char *data, unsigned int bytesReceived)
@@ -1796,6 +1812,8 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessFiring(HDLFiringData* firingData,
     (((this->LastAzimuth == firingData->rotationalPosition) && (firingBlock == 2))
       || this->IsDualReturnSensorMode && (firingBlock % 4 >=2));
 
+  this->HasDualReturn = this->HasDualReturn || isThisFiringDualReturnData;
+
   if (isThisFiringDualReturnData  && !this->IsDualReturnSensorMode)
     {
     this->IsDualReturnSensorMode = true;
@@ -2104,6 +2122,25 @@ void vtkVelodyneHDLReader::updateReportedSensor(const unsigned char* data)
     {
     this->Internal->ReportedSensor = static_cast<SensorType>(dataPacket->factoryField2);
     }
+}
+
+//-----------------------------------------------------------------------------
+void vtkVelodyneHDLReader::SetSelectedPointsWithDualReturn(double *data, int Npoints)
+{
+  this->Internal->SelectedDualReturn = vtkSmartPointer<vtkDoubleArray>::New();
+  this->Internal->SelectedDualReturn->Allocate(60000);
+  this->Internal->SelectedDualReturn->SetName("dualReturn_of_selectedPoints");
+
+  for(unsigned int k=0; k < Npoints ;++k)
+    {
+    this->Internal->SelectedDualReturn->InsertNextValue(data[k]);
+    }
+}
+
+//-----------------------------------------------------------------------------
+bool vtkVelodyneHDLReader::GetHasDualReturn()
+{
+  return this->Internal->HasDualReturn;
 }
 
 //-----------------------------------------------------------------------------

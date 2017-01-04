@@ -161,6 +161,13 @@ public:
   bool isReportedSensorAndCalibrationFileConsistent(bool shouldWarn);
   void updateReportedSensor(const unsigned char* data);
 
+  bool GetHasDualReturn();
+
+  // This function permits to know which are the points selected
+  // with a corresponding dual return
+  void SetSelectedPointsWithDualReturn(double *data, int Npoints);
+  void SetShouldAddDualReturnArray(bool input);
+
 protected:
   vtkVelodyneHDLReader();
   ~vtkVelodyneHDLReader();

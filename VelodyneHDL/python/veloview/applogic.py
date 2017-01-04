@@ -2048,7 +2048,62 @@ def toggleRPM():
 
     smp.Render()
 
+def toggleSelectDualReturn():
+    #Get the active source
+    source = smp.GetActiveSource()
     
+    #If no data are available
+    if not source :
+        return
+        
+    if not source.GetClientSideObject().GetHasDualReturn() :
+        return
+        
+    #Get the polyData which contains all points
+    allFrame = source.GetClientSideObject().GetOutput()
+    nPoints = allFrame.GetNumberOfPoints()
+    
+    #Get the selected Points
+    selectedPoints = source.GetSelectionOutput(0)
+    polyData = selectedPoints.GetClientSideObject().GetOutput()
+    idArray = polyData.GetPointData().GetArray('dual_return_matching')
+    nSelectedpoints = polyData.GetNumberOfPoints()
+    
+    #Select the dual return of each selected points which have a dual return
+    if nSelectedpoints >0 :
+        #create a temporary array to make a query selection
+        array = range(0,nPoints)
+        
+        #fill the temporary array
+        for i in range (nPoints):
+            array[i] = -1
+        
+        #Add the dualId in the temporary array
+        for i in range(nSelectedpoints):
+            dualId = idArray.GetValue(i)
+            if dualId >=0:
+                array[dualId] = 1
+        
+        #Add the temporary array to the source
+        source.GetClientSideObject().SetSelectedPointsWithDualReturn(array,nPoints)
+        source.GetClientSideObject().SetShouldAddDualReturnArray(True)
+        gotoNext()
+        gotoPrevious()
+        
+        query = 'dualReturn_of_selectedPoints>0'
+        smp.SelectPoints(query,source)
+        smp.Render()
+        #Tell the source the selection is made
+        #source.GetClientSideObject().SetShouldAddDualReturnArray(False)
+        #Remove the query
+        query = ''
+    #Select all the points which have a dual return if no points are selected
+    else :
+        query = 'dual_return_matching>-1'
+        smp.SelectPoints(query)
+        smp.Render()
+
+
 def toggleCrashAnalysis():
 
     app.EnableCrashAnalysis = app.actions['actionEnableCrashAnalysis'].isChecked()
@@ -2225,6 +2280,8 @@ def setupActions():
     app.actions['actionShowRPM'].connect('triggered()', toggleRPM)
     app.actions['actionEnableCrashAnalysis'].connect('triggered()',toggleCrashAnalysis)
     app.actions['actionCorrectIntensityValues'].connect('triggered()',intensitiesCorrectedChanged)
+    app.actions['actionSelectDualReturn'].connect('triggered()',toggleSelectDualReturn)
+    app.actions['actionSelectDualReturn2'].connect('triggered()',toggleSelectDualReturn)
     app.EnableCrashAnalysis = app.actions['actionEnableCrashAnalysis'].isChecked()
 
     # Setup and add the geolocation toolbar

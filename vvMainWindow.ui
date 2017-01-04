@@ -93,6 +93,7 @@
     <addaction name="actionCorrectIntensityValues"/>
     <addaction name="actionLaserSelection"/>
     <addaction name="menuDualReturnMode"/>
+    <addaction name="actionSelectDualReturn"/>
     <addaction name="actionChoose_Calibration_File"/>
     <addaction name="actionCropReturns"/>
     <addaction name="separator"/>
@@ -143,6 +144,7 @@
    <addaction name="actionCropReturns"/>
    <addaction name="separator"/>
    <addaction name="actionSelect_All_Points"/>
+   <addaction name="actionSelectDualReturn2"/>
    <addaction name="actionSpreadsheet"/>
    <addaction name="actionPython_Console"/>
   </widget>
@@ -862,6 +864,29 @@
    </property>
    <property name="text">
     <string>Apply HDL-64E Intensity Corrections</string>
+   </property>
+  </action>
+  <action name="actionSelectDualReturn">
+   <property name="text">
+    <string>Select dual returns</string>
+   </property>
+   <property name="toolTip">
+    <string>Select the dual returns of the current selection</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+D</string>
+   </property>
+  </action>
+  <action name="actionSelectDualReturn2">
+   <property name="icon">
+    <iconset resource="vvResources.qrc">
+     <normaloff>:/vvResources/Icons/pqSurfaceSelectionPoint24.png</normaloff>:/vvResources/Icons/pqSurfaceSelectionPoint24.png</iconset>
+   </property>
+   <property name="text">
+    <string>SelectDualReturn</string>
+   </property>
+   <property name="toolTip">
+    <string>Select the dual returns of the current selection</string>
    </property>
   </action>
  </widget>
