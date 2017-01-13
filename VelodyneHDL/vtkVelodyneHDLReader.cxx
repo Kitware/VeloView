@@ -98,6 +98,18 @@ enum DualReturnSensorMode
   LAST_RETURN  = 0x38,
   DUAL_RETURN  = 0x39,
 };
+enum PowerMode
+{
+  NO_INTERNAL_CORRECTION_0 = 0xa0,
+  NO_INTERNAL_CORRECTION_1 = 0xa1,
+  NO_INTERNAL_CORRECTION_2 = 0xa2,
+  NO_INTERNAL_CORRECTION_3 = 0xa3,
+  NO_INTERNAL_CORRECTION_4 = 0xa4,
+  NO_INTERNAL_CORRECTION_5 = 0xa5,
+  NO_INTERNAL_CORRECTION_6 = 0xa6,
+  NO_INTERNAL_CORRECTION_7 = 0xa7,
+  CorrectionOn = 0xa8,
+};
 
 #pragma pack(push, 1)
 typedef struct HDLLaserReturn
@@ -257,6 +269,7 @@ public:
 
   vtkInternal()
   {
+    this->SensorPowerMode = 0;
     this->Skip = 0;
     this->LastAzimuth = -1;
     this->LastTimestamp = std::numeric_limits<unsigned int>::max();
@@ -284,7 +297,7 @@ public:
     this->IsHDL64Data = false;
     this->skipFirstFrame = true;
     this->distanceResolutionM = 0.002;
-    this->areIntensitiesCorrected = false;
+    this->WantIntensityCorrection = false;
 
     this->rollingCalibrationData = new vtkRollingDataAccumulator();
     this->Init();
@@ -325,7 +338,9 @@ public:
   DualReturnSensorMode ReportedSensorReturnMode;
   bool IsHDL64Data;
   bool skipFirstFrame;
-  bool areIntensitiesCorrected;
+
+  //Bolean to manage the correction of intensity which indicates if the user want to correct the intensities
+  bool WantIntensityCorrection;
 
   int LastAzimuth;
   unsigned int LastTimestamp;
@@ -341,6 +356,8 @@ public:
   std::vector<int> Skips;
   int Skip;
   vtkPacketFileReader* Reader;
+
+  unsigned char SensorPowerMode;
 
   // Number of allowed split, for frame-range retrieval.
   int SplitCounter;
@@ -1602,7 +1619,14 @@ void vtkVelodyneHDLReader::vtkInternal::ComputeCorrectedValues(
   pos[1] = xyDistance * cosAzimuth + correction->horizontalOffsetCorrection * sinAzimuth;
   pos[2] = distanceM * correction->sinVertCorrection + correction->verticalOffsetCorrection;
 
-  if(this->areIntensitiesCorrected && this->IsHDL64Data && (correction->minIntensity < correction->maxIntensity))
+  //If the intensities are already corrected from the sensor
+  //We do not apply the correction
+  if(this->SensorPowerMode == CorrectionOn)
+    {
+    return;
+    }
+
+  if( this->WantIntensityCorrection && this->IsHDL64Data && (correction->minIntensity < correction->maxIntensity) )
     {
     // Compute corrected intensity
 
@@ -2143,6 +2167,12 @@ bool vtkVelodyneHDLReader::vtkInternal::HDL64LoadCorrectionsFromStreamData()
     vvCorrection.maxIntensity = correctionStream->maxIntensity;
     }
 
+  //Get the last cycle of live correction file
+  const last4cyclesByte* lastCycle =
+      reinterpret_cast<const last4cyclesByte*>
+        (&data[idxDSRDataFromMarker + 64 * HDL_MAX_NUM_LASERS]);
+  this->SensorPowerMode = lastCycle->powerLevelStatus;
+
   this->CalibrationReportedNumLasers = 64;
   PrecomputeCorrectionCosSin();
   this->CorrectionsInitialized = true;
@@ -2164,24 +2194,30 @@ bool vtkVelodyneHDLReader::getIsHDL64Data()
 }
 
 //-----------------------------------------------------------------------------
+bool vtkVelodyneHDLReader::IsIntensityCorrectedBySensor()
+{
+  return this->Internal->SensorPowerMode == CorrectionOn;
+}
+
+//-----------------------------------------------------------------------------
 bool vtkVelodyneHDLReader::getCorrectionsInitialized()
 {
   return this->Internal->CorrectionsInitialized;
 }
 
 //-----------------------------------------------------------------------------
-const bool& vtkVelodyneHDLReader::GetAreIntensitiesCorrected()
+const bool& vtkVelodyneHDLReader::GetWantIntensityCorrection()
 {
-  return this->Internal->areIntensitiesCorrected;
+  return this->Internal->WantIntensityCorrection;
 }
 
 //-----------------------------------------------------------------------------
 void vtkVelodyneHDLReader::SetIntensitiesCorrected(const bool& state)
 {
 
-  if (state != this->Internal->areIntensitiesCorrected)
+  if (state != this->Internal->WantIntensityCorrection)
     {
-    this->Internal->areIntensitiesCorrected = state;
+    this->Internal->WantIntensityCorrection = state;
     this->Modified();
     }
 

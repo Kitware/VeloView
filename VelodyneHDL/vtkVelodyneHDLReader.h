@@ -69,7 +69,8 @@ public:
 
   //Description:
   //
-  const bool& GetAreIntensitiesCorrected();
+  bool IsIntensityCorrectedBySensor();
+  const bool& GetWantIntensityCorrection();
   void SetIntensitiesCorrected(const bool& state);
 
   //Description:

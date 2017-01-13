@@ -52,6 +52,11 @@ bool vtkRollingDataAccumulator::areRollingDataReady() const
 bool vtkRollingDataAccumulator::getGoodSequenceId(int & idRollingSequence) const
   {
     idRollingSequence = 0;
+
+    //Prevent seg fault when beginPosition is empty
+    if(beginPosition.size()<3)
+      return false;
+
     while (idRollingSequence<(beginPosition.size()-1) &&
            (  beginPosition[idRollingSequence]<byteBeforeMarker
            || ((beginPosition[idRollingSequence+1]-beginPosition[idRollingSequence])
