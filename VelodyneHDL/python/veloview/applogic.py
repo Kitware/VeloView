@@ -1542,6 +1542,7 @@ def onCropReturns(show = True):
         firstCorner = QtGui.QVector3D(sensor.CropRegion[0], sensor.CropRegion[2], sensor.CropRegion[4])
         secondCorner = QtGui.QVector3D(sensor.CropRegion[1], sensor.CropRegion[3], sensor.CropRegion[5])
 
+    #show the dialog box
     if show:
         dialog.croppingEnabled = cropEnabled
         dialog.cropInside = cropInside
@@ -1554,6 +1555,7 @@ def onCropReturns(show = True):
     if reader is not None:
         reader.CropReturns = dialog.croppingEnabled
         reader.CropInside = dialog.cropInside
+        reader.GetClientSideObject().SetCropMode(dialog.GetCropMode())
         p1 = dialog.firstCorner
         p2 = dialog.secondCorner
         reader.CropRegion = [p1.x(), p2.x(), p1.y(), p2.y(), p1.z(), p2.z()]
@@ -1568,7 +1570,6 @@ def onCropReturns(show = True):
         sensor.CropRegion = [p1.x(), p2.x(), p1.y(), p2.y(), p1.z(), p2.z()]
         if show:
             smp.Render()
-
 
 def resetCamera():
 

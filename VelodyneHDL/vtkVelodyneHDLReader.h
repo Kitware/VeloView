@@ -126,6 +126,7 @@ public:
   void SetCropInside(int);
   void SetCropRegion(double[6]);
   void SetCropRegion(double, double, double, double, double, double);
+  void SetCropMode(int cropMode);
 
   int GetNumberOfChannels();
 
