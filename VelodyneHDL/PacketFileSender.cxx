@@ -32,12 +32,10 @@
 #include "vtkPacketFileReader.h"
 #include "vvPacketSender.h"
 
-#include <chrono>
 #include <cstdlib>
 #include <ctime>
 #include <iostream>
 #include <string>
-#include <thread>
 
 #include <boost/thread/thread.hpp>
 
@@ -85,15 +83,15 @@ int main(int argc, char* argv[])
   // But we need to send packets every X microseconds
   // Thus, we send packet by group of NumberPacketsByPool
   // and then wait the necessary time
-  int NumberPacketsByPool = 20;
+  int NumberPacketsByPool = 40;
 
   // The minimalTimeToWait resolution so that
   // timeToWait * NumberPacketsByPool > 1000
   double minimalTimeToWait = 1000.0/NumberPacketsByPool;
 
   // Measurement of the sleep
-  std::chrono::time_point<std::chrono::system_clock> T1, T2;
-  std::chrono::duration<double> elapsedTimeMeasured;
+  clock_t T1, T2;
+  double elapsedTimeMeasured;
   double timeMicroSecond = 0;
   double elapsedTimeBetweenPackets = 0;
 
@@ -104,8 +102,7 @@ int main(int argc, char* argv[])
       {
       vvPacketSender sender(filename, destinationIp, dataPort, positionPort);
       // socket.connect(destinationEndpoint);
-      bool isFirstPacket = true;
-      double currentTimeStamp = 0;
+
       sender.pumpPacket();
       while (!sender.done())
         {
@@ -125,11 +122,11 @@ int main(int argc, char* argv[])
           // Elapsed time measured from the clock of the computer
           // This timestamp will be used to inform the user
           // This timestamp should be greater than elapsedTime2
-          T2 = std::chrono::high_resolution_clock::now();
+          T2 = std::clock();
           elapsedTimeMeasured = T2 - T1;
           std::cout << "total sent packets : " << sender.packetCount() << std::endl
                     <<" Elapsed time per packets asked    : " << timeToWaitPerPacket << " microseconds" << std::endl
-                    <<" Elapsed time per packets measured : " << elapsedTimeMeasured.count() * 1e6 / 1000
+                    <<" Elapsed time per packets measured : " << elapsedTimeMeasured * 1e6 / 1000
                     << " microseconds" << std::endl
                     << std::endl;
 
@@ -151,7 +148,7 @@ int main(int argc, char* argv[])
             }
 
           // Refresh the measured timestamps
-          T1 = std::chrono::high_resolution_clock::now();
+          T1 = std::clock();
           elapsedTimeBetweenPackets = 0;
           }
 
@@ -162,7 +159,7 @@ int main(int argc, char* argv[])
         // NumberPacketsByPool * timeToWait should be greater than 1000
         if ((sender.packetCount() % NumberPacketsByPool) == 0)
           {
-          std::this_thread::sleep_for(std::chrono::microseconds(NumberPacketsByPool * timeToWaitPerPacket));
+          sleep(NumberPacketsByPool * timeToWaitPerPacket);
           }
         }
       } while(loop);
