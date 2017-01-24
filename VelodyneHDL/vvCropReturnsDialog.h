@@ -43,8 +43,18 @@ public:
   void setFirstCorner(QVector3D);
   void setSecondCorner(QVector3D);
 
+  Q_INVOKABLE int GetCropMode() const;
+
 public slots:
   virtual void accept();
+  void onNoneToggled();
+  void onCartesianToggled();
+  void onSphericalToggled();
+  void onSliderBoxToggled();
+  void onSpinBoxChanged(double value);
+  void onXSliderChanged(double vmin, double vmax);
+  void onYSliderChanged(double vmin, double vmax);
+  void onZSliderChanged(double vmin, double vmax);
 
 private:
   class pqInternal;

@@ -63,6 +63,8 @@
 #include <boost/property_tree/xml_parser.hpp>
 #include <boost/filesystem.hpp>
 
+#include <Eigen/Dense>
+
 #ifdef _MSC_VER
 # include <boost/cstdint.hpp>
 typedef boost::uint8_t uint8_t;
@@ -84,6 +86,14 @@ enum HDLBlock
 {
   BLOCK_0_TO_31 = 0xeeff,
   BLOCK_32_TO_63 = 0xddff
+};
+
+enum CropModeEnum
+{
+  None = 0,
+  Cartesian = 1,
+  Spherical = 2,
+  Cylindric = 3,
 };
 
 enum SensorType
@@ -266,12 +276,43 @@ double HDL64EAdjustTimeStamp(int firingblock,
 }
 
 //-----------------------------------------------------------------------------
+void GetSphericalCoordinates(double p_in[3], double p_out[3])
+{
+  // We will compute R, theta and phi
+  double R, theta, phi, rho;
+  Eigen::Vector3f P(p_in[0],p_in[1],p_in[2]);
+  Eigen::Vector3f projP(p_in[0],p_in[1],0); // Projection on the (X,Y) plane
+  Eigen::Vector3f ez(0,0,1);
+  Eigen::Vector3f ex(1,0,0);
+  Eigen::Vector3f u_r = P.normalized(); // u_r vector in spherical coordinates
+  Eigen::Vector3f u_theta = projP.normalized(); // u_theta in polar/cylindric coordinates
+  R = P.norm();
+  rho = projP.norm();
+
+  // Phi is the angle between OP and ez :
+  double cosPhi = u_r.dot(ez);
+  double sinPhi = u_r.dot(u_theta);
+
+  phi = std::abs(std::atan2(sinPhi,cosPhi)) / vtkMath::Pi() * 180;
+
+  // Theta is the angle between u_theta and ex :
+  // Since u_theta is normalized cos(theta) = u_theta[0]
+  // and sin(theta) = u_theta[1]
+  theta = (std::atan2(u_theta[1],u_theta[0]) + vtkMath::Pi()) / vtkMath::Pi() * 180;
+
+  p_out[0] = theta;
+  p_out[1] = phi;
+  p_out[2] = R;
+}
+
+//-----------------------------------------------------------------------------
 class vtkVelodyneHDLReader::vtkInternal
 {
 public:
 
   vtkInternal()
   {
+    this->CropMode = Cartesian;
     this->SensorPowerMode = 0;
     this->Skip = 0;
     this->LastAzimuth = -1;
@@ -361,6 +402,7 @@ public:
   vtkPacketFileReader* Reader;
 
   unsigned char SensorPowerMode;
+  CropModeEnum CropMode;
 
   // Number of allowed split, for frame-range retrieval.
   int SplitCounter;
@@ -676,6 +718,11 @@ void vtkVelodyneHDLReader::SetCropRegion(double region[6])
 {
   std::copy(region, region + 6, this->Internal->CropRegion);
   this->Modified();
+}
+
+void vtkVelodyneHDLReader::SetCropMode(int cropMode)
+{
+  this->Internal->CropMode = static_cast<CropModeEnum>(cropMode);
 }
 
 //-----------------------------------------------------------------------------
@@ -1180,13 +1227,46 @@ void vtkVelodyneHDLReader::vtkInternal::PushFiringData(const unsigned char laser
   // Test if point is cropped
   if (this->CropReturns)
     {
-    bool pointOutsideOfBox = pos[0] >= this->CropRegion[0] && pos[0] <= this->CropRegion[1] &&
-      pos[1] >= this->CropRegion[2] && pos[1] <= this->CropRegion[3] &&
-      pos[2] >= this->CropRegion[4] && pos[2] <= this->CropRegion[5];
-    if ((pointOutsideOfBox && !this->CropInside) ||
-        (!pointOutsideOfBox && this->CropInside))
+    // Cartesian cropping mode
+    if(this->CropMode == Cartesian)
       {
-      return;
+      bool pointOutsideOfBox = pos[0] >= this->CropRegion[0] && pos[0] <= this->CropRegion[1] &&
+        pos[1] >= this->CropRegion[2] && pos[1] <= this->CropRegion[3] &&
+        pos[2] >= this->CropRegion[4] && pos[2] <= this->CropRegion[5];
+      if ((pointOutsideOfBox && !this->CropInside) ||
+          (!pointOutsideOfBox && this->CropInside))
+        {
+        return;
+        }
+      }
+    // Spherical mode
+    if(this->CropMode == Spherical)
+      {
+        double theta = static_cast<double>(azimuth) / 100;
+        double R = std::sqrt(pos[0]*pos[0] + pos[1]*pos[1] + pos[2]*pos[2]);
+
+        bool pointOutsideOfBox;
+
+        if(this->CropRegion[0] <= this->CropRegion[1])
+          {
+          pointOutsideOfBox = theta >= this->CropRegion[0] && theta <= this->CropRegion[1] &&
+          R >= this->CropRegion[4] && R <= this->CropRegion[5];
+          }
+        else
+          {
+          pointOutsideOfBox = (theta >= this->CropRegion[0] || theta <= this->CropRegion[1]) &&
+          R >= this->CropRegion[4] && R <= this->CropRegion[5];
+          }
+
+        if ((pointOutsideOfBox && !this->CropInside) ||
+            (!pointOutsideOfBox && this->CropInside))
+          {
+          return;
+          }
+      }
+    if(this->CropMode == Cylindric)
+      {
+        // space holder for future implementation
       }
     }
 
