@@ -126,7 +126,7 @@ int main(int argc, char* argv[])
           elapsedTimeMeasured = T2 - T1;
           std::cout << "total sent packets : " << sender.packetCount() << std::endl
                     <<" Elapsed time per packets asked    : " << timeToWaitPerPacket << " microseconds" << std::endl
-                    <<" Elapsed time per packets measured : " << elapsedTimeMeasured * 1e6 / 1000
+                    <<" Elapsed time per packets measured : " << elapsedTimeMeasured
                     << " microseconds" << std::endl
                     << std::endl;
 
@@ -159,7 +159,7 @@ int main(int argc, char* argv[])
         // NumberPacketsByPool * timeToWait should be greater than 1000
         if ((sender.packetCount() % NumberPacketsByPool) == 0)
           {
-          sleep(NumberPacketsByPool * timeToWaitPerPacket);
+          boost::this_thread::sleep(boost::posix_time::microseconds(NumberPacketsByPool * timeToWaitPerPacket));
           }
         }
       } while(loop);
