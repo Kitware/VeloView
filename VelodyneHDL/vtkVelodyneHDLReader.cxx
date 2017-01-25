@@ -1859,7 +1859,7 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessFiring(HDLFiringData* firingData,
     case 64:
       {
       timestampadjustment = -HDL64EAdjustTimeStamp(firingBlock, dsr, this->IsDualReturnSensorMode);
-      nextblockdsr0 = -HDL64EAdjustTimeStamp(firingBlock + this->IsDualReturnSensorMode?4:2, 0, this->IsDualReturnSensorMode);
+      nextblockdsr0 = -HDL64EAdjustTimeStamp(firingBlock + (this->IsDualReturnSensorMode?4:2), 0, this->IsDualReturnSensorMode);
       blockdsr0 = -HDL64EAdjustTimeStamp(firingBlock, 0, this->IsDualReturnSensorMode);
       break;
       }
@@ -1868,13 +1868,13 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessFiring(HDLFiringData* firingData,
       if (this->ReportedSensor == VLP32)
         {
         timestampadjustment = VLP32AdjustTimeStamp(firingBlock, dsr,this->IsDualReturnSensorMode);
-        nextblockdsr0 = VLP32AdjustTimeStamp(firingBlock + this->IsDualReturnSensorMode?2:1, 0, this->IsDualReturnSensorMode);
+        nextblockdsr0 = VLP32AdjustTimeStamp(firingBlock + (this->IsDualReturnSensorMode?2:1), 0, this->IsDualReturnSensorMode);
         blockdsr0 = VLP32AdjustTimeStamp(firingBlock, 0, this->IsDualReturnSensorMode);
         }
       else
         {
         timestampadjustment = HDL32AdjustTimeStamp(firingBlock, dsr,this->IsDualReturnSensorMode);
-        nextblockdsr0 = HDL32AdjustTimeStamp(firingBlock + this->IsDualReturnSensorMode?2:1, 0, this->IsDualReturnSensorMode);
+        nextblockdsr0 = HDL32AdjustTimeStamp(firingBlock + (this->IsDualReturnSensorMode?2:1), 0, this->IsDualReturnSensorMode);
         blockdsr0 = HDL32AdjustTimeStamp(firingBlock, 0, this->IsDualReturnSensorMode);
         }
       break;
@@ -1882,7 +1882,7 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessFiring(HDLFiringData* firingData,
     case 16:
       {
       timestampadjustment = VLP16AdjustTimeStamp(firingBlock, laserId, firingWithinBlock, this->IsDualReturnSensorMode);
-      nextblockdsr0 = VLP16AdjustTimeStamp(firingBlock + this->IsDualReturnSensorMode?2:1, 0, 0, this->IsDualReturnSensorMode);
+      nextblockdsr0 = VLP16AdjustTimeStamp(firingBlock + (this->IsDualReturnSensorMode?2:1), 0, 0, this->IsDualReturnSensorMode);
       blockdsr0 = VLP16AdjustTimeStamp(firingBlock, 0, 0, this->IsDualReturnSensorMode);
       break;
       }
