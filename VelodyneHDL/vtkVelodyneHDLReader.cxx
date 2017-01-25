@@ -261,14 +261,14 @@ double HDL64EAdjustTimeStamp(int firingblock,
   if (!isDualReturnMode)
     {
       const double TimeOffsetMicroSec[4] = {2.34, 3.54, 4.74, 6.0};
-      return (firingblockReversed/ 2 * 48.0)
+      return (std::floor(static_cast<double>(firingblockReversed)/ 2.0) * 48.0)
           + TimeOffsetMicroSec[(dsrReversed % 4)]
           + (dsrReversed / 4) * TimeOffsetMicroSec[3];
     }
   else
     {
       const double TimeOffsetMicroSec[4] = {3.5, 4.7, 5.9, 7.2};
-      return (firingblockReversed / 4 * 57.6)
+      return (std::floor(static_cast<double>(firingblockReversed)/ 4.0) * 57.6)
           + TimeOffsetMicroSec[(dsrReversed % 4)]
           + (dsrReversed / 4) * TimeOffsetMicroSec[3];
     }
