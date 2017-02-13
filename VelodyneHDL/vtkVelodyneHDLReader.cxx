@@ -72,22 +72,11 @@ typedef boost::uint8_t uint8_t;
 # include <stdint.h>
 #endif
 
+#include "vtkDataPacket.h"
+using namespace DataPacketFixedLength;
+
 namespace
 {
-
-#define HDL_Grabber_toRadians(x) ((x) * vtkMath::Pi() / 180.0)
-
-static const int HDL_NUM_ROT_ANGLES = 36001;
-static const int HDL_LASER_PER_FIRING = 32;
-static const int HDL_MAX_NUM_LASERS = 64;
-static const int HDL_FIRING_PER_PKT = 12;
-
-enum HDLBlock
-{
-  BLOCK_0_TO_31 = 0xeeff,
-  BLOCK_32_TO_63 = 0xddff
-};
-
 enum CropModeEnum
 {
   None = 0,
@@ -96,92 +85,6 @@ enum CropModeEnum
   Cylindric = 3,
 };
 
-enum SensorType
-{
-  HDL32E = 0x21,
-  VLP16  = 0x22,
-  VLP32  = 0x23,
-  //Work around : this is not defined by any specification
-  //But it is usefull to define
-  HDL64  = 0xa0,
-};
-enum DualReturnSensorMode
-{
-  STRONGEST_RETURN = 0x37,
-  LAST_RETURN  = 0x38,
-  DUAL_RETURN  = 0x39,
-};
-enum PowerMode
-{
-  NO_INTERNAL_CORRECTION_0 = 0xa0,
-  NO_INTERNAL_CORRECTION_1 = 0xa1,
-  NO_INTERNAL_CORRECTION_2 = 0xa2,
-  NO_INTERNAL_CORRECTION_3 = 0xa3,
-  NO_INTERNAL_CORRECTION_4 = 0xa4,
-  NO_INTERNAL_CORRECTION_5 = 0xa5,
-  NO_INTERNAL_CORRECTION_6 = 0xa6,
-  NO_INTERNAL_CORRECTION_7 = 0xa7,
-  CorrectionOn = 0xa8,
-};
-
-#pragma pack(push, 1)
-typedef struct HDLLaserReturn
-{
-  unsigned short distance;
-  unsigned char intensity;
-} HDLLaserReturn;
-
-struct HDLFiringData
-{
-  unsigned short blockIdentifier;
-  unsigned short rotationalPosition;
-  HDLLaserReturn laserReturns[HDL_LASER_PER_FIRING];
-};
-
-struct HDLDataPacket
-{
-  HDLFiringData firingData[HDL_FIRING_PER_PKT];
-  unsigned int gpsTimestamp;
-  unsigned char factoryField1;
-  unsigned char factoryField2;
-};
-
-struct HDLLaserCorrection  // Internal representation of per-laser correction
-{
-  // In degrees
-  double rotationalCorrection;
-  double verticalCorrection;
-  // In meters
-  double distanceCorrection;
-  double distanceCorrectionX;
-  double distanceCorrectionY;
-
-  double verticalOffsetCorrection;
-  double horizontalOffsetCorrection;
-
-  double focalDistance;
-  double focalSlope;
-  double closeSlope; // Used in HDL-64 only
-
-  short minIntensity;
-  short maxIntensity;
-
-  // precomputed values
-  double sinRotationalCorrection;
-  double cosRotationalCorrection;
-  double sinVertCorrection;
-  double cosVertCorrection;
-  double sinVertOffsetCorrection;
-  double cosVertOffsetCorrection;
-};
-
-struct HDLRGB
-{
-  uint8_t r;
-  uint8_t g;
-  uint8_t b;
-};
-#pragma pack(pop)
 
 //-----------------------------------------------------------------------------
 int MapFlags(unsigned int flags, unsigned int low, unsigned int high)
@@ -1253,15 +1156,15 @@ void vtkVelodyneHDLReader::vtkInternal::PushFiringData(const unsigned char laser
     // Cartesian cropping mode
     if(this->CropMode == Cartesian)
       {
-      bool pointOutsideOfBox = pos[0] >= this->CropRegion[0] && pos[0] <= this->CropRegion[1] &&
-        pos[1] >= this->CropRegion[2] && pos[1] <= this->CropRegion[3] &&
-        pos[2] >= this->CropRegion[4] && pos[2] <= this->CropRegion[5];
-      if ((pointOutsideOfBox && !this->CropInside) ||
-          (!pointOutsideOfBox && this->CropInside))
-        {
-        return;
-        }
+    bool pointOutsideOfBox = pos[0] >= this->CropRegion[0] && pos[0] <= this->CropRegion[1] &&
+      pos[1] >= this->CropRegion[2] && pos[1] <= this->CropRegion[3] &&
+      pos[2] >= this->CropRegion[4] && pos[2] <= this->CropRegion[5];
+    if ((pointOutsideOfBox && !this->CropInside) ||
+        (!pointOutsideOfBox && this->CropInside))
+      {
+      return;
       }
+    }
     // Spherical mode
     if(this->CropMode == Spherical)
       {

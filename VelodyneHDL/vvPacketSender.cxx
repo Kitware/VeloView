@@ -14,64 +14,12 @@
 
 #include "vvPacketSender.h"
 #include "vtkPacketFileReader.h"
+#include "vtkDataPacket.h"
 
 #include <boost/thread/thread.hpp>
 #include <boost/asio.hpp>
 
-const int HDL_NUM_ROT_ANGLES = 36001;
-const int HDL_LASER_PER_FIRING = 32;
-const int HDL_MAX_NUM_LASERS = 64;
-const int HDL_FIRING_PER_PKT = 12;
-
-enum HDLBlock
-{
-  BLOCK_0_TO_31 = 0xeeff,
-  BLOCK_32_TO_63 = 0xddff
-};
-
-#pragma pack(push, 1)
-typedef struct HDLLaserReturn
-{
-  unsigned short distance;
-  unsigned char intensity;
-} HDLLaserReturn;
-
-struct HDLFiringData
-{
-  unsigned short blockIdentifier;
-  unsigned short rotationalPosition;
-  HDLLaserReturn laserReturns[HDL_LASER_PER_FIRING];
-};
-
-struct HDLDataPacket
-{
-  HDLFiringData firingData[HDL_FIRING_PER_PKT];
-  unsigned int gpsTimestamp;
-  unsigned char blank1;
-  unsigned char blank2;
-};
-
-struct HDLLaserCorrection
-{
-  double azimuthCorrection;
-  double verticalCorrection;
-  double distanceCorrection;
-  double verticalOffsetCorrection;
-  double horizontalOffsetCorrection;
-  double sinVertCorrection;
-  double cosVertCorrection;
-  double sinVertOffsetCorrection;
-  double cosVertOffsetCorrection;
-};
-
-struct HDLRGB
-{
-  uint8_t r;
-  uint8_t g;
-  uint8_t b;
-};
-#pragma pack(pop)
-
+using namespace DataPacketFixedLength;
 
 //-----------------------------------------------------------------------------
 class vvPacketSender::vvInternal
