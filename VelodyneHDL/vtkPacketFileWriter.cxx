@@ -35,22 +35,45 @@ int gettimeofday(struct timeval * tp, void *)
 #endif
 
 #include <cstring>
+#include <arpa/inet.h>
 
 //--------------------------------------------------------------------------------
 const unsigned short vtkPacketFileWriter::LidarPacketHeader[21] = {
-    0xffff, 0xffff, 0xffff, 0x7660,
-    0x0088, 0x0000, 0x0008, 0x0045,
-    0xd204, 0x0000, 0x0040, 0x11ff,
-    0xaab4, 0xa8c0, 0xc801, 0xffff, // checksum 0xa9b4 //source ip 0xa8c0, 0xc801 is 192.168.1.200
-    0xffff, 0x4009, 0x4009, 0xbe04, 0x0000};
+  // 14 bytes ethernet header
+    0xffff, 0xffff, 0xffff, // src MAC addr
+    0x7660, 0x0088, 0x0000, // dst MAC addr
+    0x0008, // packet type (IP)
+  // 20 bytes IPv4 header
+    0x0045, // version+IHL, services
+    0xd204, 0x0000, // totlen , iden
+    0x0040, 0x11ff,  // flag (40=don't fragment) + frag offset, TTL + protocol
+    0xaab4, // chksum
+    0xa8c0, 0xc801, 0xffff, 0xffff, //src ip, dest ip
+    //source ip 0xa8c0, 0xc801 is 192.168.1.200
+    //dest ip 0xffff, 0xffff is broadcast
+
+  // 8 bytes UDP header
+    // checksum 0xa9b4
+    0x4009, 0x4009, 0xbe04, 0x0000}; // src port, dst port , len, chksum
 
 //--------------------------------------------------------------------------------
 const unsigned short vtkPacketFileWriter::PositionPacketHeader[21] = {
-    0xffff, 0xffff, 0xffff, 0x7660,
-    0x0088, 0x0000, 0x0008, 0x0045,
-    0xd204, 0x0000, 0x0040, 0x11ff,
-    0xaab4, 0xa8c0, 0xc801, 0xffff, // checksum 0xa9b4 //source ip 0xa8c0, 0xc801 is 192.168.1.200
-    0xffff, 0x7420, 0x7420, 0x0802, 0x0000};
+  // 14 bytes ethernet header
+    0xffff, 0xffff, 0xffff, // src MAC addr
+    0x7660, 0x0088, 0x0000, // dst MAC addr
+    0x0008, // packet type (IP)
+  // 20 bytes IPv4 header
+    0x0045, // version+IHL, services
+    0xd204, 0x0000, // totlen , iden
+    0x0040, 0x11ff,  // flag (40=don't fragment) + frag offset, TTL + protocol
+    0xaab4, // chksum
+    0xa8c0, 0xc801, 0xffff, 0xffff, //src ip, dest ip
+    //source ip 0xa8c0, 0xc801 is 192.168.1.200
+    //dest ip 0xffff, 0xffff is broadcast
+
+  // 8 bytes UDP header
+    // checksum 0xa9b4
+    0x7420, 0x7420, 0x0802, 0x0000};// src port, dst port , len, chksum
 
 //--------------------------------------------------------------------------------
 vtkPacketFileWriter::vtkPacketFileWriter()
@@ -114,6 +137,7 @@ const std::string& vtkPacketFileWriter::GetFileName()
 }
 
 //--------------------------------------------------------------------------------
+// Write an UDP packet from the data (without providing a header, so we construct it)
 bool vtkPacketFileWriter::WritePacket(const unsigned char* data, unsigned int dataLength)
   {
     if (!this->PCAPFile)
@@ -128,21 +152,18 @@ bool vtkPacketFileWriter::WritePacket(const unsigned char* data, unsigned int da
     if (dataLength == 1206)
       {
       headerData = LidarPacketHeader;
-      header.caplen = 1248;
-      header.len = 1248;
-      packetBuffer.resize(1248);
       }
-    else if(dataLength == (554 - 42))
+    else if(dataLength == 512 )
       {
       headerData = PositionPacketHeader;
-      header.caplen = 554;
-      header.len = 554;
-      packetBuffer.resize(554);
       }
     else
       {
-      return false;
+      headerData = LidarPacketHeader;
       }
+    header.caplen = dataLength + 42;
+    header.len =  dataLength + 42;
+    packetBuffer.resize( header.len );
 
     struct timeval currentTime;
     gettimeofday(&currentTime, NULL);
@@ -150,12 +171,19 @@ bool vtkPacketFileWriter::WritePacket(const unsigned char* data, unsigned int da
 
     memcpy(&(packetBuffer[0]), headerData, 42);
     memcpy(&(packetBuffer[0]) + 42, data, dataLength);
+    // There is no Ethernet frame lenght field
+    //reinterpret_cast<unsigned short&>(packetBuffer[20]) = dataLength + 42;
+    // Set IP frame lenght
+    reinterpret_cast<unsigned short&>(packetBuffer[2*8]) = htons(dataLength + 28);
+    // Set UDP frame lenght
+    reinterpret_cast<unsigned short&>(packetBuffer[2*19]) = htons(dataLength + 8);
 
     pcap_dump((u_char *)this->PCAPDump, &header, &(packetBuffer[0]));
     return true;
   }
 
 //--------------------------------------------------------------------------------
+// Write an packet from packetHeader and packetData (which includes the packet header)
 bool vtkPacketFileWriter::WritePacket(pcap_pkthdr* packetHeader, unsigned char* packetData)
   {
     pcap_dump((u_char *)this->PCAPDump, packetHeader, packetData);
