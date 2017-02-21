@@ -437,6 +437,7 @@ def openSensor():
     #Auto adjustment of the grid size with the distance resolution
     app.distanceResolutionM = sensor.GetClientSideObject().GetDistanceResolutionM()
     app.grid = createGrid()
+    app.actions['actionMeasurement_Grid'].setChecked(True)
     showMeasurementGrid()
 
     play()
@@ -580,6 +581,7 @@ def openPCAP(filename, positionFilename=None):
     #Auto adjustment of the grid size with the distance resolution
     app.distanceResolutionM = reader.GetClientSideObject().GetDistanceResolutionM()
     app.grid = createGrid()
+    app.actions['actionMeasurement_Grid'].setChecked(True)
     showMeasurementGrid()
 
     smp.SetActiveSource(reader)
@@ -1076,6 +1078,7 @@ def close():
     app.reader = None
     app.sensor = None
     app.Text = None
+    smp.Delete(app.grid)
 
     smp.HideUnusedScalarBars()
 
@@ -1861,6 +1864,7 @@ def onGridProperties():
         rep = smp.Show(app.grid, None)
         rep.LineWidth = app.grid.LineWidth
         rep.DiffuseColor = app.grid.Color
+        app.actions['actionMeasurement_Grid'].setChecked(True)
         smp.Render()
 
 
