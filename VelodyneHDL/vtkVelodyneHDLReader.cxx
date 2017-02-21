@@ -211,13 +211,13 @@ int MapIntensityFlag(unsigned int flags)
                               const bool isDualReturnMode)
 {
   if (!isDualReturnMode)
-    {
+  {
     return (firingblock * 46.08) + (dsr * 1.152);
-    }
+  }
   else
-    {
+  {
     return (firingblock / 2 * 46.08) + (dsr * 1.152);
-    }
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -227,13 +227,13 @@ double VLP16AdjustTimeStamp(int firingblock,
                             const bool isDualReturnMode)
 {
   if (!isDualReturnMode)
-    {
-  return (firingblock * 110.592) + (dsr * 2.304) + (firingwithinblock * 55.296);
-    }
+  {
+    return (firingblock * 110.592) + (dsr * 2.304) + (firingwithinblock * 55.296);
+  }
   else
-    {
+  {
     return (firingblock / 2 * 110.592) + (dsr * 2.304) + (firingwithinblock * 55.296);
-    }
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -242,13 +242,13 @@ double VLP32AdjustTimeStamp(int firingblock,
                             const bool isDualReturnMode)
 {
   if (!isDualReturnMode)
-    {
+  {
     return (firingblock * 55.296) + (dsr / 2) * 2.304;
-    }
+  }
   else
-    {
+  {
     return (firingblock / 2 * 55.296) + (dsr / 2) * 2.304;
-    }
+  }
 }
 
 //-----------------------------------------------------------------------------
