@@ -150,8 +150,15 @@ int vvPacketSender::pumpPacket()
     return timeSinceStart;
     }
 
+  if( (dataLength == 512) )
+    {
+    size_t bytesSent = this->Internal->PositionSocket->send_to(boost::asio::buffer(data, dataLength),
+                                                               this->Internal->PositionEndpoint);
+    }
+
   // Recurse until we get to the right kind of packet
-  if (dataLength == 1206)
+  else
+  //if (dataLength == 1206)
     {
     const HDLDataPacket* dataPacket = reinterpret_cast<const HDLDataPacket *>(data);
     timeDiff = static_cast<int>(dataPacket->gpsTimestamp) - static_cast<int>(this->Internal->lastTimestamp);
@@ -161,11 +168,6 @@ int vvPacketSender::pumpPacket()
                                                             this->Internal->LIDAREndpoint);
     }
 
-  if( (dataLength == 512) )
-    {
-    size_t bytesSent = this->Internal->PositionSocket->send_to(boost::asio::buffer(data, dataLength),
-                                                               this->Internal->PositionEndpoint);
-    }
 
   return timeDiff;
 }
