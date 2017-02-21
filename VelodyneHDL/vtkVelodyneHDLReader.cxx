@@ -1951,7 +1951,6 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(unsigned char *data, st
   if(!IsHDL64Data){
     this->ReportedSensor = static_cast<SensorType>(dataPacket->factoryField2);
     this->ReportedSensorReturnMode = static_cast<DualReturnSensorMode>(dataPacket->factoryField1);
-    this->IsDualReturnSensorMode = (this->ReportedSensorReturnMode == DUAL_RETURN);
   }
 
   std::sort(diffs.begin(), diffs.end());
