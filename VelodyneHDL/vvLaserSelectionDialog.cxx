@@ -197,12 +197,24 @@ void vvLaserSelectionDialog::onItemChanged(QTableWidgetItem* item)
   bool noneChecked = true;
   // Iterate over visible rows to choose in whch state the enable/disable
   // all checkbox should pass
+
+  // Store the current sorting state
+  int currentSortingColumn =
+    this->Internal->Table->horizontalHeader()->sortIndicatorSection();
+  Qt::SortOrder currentSortOrder =
+    this->Internal->Table->horizontalHeader()->sortIndicatorOrder();
+
+  // Sort the table by channel
+  this->Internal->Table->sortItems(1);
   for(int i = 0; i < this->Internal->numVisibleRows; ++i)
     {
+    // Check the current row state
     QTableWidgetItem* item = this->Internal->Table->item(i, 0);
     allChecked = allChecked && item->checkState() == Qt::Checked;
     noneChecked = noneChecked && item->checkState() == Qt::Unchecked;
     }
+  // Restore the current sorting state
+  this->Internal->Table->sortItems(currentSortingColumn, currentSortOrder);
   Qt::CheckState state;
   if(allChecked)
     {
@@ -229,11 +241,22 @@ void vvLaserSelectionDialog::onEnableDisableAll(int state)
   if(state != Qt::PartiallyChecked)
     {
     // enable all
+    // Store current sorting state
+    int currentSortingColumn =
+      this->Internal->Table->horizontalHeader()->sortIndicatorSection();
+    Qt::SortOrder currentSortOrder =
+      this->Internal->Table->horizontalHeader()->sortIndicatorOrder();
+
+    // Sort the table by channel
+    this->Internal->Table->sortItems(1);
     for(int i = 0; i < this->Internal->numVisibleRows; ++i)
       {
+      // Enable/Disable the checkboxes
       QTableWidgetItem* item = this->Internal->Table->item(i, 0);
       item->setCheckState(Qt::CheckState(state));
       }
+    // Restore the current sorting state
+    this->Internal->Table->sortItems(currentSortingColumn, currentSortOrder);
     }
 }
 
