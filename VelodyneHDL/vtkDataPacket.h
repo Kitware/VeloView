@@ -46,6 +46,22 @@ enum SensorType
   //But it is usefull to define
   HDL64  = 0xa0,
 };
+static int num_laser(SensorType sensorType){
+  switch (sensorType)
+  {
+  case HDL64:
+    return 64;
+  case HDL32E:
+    return 32;
+  case VLP32:
+    return 32;
+  case VLP16:
+    return 16;
+  default:
+    return 0;
+  }
+}
+
 enum DualReturnSensorMode
 {
   STRONGEST_RETURN = 0x37,
@@ -85,6 +101,14 @@ struct HDLDataPacket
   uint32_t gpsTimestamp;
   uint8_t factoryField1;
   uint8_t factoryField2;
+  SensorType getSensorType() const
+  {
+    return static_cast<SensorType>(factoryField2);
+  }
+  DualReturnSensorMode getDualReturnSensorMode() const
+  {
+    return static_cast<DualReturnSensorMode>(factoryField1);
+  }
 };
 
 struct HDLLaserCorrection  // Internal representation of per-laser correction

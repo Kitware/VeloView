@@ -2069,26 +2069,8 @@ bool vtkVelodyneHDLReader::GetHasDualReturn()
 //-----------------------------------------------------------------------------
 bool vtkVelodyneHDLReader::isReportedSensorAndCalibrationFileConsistent(bool shouldWarn)
 {
-  int reportedSensorNumberLaser = 0;
   //Get the number of laser from sensor type
-  switch (this->Internal->ReportedSensor)
-    {
-    case HDL32E:
-      reportedSensorNumberLaser = 32;
-      break;
-    case VLP16:
-      reportedSensorNumberLaser = 16;
-      break;
-    case VLP32:
-      reportedSensorNumberLaser = 32;
-      break;
-    case HDL64:
-      reportedSensorNumberLaser = 64;
-      break;
-    default:
-      reportedSensorNumberLaser = 0;
-      break;
-    }
+  int reportedSensorNumberLaser = num_laser(this->Internal->ReportedSensor);
 
   //compare the numbers of lasers
   if(reportedSensorNumberLaser != this->Internal->CalibrationReportedNumLasers)
