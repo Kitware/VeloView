@@ -35,7 +35,6 @@ int gettimeofday(struct timeval * tp, void *)
 #endif
 
 #include <cstring>
-#include <arpa/inet.h>
 
 //--------------------------------------------------------------------------------
 const unsigned short vtkPacketFileWriter::LidarPacketHeader[21] = {
@@ -173,10 +172,12 @@ bool vtkPacketFileWriter::WritePacket(const unsigned char* data, unsigned int da
     memcpy(&(packetBuffer[0]) + 42, data, dataLength);
     // There is no Ethernet frame lenght field
     //reinterpret_cast<unsigned short&>(packetBuffer[20]) = dataLength + 42;
-    // Set IP frame lenght
-    reinterpret_cast<unsigned short&>(packetBuffer[2*8]) = htons(dataLength + 28);
-    // Set UDP frame lenght
-    reinterpret_cast<unsigned short&>(packetBuffer[2*19]) = htons(dataLength + 8);
+    // Set IP frame lenght (which is 28 + dataLength), in Network (Big) Endian
+    packetBuffer[2*8] = ((dataLength + 28) & 0xFF00) >>8;
+    packetBuffer[2*8+1] = ((dataLength + 28) & 0x00FF) >>0;
+    // Set UDP frame lenght (which is 8 + dataLength), in Network (Big) Endian
+    packetBuffer[2*19] = ((dataLength + 8) & 0xFF00) >>8;
+    packetBuffer[2*19+1] = ((dataLength + 8) & 0x00FF) >>0;
 
     pcap_dump((u_char *)this->PCAPDump, &header, &(packetBuffer[0]));
     return true;
