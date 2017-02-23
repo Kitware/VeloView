@@ -109,6 +109,22 @@ struct HDLDataPacket
   {
     return static_cast<DualReturnSensorMode>(factoryField1);
   }
+  static const unsigned int getDataByteLength()
+  {
+    return 1206;
+  }
+  static const unsigned int getPacketByteLength()
+  {
+    return getDataByteLength() + 42;
+  }
+  static inline bool isValidPacket(const unsigned char* data, unsigned int dataLength)
+  {
+    if (dataLength != getDataByteLength())
+      return false;
+    const HDLDataPacket* dataPacket = reinterpret_cast<const HDLDataPacket *>(data);
+    return (dataPacket->firingData[0].blockIdentifier == BLOCK_0_TO_31
+        || dataPacket->firingData[0].blockIdentifier == BLOCK_32_TO_63);
+  }
 };
 
 struct HDLLaserCorrection  // Internal representation of per-laser correction

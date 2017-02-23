@@ -910,24 +910,24 @@ void vtkVelodyneHDLReader::DumpFrames(int startFrame, int endFrame, const std::s
 
   this->Internal->Reader->SetFilePosition(&this->Internal->FilePositions[startFrame]);
   int skip = this->Internal->Skips[startFrame];
-
+  const unsigned int ethernetUDPHeaderLength = 42;
   while (this->Internal->Reader->NextPacket(data, dataLength, timeSinceStart, &header) &&
          currentFrame <= endFrame)
     {
-    if (dataLength == (1206 + 42) ||
-        dataLength == (512 + 42))
+    if (dataLength == (HDLDataPacket::getDataByteLength() + ethernetUDPHeaderLength) ||
+        dataLength == (512 + ethernetUDPHeaderLength))
       {
       writer.WritePacket(header, const_cast<unsigned char*>(data));
       }
 
     // dont check for frame counts if it was not a firing packet
-    if(dataLength != (1206 + 42))
+    if(dataLength != HDLDataPacket::getPacketByteLength())
       {
       continue;
       }
 
     // Check if we cycled a frame and decrement
-    const HDLDataPacket* dataPacket = reinterpret_cast<const HDLDataPacket *>(data + 42);
+    const HDLDataPacket* dataPacket = reinterpret_cast<const HDLDataPacket *>(data + ethernetUDPHeaderLength);
 
     for (int i = skip; i < HDL_FIRING_PER_PKT; ++i)
       {
