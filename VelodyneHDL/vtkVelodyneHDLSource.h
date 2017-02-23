@@ -116,6 +116,8 @@ public:
 
   void SetIntensitiesCorrected(const bool& state);
 
+  bool GetHasDualReturn();
+
 protected:
 
 

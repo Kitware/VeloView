@@ -800,6 +800,12 @@ vtkVelodyneHDLSource::~vtkVelodyneHDLSource()
 }
 
 //-----------------------------------------------------------------------------
+bool vtkVelodyneHDLSource::GetHasDualReturn()
+{
+  return this->Internal->Consumer->GetReader()->GetHasDualReturn();
+}
+
+//-----------------------------------------------------------------------------
 const std::string& vtkVelodyneHDLSource::GetOutputFile()
 {
   return this->OutputFile;

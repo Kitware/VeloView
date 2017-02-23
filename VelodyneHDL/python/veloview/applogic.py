@@ -426,11 +426,6 @@ def openSensor():
 
     showSourceInSpreadSheet(sensor)
 
-    app.actions['actionDualReturnModeDual'].enabled = True
-    app.actions['actionDualReturnDistanceNear'].enabled = True
-    app.actions['actionDualReturnDistanceFar'].enabled = True
-    app.actions['actionDualReturnIntensityHigh'].enabled = True
-    app.actions['actionDualReturnIntensityLow'].enabled = True
     app.actions['actionShowRPM'].enabled = True
     app.actions['actionCorrectIntensityValues'].enabled = True
 
@@ -441,6 +436,16 @@ def openSensor():
     showMeasurementGrid()
 
     play()
+
+    # Enable the dual return point selection only if the current dataset was taken with dual return
+    # NOTE: We do not enable the dual return point selection as it's not intended to works on
+    # live stream.
+    if sensor.GetClientSideObject().GetHasDualReturn():
+        app.actions['actionDualReturnModeDual'].enabled = True
+        app.actions['actionDualReturnDistanceNear'].enabled = True
+        app.actions['actionDualReturnDistanceFar'].enabled = True
+        app.actions['actionDualReturnIntensityHigh'].enabled = True
+        app.actions['actionDualReturnIntensityLow'].enabled = True
 
 def openPCAP(filename, positionFilename=None):
 
@@ -570,11 +575,17 @@ def openPCAP(filename, positionFilename=None):
     enableSaveActions()
     addRecentFile(filename)
     app.actions['actionRecord'].setEnabled(False)
-    app.actions['actionDualReturnModeDual'].enabled = True
-    app.actions['actionDualReturnDistanceNear'].enabled = True
-    app.actions['actionDualReturnDistanceFar'].enabled = True
-    app.actions['actionDualReturnIntensityHigh'].enabled = True
-    app.actions['actionDualReturnIntensityLow'].enabled = True
+
+    # Enable the dual return mode selection only if the current dataset was taken with dual return
+    if reader.GetClientSideObject().GetHasDualReturn():
+        app.actions['actionSelectDualReturn'].enabled = True
+        app.actions['actionSelectDualReturn2'].enabled = True
+        app.actions['actionDualReturnModeDual'].enabled = True
+        app.actions['actionDualReturnDistanceNear'].enabled = True
+        app.actions['actionDualReturnDistanceFar'].enabled = True
+        app.actions['actionDualReturnIntensityHigh'].enabled = True
+        app.actions['actionDualReturnIntensityLow'].enabled = True
+
     app.actions['actionShowRPM'].enabled = True
     app.actions['actionCorrectIntensityValues'].enabled = True
 
@@ -1092,6 +1103,8 @@ def close():
     app.actions['actionRecord'].setChecked(False)
     app.actions['actionDualReturnModeDual'].setChecked(True)
 
+    app.actions['actionSelectDualReturn'].enabled = False
+    app.actions['actionSelectDualReturn2'].enabled = False
     app.actions['actionDualReturnModeDual'].enabled = False
     app.actions['actionDualReturnDistanceNear'].enabled = False
     app.actions['actionDualReturnDistanceFar'].enabled = False
@@ -2176,17 +2189,20 @@ def setFilterToIntensityLow():
     setFilterTo(vtkVelodyneHDLReader.DUAL_INTENSITY_LOW)
 
 def setFilterTo(mask):
+
     reader = getReader()
     if reader:
-        reader.DualReturnFilter = mask
-        smp.Render()
-        smp.Render(getSpreadSheetViewProxy())
+        if reader.GetClientSideObject().GetHasDualReturn():
+            reader.DualReturnFilter = mask
+            smp.Render()
+            smp.Render(getSpreadSheetViewProxy())
 
     sensor = getSensor()
     if sensor:
-        sensor.DualReturnFilter = mask
-        smp.Render()
-        smp.Render(getSpreadSheetViewProxy())
+        if sensor.GetClientSideObject().GetHasDualReturn():
+            sensor.DualReturnFilter = mask
+            smp.Render()
+            smp.Render(getSpreadSheetViewProxy())
 
 def transformMode():
     reader = getReader()
