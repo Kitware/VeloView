@@ -434,6 +434,8 @@ def openSensor():
     app.actions['actionShowRPM'].enabled = True
     app.actions['actionCorrectIntensityValues'].enabled = True
 
+    app.text = smp.Text()
+
     #Auto adjustment of the grid size with the distance resolution
     app.distanceResolutionM = sensor.GetClientSideObject().GetDistanceResolutionM()
     app.grid = createGrid()
@@ -1077,7 +1079,8 @@ def close():
     app.scene.AnimationTime = 0
     app.reader = None
     app.sensor = None
-    app.Text = None
+    if app.text:
+        smp.Delete(app.text)
     smp.Delete(app.grid)
 
     smp.HideUnusedScalarBars()
@@ -1309,12 +1312,17 @@ def onPlayTimer():
 
         playbackTick()
         targetRealTimeFps = app.targetFps
-		
+
+        rpmArray = None
+
         if getReader():
             rpmArray = getReader().GetClientSideObject().GetOutput().GetFieldData().GetArray('RotationPerMinute')
-            if rpmArray:
-                rpm = rpmArray.GetTuple1(0)
-                targetRealTimeFps = rpm/60
+        # TODO: Do the same thing to get the RPM on the sensor once they're computed correctly
+
+        if rpmArray:
+            rpm = rpmArray.GetTuple1(0)
+            targetRealTimeFps = rpm/60
+
         
         speedMultiplier = float(str(app.PlaybackSpeed.currentText))
         targetRealTimeFps = speedMultiplier*targetRealTimeFps
@@ -1858,6 +1866,9 @@ def onTimeChanged():
         widget.setValue(frame)
         widget.blockSignals(False)
 
+    if getSensor():
+        showRPM()
+
 
 def onGridProperties():
     if gridAdjustmentDialog.showDialog(getMainWindow(), app.grid):
@@ -2381,7 +2392,11 @@ def setupActions():
 
 def showRPM():
 
-    rpmArray = getReader().GetClientSideObject().GetOutput().GetFieldData().GetArray('RotationPerMinute')
+    rpmArray = None
+
+    if getReader():
+        rpmArray = getReader().GetClientSideObject().GetOutput().GetFieldData().GetArray('RotationPerMinute')
+    # TODO: Do the same thing to get the RPM on the sensor once they're computed correctly
 
     if rpmArray:
         rpm = rpmArray.GetTuple1(0)
