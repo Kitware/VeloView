@@ -110,6 +110,9 @@
      <string>Help</string>
     </property>
     <action name="actionResetConfigurationFile">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
      <property name="text">
       <string>Reset Veloview settings</string>
      </property>
@@ -878,6 +881,9 @@
    </property>
   </action>
   <action name="actionSelectDualReturn2">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="icon">
     <iconset resource="vvResources.qrc">
      <normaloff>:/vvResources/Icons/pqSurfaceSelectionPoint24.png</normaloff>:/vvResources/Icons/pqSurfaceSelectionPoint24.png</iconset>
