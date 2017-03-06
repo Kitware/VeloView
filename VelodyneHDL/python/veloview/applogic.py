@@ -1686,7 +1686,7 @@ def createGrid(view=None):
 
     view = view or smp.GetActiveView()
     grid = smp.VelodyneHDLGridSource(guiName='Measurement Grid')
-    grid.GetClientSideObject().SetGridNbTicks(int(math.ceil(50000 * app.distanceResolutionM/ grid.GetClientSideObject().GetScale()) ))
+    grid.GridNbTicks = (int(math.ceil(50000 * app.distanceResolutionM/ grid.GetClientSideObject().GetScale()) ))
     rep = smp.Show(grid, view)
     rep.LineWidth = grid.LineWidth
     rep.DiffuseColor = grid.Color
