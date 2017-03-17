@@ -434,7 +434,7 @@ def openSensor():
     app.actions['actionShowRPM'].enabled = True
     app.actions['actionCorrectIntensityValues'].enabled = True
 
-    app.text = smp.Text()
+    initializeRPMText()
 
     #Auto adjustment of the grid size with the distance resolution
     app.distanceResolutionM = sensor.GetClientSideObject().GetDistanceResolutionM()
@@ -563,7 +563,7 @@ def openPCAP(filename, positionFilename=None):
     setDefaultLookupTables(reader)
     colorByIntensity(reader)
 
-    app.text = smp.Text()
+    initializeRPMText()
 
     showSourceInSpreadSheet(reader)
 
@@ -1317,7 +1317,8 @@ def onPlayTimer():
 
         if getReader():
             rpmArray = getReader().GetClientSideObject().GetOutput().GetFieldData().GetArray('RotationPerMinute')
-        # TODO: Do the same thing to get the RPM on the sensor once they're computed correctly
+        if getSensor():
+            rpmArray = getSensor().GetClientSideObject().GetOutput().GetFieldData().GetArray('RotationPerMinute')
 
         if rpmArray:
             rpm = rpmArray.GetTuple1(0)
@@ -2396,7 +2397,8 @@ def showRPM():
 
     if getReader():
         rpmArray = getReader().GetClientSideObject().GetOutput().GetFieldData().GetArray('RotationPerMinute')
-    # TODO: Do the same thing to get the RPM on the sensor once they're computed correctly
+    elif getSensor():
+        rpmArray = getSensor().GetClientSideObject().GetOutput().GetFieldData().GetArray('RotationPerMinute')
 
     if rpmArray:
         rpm = rpmArray.GetTuple1(0)
@@ -2409,7 +2411,13 @@ def showRPM():
     textRepresentation = smp.GetRepresentation(app.text)
     textRepresentation.Visibility = app.actions['actionShowRPM'].isChecked()
 
+    smp.Render()
+
+
+def initializeRPMText():
+    app.text = smp.Text()
+    app.text.Text = "No RPM"
+    textRepresentation = smp.GetRepresentation(app.text)
+    textRepresentation.Visibility = app.actions['actionShowRPM'].isChecked()
     textRepresentation.FontSize = 8
     textRepresentation.Color = [1,1,0]
-
-    smp.Render()

@@ -1986,6 +1986,9 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(unsigned char *data, st
       this->CurrentDataset->GetFieldData()->GetArray("RotationPerMinute")->SetTuple1(0,this->currentRpm);
       //Create a new dataset (new frame)
       this->SplitFrame();
+      this->LastAzimuth = -1;
+      this->LastTimestamp = std::numeric_limits<unsigned int>::max();
+      this->firstAngle = std::numeric_limits<int>::max();
       }
 
     // Skip this firing every PointSkip
