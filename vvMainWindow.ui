@@ -895,6 +895,17 @@
     <string>Select the dual returns of the current selection</string>
    </property>
   </action>
+  <action name="actionPersisting_Grid_Properties">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Persisting Grid Properties</string>
+   </property>
+  </action>
  </widget>
  <customwidgets>
   <customwidget>

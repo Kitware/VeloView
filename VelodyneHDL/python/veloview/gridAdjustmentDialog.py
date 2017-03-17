@@ -14,7 +14,7 @@
 from PythonQt import QtCore, QtGui, QtUiTools
 import math
 
-def showDialog(mainWindow, grid):
+def showDialog(mainWindow, grid, gridProperties):
 
     loader = QtUiTools.QUiLoader()
     uifile = QtCore.QFile(':/VelodyneHDLPlugin/vvGridAdjustmentDialog.ui')
@@ -47,6 +47,8 @@ def showDialog(mainWindow, grid):
     b = grid.Color[2] * 255
     w('GridColorPicker').setStyleSheet("background-color: rgb(" + str(r) + "," + str(g) + "," + str(b) +");")
 
+    w('ShouldPropertiesPersist').checked = gridProperties.Persist
+
     def pickColor():
         colorPicker = QtGui.QColorDialog()
         qColor = colorPicker.getColor()
@@ -72,5 +74,6 @@ def showDialog(mainWindow, grid):
     grid.LineWidth = w('GridLineWidth').value
     color = w('GridColorPicker').palette.color(QtGui.QPalette.Background)
     grid.Color = [color.redF(), color.greenF(), color.blueF()]
+    gridProperties.Persist = w('ShouldPropertiesPersist').checked
 
     return True
