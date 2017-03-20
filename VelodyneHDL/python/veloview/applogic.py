@@ -404,6 +404,9 @@ def openSensor():
     ipAddressForwarding = calibration.ipAddressForwarding
 
     close()
+    app.grid = createGrid()
+
+    initializeRPMText()
 
     sensor = smp.VelodyneHDLSource(guiName='Data', CalibrationFile=calibrationFile, CacheSize=100)
     sensor.GetClientSideObject().SetLIDARPort(LIDARPort)
@@ -443,11 +446,8 @@ def openSensor():
     app.actions['actionShowRPM'].enabled = True
     app.actions['actionCorrectIntensityValues'].enabled = True
 
-    initializeRPMText()
-
     #Auto adjustment of the grid size with the distance resolution
     app.distanceResolutionM = sensor.GetClientSideObject().GetDistanceResolutionM()
-    app.grid = createGrid()
     app.actions['actionMeasurement_Grid'].setChecked(True)
     showMeasurementGrid()
 
@@ -1914,9 +1914,14 @@ def onTimeChanged():
         widget.setValue(frame)
         widget.blockSignals(False)
 
+    #Remove the Rotation per minute from color label comboBox
+    ComboBox = getMainWindow().findChild('vvColorToolbar').findChild('pqDisplayColorWidget').findChildren('QComboBox')[0]
+    n = ComboBox.findText('RotationPerMinute')
+    ComboBox.removeItem(n)
+
     if getSensor():
         showRPM()
-
+    
 
 def onGridProperties():
     if gridAdjustmentDialog.showDialog(getMainWindow(), app.grid, app.gridProperties):
