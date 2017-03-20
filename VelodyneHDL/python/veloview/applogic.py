@@ -79,6 +79,8 @@ class AppLogic(object):
 
         self.laserSelectionDialog = None
 
+        self.gridProperties = None
+
     def setupTimers(self):
         self.playTimer = QtCore.QTimer()
         self.playTimer.setSingleShot(True)
@@ -118,6 +120,18 @@ class IconPaths(object):
     seekBackward3x = ':/VelodyneHDLPlugin/media-seek-backward-3x.png'
     seekBackwardHalfx = ':/VelodyneHDLPlugin/media-seek-backward-0.5x.png'
     seekBackwardQuarterx = ':/VelodyneHDLPlugin/media-seek-backward-0.25x.png'
+
+class GridProperties:
+
+    def __init__(self):
+        self.Normal = [0, 0, 0]
+        self.Origin = [0, 0, 0]
+        self.Scale = 0
+        self.GridNbTicks = 0
+        self.LineWidth = 0
+        self.Color = [0, 0, 0]
+        self.Persist = False
+
 
 
 def hasArrayName(sourceProxy, arrayName):
@@ -1083,6 +1097,14 @@ def onAbout():
 
 
 def close():
+    # Save grid properties for this session
+    app.gridProperties.Normal = app.grid.Normal
+    app.gridProperties.Origin = app.grid.Origin
+    app.gridProperties.Scale = app.grid.Scale
+    app.gridProperties.GridNbTicks = app.grid.GridNbTicks
+    app.gridProperties.LineWidth = app.grid.LineWidth
+    app.gridProperties.Color = app.grid.Color
+
     stop()
     hideRuler()
     unloadData()
@@ -1695,7 +1717,18 @@ def createGrid(view=None):
 
     view = view or smp.GetActiveView()
     grid = smp.VelodyneHDLGridSource(guiName='Measurement Grid')
-    grid.GetClientSideObject().SetGridNbTicks(int(math.ceil(50000 * app.distanceResolutionM/ grid.GetClientSideObject().GetScale()) ))
+
+    if app.gridProperties.Persist == False:
+        grid.GridNbTicks = (int(math.ceil(50000 * app.distanceResolutionM/ grid.GetClientSideObject().GetScale()) ))
+    else:
+        # Restore grid properties
+        grid.Normal = app.gridProperties.Normal
+        grid.Origin = app.gridProperties.Origin
+        grid.Scale = app.gridProperties.Scale
+        grid.GridNbTicks = app.gridProperties.GridNbTicks
+        grid.LineWidth = app.gridProperties.LineWidth
+        grid.Color = app.gridProperties.Color
+
     rep = smp.Show(grid, view)
     rep.LineWidth = grid.LineWidth
     rep.DiffuseColor = grid.Color
@@ -1726,6 +1759,7 @@ def start():
     global app
     app = AppLogic()
     app.scene = getAnimationScene()
+    app.gridProperties = GridProperties()
 
     view = smp.GetActiveView()
     view.Background = [0.0, 0.0, 0.0]
@@ -1885,7 +1919,7 @@ def onTimeChanged():
 
 
 def onGridProperties():
-    if gridAdjustmentDialog.showDialog(getMainWindow(), app.grid):
+    if gridAdjustmentDialog.showDialog(getMainWindow(), app.grid, app.gridProperties):
         rep = smp.Show(app.grid, None)
         rep.LineWidth = app.grid.LineWidth
         rep.DiffuseColor = app.grid.Color
@@ -2076,6 +2110,7 @@ def toggleRPM():
     r.Visibility = app.actions['actionShowRPM'].isChecked()
 
     smp.Render()
+
 
 def toggleSelectDualReturn():
     #Get the active source

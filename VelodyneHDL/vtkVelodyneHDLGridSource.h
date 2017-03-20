@@ -51,6 +51,9 @@ public:
   vtkSetMacro(LineWidth, int);
   vtkGetMacro(LineWidth, int);
 
+  vtkSetMacro(DistanceResolutionM, double);
+  vtkGetMacro(DistanceResolutionM, double);
+
   vtkSetVector3Macro(Origin, double);
   vtkGetVector3Macro(Origin, double);
 
@@ -73,6 +76,7 @@ protected:
   //width of the grid in number of square
   int GridNbTicks;
   double Scale;
+  double DistanceResolutionM;
   int LineWidth;
   double Origin[3];
   double Normal[3];
