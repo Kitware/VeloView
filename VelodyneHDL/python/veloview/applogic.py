@@ -429,6 +429,8 @@ def openSensor():
     app.actions['actionShowRPM'].enabled = True
     app.actions['actionCorrectIntensityValues'].enabled = True
 
+    initializeRPMText()
+
     #Auto adjustment of the grid size with the distance resolution
     app.distanceResolutionM = sensor.GetClientSideObject().GetDistanceResolutionM()
     app.grid = createGrid()
@@ -566,7 +568,7 @@ def openPCAP(filename, positionFilename=None):
     setDefaultLookupTables(reader)
     colorByIntensity(reader)
 
-    app.text = smp.Text()
+    initializeRPMText()
 
     showSourceInSpreadSheet(reader)
 
@@ -1088,7 +1090,8 @@ def close():
     app.scene.AnimationTime = 0
     app.reader = None
     app.sensor = None
-    app.Text = None
+    if app.text:
+        smp.Delete(app.text)
     smp.Delete(app.grid)
 
     smp.HideUnusedScalarBars()
@@ -1322,12 +1325,18 @@ def onPlayTimer():
 
         playbackTick()
         targetRealTimeFps = app.targetFps
-		
+
+        rpmArray = None
+
         if getReader():
             rpmArray = getReader().GetClientSideObject().GetOutput().GetFieldData().GetArray('RotationPerMinute')
-            if rpmArray:
-                rpm = rpmArray.GetTuple1(0)
-                targetRealTimeFps = rpm/60
+        if getSensor():
+            rpmArray = getSensor().GetClientSideObject().GetOutput().GetFieldData().GetArray('RotationPerMinute')
+
+        if rpmArray:
+            rpm = rpmArray.GetTuple1(0)
+            targetRealTimeFps = rpm/60
+
         
         speedMultiplier = float(str(app.PlaybackSpeed.currentText))
         targetRealTimeFps = speedMultiplier*targetRealTimeFps
@@ -1871,6 +1880,9 @@ def onTimeChanged():
         widget.setValue(frame)
         widget.blockSignals(False)
 
+    if getSensor():
+        showRPM()
+
 
 def onGridProperties():
     if gridAdjustmentDialog.showDialog(getMainWindow(), app.grid):
@@ -2397,7 +2409,12 @@ def setupActions():
 
 def showRPM():
 
-    rpmArray = getReader().GetClientSideObject().GetOutput().GetFieldData().GetArray('RotationPerMinute')
+    rpmArray = None
+
+    if getReader():
+        rpmArray = getReader().GetClientSideObject().GetOutput().GetFieldData().GetArray('RotationPerMinute')
+    elif getSensor():
+        rpmArray = getSensor().GetClientSideObject().GetOutput().GetFieldData().GetArray('RotationPerMinute')
 
     if rpmArray:
         rpm = rpmArray.GetTuple1(0)
@@ -2410,7 +2427,13 @@ def showRPM():
     textRepresentation = smp.GetRepresentation(app.text)
     textRepresentation.Visibility = app.actions['actionShowRPM'].isChecked()
 
+    smp.Render()
+
+
+def initializeRPMText():
+    app.text = smp.Text()
+    app.text.Text = "No RPM"
+    textRepresentation = smp.GetRepresentation(app.text)
+    textRepresentation.Visibility = app.actions['actionShowRPM'].isChecked()
     textRepresentation.FontSize = 8
     textRepresentation.Color = [1,1,0]
-
-    smp.Render()
