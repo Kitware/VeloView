@@ -1914,9 +1914,14 @@ def onTimeChanged():
         widget.setValue(frame)
         widget.blockSignals(False)
 
+    #Remove the Rotation per minute from color label comboBox
+    ComboBox = getMainWindow().findChild('vvColorToolbar').findChild('pqDisplayColorWidget').findChildren('QComboBox')[0]
+    n = ComboBox.findText('RotationPerMinute')
+    ComboBox.removeItem(n)
+
     if getSensor():
         showRPM()
-
+    
 
 def onGridProperties():
     if gridAdjustmentDialog.showDialog(getMainWindow(), app.grid, app.gridProperties):
