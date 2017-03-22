@@ -2032,8 +2032,11 @@ def hideColorByComponent():
 
 
 def adjustScalarBarRangeLabelFormat():
+    if not app.actions['actionScalarBarVisibility'].isChecked():
+        return
+
     arrayName = getMainWindow().findChild('vvColorToolbar').findChild('pqDisplayColorWidget').findChild('QComboBox').currentText
-    if arrayName != '' and app.actions['actionScalarBarVisibility'].isChecked():
+    if arrayName != '' and hasArrayName(app.reader, arrayName):
         sb = smp.GetScalarBar(smp.GetLookupTableForArray(arrayName, []))
         sb.RangeLabelFormat = '%g'
         smp.Render()
