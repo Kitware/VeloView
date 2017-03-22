@@ -1784,6 +1784,8 @@ def start():
     updateRecentFiles()
     getTimeKeeper().connect('timeChanged()', onTimeChanged)
 
+    initializeRPMText()
+
 
 def findQObjectByName(widgets, name):
     for w in widgets:
