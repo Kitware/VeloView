@@ -452,6 +452,8 @@ public:
   double ComputeTimestamp(unsigned int tohTime);
   void ComputeOrientation(double timestamp, vtkTransform* geotransform);
 
+  bool isCurrentFrameValid();
+
   // Process the laser return from the firing data
   // firingData - one of HDL_FIRING_PER_PKT from the packet
   // hdl64offset - either 0 or 32 to support 64-laser systems
@@ -1628,17 +1630,24 @@ void vtkVelodyneHDLReader::vtkInternal::Init()
 }
 
 //-----------------------------------------------------------------------------
+bool vtkVelodyneHDLReader::vtkInternal::isCurrentFrameValid()
+{
+  return (this->CurrentDataset->GetNumberOfPoints() != 0 &&
+    this->currentRpm != std::numeric_limits<double>::infinity());
+}
+
+//-----------------------------------------------------------------------------
 void vtkVelodyneHDLReader::vtkInternal::SplitFrame(bool force)
 {
-  //if(this->CurrentDataset->GetNumberOfPoints() == 0)
-  //  {
-  //  return;
-  //  }
   /*if(this->skipFirstFrame)
     {
     this->skipFirstFrame = false;
     return;
     }*/
+  if (!this->isCurrentFrameValid())
+    {
+    return;
+    }
   if(this->SplitCounter > 0 && !force)
     {
     this->SplitCounter--;
