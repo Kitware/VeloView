@@ -48,7 +48,8 @@ def showDialog(mainWindow):
                         We are the developers of VeloView, providing real-time interactive visualization of live captured 3D LiDAR
                         data from Velodyne's sensors. We create customized solutions providing detection and tracking of people,
                         street signs, lane markings, vehicles, industrial machinery, and building facades from within VeloView or using
-                        combinations of point cloud and video data. We work with customers to create tailored solutions using proven open-source
+                        combinations of point cloud and video data. We also provide Lidar-based SLAM algorithms for other Velodyne's integrators.
+                        We work with customers to create tailored solutions using proven open-source
                         technologies, avoiding vendor lock-in and leveraging our world-leading experience in visualization, computer vision, high-performance
                         computing, and test-driven high-quality software process.<br />
                         <br />
