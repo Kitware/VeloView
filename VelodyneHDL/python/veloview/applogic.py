@@ -2110,6 +2110,8 @@ def toggleProjectionType():
         app.actions['actionMeasure'].toggle()
 
     app.actions['actionMeasure'].setEnabled(view.CameraParallelProjection)
+    if not view.CameraParallelProjection:
+        app.actions['actionMeasure'].setChecked(False)
 
     smp.Render()
 
