@@ -312,6 +312,7 @@ public:
 
   vtkInternal()
   {
+    this->AlreadyWarnAboutCalibration = false;
     this->CropMode = Cartesian;
     this->HasDualReturn = false;
     this->ShouldAddDualReturnArray = false;
@@ -430,6 +431,7 @@ public:
 
   bool CropReturns;
   bool CropInside;
+  bool AlreadyWarnAboutCalibration;
   double CropRegion[6];
   double distanceResolutionM;
 
@@ -2172,12 +2174,13 @@ bool vtkVelodyneHDLReader::isReportedSensorAndCalibrationFileConsistent(bool sho
   //compare the numbers of lasers
   if(reportedSensorNumberLaser != this->Internal->CalibrationReportedNumLasers)
     {
-    if(shouldWarn)
+    if(shouldWarn && !this->Internal->AlreadyWarnAboutCalibration)
       {
       std::stringstream warningMessage;
       warningMessage << "Reported number of lasers is " << reportedSensorNumberLaser;
       warningMessage << " whereas calibration number of laser is " << this->Internal->CalibrationReportedNumLasers;
       vtkGenericWarningMacro(<<warningMessage.str());
+      this->Internal->AlreadyWarnAboutCalibration = true;
       }
     return false;
     }
