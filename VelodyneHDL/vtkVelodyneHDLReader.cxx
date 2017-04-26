@@ -354,6 +354,7 @@ public:
   void LoadCorrectionsFile(const std::string& filename);
   bool HDL64LoadCorrectionsFromStreamData();
   bool HasDualReturn;
+  bool shouldBeCroppedOut(double pos[3],double theta);
 
   void ProcessHDLPacket(unsigned char *data, std::size_t bytesReceived);
 
@@ -1126,6 +1127,49 @@ vtkSmartPointer<vtkCellArray> vtkVelodyneHDLReader::vtkInternal::NewVertexCells(
   return cellArray;
 }
 
+bool vtkVelodyneHDLReader::vtkInternal::shouldBeCroppedOut(double pos[3],double theta){
+    // Test if point is cropped
+    if (!this->CropReturns)
+    {
+      return false;
+    }
+    switch(this->CropMode)
+    {
+      case Cartesian:// Cartesian cropping mode
+      {
+        bool pointOutsideOfBox = pos[0] >= this->CropRegion[0] && pos[0] <= this->CropRegion[1] &&
+          pos[1] >= this->CropRegion[2] && pos[1] <= this->CropRegion[3] &&
+          pos[2] >= this->CropRegion[4] && pos[2] <= this->CropRegion[5];
+        return ((pointOutsideOfBox && !this->CropInside) ||
+            (!pointOutsideOfBox && this->CropInside));
+        break;
+      }
+      case Spherical:
+      // Spherical mode
+      {
+        double R = std::sqrt(pos[0]*pos[0] + pos[1]*pos[1] + pos[2]*pos[2]);
+        bool pointInsideOfBounds;
+        if(this->CropRegion[0] <= this->CropRegion[1])
+          {
+          pointInsideOfBounds = theta >= this->CropRegion[0] && theta <= this->CropRegion[1] &&
+          R >= this->CropRegion[4] && R <= this->CropRegion[5];
+          }
+        else
+          {
+          pointInsideOfBounds = (theta >= this->CropRegion[0] || theta <= this->CropRegion[1]) &&
+          R >= this->CropRegion[4] && R <= this->CropRegion[5];
+          }
+        return ((pointInsideOfBounds && !this->CropInside) ||
+            (!pointInsideOfBounds && this->CropInside));
+        break;
+      }
+      case Cylindric:
+      {
+        // space holder for future implementation
+      }
+    }
+    return false;
+  }
 //-----------------------------------------------------------------------------
 void vtkVelodyneHDLReader::vtkInternal::PushFiringData(const unsigned char laserId,
                                                        const unsigned char rawLaserId,
@@ -1152,51 +1196,8 @@ void vtkVelodyneHDLReader::vtkInternal::PushFiringData(const unsigned char laser
   // Apply sensor transform
   this->SensorTransform->InternalTransformPoint(pos, pos);
 
-  // Test if point is cropped
-  if (this->CropReturns)
-    {
-    // Cartesian cropping mode
-    if(this->CropMode == Cartesian)
-      {
-    bool pointOutsideOfBox = pos[0] >= this->CropRegion[0] && pos[0] <= this->CropRegion[1] &&
-      pos[1] >= this->CropRegion[2] && pos[1] <= this->CropRegion[3] &&
-      pos[2] >= this->CropRegion[4] && pos[2] <= this->CropRegion[5];
-    if ((pointOutsideOfBox && !this->CropInside) ||
-        (!pointOutsideOfBox && this->CropInside))
-      {
-      return;
-      }
-    }
-    // Spherical mode
-    if(this->CropMode == Spherical)
-      {
-        double theta = static_cast<double>(azimuth) / 100;
-        double R = std::sqrt(pos[0]*pos[0] + pos[1]*pos[1] + pos[2]*pos[2]);
-
-        bool pointOutsideOfBox;
-
-        if(this->CropRegion[0] <= this->CropRegion[1])
-          {
-          pointOutsideOfBox = theta >= this->CropRegion[0] && theta <= this->CropRegion[1] &&
-          R >= this->CropRegion[4] && R <= this->CropRegion[5];
-          }
-        else
-          {
-          pointOutsideOfBox = (theta >= this->CropRegion[0] || theta <= this->CropRegion[1]) &&
-          R >= this->CropRegion[4] && R <= this->CropRegion[5];
-          }
-
-        if ((pointOutsideOfBox && !this->CropInside) ||
-            (!pointOutsideOfBox && this->CropInside))
-          {
-          return;
-          }
-      }
-    if(this->CropMode == Cylindric)
-      {
-        // space holder for future implementation
-      }
-    }
+  if (this->shouldBeCroppedOut(pos,static_cast<double> (azimuth)/100.0))
+    return;
 
   // Do not add any data before here as this might short-circuit
   if (hasDualReturn)
