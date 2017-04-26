@@ -17,6 +17,13 @@ install(DIRECTORY "${install_location}/lib/veloview-${VV_VERSION}"
   DESTINATION "lib"
   USE_SOURCE_PERMISSIONS
   COMPONENT superbuild)
+# Sensor calibration files
+file(GLOB shared_files "${install_location}/share/*.xml")
+install(FILES ${shared_files}
+  DESTINATION "share"
+  COMPONENT superbuild
+)
+unset(shared_files)
 
 if (qt_ENABLED AND NOT USE_SYSTEM_qt)
   install(DIRECTORY
