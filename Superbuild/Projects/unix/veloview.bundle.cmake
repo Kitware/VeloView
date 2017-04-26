@@ -17,6 +17,7 @@ install(DIRECTORY "${install_location}/lib/veloview-${VV_VERSION}"
   DESTINATION "lib"
   USE_SOURCE_PERMISSIONS
   COMPONENT superbuild)
+
 # Sensor calibration files
 file(GLOB shared_files "${install_location}/share/*.xml")
 install(FILES ${shared_files}
@@ -24,6 +25,19 @@ install(FILES ${shared_files}
   COMPONENT superbuild
 )
 unset(shared_files)
+
+# Workaround to ship required .so in the .sh installer
+file(GLOB lib_files_so
+  "${install_location}/lib/libPythonQt.so"
+  "${install_location}/lib/libpcap*.so*"
+  "${install_location}/lib/liblas*.so*"
+  "${install_location}/lib/libboost*.so*" # could be replqce by a package dependency
+  "${install_location}/lib/libQt*.so*" #  could be replqce by a package dependency
+)
+install(FILES ${lib_files_so}
+  DESTINATION "lib/veloview-${VV_VERSION}"
+  COMPONENT superbuild)
+unset(lib_files_so)
 
 if (qt_ENABLED AND NOT USE_SYSTEM_qt)
   install(DIRECTORY
