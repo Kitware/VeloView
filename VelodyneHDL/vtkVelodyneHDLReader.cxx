@@ -180,6 +180,61 @@ double HDL64EAdjustTimeStamp(int firingblock,
 }
 
 //-----------------------------------------------------------------------------
+double ComputeAverageRPM(vtkPolyData* cloud, int chunkSize)
+{
+  int NPoints = cloud->GetNumberOfPoints();
+  double meanRPM = 0;
+  unsigned int numChunks = 0;
+  double phiLeftSide, phiRightSide;
+  double timeLeftSide, timeRightSide;
+
+  vtkDataArray* azimuthArray = cloud->GetPointData()->GetArray("azimuth");
+  vtkDataArray* timeArray = cloud->GetPointData()->GetArray("timestamp");
+
+  for (int leftSide = 0; leftSide < NPoints; leftSide = leftSide + chunkSize)
+    {
+    // get the right bound of the current chunk
+    int rightSide = std::min(leftSide + chunkSize, NPoints - 1);
+
+    // rightSide can be equal to leftSide if the number of points
+    // is a multiple of chunkSize
+    if (rightSide != leftSide)
+      {
+      // get the left and right bound angles
+      phiLeftSide = azimuthArray->GetTuple1(leftSide);
+      phiRightSide = azimuthArray->GetTuple1(rightSide);
+      // get the left and right bound times
+      timeLeftSide = timeArray->GetTuple1(leftSide);
+      timeRightSide = timeArray->GetTuple1(rightSide);
+      // if the right bound time is lower than the left bound,
+      // the chunk goes across a frame boundary, skip this chunk
+      if ( phiRightSide < phiLeftSide)
+        {
+        continue;
+        }
+
+      // delta angle in number of full rotations
+      double dAngle = static_cast<double>(phiRightSide - phiLeftSide) / (36000.0);
+      // delta time in minutes
+      double dt = static_cast<double>(timeRightSide - timeLeftSide) / (60e6);
+
+      meanRPM += dAngle / dt;
+      numChunks++;
+      }
+    }
+
+  if (numChunks > 0)
+    {
+    meanRPM /= static_cast<double>(numChunks);
+    }
+  else
+    {
+    meanRPM = -1;
+    }
+
+  return meanRPM;
+}
+//-----------------------------------------------------------------------------
 void GetSphericalCoordinates(double p_in[3], double p_out[3])
 {
   // We will compute R, theta and phi
@@ -238,8 +293,6 @@ public:
     this->CropRegion[4] = this->CropRegion[5] = 0.0;
     this->CorrectionsInitialized = false;
     this->currentRpm = 0;
-    this->firstTimestamp = 0;
-    this->firstAngle = std::numeric_limits<int>::max();
 
     std::fill(this->LastPointId, this->LastPointId + HDL_MAX_NUM_LASERS, -1);
 
@@ -303,8 +356,6 @@ public:
   double currentRpm;
   std::vector<double> RpmByFrames;
   double TimeAdjust;
-  double firstTimestamp;
-  int firstAngle;
   vtkIdType LastPointId[HDL_MAX_NUM_LASERS];
   vtkIdType FirstPointIdOfDualReturnPair;
 
@@ -687,7 +738,6 @@ void vtkVelodyneHDLReader::UnloadPerFrameData()
   this->Internal->LastAzimuth = -1;
   this->Internal->LastTimestamp = std::numeric_limits<unsigned int>::max();
   this->Internal->TimeAdjust = std::numeric_limits<double>::quiet_NaN();
-  this->Internal->firstAngle = std::numeric_limits<int>::max();
 
   this->Internal->rollingCalibrationData->clear();
   this->Internal->IsDualReturnSensorMode = false;
@@ -1571,6 +1621,28 @@ void vtkVelodyneHDLReader::vtkInternal::SplitFrame(bool force)
     }
 
   this->CurrentDataset->SetVerts(this->NewVertexCells(this->CurrentDataset->GetNumberOfPoints()));
+
+  // The strategy is to compute an average RPM. The RPM is
+  // computed using chunks of size 1000. If the dataset doesn't
+  // have enought points, we reduce the size of the chunk.
+  double RPMValue = -1;
+  int chunkSize = 1000;
+  int nbrTry = 1;
+
+  // Minimum chunk size of 32
+  while( (RPMValue == -1) && nbrTry <= 5)
+  {
+    RPMValue = ComputeAverageRPM(this->CurrentDataset, chunkSize / nbrTry);
+    nbrTry++;
+  }
+
+  // if the number of points is under 32
+  if (RPMValue == -1)
+  {
+    vtkGenericWarningMacro("Not enough points in the dataset, RPM couldn't be computed");
+  }
+
+  this->CurrentDataset->GetFieldData()->GetArray("RotationPerMinute")->SetTuple1(0, RPMValue);
   this->Datasets.push_back(this->CurrentDataset);
   this->CurrentDataset = this->CreateData(0);
 }
@@ -1878,14 +1950,6 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(unsigned char *data, st
     }
   assert(azimuthDiff > 0);
 
-  //If it is the first packet of the current frame (ie : the first angle is not defined yet)
-  if(this->firstAngle >= std::numeric_limits<int>::max())
-    {
-    //Save the "first angle" of the frame = last angle of the first packet
-    this->firstAngle = dataPacket->firingData[HDL_FIRING_PER_PKT-1].rotationalPosition;
-    //Save the first timestamp of the frame = timestamp of the first packet
-    this->firstTimestamp = timestamp;//timestamp;
-    }
   for ( ; firingBlock < HDL_FIRING_PER_PKT; ++firingBlock)
     {
     HDLFiringData* firingData = &(dataPacket->firingData[firingBlock]);
@@ -1894,18 +1958,9 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(unsigned char *data, st
 
     if (firingData->rotationalPosition < this->LastAzimuth)
       {
-      //At the end of a frame : 
-      //Compute the deltaAngle / deltaTime (in rpm)
-      double deltaRotation = static_cast<double>(this->LastAzimuth - this->firstAngle)/(36000.0); //in number of lap
-      double deltaTime = (static_cast<double>(timestamp)-firstTimestamp)/(60e6); //in minutes
-      this->currentRpm = deltaRotation/deltaTime;
-      //Put the current rpm in a FieldData attached to the current dataset
-      this->CurrentDataset->GetFieldData()->GetArray("RotationPerMinute")->SetTuple1(0,this->currentRpm);
-      //Create a new dataset (new frame)
       this->SplitFrame();
       this->LastAzimuth = -1;
       this->LastTimestamp = std::numeric_limits<unsigned int>::max();
-      this->firstAngle = std::numeric_limits<int>::max();
       }
 
     // Skip this firing every PointSkip
