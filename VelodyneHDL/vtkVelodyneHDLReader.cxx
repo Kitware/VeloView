@@ -315,6 +315,7 @@ public:
     this->CropMode = Cartesian;
     this->HasDualReturn = false;
     this->ShouldAddDualReturnArray = false;
+    this->alreadyWarnedForIgnoredHDL64FiringPacket = false;
     this->SensorPowerMode = 0;
     this->Skip = 0;
     this->LastAzimuth = -1;
@@ -386,6 +387,7 @@ public:
   DualReturnSensorMode ReportedSensorReturnMode;
   bool IsHDL64Data;
   bool skipFirstFrame;
+  bool alreadyWarnedForIgnoredHDL64FiringPacket;
 
   //Bolean to manage the correction of intensity which indicates if the user want to correct the intensities
   bool WantIntensityCorrection;
@@ -1841,8 +1843,12 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessFiring(HDLFiringData* firingData,
       {
       if(firingBlockLaserOffset != 0)
         {
-        vtkGenericWarningMacro("Error: Received a HDL-64 UPPERBLOCK firing packet "
+        if (!this->alreadyWarnedForIgnoredHDL64FiringPacket)
+          {
+          vtkGenericWarningMacro("Error: Received a HDL-64 UPPERBLOCK firing packet "
                       "with a VLP-16 calibration file. Ignoring the firing.");
+          this->alreadyWarnedForIgnoredHDL64FiringPacket = true;
+          }
         return;
         }
       if(laserId >= 16)
