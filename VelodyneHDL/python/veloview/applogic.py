@@ -139,6 +139,9 @@ def hasArrayName(sourceProxy, arrayName):
     Returns True if the data has non-zero points and has a point data
     attribute with the given arrayName.
     '''
+    if not sourceProxy:
+        return False
+
     info = sourceProxy.GetDataInformation().DataInformation
 
     if info.GetNumberOfPoints() == 0:
