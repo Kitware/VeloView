@@ -2384,6 +2384,7 @@ def setupActions():
     geolocationComboBox.addItem('Relative Geolocation')
     geolocationComboBox.setItemData(2, "Use GPS geolocation to get each frame absolute location, the current frame is shown at origin", 3)
 
+    geolocationComboBox.connect('currentIndexChanged(int)', geolocationChanged)
     geolocationToolBar.addWidget(geolocationComboBox)
 
     # Set default toolbar visibility
