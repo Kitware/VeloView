@@ -1779,6 +1779,7 @@ def start():
     setupActions()
     disablePlaybackActions()
     disableSaveActions()
+    app.actions['actionSelectDualReturn'].setEnabled(False)
     app.actions['actionMeasure'].setEnabled(view.CameraParallelProjection)
     setupStatusBar()
     setupTimeSliderWidget()
