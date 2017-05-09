@@ -51,7 +51,7 @@
       <string notr="true"/>
      </property>
      <property name="pixmap">
-      <pixmap resource="build/veloview/src/veloview-build/VeloView_generated.qrc">:/VeloView/SplashImage.img</pixmap>
+      <pixmap resource="vvResources.qrc">:/vvResources/About.jpg</pixmap>
      </property>
      <property name="scaledContents">
       <bool>true</bool>
@@ -116,7 +116,7 @@
   </layout>
  </widget>
  <resources>
-  <include location="build/veloview/src/veloview-build/VeloView_generated.qrc"/>
+  <include location="vvResources.qrc"/>
  </resources>
  <connections/>
 </ui>
