@@ -758,6 +758,16 @@ def saveCSVCurrentFrame(filename):
     smp.Delete(w)
     rotateCSVFile(filename)
 
+def saveCSVCurrentFrameSelection(filename):
+    source = smp.GetActiveSource()
+    selection = source.GetSelectionOutput(0)
+    extractSelection = smp.ExtractSelection(Input = source, Selection = selection.Selection)
+    w = smp.CreateWriter(filename, extractSelection)
+    w.Precision = 16
+    w.FieldAssociation = 'Points'
+    w.UpdatePipeline()
+    smp.Delete(w)
+    rotateCSVFile(filename)
 
 def saveLASFrames(filename, first, last, transform):
     reader = getReader().GetClientSideObject()
