@@ -122,6 +122,7 @@ qt4_wrap_cpp(moc_source_files
 qt4_wrap_ui(ui_source_files
   vvColorToolbar.ui
   vvMainWindow.ui
+  vvAboutDialog.ui
   )
 
 qt4_add_resources(rcs_source_files

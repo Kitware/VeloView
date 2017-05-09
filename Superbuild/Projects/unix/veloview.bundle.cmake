@@ -12,7 +12,7 @@ install(DIRECTORY "${install_location}/lib/paraview-${PARAVIEW_VERSION}"
   USE_SOURCE_PERMISSIONS
   COMPONENT superbuild)
 
-# install all velodyne libraries
+# install all libraries
 install(DIRECTORY "${install_location}/lib/veloview-${VV_VERSION}"
   DESTINATION "lib"
   USE_SOURCE_PERMISSIONS

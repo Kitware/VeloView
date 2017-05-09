@@ -27,6 +27,7 @@ from PythonQt import QtCore, QtGui
 from vtkIOXMLPython import vtkXMLPolyDataWriter
 import kiwiviewerExporter
 import gridAdjustmentDialog
+import aboutDialog
 import planefit
 
 from PythonQt.paraview import vvCalibrationDialog, vvCropReturnsDialog, vvSelectFramesDialog
@@ -97,7 +98,7 @@ class AppLogic(object):
     def createStatusBarWidgets(self):
 
         self.logoLabel = QtGui.QLabel()
-        self.logoLabel.setPixmap(QtGui.QPixmap(":/VelodyneHDLPlugin/velodyne_logo.png"))
+        self.logoLabel.setPixmap(QtGui.QPixmap(":/VelodyneHDLPlugin/bottom_logo.png"))
         self.logoLabel.setScaledContents(True)
 
         self.filenameLabel = QtGui.QLabel()
@@ -1103,10 +1104,7 @@ def onUserGuide():
             QtGui.QDesktopServices.openUrl(QtCore.QUrl('file:///%s' % filename, QtCore.QUrl.TolerantMode))
 
 def onAbout():
-    title = 'About VeloView'
-    text = '''<h1>VeloView %s</h1><br/>Copyright (c) 2013, Velodyne Lidar<br />
-           Sample Data Repository: <a href=http://midas3.kitware.com/midas/community/29>http://midas3.kitware.com/midas/community/29</a>'''% getVersionString()
-    QtGui.QMessageBox.about(getMainWindow(), title, text)
+    aboutDialog.showDialog(getMainWindow())
 
 
 def close():
