@@ -29,8 +29,8 @@ class vvCalibrationDialog::pqInternal : public Ui::vvCalibrationDialog
 public:
   pqInternal() : Settings(pqApplicationCore::instance()->settings())
   {
-    const unsigned int nFile = 7; // WARNING update this accordingly.
-    const char* filenames[nFile]={"HDL-32.xml","VLP-16.xml","VLP-32a.xml","VLP-32b.xml","VLP-32c.xml","Puck Hi-Res.xml","Puck LITE.xml"};
+    const unsigned int nFile = 5; // WARNING update this accordingly.
+    const char* filenames[nFile]={"HDL-32.xml","VLP-16.xml","VLP-32c.xml","Puck Hi-Res.xml","Puck LITE.xml"};
     std::vector<QString> calibrationBuiltIn(filenames, filenames + nFile);
     QString prefix;
 #if defined(_WIN32)
