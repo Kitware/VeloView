@@ -343,6 +343,7 @@ public:
     this->DualReturnFilter = 0;
     this->IsDualReturnSensorMode = false;
     this->IsHDL64Data = false;
+    this->CalibrationReportedNumLasers = -1;
     this->skipFirstFrame = true;
     this->distanceResolutionM = 0.002;
     this->WantIntensityCorrection = false;
