@@ -53,9 +53,11 @@ install(DIRECTORY "${install_location}/lib/paraview-${PARAVIEW_VERSION}"
         COMPONENT ${AppName}
         PATTERN "*.lib" EXCLUDE)
 
-install(FILES "${install_location}/share/HDL-32.xml" "${install_location}/share/VLP-16.xml" "${install_location}/share/VLP-32a.xml" "${install_location}/share/VLP-32b.xml" "${install_location}/share/VLP-32c.xml" "${install_location}/share/Puck Hi-Res.xml" "${install_location}/share/Puck LITE.xml"
+file(GLOB shared_files "${install_location}/share/*.xml")
+install(FILES ${shared_files}
         DESTINATION "share"
         COMPONENT ${AppName})
+unset(shared_files)
 
 install(FILES "${VeloViewSuperBuild_SOURCE_DIR}/../Documentation/VeloView_Developer_Guide.pdf"
         DESTINATION "doc"
