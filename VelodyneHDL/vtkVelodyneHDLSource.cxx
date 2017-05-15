@@ -155,6 +155,7 @@ public:
     // Firing data packet
     if(length == 1206)
       {
+      this->HDLReader->updateReportedSensor(data);
       // Accumulate HDL64 Status byte data while correction are not initialized
       if(this->HDLReader->getIsHDL64Data()
           && !this->HDLReader->getCorrectionsInitialized())
@@ -166,7 +167,6 @@ public:
         // We check the sensor type when the initialization is done
         if(this->ShouldCheckSensor)
           {
-          this->HDLReader->updateReportedSensor(data);
           this->HDLReader->isReportedSensorAndCalibrationFileConsistent(true);
           this->ShouldCheckSensor = false;
           }
