@@ -391,7 +391,7 @@ public:
                               const HDLLaserCorrection* correction,
                               double pos[3],
                               double & distanceM ,
-                              short & intensity);
+                              short & intensity, bool correctIntensity);
 };
 
 //-----------------------------------------------------------------------------
@@ -1144,8 +1144,10 @@ void vtkVelodyneHDLReader::vtkInternal::PushFiringData(const unsigned char laser
   // Compute raw position
   double distanceM;
   double pos[3];
+  bool applyIntensityCorrection =
+      this->WantIntensityCorrection && this->IsHDL64Data && !(this->SensorPowerMode == CorrectionOn);
   ComputeCorrectedValues(azimuth, laserReturn, correction,
-                         pos, distanceM, intensity);
+                         pos, distanceM, intensity, applyIntensityCorrection);
 
   // Apply sensor transform
   this->SensorTransform->InternalTransformPoint(pos, pos);
@@ -1626,7 +1628,7 @@ void vtkVelodyneHDLReader::vtkInternal::ComputeOrientation(
 
 void vtkVelodyneHDLReader::vtkInternal::ComputeCorrectedValues(
     const unsigned short azimuth, const HDLLaserReturn* laserReturn,
-    const HDLLaserCorrection* correction, double pos[3], double & distanceM , short & intensity)
+    const HDLLaserCorrection* correction, double pos[3], double & distanceM , short & intensity, bool correctIntensity)
   {
   intensity = laserReturn->intensity;
 
@@ -1660,15 +1662,7 @@ void vtkVelodyneHDLReader::vtkInternal::ComputeCorrectedValues(
   pos[1] = xyDistance * cosAzimuth + correction->horizontalOffsetCorrection * sinAzimuth;
   pos[2] = distanceM * correction->sinVertCorrection + correction->verticalOffsetCorrection;
 
-  //If the intensities are already corrected from the sensor
-  //We do not apply the correction
-  if(this->SensorPowerMode == CorrectionOn)
-    {
-    return;
-    }
-
-  if( this->WantIntensityCorrection && this->IsHDL64Data && (correction->minIntensity < correction->maxIntensity) )
-    {
+  if (correctIntensity && (correction->minIntensity < correction->maxIntensity)){
     // Compute corrected intensity
 
     /* Please refer to the manual:
