@@ -1280,7 +1280,7 @@ void vtkVelodyneHDLReader::vtkInternal::PushFiringData(const unsigned char laser
       this->Flags->InsertNextValue(secondFlags);
       this->DistanceFlag->InsertNextValue(MapDistanceFlag(secondFlags));
       this->IntensityFlag->InsertNextValue(MapIntensityFlag(secondFlags));
-      //The first return indicates the dual return 
+      //The first return indicates the dual return
       //and the dual return indicates the first return
       this->DualReturnMatching->InsertNextValue(dualPointId);
       this->DualReturnMatching->SetValue(dualPointId,thisPointId);
@@ -2266,7 +2266,8 @@ bool vtkVelodyneHDLReader::vtkInternal::HDL64LoadCorrectionsFromStreamData()
       reinterpret_cast<const last4cyclesByte*>
         (&data[idxDSRDataFromMarker + 64 * HDL_MAX_NUM_LASERS]);
   this->SensorPowerMode = lastCycle->powerLevelStatus;
-
+  this->ReportedSensorReturnMode = ((lastCycle->multipleReturnStatus == 0)?STRONGEST_RETURN:
+                                ((lastCycle->multipleReturnStatus == 1)?LAST_RETURN:DUAL_RETURN));
   this->CalibrationReportedNumLasers = 64;
   PrecomputeCorrectionCosSin();
   this->CorrectionsInitialized = true;
