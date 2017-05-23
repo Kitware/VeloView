@@ -93,6 +93,10 @@ struct HDLFiringData
   uint16_t blockIdentifier;
   uint16_t rotationalPosition;
   HDLLaserReturn laserReturns[HDL_LASER_PER_FIRING];
+
+  inline bool isUpperBlock() const {
+    return blockIdentifier==BLOCK_32_TO_63;
+  }
 };
 
 struct HDLDataPacket
@@ -103,6 +107,8 @@ struct HDLDataPacket
   uint8_t factoryField2;
   SensorType getSensorType() const
   {
+    if (isHDL64())
+      return HDL64;
     return static_cast<SensorType>(factoryField2);
   }
   DualReturnSensorMode getDualReturnSensorMode() const
@@ -124,6 +130,9 @@ struct HDLDataPacket
     const HDLDataPacket* dataPacket = reinterpret_cast<const HDLDataPacket *>(data);
     return (dataPacket->firingData[0].blockIdentifier == BLOCK_0_TO_31
         || dataPacket->firingData[0].blockIdentifier == BLOCK_32_TO_63);
+  }
+  inline bool isHDL64() const {
+    return firingData[1].isUpperBlock();
   }
 };
 
@@ -163,4 +172,4 @@ struct HDLRGB
   uint8_t b;
 };
 #pragma pack(pop)
-} // end namespace
+}// end namespace DataPacketFixedLength

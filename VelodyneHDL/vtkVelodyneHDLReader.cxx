@@ -1715,9 +1715,9 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessFiring(HDLFiringData* firingData,
   // Here the logic is the following: Each firing in a packet encodes 32 lasers.
   // Hence two consecutive firings with same azimuth denotes dual-return
   //    for sensors with 32 dsr or less
-  // For 64 lasers sensors, dual return datas is detected if 3rd firing has same
-  //  rotationalPosition as firing 2.
-  //  Once DualReturnMode is detected, dual returns are firing 3,4 7,8 11,12
+  // For 64 lasers sensors, dual return datas is detected if firing idx 2 has same
+  //  rotationalPosition as firing idx 1.
+  //  Once DualReturnMode is detected, dual returns are firing 2,3 6,7 10,11 [0-based]
   const bool isThisFiringDualReturnData =
     (!this->IsHDL64Data)?(this->LastAzimuth == firingData->rotationalPosition):
     (((this->LastAzimuth == firingData->rotationalPosition) && (firingBlock == 2))
@@ -1859,13 +1859,13 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(unsigned char *data, st
     int localDiff = (36000 + dataPacket->firingData[i+1].rotationalPosition -
                      dataPacket->firingData[i].rotationalPosition) % 36000;
     diffs[i] = localDiff;
-    this->IsHDL64Data |=
-        (dataPacket->firingData[i].blockIdentifier == BLOCK_32_TO_63);
     }
 
-  if(!IsHDL64Data){
-    this->ReportedSensor = static_cast<SensorType>(dataPacket->factoryField2);
-    this->ReportedSensorReturnMode = static_cast<DualReturnSensorMode>(dataPacket->factoryField1);
+  this->IsHDL64Data |= dataPacket->isHDL64();
+
+  if(!IsHDL64Data){ // with HDL64, it should be filled by LoadCorrectionsFromStreamData
+    this->ReportedSensor = dataPacket->getSensorType();
+    this->ReportedSensorReturnMode = dataPacket->getDualReturnSensorMode();
   }
 
   std::sort(diffs.begin(), diffs.end());
@@ -1888,7 +1888,7 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(unsigned char *data, st
   for ( ; firingBlock < HDL_FIRING_PER_PKT; ++firingBlock)
     {
     HDLFiringData* firingData = &(dataPacket->firingData[firingBlock]);
-    int hdl64OffsetIf2ndBlock = (firingData->blockIdentifier == BLOCK_0_TO_31) ? 0 : 32;
+    int hdl64OffsetIf2ndBlock = firingData->isUpperBlock() ? 32 : 0;
 
     if (firingData->rotationalPosition < this->LastAzimuth)
       {
@@ -2018,27 +2018,9 @@ int vtkVelodyneHDLReader::ReadFrameInformation()
 //-----------------------------------------------------------------------------
 void vtkVelodyneHDLReader::updateReportedSensor(const unsigned char* data)
 {
-  const HDLDataPacket* dataPacket = reinterpret_cast<const HDLDataPacket *>(data);
-
-  // Since factoryField2 contains the rolling data in HDL64
-  // We check the number of laser by analysing the packets
-  this->Internal->IsHDL64Data = false;
-  for(int i = 0; i < HDL_FIRING_PER_PKT; ++i)
-    {
-    this->Internal->IsHDL64Data |=
-        (dataPacket->firingData[i].blockIdentifier == BLOCK_32_TO_63);
-    }
-
-  if(this->Internal->IsHDL64Data)
-    {
-    // Starting with HDL64, factoryField2 is not anymore the sensorType
-    this->Internal->ReportedSensor = HDL64;
-    return;
-    }
-  else
-    {
-    this->Internal->ReportedSensor = static_cast<SensorType>(dataPacket->factoryField2);
-    }
+    if(HDLDataPacket::isValidPacket(data, 1206))
+      this->Internal->ReportedSensor =
+        reinterpret_cast<const HDLDataPacket *>(data)->getSensorType();
 }
 
 //-----------------------------------------------------------------------------
