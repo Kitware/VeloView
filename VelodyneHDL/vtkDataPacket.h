@@ -113,6 +113,8 @@ struct HDLDataPacket
   }
   DualReturnSensorMode getDualReturnSensorMode() const
   {
+    if (isHDL64())
+      return isHDL64DualModeReturn()?DUAL_RETURN:STRONGEST_RETURN;
     return static_cast<DualReturnSensorMode>(factoryField1);
   }
   static const unsigned int getDataByteLength()
@@ -133,6 +135,15 @@ struct HDLDataPacket
   }
   inline bool isHDL64() const {
     return firingData[1].isUpperBlock();
+  }
+  inline bool isDualModeReturn() const {
+    if(isHDL64())
+      return isHDL64DualModeReturn();
+    else
+      return firingData[1].rotationalPosition == firingData[0].rotationalPosition;
+  }
+  inline bool isHDL64DualModeReturn() const {
+      return firingData[2].rotationalPosition == firingData[0].rotationalPosition;
   }
 };
 
