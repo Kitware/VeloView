@@ -2020,8 +2020,11 @@ int vtkVelodyneHDLReader::ReadFrameInformation()
 void vtkVelodyneHDLReader::updateReportedSensor(const unsigned char* data)
 {
     if(HDLDataPacket::isValidPacket(data, 1206))
-      this->Internal->ReportedSensor =
-        reinterpret_cast<const HDLDataPacket *>(data)->getSensorType();
+    {
+      const HDLDataPacket * dataPacket = reinterpret_cast<const HDLDataPacket *>(data);
+      this->Internal->IsHDL64Data = dataPacket->isHDL64();
+      this->Internal->ReportedSensor = dataPacket->getSensorType();
+    }
 }
 
 //-----------------------------------------------------------------------------
