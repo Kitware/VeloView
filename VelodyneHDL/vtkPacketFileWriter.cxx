@@ -148,18 +148,14 @@ bool vtkPacketFileWriter::WritePacket(const unsigned char* data, unsigned int da
     struct pcap_pkthdr header;
 
     std::vector<unsigned char> packetBuffer;
-    if (dataLength == 1206)
-      {
-      headerData = LidarPacketHeader;
-      }
-    else if(dataLength == 512 )
-      {
+    if(dataLength == 512 )
+    {
       headerData = PositionPacketHeader;
-      }
+    }
     else
-      {
+    {
       headerData = LidarPacketHeader;
-      }
+    }
     header.caplen = dataLength + 42;
     header.len =  dataLength + 42;
     packetBuffer.resize( header.len );

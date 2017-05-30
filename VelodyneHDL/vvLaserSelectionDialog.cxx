@@ -25,6 +25,8 @@
 #include <cmath>
 #include <cassert>
 
+#define NUM_LASER_MAX 64
+
 //-----------------------------------------------------------------------------
 class vvLaserSelectionDialog::pqInternal : public Ui::vvLaserSelectionDialog
 {
@@ -55,7 +57,7 @@ public:
 //-----------------------------------------------------------------------------
 void vvLaserSelectionDialog::pqInternal::saveSettings()
 {
-  for(int i = 0; i < 64; ++i)
+  for(int i = 0; i < NUM_LASER_MAX; ++i)
     {
     QTableWidgetItem* item = this->Table->item(i, 0);
     QTableWidgetItem* value = this->Table->item(i, 2);
@@ -74,16 +76,16 @@ void vvLaserSelectionDialog::pqInternal::saveSettings()
 //-----------------------------------------------------------------------------
 void vvLaserSelectionDialog::pqInternal::restoreSettings()
 {
-  QVector<int> channel2index(64, 0);
+  QVector<int> channel2index(NUM_LASER_MAX, 0);
 
-  for(int i = 0; i < 64; ++i)
+  for(int i = 0; i < NUM_LASER_MAX; ++i)
     {
     QTableWidgetItem* value = this->Table->item(i, 2);
     int channel = value->data(Qt::EditRole).toInt();
     channel2index[channel] = i;
     }
 
-  for(int c = 0; c < 64; ++c)
+  for(int c = 0; c < NUM_LASER_MAX; ++c)
     {
     bool checked = this->Settings->value(QString("VelodyneHDLPlugin/LaserSelectionDialog%1").arg(c),
                                          QVariant::fromValue(true)).toBool();
@@ -125,9 +127,9 @@ void vvLaserSelectionDialog::pqInternal::setup()
 
   table->setHorizontalHeaderItem(0, hcheckbox);
 
-  numVisibleRows = 64;
+  numVisibleRows = NUM_LASER_MAX;
 
-  for(size_t i = 0; i < 64; ++i)
+  for(size_t i = 0; i < NUM_LASER_MAX; ++i)
     {
     table->insertRow(i);
 
@@ -295,12 +297,12 @@ vvLaserSelectionDialog::vvLaserSelectionDialog(QWidget *p) : QDialog(p)
 //-----------------------------------------------------------------------------
 QVector<int> vvLaserSelectionDialog::getLaserSelectionSelector()
 {
-  QVector<int> result(64, 1);
+  QVector<int> result(NUM_LASER_MAX, 1);
   for(int i = 0; i < this->Internal->Table->rowCount(); ++i)
     {
     QTableWidgetItem* value = this->Internal->Table->item(i, 1);
     int channel = value->data(Qt::EditRole).toInt();
-    assert(channel < 64 && channel >= 0);
+    assert(channel < NUM_LASER_MAX && channel >= 0);
     QTableWidgetItem* item = this->Internal->Table->item(i, 0);
     result[channel] = (item->checkState() == Qt::Checked) && !this->Internal->Table->isRowHidden(i);
     }
@@ -327,7 +329,7 @@ void vvLaserSelectionDialog::setLasersCorrections(const QVector<double>& vertica
     QTableWidgetItem* value = this->Internal->Table->item(i, 1);
     int channel = value->data(Qt::EditRole).toInt();
 
-    assert(channel < 64 && channel >= 0);
+    assert(channel < NUM_LASER_MAX && channel >= 0);
     int col=2;
     QTableWidgetItem* item = this->Internal->Table->item(i, col++);
     item->setData(Qt::EditRole, verticalCorrection[channel]);
@@ -400,7 +402,7 @@ void vvLaserSelectionDialog::setLaserSelectionSelector(const QVector<int>& mask)
     QTableWidgetItem* item = this->Internal->Table->item(i, 0);
     QTableWidgetItem* value = this->Internal->Table->item(i, 1);
     int channel = value->data(Qt::EditRole).toInt();
-    assert(channel < 64 && channel >= 0);
+    assert(channel < NUM_LASER_MAX && channel >= 0);
     item->setCheckState(mask[channel] && !this->Internal->Table->isRowHidden(i) ? Qt::Checked : Qt::Unchecked);
     }
 }

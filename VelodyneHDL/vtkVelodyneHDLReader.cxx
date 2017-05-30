@@ -62,6 +62,7 @@
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
 #include <boost/filesystem.hpp>
+#include <boost/preprocessor.hpp>
 
 #include <Eigen/Dense>
 
@@ -72,22 +73,11 @@ typedef boost::uint8_t uint8_t;
 # include <stdint.h>
 #endif
 
+#include "vtkDataPacket.h"
+using namespace DataPacketFixedLength;
+
 namespace
 {
-
-#define HDL_Grabber_toRadians(x) ((x) * vtkMath::Pi() / 180.0)
-
-static const int HDL_NUM_ROT_ANGLES = 36001;
-static const int HDL_LASER_PER_FIRING = 32;
-static const int HDL_MAX_NUM_LASERS = 64;
-static const int HDL_FIRING_PER_PKT = 12;
-
-enum HDLBlock
-{
-  BLOCK_0_TO_31 = 0xeeff,
-  BLOCK_32_TO_63 = 0xddff
-};
-
 enum CropModeEnum
 {
   None = 0,
@@ -96,92 +86,6 @@ enum CropModeEnum
   Cylindric = 3,
 };
 
-enum SensorType
-{
-  HDL32E = 0x21,
-  VLP16  = 0x22,
-  VLP32  = 0x23,
-  //Work around : this is not defined by any specification
-  //But it is usefull to define
-  HDL64  = 0xa0,
-};
-enum DualReturnSensorMode
-{
-  STRONGEST_RETURN = 0x37,
-  LAST_RETURN  = 0x38,
-  DUAL_RETURN  = 0x39,
-};
-enum PowerMode
-{
-  NO_INTERNAL_CORRECTION_0 = 0xa0,
-  NO_INTERNAL_CORRECTION_1 = 0xa1,
-  NO_INTERNAL_CORRECTION_2 = 0xa2,
-  NO_INTERNAL_CORRECTION_3 = 0xa3,
-  NO_INTERNAL_CORRECTION_4 = 0xa4,
-  NO_INTERNAL_CORRECTION_5 = 0xa5,
-  NO_INTERNAL_CORRECTION_6 = 0xa6,
-  NO_INTERNAL_CORRECTION_7 = 0xa7,
-  CorrectionOn = 0xa8,
-};
-
-#pragma pack(push, 1)
-typedef struct HDLLaserReturn
-{
-  unsigned short distance;
-  unsigned char intensity;
-} HDLLaserReturn;
-
-struct HDLFiringData
-{
-  unsigned short blockIdentifier;
-  unsigned short rotationalPosition;
-  HDLLaserReturn laserReturns[HDL_LASER_PER_FIRING];
-};
-
-struct HDLDataPacket
-{
-  HDLFiringData firingData[HDL_FIRING_PER_PKT];
-  unsigned int gpsTimestamp;
-  unsigned char factoryField1;
-  unsigned char factoryField2;
-};
-
-struct HDLLaserCorrection  // Internal representation of per-laser correction
-{
-  // In degrees
-  double rotationalCorrection;
-  double verticalCorrection;
-  // In meters
-  double distanceCorrection;
-  double distanceCorrectionX;
-  double distanceCorrectionY;
-
-  double verticalOffsetCorrection;
-  double horizontalOffsetCorrection;
-
-  double focalDistance;
-  double focalSlope;
-  double closeSlope; // Used in HDL-64 only
-
-  short minIntensity;
-  short maxIntensity;
-
-  // precomputed values
-  double sinRotationalCorrection;
-  double cosRotationalCorrection;
-  double sinVertCorrection;
-  double cosVertCorrection;
-  double sinVertOffsetCorrection;
-  double cosVertOffsetCorrection;
-};
-
-struct HDLRGB
-{
-  uint8_t r;
-  uint8_t g;
-  uint8_t b;
-};
-#pragma pack(pop)
 
 //-----------------------------------------------------------------------------
 int MapFlags(unsigned int flags, unsigned int low, unsigned int high)
@@ -339,7 +243,7 @@ public:
 
     std::fill(this->LastPointId, this->LastPointId + HDL_MAX_NUM_LASERS, -1);
 
-    this->LaserSelection.resize(64, true);
+    this->LaserSelection.resize(HDL_MAX_NUM_LASERS, true);
     this->DualReturnFilter = 0;
     this->IsDualReturnSensorMode = false;
     this->IsHDL64Data = false;
@@ -419,7 +323,7 @@ public:
   std::vector<double> cos_lookup_table_;
   std::vector<double> sin_lookup_table_;
   HDLLaserCorrection laser_corrections_[HDL_MAX_NUM_LASERS];
-  double XMLColorTable[64][3];
+  double XMLColorTable[HDL_MAX_NUM_LASERS][3];
   int CalibrationReportedNumLasers;
   bool CorrectionsInitialized;
   bool IsCorrectionFromLiveStream;
@@ -451,6 +355,7 @@ public:
   void LoadCorrectionsFile(const std::string& filename);
   bool HDL64LoadCorrectionsFromStreamData();
   bool HasDualReturn;
+  bool shouldBeCroppedOut(double pos[3],double theta);
 
   void ProcessHDLPacket(unsigned char *data, std::size_t bytesReceived);
 
@@ -488,7 +393,7 @@ public:
                               const HDLLaserCorrection* correction,
                               double pos[3],
                               double & distanceM ,
-                              short & intensity);
+                              short & intensity, bool correctIntensity);
 };
 
 //-----------------------------------------------------------------------------
@@ -580,30 +485,24 @@ const std::string& vtkVelodyneHDLReader::GetCorrectionsFile()
 }
 
 //-----------------------------------------------------------------------------
-void vtkVelodyneHDLReader::SetLaserSelection(int x00, int x01, int x02, int x03, int x04, int x05, int x06, int x07,
-                                        int x08, int x09, int x10, int x11, int x12, int x13, int x14, int x15,
-                                        int x16, int x17, int x18, int x19, int x20, int x21, int x22, int x23,
-                                        int x24, int x25, int x26, int x27, int x28, int x29, int x30, int x31,
-                                        int x32, int x33, int x34, int x35, int x36, int x37, int x38, int x39,
-                                        int x40, int x41, int x42, int x43, int x44, int x45, int x46, int x47,
-                                        int x48, int x49, int x50, int x51, int x52, int x53, int x54, int x55,
-                                        int x56, int x57, int x58, int x59, int x60, int x61, int x62, int x63)
+
+#define PARAM(z,n, data) int x##n,
+#define VAL(z,n, data) x##n,
+#define B_HDL_MAX_NUM_LASERS 64
+void vtkVelodyneHDLReader::SetLaserSelection(BOOST_PP_REPEAT(BOOST_PP_DEC(B_HDL_MAX_NUM_LASERS), PARAM, "") int BOOST_PP_CAT(x, B_HDL_MAX_NUM_LASERS))
 {
-  int mask[64] = {x00, x01, x02, x03, x04, x05, x06, x07,
-                  x08, x09, x10, x11, x12, x13, x14, x15,
-                  x16, x17, x18, x19, x20, x21, x22, x23,
-                  x24, x25, x26, x27, x28, x29, x30, x31,
-                  x32, x33, x34, x35, x36, x37, x38, x39,
-                  x40, x41, x42, x43, x44, x45, x46, x47,
-                  x48, x49, x50, x51, x52, x53, x54, x55,
-                  x56, x57, x58, x59, x60, x61, x62, x63};
+  assert(HDL_MAX_NUM_LASERS == B_HDL_MAX_NUM_LASERS);
+  int mask[HDL_MAX_NUM_LASERS] = {BOOST_PP_REPEAT(BOOST_PP_DEC(B_HDL_MAX_NUM_LASERS), VAL, "") BOOST_PP_CAT(x, B_HDL_MAX_NUM_LASERS)};
   this->SetLaserSelection(mask);
 }
+#undef B_HDL_MAX_NUM_LASERS
+#undef PARAM
+#undef VAL
 
 //-----------------------------------------------------------------------------
-void vtkVelodyneHDLReader::SetLaserSelection(int LaserSelection[64])
+void vtkVelodyneHDLReader::SetLaserSelection(int LaserSelection[HDL_MAX_NUM_LASERS])
 {
-  for(int i = 0; i < 64; ++i)
+  for(int i = 0; i < HDL_MAX_NUM_LASERS; ++i)
     {
     this->Internal->LaserSelection[i] = LaserSelection[i];
     }
@@ -611,9 +510,9 @@ void vtkVelodyneHDLReader::SetLaserSelection(int LaserSelection[64])
 }
 
 //-----------------------------------------------------------------------------
-void vtkVelodyneHDLReader::GetLaserSelection(int LaserSelection[64])
+void vtkVelodyneHDLReader::GetLaserSelection(int LaserSelection[HDL_MAX_NUM_LASERS])
 {
-  for(int i = 0; i < 64; ++i)
+  for(int i = 0; i < HDL_MAX_NUM_LASERS; ++i)
     {
     LaserSelection[i] = this->Internal->LaserSelection[i];
     }
@@ -643,19 +542,19 @@ void vtkVelodyneHDLReader::SetDualReturnFilter(unsigned int filter)
 
 //-----------------------------------------------------------------------------
 void vtkVelodyneHDLReader::GetLaserCorrections(
-    double verticalCorrection[64],
-    double rotationalCorrection[64],
-    double distanceCorrection[64],
-    double distanceCorrectionX[64],
-    double distanceCorrectionY[64],
-    double verticalOffsetCorrection[64],
-    double horizontalOffsetCorrection[64],
-    double focalDistance[64],
-    double focalSlope[64],
-    double minIntensity[64],
-    double maxIntensity[64]  )
+    double verticalCorrection[HDL_MAX_NUM_LASERS],
+    double rotationalCorrection[HDL_MAX_NUM_LASERS],
+    double distanceCorrection[HDL_MAX_NUM_LASERS],
+    double distanceCorrectionX[HDL_MAX_NUM_LASERS],
+    double distanceCorrectionY[HDL_MAX_NUM_LASERS],
+    double verticalOffsetCorrection[HDL_MAX_NUM_LASERS],
+    double horizontalOffsetCorrection[HDL_MAX_NUM_LASERS],
+    double focalDistance[HDL_MAX_NUM_LASERS],
+    double focalSlope[HDL_MAX_NUM_LASERS],
+    double minIntensity[HDL_MAX_NUM_LASERS],
+    double maxIntensity[HDL_MAX_NUM_LASERS]  )
 {
-  for(int i = 0; i < 64; ++i)
+  for(int i = 0; i < HDL_MAX_NUM_LASERS; ++i)
     {
     verticalCorrection[i] = this->Internal->laser_corrections_[i].verticalCorrection;
     rotationalCorrection[i] = this->Internal->laser_corrections_[i].rotationalCorrection;
@@ -672,9 +571,9 @@ void vtkVelodyneHDLReader::GetLaserCorrections(
 }
 
 //-----------------------------------------------------------------------------
-void vtkVelodyneHDLReader::GetXMLColorTable(double XMLColorTable[256])
+void vtkVelodyneHDLReader::GetXMLColorTable(double XMLColorTable[4*HDL_MAX_NUM_LASERS])
 {
-  for(int i = 0; i < 64; ++i)
+  for(int i = 0; i < HDL_MAX_NUM_LASERS; ++i)
     {
     XMLColorTable[i*4] = static_cast<double>(i)/63.0 * 255.0;
     for (int j = 0; j < 3; ++j)
@@ -1007,24 +906,24 @@ void vtkVelodyneHDLReader::DumpFrames(int startFrame, int endFrame, const std::s
 
   this->Internal->Reader->SetFilePosition(&this->Internal->FilePositions[startFrame]);
   int skip = this->Internal->Skips[startFrame];
-
+  const unsigned int ethernetUDPHeaderLength = 42;
   while (this->Internal->Reader->NextPacket(data, dataLength, timeSinceStart, &header) &&
          currentFrame <= endFrame)
     {
-    if (dataLength == (1206 + 42) ||
-        dataLength == (512 + 42))
+    if (dataLength == (HDLDataPacket::getDataByteLength() + ethernetUDPHeaderLength) ||
+        dataLength == (512 + ethernetUDPHeaderLength))
       {
       writer.WritePacket(header, const_cast<unsigned char*>(data));
       }
 
     // dont check for frame counts if it was not a firing packet
-    if(dataLength != (1206 + 42))
+    if(dataLength != HDLDataPacket::getPacketByteLength())
       {
       continue;
       }
 
     // Check if we cycled a frame and decrement
-    const HDLDataPacket* dataPacket = reinterpret_cast<const HDLDataPacket *>(data + 42);
+    const HDLDataPacket* dataPacket = reinterpret_cast<const HDLDataPacket *>(data + ethernetUDPHeaderLength);
 
     for (int i = skip; i < HDL_FIRING_PER_PKT; ++i)
       {
@@ -1223,6 +1122,49 @@ vtkSmartPointer<vtkCellArray> vtkVelodyneHDLReader::vtkInternal::NewVertexCells(
   return cellArray;
 }
 
+bool vtkVelodyneHDLReader::vtkInternal::shouldBeCroppedOut(double pos[3],double theta){
+    // Test if point is cropped
+    if (!this->CropReturns)
+    {
+      return false;
+    }
+    switch(this->CropMode)
+    {
+      case Cartesian:// Cartesian cropping mode
+      {
+        bool pointOutsideOfBox = pos[0] >= this->CropRegion[0] && pos[0] <= this->CropRegion[1] &&
+          pos[1] >= this->CropRegion[2] && pos[1] <= this->CropRegion[3] &&
+          pos[2] >= this->CropRegion[4] && pos[2] <= this->CropRegion[5];
+        return ((pointOutsideOfBox && !this->CropInside) ||
+            (!pointOutsideOfBox && this->CropInside));
+        break;
+      }
+      case Spherical:
+      // Spherical mode
+      {
+        double R = std::sqrt(pos[0]*pos[0] + pos[1]*pos[1] + pos[2]*pos[2]);
+        bool pointInsideOfBounds;
+        if(this->CropRegion[0] <= this->CropRegion[1])
+          {
+          pointInsideOfBounds = theta >= this->CropRegion[0] && theta <= this->CropRegion[1] &&
+          R >= this->CropRegion[4] && R <= this->CropRegion[5];
+          }
+        else
+          {
+          pointInsideOfBounds = (theta >= this->CropRegion[0] || theta <= this->CropRegion[1]) &&
+          R >= this->CropRegion[4] && R <= this->CropRegion[5];
+          }
+        return ((pointInsideOfBounds && !this->CropInside) ||
+            (!pointInsideOfBounds && this->CropInside));
+        break;
+      }
+      case Cylindric:
+      {
+        // space holder for future implementation
+      }
+    }
+    return false;
+  }
 //-----------------------------------------------------------------------------
 void vtkVelodyneHDLReader::vtkInternal::PushFiringData(const unsigned char laserId,
                                                        const unsigned char rawLaserId,
@@ -1241,57 +1183,16 @@ void vtkVelodyneHDLReader::vtkInternal::PushFiringData(const unsigned char laser
   // Compute raw position
   double distanceM;
   double pos[3];
+  bool applyIntensityCorrection =
+      this->WantIntensityCorrection && this->IsHDL64Data && !(this->SensorPowerMode == CorrectionOn);
   ComputeCorrectedValues(azimuth, laserReturn, correction,
-                         pos, distanceM, intensity);
+                         pos, distanceM, intensity, applyIntensityCorrection);
 
   // Apply sensor transform
   this->SensorTransform->InternalTransformPoint(pos, pos);
 
-  // Test if point is cropped
-  if (this->CropReturns)
-    {
-    // Cartesian cropping mode
-    if(this->CropMode == Cartesian)
-      {
-      bool pointOutsideOfBox = pos[0] >= this->CropRegion[0] && pos[0] <= this->CropRegion[1] &&
-        pos[1] >= this->CropRegion[2] && pos[1] <= this->CropRegion[3] &&
-        pos[2] >= this->CropRegion[4] && pos[2] <= this->CropRegion[5];
-      if ((pointOutsideOfBox && !this->CropInside) ||
-          (!pointOutsideOfBox && this->CropInside))
-        {
-        return;
-        }
-      }
-    // Spherical mode
-    if(this->CropMode == Spherical)
-      {
-        double theta = static_cast<double>(azimuth) / 100;
-        double R = std::sqrt(pos[0]*pos[0] + pos[1]*pos[1] + pos[2]*pos[2]);
-
-        bool pointOutsideOfBox;
-
-        if(this->CropRegion[0] <= this->CropRegion[1])
-          {
-          pointOutsideOfBox = theta >= this->CropRegion[0] && theta <= this->CropRegion[1] &&
-          R >= this->CropRegion[4] && R <= this->CropRegion[5];
-          }
-        else
-          {
-          pointOutsideOfBox = (theta >= this->CropRegion[0] || theta <= this->CropRegion[1]) &&
-          R >= this->CropRegion[4] && R <= this->CropRegion[5];
-          }
-
-        if ((pointOutsideOfBox && !this->CropInside) ||
-            (!pointOutsideOfBox && this->CropInside))
-          {
-          return;
-          }
-      }
-    if(this->CropMode == Cylindric)
-      {
-        // space holder for future implementation
-      }
-    }
+  if (this->shouldBeCroppedOut(pos,static_cast<double> (azimuth)/100.0))
+    return;
 
   // Do not add any data before here as this might short-circuit
   if (hasDualReturn)
@@ -1374,7 +1275,7 @@ void vtkVelodyneHDLReader::vtkInternal::PushFiringData(const unsigned char laser
       this->Flags->InsertNextValue(secondFlags);
       this->DistanceFlag->InsertNextValue(MapDistanceFlag(secondFlags));
       this->IntensityFlag->InsertNextValue(MapIntensityFlag(secondFlags));
-      //The first return indicates the dual return 
+      //The first return indicates the dual return
       //and the dual return indicates the first return
       this->DualReturnMatching->InsertNextValue(dualPointId);
       this->DualReturnMatching->SetValue(dualPointId,thisPointId);
@@ -1483,7 +1384,7 @@ void vtkVelodyneHDLReader::vtkInternal::LoadCorrectionsFile(const std::string& c
 
   // Getting min & max intensities from XML
   int laserId = 0;
-  int minIntensity[64], maxIntensity[64];
+  int minIntensity[HDL_MAX_NUM_LASERS], maxIntensity[HDL_MAX_NUM_LASERS];
   BOOST_FOREACH (boost::property_tree::ptree::value_type &v, pt.get_child("boost_serialization.DB.minIntensity_"))
     {
     std::stringstream ss;
@@ -1603,6 +1504,7 @@ void vtkVelodyneHDLReader::vtkInternal::LoadCorrectionsFile(const std::string& c
       idx++;
       }
     }
+
   PrecomputeCorrectionCosSin();
   this->CorrectionsInitialized = true;
 }
@@ -1723,7 +1625,7 @@ void vtkVelodyneHDLReader::vtkInternal::ComputeOrientation(
 
 void vtkVelodyneHDLReader::vtkInternal::ComputeCorrectedValues(
     const unsigned short azimuth, const HDLLaserReturn* laserReturn,
-    const HDLLaserCorrection* correction, double pos[3], double & distanceM , short & intensity)
+    const HDLLaserCorrection* correction, double pos[3], double & distanceM , short & intensity, bool correctIntensity)
   {
   intensity = laserReturn->intensity;
 
@@ -1757,15 +1659,7 @@ void vtkVelodyneHDLReader::vtkInternal::ComputeCorrectedValues(
   pos[1] = xyDistance * cosAzimuth + correction->horizontalOffsetCorrection * sinAzimuth;
   pos[2] = distanceM * correction->sinVertCorrection + correction->verticalOffsetCorrection;
 
-  //If the intensities are already corrected from the sensor
-  //We do not apply the correction
-  if(this->SensorPowerMode == CorrectionOn)
-    {
-    return;
-    }
-
-  if( this->WantIntensityCorrection && this->IsHDL64Data && (correction->minIntensity < correction->maxIntensity) )
-    {
+  if (correctIntensity && (correction->minIntensity < correction->maxIntensity)){
     // Compute corrected intensity
 
     /* Please refer to the manual:
@@ -1818,9 +1712,9 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessFiring(HDLFiringData* firingData,
   // Here the logic is the following: Each firing in a packet encodes 32 lasers.
   // Hence two consecutive firings with same azimuth denotes dual-return
   //    for sensors with 32 dsr or less
-  // For 64 lasers sensors, dual return datas is detected if 3rd firing has same
-  //  rotationalPosition as firing 2.
-  //  Once DualReturnMode is detected, dual returns are firing 3,4 7,8 11,12
+  // For 64 lasers sensors, dual return datas is detected if firing idx 2 has same
+  //  rotationalPosition as firing idx 1.
+  //  Once DualReturnMode is detected, dual returns are firing 2,3 6,7 10,11 [0-based]
   const bool isThisFiringDualReturnData =
     (!this->IsHDL64Data)?(this->LastAzimuth == firingData->rotationalPosition):
     (((this->LastAzimuth == firingData->rotationalPosition) && (firingBlock == 2))
@@ -1962,13 +1856,13 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(unsigned char *data, st
     int localDiff = (36000 + dataPacket->firingData[i+1].rotationalPosition -
                      dataPacket->firingData[i].rotationalPosition) % 36000;
     diffs[i] = localDiff;
-    this->IsHDL64Data |=
-        (dataPacket->firingData[i].blockIdentifier == BLOCK_32_TO_63);
     }
 
-  if(!IsHDL64Data){
-    this->ReportedSensor = static_cast<SensorType>(dataPacket->factoryField2);
-    this->ReportedSensorReturnMode = static_cast<DualReturnSensorMode>(dataPacket->factoryField1);
+  this->IsHDL64Data |= dataPacket->isHDL64();
+
+  if(!IsHDL64Data){ // with HDL64, it should be filled by LoadCorrectionsFromStreamData
+    this->ReportedSensor = dataPacket->getSensorType();
+    this->ReportedSensorReturnMode = dataPacket->getDualReturnSensorMode();
   }
 
   std::sort(diffs.begin(), diffs.end());
@@ -1991,7 +1885,8 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(unsigned char *data, st
   for ( ; firingBlock < HDL_FIRING_PER_PKT; ++firingBlock)
     {
     HDLFiringData* firingData = &(dataPacket->firingData[firingBlock]);
-    int hdl64OffsetIf2ndBlock = (firingData->blockIdentifier == BLOCK_0_TO_31) ? 0 : 32;
+    int multiBlockLaserIdOffset = (firingData->blockIdentifier == BLOCK_0_TO_31) ? 0 :
+                                  (firingData->blockIdentifier == BLOCK_32_TO_63 ? 32 : 0);
 
     if (firingData->rotationalPosition < this->LastAzimuth)
       {
@@ -2013,7 +1908,7 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(unsigned char *data, st
     if(this->PointsSkip == 0 || firingBlock % (this->PointsSkip + 1) == 0)
       {
       this->ProcessFiring(firingData,
-                          hdl64OffsetIf2ndBlock,
+                          multiBlockLaserIdOffset,
                           firingBlock,
                           azimuthDiff,
                           timestamp,
@@ -2121,27 +2016,9 @@ int vtkVelodyneHDLReader::ReadFrameInformation()
 //-----------------------------------------------------------------------------
 void vtkVelodyneHDLReader::updateReportedSensor(const unsigned char* data)
 {
-  const HDLDataPacket* dataPacket = reinterpret_cast<const HDLDataPacket *>(data);
-
-  // Since factoryField2 contains the rolling data in HDL64
-  // We check the number of laser by analysing the packets
-  this->Internal->IsHDL64Data = false;
-  for(int i = 0; i < HDL_FIRING_PER_PKT; ++i)
-    {
-    this->Internal->IsHDL64Data |=
-        (dataPacket->firingData[i].blockIdentifier == BLOCK_32_TO_63);
-    }
-
-  if(this->Internal->IsHDL64Data)
-    {
-    // Starting with HDL64, factoryField2 is not anymore the sensorType
-    this->Internal->ReportedSensor = HDL64;
-    return;
-    }
-  else
-    {
-    this->Internal->ReportedSensor = static_cast<SensorType>(dataPacket->factoryField2);
-    }
+    if(HDLDataPacket::isValidPacket(data, 1206))
+      this->Internal->ReportedSensor =
+        reinterpret_cast<const HDLDataPacket *>(data)->getSensorType();
 }
 
 //-----------------------------------------------------------------------------
@@ -2166,26 +2043,8 @@ bool vtkVelodyneHDLReader::GetHasDualReturn()
 //-----------------------------------------------------------------------------
 bool vtkVelodyneHDLReader::isReportedSensorAndCalibrationFileConsistent(bool shouldWarn)
 {
-  int reportedSensorNumberLaser = 0;
   //Get the number of laser from sensor type
-  switch (this->Internal->ReportedSensor)
-    {
-    case HDL32E:
-      reportedSensorNumberLaser = 32;
-      break;
-    case VLP16:
-      reportedSensorNumberLaser = 16;
-      break;
-    case VLP32:
-      reportedSensorNumberLaser = 32;
-      break;
-    case HDL64:
-      reportedSensorNumberLaser = 64;
-      break;
-    default:
-      reportedSensorNumberLaser = 0;
-      break;
-    }
+  int reportedSensorNumberLaser = num_laser(this->Internal->ReportedSensor);
 
   //compare the numbers of lasers
   if(reportedSensorNumberLaser != this->Internal->CalibrationReportedNumLasers)
@@ -2366,13 +2225,17 @@ bool vtkVelodyneHDLReader::vtkInternal::HDL64LoadCorrectionsFromStreamData()
     {
     return false;
     }
+  // the rollingCalibrationData considers the marker to be "#" in reserved4
   const int idxDSRDataFromMarker = static_cast<int>(
                                      -reinterpret_cast<unsigned long>
                                     (&((HDLLaserCorrectionByte*)0)->reserved4));
-  for (int dsr = 0; dsr < HDL_MAX_NUM_LASERS; ++dsr)
+  const int HDL64_RollingData_NumLaser = 64;
+  for (int dsr = 0; dsr < HDL64_RollingData_NumLaser; ++dsr)
     {
     const HDLLaserCorrectionByte * correctionStream=
         reinterpret_cast<const HDLLaserCorrectionByte*>
+        // The 64 here is the length of the 4 16-byte cycle
+        //    containing one dsr information
           (&data[idxDSRDataFromMarker + 64 * dsr]);
     if (correctionStream->channel != dsr)
       {
@@ -2402,10 +2265,12 @@ bool vtkVelodyneHDLReader::vtkInternal::HDL64LoadCorrectionsFromStreamData()
   //Get the last cycle of live correction file
   const last4cyclesByte* lastCycle =
       reinterpret_cast<const last4cyclesByte*>
-        (&data[idxDSRDataFromMarker + 64 * HDL_MAX_NUM_LASERS]);
+        (&data[idxDSRDataFromMarker + 64 * HDL64_RollingData_NumLaser]);
   this->SensorPowerMode = lastCycle->powerLevelStatus;
+  this->ReportedSensorReturnMode = ((lastCycle->multipleReturnStatus == 0)?STRONGEST_RETURN:
+                                ((lastCycle->multipleReturnStatus == 1)?LAST_RETURN:DUAL_RETURN));
 
-  this->CalibrationReportedNumLasers = 64;
+  this->CalibrationReportedNumLasers = HDL64_RollingData_NumLaser;
   PrecomputeCorrectionCosSin();
   this->CorrectionsInitialized = true;
   }
