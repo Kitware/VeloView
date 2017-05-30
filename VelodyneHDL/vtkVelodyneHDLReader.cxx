@@ -1889,7 +1889,8 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(unsigned char *data, st
   for ( ; firingBlock < HDL_FIRING_PER_PKT; ++firingBlock)
     {
     HDLFiringData* firingData = &(dataPacket->firingData[firingBlock]);
-    int hdl64OffsetIf2ndBlock = firingData->isUpperBlock() ? 32 : 0;
+    int multiBlockLaserIdOffset = (firingData->blockIdentifier == BLOCK_0_TO_31) ? 0 :
+                                  (firingData->blockIdentifier == BLOCK_32_TO_63 ? 32 : 0);
 
     if (firingData->rotationalPosition < this->LastAzimuth)
       {
@@ -1911,7 +1912,7 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(unsigned char *data, st
     if(this->PointsSkip == 0 || firingBlock % (this->PointsSkip + 1) == 0)
       {
       this->ProcessFiring(firingData,
-                          hdl64OffsetIf2ndBlock,
+                          multiBlockLaserIdOffset,
                           firingBlock,
                           azimuthDiff,
                           timestamp,
