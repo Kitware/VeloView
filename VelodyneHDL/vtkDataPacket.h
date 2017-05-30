@@ -44,7 +44,10 @@ enum SensorType
 {
   HDL32E = 0x21,
   VLP16  = 0x22,
-  VLP32  = 0x23,
+  VLP32AB  = 0x23,
+  VLP16HiRes  = 0x24,
+  VLP32C  = 0x28,
+
   //Work around : this is not defined by any specification
   //But it is usefull to define
   HDL64  = 0xa0,
@@ -55,10 +58,11 @@ static int num_laser(SensorType sensorType){
   case HDL64:
     return 64;
   case HDL32E:
-    return 32;
-  case VLP32:
+  case VLP32AB:
+  case VLP32C:
     return 32;
   case VLP16:
+  case VLP16HiRes:
     return 16;
   default:
     return 0;
