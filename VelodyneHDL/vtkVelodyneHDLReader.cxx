@@ -1037,7 +1037,7 @@ vtkSmartPointer<vtkPolyData> vtkVelodyneHDLReader::GetFrame(int frameNumber)
       }
     }
 
-  this->Internal->SplitFrame();
+  this->Internal->SplitFrame(true);
   return this->Internal->Datasets.back();
 }
 
@@ -1555,7 +1555,7 @@ void vtkVelodyneHDLReader::vtkInternal::SplitFrame(bool force)
     this->skipFirstFrame = false;
     return;
     }*/
-  if (!this->isCurrentFrameValid())
+  if (!this->isCurrentFrameValid() && !force)
     {
     return;
     }
