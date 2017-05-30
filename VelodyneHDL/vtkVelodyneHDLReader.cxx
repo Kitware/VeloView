@@ -2229,13 +2229,17 @@ bool vtkVelodyneHDLReader::vtkInternal::HDL64LoadCorrectionsFromStreamData()
     {
     return false;
     }
+  // the rollingCalibrationData considers the marker to be "#" in reserved4
   const int idxDSRDataFromMarker = static_cast<int>(
                                      -reinterpret_cast<unsigned long>
                                     (&((HDLLaserCorrectionByte*)0)->reserved4));
-  for (int dsr = 0; dsr < HDL_MAX_NUM_LASERS; ++dsr)
+  const int HDL64_RollingData_NumLaser = 64;
+  for (int dsr = 0; dsr < HDL64_RollingData_NumLaser; ++dsr)
     {
     const HDLLaserCorrectionByte * correctionStream=
         reinterpret_cast<const HDLLaserCorrectionByte*>
+        // The 64 here is the length of the 4 16-byte cycle
+        //    containing one dsr information
           (&data[idxDSRDataFromMarker + 64 * dsr]);
     if (correctionStream->channel != dsr)
       {
@@ -2265,11 +2269,12 @@ bool vtkVelodyneHDLReader::vtkInternal::HDL64LoadCorrectionsFromStreamData()
   //Get the last cycle of live correction file
   const last4cyclesByte* lastCycle =
       reinterpret_cast<const last4cyclesByte*>
-        (&data[idxDSRDataFromMarker + 64 * HDL_MAX_NUM_LASERS]);
+        (&data[idxDSRDataFromMarker + 64 * HDL64_RollingData_NumLaser]);
   this->SensorPowerMode = lastCycle->powerLevelStatus;
   this->ReportedSensorReturnMode = ((lastCycle->multipleReturnStatus == 0)?STRONGEST_RETURN:
                                 ((lastCycle->multipleReturnStatus == 1)?LAST_RETURN:DUAL_RETURN));
-  this->CalibrationReportedNumLasers = 64;
+
+  this->CalibrationReportedNumLasers = HDL64_RollingData_NumLaser;
   PrecomputeCorrectionCosSin();
   this->CorrectionsInitialized = true;
   }
