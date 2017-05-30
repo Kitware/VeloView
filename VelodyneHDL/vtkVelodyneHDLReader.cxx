@@ -1781,7 +1781,7 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessFiring(HDLFiringData* firingData,
       }
     case 32:
       {
-      if (this->ReportedSensor == VLP32)
+      if (this->ReportedSensor == VLP32AB || this->ReportedSensor == VLP32C)
         {
         timestampadjustment = VLP32AdjustTimeStamp(firingBlock, dsr,this->IsDualReturnSensorMode);
         nextblockdsr0 = VLP32AdjustTimeStamp(firingBlock + (this->IsDualReturnSensorMode?2:1), 0, this->IsDualReturnSensorMode);
