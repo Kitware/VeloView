@@ -1947,22 +1947,22 @@ def onGridProperties():
 
 
 def onLaserSelection(show = True):
-    oldmask = [1] * 64
+    nchannels = 64
+    oldmask = [1] * nchannels
     reader = getReader()
     sensor = getSensor()
-    verticalCorrection = [0] * 64
-    rotationalCorrection = [0] * 64
-    distanceCorrection = [0] * 64
-    distanceCorrectionX = [0] * 64
-    distanceCorrectionY = [0] * 64
-    verticalOffsetCorrection = [0] * 64
-    horizontalOffsetCorrection = [0] * 64
-    focalDistance = [0] * 64
-    focalSlope = [0] * 64
-    minIntensity = [0] * 64
-    maxIntensity = [0] * 64
+    verticalCorrection = [0] * nchannels
+    rotationalCorrection = [0] * nchannels
+    distanceCorrection = [0] * nchannels
+    distanceCorrectionX = [0] * nchannels
+    distanceCorrectionY = [0] * nchannels
+    verticalOffsetCorrection = [0] * nchannels
+    horizontalOffsetCorrection = [0] * nchannels
+    focalDistance = [0] * nchannels
+    focalSlope = [0] * nchannels
+    minIntensity = [0] * nchannels
+    maxIntensity = [0] * nchannels
 
-    nchannels = 32
     if reader:
         reader.GetClientSideObject().GetLaserSelection(oldmask)
         reader.GetClientSideObject().GetLaserCorrections(verticalCorrection,

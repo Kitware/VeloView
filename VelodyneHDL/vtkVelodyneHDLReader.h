@@ -35,9 +35,12 @@
 #include <vtkPolyDataAlgorithm.h>
 #include <vtkSmartPointer.h>
 #include <string>
+#include "vtkDataPacket.h"
 
 class vtkTransform;
 class vtkVelodyneTransformInterpolator;
+
+using DataPacketFixedLength::HDL_MAX_NUM_LASERS;
 
 class VTK_EXPORT vtkVelodyneHDLReader : public vtkPolyDataAlgorithm
 {
@@ -91,26 +94,26 @@ public:
                     int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int,
                     int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int,
                     int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int);
-  void SetLaserSelection(int LaserSelection[64]);
+  void SetLaserSelection(int LaserSelection[HDL_MAX_NUM_LASERS]);
 
-  void GetLaserSelection(int LaserSelection[64]);
+  void GetLaserSelection(int LaserSelection[HDL_MAX_NUM_LASERS]);
 
   double GetCurrentRpm();
 
   double GetDistanceResolutionM();
 
   void GetLaserCorrections(
-      double verticalCorrection[64],
-      double rotationalCorrection[64],
-      double distanceCorrection[64],
-      double distanceCorrectionX[64],
-      double distanceCorrectionY[64],
-      double verticalOffsetCorrection[64],
-      double horizontalOffsetCorrection[64],
-      double focalDistance[64],
-      double focalSlope[64],
-      double minIntensity[64],
-      double maxIntensity[64]);
+      double verticalCorrection[HDL_MAX_NUM_LASERS],
+      double rotationalCorrection[HDL_MAX_NUM_LASERS],
+      double distanceCorrection[HDL_MAX_NUM_LASERS],
+      double distanceCorrectionX[HDL_MAX_NUM_LASERS],
+      double distanceCorrectionY[HDL_MAX_NUM_LASERS],
+      double verticalOffsetCorrection[HDL_MAX_NUM_LASERS],
+      double horizontalOffsetCorrection[HDL_MAX_NUM_LASERS],
+      double focalDistance[HDL_MAX_NUM_LASERS],
+      double focalSlope[HDL_MAX_NUM_LASERS],
+      double minIntensity[HDL_MAX_NUM_LASERS],
+      double maxIntensity[HDL_MAX_NUM_LASERS]);
 
   void GetXMLColorTable(double XMLColorTable[]);
 

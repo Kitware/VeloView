@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#ifndef _vtkDataPacket_h
+#define _vtkDataPacket_h
+
 #include <vector>
 #include <iomanip>
 #include <stdio.h>
@@ -184,3 +187,4 @@ struct HDLRGB
 };
 #pragma pack(pop)
 }// end namespace DataPacketFixedLength
+#endif

@@ -242,7 +242,7 @@ public:
 
     std::fill(this->LastPointId, this->LastPointId + HDL_MAX_NUM_LASERS, -1);
 
-    this->LaserSelection.resize(64, true);
+    this->LaserSelection.resize(HDL_MAX_NUM_LASERS, true);
     this->DualReturnFilter = 0;
     this->IsDualReturnSensorMode = false;
     this->IsHDL64Data = false;
@@ -322,7 +322,7 @@ public:
   std::vector<double> cos_lookup_table_;
   std::vector<double> sin_lookup_table_;
   HDLLaserCorrection laser_corrections_[HDL_MAX_NUM_LASERS];
-  double XMLColorTable[64][3];
+  double XMLColorTable[HDL_MAX_NUM_LASERS][3];
   int CalibrationReportedNumLasers;
   bool CorrectionsInitialized;
   bool IsCorrectionFromLiveStream;
@@ -505,9 +505,9 @@ void vtkVelodyneHDLReader::SetLaserSelection(int x00, int x01, int x02, int x03,
 }
 
 //-----------------------------------------------------------------------------
-void vtkVelodyneHDLReader::SetLaserSelection(int LaserSelection[64])
+void vtkVelodyneHDLReader::SetLaserSelection(int LaserSelection[HDL_MAX_NUM_LASERS])
 {
-  for(int i = 0; i < 64; ++i)
+  for(int i = 0; i < HDL_MAX_NUM_LASERS; ++i)
     {
     this->Internal->LaserSelection[i] = LaserSelection[i];
     }
@@ -515,9 +515,9 @@ void vtkVelodyneHDLReader::SetLaserSelection(int LaserSelection[64])
 }
 
 //-----------------------------------------------------------------------------
-void vtkVelodyneHDLReader::GetLaserSelection(int LaserSelection[64])
+void vtkVelodyneHDLReader::GetLaserSelection(int LaserSelection[HDL_MAX_NUM_LASERS])
 {
-  for(int i = 0; i < 64; ++i)
+  for(int i = 0; i < HDL_MAX_NUM_LASERS; ++i)
     {
     LaserSelection[i] = this->Internal->LaserSelection[i];
     }
@@ -547,19 +547,19 @@ void vtkVelodyneHDLReader::SetDualReturnFilter(unsigned int filter)
 
 //-----------------------------------------------------------------------------
 void vtkVelodyneHDLReader::GetLaserCorrections(
-    double verticalCorrection[64],
-    double rotationalCorrection[64],
-    double distanceCorrection[64],
-    double distanceCorrectionX[64],
-    double distanceCorrectionY[64],
-    double verticalOffsetCorrection[64],
-    double horizontalOffsetCorrection[64],
-    double focalDistance[64],
-    double focalSlope[64],
-    double minIntensity[64],
-    double maxIntensity[64]  )
+    double verticalCorrection[HDL_MAX_NUM_LASERS],
+    double rotationalCorrection[HDL_MAX_NUM_LASERS],
+    double distanceCorrection[HDL_MAX_NUM_LASERS],
+    double distanceCorrectionX[HDL_MAX_NUM_LASERS],
+    double distanceCorrectionY[HDL_MAX_NUM_LASERS],
+    double verticalOffsetCorrection[HDL_MAX_NUM_LASERS],
+    double horizontalOffsetCorrection[HDL_MAX_NUM_LASERS],
+    double focalDistance[HDL_MAX_NUM_LASERS],
+    double focalSlope[HDL_MAX_NUM_LASERS],
+    double minIntensity[HDL_MAX_NUM_LASERS],
+    double maxIntensity[HDL_MAX_NUM_LASERS]  )
 {
-  for(int i = 0; i < 64; ++i)
+  for(int i = 0; i < HDL_MAX_NUM_LASERS; ++i)
     {
     verticalCorrection[i] = this->Internal->laser_corrections_[i].verticalCorrection;
     rotationalCorrection[i] = this->Internal->laser_corrections_[i].rotationalCorrection;
@@ -576,9 +576,9 @@ void vtkVelodyneHDLReader::GetLaserCorrections(
 }
 
 //-----------------------------------------------------------------------------
-void vtkVelodyneHDLReader::GetXMLColorTable(double XMLColorTable[256])
+void vtkVelodyneHDLReader::GetXMLColorTable(double XMLColorTable[4*HDL_MAX_NUM_LASERS])
 {
-  for(int i = 0; i < 64; ++i)
+  for(int i = 0; i < HDL_MAX_NUM_LASERS; ++i)
     {
     XMLColorTable[i*4] = static_cast<double>(i)/63.0 * 255.0;
     for (int j = 0; j < 3; ++j)
@@ -1389,7 +1389,7 @@ void vtkVelodyneHDLReader::vtkInternal::LoadCorrectionsFile(const std::string& c
 
   // Getting min & max intensities from XML
   int laserId = 0;
-  int minIntensity[64], maxIntensity[64];
+  int minIntensity[HDL_MAX_NUM_LASERS], maxIntensity[HDL_MAX_NUM_LASERS];
   BOOST_FOREACH (boost::property_tree::ptree::value_type &v, pt.get_child("boost_serialization.DB.minIntensity_"))
     {
     std::stringstream ss;
@@ -1509,6 +1509,7 @@ void vtkVelodyneHDLReader::vtkInternal::LoadCorrectionsFile(const std::string& c
       idx++;
       }
     }
+
   PrecomputeCorrectionCosSin();
   this->CorrectionsInitialized = true;
 }

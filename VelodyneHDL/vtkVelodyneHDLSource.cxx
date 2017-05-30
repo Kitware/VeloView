@@ -48,6 +48,7 @@
 #include <queue>
 #include <deque>
 
+using DataPacketFixedLength::HDL_MAX_NUM_LASERS;
 //----------------------------------------------------------------------------
 namespace
 {
@@ -871,7 +872,7 @@ void vtkVelodyneHDLSource::SetForwardedIpAddress(const std::string& ipAddress)
 }
 
 //-----------------------------------------------------------------------------
-void vtkVelodyneHDLSource::SetLaserSelection(int LaserSelection[64])
+void vtkVelodyneHDLSource::SetLaserSelection(int LaserSelection[HDL_MAX_NUM_LASERS])
 {
   boost::lock_guard<boost::mutex> lock(this->Internal->Consumer->ReaderMutex);
 
@@ -880,7 +881,7 @@ void vtkVelodyneHDLSource::SetLaserSelection(int LaserSelection[64])
 }
 
 //-----------------------------------------------------------------------------
-void vtkVelodyneHDLSource::GetLaserSelection(int LaserSelection[64])
+void vtkVelodyneHDLSource::GetLaserSelection(int LaserSelection[HDL_MAX_NUM_LASERS])
 {
   boost::lock_guard<boost::mutex> lock(this->Internal->Consumer->ReaderMutex);
 
@@ -930,17 +931,17 @@ void vtkVelodyneHDLSource::SetCropRegion(double xmin, double xmax,
 
 //-----------------------------------------------------------------------------
 void vtkVelodyneHDLSource::GetLaserCorrections(
-      double verticalCorrection[64],
-      double rotationalCorrection[64],
-      double distanceCorrection[64],
-      double distanceCorrectionX[64],
-      double distanceCorrectionY[64],
-      double verticalOffsetCorrection[64],
-      double horizontalOffsetCorrection[64],
-      double focalDistance[64],
-      double focalSlope[64],
-      double minIntensity[64],
-      double maxIntensity[64])
+      double verticalCorrection[HDL_MAX_NUM_LASERS],
+      double rotationalCorrection[HDL_MAX_NUM_LASERS],
+      double distanceCorrection[HDL_MAX_NUM_LASERS],
+      double distanceCorrectionX[HDL_MAX_NUM_LASERS],
+      double distanceCorrectionY[HDL_MAX_NUM_LASERS],
+      double verticalOffsetCorrection[HDL_MAX_NUM_LASERS],
+      double horizontalOffsetCorrection[HDL_MAX_NUM_LASERS],
+      double focalDistance[HDL_MAX_NUM_LASERS],
+      double focalSlope[HDL_MAX_NUM_LASERS],
+      double minIntensity[HDL_MAX_NUM_LASERS],
+      double maxIntensity[HDL_MAX_NUM_LASERS])
 {
   boost::lock_guard<boost::mutex> lock(this->Internal->Consumer->ReaderMutex);
 
