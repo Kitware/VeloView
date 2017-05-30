@@ -25,7 +25,7 @@
 #include <cmath>
 #include <cassert>
 
-#define NUM_LASER_MAX 64
+#define NUM_LASER_MAX 128
 
 //-----------------------------------------------------------------------------
 class vvLaserSelectionDialog::pqInternal : public Ui::vvLaserSelectionDialog

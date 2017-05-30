@@ -93,7 +93,11 @@ public:
   void SetLaserSelection(int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int,
                     int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int,
                     int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int,
-                    int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int);
+                    int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int,
+                     int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int,
+                     int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int,
+                     int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int,
+                      int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int);
   void SetLaserSelection(int LaserSelection[HDL_MAX_NUM_LASERS]);
 
   void GetLaserSelection(int LaserSelection[HDL_MAX_NUM_LASERS]);

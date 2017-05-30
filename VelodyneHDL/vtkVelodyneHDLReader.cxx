@@ -488,7 +488,7 @@ const std::string& vtkVelodyneHDLReader::GetCorrectionsFile()
 
 #define PARAM(z,n, data) int x##n,
 #define VAL(z,n, data) x##n,
-#define B_HDL_MAX_NUM_LASERS 64
+#define B_HDL_MAX_NUM_LASERS 128
 void vtkVelodyneHDLReader::SetLaserSelection(BOOST_PP_REPEAT(BOOST_PP_DEC(B_HDL_MAX_NUM_LASERS), PARAM, "") int BOOST_PP_CAT(x, B_HDL_MAX_NUM_LASERS))
 {
   assert(HDL_MAX_NUM_LASERS == B_HDL_MAX_NUM_LASERS);
@@ -1715,10 +1715,7 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessFiring(HDLFiringData* firingData,
   // For 64 lasers sensors, dual return datas is detected if firing idx 2 has same
   //  rotationalPosition as firing idx 1.
   //  Once DualReturnMode is detected, dual returns are firing 2,3 6,7 10,11 [0-based]
-  const bool isThisFiringDualReturnData =
-    (!this->IsHDL64Data)?(this->LastAzimuth == firingData->rotationalPosition):
-    (((this->LastAzimuth == firingData->rotationalPosition) && (firingBlock == 2))
-      || this->IsDualReturnSensorMode && (firingBlock % 4 >=2));
+  const bool isThisFiringDualReturnData = false;
 
   this->HasDualReturn = this->HasDualReturn || isThisFiringDualReturnData;
 
@@ -1870,7 +1867,7 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(unsigned char *data, st
   int azimuthDiff = diffs[HDL_FIRING_PER_PKT / 2];
   if (this->IsHDL64Data)
     {
-    azimuthDiff = diffs[HDL_FIRING_PER_PKT - 2];
+    azimuthDiff = diffs[HDL_FIRING_PER_PKT - 1];
     }
   assert(azimuthDiff > 0);
 
@@ -1886,7 +1883,9 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(unsigned char *data, st
     {
     HDLFiringData* firingData = &(dataPacket->firingData[firingBlock]);
     int multiBlockLaserIdOffset = (firingData->blockIdentifier == BLOCK_0_TO_31) ? 0 :
-                                  (firingData->blockIdentifier == BLOCK_32_TO_63 ? 32 : 0);
+                                  (firingData->blockIdentifier == BLOCK_32_TO_63 ? 32 :
+                                  (firingData->blockIdentifier == BLOCK_64_TO_95 ? 64 :
+                                  (firingData->blockIdentifier == BLOCK_96_TO_127 ? 96 : 0)));
 
     if (firingData->rotationalPosition < this->LastAzimuth)
       {
