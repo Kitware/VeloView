@@ -929,7 +929,7 @@ void vtkVelodyneHDLReader::DumpFrames(int startFrame, int endFrame, const std::s
       {
       HDLFiringData firingData = dataPacket->firingData[i];
 
-      if (firingData.rotationalPosition != 0 && firingData.rotationalPosition < lastAzimuth)
+      if (firingData.rotationalPosition < lastAzimuth)
         {
         currentFrame++;
         if(currentFrame > endFrame)
