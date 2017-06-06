@@ -162,7 +162,7 @@ public:
   bool getCorrectionsInitialized();
 
   bool isReportedSensorAndCalibrationFileConsistent(bool shouldWarn);
-  void updateReportedSensor(const unsigned char* data);
+  bool updateReportedSensor(const unsigned char* data, unsigned int bytesReceived);
 
   bool GetHasDualReturn();
 

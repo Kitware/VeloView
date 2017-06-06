@@ -765,18 +765,22 @@ int vtkVelodyneHDLReader::RequestData(vtkInformation *request,
     //Open the .pcap
     this->Open();
     //set the position to the first full frame
-    this->Internal->Reader->SetFilePosition(&this->Internal->FilePositions[1]);
-    this->Internal->Skip = this->Internal->Skips[1];
+    this->Internal->Reader->SetFilePosition(&this->Internal->FilePositions[0]);
     //Read the data of a packet
-    this->Internal->Reader->NextPacket(data, dataLength, timeSinceStart);
-    //Update the sensor type
-    this->updateReportedSensor(data);
-    //Compare the number of lasers from calibration and from sensor
-    this->isReportedSensorAndCalibrationFileConsistent(true);
+    while (this->Internal->Reader->NextPacket(data, dataLength, timeSinceStart) )
+      {
+      //Update the sensor type if appropriate packet
+      if(this->updateReportedSensor(data, dataLength))
+        {
+        //Compare the number of lasers from calibration and from sensor
+        this->isReportedSensorAndCalibrationFileConsistent(true);
+        //check is done
+        this->ShouldCheckSensor = false;
+        break;
+        }
+      }
     //close the .pcap file
     this->Close();
-    //check is done
-    this->ShouldCheckSensor = false;
     }
 
   this->Open();
@@ -1957,6 +1961,7 @@ int vtkVelodyneHDLReader::ReadFrameInformation()
 
     if (dataLength != 1206)
       {
+      reader.GetFilePosition(&lastFilePosition);
       continue;
       }
 
@@ -2014,14 +2019,16 @@ int vtkVelodyneHDLReader::ReadFrameInformation()
 }
 
 //-----------------------------------------------------------------------------
-void vtkVelodyneHDLReader::updateReportedSensor(const unsigned char* data)
+bool vtkVelodyneHDLReader::updateReportedSensor(const unsigned char* data, unsigned int bytesReceived)
 {
-    if(HDLDataPacket::isValidPacket(data, 1206))
+    if(HDLDataPacket::isValidPacket(data, bytesReceived))
     {
       const HDLDataPacket * dataPacket = reinterpret_cast<const HDLDataPacket *>(data);
       this->Internal->IsHDL64Data = dataPacket->isHDL64();
       this->Internal->ReportedSensor = dataPacket->getSensorType();
+      return true;
     }
+    return false;
 }
 
 //-----------------------------------------------------------------------------

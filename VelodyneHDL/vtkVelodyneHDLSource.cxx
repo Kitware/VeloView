@@ -156,7 +156,7 @@ public:
     // Firing data packet
     if(length == 1206)
       {
-      this->HDLReader->updateReportedSensor(data);
+      this->HDLReader->updateReportedSensor(data, length);
       // Accumulate HDL64 Status byte data while correction are not initialized
       if(this->HDLReader->getIsHDL64Data()
           && !this->HDLReader->getCorrectionsInitialized())
