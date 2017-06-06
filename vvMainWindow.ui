@@ -659,7 +659,7 @@
     <string>Measure</string>
    </property>
    <property name="toolTip">
-    <string>Measure the distance between two points: Press Control key and keep pressed left button of the mouse two place the two points of the ruler. To use this tool, the orthogonal projection view is obligatory.</string>
+    <string>Measure the distance (in meters) between two screen points.&lt;br/&gt;To draw a ruler line, hold down the &lt;b&gt;Ctrl key&lt;/b&gt; and the &lt;b&gt;left button&lt;/b&gt; of your mouse. &lt;br/&gt;&lt;u&gt;This feature is only available in orthogonal projection.&lt;/u&gt;</string>
    </property>
   </action>
   <action name="actionOverheadView">
