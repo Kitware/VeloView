@@ -403,7 +403,7 @@ vtkStandardNewMacro(vtkVelodyneHDLReader);
 vtkVelodyneHDLReader::vtkVelodyneHDLReader()
 {
   this->Internal = new vtkInternal;
-  this->UnloadData();
+  this->UnloadPerFrameData();
   this->SetNumberOfInputPorts(0);
   this->SetNumberOfOutputPorts(1);
 }
@@ -474,7 +474,7 @@ void vtkVelodyneHDLReader::SetFileName(const std::string& filename)
   this->FileName = filename;
   this->Internal->FilePositions.clear();
   this->Internal->Skips.clear();
-  this->UnloadData();
+  this->UnloadPerFrameData();
   this->Modified();
 }
 
@@ -676,12 +676,12 @@ void vtkVelodyneHDLReader::SetCorrectionsFile(const std::string& correctionsFile
     }
 
   this->CorrectionsFile = correctionsFile;
-  this->UnloadData();
+  this->UnloadPerFrameData();
   this->Modified();
 }
 
 //-----------------------------------------------------------------------------
-void vtkVelodyneHDLReader::UnloadData()
+void vtkVelodyneHDLReader::UnloadPerFrameData()
 {
   std::fill(this->Internal->LastPointId, this->Internal->LastPointId + HDL_MAX_NUM_LASERS, -1);
   this->Internal->LastAzimuth = -1;
@@ -948,7 +948,7 @@ void vtkVelodyneHDLReader::DumpFrames(int startFrame, int endFrame, const std::s
 //-----------------------------------------------------------------------------
 vtkSmartPointer<vtkPolyData> vtkVelodyneHDLReader::GetFrameRange(int startFrame, int wantedNumberOfFrames)
 {
-  this->UnloadData();
+  this->UnloadPerFrameData();
   if (!this->Internal->Reader)
     {
     vtkErrorMacro("GetFrame() called but packet file reader is not open.");
@@ -995,7 +995,7 @@ vtkSmartPointer<vtkPolyData> vtkVelodyneHDLReader::GetFrameRange(int startFrame,
 //-----------------------------------------------------------------------------
 vtkSmartPointer<vtkPolyData> vtkVelodyneHDLReader::GetFrame(int frameNumber)
 {
-  this->UnloadData();
+  this->UnloadPerFrameData();
   if (!this->Internal->Reader)
     {
     vtkErrorMacro("GetFrame() called but packet file reader is not open.");

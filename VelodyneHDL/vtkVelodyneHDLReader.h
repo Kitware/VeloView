@@ -184,7 +184,7 @@ protected:
                   vtkInformationVector *);
 
 
-  void UnloadData();
+  void UnloadPerFrameData();
   void SetTimestepInformation(vtkInformation *info);
 
   std::string CorrectionsFile;
