@@ -457,15 +457,13 @@ def openSensor():
 
     play()
 
-    # Enable the dual return point selection only if the current dataset was taken with dual return
-    # NOTE: We do not enable the dual return point selection as it's not intended to works on
-    # live stream.
-    if sensor.GetClientSideObject().GetHasDualReturn():
-        app.actions['actionDualReturnModeDual'].enabled = True
-        app.actions['actionDualReturnDistanceNear'].enabled = True
-        app.actions['actionDualReturnDistanceFar'].enabled = True
-        app.actions['actionDualReturnIntensityHigh'].enabled = True
-        app.actions['actionDualReturnIntensityLow'].enabled = True
+    # Always enable dual return mode selection. A warning will be raised if
+    # there's no dual return on the current frame later on
+    app.actions['actionDualReturnModeDual'].enabled = True
+    app.actions['actionDualReturnDistanceNear'].enabled = True
+    app.actions['actionDualReturnDistanceFar'].enabled = True
+    app.actions['actionDualReturnIntensityHigh'].enabled = True
+    app.actions['actionDualReturnIntensityLow'].enabled = True
 
 def openPCAP(filename, positionFilename=None):
 
@@ -596,15 +594,15 @@ def openPCAP(filename, positionFilename=None):
     addRecentFile(filename)
     app.actions['actionRecord'].setEnabled(False)
 
-    # Enable the dual return mode selection only if the current dataset was taken with dual return
-    if reader.GetClientSideObject().GetHasDualReturn():
-        app.actions['actionSelectDualReturn'].enabled = True
-        app.actions['actionSelectDualReturn2'].enabled = True
-        app.actions['actionDualReturnModeDual'].enabled = True
-        app.actions['actionDualReturnDistanceNear'].enabled = True
-        app.actions['actionDualReturnDistanceFar'].enabled = True
-        app.actions['actionDualReturnIntensityHigh'].enabled = True
-        app.actions['actionDualReturnIntensityLow'].enabled = True
+    # Always enable dual return mode selection. A warning will be raised if
+    # there's no dual return on the current frame later on
+    app.actions['actionSelectDualReturn'].enabled = True
+    app.actions['actionSelectDualReturn2'].enabled = True
+    app.actions['actionDualReturnModeDual'].enabled = True
+    app.actions['actionDualReturnDistanceNear'].enabled = True
+    app.actions['actionDualReturnDistanceFar'].enabled = True
+    app.actions['actionDualReturnIntensityHigh'].enabled = True
+    app.actions['actionDualReturnIntensityLow'].enabled = True
 
     app.actions['actionShowRPM'].enabled = True
     app.actions['actionCorrectIntensityValues'].enabled = True
@@ -2143,6 +2141,9 @@ def toggleSelectDualReturn():
         return
         
     if not source.GetClientSideObject().GetHasDualReturn() :
+        QtGui.QMessageBox.warning(getMainWindow(), 'Dual returns not found',
+        "The functionality only works with dual returns, and the current"
+        "frame has no dual returns.")
         return
         
     #Get the polyData which contains all points
@@ -2265,6 +2266,11 @@ def setFilterTo(mask):
             reader.DualReturnFilter = mask
             smp.Render()
             smp.Render(getSpreadSheetViewProxy())
+        else:
+            app.actions['actionDualReturnModeDual'].setChecked(True)
+            QtGui.QMessageBox.warning(getMainWindow(), 'Dual returns not found',
+            "The functionality only works with dual returns, and the current"
+            "frame has no dual returns.")
 
     sensor = getSensor()
     if sensor:
@@ -2272,6 +2278,12 @@ def setFilterTo(mask):
             sensor.DualReturnFilter = mask
             smp.Render()
             smp.Render(getSpreadSheetViewProxy())
+        else:
+            app.actions['actionDualReturnModeDual'].setChecked(True)
+            QtGui.QMessageBox.warning(getMainWindow(), 'Dual returns not found',
+            "The functionality only works with dual returns, and the current"
+            "frame has no dual returns.")
+
 
 def transformMode():
     reader = getReader()
