@@ -1355,24 +1355,52 @@ def onPlayTimer():
         startTime = vtk.vtkTimerLog.GetUniversalTime()
 
         playbackTick()
-        targetRealTimeFps = app.targetFps
 
         rpmArray = None
+        targetPlaybackFps = app.targetFps
+        defaultRPM = 600
+        defaultFps = 200
+        currentFrameOriginalFps = defaultRPM / 60
+        # if the rpm is below this value, we consider
+        # that the computation has failed
+        minimalRPM = 10
 
+        # if we are in playback mode, compute the targetFps
+        # using the rpm of the current frame
         if getReader():
+            # Get the computed rpm of the current frame
             rpmArray = getReader().GetClientSideObject().GetOutput().GetFieldData().GetArray('RotationPerMinute')
+
+            # If the rpm is available
+            if rpmArray:
+                rpm = rpmArray.GetTuple1(0)
+                if rpm > minimalRPM:
+                    currentFrameOriginalFps = rpm / 60
+
+            # Get the playback speed multiplier
+            playbackSpeed = str(app.PlaybackSpeed.currentText)
+
+            canConvertToFloat = True
+            try:
+                float(playbackSpeed)
+            except ValueError:
+                canConvertToFloat = False
+
+            # if the speed multiplier is set to default, we
+            # use the default target fps. Otherwise, we apply
+            # the multiplier to the current frame real fps
+            if (playbackSpeed == 'default') or (not canConvertToFloat):
+                targetPlaybackFps = defaultFps
+            else:
+                speedMultiplier = float(playbackSpeed)
+                targetPlaybackFps = speedMultiplier * currentFrameOriginalFps
+
+        # if we are in live mode, we want to read the frames using
+        # the standard fps
         if getSensor():
-            rpmArray = getSensor().GetClientSideObject().GetOutput().GetFieldData().GetArray('RotationPerMinute')
+            targetPlaybackFps = defaultFps
 
-        if rpmArray:
-            rpm = rpmArray.GetTuple1(0)
-            targetRealTimeFps = rpm/60
-
-        
-        speedMultiplier = float(str(app.PlaybackSpeed.currentText))
-        targetRealTimeFps = speedMultiplier*targetRealTimeFps
-        
-        fpsDelayMilliseconds = int(1000.0 / targetRealTimeFps)
+        fpsDelayMilliseconds = int(1000.0 / targetPlaybackFps)
         elapsedMilliseconds = int((vtk.vtkTimerLog.GetUniversalTime() - startTime)*1000.0)
 
         if elapsedMilliseconds > 0:
@@ -2430,7 +2458,8 @@ def setupActions():
     PlaybackSpeedComboBox.addItem("4")
     PlaybackSpeedComboBox.addItem("8")
     PlaybackSpeedComboBox.addItem("16")
-    PlaybackSpeedComboBox.setCurrentIndex(2)
+    PlaybackSpeedComboBox.addItem("default")
+    PlaybackSpeedComboBox.setCurrentIndex(PlaybackSpeedComboBox.count - 1)
     timeToolBar.addWidget(PlaybackSpeedComboBox)
     app.PlaybackSpeed = PlaybackSpeedComboBox
     
