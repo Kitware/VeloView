@@ -21,7 +21,7 @@
         <file>Icons/ViewPerspective.png</file>
         <file>Icons/Measurements.png</file>
         <file>Splash.jpg</file>
-        <file>About.jpg</file>
+        <file>About.png</file>
         <file>vvAboutDialog.ui</file>
     </qresource>
 </RCC>
