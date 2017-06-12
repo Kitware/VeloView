@@ -2060,6 +2060,11 @@ int vtkVelodyneHDLReader::ReadFrameInformation()
     reader.GetFilePosition(&lastFilePosition);
     }
 
+  if(IsHDL64Data && this->Internal->IsCorrectionFromLiveStream
+     && !this->Internal->CorrectionsInitialized)
+    {
+      vtkGenericWarningMacro("Unable to load live calibration from pcap")
+    }
   this->Internal->FilePositions = filePositions;
   this->Internal->Skips = skips;
   return this->GetNumberOfFrames();
