@@ -121,7 +121,7 @@ struct HDLDataPacket
   DualReturnSensorMode getDualReturnSensorMode() const
   {
     if (isHDL64())
-      return isHDL64DualModeReturn()?DUAL_RETURN:STRONGEST_RETURN;
+      return isDualModeReturnHDL64()?DUAL_RETURN:STRONGEST_RETURN;
     return static_cast<DualReturnSensorMode>(factoryField1);
   }
   static const unsigned int getDataByteLength()
@@ -140,17 +140,44 @@ struct HDLDataPacket
     return (dataPacket->firingData[0].blockIdentifier == BLOCK_0_TO_31
         || dataPacket->firingData[0].blockIdentifier == BLOCK_32_TO_63);
   }
+
   inline bool isHDL64() const {
     return firingData[1].isUpperBlock();
   }
+
   inline bool isDualModeReturn() const {
-    if(isHDL64())
-      return isHDL64DualModeReturn();
-    else
-      return firingData[1].rotationalPosition == firingData[0].rotationalPosition;
+    return isDualModeReturn(isHDL64());
   }
-  inline bool isHDL64DualModeReturn() const {
+  inline bool isDualModeReturn(const bool isHDL64) const {
+    if(isHDL64)
+      return isDualModeReturnHDL64();
+    else
+      return isDualModeReturn16Or32();
+  }
+  inline bool isDualModeReturn16Or32() const {
+      return firingData[1].rotationalPosition == firingData[0].rotationalPosition;
+    }
+  inline bool isDualModeReturnHDL64() const {
       return firingData[2].rotationalPosition == firingData[0].rotationalPosition;
+  }
+  inline bool isDualReturnFiringBlock(const int firingBlock)
+  {
+    if (isHDL64())
+      return isDualModeReturnHDL64() && isDualBlockOfDualPacket64(firingBlock);
+    else
+      return isDualModeReturn16Or32() && isDualBlockOfDualPacket16Or32(firingBlock);
+  }
+
+  inline static bool isDualBlockOfDualPacket(const bool isHDL64, const int firingBlock)
+  {
+    return isHDL64?isDualBlockOfDualPacket64(firingBlock)
+        :isDualBlockOfDualPacket16Or32(firingBlock);
+  }
+  inline static bool isDualBlockOfDualPacket64(const int firingBlock){
+      return (firingBlock % 4 >=2);
+    }
+  inline static bool isDualBlockOfDualPacket16Or32(const int firingBlock){
+    return (firingBlock % 2 == 1);
   }
 };
 

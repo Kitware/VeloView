@@ -273,7 +273,6 @@ public:
   {
     this->AlreadyWarnAboutCalibration = false;
     this->CropMode = Cartesian;
-    this->HasDualReturn = false;
     this->ShouldAddDualReturnArray = false;
     this->alreadyWarnedForIgnoredHDL64FiringPacket = false;
     this->SensorPowerMode = 0;
@@ -298,7 +297,6 @@ public:
 
     this->LaserSelection.resize(HDL_MAX_NUM_LASERS, true);
     this->DualReturnFilter = 0;
-    this->IsDualReturnSensorMode = false;
     this->IsHDL64Data = false;
     this->CalibrationReportedNumLasers = -1;
     this->skipFirstFrame = true;
@@ -341,7 +339,7 @@ public:
   vtkSmartPointer<vtkDoubleArray> SelectedDualReturn;
   bool ShouldAddDualReturnArray;
 
-  bool IsDualReturnSensorMode;
+  bool HasDualReturn;
   SensorType ReportedSensor;
   DualReturnSensorMode ReportedSensorReturnMode;
   bool IsHDL64Data;
@@ -405,7 +403,6 @@ public:
   void PrecomputeCorrectionCosSin();
   void LoadCorrectionsFile(const std::string& filename);
   bool HDL64LoadCorrectionsFromStreamData();
-  bool HasDualReturn;
   bool shouldBeCroppedOut(double pos[3],double theta);
 
   void ProcessHDLPacket(unsigned char *data, std::size_t bytesReceived);
@@ -428,6 +425,8 @@ public:
                      int azimuthDiff,
                      double timestamp,
                      unsigned int rawtime,
+                     bool isThisFiringDualReturnData,
+                     bool isDualReturnPacket,
                      vtkTransform* geotransform);
 
   void PushFiringData(const unsigned char laserId,
@@ -438,7 +437,7 @@ public:
                       const HDLLaserReturn* laserReturn,
                       const HDLLaserCorrection* correction,
                       vtkTransform* geotransform,
-                      const bool hasDualReturn);
+                      const bool isFiringDualReturnData);
   void ComputeCorrectedValues(const unsigned short azimuth,
                               const HDLLaserReturn* laserReturn,
                               const HDLLaserCorrection* correction,
@@ -740,11 +739,10 @@ void vtkVelodyneHDLReader::UnloadPerFrameData()
   this->Internal->TimeAdjust = std::numeric_limits<double>::quiet_NaN();
 
   this->Internal->rollingCalibrationData->clear();
-  this->Internal->IsDualReturnSensorMode = false;
+  this->Internal->HasDualReturn = false;
   this->Internal->IsHDL64Data = false;
   this->Internal->Datasets.clear();
   this->Internal->CurrentDataset = this->Internal->CreateData(0);
-  this->Internal->HasDualReturn = false;
 
   this->ShouldCheckSensor = true;
 }
@@ -1149,7 +1147,7 @@ vtkSmartPointer<vtkPolyData> vtkVelodyneHDLReader::vtkInternal::CreateData(vtkId
   polyData->GetFieldData()->AddArray(rpmData);
   
 
-  if (this->IsDualReturnSensorMode)
+  if (this->HasDualReturn)
     {
     polyData->GetPointData()->AddArray(this->DistanceFlag.GetPointer());
     polyData->GetPointData()->AddArray(this->IntensityFlag.GetPointer());
@@ -1228,7 +1226,7 @@ void vtkVelodyneHDLReader::vtkInternal::PushFiringData(const unsigned char laser
                                                        const HDLLaserReturn* laserReturn,
                                                        const HDLLaserCorrection* correction,
                                                        vtkTransform* geotransform,
-                                                       const bool hasDualReturn)
+                                                       const bool isFiringDualReturnData)
 {
   azimuth %= 36000;
   const vtkIdType thisPointId = this->Points->GetNumberOfPoints();
@@ -1249,7 +1247,7 @@ void vtkVelodyneHDLReader::vtkInternal::PushFiringData(const unsigned char laser
     return;
 
   // Do not add any data before here as this might short-circuit
-  if (hasDualReturn)
+  if (isFiringDualReturnData)
     {
     const vtkIdType dualPointId = this->LastPointId[rawLaserId];
     if (dualPointId < this->FirstPointIdOfDualReturnPair)
@@ -1783,29 +1781,11 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessFiring(HDLFiringData* firingData,
                                                       int azimuthDiff,
                                                       double timestamp,
                                                       unsigned int rawtime,
+                                                      bool isThisFiringDualReturnData,
+                                                      bool isDualReturnPacket,
                                                       vtkTransform* geotransform)
 {
-  // Here the logic is the following: Each firing in a packet encodes 32 lasers.
-  // Hence two consecutive firings with same azimuth denotes dual-return
-  //    for sensors with 32 dsr or less
-  // For 64 lasers sensors, dual return datas is detected if firing idx 2 has same
-  //  rotationalPosition as firing idx 1.
-  //  Once DualReturnMode is detected, dual returns are firing 2,3 6,7 10,11 [0-based]
-  const bool isThisFiringDualReturnData =
-    (!this->IsHDL64Data)?(this->LastAzimuth == firingData->rotationalPosition):
-    (((this->LastAzimuth == firingData->rotationalPosition) && (firingBlock == 2))
-      || this->IsDualReturnSensorMode && (firingBlock % 4 >=2));
-
-  this->HasDualReturn = this->HasDualReturn || isThisFiringDualReturnData;
-
-  if (isThisFiringDualReturnData  && !this->IsDualReturnSensorMode)
-    {
-    this->IsDualReturnSensorMode = true;
-    this->CurrentDataset->GetPointData()->AddArray(this->DistanceFlag.GetPointer());
-    this->CurrentDataset->GetPointData()->AddArray(this->IntensityFlag.GetPointer());
-    this->CurrentDataset->GetPointData()->AddArray(this->DualReturnMatching.GetPointer());
-    }
-
+  // Non dual return piece of a dual return packet: init last point of laser
   if(!isThisFiringDualReturnData
        && (!this->IsHDL64Data || (this->IsHDL64Data && ((firingBlock % 4)==0))))
     {
@@ -1846,32 +1826,32 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessFiring(HDLFiringData* firingData,
     switch(this->CalibrationReportedNumLasers){
     case 64:
       {
-      timestampadjustment = -HDL64EAdjustTimeStamp(firingBlock, dsr, this->IsDualReturnSensorMode);
-      nextblockdsr0 = -HDL64EAdjustTimeStamp(firingBlock + (this->IsDualReturnSensorMode?4:2), 0, this->IsDualReturnSensorMode);
-      blockdsr0 = -HDL64EAdjustTimeStamp(firingBlock, 0, this->IsDualReturnSensorMode);
+      timestampadjustment = -HDL64EAdjustTimeStamp(firingBlock, dsr, isDualReturnPacket);
+      nextblockdsr0 = -HDL64EAdjustTimeStamp(firingBlock + (isDualReturnPacket?4:2), 0, isDualReturnPacket);
+      blockdsr0 = -HDL64EAdjustTimeStamp(firingBlock, 0, isDualReturnPacket);
       break;
       }
     case 32:
       {
       if (this->ReportedSensor == VLP32AB || this->ReportedSensor == VLP32C)
         {
-        timestampadjustment = VLP32AdjustTimeStamp(firingBlock, dsr,this->IsDualReturnSensorMode);
-        nextblockdsr0 = VLP32AdjustTimeStamp(firingBlock + (this->IsDualReturnSensorMode?2:1), 0, this->IsDualReturnSensorMode);
-        blockdsr0 = VLP32AdjustTimeStamp(firingBlock, 0, this->IsDualReturnSensorMode);
+        timestampadjustment = VLP32AdjustTimeStamp(firingBlock, dsr,isDualReturnPacket);
+        nextblockdsr0 = VLP32AdjustTimeStamp(firingBlock + (isDualReturnPacket?2:1), 0, isDualReturnPacket);
+        blockdsr0 = VLP32AdjustTimeStamp(firingBlock, 0, isDualReturnPacket);
         }
       else
         {
-        timestampadjustment = HDL32AdjustTimeStamp(firingBlock, dsr,this->IsDualReturnSensorMode);
-        nextblockdsr0 = HDL32AdjustTimeStamp(firingBlock + (this->IsDualReturnSensorMode?2:1), 0, this->IsDualReturnSensorMode);
-        blockdsr0 = HDL32AdjustTimeStamp(firingBlock, 0, this->IsDualReturnSensorMode);
+        timestampadjustment = HDL32AdjustTimeStamp(firingBlock, dsr,isDualReturnPacket);
+        nextblockdsr0 = HDL32AdjustTimeStamp(firingBlock + (isDualReturnPacket?2:1), 0, isDualReturnPacket);
+        blockdsr0 = HDL32AdjustTimeStamp(firingBlock, 0, isDualReturnPacket);
         }
       break;
       }
     case 16:
       {
-      timestampadjustment = VLP16AdjustTimeStamp(firingBlock, laserId, firingWithinBlock, this->IsDualReturnSensorMode);
-      nextblockdsr0 = VLP16AdjustTimeStamp(firingBlock + (this->IsDualReturnSensorMode?2:1), 0, 0, this->IsDualReturnSensorMode);
-      blockdsr0 = VLP16AdjustTimeStamp(firingBlock, 0, 0, this->IsDualReturnSensorMode);
+      timestampadjustment = VLP16AdjustTimeStamp(firingBlock, laserId, firingWithinBlock, isDualReturnPacket);
+      nextblockdsr0 = VLP16AdjustTimeStamp(firingBlock + (isDualReturnPacket?2:1), 0, 0, isDualReturnPacket);
+      blockdsr0 = VLP16AdjustTimeStamp(firingBlock, 0, 0, isDualReturnPacket);
       break;
       }
     default:
@@ -1950,6 +1930,16 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(unsigned char *data, st
     }
   assert(azimuthDiff > 0);
 
+  // Add DualReturn-specific arrays if newly detected dual return packet
+  if (dataPacket->isDualModeReturn(this->IsHDL64Data)
+      && !this->HasDualReturn)
+    {
+    this->HasDualReturn = true;
+    this->CurrentDataset->GetPointData()->AddArray(this->DistanceFlag.GetPointer());
+    this->CurrentDataset->GetPointData()->AddArray(this->IntensityFlag.GetPointer());
+    this->CurrentDataset->GetPointData()->AddArray(this->DualReturnMatching.GetPointer());
+    }
+
   for ( ; firingBlock < HDL_FIRING_PER_PKT; ++firingBlock)
     {
     HDLFiringData* firingData = &(dataPacket->firingData[firingBlock]);
@@ -1972,6 +1962,8 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(unsigned char *data, st
                           azimuthDiff,
                           timestamp,
                           rawtime,
+                          this->HasDualReturn && dataPacket->isDualBlockOfDualPacket(this->IsHDL64Data, firingBlock),
+                          this->HasDualReturn,
                           geotransform.GetPointer());
       }
 
