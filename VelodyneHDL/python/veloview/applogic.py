@@ -17,6 +17,7 @@ import csv
 import datetime
 import time
 import math
+import sys
 import paraview.simple as smp
 from paraview import servermanager
 from paraview import vtk
@@ -2161,29 +2162,35 @@ def toggleRPM():
 
 
 def toggleSelectDualReturn():
+    # test if we are on osx os
+    osName = str(sys.platform)
+    if osName == 'darwin':
+        QtGui.QMessageBox.warning(getMainWindow(), 'Information', 'This functionality is not yet available on %s' % osName)
+        return
+
     #Get the active source
     source = smp.GetActiveSource()
-    
+
     #If no data are available
     if not source :
         return
-        
+
     if not source.GetClientSideObject().GetHasDualReturn() :
         QtGui.QMessageBox.warning(getMainWindow(), 'Dual returns not found',
         "The functionality only works with dual returns, and the current"
         "frame has no dual returns.")
         return
-        
+
     #Get the polyData which contains all points
     allFrame = source.GetClientSideObject().GetOutput()
     nPoints = allFrame.GetNumberOfPoints()
-    
+
     #Get the selected Points
     selectedPoints = source.GetSelectionOutput(0)
     polyData = selectedPoints.GetClientSideObject().GetOutput()
     idArray = polyData.GetPointData().GetArray('dual_return_matching')
     nSelectedpoints = polyData.GetNumberOfPoints()
-    
+
     #Select the dual return of each selected points which have a dual return
     if nSelectedpoints >0 :
         #create a temporary array to make a query selection
