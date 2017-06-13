@@ -13,9 +13,12 @@
 // limitations under the License.
 
 #include "TestHelpers.h"
-#include "vtkVelodyneHDLReader.h"
+#include "vtkVelodyneHDLSource.h"
+#include "vvPacketSender.h"
 
 #include <vtkNew.h>
+
+#include <boost/thread/thread.hpp>
 
 // Multitest functions
 //-----------------------------------------------------------------------------
@@ -35,26 +38,85 @@ int TestFile(const std::string &correctionFileName, const std::string &pcapFileN
   std::cout << "Testing " << pcapFileName << std::endl;
   std::cout << "Corrections file: " << correctionFileName << std::endl;
 
-  // Generate a Velodyne HDL reader
-  vtkNew<vtkVelodyneHDLReader> HDLReader;
+  // Generate a Velodyne HDL source
+  static const std::string destinationIp = "127.0.0.1";
+  static const int dataPort = 2368;
 
-  HDLReader->SetFileName(pcapFileName);
-  HDLReader->SetCorrectionsFile(correctionFileName);
+  vtkNew<vtkVelodyneHDLSource> HDLsource;
+  HDLsource->SetCorrectionsFile(correctionFileName);
+  HDLsource->SetCacheSize(100);
+  HDLsource->SetLIDARPort(dataPort);
+  HDLsource->SetGPSPort(8308);
+  HDLsource->SetisForwarding(false);
+  HDLsource->SetisCrashAnalysing(true);
+  HDLsource->Start();
 
-  HDLReader->ReadFrameInformation();
-  HDLReader->Update();
+  std::cout << "Sending data... " << std::endl;
+  try
+  {
+    vvPacketSender sender(pcapFileName, destinationIp, dataPort);
+    boost::this_thread::sleep(boost::posix_time::microseconds(1000));
+    sender.pumpPacket();
+    while (!sender.done())
+    {
+      sender.pumpPacket();
+      boost::this_thread::sleep(boost::posix_time::microseconds(1000));
+    }
+  }
+  catch (std::exception& e)
+  {
+    std::cout << "Caught Exception: " << e.what() << std::endl;
+    return 1;
+  }
+  HDLsource->Stop();
+
+  std::cout << "Done." << std::endl;
+
+  if (correctionFileName == "" && HDLsource->GetCorrectionsInitialized())
+  {
+    HDLsource->UnloadDatasets();
+
+    std::cout << "Live Correction initialized, resend data..." << std::endl;
+    try
+    {
+      HDLsource->Start();
+      vvPacketSender sender(pcapFileName, destinationIp, dataPort);
+
+      boost::this_thread::sleep(boost::posix_time::microseconds(1000));
+      sender.pumpPacket();
+
+      while (!sender.done())
+      {
+        sender.pumpPacket();
+        boost::this_thread::sleep(boost::posix_time::microseconds(1000));
+      }
+
+      HDLsource->Stop();
+      std::cout << "Done." << std::endl;
+    }
+    catch (std::exception& e)
+    {
+      std::cout << "Caught Exception: " << e.what() << std::endl;
+      return 1;
+    }
+  }
+
 
   std::cout << "Testing..." << std::endl;
 
-  // Checks frame count
-  retVal += TestFrameCount(HDLReader->GetNumberOfFrames(), referenceFilesList.size());
+  retVal += TestFrameCount(GetNumberOfTimesteps(HDLsource.Get()), referenceFilesList.size());
 
   // Check properties frame by frame
   unsigned int nbReferences = referenceFilesList.size();
 
-  for (int idFrame = 0; idFrame < nbReferences; ++idFrame)
+  // Skips the first & last frames. First and last frame aren't complete frames
+  // In live mode, we don't skip the last firing belonging to the n-1 frame.
+  // In live mode, the last frame is uncomplete.
+  GetCurrentFrame(HDLsource.Get(), 0);
+
+  for (int idFrame = 0; idFrame < nbReferences - 1; ++idFrame)
   {
-    vtkPolyData* currentFrame = GetCurrentFrame(HDLReader.Get(), idFrame);
+    vtkPolyData* currentFrame = GetCurrentFrame(HDLsource.Get(), idFrame + 1);
     vtkPolyData* currentReference = GetCurrentReference(referenceFilesList, idFrame);
 
     // Points count
@@ -90,7 +152,7 @@ int main(int argc, char* argv[])
 {
   if (argc < 3)
   {
-    std::cerr << "Wrong number of arguments. Usage: TestReaderVTP TEST_DIR SHARE_DIR"
+    std::cerr << "Wrong number of arguments. Usage: TestLiveStream TEST_DIR SHARE_DIR"
       << std::endl;
 
     return 1;
@@ -164,6 +226,7 @@ int main(int argc, char* argv[])
   retVal += TestFile(correctionsFileName, pcapFileName, referenceFilesList);
 
   // HDL-64 Dual
+  correctionsFileName = "";
   pcapFileName = testFolder;
   pcapFileName += "HDL-64_Dual_10to20.pcap";
   referenceFileName = testFolder;
