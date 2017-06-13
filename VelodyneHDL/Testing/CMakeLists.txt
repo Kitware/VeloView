@@ -7,6 +7,9 @@ target_link_libraries(TestPositionReader VelodyneHDLPlugin)
 add_executable(TestSensor TestSensor.cxx)
 target_link_libraries(TestSensor VelodyneHDLPlugin)
 
+add_executable(TestReaderVTP TestReaderVTP.cxx)
+target_link_libraries(TestReaderVTP VelodyneHDLPlugin)
+
 add_test(TestReader1 ${CMAKE_BINARY_DIR}/bin/TestPositionReader ${CMAKE_SOURCE_DIR}/Testing/Data/monterey-first-100-packets.pcap 299)
 
 add_test(TestReaderMonterey
@@ -35,6 +38,12 @@ add_test(TestReaderVLP16
   ${CMAKE_SOURCE_DIR}/Testing/Data/vlp-16-test-90deg-1-50-frames.pcap
   ${CMAKE_SOURCE_DIR}/share/VLP-16.xml
   ${CMAKE_SOURCE_DIR}/Testing/vlp-16.test
+)
+
+add_test(TestReaderVTP
+  ${CMAKE_BINARY_DIR}/bin/TestReaderVTP
+  ${CMAKE_SOURCE_DIR}/Testing/Data/
+  ${CMAKE_SOURCE_DIR}/share/
 )
 
 add_test(TestSensor
