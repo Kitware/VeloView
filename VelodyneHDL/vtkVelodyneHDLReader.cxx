@@ -2345,7 +2345,8 @@ bool vtkVelodyneHDLReader::vtkInternal::HDL64LoadCorrectionsFromStreamData()
   this->CalibrationReportedNumLasers = HDL64_RollingData_NumLaser;
   PrecomputeCorrectionCosSin();
   this->CorrectionsInitialized = true;
-  }
+  return true;
+}
 
 //-----------------------------------------------------------------------------
 void vtkVelodyneHDLReader::appendRollingDataAndTryCorrection(const unsigned char* data) {
