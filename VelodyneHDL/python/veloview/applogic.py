@@ -1629,10 +1629,16 @@ def onCropReturns(show = True):
 
     #show the dialog box
     if show:
-        dialog.croppingEnabled = cropEnabled
         dialog.cropOutside = cropOutside
         dialog.firstCorner = firstCorner
         dialog.secondCorner = secondCorner
+        dialog.croppingEnabled = cropEnabled
+        # Enforce the call to dialog.croppingEnabled."onChanged" even if dialog.croppingEnabled == cropEnabled
+        dialog.croppingEnabled = not dialog.croppingEnabled
+        dialog.croppingEnabled = not dialog.croppingEnabled
+
+        # update the dialog configuration
+        dialog.UpdateDialogWithCurrentSetting()
 
         if not dialog.exec_():
             return

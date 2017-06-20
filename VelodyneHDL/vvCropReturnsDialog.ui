@@ -37,7 +37,7 @@
    <item row="0" column="0" colspan="2">
     <widget class="QGroupBox" name="CropGroupBox">
      <property name="title">
-      <string>Enable Cropping</string>
+      <string>Enable Cropping : Keep only point with coordinates in following range</string>
      </property>
      <property name="checkable">
       <bool>true</bool>
@@ -163,7 +163,7 @@
       <item row="5" column="1">
        <widget class="QCheckBox" name="CropOutsideCheckBox">
         <property name="text">
-         <string>Crop Outside</string>
+         <string>Invert Crop : Keep points outside the range</string>
         </property>
        </widget>
       </item>
