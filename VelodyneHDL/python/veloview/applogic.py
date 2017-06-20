@@ -465,12 +465,10 @@ def openSensor():
     app.actions['actionDualReturnDistanceFar'].enabled = True
     app.actions['actionDualReturnIntensityHigh'].enabled = True
     app.actions['actionDualReturnIntensityLow'].enabled = True
-    app.actions['actionDiscardZeroDistances'].enabled = True
-    app.actions['actionIntraFiringAdjust'].enabled = True
 
-    app.actions['actionDiscardZeroDistances'].setChecked(sensor.GetClientSideObject().GetDiscardZeroDistances())
+    sensor.GetClientSideObject().SetDiscardZeroDistances(app.actions['actionDiscardZeroDistances'].isChecked())
     # wip
-    # app.actions['actionIntraFiringAdjust'].setChecked(sensor.GetClientSideObject().GetIntraFiringAdjust())
+    # sensor.GetClientSideObject().SetIntraFiringAdjust(app.actions['actionIntraFiringAdjust'].isChecked())
 
 
 def openPCAP(filename, positionFilename=None):
@@ -615,12 +613,9 @@ def openPCAP(filename, positionFilename=None):
     app.actions['actionShowRPM'].enabled = True
     app.actions['actionCorrectIntensityValues'].enabled = True
 
-    app.actions['actionDiscardZeroDistances'].enabled = True
-    app.actions['actionIntraFiringAdjust'].enabled = True
-
-    app.actions['actionDiscardZeroDistances'].setChecked(reader.GetClientSideObject().GetDiscardZeroDistances())
+    reader.GetClientSideObject().SetDiscardZeroDistances(app.actions['actionDiscardZeroDistances'].isChecked())
     # wip
-    # app.actions['actionIntraFiringAdjust'].setChecked(reader.GetClientSideObject().GetIntraFiringAdjust())
+    # reader.GetClientSideObject().SetIntraFiringAdjust(app.actions['actionIntraFiringAdjust'].isChecked())
 
     #Auto adjustment of the grid size with the distance resolution
     app.distanceResolutionM = reader.GetClientSideObject().GetDistanceResolutionM()
@@ -1161,8 +1156,6 @@ def close():
     app.actions['actionDualReturnIntensityLow'].enabled = False
     app.actions['actionCorrectIntensityValues'].enabled = False
 
-    app.actions['actionDiscardZeroDistances'].enabled = False
-    app.actions['actionIntraFiringAdjust'].enabled = False
 
 def seekForward():
 
@@ -1842,6 +1835,7 @@ def start():
     initializeRPMText()
 
 
+
 def findQObjectByName(widgets, name):
     for w in widgets:
         if w.objectName == name:
@@ -2439,6 +2433,11 @@ def setupActions():
     app.actions['actionSelectDualReturn2'].connect('triggered()',toggleSelectDualReturn)
     app.EnableCrashAnalysis = app.actions['actionEnableCrashAnalysis'].isChecked()
 
+    # Restore action states from settings
+    settings = getPVSettings()
+    app.actions['actionDiscardZeroDistances'].setChecked(int(settings.value('VelodyneHDLPlugin/DiscardZeroDistances', 1)))
+    app.actions['actionIntraFiringAdjust'].setChecked(int(settings.value('VelodyneHDLPlugin/IntraFiringAdjust', 1)))
+
     # Setup and add the geolocation toolbar
     geolocationToolBar = mW.findChild('QToolBar', 'geolocationToolbar')
 
@@ -2565,19 +2564,35 @@ def initializeRPMText():
 
 
 def onDiscardZeroDistances():
+    # Get the check box value as an int to save it into the PV settings (there's incompatibility with python booleans)
+    discardZeroDistances = int(app.actions['actionDiscardZeroDistances'].isChecked())
+
+    # Save the setting for future session
+    getPVSettings().setValue('VelodyneHDLPlugin/DiscardZeroDistances', discardZeroDistances)
+
+    # Apply it to the current source if any
     source = getReader() or getSensor()
 
     if source:
-        source.GetClientSideObject().SetDiscardZeroDistances(app.actions['actionDiscardZeroDistances'].isChecked())
+        source.GetClientSideObject().SetDiscardZeroDistances(discardZeroDistances)
+
         refreshUI()
 
 
 def onIntraFiringAdjust():
-    source = getReader() or getSensor()
+    # Get the check box value as an int to save it into the PV settings (there's incompatibility with python booleans)
+    intraFiringAdjust = int(app.actions['actionIntraFiringAdjust'].isChecked())
+
+    # Save the setting for future session
+    getPVSettings().setValue('VelodyneHDLPlugin/IntraFiringAdjust', intraFiringAdjust)
+
+    # Apply it to the current source if any
+    # source = getReader() or getSensor()
 
     # if source:
-        # source.GetClientSideObject().SetIntraFiringAdjust(app.actions['actionIntraFiringAdjust'].isChecked())
-        # refreshUI()
+    #     source.GetClientSideObject().SetIntraFiringAdjust(intraFiringAdjust)
+
+    #     refreshUI()
 
 
 def refreshUI():

@@ -94,6 +94,8 @@
     <addaction name="actionLaserSelection"/>
     <addaction name="menuDualReturnMode"/>
     <addaction name="actionSelectDualReturn"/>
+    <addaction name="actionDiscardZeroDistances"/>
+    <addaction name="actionIntraFiringAdjust"/>
     <addaction name="actionChoose_Calibration_File"/>
     <addaction name="actionCropReturns"/>
     <addaction name="separator"/>
@@ -104,8 +106,6 @@
     <addaction name="separator"/>
     <addaction name="menuDebugging"/>
     <addaction name="actionEnableCrashAnalysis"/>
-    <addaction name="actionDiscardZeroDistances"/>
-    <addaction name="actionIntraFiringAdjust"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
@@ -922,7 +922,7 @@
     <bool>true</bool>
    </property>
    <property name="enabled">
-    <bool>false</bool>
+    <bool>true</bool>
    </property>
    <property name="text">
     <string>Discard 0-Distances returns</string>
@@ -936,7 +936,7 @@
     <bool>true</bool>
    </property>
    <property name="enabled">
-    <bool>false</bool>
+    <bool>true</bool>
    </property>
    <property name="text">
     <string>Adjust intra-firing timings and azimuths</string>
