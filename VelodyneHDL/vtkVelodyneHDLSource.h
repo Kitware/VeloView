@@ -121,6 +121,9 @@ public:
 
   bool GetHasDualReturn();
 
+  unsigned int GetDiscardZeroDistances() const;
+  void SetDiscardZeroDistances(unsigned int);
+
 protected:
 
 

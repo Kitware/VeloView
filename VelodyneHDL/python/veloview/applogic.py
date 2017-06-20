@@ -465,6 +465,13 @@ def openSensor():
     app.actions['actionDualReturnDistanceFar'].enabled = True
     app.actions['actionDualReturnIntensityHigh'].enabled = True
     app.actions['actionDualReturnIntensityLow'].enabled = True
+    app.actions['actionDiscardZeroDistances'].enabled = True
+    app.actions['actionIntraFiringAdjust'].enabled = True
+
+    app.actions['actionDiscardZeroDistances'].setChecked(sensor.GetClientSideObject().GetDiscardZeroDistances())
+    # wip
+    # app.actions['actionIntraFiringAdjust'].setChecked(sensor.GetClientSideObject().GetIntraFiringAdjust())
+
 
 def openPCAP(filename, positionFilename=None):
 
@@ -607,6 +614,13 @@ def openPCAP(filename, positionFilename=None):
 
     app.actions['actionShowRPM'].enabled = True
     app.actions['actionCorrectIntensityValues'].enabled = True
+
+    app.actions['actionDiscardZeroDistances'].enabled = True
+    app.actions['actionIntraFiringAdjust'].enabled = True
+
+    app.actions['actionDiscardZeroDistances'].setChecked(reader.GetClientSideObject().GetDiscardZeroDistances())
+    # wip
+    # app.actions['actionIntraFiringAdjust'].setChecked(reader.GetClientSideObject().GetIntraFiringAdjust())
 
     #Auto adjustment of the grid size with the distance resolution
     app.distanceResolutionM = reader.GetClientSideObject().GetDistanceResolutionM()
@@ -1147,6 +1161,8 @@ def close():
     app.actions['actionDualReturnIntensityLow'].enabled = False
     app.actions['actionCorrectIntensityValues'].enabled = False
 
+    app.actions['actionDiscardZeroDistances'].enabled = False
+    app.actions['actionIntraFiringAdjust'].enabled = False
 
 def seekForward():
 
@@ -2373,6 +2389,9 @@ def setupActions():
     for a in actions:
         app.actions[a.objectName] = a
 
+    app.actions['actionDiscardZeroDistances'].connect('triggered()', onDiscardZeroDistances)
+    app.actions['actionIntraFiringAdjust'].connect('triggered()', onIntraFiringAdjust)
+
     app.actions['actionPlaneFit'].connect('triggered()', planeFit)
 
     app.actions['actionClose'].connect('triggered()', close)
@@ -2543,3 +2562,25 @@ def initializeRPMText():
     textRepresentation.Visibility = app.actions['actionShowRPM'].isChecked()
     textRepresentation.FontSize = 8
     textRepresentation.Color = [1,1,0]
+
+
+def onDiscardZeroDistances():
+    source = getReader() or getSensor()
+
+    if source:
+        source.GetClientSideObject().SetDiscardZeroDistances(app.actions['actionDiscardZeroDistances'].isChecked())
+        refreshUI()
+
+
+def onIntraFiringAdjust():
+    source = getReader() or getSensor()
+
+    # if source:
+        # source.GetClientSideObject().SetIntraFiringAdjust(app.actions['actionIntraFiringAdjust'].isChecked())
+        # refreshUI()
+
+
+def refreshUI():
+    # For now, we have to go to the next frame and go back to the current frame to force the UI to refresh
+    gotoNext()
+    gotoPrevious()

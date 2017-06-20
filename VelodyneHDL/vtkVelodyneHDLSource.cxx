@@ -807,6 +807,18 @@ bool vtkVelodyneHDLSource::GetHasDualReturn()
 }
 
 //-----------------------------------------------------------------------------
+unsigned int vtkVelodyneHDLSource::GetDiscardZeroDistances() const
+{
+  return this->Internal->Consumer->GetReader()->GetDiscardZeroDistances();
+}
+
+//-----------------------------------------------------------------------------
+void vtkVelodyneHDLSource::SetDiscardZeroDistances(unsigned int value)
+{
+  this->Internal->Consumer->GetReader()->SetDiscardZeroDistances(value);
+}
+
+//-----------------------------------------------------------------------------
 const std::string& vtkVelodyneHDLSource::GetOutputFile()
 {
   return this->OutputFile;

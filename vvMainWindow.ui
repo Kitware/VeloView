@@ -104,6 +104,8 @@
     <addaction name="separator"/>
     <addaction name="menuDebugging"/>
     <addaction name="actionEnableCrashAnalysis"/>
+    <addaction name="actionDiscardZeroDistances"/>
+    <addaction name="actionIntraFiringAdjust"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
@@ -910,6 +912,34 @@
    </property>
    <property name="text">
     <string>Persisting Grid Properties</string>
+   </property>
+  </action>
+  <action name="actionDiscardZeroDistances">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Discard 0-Distances returns</string>
+   </property>
+  </action>
+  <action name="actionIntraFiringAdjust">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Adjust intra-firing timings and azimuths</string>
    </property>
   </action>
  </widget>
