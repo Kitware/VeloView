@@ -807,15 +807,27 @@ bool vtkVelodyneHDLSource::GetHasDualReturn()
 }
 
 //-----------------------------------------------------------------------------
-unsigned int vtkVelodyneHDLSource::GetDiscardZeroDistances() const
+int vtkVelodyneHDLSource::GetDiscardZeroDistances() const
 {
   return this->Internal->Consumer->GetReader()->GetDiscardZeroDistances();
 }
 
 //-----------------------------------------------------------------------------
-void vtkVelodyneHDLSource::SetDiscardZeroDistances(unsigned int value)
+void vtkVelodyneHDLSource::SetDiscardZeroDistances(int value)
 {
   this->Internal->Consumer->GetReader()->SetDiscardZeroDistances(value);
+}
+
+//-----------------------------------------------------------------------------
+int vtkVelodyneHDLSource::GetIntraFiringAdjust() const
+{
+  return this->Internal->Consumer->GetReader()->GetIntraFiringAdjust();
+}
+
+//-----------------------------------------------------------------------------
+void vtkVelodyneHDLSource::SetIntraFiringAdjust(int value)
+{
+  this->Internal->Consumer->GetReader()->SetIntraFiringAdjust(value);
 }
 
 //-----------------------------------------------------------------------------

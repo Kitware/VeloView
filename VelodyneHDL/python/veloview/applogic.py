@@ -467,8 +467,7 @@ def openSensor():
     app.actions['actionDualReturnIntensityLow'].enabled = True
 
     sensor.GetClientSideObject().SetDiscardZeroDistances(app.actions['actionDiscardZeroDistances'].isChecked())
-    # wip
-    # sensor.GetClientSideObject().SetIntraFiringAdjust(app.actions['actionIntraFiringAdjust'].isChecked())
+    sensor.GetClientSideObject().SetIntraFiringAdjust(app.actions['actionIntraFiringAdjust'].isChecked())
 
 
 def openPCAP(filename, positionFilename=None):
@@ -614,8 +613,7 @@ def openPCAP(filename, positionFilename=None):
     app.actions['actionCorrectIntensityValues'].enabled = True
 
     reader.GetClientSideObject().SetDiscardZeroDistances(app.actions['actionDiscardZeroDistances'].isChecked())
-    # wip
-    # reader.GetClientSideObject().SetIntraFiringAdjust(app.actions['actionIntraFiringAdjust'].isChecked())
+    reader.GetClientSideObject().SetIntraFiringAdjust(app.actions['actionIntraFiringAdjust'].isChecked())
 
     #Auto adjustment of the grid size with the distance resolution
     app.distanceResolutionM = reader.GetClientSideObject().GetDistanceResolutionM()
@@ -2587,12 +2585,12 @@ def onIntraFiringAdjust():
     getPVSettings().setValue('VelodyneHDLPlugin/IntraFiringAdjust', intraFiringAdjust)
 
     # Apply it to the current source if any
-    # source = getReader() or getSensor()
+    source = getReader() or getSensor()
 
-    # if source:
-    #     source.GetClientSideObject().SetIntraFiringAdjust(intraFiringAdjust)
+    if source:
+        source.GetClientSideObject().SetIntraFiringAdjust(intraFiringAdjust)
 
-    #     refreshUI()
+        refreshUI()
 
 
 def refreshUI():

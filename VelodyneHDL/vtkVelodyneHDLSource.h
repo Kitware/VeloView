@@ -121,8 +121,11 @@ public:
 
   bool GetHasDualReturn();
 
-  unsigned int GetDiscardZeroDistances() const;
-  void SetDiscardZeroDistances(unsigned int);
+  int GetDiscardZeroDistances() const;
+  void SetDiscardZeroDistances(int);
+
+  int GetIntraFiringAdjust() const;
+  void SetIntraFiringAdjust(int);
 
 protected:
 
