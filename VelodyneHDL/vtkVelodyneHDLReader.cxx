@@ -272,6 +272,7 @@ public:
   vtkInternal()
   {
     this->AlreadyWarnAboutCalibration = false;
+    this->DiscardZeroDistances = true;
     this->CropMode = Cartesian;
     this->ShouldAddDualReturnArray = false;
     this->alreadyWarnedForIgnoredHDL64FiringPacket = false;
@@ -384,6 +385,7 @@ public:
   int NumberOfTrailingFrames;
   int ApplyTransform;
   int PointsSkip;
+  bool DiscardZeroDistances;
 
   bool CropReturns;
   bool CropInside;
@@ -468,6 +470,22 @@ vtkVelodyneHDLReader::~vtkVelodyneHDLReader()
 const std::string& vtkVelodyneHDLReader::GetFileName()
 {
   return this->FileName;
+}
+
+//-----------------------------------------------------------------------------
+unsigned int vtkVelodyneHDLReader::GetDiscardZeroDistances() const
+{
+  return this->Internal->DiscardZeroDistances;
+}
+
+//-----------------------------------------------------------------------------
+void vtkVelodyneHDLReader::SetDiscardZeroDistances(unsigned int value)
+{
+  if (this->Internal->DiscardZeroDistances != value)
+    {
+    this->Internal->DiscardZeroDistances = value;
+    this->Modified();
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -1867,7 +1885,8 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessFiring(HDLFiringData* firingData,
     azimuthadjustment = vtkMath::Round(azimuthDiff * ((timestampadjustment - blockdsr0) / (nextblockdsr0 - blockdsr0)));
     timestampadjustment = vtkMath::Round(timestampadjustment);
 
-    if (firingData->laserReturns[dsr].distance != 0.0 && this->LaserSelection[laserId])
+    if ((!this->DiscardZeroDistances || firingData->laserReturns[dsr].distance != 0.0)
+        && this->LaserSelection[laserId])
       {
       this->PushFiringData(laserId,
                            rawLaserId,
@@ -2040,7 +2059,7 @@ int vtkVelodyneHDLReader::ReadFrameInformation()
       if (firingData.rotationalPosition < lastAzimuth)
         {
         // Add file position if the frame is not empty
-        if(!isEmptyFrame)
+        if(!isEmptyFrame || !this->DiscardZeroDistances)
         {
           filePositions.push_back(lastFilePosition);
           skips.push_back(i);
