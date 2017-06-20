@@ -286,7 +286,7 @@ public:
     this->ApplyTransform = 0;
     this->PointsSkip = 0;
     this->CropReturns = false;
-    this->CropInside = false;
+    this->CropOutside = false;
     this->CropRegion[0] = this->CropRegion[1] = 0.0;
     this->CropRegion[2] = this->CropRegion[3] = 0.0;
     this->CropRegion[4] = this->CropRegion[5] = 0.0;
@@ -386,7 +386,7 @@ public:
   int PointsSkip;
 
   bool CropReturns;
-  bool CropInside;
+  bool CropOutside;
   bool AlreadyWarnAboutCalibration;
   double CropRegion[6];
   double distanceResolutionM;
@@ -665,11 +665,11 @@ void vtkVelodyneHDLReader::SetCropReturns(int crop)
 }
 
 //-----------------------------------------------------------------------------
-void vtkVelodyneHDLReader::SetCropInside(int crop)
+void vtkVelodyneHDLReader::SetCropOutside(int crop)
 {
-  if (!this->Internal->CropInside == !!crop)
+  if (!this->Internal->CropOutside == !!crop)
     {
-    this->Internal->CropInside = !!crop;
+    this->Internal->CropOutside = !!crop;
     this->Modified();
     }
 }
@@ -1187,8 +1187,8 @@ bool vtkVelodyneHDLReader::vtkInternal::shouldBeCroppedOut(double pos[3],double 
         bool pointOutsideOfBox = pos[0] >= this->CropRegion[0] && pos[0] <= this->CropRegion[1] &&
           pos[1] >= this->CropRegion[2] && pos[1] <= this->CropRegion[3] &&
           pos[2] >= this->CropRegion[4] && pos[2] <= this->CropRegion[5];
-        return ((pointOutsideOfBox && !this->CropInside) ||
-            (!pointOutsideOfBox && this->CropInside));
+        return ((pointOutsideOfBox && this->CropOutside) ||
+            (!pointOutsideOfBox && !this->CropOutside));
         break;
       }
       case Spherical:
@@ -1206,8 +1206,8 @@ bool vtkVelodyneHDLReader::vtkInternal::shouldBeCroppedOut(double pos[3],double 
           pointInsideOfBounds = (theta >= this->CropRegion[0] || theta <= this->CropRegion[1]) &&
           R >= this->CropRegion[4] && R <= this->CropRegion[5];
           }
-        return ((pointInsideOfBounds && !this->CropInside) ||
-            (!pointInsideOfBounds && this->CropInside));
+        return ((pointInsideOfBounds && this->CropOutside) ||
+            (!pointInsideOfBounds && !this->CropOutside));
         break;
       }
       case Cylindric:

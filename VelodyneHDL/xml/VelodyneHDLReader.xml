@@ -88,13 +88,13 @@
       </IntVectorProperty>
 
       <IntVectorProperty
-          name="CropInside"
+          name="CropOutside"
           animateable="0"
-          command="SetCropInside"
+          command="SetCropOutside"
           default_values="0"
           number_of_elements="1">
         <Documentation>
-          Crop inside
+          Crop outside
         </Documentation>
       </IntVectorProperty>
 

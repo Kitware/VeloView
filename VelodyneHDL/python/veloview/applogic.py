@@ -1608,7 +1608,7 @@ def onCropReturns(show = True):
     dialog = vvCropReturnsDialog(getMainWindow())
 
     cropEnabled = False
-    cropInside = False
+    cropOutside = False
     firstCorner = QtGui.QVector3D()
     secondCorner = QtGui.QVector3D()
 
@@ -1617,20 +1617,20 @@ def onCropReturns(show = True):
 
     if reader is not None:
         cropEnabled = reader.CropReturns
-        cropInside = reader.CropInside
+        cropOutside = reader.CropOutside
         firstCorner = QtGui.QVector3D(reader.CropRegion[0], reader.CropRegion[2], reader.CropRegion[4])
         secondCorner = QtGui.QVector3D(reader.CropRegion[1], reader.CropRegion[3], reader.CropRegion[5])
 
     if sensor is not None:
         cropEnabled = sensor.CropReturns
-        cropInside = sensor.CropInside
+        cropOutside = sensor.CropOutside
         firstCorner = QtGui.QVector3D(sensor.CropRegion[0], sensor.CropRegion[2], sensor.CropRegion[4])
         secondCorner = QtGui.QVector3D(sensor.CropRegion[1], sensor.CropRegion[3], sensor.CropRegion[5])
 
     #show the dialog box
     if show:
         dialog.croppingEnabled = cropEnabled
-        dialog.cropInside = cropInside
+        dialog.cropOutside = cropOutside
         dialog.firstCorner = firstCorner
         dialog.secondCorner = secondCorner
 
@@ -1639,7 +1639,7 @@ def onCropReturns(show = True):
 
     if reader is not None:
         reader.CropReturns = dialog.croppingEnabled
-        reader.CropInside = dialog.cropInside
+        reader.CropOutside = dialog.cropOutside
         reader.GetClientSideObject().SetCropMode(dialog.GetCropMode())
         p1 = dialog.firstCorner
         p2 = dialog.secondCorner
@@ -1649,7 +1649,7 @@ def onCropReturns(show = True):
 
     if sensor is not None:
         sensor.CropReturns = dialog.croppingEnabled
-        sensor.CropInside = dialog.cropInside
+        sensor.CropOutside = dialog.cropOutside
         p1 = dialog.firstCorner
         p2 = dialog.secondCorner
         sensor.CropRegion = [p1.x(), p2.x(), p1.y(), p2.y(), p1.z(), p2.z()]

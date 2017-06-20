@@ -69,8 +69,8 @@ void vvCropReturnsDialog::pqInternal::saveSettings()
     this->CropGroupBox->isChecked());
 
   this->Settings->setValue(
-    "VelodyneHDLPlugin/CropReturnsDialog/CropInside",
-    this->CropInsideCheckBox->isChecked());
+    "VelodyneHDLPlugin/CropReturnsDialog/CropOutside",
+    this->CropOutsideCheckBox->isChecked());
 
   this->Settings->setValue(
     "VelodyneHDLPlugin/CropReturnsDialog/FirstCornerX",
@@ -120,10 +120,10 @@ void vvCropReturnsDialog::pqInternal::restoreSettings()
       "VelodyneHDLPlugin/CropReturnsDialog/EnableCropping",
       false).toBool());
 
-  this->CropInsideCheckBox->setChecked(
+  this->CropOutsideCheckBox->setChecked(
     this->Settings->value(
-      "VelodyneHDLPlugin/CropReturnsDialog/CropInside",
-      this->CropInsideCheckBox->isChecked()).toBool());
+      "VelodyneHDLPlugin/CropReturnsDialog/CropOutside",
+      this->CropOutsideCheckBox->isChecked()).toBool());
 
   this->X1SpinBox->setValue (
     this->Settings->value(
@@ -217,15 +217,15 @@ void vvCropReturnsDialog::setCroppingEnabled(bool checked)
 }
 
 //-----------------------------------------------------------------------------
-bool vvCropReturnsDialog::cropInside() const
+bool vvCropReturnsDialog::cropOutside() const
 {
-  return this->Internal->CropInsideCheckBox->isChecked();
+  return this->Internal->CropOutsideCheckBox->isChecked();
 }
 
 //-----------------------------------------------------------------------------
-void vvCropReturnsDialog::setCropInside(bool checked)
+void vvCropReturnsDialog::setCropOutside(bool checked)
 {
-  this->Internal->CropInsideCheckBox->setChecked(checked);
+  this->Internal->CropOutsideCheckBox->setChecked(checked);
 }
 
 //-----------------------------------------------------------------------------
@@ -397,7 +397,7 @@ void vvCropReturnsDialog::pqInternal::SetCartesianSettings()
 void vvCropReturnsDialog::onNoneToggled()
 {
   this->Internal->DesactivateSpinBox();
-  this->Internal->CropInsideCheckBox->setChecked(false);
+  this->Internal->CropOutsideCheckBox->setChecked(false);
 }
 
 //-----------------------------------------------------------------------------
@@ -446,7 +446,7 @@ void vvCropReturnsDialog::pqInternal::ActivateSpinBox()
   this->YDoubleRangeSlider.setDisabled(false);
   this->ZDoubleRangeSlider.setDisabled(false);
 
-  this->CropInsideCheckBox->setDisabled(false);
+  this->CropOutsideCheckBox->setDisabled(false);
 }
 
 //-----------------------------------------------------------------------------
@@ -557,7 +557,7 @@ void vvCropReturnsDialog::pqInternal::DesactivateSpinBox()
   this->YDoubleRangeSlider.setDisabled(true);
   this->ZDoubleRangeSlider.setDisabled(true);
 
-  this->CropInsideCheckBox->setDisabled(true);
+  this->CropOutsideCheckBox->setDisabled(true);
 }
 
 //-----------------------------------------------------------------------------
