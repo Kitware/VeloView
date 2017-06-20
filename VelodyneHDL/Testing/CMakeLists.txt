@@ -149,4 +149,13 @@ else()
       ${CMAKE_SOURCE_DIR}/Testing/Data/monterey-first-100-packets.pcap
       ${CMAKE_SOURCE_DIR}/share/HDL-32.xml
     )
+
+    # Set the DYLD_LIBRARY_PATH used to find libraries for the tests on MacOS
+    if(APPLE)
+     set_property(TEST
+       TestReader1 TestReaderMonterey TestReaderMontereyWithCrop
+       TestReaderDualReturn TestReaderVLP16 TestReaderVTP TestLiveStream TestSensor
+       PROPERTY ENVIRONMENT
+       "DYLD_LIBRARY_PATH=${CMAKE_BINARY_DIR}/../../../install/lib:$ENV{DYLD_LIBRARY_PATH}")
+    endif()
 endif()
