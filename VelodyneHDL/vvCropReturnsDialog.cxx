@@ -357,12 +357,6 @@ void vvCropReturnsDialog::pqInternal::SetSphericalSettings()
   this->Z1SpinBox->setMaximum(1000);
   this->Z2SpinBox->setMaximum(1000);
   this->ZDoubleRangeSlider.setMaximum(1000);
-
-  // Hide phi selection since the laser 
-  // selection does almost the same thing
-  this->Y1SpinBox->setDisabled(true);
-  this->Y2SpinBox->setDisabled(true);
-  this->YDoubleRangeSlider.setDisabled(true);
 }
 
 //-----------------------------------------------------------------------------
@@ -397,12 +391,6 @@ void vvCropReturnsDialog::pqInternal::SetCartesianSettings()
   this->Z1SpinBox->setMaximum(maxV);
   this->Z2SpinBox->setMaximum(maxV);
   this->ZDoubleRangeSlider.setMaximum(maxV);
-
-  // Activate the Y SpinBox since the Spherical
-  // settings desactivate it
-  this->Y1SpinBox->setDisabled(false);
-  this->Y2SpinBox->setDisabled(false);
-  this->YDoubleRangeSlider.setDisabled(false);
 }
 
 //-----------------------------------------------------------------------------
