@@ -511,6 +511,7 @@ void vtkVelodyneHDLReader::SetInterpolator(
   vtkVelodyneTransformInterpolator* interpolator)
 {
   this->Internal->Interp = interpolator;
+  this->Modified();
 }
 
 //-----------------------------------------------------------------------------
@@ -544,6 +545,7 @@ void vtkVelodyneHDLReader::SetLaserSelection(BOOST_PP_REPEAT(BOOST_PP_DEC(B_HDL_
   assert(HDL_MAX_NUM_LASERS == B_HDL_MAX_NUM_LASERS);
   int mask[HDL_MAX_NUM_LASERS] = {BOOST_PP_REPEAT(BOOST_PP_DEC(B_HDL_MAX_NUM_LASERS), VAL, "") BOOST_PP_CAT(x, B_HDL_MAX_NUM_LASERS)};
   this->SetLaserSelection(mask);
+  this->Modified();
 }
 #undef B_HDL_MAX_NUM_LASERS
 #undef PARAM
@@ -684,6 +686,7 @@ void vtkVelodyneHDLReader::SetCropRegion(double region[6])
 void vtkVelodyneHDLReader::SetCropMode(int cropMode)
 {
   this->Internal->CropMode = static_cast<CropModeEnum>(cropMode);
+  this->Modified();
 }
 
 //-----------------------------------------------------------------------------
