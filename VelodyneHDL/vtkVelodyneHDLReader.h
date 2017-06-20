@@ -117,8 +117,11 @@ public:
 
   void GetXMLColorTable(double XMLColorTable[]);
 
-  unsigned int GetDiscardZeroDistances() const;
-  void SetDiscardZeroDistances(unsigned int) ;
+  int GetDiscardZeroDistances() const;
+  void SetDiscardZeroDistances(int) ;
+
+  int GetIntraFiringAdjust() const;
+  void SetIntraFiringAdjust(int);
 
   unsigned int GetDualReturnFilter() const;
   void SetDualReturnFilter(unsigned int);

@@ -273,6 +273,7 @@ public:
   {
     this->AlreadyWarnAboutCalibration = false;
     this->DiscardZeroDistances = true;
+    this->UseIntraFiringAdjustment = true;
     this->CropMode = Cartesian;
     this->ShouldAddDualReturnArray = false;
     this->alreadyWarnedForIgnoredHDL64FiringPacket = false;
@@ -386,6 +387,7 @@ public:
   int ApplyTransform;
   int PointsSkip;
   bool DiscardZeroDistances;
+  bool UseIntraFiringAdjustment;
 
   bool CropReturns;
   bool CropInside;
@@ -473,17 +475,33 @@ const std::string& vtkVelodyneHDLReader::GetFileName()
 }
 
 //-----------------------------------------------------------------------------
-unsigned int vtkVelodyneHDLReader::GetDiscardZeroDistances() const
+int vtkVelodyneHDLReader::GetDiscardZeroDistances() const
 {
   return this->Internal->DiscardZeroDistances;
 }
 
 //-----------------------------------------------------------------------------
-void vtkVelodyneHDLReader::SetDiscardZeroDistances(unsigned int value)
+void vtkVelodyneHDLReader::SetDiscardZeroDistances(int value)
 {
   if (this->Internal->DiscardZeroDistances != value)
     {
     this->Internal->DiscardZeroDistances = value;
+    this->Modified();
+    }
+}
+
+//-----------------------------------------------------------------------------
+int vtkVelodyneHDLReader::GetIntraFiringAdjust() const
+{
+  return this->Internal->UseIntraFiringAdjustment;
+}
+
+//-----------------------------------------------------------------------------
+void vtkVelodyneHDLReader::SetIntraFiringAdjust(int value)
+{
+  if (this->Internal->UseIntraFiringAdjustment != value)
+    {
+    this->Internal->UseIntraFiringAdjustment = value;
     this->Modified();
     }
 }
@@ -1842,49 +1860,52 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessFiring(HDLFiringData* firingData,
       }
 
     // Interpolate azimuths and timestamps per laser within firing blocks
-    double timestampadjustment, blockdsr0, nextblockdsr0;
-    int azimuthadjustment;
-    switch(this->CalibrationReportedNumLasers){
-    case 64:
-      {
-      timestampadjustment = -HDL64EAdjustTimeStamp(firingBlock, dsr, isDualReturnPacket);
-      nextblockdsr0 = -HDL64EAdjustTimeStamp(firingBlock + (isDualReturnPacket?4:2), 0, isDualReturnPacket);
-      blockdsr0 = -HDL64EAdjustTimeStamp(firingBlock, 0, isDualReturnPacket);
-      break;
-      }
-    case 32:
-      {
-      if (this->ReportedSensor == VLP32AB || this->ReportedSensor == VLP32C)
+    double timestampadjustment = 0;
+    int azimuthadjustment = 0;
+    if(this->UseIntraFiringAdjustment)
+    {
+      double blockdsr0 = 0, nextblockdsr0 = 1;
+      switch(this->CalibrationReportedNumLasers){
+      case 64:
         {
-        timestampadjustment = VLP32AdjustTimeStamp(firingBlock, dsr,isDualReturnPacket);
-        nextblockdsr0 = VLP32AdjustTimeStamp(firingBlock + (isDualReturnPacket?2:1), 0, isDualReturnPacket);
-        blockdsr0 = VLP32AdjustTimeStamp(firingBlock, 0, isDualReturnPacket);
+        timestampadjustment = -HDL64EAdjustTimeStamp(firingBlock, dsr, isDualReturnPacket);
+        nextblockdsr0 = -HDL64EAdjustTimeStamp(firingBlock + (isDualReturnPacket?4:2), 0, isDualReturnPacket);
+        blockdsr0 = -HDL64EAdjustTimeStamp(firingBlock, 0, isDualReturnPacket);
+        break;
         }
-      else
+      case 32:
         {
-        timestampadjustment = HDL32AdjustTimeStamp(firingBlock, dsr,isDualReturnPacket);
-        nextblockdsr0 = HDL32AdjustTimeStamp(firingBlock + (isDualReturnPacket?2:1), 0, isDualReturnPacket);
-        blockdsr0 = HDL32AdjustTimeStamp(firingBlock, 0, isDualReturnPacket);
+        if (this->ReportedSensor == VLP32AB || this->ReportedSensor == VLP32C)
+          {
+          timestampadjustment = VLP32AdjustTimeStamp(firingBlock, dsr,isDualReturnPacket);
+          nextblockdsr0 = VLP32AdjustTimeStamp(firingBlock + (isDualReturnPacket?2:1), 0, isDualReturnPacket);
+          blockdsr0 = VLP32AdjustTimeStamp(firingBlock, 0, isDualReturnPacket);
+          }
+        else
+          {
+          timestampadjustment = HDL32AdjustTimeStamp(firingBlock, dsr,isDualReturnPacket);
+          nextblockdsr0 = HDL32AdjustTimeStamp(firingBlock + (isDualReturnPacket?2:1), 0, isDualReturnPacket);
+          blockdsr0 = HDL32AdjustTimeStamp(firingBlock, 0, isDualReturnPacket);
+          }
+        break;
         }
-      break;
+      case 16:
+        {
+        timestampadjustment = VLP16AdjustTimeStamp(firingBlock, laserId, firingWithinBlock, isDualReturnPacket);
+        nextblockdsr0 = VLP16AdjustTimeStamp(firingBlock + (isDualReturnPacket?2:1), 0, 0, isDualReturnPacket);
+        blockdsr0 = VLP16AdjustTimeStamp(firingBlock, 0, 0, isDualReturnPacket);
+        break;
+        }
+      default:
+        {
+        timestampadjustment = 0.0;
+        blockdsr0 = 0.0;
+        nextblockdsr0 = 1.0;
+        }
       }
-    case 16:
-      {
-      timestampadjustment = VLP16AdjustTimeStamp(firingBlock, laserId, firingWithinBlock, isDualReturnPacket);
-      nextblockdsr0 = VLP16AdjustTimeStamp(firingBlock + (isDualReturnPacket?2:1), 0, 0, isDualReturnPacket);
-      blockdsr0 = VLP16AdjustTimeStamp(firingBlock, 0, 0, isDualReturnPacket);
-      break;
-      }
-    default:
-      {
-      timestampadjustment = 0.0;
-      blockdsr0 = 0.0;
-      nextblockdsr0 = 1.0;
-      }
+      azimuthadjustment = vtkMath::Round(azimuthDiff * ((timestampadjustment - blockdsr0) / (nextblockdsr0 - blockdsr0)));
+      timestampadjustment = vtkMath::Round(timestampadjustment);
     }
-    azimuthadjustment = vtkMath::Round(azimuthDiff * ((timestampadjustment - blockdsr0) / (nextblockdsr0 - blockdsr0)));
-    timestampadjustment = vtkMath::Round(timestampadjustment);
-
     if ((!this->DiscardZeroDistances || firingData->laserReturns[dsr].distance != 0.0)
         && this->LaserSelection[laserId])
       {
@@ -2059,7 +2080,7 @@ int vtkVelodyneHDLReader::ReadFrameInformation()
       if (firingData.rotationalPosition < lastAzimuth)
         {
         // Add file position if the frame is not empty
-        if(!isEmptyFrame || !this->DiscardZeroDistances)
+        if(!isEmptyFrame || !this->Internal->DiscardZeroDistances)
         {
           filePositions.push_back(lastFilePosition);
           skips.push_back(i);
