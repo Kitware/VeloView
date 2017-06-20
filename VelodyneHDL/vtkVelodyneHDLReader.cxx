@@ -176,8 +176,8 @@ double HDL64EAdjustTimeStamp(int firingblock,
           + TimeOffsetMicroSec[(dsrReversed % 4)]
           + (dsrReversed / 4) * TimeOffsetMicroSec[3];
     }
-}
-}
+  }
+} // End namespace
 
 //-----------------------------------------------------------------------------
 double ComputeAverageRPM(vtkPolyData* cloud, int chunkSize)
