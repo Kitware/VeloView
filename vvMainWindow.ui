@@ -110,9 +110,6 @@
      <string>Help</string>
     </property>
     <action name="actionResetConfigurationFile">
-     <property name="enabled">
-      <bool>false</bool>
-     </property>
      <property name="text">
       <string>Reset Veloview settings</string>
      </property>
