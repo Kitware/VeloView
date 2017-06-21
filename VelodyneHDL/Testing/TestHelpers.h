@@ -23,14 +23,12 @@ class vtkVelodyneHDLSource;
 class vtkPolyData;
 
 // Helper functions
-bool compare(const double a, const double b);
-
-bool compare(const double *const a, const double *const b, const size_t N);
+bool compare(const double *const a, const double *const b, const size_t N, double epsilon);
 
 template <size_t N>
-bool compare(double const (&a)[N], double const (&b)[N])
+bool compare(double const (&a)[N], double const (&b)[N], double epsilon)
 {
-  return compare(a, b, N);
+  return compare(a, b, N, epsilon);
 }
 
 std::string toString(const double *const d, const size_t N);

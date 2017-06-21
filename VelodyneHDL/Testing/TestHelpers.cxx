@@ -28,19 +28,11 @@
 
 // Helper functions
 //-----------------------------------------------------------------------------
-bool compare(const double a, const double b)
-{
-  static const double epsilon = 1.0e-12;
-
-  return vtkMathUtilities::FuzzyCompare(a, b, epsilon);
-}
-
-//-----------------------------------------------------------------------------
-bool compare(const double *const a, const double *const b, const size_t N)
+bool compare(const double *const a, const double *const b, const size_t N, double epsilon)
 {
   for (size_t i = 0; i < N; ++i)
   {
-    if (!compare(a[i], b[i]))
+    if (!vtkMathUtilities::FuzzyCompare(a[i], b[i], epsilon))
     {
       return false;
     }
@@ -274,7 +266,7 @@ int TestPointDataValues(vtkPolyData* currentFrame, vtkPolyData* currentReference
       double* frameTuple = currentFrameArray->GetTuple(idTuple);
       double* referenceTuple = currentReferenceArray->GetTuple(idTuple);
 
-      if (!compare(frameTuple, referenceTuple, nbComp))
+      if (!compare(frameTuple, referenceTuple, nbComp, 1e-12))
       {
         if ((long)(*referenceTuple - *frameTuple) % 3600*1e6 ==0) continue;
         std::cerr << "Tuples " << idTuple << " doesn't match for array "
@@ -311,7 +303,7 @@ int TestPointPositions(vtkPolyData* currentFrame, vtkPolyData* currentReference)
     currentFramePoints->GetPoint(currentPointId, framePoint);
     currentReferencePoints->GetPoint(currentPointId, referencePoint);
 
-    if (!compare(framePoint, referencePoint))
+    if (!compare(framePoint, referencePoint, 1e-12))
     {
       std::cerr << "Wrong point coordinates at point " << currentPointId
         << ". Expected (" << toString(referencePoint) << ", got "
@@ -335,7 +327,7 @@ int TestRPMValues(vtkPolyData* currentFrame, vtkPolyData* currentReference)
   double currentReferenceRPM = currentReference->GetFieldData()
     ->GetArray("RotationPerMinute")->GetTuple1(0);
 
-  if (!compare(currentFrameRPM, currentReferenceRPM))
+  if (!vtkMathUtilities::FuzzyCompare(currentFrameRPM, currentReferenceRPM, 1.0))
   {
     std::cerr << "Wrong RPM value. Expected " << currentReferenceRPM
       << ", got " << currentFrameRPM << std::endl;
