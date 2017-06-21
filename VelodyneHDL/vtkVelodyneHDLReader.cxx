@@ -301,7 +301,7 @@ public:
     this->DualReturnFilter = 0;
     this->IsHDL64Data = false;
     this->CalibrationReportedNumLasers = -1;
-    this->skipFirstFrame = true;
+    this->IgnoreEmptyFrames = true;
     this->distanceResolutionM = 0.002;
     this->WantIntensityCorrection = false;
 
@@ -345,7 +345,7 @@ public:
   SensorType ReportedSensor;
   DualReturnSensorMode ReportedSensorReturnMode;
   bool IsHDL64Data;
-  bool skipFirstFrame;
+  bool IgnoreEmptyFrames;
   bool alreadyWarnedForIgnoredHDL64FiringPacket;
 
   //Bolean to manage the correction of intensity which indicates if the user want to correct the intensities
@@ -413,8 +413,6 @@ public:
 
   double ComputeTimestamp(unsigned int tohTime);
   void ComputeOrientation(double timestamp, vtkTransform* geotransform);
-
-  bool isCurrentFrameValid();
 
   // Process the laser return from the firing data
   // firingData - one of HDL_FIRING_PER_PKT from the packet
@@ -1628,24 +1626,13 @@ void vtkVelodyneHDLReader::vtkInternal::Init()
 }
 
 //-----------------------------------------------------------------------------
-bool vtkVelodyneHDLReader::vtkInternal::isCurrentFrameValid()
-{
-  return (this->CurrentDataset->GetNumberOfPoints() != 0 &&
-    this->currentRpm != std::numeric_limits<double>::infinity());
-}
-
-//-----------------------------------------------------------------------------
 void vtkVelodyneHDLReader::vtkInternal::SplitFrame(bool force)
 {
-  /*if(this->skipFirstFrame)
-    {
-    this->skipFirstFrame = false;
-    return;
-    }*/
-  if (!this->isCurrentFrameValid() && !force)
+  if ((this->IgnoreEmptyFrames && this->CurrentDataset->GetNumberOfPoints() == 0) && !force)
     {
     return;
     }
+
   if(this->SplitCounter > 0 && !force)
     {
     this->SplitCounter--;
@@ -2071,16 +2058,19 @@ int vtkVelodyneHDLReader::ReadFrameInformation()
       IsHDL64Data |= (firingData.blockIdentifier == BLOCK_32_TO_63);
 
       // Test if all lasers had a positive distance
-      for(int laserID = 0; laserID < HDL_LASER_PER_FIRING; laserID++)
+      if (this->Internal->DiscardZeroDistances)
+      {
+        for(int laserID = 0; laserID < HDL_LASER_PER_FIRING; laserID++)
         {
-        if(firingData.laserReturns[laserID].distance != 0)
+          if(firingData.laserReturns[laserID].distance != 0)
             isEmptyFrame = false;
         }
+      }
 
       if (firingData.rotationalPosition < lastAzimuth)
         {
         // Add file position if the frame is not empty
-        if(!isEmptyFrame || !this->Internal->DiscardZeroDistances)
+        if(!isEmptyFrame || !this->Internal->IgnoreEmptyFrames)
         {
           filePositions.push_back(lastFilePosition);
           skips.push_back(i);
