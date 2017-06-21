@@ -2529,7 +2529,7 @@ def showRPM():
         # it and display ??? RPM
         try:
             app.text.Text = str(int(rpm)) + " RPM"
-        except ValueError:
+        except :
             app.text.Text = "??? RPM"
     else:
         app.text.Text = "No RPM"
