@@ -86,6 +86,91 @@ enum CropModeEnum
   Cylindric = 3,
 };
 
+// Structure to compute RPM and handle degenerated cases
+struct RPMCalculator
+{
+  // Determines if the rpm computation is available
+  bool IsReady;
+  // Determines if the corresponding value has been set
+  bool ValueReady[4];
+  int MinAngle;
+  int MaxAngle;
+  unsigned int MinTime;
+  unsigned int MaxTime;
+
+  void Reset()
+  {
+    this->IsReady = false;
+    this->ValueReady[0] = false;
+    this->ValueReady[1] = false;
+    this->ValueReady[2] = false;
+    this->ValueReady[3] = false;
+    this->MinAngle = std::numeric_limits<int>::max();
+    this->MaxAngle = std::numeric_limits<int>::min();
+    this->MinTime = std::numeric_limits<unsigned int>::max();
+    this->MaxTime = std::numeric_limits<unsigned int>::min();
+  }
+
+  double GetRPM()
+  {
+    // If the calculator is not ready i.e : one
+    // of the attributes is not initialized yet
+    // (MaxAngle, MinAngle, MaxTime, MinTime)
+    if (!this->IsReady)
+    {
+      return 0;
+    }
+
+    // delta angle in number of laps
+    double dAngle = static_cast<double>(this->MaxAngle - this->MinAngle) / (100.0 * 360.0);
+
+    // delta time in minutes
+    double dTime = static_cast<double>(this->MaxTime - this->MinTime) / (60e6);
+
+    // epsilon to test if the delta time / angle is not too small
+    const double epsilon = 1e-12;
+
+    // if one the deltas is too small
+    if ((std::abs(dTime) < epsilon) || (std::abs(dAngle) < epsilon))
+    {
+      return 0;
+    }
+
+    return dAngle / dTime;
+  }
+
+  void AddData(HDLDataPacket* HDLPacket, unsigned int rawtime)
+  {
+    if (HDLPacket->firingData[0].rotationalPosition < this->MinAngle)
+    {
+      this->MinAngle = HDLPacket->firingData[0].rotationalPosition;
+      this->ValueReady[0] = true;
+    }
+    if (HDLPacket->firingData[0].rotationalPosition > this->MaxAngle)
+    {
+      this->MaxAngle = HDLPacket->firingData[0].rotationalPosition;
+      this->ValueReady[1] = true;
+    }
+    if (rawtime < this->MinTime)
+    {
+      this->MinTime = rawtime;
+      this->ValueReady[2] = true;
+    }
+    if (rawtime > this->MaxTime)
+    {
+      this->MaxTime = rawtime;
+      this->ValueReady[3] = true;
+    }
+
+    // Check if all of the 4th parameters
+    // have been set
+    this->IsReady = true;
+    for (int k = 0; k < 4; ++k)
+    {
+      this->IsReady &= this->ValueReady[k];
+    }
+  }
+};
 
 //-----------------------------------------------------------------------------
 int MapFlags(unsigned int flags, unsigned int low, unsigned int high)
@@ -271,6 +356,7 @@ public:
 
   vtkInternal()
   {
+    this->RpmCalculator.Reset();
     this->AlreadyWarnAboutCalibration = false;
     this->CropMode = Cartesian;
     this->ShouldAddDualReturnArray = false;
@@ -348,6 +434,15 @@ public:
 
   //Bolean to manage the correction of intensity which indicates if the user want to correct the intensities
   bool WantIntensityCorrection;
+
+  // WIP : We now have two method to compute the RPM :
+  // - One method which computes the rpm using the point cloud
+  // this method is not packets dependant but need a none empty
+  // point cloud which can be tricky (hard cropping, none spinning sensor)
+  // - One method which computes the rpm directly using the packets. the problem
+  // is, if the packets format change, we will have to adapt the rpm computation
+  // - For now, we will use the packet dependant method
+  RPMCalculator RpmCalculator;
 
   int LastAzimuth;
   unsigned int LastTimestamp;
@@ -1620,6 +1715,7 @@ void vtkVelodyneHDLReader::vtkInternal::SplitFrame(bool force)
 
   this->CurrentDataset->SetVerts(this->NewVertexCells(this->CurrentDataset->GetNumberOfPoints()));
 
+  /* Commented to remove the point-cloud based method computation from SplitFrame
   // The strategy is to compute an average RPM. The RPM is
   // computed using chunks of size 1000. If the dataset doesn't
   // have enought points, we reduce the size of the chunk.
@@ -1639,8 +1735,13 @@ void vtkVelodyneHDLReader::vtkInternal::SplitFrame(bool force)
   {
     vtkGenericWarningMacro("Not enough points in the dataset, RPM couldn't be computed");
   }
+  */
 
-  this->CurrentDataset->GetFieldData()->GetArray("RotationPerMinute")->SetTuple1(0, RPMValue);
+  // Compute the rpm and reset
+  this->currentRpm = this->RpmCalculator.GetRPM();
+  this->RpmCalculator.Reset();
+
+  this->CurrentDataset->GetFieldData()->GetArray("RotationPerMinute")->SetTuple1(0, this->currentRpm);
   this->Datasets.push_back(this->CurrentDataset);
   this->CurrentDataset = this->CreateData(0);
 }
@@ -1896,6 +1997,9 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(unsigned char *data, st
   const unsigned int rawtime = dataPacket->gpsTimestamp;
   const double timestamp = this->ComputeTimestamp(dataPacket->gpsTimestamp);
   this->ComputeOrientation(timestamp, geotransform.GetPointer());
+
+  // Update the rpm computation (by packets)
+  this->RpmCalculator.AddData(dataPacket, rawtime);
 
   // Update the transforms here and then call internal
   // transform
