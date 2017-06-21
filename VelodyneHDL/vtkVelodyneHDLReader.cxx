@@ -272,7 +272,7 @@ public:
   vtkInternal()
   {
     this->AlreadyWarnAboutCalibration = false;
-    this->DiscardZeroDistances = true;
+    this->IgnoreZeroDistances = true;
     this->UseIntraFiringAdjustment = true;
     this->CropMode = Cartesian;
     this->ShouldAddDualReturnArray = false;
@@ -386,7 +386,7 @@ public:
   int NumberOfTrailingFrames;
   int ApplyTransform;
   int PointsSkip;
-  bool DiscardZeroDistances;
+  bool IgnoreZeroDistances;
   bool UseIntraFiringAdjustment;
 
   bool CropReturns;
@@ -473,17 +473,17 @@ const std::string& vtkVelodyneHDLReader::GetFileName()
 }
 
 //-----------------------------------------------------------------------------
-int vtkVelodyneHDLReader::GetDiscardZeroDistances() const
+int vtkVelodyneHDLReader::GetIgnoreZeroDistances() const
 {
-  return this->Internal->DiscardZeroDistances;
+  return this->Internal->IgnoreZeroDistances;
 }
 
 //-----------------------------------------------------------------------------
-void vtkVelodyneHDLReader::SetDiscardZeroDistances(int value)
+void vtkVelodyneHDLReader::SetIgnoreZeroDistances(int value)
 {
-  if (this->Internal->DiscardZeroDistances != value)
+  if (this->Internal->IgnoreZeroDistances != value)
     {
-    this->Internal->DiscardZeroDistances = value;
+    this->Internal->IgnoreZeroDistances = value;
     this->Modified();
   }
 }
@@ -1909,7 +1909,7 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessFiring(HDLFiringData* firingData,
       azimuthadjustment = vtkMath::Round(azimuthDiff * ((timestampadjustment - blockdsr0) / (nextblockdsr0 - blockdsr0)));
       timestampadjustment = vtkMath::Round(timestampadjustment);
     }
-    if ((!this->DiscardZeroDistances || firingData->laserReturns[dsr].distance != 0.0)
+    if ((!this->IgnoreZeroDistances || firingData->laserReturns[dsr].distance != 0.0)
         && this->LaserSelection[laserId])
       {
       this->PushFiringData(laserId,
@@ -2074,7 +2074,7 @@ int vtkVelodyneHDLReader::ReadFrameInformation()
       IsHDL64Data |= (firingData.blockIdentifier == BLOCK_32_TO_63);
 
       // Test if all lasers had a positive distance
-      if (this->Internal->DiscardZeroDistances)
+      if (this->Internal->IgnoreZeroDistances)
       {
         for(int laserID = 0; laserID < HDL_LASER_PER_FIRING; laserID++)
         {

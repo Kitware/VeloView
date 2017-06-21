@@ -466,7 +466,7 @@ def openSensor():
     app.actions['actionDualReturnIntensityHigh'].enabled = True
     app.actions['actionDualReturnIntensityLow'].enabled = True
 
-    sensor.GetClientSideObject().SetDiscardZeroDistances(app.actions['actionDiscardZeroDistances'].isChecked())
+    sensor.GetClientSideObject().SetIgnoreZeroDistances(app.actions['actionIgnoreZeroDistances'].isChecked())
     sensor.GetClientSideObject().SetIntraFiringAdjust(app.actions['actionIntraFiringAdjust'].isChecked())
     sensor.GetClientSideObject().SetIgnoreEmptyFrames(app.actions['actionIgnoreEmptyFrames'].isChecked())
 
@@ -613,7 +613,7 @@ def openPCAP(filename, positionFilename=None):
     app.actions['actionShowRPM'].enabled = True
     app.actions['actionCorrectIntensityValues'].enabled = True
 
-    reader.GetClientSideObject().SetDiscardZeroDistances(app.actions['actionDiscardZeroDistances'].isChecked())
+    reader.GetClientSideObject().SetIgnoreZeroDistances(app.actions['actionIgnoreZeroDistances'].isChecked())
     reader.GetClientSideObject().SetIntraFiringAdjust(app.actions['actionIntraFiringAdjust'].isChecked())
     reader.GetClientSideObject().SetIgnoreEmptyFrames(app.actions['actionIgnoreEmptyFrames'].isChecked())
 
@@ -1835,7 +1835,6 @@ def start():
     initializeRPMText()
 
 
-
 def findQObjectByName(widgets, name):
     for w in widgets:
         if w.objectName == name:
@@ -2383,7 +2382,7 @@ def setupActions():
     for a in actions:
         app.actions[a.objectName] = a
 
-    app.actions['actionDiscardZeroDistances'].connect('triggered()', onDiscardZeroDistances)
+    app.actions['actionIgnoreZeroDistances'].connect('triggered()', onIgnoreZeroDistances)
     app.actions['actionIntraFiringAdjust'].connect('triggered()', onIntraFiringAdjust)
     app.actions['actionIgnoreEmptyFrames'].connect('triggered()', onIgnoreEmptyFrames)
 
@@ -2436,7 +2435,7 @@ def setupActions():
 
     # Restore action states from settings
     settings = getPVSettings()
-    app.actions['actionDiscardZeroDistances'].setChecked(int(settings.value('VelodyneHDLPlugin/DiscardZeroDistances', 1)))
+    app.actions['actionIgnoreZeroDistances'].setChecked(int(settings.value('VelodyneHDLPlugin/IgnoreZeroDistances', 1)))
     app.actions['actionIntraFiringAdjust'].setChecked(int(settings.value('VelodyneHDLPlugin/IntraFiringAdjust', 1)))
     app.actions['actionIgnoreEmptyFrames'].setChecked(int(settings.value('VelodyneHDLPlugin/IgnoreEmptyFrames', 1)))
 
@@ -2565,20 +2564,19 @@ def initializeRPMText():
     textRepresentation.Color = [1,1,0]
 
 
-def onDiscardZeroDistances():
+def onIgnoreZeroDistances():
     # Get the check box value as an int to save it into the PV settings (there's incompatibility with python booleans)
-    discardZeroDistances = int(app.actions['actionDiscardZeroDistances'].isChecked())
+    IgnoreZeroDistances = int(app.actions['actionIgnoreZeroDistances'].isChecked())
 
     # Save the setting for future session
-    getPVSettings().setValue('VelodyneHDLPlugin/DiscardZeroDistances', discardZeroDistances)
+    getPVSettings().setValue('VelodyneHDLPlugin/IgnoreZeroDistances', IgnoreZeroDistances)
 
     # Apply it to the current source if any
     source = getReader() or getSensor()
 
     if source:
-        source.GetClientSideObject().SetDiscardZeroDistances(discardZeroDistances)
-
-        refreshUI()
+        source.GetClientSideObject().SetIgnoreZeroDistances(IgnoreZeroDistances)
+        reloadCurrentFrame()
 
 
 def onIntraFiringAdjust():
@@ -2593,8 +2591,7 @@ def onIntraFiringAdjust():
 
     if source:
         source.GetClientSideObject().SetIntraFiringAdjust(intraFiringAdjust)
-
-        refreshUI()
+        reloadCurrentFrame()
 
 
 def onIgnoreEmptyFrames():
@@ -2609,11 +2606,10 @@ def onIgnoreEmptyFrames():
 
     if source:
         source.GetClientSideObject().SetIgnoreEmptyFrames(ignoreEmptyFrames)
+        reloadCurrentFrame()
 
-        refreshUI()
 
-
-def refreshUI():
+def reloadCurrentFrame():
     # For now, we have to go to the next frame and go back to the current frame to force the UI to refresh
     gotoNext()
     gotoPrevious()

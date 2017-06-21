@@ -121,8 +121,8 @@ public:
 
   bool GetHasDualReturn();
 
-  int GetDiscardZeroDistances() const;
-  void SetDiscardZeroDistances(int);
+  int GetIgnoreZeroDistances() const;
+  void SetIgnoreZeroDistances(int);
 
   int GetIgnoreEmptyFrames() const;
   void SetIgnoreEmptyFrames(int);

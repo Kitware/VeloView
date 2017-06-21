@@ -91,7 +91,7 @@
       <string>Processing Options</string>
      </property>
      <addaction name="actionCorrectIntensityValues"/>
-     <addaction name="actionDiscardZeroDistances"/>
+     <addaction name="actionIgnoreZeroDistances"/>
      <addaction name="actionIntraFiringAdjust"/>
      <addaction name="actionIgnoreEmptyFrames"/>
     </widget>
@@ -923,7 +923,7 @@
     <string>Persisting Grid Properties</string>
    </property>
   </action>
-  <action name="actionDiscardZeroDistances">
+  <action name="actionIgnoreZeroDistances">
    <property name="checkable">
     <bool>true</bool>
    </property>
@@ -934,7 +934,7 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Discard 0-Distances returns</string>
+    <string>Ignore returns with distance equals to 0</string>
    </property>
   </action>
   <action name="actionIntraFiringAdjust">
