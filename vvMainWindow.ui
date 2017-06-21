@@ -86,18 +86,26 @@
      <addaction name="actionDualReturnIntensityHigh"/>
      <addaction name="actionDualReturnIntensityLow"/>
     </widget>
+    <widget class="QMenu" name="menuProcessing_Options">
+     <property name="title">
+      <string>Processing Options</string>
+     </property>
+     <addaction name="actionCorrectIntensityValues"/>
+     <addaction name="actionDiscardZeroDistances"/>
+     <addaction name="actionIntraFiringAdjust"/>
+    </widget>
     <addaction name="actionSpreadsheet"/>
     <addaction name="actionMeasurement_Grid"/>
     <addaction name="actionShowRPM"/>
     <addaction name="actionGrid_Properties"/>
-    <addaction name="actionCorrectIntensityValues"/>
+    <addaction name="separator"/>
+    <addaction name="actionChoose_Calibration_File"/>
     <addaction name="actionLaserSelection"/>
+    <addaction name="actionCropReturns"/>
     <addaction name="menuDualReturnMode"/>
     <addaction name="actionSelectDualReturn"/>
-    <addaction name="actionDiscardZeroDistances"/>
-    <addaction name="actionIntraFiringAdjust"/>
-    <addaction name="actionChoose_Calibration_File"/>
-    <addaction name="actionCropReturns"/>
+    <addaction name="separator"/>
+    <addaction name="menuProcessing_Options"/>
     <addaction name="separator"/>
     <addaction name="actionPlay"/>
     <addaction name="actionRecord"/>
