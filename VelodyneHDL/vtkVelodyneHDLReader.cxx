@@ -485,6 +485,22 @@ void vtkVelodyneHDLReader::SetDiscardZeroDistances(int value)
     {
     this->Internal->DiscardZeroDistances = value;
     this->Modified();
+  }
+}
+
+//-----------------------------------------------------------------------------
+int vtkVelodyneHDLReader::GetIgnoreEmptyFrames() const
+{
+  return this->Internal->IgnoreEmptyFrames;
+}
+
+//-----------------------------------------------------------------------------
+void vtkVelodyneHDLReader::SetIgnoreEmptyFrames(int value)
+{
+  if (this->Internal->IgnoreEmptyFrames != value)
+    {
+    this->Internal->IgnoreEmptyFrames = value;
+    this->Modified();
     }
 }
 

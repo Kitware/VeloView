@@ -120,6 +120,9 @@ public:
   int GetDiscardZeroDistances() const;
   void SetDiscardZeroDistances(int) ;
 
+  int GetIgnoreEmptyFrames() const;
+  void SetIgnoreEmptyFrames(int);
+
   int GetIntraFiringAdjust() const;
   void SetIntraFiringAdjust(int);
 

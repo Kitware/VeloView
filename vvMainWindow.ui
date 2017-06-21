@@ -93,6 +93,7 @@
      <addaction name="actionCorrectIntensityValues"/>
      <addaction name="actionDiscardZeroDistances"/>
      <addaction name="actionIntraFiringAdjust"/>
+     <addaction name="actionIgnoreEmptyFrames"/>
     </widget>
     <addaction name="actionSpreadsheet"/>
     <addaction name="actionMeasurement_Grid"/>
@@ -948,6 +949,17 @@
    </property>
    <property name="text">
     <string>Adjust intra-firing timings and azimuths</string>
+   </property>
+  </action>
+  <action name="actionIgnoreEmptyFrames">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Ignore empty frames</string>
    </property>
   </action>
  </widget>

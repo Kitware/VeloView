@@ -819,6 +819,18 @@ void vtkVelodyneHDLSource::SetDiscardZeroDistances(int value)
 }
 
 //-----------------------------------------------------------------------------
+int vtkVelodyneHDLSource::GetIgnoreEmptyFrames() const
+{
+  return this->Internal->Consumer->GetReader()->GetIgnoreEmptyFrames();
+}
+
+//-----------------------------------------------------------------------------
+void vtkVelodyneHDLSource::SetIgnoreEmptyFrames(int value)
+{
+  this->Internal->Consumer->GetReader()->SetIgnoreEmptyFrames(value);
+}
+
+//-----------------------------------------------------------------------------
 int vtkVelodyneHDLSource::GetIntraFiringAdjust() const
 {
   return this->Internal->Consumer->GetReader()->GetIntraFiringAdjust();

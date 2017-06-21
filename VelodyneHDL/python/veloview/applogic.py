@@ -468,6 +468,7 @@ def openSensor():
 
     sensor.GetClientSideObject().SetDiscardZeroDistances(app.actions['actionDiscardZeroDistances'].isChecked())
     sensor.GetClientSideObject().SetIntraFiringAdjust(app.actions['actionIntraFiringAdjust'].isChecked())
+    sensor.GetClientSideObject().SetIgnoreEmptyFrames(app.actions['actionIgnoreEmptyFrames'].isChecked())
 
 
 def openPCAP(filename, positionFilename=None):
@@ -614,6 +615,7 @@ def openPCAP(filename, positionFilename=None):
 
     reader.GetClientSideObject().SetDiscardZeroDistances(app.actions['actionDiscardZeroDistances'].isChecked())
     reader.GetClientSideObject().SetIntraFiringAdjust(app.actions['actionIntraFiringAdjust'].isChecked())
+    reader.GetClientSideObject().SetIgnoreEmptyFrames(app.actions['actionIgnoreEmptyFrames'].isChecked())
 
     #Auto adjustment of the grid size with the distance resolution
     app.distanceResolutionM = reader.GetClientSideObject().GetDistanceResolutionM()
@@ -2383,6 +2385,7 @@ def setupActions():
 
     app.actions['actionDiscardZeroDistances'].connect('triggered()', onDiscardZeroDistances)
     app.actions['actionIntraFiringAdjust'].connect('triggered()', onIntraFiringAdjust)
+    app.actions['actionIgnoreEmptyFrames'].connect('triggered()', onIgnoreEmptyFrames)
 
     app.actions['actionPlaneFit'].connect('triggered()', planeFit)
 
@@ -2435,6 +2438,7 @@ def setupActions():
     settings = getPVSettings()
     app.actions['actionDiscardZeroDistances'].setChecked(int(settings.value('VelodyneHDLPlugin/DiscardZeroDistances', 1)))
     app.actions['actionIntraFiringAdjust'].setChecked(int(settings.value('VelodyneHDLPlugin/IntraFiringAdjust', 1)))
+    app.actions['actionIgnoreEmptyFrames'].setChecked(int(settings.value('VelodyneHDLPlugin/IgnoreEmptyFrames', 1)))
 
     # Setup and add the geolocation toolbar
     geolocationToolBar = mW.findChild('QToolBar', 'geolocationToolbar')
@@ -2589,6 +2593,22 @@ def onIntraFiringAdjust():
 
     if source:
         source.GetClientSideObject().SetIntraFiringAdjust(intraFiringAdjust)
+
+        refreshUI()
+
+
+def onIgnoreEmptyFrames():
+    # Get the check box value as an int to save it into the PV settings (there's incompatibility with python booleans)
+    ignoreEmptyFrames = int(app.actions['actionIgnoreEmptyFrames'].isChecked())
+
+    # Save the setting for future session
+    getPVSettings().setValue('VelodyneHDLPlugin/IgnoreEmptyFrames', ignoreEmptyFrames)
+
+    # Apply it to the current source if any
+    source = getReader() or getSensor()
+
+    if source:
+        source.GetClientSideObject().SetIgnoreEmptyFrames(ignoreEmptyFrames)
 
         refreshUI()
 
