@@ -331,9 +331,9 @@ void vvCropReturnsDialog::pqInternal::SetSphericalSettings()
   this->ActivateSpinBox();
   // change the labels
   // list of unicode symbol : http://sites.psu.edu/symbolcodes/languages/ancient/greek/greekchart/
-  this->XLabel->setText(QString("theta ") + QString((QChar)0x03b8)); // theta symbol
-  this->YLabel->setText(QString("phi ") + QString((QChar)0x03c6)); //phi symbol
-  this->ZLabel->setText("R");
+  this->XLabel->setText("Rotational angle");
+  this->YLabel->setText("Vertical angle");
+  this->ZLabel->setText("Distance");
 
   // Here we take the spherical coordinates used in mathematics (and not physic)
   // (r,theta,phi)
