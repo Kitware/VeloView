@@ -121,6 +121,10 @@ public:
 
   bool GetHasDualReturn();
 
+  bool GetCorrectionsInitialized();
+
+  void UnloadDatasets();
+
 protected:
 
 

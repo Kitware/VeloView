@@ -280,6 +280,12 @@ public:
     return this->HDLReader.GetPointer();
   }
 
+  void UnloadData()
+  {
+    this->Datasets.clear();
+    this->Timesteps.clear();
+  }
+
   // Hold this when running reader code code or modifying its internals
   boost::mutex ReaderMutex;
 
@@ -804,6 +810,18 @@ vtkVelodyneHDLSource::~vtkVelodyneHDLSource()
 bool vtkVelodyneHDLSource::GetHasDualReturn()
 {
   return this->Internal->Consumer->GetReader()->GetHasDualReturn();
+}
+
+//-----------------------------------------------------------------------------
+bool vtkVelodyneHDLSource::GetCorrectionsInitialized()
+{
+  return this->Internal->Consumer->GetReader()->getCorrectionsInitialized();
+}
+
+//-----------------------------------------------------------------------------
+void vtkVelodyneHDLSource::UnloadDatasets()
+{
+  this->Internal->Consumer->UnloadData();
 }
 
 //-----------------------------------------------------------------------------
