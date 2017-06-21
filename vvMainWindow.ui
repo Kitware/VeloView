@@ -101,6 +101,7 @@
     <addaction name="actionRecord"/>
     <addaction name="separator"/>
     <addaction name="actionPython_Console"/>
+    <addaction name="actionShowErrorDialog"/>
     <addaction name="separator"/>
     <addaction name="menuDebugging"/>
     <addaction name="actionEnableCrashAnalysis"/>
@@ -907,6 +908,18 @@
    </property>
    <property name="text">
     <string>Persisting Grid Properties</string>
+   </property>
+  </action>
+  <action name="actionShowErrorDialog">
+   <property name="icon">
+    <iconset resource="vvResources.qrc">
+     <normaloff>:/vvResources/Icons/errorConsole.png</normaloff>:/vvResources/Icons/errorConsole.png</iconset>
+   </property>
+   <property name="text">
+    <string>Error Console</string>
+   </property>
+   <property name="toolTip">
+    <string>Show the error console.</string>
    </property>
   </action>
  </widget>
