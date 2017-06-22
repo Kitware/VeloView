@@ -953,11 +953,11 @@ void vtkVelodyneHDLSource::SetCropReturns(int cr)
 }
 
 //-----------------------------------------------------------------------------
-void vtkVelodyneHDLSource::SetCropInside(int ci)
+void vtkVelodyneHDLSource::SetCropOutside(int ci)
 {
   boost::lock_guard<boost::mutex> lock(this->Internal->Consumer->ReaderMutex);
 
-  this->Internal->Consumer->GetReader()->SetCropInside(ci);
+  this->Internal->Consumer->GetReader()->SetCropOutside(ci);
   this->Modified();
 }
 

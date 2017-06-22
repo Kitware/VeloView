@@ -135,16 +135,16 @@ bool testPointCount(vtkSmartPointer<vtkPolyData>& frame, std::istream& is)
 //-----------------------------------------------------------------------------
 bool testCropSettings(vtkSmartPointer<vtkPolyData>& frame, std::istream& is)
 {
-  bool cropEnabled, cropInside;
+  bool cropEnabled, cropOutside;
   double ptcropregion[6];
-  is >> cropEnabled >> cropInside;
+  is >> cropEnabled >> cropOutside;
   for(int i = 0; i < 6; ++i)
     {
     is >> ptcropregion[i];
     }
 
   reader->SetCropReturns(cropEnabled);
-  reader->SetCropInside(cropInside);
+  reader->SetCropOutside(cropOutside);
   reader->SetCropRegion(ptcropregion);
 
   return true;

@@ -135,7 +135,7 @@ public:
   void SetPointsSkip(int);
 
   void SetCropReturns(int);
-  void SetCropInside(int);
+  void SetCropOutside(int);
   void SetCropRegion(double[6]);
   void SetCropRegion(double, double, double, double, double, double);
   void SetCropMode(int cropMode);

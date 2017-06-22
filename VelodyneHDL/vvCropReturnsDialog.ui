@@ -37,7 +37,7 @@
    <item row="0" column="0" colspan="2">
     <widget class="QGroupBox" name="CropGroupBox">
      <property name="title">
-      <string>Enable Cropping</string>
+      <string>Enable Cropping of Returns</string>
      </property>
      <property name="checkable">
       <bool>true</bool>
@@ -49,15 +49,25 @@
       <property name="fieldGrowthPolicy">
        <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
       </property>
-      <item row="2" column="0">
-       <widget class="QLabel" name="XLabel">
+      <item row="3" column="1">
+       <widget class="QCheckBox" name="sliderModeCheckBox">
         <property name="text">
-         <string>X</string>
+         <string>slider mode</string>
         </property>
        </widget>
       </item>
-      <item row="2" column="1">
+      <item row="4" column="1">
        <layout class="QHBoxLayout" name="XLayout">
+        <item>
+         <widget class="QLabel" name="XLabel">
+          <property name="text">
+           <string>X</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          </property>
+         </widget>
+        </item>
         <item>
          <widget class="QDoubleSpinBox" name="X1SpinBox">
           <property name="alignment">
@@ -86,15 +96,18 @@
         </item>
        </layout>
       </item>
-      <item row="3" column="0">
-       <widget class="QLabel" name="YLabel">
-        <property name="text">
-         <string>Y</string>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="1">
+      <item row="5" column="1">
        <layout class="QHBoxLayout" name="YLayout">
+        <item>
+         <widget class="QLabel" name="YLabel">
+          <property name="text">
+           <string>Y</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          </property>
+         </widget>
+        </item>
         <item>
          <widget class="QDoubleSpinBox" name="Y1SpinBox">
           <property name="alignment">
@@ -123,15 +136,18 @@
         </item>
        </layout>
       </item>
-      <item row="4" column="0">
-       <widget class="QLabel" name="ZLabel">
-        <property name="text">
-         <string>Z</string>
-        </property>
-       </widget>
-      </item>
-      <item row="4" column="1">
+      <item row="6" column="1">
        <layout class="QHBoxLayout" name="ZLayout">
+        <item>
+         <widget class="QLabel" name="ZLabel">
+          <property name="text">
+           <string>Z</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          </property>
+         </widget>
+        </item>
         <item>
          <widget class="QDoubleSpinBox" name="Z1SpinBox">
           <property name="alignment">
@@ -160,47 +176,47 @@
         </item>
        </layout>
       </item>
-      <item row="5" column="1">
-       <widget class="QCheckBox" name="CropInsideCheckBox">
+      <item row="7" column="1">
+       <widget class="QCheckBox" name="CropOutsideCheckBox">
         <property name="text">
-         <string>Crop Inside</string>
+         <string>Inverse Cropping : Keep points outside the range</string>
         </property>
        </widget>
       </item>
-      <item row="1" column="1">
+      <item row="2" column="1">
        <widget class="QGroupBox" name="radioButtonGroupBox">
         <property name="title">
          <string>Coordinates mode selection</string>
         </property>
         <layout class="QGridLayout" name="radioButtonGroupBoxLayout">
-         <item row="0" column="2">
-          <widget class="QRadioButton" name="sphericalRadioButton">
-           <property name="text">
-            <string>spherical</string>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="1">
-          <widget class="QRadioButton" name="cartesianRadioButton">
-           <property name="text">
-            <string>cartesian</string>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="0">
+         <item row="1" column="0">
           <widget class="QRadioButton" name="noneRadioButton">
            <property name="text">
             <string>none</string>
            </property>
           </widget>
          </item>
+         <item row="1" column="1">
+          <widget class="QRadioButton" name="cartesianRadioButton">
+           <property name="text">
+            <string>cartesian</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="2">
+          <widget class="QRadioButton" name="sphericalRadioButton">
+           <property name="text">
+            <string>spherical</string>
+           </property>
+          </widget>
+         </item>
         </layout>
        </widget>
       </item>
-      <item row="0" column="1">
-       <widget class="QCheckBox" name="sliderModeCheckBox">
+      <item row="1" column="1">
+       <widget class="QLabel" name="label">
         <property name="text">
-         <string>slider mode</string>
+         <string> Keep only points with coordinates in range defined below.</string>
         </property>
        </widget>
       </item>
