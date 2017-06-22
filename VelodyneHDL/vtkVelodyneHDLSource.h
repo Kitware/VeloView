@@ -121,6 +121,15 @@ public:
 
   bool GetHasDualReturn();
 
+  int GetIgnoreZeroDistances() const;
+  void SetIgnoreZeroDistances(int);
+
+  int GetIgnoreEmptyFrames() const;
+  void SetIgnoreEmptyFrames(int);
+
+  int GetIntraFiringAdjust() const;
+  void SetIntraFiringAdjust(int);
+
   bool GetCorrectionsInitialized();
 
   void UnloadDatasets();

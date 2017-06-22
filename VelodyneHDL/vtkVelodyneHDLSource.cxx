@@ -825,6 +825,42 @@ void vtkVelodyneHDLSource::UnloadDatasets()
 }
 
 //-----------------------------------------------------------------------------
+int vtkVelodyneHDLSource::GetIgnoreZeroDistances() const
+{
+  return this->Internal->Consumer->GetReader()->GetIgnoreZeroDistances();
+}
+
+//-----------------------------------------------------------------------------
+void vtkVelodyneHDLSource::SetIgnoreZeroDistances(int value)
+{
+  this->Internal->Consumer->GetReader()->SetIgnoreZeroDistances(value);
+}
+
+//-----------------------------------------------------------------------------
+int vtkVelodyneHDLSource::GetIgnoreEmptyFrames() const
+{
+  return this->Internal->Consumer->GetReader()->GetIgnoreEmptyFrames();
+}
+
+//-----------------------------------------------------------------------------
+void vtkVelodyneHDLSource::SetIgnoreEmptyFrames(int value)
+{
+  this->Internal->Consumer->GetReader()->SetIgnoreEmptyFrames(value);
+}
+
+//-----------------------------------------------------------------------------
+int vtkVelodyneHDLSource::GetIntraFiringAdjust() const
+{
+  return this->Internal->Consumer->GetReader()->GetIntraFiringAdjust();
+}
+
+//-----------------------------------------------------------------------------
+void vtkVelodyneHDLSource::SetIntraFiringAdjust(int value)
+{
+  this->Internal->Consumer->GetReader()->SetIntraFiringAdjust(value);
+}
+
+//-----------------------------------------------------------------------------
 const std::string& vtkVelodyneHDLSource::GetOutputFile()
 {
   return this->OutputFile;

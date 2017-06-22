@@ -466,6 +466,11 @@ def openSensor():
     app.actions['actionDualReturnIntensityHigh'].enabled = True
     app.actions['actionDualReturnIntensityLow'].enabled = True
 
+    sensor.GetClientSideObject().SetIgnoreZeroDistances(app.actions['actionIgnoreZeroDistances'].isChecked())
+    sensor.GetClientSideObject().SetIntraFiringAdjust(app.actions['actionIntraFiringAdjust'].isChecked())
+    sensor.GetClientSideObject().SetIgnoreEmptyFrames(app.actions['actionIgnoreEmptyFrames'].isChecked())
+
+
 def openPCAP(filename, positionFilename=None):
 
     calibration = chooseCalibration()
@@ -607,6 +612,10 @@ def openPCAP(filename, positionFilename=None):
 
     app.actions['actionShowRPM'].enabled = True
     app.actions['actionCorrectIntensityValues'].enabled = True
+
+    reader.GetClientSideObject().SetIgnoreZeroDistances(app.actions['actionIgnoreZeroDistances'].isChecked())
+    reader.GetClientSideObject().SetIntraFiringAdjust(app.actions['actionIntraFiringAdjust'].isChecked())
+    reader.GetClientSideObject().SetIgnoreEmptyFrames(app.actions['actionIgnoreEmptyFrames'].isChecked())
 
     #Auto adjustment of the grid size with the distance resolution
     app.distanceResolutionM = reader.GetClientSideObject().GetDistanceResolutionM()
@@ -1592,9 +1601,7 @@ def onChooseCalibrationFile():
 
     if reader is not None:
         reader.GetClientSideObject().SetSensorTransform(sensorTransform)
-        reader.CalibrationFile = calibrationFile
-        reader.DummyProperty = not reader.DummyProperty
-        smp.Render()
+        reloadCurrentFrame()
 
     elif sensor is not None:
         sensor.GetClientSideObject().SetSensorTransform(sensorTransform)
@@ -2056,16 +2063,11 @@ def onLaserSelectionChanged():
     mask = dialog.getLaserSelectionSelector()
     if reader:
         reader.GetClientSideObject().SetLaserSelection(mask)
-        reader.DummyProperty = not reader.DummyProperty
-        smp.Render()
-        smp.Render(getSpreadSheetViewProxy())
-
+        reloadCurrentFrame()
 
     if sensor:
         sensor.GetClientSideObject().SetLaserSelection(mask)
-        sensor.DummyProperty = not sensor.DummyProperty
-        smp.Render()
-        smp.Render(getSpreadSheetViewProxy())
+        reloadCurrentFrame()
 
 
 def hideColorByComponent():
@@ -2209,8 +2211,7 @@ def toggleSelectDualReturn():
         #Add the temporary array to the source
         source.GetClientSideObject().SetSelectedPointsWithDualReturn(array,nPoints)
         source.GetClientSideObject().SetShouldAddDualReturnArray(True)
-        gotoNext()
-        gotoPrevious()
+        reloadCurrentFrame()
         
         query = 'dualReturn_of_selectedPoints>0'
         smp.SelectPoints(query,source)
@@ -2373,6 +2374,10 @@ def setupActions():
     for a in actions:
         app.actions[a.objectName] = a
 
+    app.actions['actionIgnoreZeroDistances'].connect('triggered()', onIgnoreZeroDistances)
+    app.actions['actionIntraFiringAdjust'].connect('triggered()', onIntraFiringAdjust)
+    app.actions['actionIgnoreEmptyFrames'].connect('triggered()', onIgnoreEmptyFrames)
+
     app.actions['actionPlaneFit'].connect('triggered()', planeFit)
 
     app.actions['actionClose'].connect('triggered()', close)
@@ -2419,6 +2424,12 @@ def setupActions():
     app.actions['actionSelectDualReturn'].connect('triggered()',toggleSelectDualReturn)
     app.actions['actionSelectDualReturn2'].connect('triggered()',toggleSelectDualReturn)
     app.EnableCrashAnalysis = app.actions['actionEnableCrashAnalysis'].isChecked()
+
+    # Restore action states from settings
+    settings = getPVSettings()
+    app.actions['actionIgnoreZeroDistances'].setChecked(int(settings.value('VelodyneHDLPlugin/IgnoreZeroDistances', 1)))
+    app.actions['actionIntraFiringAdjust'].setChecked(int(settings.value('VelodyneHDLPlugin/IntraFiringAdjust', 1)))
+    app.actions['actionIgnoreEmptyFrames'].setChecked(int(settings.value('VelodyneHDLPlugin/IgnoreEmptyFrames', 1)))
 
     # Setup and add the geolocation toolbar
     geolocationToolBar = mW.findChild('QToolBar', 'geolocationToolbar')
@@ -2549,3 +2560,56 @@ def initializeRPMText():
     textRepresentation.Visibility = app.actions['actionShowRPM'].isChecked()
     textRepresentation.FontSize = 8
     textRepresentation.Color = [1,1,0]
+
+
+def onIgnoreZeroDistances():
+    # Get the check box value as an int to save it into the PV settings (there's incompatibility with python booleans)
+    IgnoreZeroDistances = int(app.actions['actionIgnoreZeroDistances'].isChecked())
+
+    # Save the setting for future session
+    getPVSettings().setValue('VelodyneHDLPlugin/IgnoreZeroDistances', IgnoreZeroDistances)
+
+    # Apply it to the current source if any
+    source = getReader() or getSensor()
+
+    if source:
+        source.GetClientSideObject().SetIgnoreZeroDistances(IgnoreZeroDistances)
+        reloadCurrentFrame()
+
+
+def onIntraFiringAdjust():
+    # Get the check box value as an int to save it into the PV settings (there's incompatibility with python booleans)
+    intraFiringAdjust = int(app.actions['actionIntraFiringAdjust'].isChecked())
+
+    # Save the setting for future session
+    getPVSettings().setValue('VelodyneHDLPlugin/IntraFiringAdjust', intraFiringAdjust)
+
+    # Apply it to the current source if any
+    source = getReader() or getSensor()
+
+    if source:
+        source.GetClientSideObject().SetIntraFiringAdjust(intraFiringAdjust)
+        reloadCurrentFrame()
+
+
+def onIgnoreEmptyFrames():
+    # Get the check box value as an int to save it into the PV settings (there's incompatibility with python booleans)
+    ignoreEmptyFrames = int(app.actions['actionIgnoreEmptyFrames'].isChecked())
+
+    # Save the setting for future session
+    getPVSettings().setValue('VelodyneHDLPlugin/IgnoreEmptyFrames', ignoreEmptyFrames)
+
+    # Apply it to the current source if any
+    source = getReader() or getSensor()
+
+    if source:
+        source.GetClientSideObject().SetIgnoreEmptyFrames(ignoreEmptyFrames)
+        reloadCurrentFrame()
+
+
+def reloadCurrentFrame():
+    source = getReader() or getSensor()
+    if source:
+        source.DummyProperty = not source.DummyProperty
+        smp.Render()
+        smp.Render(getSpreadSheetViewProxy())

@@ -358,6 +358,8 @@ public:
   {
     this->RpmCalculator.Reset();
     this->AlreadyWarnAboutCalibration = false;
+    this->IgnoreZeroDistances = true;
+    this->UseIntraFiringAdjustment = true;
     this->CropMode = Cartesian;
     this->ShouldAddDualReturnArray = false;
     this->alreadyWarnedForIgnoredHDL64FiringPacket = false;
@@ -385,7 +387,7 @@ public:
     this->DualReturnFilter = 0;
     this->IsHDL64Data = false;
     this->CalibrationReportedNumLasers = -1;
-    this->skipFirstFrame = true;
+    this->IgnoreEmptyFrames = true;
     this->distanceResolutionM = 0.002;
     this->WantIntensityCorrection = false;
 
@@ -429,7 +431,7 @@ public:
   SensorType ReportedSensor;
   DualReturnSensorMode ReportedSensorReturnMode;
   bool IsHDL64Data;
-  bool skipFirstFrame;
+  bool IgnoreEmptyFrames;
   bool alreadyWarnedForIgnoredHDL64FiringPacket;
 
   //Bolean to manage the correction of intensity which indicates if the user want to correct the intensities
@@ -479,6 +481,8 @@ public:
   int NumberOfTrailingFrames;
   int ApplyTransform;
   int PointsSkip;
+  bool IgnoreZeroDistances;
+  bool UseIntraFiringAdjustment;
 
   bool CropReturns;
   bool CropInside;
@@ -504,8 +508,6 @@ public:
 
   double ComputeTimestamp(unsigned int tohTime);
   void ComputeOrientation(double timestamp, vtkTransform* geotransform);
-
-  bool isCurrentFrameValid();
 
   // Process the laser return from the firing data
   // firingData - one of HDL_FIRING_PER_PKT from the packet
@@ -566,6 +568,54 @@ const std::string& vtkVelodyneHDLReader::GetFileName()
 }
 
 //-----------------------------------------------------------------------------
+int vtkVelodyneHDLReader::GetIgnoreZeroDistances() const
+{
+  return this->Internal->IgnoreZeroDistances;
+}
+
+//-----------------------------------------------------------------------------
+void vtkVelodyneHDLReader::SetIgnoreZeroDistances(int value)
+{
+  if (this->Internal->IgnoreZeroDistances != value)
+    {
+    this->Internal->IgnoreZeroDistances = value;
+    this->Modified();
+  }
+}
+
+//-----------------------------------------------------------------------------
+int vtkVelodyneHDLReader::GetIgnoreEmptyFrames() const
+{
+  return this->Internal->IgnoreEmptyFrames;
+}
+
+//-----------------------------------------------------------------------------
+void vtkVelodyneHDLReader::SetIgnoreEmptyFrames(int value)
+{
+  if (this->Internal->IgnoreEmptyFrames != value)
+    {
+    this->Internal->IgnoreEmptyFrames = value;
+    this->Modified();
+    }
+}
+
+//-----------------------------------------------------------------------------
+int vtkVelodyneHDLReader::GetIntraFiringAdjust() const
+{
+  return this->Internal->UseIntraFiringAdjustment;
+}
+
+//-----------------------------------------------------------------------------
+void vtkVelodyneHDLReader::SetIntraFiringAdjust(int value)
+{
+  if (this->Internal->UseIntraFiringAdjustment != value)
+    {
+    this->Internal->UseIntraFiringAdjustment = value;
+    this->Modified();
+    }
+}
+
+//-----------------------------------------------------------------------------
 void vtkVelodyneHDLReader::SetApplyTransform(int apply)
 {
   if(apply != this->Internal->ApplyTransform)
@@ -606,6 +656,7 @@ void vtkVelodyneHDLReader::SetInterpolator(
   vtkVelodyneTransformInterpolator* interpolator)
 {
   this->Internal->Interp = interpolator;
+  this->Modified();
 }
 
 //-----------------------------------------------------------------------------
@@ -639,6 +690,7 @@ void vtkVelodyneHDLReader::SetLaserSelection(BOOST_PP_REPEAT(BOOST_PP_DEC(B_HDL_
   assert(HDL_MAX_NUM_LASERS == B_HDL_MAX_NUM_LASERS);
   int mask[HDL_MAX_NUM_LASERS] = {BOOST_PP_REPEAT(BOOST_PP_DEC(B_HDL_MAX_NUM_LASERS), VAL, "") BOOST_PP_CAT(x, B_HDL_MAX_NUM_LASERS)};
   this->SetLaserSelection(mask);
+  this->Modified();
 }
 #undef B_HDL_MAX_NUM_LASERS
 #undef PARAM
@@ -779,6 +831,7 @@ void vtkVelodyneHDLReader::SetCropRegion(double region[6])
 void vtkVelodyneHDLReader::SetCropMode(int cropMode)
 {
   this->Internal->CropMode = static_cast<CropModeEnum>(cropMode);
+  this->Modified();
 }
 
 //-----------------------------------------------------------------------------
@@ -1684,24 +1737,13 @@ void vtkVelodyneHDLReader::vtkInternal::Init()
 }
 
 //-----------------------------------------------------------------------------
-bool vtkVelodyneHDLReader::vtkInternal::isCurrentFrameValid()
-{
-  return (this->CurrentDataset->GetNumberOfPoints() != 0 &&
-    this->currentRpm != std::numeric_limits<double>::infinity());
-}
-
-//-----------------------------------------------------------------------------
 void vtkVelodyneHDLReader::vtkInternal::SplitFrame(bool force)
 {
-  /*if(this->skipFirstFrame)
-    {
-    this->skipFirstFrame = false;
-    return;
-    }*/
-  if (!this->isCurrentFrameValid() && !force)
+  if ((this->IgnoreEmptyFrames && this->CurrentDataset->GetNumberOfPoints() == 0) && !force)
     {
     return;
     }
+
   if(this->SplitCounter > 0 && !force)
     {
     this->SplitCounter--;
@@ -1922,50 +1964,54 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessFiring(HDLFiringData* firingData,
       }
 
     // Interpolate azimuths and timestamps per laser within firing blocks
-    double timestampadjustment, blockdsr0, nextblockdsr0;
-    int azimuthadjustment;
-    switch(this->CalibrationReportedNumLasers){
-    case 64:
-      {
-      timestampadjustment = -HDL64EAdjustTimeStamp(firingBlock, dsr, isDualReturnPacket);
-      nextblockdsr0 = -HDL64EAdjustTimeStamp(firingBlock + (isDualReturnPacket?4:2), 0, isDualReturnPacket);
-      blockdsr0 = -HDL64EAdjustTimeStamp(firingBlock, 0, isDualReturnPacket);
-      break;
-      }
-    case 32:
-      {
-      if (this->ReportedSensor == VLP32AB || this->ReportedSensor == VLP32C)
+    double timestampadjustment = 0;
+    int azimuthadjustment = 0;
+    if(this->UseIntraFiringAdjustment)
+    {
+      double blockdsr0 = 0, nextblockdsr0 = 1;
+      switch(this->CalibrationReportedNumLasers){
+      case 64:
         {
-        timestampadjustment = VLP32AdjustTimeStamp(firingBlock, dsr,isDualReturnPacket);
-        nextblockdsr0 = VLP32AdjustTimeStamp(firingBlock + (isDualReturnPacket?2:1), 0, isDualReturnPacket);
-        blockdsr0 = VLP32AdjustTimeStamp(firingBlock, 0, isDualReturnPacket);
+        timestampadjustment = -HDL64EAdjustTimeStamp(firingBlock, dsr, isDualReturnPacket);
+        nextblockdsr0 = -HDL64EAdjustTimeStamp(firingBlock + (isDualReturnPacket?4:2), 0, isDualReturnPacket);
+        blockdsr0 = -HDL64EAdjustTimeStamp(firingBlock, 0, isDualReturnPacket);
+        break;
         }
-      else
+      case 32:
         {
-        timestampadjustment = HDL32AdjustTimeStamp(firingBlock, dsr,isDualReturnPacket);
-        nextblockdsr0 = HDL32AdjustTimeStamp(firingBlock + (isDualReturnPacket?2:1), 0, isDualReturnPacket);
-        blockdsr0 = HDL32AdjustTimeStamp(firingBlock, 0, isDualReturnPacket);
+        if (this->ReportedSensor == VLP32AB || this->ReportedSensor == VLP32C)
+          {
+          timestampadjustment = VLP32AdjustTimeStamp(firingBlock, dsr,isDualReturnPacket);
+          nextblockdsr0 = VLP32AdjustTimeStamp(firingBlock + (isDualReturnPacket?2:1), 0, isDualReturnPacket);
+          blockdsr0 = VLP32AdjustTimeStamp(firingBlock, 0, isDualReturnPacket);
+          }
+        else
+          {
+          timestampadjustment = HDL32AdjustTimeStamp(firingBlock, dsr,isDualReturnPacket);
+          nextblockdsr0 = HDL32AdjustTimeStamp(firingBlock + (isDualReturnPacket?2:1), 0, isDualReturnPacket);
+          blockdsr0 = HDL32AdjustTimeStamp(firingBlock, 0, isDualReturnPacket);
+          }
+        break;
         }
-      break;
+      case 16:
+        {
+        timestampadjustment = VLP16AdjustTimeStamp(firingBlock, laserId, firingWithinBlock, isDualReturnPacket);
+        nextblockdsr0 = VLP16AdjustTimeStamp(firingBlock + (isDualReturnPacket?2:1), 0, 0, isDualReturnPacket);
+        blockdsr0 = VLP16AdjustTimeStamp(firingBlock, 0, 0, isDualReturnPacket);
+        break;
+        }
+      default:
+        {
+        timestampadjustment = 0.0;
+        blockdsr0 = 0.0;
+        nextblockdsr0 = 1.0;
+        }
       }
-    case 16:
-      {
-      timestampadjustment = VLP16AdjustTimeStamp(firingBlock, laserId, firingWithinBlock, isDualReturnPacket);
-      nextblockdsr0 = VLP16AdjustTimeStamp(firingBlock + (isDualReturnPacket?2:1), 0, 0, isDualReturnPacket);
-      blockdsr0 = VLP16AdjustTimeStamp(firingBlock, 0, 0, isDualReturnPacket);
-      break;
-      }
-    default:
-      {
-      timestampadjustment = 0.0;
-      blockdsr0 = 0.0;
-      nextblockdsr0 = 1.0;
-      }
+      azimuthadjustment = vtkMath::Round(azimuthDiff * ((timestampadjustment - blockdsr0) / (nextblockdsr0 - blockdsr0)));
+      timestampadjustment = vtkMath::Round(timestampadjustment);
     }
-    azimuthadjustment = vtkMath::Round(azimuthDiff * ((timestampadjustment - blockdsr0) / (nextblockdsr0 - blockdsr0)));
-    timestampadjustment = vtkMath::Round(timestampadjustment);
-
-    if (firingData->laserReturns[dsr].distance != 0.0 && this->LaserSelection[laserId])
+    if ((!this->IgnoreZeroDistances || firingData->laserReturns[dsr].distance != 0.0)
+        && this->LaserSelection[laserId])
       {
       this->PushFiringData(laserId,
                            rawLaserId,
@@ -2132,16 +2178,19 @@ int vtkVelodyneHDLReader::ReadFrameInformation()
       IsHDL64Data |= (firingData.blockIdentifier == BLOCK_32_TO_63);
 
       // Test if all lasers had a positive distance
-      for(int laserID = 0; laserID < HDL_LASER_PER_FIRING; laserID++)
+      if (this->Internal->IgnoreZeroDistances)
+      {
+        for(int laserID = 0; laserID < HDL_LASER_PER_FIRING; laserID++)
         {
-        if(firingData.laserReturns[laserID].distance != 0)
+          if(firingData.laserReturns[laserID].distance != 0)
             isEmptyFrame = false;
         }
+      }
 
       if (firingData.rotationalPosition < lastAzimuth)
         {
         // Add file position if the frame is not empty
-        if(!isEmptyFrame)
+        if(!isEmptyFrame || !this->Internal->IgnoreEmptyFrames)
         {
           filePositions.push_back(lastFilePosition);
           skips.push_back(i);

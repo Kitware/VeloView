@@ -86,22 +86,32 @@
      <addaction name="actionDualReturnIntensityHigh"/>
      <addaction name="actionDualReturnIntensityLow"/>
     </widget>
+    <widget class="QMenu" name="menuProcessing_Options">
+     <property name="title">
+      <string>Processing Options</string>
+     </property>
+     <addaction name="actionCorrectIntensityValues"/>
+     <addaction name="actionIgnoreZeroDistances"/>
+     <addaction name="actionIntraFiringAdjust"/>
+     <addaction name="actionIgnoreEmptyFrames"/>
+    </widget>
     <addaction name="actionSpreadsheet"/>
     <addaction name="actionMeasurement_Grid"/>
     <addaction name="actionShowRPM"/>
     <addaction name="actionGrid_Properties"/>
-    <addaction name="actionCorrectIntensityValues"/>
+    <addaction name="separator"/>
+    <addaction name="actionChoose_Calibration_File"/>
     <addaction name="actionLaserSelection"/>
+    <addaction name="actionCropReturns"/>
     <addaction name="menuDualReturnMode"/>
     <addaction name="actionSelectDualReturn"/>
-    <addaction name="actionChoose_Calibration_File"/>
-    <addaction name="actionCropReturns"/>
+    <addaction name="separator"/>
+    <addaction name="menuProcessing_Options"/>
     <addaction name="separator"/>
     <addaction name="actionPlay"/>
     <addaction name="actionRecord"/>
     <addaction name="separator"/>
     <addaction name="actionPython_Console"/>
-    <addaction name="actionShowErrorDialog"/>
     <addaction name="separator"/>
     <addaction name="menuDebugging"/>
     <addaction name="actionEnableCrashAnalysis"/>
@@ -920,6 +930,45 @@
    </property>
    <property name="toolTip">
     <string>Show the error console.</string>
+   </property>
+  </action>
+  <action name="actionIgnoreZeroDistances">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Ignore returns with distance equals to 0</string>
+   </property>
+  </action>
+  <action name="actionIntraFiringAdjust">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Adjust intra-firing timings and azimuths</string>
+   </property>
+  </action>
+  <action name="actionIgnoreEmptyFrames">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Ignore empty frames</string>
    </property>
   </action>
  </widget>
