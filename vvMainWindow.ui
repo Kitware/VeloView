@@ -158,6 +158,7 @@
    <addaction name="actionSelectDualReturn2"/>
    <addaction name="actionSpreadsheet"/>
    <addaction name="actionPython_Console"/>
+   <addaction name="actionShowErrorDialog"/>
   </widget>
   <widget class="vvColorToolbar" name="colorToolBar">
    <property name="windowTitle">
