@@ -2543,7 +2543,13 @@ def showRPM():
 
     if rpmArray:
         rpm = rpmArray.GetTuple1(0)
-        app.text.Text = str(int(rpm)) + " RPM"
+        # try to convert the RPM into a str
+        # If the RPM is NaN, Infinity, ... catch
+        # it and display ??? RPM
+        try:
+            app.text.Text = str(int(rpm)) + " RPM"
+        except :
+            app.text.Text = "??? RPM"
     else:
         app.text.Text = "No RPM"
 

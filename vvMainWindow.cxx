@@ -212,6 +212,9 @@ private:
 
     connect(this->Ui.actionResetConfigurationFile, SIGNAL(triggered()),
             pqVelodyneManager::instance(), SLOT(onResetCalibrationFile()));
+
+    connect(this->Ui.actionShowErrorDialog, SIGNAL(triggered()),
+            pqApplicationCore::instance(), SLOT(showOutputWindow()));
     }
 };
 

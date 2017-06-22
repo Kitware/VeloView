@@ -130,6 +130,10 @@ public:
   int GetIntraFiringAdjust() const;
   void SetIntraFiringAdjust(int);
 
+  bool GetCorrectionsInitialized();
+
+  void UnloadDatasets();
+
 protected:
 
 
