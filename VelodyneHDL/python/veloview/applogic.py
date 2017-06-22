@@ -1601,9 +1601,7 @@ def onChooseCalibrationFile():
 
     if reader is not None:
         reader.GetClientSideObject().SetSensorTransform(sensorTransform)
-        reader.CalibrationFile = calibrationFile
-        reader.DummyProperty = not reader.DummyProperty
-        smp.Render()
+        reloadCurrentFrame()
 
     elif sensor is not None:
         sensor.GetClientSideObject().SetSensorTransform(sensorTransform)
@@ -2065,16 +2063,11 @@ def onLaserSelectionChanged():
     mask = dialog.getLaserSelectionSelector()
     if reader:
         reader.GetClientSideObject().SetLaserSelection(mask)
-        reader.DummyProperty = not reader.DummyProperty
-        smp.Render()
-        smp.Render(getSpreadSheetViewProxy())
-
+        reloadCurrentFrame()
 
     if sensor:
         sensor.GetClientSideObject().SetLaserSelection(mask)
-        sensor.DummyProperty = not sensor.DummyProperty
-        smp.Render()
-        smp.Render(getSpreadSheetViewProxy())
+        reloadCurrentFrame()
 
 
 def hideColorByComponent():
@@ -2218,8 +2211,7 @@ def toggleSelectDualReturn():
         #Add the temporary array to the source
         source.GetClientSideObject().SetSelectedPointsWithDualReturn(array,nPoints)
         source.GetClientSideObject().SetShouldAddDualReturnArray(True)
-        gotoNext()
-        gotoPrevious()
+        reloadCurrentFrame()
         
         query = 'dualReturn_of_selectedPoints>0'
         smp.SelectPoints(query,source)
@@ -2616,6 +2608,8 @@ def onIgnoreEmptyFrames():
 
 
 def reloadCurrentFrame():
-    # For now, we have to go to the next frame and go back to the current frame to force the UI to refresh
-    gotoNext()
-    gotoPrevious()
+    source = getReader() or getSensor()
+    if source:
+        source.DummyProperty = not source.DummyProperty
+        smp.Render()
+        smp.Render(getSpreadSheetViewProxy())
