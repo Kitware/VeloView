@@ -67,9 +67,13 @@ vvPacketSender::vvPacketSender(std::string pcapfile,
 
   this->Internal->LIDARSocket = new boost::asio::ip::udp::socket(this->Internal->IOService);
   this->Internal->LIDARSocket->open(this->Internal->LIDAREndpoint.protocol());
+  this->Internal->LIDARSocket->set_option(boost::asio::ip::udp::socket::reuse_address(true));
+  this->Internal->LIDARSocket->set_option(boost::asio::ip::multicast::enable_loopback(true)); //Allow to send the packet on the same machine
 
   this->Internal->PositionSocket = new boost::asio::ip::udp::socket(this->Internal->IOService);
   this->Internal->PositionSocket->open(this->Internal->PositionEndpoint.protocol());
+  this->Internal->PositionSocket->set_option(boost::asio::ip::udp::socket::reuse_address(true));
+  this->Internal->PositionSocket->set_option(boost::asio::ip::multicast::enable_loopback(true)); //Allow to send the packet on the same machine
 }
 
 //-----------------------------------------------------------------------------
