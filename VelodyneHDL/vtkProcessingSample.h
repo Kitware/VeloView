@@ -30,20 +30,18 @@ public:
   vtkTypeMacro(vtkProcessingSample, vtkPolyDataAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent);
 
-  static vtkProcessingSample *New();
+  static vtkProcessingSample* New();
 
 protected:
-
-  virtual int RequestData(vtkInformation *request,
-                          vtkInformationVector **inputVector,
-                          vtkInformationVector *outputVector);
+  virtual int RequestData(vtkInformation* request, vtkInformationVector** inputVector,
+    vtkInformationVector* outputVector);
 
   vtkProcessingSample();
   virtual ~vtkProcessingSample();
 
 private:
-  vtkProcessingSample(const vtkProcessingSample&);  // Not implemented.
-  void operator=(const vtkProcessingSample&);  // Not implemented.
+  vtkProcessingSample(const vtkProcessingSample&); // Not implemented.
+  void operator=(const vtkProcessingSample&);      // Not implemented.
 };
 
 #endif

@@ -20,6 +20,7 @@ class vvMainWindow : public QMainWindow
 {
   Q_OBJECT
   typedef QMainWindow Superclass;
+
 public:
   vvMainWindow();
   virtual ~vvMainWindow();

@@ -32,10 +32,10 @@
 #ifndef _vtkVelodyneHDLReader_h
 #define _vtkVelodyneHDLReader_h
 
+#include "vtkDataPacket.h"
+#include <string>
 #include <vtkPolyDataAlgorithm.h>
 #include <vtkSmartPointer.h>
-#include <string>
-#include "vtkDataPacket.h"
 
 class vtkTransform;
 class vtkVelodyneTransformInterpolator;
@@ -45,38 +45,39 @@ using DataPacketFixedLength::HDL_MAX_NUM_LASERS;
 class VTK_EXPORT vtkVelodyneHDLReader : public vtkPolyDataAlgorithm
 {
 public:
-  enum DualFlag {
-    DUAL_DISTANCE_NEAR = 0x1,   // point with lesser distance
-    DUAL_DISTANCE_FAR = 0x2,    // point with greater distance
-    DUAL_INTENSITY_HIGH = 0x4,  // point with lesser intensity
-    DUAL_INTENSITY_LOW = 0x8,   // point with greater intensity
-    DUAL_DOUBLED = 0xf,         // point is single return
+  enum DualFlag
+  {
+    DUAL_DISTANCE_NEAR = 0x1,  // point with lesser distance
+    DUAL_DISTANCE_FAR = 0x2,   // point with greater distance
+    DUAL_INTENSITY_HIGH = 0x4, // point with lesser intensity
+    DUAL_INTENSITY_LOW = 0x8,  // point with greater intensity
+    DUAL_DOUBLED = 0xf,        // point is single return
     DUAL_DISTANCE_MASK = 0x3,
     DUAL_INTENSITY_MASK = 0xc,
   };
 
 public:
-  static vtkVelodyneHDLReader *New();
+  static vtkVelodyneHDLReader* New();
   vtkTypeMacro(vtkVelodyneHDLReader, vtkPolyDataAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent);
 
-  //Description:
+  // Description:
   //
   const std::string& GetFileName();
   void SetFileName(const std::string& filename);
 
-  //Description:
+  // Description:
   //
   const std::string& GetCorrectionsFile();
   void SetCorrectionsFile(const std::string& correctionsFile);
 
-  //Description:
+  // Description:
   //
   bool IsIntensityCorrectedBySensor();
   const bool& GetWantIntensityCorrection();
   void SetIntensitiesCorrected(const bool& state);
 
-  //Description:
+  // Description:
   //
   int CanReadFile(const char* fname);
 
@@ -90,10 +91,10 @@ public:
   // Description:
   // TODO: This is not friendly but I dont have a better way to pass 64 values to a filter in
   // paraview
-  void SetLaserSelection(int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int,
-                    int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int,
-                    int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int,
-                    int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int);
+  void SetLaserSelection(int, int, int, int, int, int, int, int, int, int, int, int, int, int, int,
+    int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int,
+    int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int,
+    int, int, int, int, int, int, int, int, int, int, int);
   void SetLaserSelection(int LaserSelection[HDL_MAX_NUM_LASERS]);
 
   void GetLaserSelection(int LaserSelection[HDL_MAX_NUM_LASERS]);
@@ -102,23 +103,18 @@ public:
 
   double GetDistanceResolutionM();
 
-  void GetLaserCorrections(
-      double verticalCorrection[HDL_MAX_NUM_LASERS],
-      double rotationalCorrection[HDL_MAX_NUM_LASERS],
-      double distanceCorrection[HDL_MAX_NUM_LASERS],
-      double distanceCorrectionX[HDL_MAX_NUM_LASERS],
-      double distanceCorrectionY[HDL_MAX_NUM_LASERS],
-      double verticalOffsetCorrection[HDL_MAX_NUM_LASERS],
-      double horizontalOffsetCorrection[HDL_MAX_NUM_LASERS],
-      double focalDistance[HDL_MAX_NUM_LASERS],
-      double focalSlope[HDL_MAX_NUM_LASERS],
-      double minIntensity[HDL_MAX_NUM_LASERS],
-      double maxIntensity[HDL_MAX_NUM_LASERS]);
+  void GetLaserCorrections(double verticalCorrection[HDL_MAX_NUM_LASERS],
+    double rotationalCorrection[HDL_MAX_NUM_LASERS], double distanceCorrection[HDL_MAX_NUM_LASERS],
+    double distanceCorrectionX[HDL_MAX_NUM_LASERS], double distanceCorrectionY[HDL_MAX_NUM_LASERS],
+    double verticalOffsetCorrection[HDL_MAX_NUM_LASERS],
+    double horizontalOffsetCorrection[HDL_MAX_NUM_LASERS], double focalDistance[HDL_MAX_NUM_LASERS],
+    double focalSlope[HDL_MAX_NUM_LASERS], double minIntensity[HDL_MAX_NUM_LASERS],
+    double maxIntensity[HDL_MAX_NUM_LASERS]);
 
   void GetXMLColorTable(double XMLColorTable[]);
 
   int GetIgnoreZeroDistances() const;
-  void SetIgnoreZeroDistances(int) ;
+  void SetIgnoreZeroDistances(int);
 
   int GetIgnoreEmptyFrames() const;
   void SetIgnoreEmptyFrames(int);
@@ -152,7 +148,7 @@ public:
 
   void DumpFrames(int startFrame, int endFrame, const std::string& filename);
 
-  void ProcessHDLPacket(unsigned char *data, unsigned int bytesReceived);
+  void ProcessHDLPacket(unsigned char* data, unsigned int bytesReceived);
   std::vector<vtkSmartPointer<vtkPolyData> >& GetDatasets();
 
   // Transform related functions
@@ -177,24 +173,19 @@ public:
 
   // This function permits to know which are the points selected
   // with a corresponding dual return
-  void SetSelectedPointsWithDualReturn(double *data, int Npoints);
+  void SetSelectedPointsWithDualReturn(double* data, int Npoints);
   void SetShouldAddDualReturnArray(bool input);
 
 protected:
   vtkVelodyneHDLReader();
   ~vtkVelodyneHDLReader();
 
-  int RequestInformation(vtkInformation *,
-                         vtkInformationVector **,
-                         vtkInformationVector *);
+  int RequestInformation(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
 
-  int RequestData(vtkInformation *,
-                  vtkInformationVector **,
-                  vtkInformationVector *);
-
+  int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
 
   void UnloadPerFrameData();
-  void SetTimestepInformation(vtkInformation *info);
+  void SetTimestepInformation(vtkInformation* info);
 
   std::string CorrectionsFile;
   std::string FileName;
@@ -204,9 +195,7 @@ protected:
   vtkInternal* Internal;
 
 private:
-
   vtkVelodyneHDLReader(const vtkVelodyneHDLReader&);
-  void operator = (const vtkVelodyneHDLReader&);
-
+  void operator=(const vtkVelodyneHDLReader&);
 };
 #endif

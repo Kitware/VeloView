@@ -15,19 +15,19 @@
 #ifndef _vtkDataPacket_h
 #define _vtkDataPacket_h
 
-#include <vector>
 #include <iomanip>
 #include <stdio.h>
+#include <vector>
 #ifdef _MSC_VER
-# include <boost/cstdint.hpp>
+#include <boost/cstdint.hpp>
 typedef boost::uint8_t uint8_t;
 #else
-# include <stdint.h>
+#include <stdint.h>
 #endif
 
 namespace DataPacketFixedLength
 {
-#define HDL_Grabber_toRadians(x) ((x) * vtkMath::Pi() / 180.0)
+#define HDL_Grabber_toRadians(x) ((x)*vtkMath::Pi() / 180.0)
 
 static const int HDL_NUM_ROT_ANGLES = 36001;
 static const int HDL_LASER_PER_FIRING = 32;
@@ -43,37 +43,38 @@ enum HDLBlock
 enum SensorType
 {
   HDL32E = 0x21,
-  VLP16  = 0x22,
-  VLP32AB  = 0x23,
-  VLP16HiRes  = 0x24,
-  VLP32C  = 0x28,
+  VLP16 = 0x22,
+  VLP32AB = 0x23,
+  VLP16HiRes = 0x24,
+  VLP32C = 0x28,
 
-  //Work around : this is not defined by any specification
-  //But it is usefull to define
-  HDL64  = 0xa0,
+  // Work around : this is not defined by any specification
+  // But it is usefull to define
+  HDL64 = 0xa0,
 };
-static int num_laser(SensorType sensorType){
+static int num_laser(SensorType sensorType)
+{
   switch (sensorType)
   {
-  case HDL64:
-    return 64;
-  case HDL32E:
-  case VLP32AB:
-  case VLP32C:
-    return 32;
-  case VLP16:
-  case VLP16HiRes:
-    return 16;
-  default:
-    return 0;
+    case HDL64:
+      return 64;
+    case HDL32E:
+    case VLP32AB:
+    case VLP32C:
+      return 32;
+    case VLP16:
+    case VLP16HiRes:
+      return 16;
+    default:
+      return 0;
   }
 }
 
 enum DualReturnSensorMode
 {
   STRONGEST_RETURN = 0x37,
-  LAST_RETURN  = 0x38,
-  DUAL_RETURN  = 0x39,
+  LAST_RETURN = 0x38,
+  DUAL_RETURN = 0x39,
 };
 enum PowerMode
 {
@@ -101,9 +102,7 @@ struct HDLFiringData
   uint16_t rotationalPosition;
   HDLLaserReturn laserReturns[HDL_LASER_PER_FIRING];
 
-  inline bool isUpperBlock() const {
-    return blockIdentifier==BLOCK_32_TO_63;
-  }
+  inline bool isUpperBlock() const { return blockIdentifier == BLOCK_32_TO_63; }
 };
 
 struct HDLDataPacket
@@ -121,44 +120,37 @@ struct HDLDataPacket
   DualReturnSensorMode getDualReturnSensorMode() const
   {
     if (isHDL64())
-      return isDualModeReturnHDL64()?DUAL_RETURN:STRONGEST_RETURN;
+      return isDualModeReturnHDL64() ? DUAL_RETURN : STRONGEST_RETURN;
     return static_cast<DualReturnSensorMode>(factoryField1);
   }
-  static const unsigned int getDataByteLength()
-  {
-    return 1206;
-  }
-  static const unsigned int getPacketByteLength()
-  {
-    return getDataByteLength() + 42;
-  }
+  static const unsigned int getDataByteLength() { return 1206; }
+  static const unsigned int getPacketByteLength() { return getDataByteLength() + 42; }
   static inline bool isValidPacket(const unsigned char* data, unsigned int dataLength)
   {
     if (dataLength != getDataByteLength())
       return false;
-    const HDLDataPacket* dataPacket = reinterpret_cast<const HDLDataPacket *>(data);
-    return (dataPacket->firingData[0].blockIdentifier == BLOCK_0_TO_31
-        || dataPacket->firingData[0].blockIdentifier == BLOCK_32_TO_63);
+    const HDLDataPacket* dataPacket = reinterpret_cast<const HDLDataPacket*>(data);
+    return (dataPacket->firingData[0].blockIdentifier == BLOCK_0_TO_31 ||
+      dataPacket->firingData[0].blockIdentifier == BLOCK_32_TO_63);
   }
 
-  inline bool isHDL64() const {
-    return firingData[1].isUpperBlock();
-  }
+  inline bool isHDL64() const { return firingData[1].isUpperBlock(); }
 
-  inline bool isDualModeReturn() const {
-    return isDualModeReturn(isHDL64());
-  }
-  inline bool isDualModeReturn(const bool isHDL64) const {
-    if(isHDL64)
+  inline bool isDualModeReturn() const { return isDualModeReturn(isHDL64()); }
+  inline bool isDualModeReturn(const bool isHDL64) const
+  {
+    if (isHDL64)
       return isDualModeReturnHDL64();
     else
       return isDualModeReturn16Or32();
   }
-  inline bool isDualModeReturn16Or32() const {
-      return firingData[1].rotationalPosition == firingData[0].rotationalPosition;
-    }
-  inline bool isDualModeReturnHDL64() const {
-      return firingData[2].rotationalPosition == firingData[0].rotationalPosition;
+  inline bool isDualModeReturn16Or32() const
+  {
+    return firingData[1].rotationalPosition == firingData[0].rotationalPosition;
+  }
+  inline bool isDualModeReturnHDL64() const
+  {
+    return firingData[2].rotationalPosition == firingData[0].rotationalPosition;
   }
   inline bool isDualReturnFiringBlock(const int firingBlock)
   {
@@ -170,18 +162,20 @@ struct HDLDataPacket
 
   inline static bool isDualBlockOfDualPacket(const bool isHDL64, const int firingBlock)
   {
-    return isHDL64?isDualBlockOfDualPacket64(firingBlock)
-        :isDualBlockOfDualPacket16Or32(firingBlock);
+    return isHDL64 ? isDualBlockOfDualPacket64(firingBlock)
+                   : isDualBlockOfDualPacket16Or32(firingBlock);
   }
-  inline static bool isDualBlockOfDualPacket64(const int firingBlock){
-      return (firingBlock % 4 >=2);
-    }
-  inline static bool isDualBlockOfDualPacket16Or32(const int firingBlock){
+  inline static bool isDualBlockOfDualPacket64(const int firingBlock)
+  {
+    return (firingBlock % 4 >= 2);
+  }
+  inline static bool isDualBlockOfDualPacket16Or32(const int firingBlock)
+  {
     return (firingBlock % 2 == 1);
   }
 };
 
-struct HDLLaserCorrection  // Internal representation of per-laser correction
+struct HDLLaserCorrection // Internal representation of per-laser correction
 {
   // In degrees
   double rotationalCorrection;
@@ -217,5 +211,5 @@ struct HDLRGB
   uint8_t b;
 };
 #pragma pack(pop)
-}// end namespace DataPacketFixedLength
+} // end namespace DataPacketFixedLength
 #endif

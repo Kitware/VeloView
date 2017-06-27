@@ -45,8 +45,9 @@
 
 #include <map>
 
-#define DATA_ARRAY(name) \
-  vtkNew<vtkDoubleArray> name##Data; name##Data->SetName(#name)
+#define DATA_ARRAY(name)                                                                           \
+  vtkNew<vtkDoubleArray> name##Data;                                                               \
+  name##Data->SetName(#name)
 
 namespace
 {
@@ -72,10 +73,9 @@ void vtkApplanixPositionReader::vtkInternal::SetMapping(
 {
   FieldIndexMap::iterator field = this->Fields.find(fieldName);
   if (field != this->Fields.end())
-    {
-    this->FieldMapping.insert(
-      std::make_pair(field->second, array.GetPointer()));
-    }
+  {
+    this->FieldMapping.insert(std::make_pair(field->second, array.GetPointer()));
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -110,18 +110,16 @@ vtkVelodyneTransformInterpolator* vtkApplanixPositionReader::GetInterpolator() c
 
 //-----------------------------------------------------------------------------
 int vtkApplanixPositionReader::RequestData(
-  vtkInformation *request,
-  vtkInformationVector **inputVector,
-  vtkInformationVector *outputVector)
+  vtkInformation* request, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
-  vtkPolyData *output = vtkPolyData::GetData(outputVector);
-  vtkInformation *info = outputVector->GetInformationObject(0);
+  vtkPolyData* output = vtkPolyData::GetData(outputVector);
+  vtkInformation* info = outputVector->GetInformationObject(0);
 
   if (!this->FileName || !*this->FileName)
-    {
+  {
     vtkErrorMacro("FileName has not been set");
     return VTK_ERROR;
-    }
+  }
 
   vtkNew<vtkPoints> points;
   vtkNew<vtkCellArray> cells;
@@ -145,10 +143,10 @@ int vtkApplanixPositionReader::RequestData(
   // Open data file
   std::ifstream f(this->FileName);
   if (!f.good())
-    {
+  {
     vtkErrorMacro("Failed to open input file \"" << this->FileName << "\"");
     return VTK_ERROR;
-    }
+  }
 
   std::string line;
   std::string lastLine;
@@ -156,43 +154,42 @@ int vtkApplanixPositionReader::RequestData(
   // Read header
   size_t numFields = 0;
   while (std::getline(f, line))
-    {
+  {
     boost::algorithm::trim(line);
     if (line.empty())
-      {
+    {
       continue;
-      }
+    }
 
     if (boost::starts_with(line, "central meridian"))
-      {
+    {
       std::vector<std::string> parts;
-      boost::algorithm::split(parts, line, boost::is_any_of(" "),
-                              boost::algorithm::token_compress_on);
+      boost::algorithm::split(
+        parts, line, boost::is_any_of(" "), boost::algorithm::token_compress_on);
 
-      zoneData->InsertNextValue(
-        static_cast<int>(186 + boost::lexical_cast<double>(parts[3])) / 6);
-      }
+      zoneData->InsertNextValue(static_cast<int>(186 + boost::lexical_cast<double>(parts[3])) / 6);
+    }
 
     if (line[0] == '(')
-      {
+    {
       // Set up field index mapping
       std::vector<std::string> fields;
-      boost::algorithm::split(fields, lastLine, boost::is_any_of(","),
-                              boost::algorithm::token_compress_on);
+      boost::algorithm::split(
+        fields, lastLine, boost::is_any_of(","), boost::algorithm::token_compress_on);
 
       numFields = fields.size();
       for (size_t n = 0; n < numFields; ++n)
-        {
+      {
         boost::algorithm::trim(fields[n]);
         this->Internal->Fields.insert(std::make_pair(fields[n], n));
-        }
+      }
 
       // Done with header
       break;
-      }
+    }
 
     lastLine = line;
-    }
+  }
 
   // Set up data array mapping
   this->Internal->SetMapping("TIME", timeData);
@@ -209,52 +206,46 @@ int vtkApplanixPositionReader::RequestData(
   // Read data
   vtkIdType count = 0;
   while (std::getline(f, line))
-    {
+  {
     boost::algorithm::trim(line);
     if (line.empty())
-      {
+    {
       continue;
-      }
+    }
 
     // Split into fields
     std::vector<std::string> fields;
-    boost::algorithm::split(fields, line, boost::is_any_of(" "),
-                            boost::algorithm::token_compress_on);
+    boost::algorithm::split(
+      fields, line, boost::is_any_of(" "), boost::algorithm::token_compress_on);
 
     if (fields.size() < numFields)
-      {
-      vtkWarningMacro(
-        "Line '" << line
-        << "' has only " << fields.size() << "fields "
-        << "(expected " << numFields << ")");
+    {
+      vtkWarningMacro("Line '" << line << "' has only " << fields.size() << "fields "
+                               << "(expected " << numFields << ")");
       continue;
-      }
+    }
 
     // Assign values to data arrays
     for (FieldDataMap::iterator iter = this->Internal->FieldMapping.begin();
          iter != this->Internal->FieldMapping.end(); ++iter)
-      {
+    {
       const double value = boost::lexical_cast<double>(fields[iter->first]);
       iter->second->InsertNextValue(value);
-      }
+    }
 
     ++count;
-    }
+  }
 
   // Verify position information
-  if (timeData->GetNumberOfTuples() != count ||
-      eastingData->GetNumberOfTuples() != count ||
-      northingData->GetNumberOfTuples() != count ||
-      heightData->GetNumberOfTuples() != count ||
-      rollData->GetNumberOfTuples() != count ||
-      pitchData->GetNumberOfTuples() != count ||
-      headingData->GetNumberOfTuples() != count)
-    {
-    vtkErrorMacro(
-      "Failed to extract points: one or more position fields has fewer values"
-      " than the number of readable records in the input file");
+  if (timeData->GetNumberOfTuples() != count || eastingData->GetNumberOfTuples() != count ||
+    northingData->GetNumberOfTuples() != count || heightData->GetNumberOfTuples() != count ||
+    rollData->GetNumberOfTuples() != count || pitchData->GetNumberOfTuples() != count ||
+    headingData->GetNumberOfTuples() != count)
+  {
+    vtkErrorMacro("Failed to extract points: one or more position fields has fewer values"
+                  " than the number of readable records in the input file");
     return VTK_ERROR;
-    }
+  }
 
   // Build polyline and transform interpolator
   points->Allocate(count);
@@ -266,19 +257,19 @@ int vtkApplanixPositionReader::RequestData(
   double pos[3] = { 0.0, 0.0, 0.0 };
   double firstPos[3];
   for (vtkIdType n = 0; n < count; ++n)
-    {
+  {
     if (n == 0)
-      {
+    {
       firstPos[0] = eastingData->GetValue(n);
       firstPos[1] = northingData->GetValue(n);
       firstPos[2] = heightData->GetValue(n);
-      }
+    }
     else
-      {
+    {
       pos[0] = eastingData->GetValue(n) - firstPos[0];
       pos[1] = northingData->GetValue(n) - firstPos[1];
       pos[2] = heightData->GetValue(n) - firstPos[2];
-      }
+    }
 
     points->InsertNextPoint(pos);
     polyIds->InsertNextId(n);
@@ -291,9 +282,8 @@ int vtkApplanixPositionReader::RequestData(
     transform->Translate(pos);
 
     const double timestamp = timeData->GetValue(n) - this->TimeOffset;
-    this->Internal->Interpolator->AddTransform(timestamp,
-                                               transform.GetPointer());
-    }
+    this->Internal->Interpolator->AddTransform(timestamp, transform.GetPointer());
+  }
 
   cells->InsertNextCell(polyLine.GetPointer());
 
@@ -304,9 +294,9 @@ int vtkApplanixPositionReader::RequestData(
   output->GetFieldData()->AddArray(zoneData.GetPointer());
   for (FieldDataMap::iterator iter = this->Internal->FieldMapping.begin();
        iter != this->Internal->FieldMapping.end(); ++iter)
-    {
+  {
     output->GetPointData()->AddArray(iter->second);
-    }
+  }
 
   return VTK_OK;
 }

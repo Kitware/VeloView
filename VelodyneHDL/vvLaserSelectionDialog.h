@@ -19,15 +19,14 @@
 #include "vvConfigure.h"
 
 class QTableWidgetItem;
-template<typename T>
+template <typename T>
 class QVector;
 
 class VelodyneHDLPlugin_EXPORT vvLaserSelectionDialog : public QDialog
 {
   Q_OBJECT
 public:
-
-  vvLaserSelectionDialog(QWidget *p=0);
+  vvLaserSelectionDialog(QWidget* p = 0);
   virtual ~vvLaserSelectionDialog();
 
   QVector<int> getLaserSelectionSelector();
@@ -37,17 +36,12 @@ public:
   void setDisplayMoreSelectionsChecked(bool state);
 
   void setLasersCorrections(const QVector<double>& verticalCorrection,
-                                                  const QVector<double>& rotationalCorrection,
-                                                  const QVector<double>& distanceCorrection,
-                                                  const QVector<double>& distanceCorrectionX,
-                                                  const QVector<double>& distanceCorrectionY,
-                                                  const QVector<double>& verticalOffsetCorrection,
-                                                  const QVector<double>& horizontalOffsetCorrection,
-                                                  const QVector<double>& focalDistance,
-                                                  const QVector<double>& focalSlope,
-                                                  const QVector<double>& minIntensity,
-                                                  const QVector<double>& maxIntensity,
-                                                  int nchannels);
+    const QVector<double>& rotationalCorrection, const QVector<double>& distanceCorrection,
+    const QVector<double>& distanceCorrectionX, const QVector<double>& distanceCorrectionY,
+    const QVector<double>& verticalOffsetCorrection,
+    const QVector<double>& horizontalOffsetCorrection, const QVector<double>& focalDistance,
+    const QVector<double>& focalSlope, const QVector<double>& minIntensity,
+    const QVector<double>& maxIntensity, int nchannels);
 
 public slots:
   void onItemChanged(QTableWidgetItem*);
@@ -65,7 +59,6 @@ signals:
   void laserSelectionChanged();
 
 private:
-
   class pqInternal;
   pqInternal* Internal;
 

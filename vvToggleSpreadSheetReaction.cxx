@@ -13,30 +13,28 @@
 // limitations under the License.
 #include "vvToggleSpreadSheetReaction.h"
 
-#include <pqView.h>
 #include <pqSpreadSheetView.h>
 #include <pqSpreadSheetViewModel.h>
+#include <pqView.h>
 
 #include <iostream>
 
 //-----------------------------------------------------------------------------
 vvToggleSpreadSheetReaction::vvToggleSpreadSheetReaction(QAction* action, pqView* view)
-  : Superclass(action),
-  Action(action),
-  View(view)
+  : Superclass(action)
+  , Action(action)
+  , View(view)
 {
-  //Hidding the XYZ grouped coordinates column by default
-  if(this->View->inherits("pqSpreadSheetView"))
+  // Hidding the XYZ grouped coordinates column by default
+  if (this->View->inherits("pqSpreadSheetView"))
   {
-  pqSpreadSheetView* ssview = qobject_cast<pqSpreadSheetView*>(this->View);
+    pqSpreadSheetView* ssview = qobject_cast<pqSpreadSheetView*>(this->View);
 
-  //XYZ column
-  ssview->getViewModel()->setVisible(1,false);
+    // XYZ column
+    ssview->getViewModel()->setVisible(1, false);
   }
 
-  QObject::connect(
-    this->Action, SIGNAL(triggered()),
-    this, SLOT(onToggleSpreadsheet()));
+  QObject::connect(this->Action, SIGNAL(triggered()), this, SLOT(onToggleSpreadsheet()));
 
   this->onToggleSpreadsheet();
 }

@@ -22,8 +22,8 @@ class vvToggleSpreadSheetReaction : public pqReaction
 {
   Q_OBJECT
   typedef pqReaction Superclass;
-public:
 
+public:
   vvToggleSpreadSheetReaction(QAction* action, pqView* view);
   virtual ~vvToggleSpreadSheetReaction();
 

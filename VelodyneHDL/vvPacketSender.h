@@ -20,10 +20,8 @@ class vtkPacketFileReader;
 class VTK_EXPORT vvPacketSender
 {
 public:
-  vvPacketSender(std::string pcapfile,
-                 std::string destinationio = "127.0.0.1",
-                 int lidarport = 2368,
-                 int positionport = 8308);
+  vvPacketSender(std::string pcapfile, std::string destinationio = "127.0.0.1",
+    int lidarport = 2368, int positionport = 8308);
   ~vvPacketSender();
 
   int pumpPacket();
@@ -33,5 +31,4 @@ public:
 private:
   class vvInternal;
   vvInternal* Internal;
-
 };

@@ -32,43 +32,38 @@
 #ifndef _vtkVelodyneHDLPositionReader_h
 #define _vtkVelodyneHDLPositionReader_h
 
+#include <string>
 #include <vtkPolyDataAlgorithm.h>
 #include <vtkSmartPointer.h>
-#include <string>
 
 class vtkVelodyneTransformInterpolator;
 
 class VTK_EXPORT vtkVelodyneHDLPositionReader : public vtkPolyDataAlgorithm
 {
 public:
-  static vtkVelodyneHDLPositionReader *New();
+  static vtkVelodyneHDLPositionReader* New();
   vtkTypeMacro(vtkVelodyneHDLPositionReader, vtkPolyDataAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent);
 
-  //Description:
+  // Description:
   //
   const std::string& GetFileName();
   void SetFileName(const std::string& filename);
   void SetShouldWarnOnWeirdGPSData(bool ShouldWarnOnWeirdGPSData_);
 
-  //Description:
+  // Description:
   //
   int CanReadFile(const char* fname);
 
   vtkVelodyneTransformInterpolator* GetInterpolator();
 
 protected:
-
   vtkVelodyneHDLPositionReader();
   virtual ~vtkVelodyneHDLPositionReader();
 
-  virtual int RequestInformation(vtkInformation *,
-                         vtkInformationVector **,
-                         vtkInformationVector *);
+  virtual int RequestInformation(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
 
-  virtual int RequestData(vtkInformation *,
-                  vtkInformationVector **,
-                  vtkInformationVector *);
+  virtual int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
 
   void Open();
   void Close();
@@ -81,7 +76,6 @@ protected:
 private:
   bool ShouldWarnOnWeirdGPSData;
   vtkVelodyneHDLPositionReader(const vtkVelodyneHDLPositionReader&);
-  void operator = (const vtkVelodyneHDLPositionReader&);
-
+  void operator=(const vtkVelodyneHDLPositionReader&);
 };
 #endif

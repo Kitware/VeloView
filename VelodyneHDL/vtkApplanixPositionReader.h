@@ -43,7 +43,7 @@ public:
   vtkTypeMacro(vtkApplanixPositionReader, vtkPolyDataAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent);
 
-  //Description:
+  // Description:
   vtkSetStringMacro(FileName);
   vtkGetStringMacro(FileName);
 
@@ -72,19 +72,17 @@ public:
   vtkSetMacro(TimeOffset, double);
   vtkGetMacro(TimeOffset, double);
 
-  //Description:
+  // Description:
   int CanReadFile(const char* fname) { return 1; }
 
-  //Description:
+  // Description:
   vtkVelodyneTransformInterpolator* GetInterpolator() const;
 
 protected:
   vtkApplanixPositionReader();
   virtual ~vtkApplanixPositionReader();
 
-  virtual int RequestData(vtkInformation*,
-                          vtkInformationVector**,
-                          vtkInformationVector*);
+  virtual int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
 
   char* FileName;
 
@@ -100,6 +98,5 @@ protected:
 private:
   vtkApplanixPositionReader(const vtkApplanixPositionReader&);
   void operator=(const vtkApplanixPositionReader&);
-
 };
 #endif

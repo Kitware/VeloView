@@ -87,5 +87,5 @@ void vtkWrappedTupleInterpolator::InterpolateTuple16(double t, double tuple[16])
 //----------------------------------------------------------------------------
 void vtkWrappedTupleInterpolator::PrintSelf(ostream& os, vtkIndent indent)
 {
-  this->Superclass::PrintSelf(os,indent);
+  this->Superclass::PrintSelf(os, indent);
 }

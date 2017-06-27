@@ -42,8 +42,11 @@
 int main(int argc, char* argv[])
 {
 
-  if (argc < 2) {
-    std::cout << "Usage: " << argv[0] << " <packet file> [loop] [ip] [dataPort] [position Port] [PlaybackSpeedMultiplier]" << std::endl;
+  if (argc < 2)
+  {
+    std::cout << "Usage: " << argv[0]
+              << " <packet file> [loop] [ip] [dataPort] [position Port] [PlaybackSpeedMultiplier]"
+              << std::endl;
     return 1;
   }
   std::string filename(argv[1]);
@@ -51,25 +54,25 @@ int main(int argc, char* argv[])
   int loop = 0;
   double speed = 1;
   std::string destinationIp = "127.0.0.1";
-  int dataPort=2368;
-  int positionPort=8308;
-  if(argc > 2)
-    {
+  int dataPort = 2368;
+  int positionPort = 8308;
+  if (argc > 2)
+  {
     loop = atoi(argv[2]);
-    }
-  if(argc > 3)
-    {
+  }
+  if (argc > 3)
+  {
     destinationIp = argv[3];
-    }
-  if(argc>5)
-    {
-      dataPort=atoi(argv[4]);
-      positionPort=atoi(argv[5]);
-    }
-  if(argc>6)
-    {
-      speed = static_cast<double>(atof(argv[6]));
-    }
+  }
+  if (argc > 5)
+  {
+    dataPort = atoi(argv[4]);
+    positionPort = atoi(argv[5]);
+  }
+  if (argc > 6)
+  {
+    speed = static_cast<double>(atof(argv[6]));
+  }
 
   // Default time to wait -> it is the elapsed
   // time between two firing of a HDL-32 sensor
@@ -87,7 +90,7 @@ int main(int argc, char* argv[])
 
   // The minimalTimeToWait resolution so that
   // timeToWait * NumberPacketsByPool > 1000
-  double minimalTimeToWait = 1000.0/NumberPacketsByPool;
+  double minimalTimeToWait = 1000.0 / NumberPacketsByPool;
 
   // Measurement of the sleep
   clock_t T1, T2;
@@ -97,15 +100,15 @@ int main(int argc, char* argv[])
 
   std::cout << "Start sending" << std::endl;
   try
-    {
+  {
     do
-      {
+    {
       vvPacketSender sender(filename, destinationIp, dataPort, positionPort);
       // socket.connect(destinationEndpoint);
 
       sender.pumpPacket();
       while (!sender.done())
-        {
+      {
         // Get the timestamp of the packet to compute
         // the next timeToWait
         int currentTimeDiff = sender.pumpPacket();
@@ -118,15 +121,16 @@ int main(int argc, char* argv[])
         // about the number of packet sent, the elapsed time
         // and the next time to wait for the 1000 next packets
         if ((sender.packetCount() % 1000) == 0)
-          {
+        {
           // Elapsed time measured from the clock of the computer
           // This timestamp will be used to inform the user
           // This timestamp should be greater than elapsedTime2
           T2 = std::clock();
           elapsedTimeMeasured = T2 - T1;
           std::cout << "total sent packets : " << sender.packetCount() << std::endl
-                    <<" Elapsed time per packets asked    : " << timeToWaitPerPacket << " microseconds" << std::endl
-                    <<" Elapsed time per packets measured : " << elapsedTimeMeasured
+                    << " Elapsed time per packets asked    : " << timeToWaitPerPacket
+                    << " microseconds" << std::endl
+                    << " Elapsed time per packets measured : " << elapsedTimeMeasured
                     << " microseconds" << std::endl
                     << std::endl;
 
@@ -135,22 +139,22 @@ int main(int argc, char* argv[])
           // If the computed timeToWait is too high we assume that
           // there is a corruption into the packets timestamp
           // then we set the timeToWait to the HDL-32 firing rate
-          if(timeToWaitPerPacket > 2500)
-            {
+          if (timeToWaitPerPacket > 2500)
+          {
             timeToWaitPerPacket = static_cast<int>(1.0 / speed * defaultTimeToWait);
-            }
+          }
 
           // If the computed timeToWait is under the minimal resolution
           // we set the timeToWait to this minimal resolution
-          if(timeToWaitPerPacket < minimalTimeToWait)
-            {
+          if (timeToWaitPerPacket < minimalTimeToWait)
+          {
             timeToWaitPerPacket = static_cast<int>(minimalTimeToWait);
-            }
+          }
 
           // Refresh the measured timestamps
           T1 = std::clock();
           elapsedTimeBetweenPackets = 0;
-          }
+        }
 
         // boost::this_thread::sleep(boost::posix_time::microseconds(553));
         // Every NumberPacketsByPool packets we wait to be consistent with
@@ -158,17 +162,18 @@ int main(int argc, char* argv[])
         // too small -> the clock resolution is 1000 microsecond. Hence,
         // NumberPacketsByPool * timeToWait should be greater than 1000
         if ((sender.packetCount() % NumberPacketsByPool) == 0)
-          {
-          boost::this_thread::sleep(boost::posix_time::microseconds(NumberPacketsByPool * timeToWaitPerPacket));
-          }
+        {
+          boost::this_thread::sleep(
+            boost::posix_time::microseconds(NumberPacketsByPool * timeToWaitPerPacket));
         }
-      } while(loop);
-    }
-  catch( std::exception & e )
-    {
+      }
+    } while (loop);
+  }
+  catch (std::exception& e)
+  {
     std::cout << "Caught Exception: " << e.what() << std::endl;
     return 1;
-    }
+  }
 
   return 0;
 }

@@ -39,15 +39,14 @@ class vtkPointSet;
 class VTK_EXPORT vtkPlaneFitter : public vtkObject
 {
 public:
-  static vtkPlaneFitter *New();
+  static vtkPlaneFitter* New();
   vtkTypeMacro(vtkPlaneFitter, vtkObject);
 
   virtual void PrintSelf(ostream& os, vtkIndent indent);
 
-  static void PlaneFit(vtkPointSet* pts, double origin[3], double normal[3],
-                       double &minDist, double &maxDist, double &stdDev,
-                       double channelMean[32], double channelStdDev[32],
-                       vtkIdType channelNpts[32]);
+  static void PlaneFit(vtkPointSet* pts, double origin[3], double normal[3], double& minDist,
+    double& maxDist, double& stdDev, double channelMean[32], double channelStdDev[32],
+    vtkIdType channelNpts[32]);
 
 protected:
   vtkPlaneFitter();

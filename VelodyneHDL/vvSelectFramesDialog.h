@@ -35,27 +35,27 @@ class VelodyneHDLPlugin_EXPORT vvSelectFramesDialog : public QDialog
   Q_ENUMS(FrameMode FramePack FrameTransform)
 
 public:
-  vvSelectFramesDialog(QWidget *p=0);
+  vvSelectFramesDialog(QWidget* p = 0);
   virtual ~vvSelectFramesDialog();
 
   enum FrameMode
-    {
+  {
     CURRENT_FRAME = 0,
     ALL_FRAMES,
     FRAME_RANGE
-    };
+  };
   enum FramePack
-    {
+  {
     SINGLE_FILE = 0,
     FILE_PER_FRAME
-    };
+  };
   enum FrameTransform
-    {
+  {
     SENSOR = 0,
     RELATIVE_GEOPOSITION,
     ABSOLUTE_GEOPOSITION_UTM,
     ABSOLUTE_GEOPOSITION_LATLON,
-    };
+  };
 
   int frameMode() const;
   int frameStart() const;

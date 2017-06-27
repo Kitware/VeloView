@@ -34,6 +34,7 @@
 #include <vtkSMProxyManager.h>
 #include <vtkSMSessionProxyManager.h>
 
+#include "pqObjectPickingBehavior.h"
 #include <pqActiveObjects.h>
 #include <pqApplicationCore.h>
 #include <pqAutoLoadPluginXMLBehavior.h>
@@ -43,7 +44,6 @@
 #include <pqDefaultViewBehavior.h>
 #include <pqInterfaceTracker.h>
 #include <pqObjectBuilder.h>
-#include "pqObjectPickingBehavior.h"
 #include <pqPersistentMainWindowStateBehavior.h>
 #include <pqPythonShellReaction.h>
 #include <pqQtMessageHandlerBehavior.h>
@@ -52,8 +52,8 @@
 #include <pqServer.h>
 #include <pqSettings.h>
 #include <pqSpreadSheetView.h>
-#include <pqSpreadSheetVisibilityBehavior.h>
 #include <pqSpreadSheetViewDecorator.h>
+#include <pqSpreadSheetVisibilityBehavior.h>
 #include <pqStandardPropertyWidgetInterface.h>
 #include <pqStandardViewFrameActionsImplementation.h>
 #include <pqVelodyneManager.h>
@@ -72,8 +72,10 @@ PV_PLUGIN_IMPORT_INIT(PythonQtPlugin);
 class vvMainWindow::pqInternals
 {
 public:
-  pqInternals(vvMainWindow* window) : Ui(), MainView(0)
-    {
+  pqInternals(vvMainWindow* window)
+    : Ui()
+    , MainView(0)
+  {
     this->Ui.setupUi(window);
     this->paraviewInit(window);
     this->setupUi(window);
@@ -88,18 +90,18 @@ public:
     window->show();
     window->raise();
     window->activateWindow();
-    }
+  }
   Ui::vvMainWindow Ui;
   pqRenderView* MainView;
 
 private:
   void paraviewInit(vvMainWindow* window)
-    {
+  {
     pqApplicationCore* core = pqApplicationCore::instance();
 
     // Register ParaView interfaces.
     pqInterfaceTracker* pgm = core->interfaceTracker();
-//    pgm->addInterface(new pqStandardViewModules(pgm));
+    //    pgm->addInterface(new pqStandardViewModules(pgm));
     pgm->addInterface(new pqStandardPropertyWidgetInterface(pgm));
     pgm->addInterface(new pqStandardViewFrameActionsImplementation(pgm));
 
@@ -108,7 +110,7 @@ private:
     new pqDataTimeStepBehavior(window);
     new pqSpreadSheetVisibilityBehavior(window);
     new pqObjectPickingBehavior(window);
-//    new pqDefaultViewBehavior(window);
+    //    new pqDefaultViewBehavior(window);
     new pqCrashRecoveryBehavior(window);
     new pqAutoLoadPluginXMLBehavior(window);
     new pqCommandLineOptionsBehavior(window);
@@ -120,23 +122,24 @@ private:
     pqActiveObjects::instance().setActiveServer(server);
 
     // Set default render view settings
-    vtkSMSessionProxyManager* pxm = vtkSMProxyManager::GetProxyManager()->GetActiveSessionProxyManager();
-    vtkSMProxy* renderviewsettings =  pxm->GetProxy("RenderViewSettings");
+    vtkSMSessionProxyManager* pxm =
+      vtkSMProxyManager::GetProxyManager()->GetActiveSessionProxyManager();
+    vtkSMProxy* renderviewsettings = pxm->GetProxy("RenderViewSettings");
     assert(renderviewsettings);
 
-    vtkSMPropertyHelper(renderviewsettings,
-                        "ResolveCoincidentTopology").Set(0);
+    vtkSMPropertyHelper(renderviewsettings, "ResolveCoincidentTopology").Set(0);
 
     // Create a default view.
-    pqRenderView* view = qobject_cast<pqRenderView*>(builder->createView(pqRenderView::renderViewType(), server));
+    pqRenderView* view =
+      qobject_cast<pqRenderView*>(builder->createView(pqRenderView::renderViewType(), server));
     assert(view);
     this->MainView = view;
 
-    vtkSMPropertyHelper(view->getProxy(),"CenterAxesVisibility").Set(0);
-    double bgcolor[3] = {0, 0, 0};
+    vtkSMPropertyHelper(view->getProxy(), "CenterAxesVisibility").Set(0);
+    double bgcolor[3] = { 0, 0, 0 };
     vtkSMPropertyHelper(view->getProxy(), "Background").Set(bgcolor, 3);
     // MultiSamples doesn't work, we need to set that up before registering the proxy.
-    //vtkSMPropertyHelper(view->getProxy(),"MultiSamples").Set(1);
+    // vtkSMPropertyHelper(view->getProxy(),"MultiSamples").Set(1);
     view->getProxy()->UpdateVTKObjects();
 
     // Create a horizontal splitter as the central widget, add views to splitter
@@ -150,7 +153,7 @@ private:
     splitter->addWidget(vSplitter);
 
     pqView* overheadView = builder->createView(pqRenderView::renderViewType(), server);
-//    overheadView->SetInteractionMode("2D");
+    //    overheadView->SetInteractionMode("2D");
     overheadView->getProxy()->UpdateVTKObjects();
     // dont add to the splitter just yet
     // TODO: These sizes should not be absolute things
@@ -169,20 +172,14 @@ private:
     dec->setFixedRepresentation(true);
 
     pqActiveObjects::instance().setActiveView(view);
-    }
+  }
 
   void setupUi(vvMainWindow* window)
-    {
-    new pqRenderViewSelectionReaction(
-                                      this->Ui.actionSelect_Visible_Points,
-                                      this->MainView,
-                                      pqRenderViewSelectionReaction::SELECT_SURFACE_POINTS
-                                      );
-    new pqRenderViewSelectionReaction(
-                                      this->Ui.actionSelect_All_Points,
-                                      this->MainView,
-                                      pqRenderViewSelectionReaction::SELECT_FRUSTUM_POINTS
-                                      );
+  {
+    new pqRenderViewSelectionReaction(this->Ui.actionSelect_Visible_Points, this->MainView,
+      pqRenderViewSelectionReaction::SELECT_SURFACE_POINTS);
+    new pqRenderViewSelectionReaction(this->Ui.actionSelect_All_Points, this->MainView,
+      pqRenderViewSelectionReaction::SELECT_FRUSTUM_POINTS);
 
     new pqPythonShellReaction(this->Ui.actionPython_Console);
 
@@ -194,36 +191,38 @@ private:
     this->Ui.actionMeasurement_Grid->setChecked(gridVisible.toBool());
 
     this->Ui.actionEnableCrashAnalysis->setChecked(
-    settings->value(
-    "VelodyneHDLPlugin/MainWindow/EnableCrashAnalysis",
-    this->Ui.actionEnableCrashAnalysis->isChecked()).toBool());
+      settings
+        ->value("VelodyneHDLPlugin/MainWindow/EnableCrashAnalysis",
+          this->Ui.actionEnableCrashAnalysis->isChecked())
+        .toBool());
 
     new vvLoadDataReaction(this->Ui.actionOpenPcap, false);
     new vvLoadDataReaction(this->Ui.actionOpenApplanix, true);
 
-    connect(this->Ui.actionOpen_Sensor_Stream, SIGNAL(triggered()),
-            pqVelodyneManager::instance(), SLOT(onOpenSensor()));
+    connect(this->Ui.actionOpen_Sensor_Stream, SIGNAL(triggered()), pqVelodyneManager::instance(),
+      SLOT(onOpenSensor()));
 
-    connect(this->Ui.actionMeasurement_Grid, SIGNAL(toggled(bool)),
-            pqVelodyneManager::instance(), SLOT(onMeasurementGrid(bool)));
+    connect(this->Ui.actionMeasurement_Grid, SIGNAL(toggled(bool)), pqVelodyneManager::instance(),
+      SLOT(onMeasurementGrid(bool)));
 
     connect(this->Ui.actionEnableCrashAnalysis, SIGNAL(toggled(bool)),
-            pqVelodyneManager::instance(), SLOT(onEnableCrashAnalysis(bool)));
+      pqVelodyneManager::instance(), SLOT(onEnableCrashAnalysis(bool)));
 
     connect(this->Ui.actionResetConfigurationFile, SIGNAL(triggered()),
-            pqVelodyneManager::instance(), SLOT(onResetCalibrationFile()));
+      pqVelodyneManager::instance(), SLOT(onResetCalibrationFile()));
 
-    connect(this->Ui.actionShowErrorDialog, SIGNAL(triggered()),
-            pqApplicationCore::instance(), SLOT(showOutputWindow()));
-    }
+    connect(this->Ui.actionShowErrorDialog, SIGNAL(triggered()), pqApplicationCore::instance(),
+      SLOT(showOutputWindow()));
+  }
 };
 
 //-----------------------------------------------------------------------------
-vvMainWindow::vvMainWindow() : Internals (new vvMainWindow::pqInternals(this))
+vvMainWindow::vvMainWindow()
+  : Internals(new vvMainWindow::pqInternals(this))
 {
-//  this->tabifyDockWidget(
-//    this->Internal->colorMapEditorDock,
-//    this->Internal->memoryInspectorDock);
+  //  this->tabifyDockWidget(
+  //    this->Internal->colorMapEditorDock,
+  //    this->Internal->memoryInspectorDock);
   pqApplicationCore::instance()->registerManager(
     "COLOR_EDITOR_PANEL", this->Internals->Ui.colorMapEditorDock);
   this->Internals->Ui.colorMapEditorDock->hide();

@@ -22,8 +22,8 @@
 
 #include <iostream>
 
-#include <cmath>
 #include <cassert>
+#include <cmath>
 
 #define NUM_LASER_MAX 64
 
@@ -31,7 +31,10 @@
 class vvLaserSelectionDialog::pqInternal : public Ui::vvLaserSelectionDialog
 {
 public:
-  pqInternal(): Settings(pqApplicationCore::instance()->settings()) {}
+  pqInternal()
+    : Settings(pqApplicationCore::instance()->settings())
+  {
+  }
 
   void setup();
   void saveSettings();
@@ -40,7 +43,6 @@ public:
   pqSettings* const Settings;
 
 public:
-
   QTableWidget* Table;
 
   // The actual number of rows to be displayed.
@@ -57,20 +59,20 @@ public:
 //-----------------------------------------------------------------------------
 void vvLaserSelectionDialog::pqInternal::saveSettings()
 {
-  for(int i = 0; i < NUM_LASER_MAX; ++i)
-    {
+  for (int i = 0; i < NUM_LASER_MAX; ++i)
+  {
     QTableWidgetItem* item = this->Table->item(i, 0);
     QTableWidgetItem* value = this->Table->item(i, 2);
     int channel = value->data(Qt::EditRole).toInt();
 
     bool checked = item->checkState() == Qt::Checked;
-    this->Settings->setValue(QString("VelodyneHDLPlugin/LaserSelectionDialog%1").arg(channel),
-                             checked);
-    }
-  this->Settings->setValue(QString("VelodyneHDLPlugin/LaserSelectionDialogSortingColumnId"),
-                             this->sortingColumnId);
-  this->Settings->setValue(QString("VelodyneHDLPlugin/LaserSelectionDialogSortingColumnOrder"),
-                             this->sortingColumnOrder);
+    this->Settings->setValue(
+      QString("VelodyneHDLPlugin/LaserSelectionDialog%1").arg(channel), checked);
+  }
+  this->Settings->setValue(
+    QString("VelodyneHDLPlugin/LaserSelectionDialogSortingColumnId"), this->sortingColumnId);
+  this->Settings->setValue(
+    QString("VelodyneHDLPlugin/LaserSelectionDialogSortingColumnOrder"), this->sortingColumnOrder);
 }
 
 //-----------------------------------------------------------------------------
@@ -78,32 +80,36 @@ void vvLaserSelectionDialog::pqInternal::restoreSettings()
 {
   QVector<int> channel2index(NUM_LASER_MAX, 0);
 
-  for(int i = 0; i < NUM_LASER_MAX; ++i)
-    {
+  for (int i = 0; i < NUM_LASER_MAX; ++i)
+  {
     QTableWidgetItem* value = this->Table->item(i, 2);
     int channel = value->data(Qt::EditRole).toInt();
     channel2index[channel] = i;
-    }
+  }
 
-  for(int c = 0; c < NUM_LASER_MAX; ++c)
-    {
-    bool checked = this->Settings->value(QString("VelodyneHDLPlugin/LaserSelectionDialog%1").arg(c),
-                                         QVariant::fromValue(true)).toBool();
+  for (int c = 0; c < NUM_LASER_MAX; ++c)
+  {
+    bool checked = this->Settings
+                     ->value(QString("VelodyneHDLPlugin/LaserSelectionDialog%1").arg(c),
+                       QVariant::fromValue(true))
+                     .toBool();
     int index = channel2index[c];
 
     QTableWidgetItem* item = this->Table->item(index, 0);
     item->setCheckState(checked ? Qt::Checked : Qt::Unchecked);
-    }
+  }
 
-  int sortingColumnId = this->Settings->value(QString("VelodyneHDLPlugin/LaserSelectionDialogSortingColumnId")).toInt();
-  Qt::SortOrder sortingColumnOrder = Qt::SortOrder(this->Settings->
-                                       value(QString("VelodyneHDLPlugin/LaserSelectionDialogSortingColumnOrder")).toInt());
+  int sortingColumnId =
+    this->Settings->value(QString("VelodyneHDLPlugin/LaserSelectionDialogSortingColumnId")).toInt();
+  Qt::SortOrder sortingColumnOrder = Qt::SortOrder(
+    this->Settings->value(QString("VelodyneHDLPlugin/LaserSelectionDialogSortingColumnOrder"))
+      .toInt());
 
   if (sortingColumnId > 0)
-    {
+  {
     this->sortingColumnId = sortingColumnId;
     this->sortingColumnOrder = sortingColumnOrder;
-    }
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -117,7 +123,7 @@ void vvLaserSelectionDialog::pqInternal::setup()
 
   for (int i = 2; i < 13; i++)
   {
-  table->setColumnWidth(i, 128);
+    table->setColumnWidth(i, 128);
   }
 
   // Set checkable header
@@ -129,8 +135,8 @@ void vvLaserSelectionDialog::pqInternal::setup()
 
   numVisibleRows = NUM_LASER_MAX;
 
-  for(size_t i = 0; i < NUM_LASER_MAX; ++i)
-    {
+  for (size_t i = 0; i < NUM_LASER_MAX; ++i)
+  {
     table->insertRow(i);
 
     QTableWidgetItem* checkbox = new QTableWidgetItem();
@@ -139,23 +145,22 @@ void vvLaserSelectionDialog::pqInternal::setup()
     checkbox->setTextAlignment(Qt::AlignHCenter);
 
     for (int j = 2; j < 13; j++)
-      {
+    {
       QTableWidgetItem* values = new QTableWidgetItem;
       values->setData(Qt::EditRole, 0.0);
       values->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled);
 
       table->setItem(i, j, values);
-      }
-    
+    }
 
     QTableWidgetItem* channel = new QTableWidgetItem;
     channel->setData(Qt::EditRole, QVariant::fromValue(i));
     channel->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled);
 
     table->setItem(i, 0, checkbox);
-    
+
     table->setItem(i, 1, channel);
-    }
+  }
 
   QTableWidgetItem* leadBox = table->horizontalHeaderItem(0);
   leadBox->setFlags(Qt::ItemIsUserCheckable);
@@ -165,9 +170,9 @@ void vvLaserSelectionDialog::pqInternal::setup()
   this->Table = table;
 
   for (int i = 3; i < 13; i++)
-    {
-    this->Table->setColumnHidden(i,true);
-    }
+  {
+    this->Table->setColumnHidden(i, true);
+  }
   this->Table->horizontalHeader()->setStretchLastSection(false);
   this->Table->resizeColumnsToContents();
 
@@ -181,13 +186,13 @@ void vvLaserSelectionDialog::onToggleSelected()
 {
   // Update other selected items
   QList<QTableWidgetItem*> list = this->Internal->Table->selectedItems();
-  foreach(QTableWidgetItem* sitem, list)
+  foreach (QTableWidgetItem* sitem, list)
+  {
+    if (sitem->column() == 0)
     {
-    if(sitem->column() == 0)
-      {
       sitem->setCheckState(sitem->checkState() == Qt::Checked ? Qt::Unchecked : Qt::Checked);
-      }
     }
+  }
   laserSelectionChanged();
 }
 
@@ -201,95 +206,89 @@ void vvLaserSelectionDialog::onItemChanged(QTableWidgetItem* item)
   // all checkbox should pass
 
   // Store the current sorting state
-  int currentSortingColumn =
-    this->Internal->Table->horizontalHeader()->sortIndicatorSection();
-  Qt::SortOrder currentSortOrder =
-    this->Internal->Table->horizontalHeader()->sortIndicatorOrder();
+  int currentSortingColumn = this->Internal->Table->horizontalHeader()->sortIndicatorSection();
+  Qt::SortOrder currentSortOrder = this->Internal->Table->horizontalHeader()->sortIndicatorOrder();
 
   // Sort the table by channel
   this->Internal->Table->sortItems(1);
-  for(int i = 0; i < this->Internal->numVisibleRows; ++i)
-    {
+  for (int i = 0; i < this->Internal->numVisibleRows; ++i)
+  {
     // Check the current row state
     QTableWidgetItem* item = this->Internal->Table->item(i, 0);
     allChecked = allChecked && item->checkState() == Qt::Checked;
     noneChecked = noneChecked && item->checkState() == Qt::Unchecked;
-    }
+  }
   // Restore the current sorting state
   this->Internal->Table->sortItems(currentSortingColumn, currentSortOrder);
   Qt::CheckState state;
-  if(allChecked)
-    {
+  if (allChecked)
+  {
     state = Qt::Checked;
-    }
-  else if(noneChecked)
-    {
+  }
+  else if (noneChecked)
+  {
     state = Qt::Unchecked;
-    }
+  }
   else
-    {
+  {
     state = Qt::PartiallyChecked;
-    }
+  }
   this->Internal->EnableDisableAll->setCheckState(state);
-  if(state != Qt::PartiallyChecked)
-    {
+  if (state != Qt::PartiallyChecked)
+  {
     this->Internal->EnableDisableAll->setTristate(false);
-    }
+  }
 }
 
 //-----------------------------------------------------------------------------
 void vvLaserSelectionDialog::onEnableDisableAll(int state)
 {
-  if(state != Qt::PartiallyChecked)
-    {
+  if (state != Qt::PartiallyChecked)
+  {
     // enable all
     // Store current sorting state
-    int currentSortingColumn =
-      this->Internal->Table->horizontalHeader()->sortIndicatorSection();
+    int currentSortingColumn = this->Internal->Table->horizontalHeader()->sortIndicatorSection();
     Qt::SortOrder currentSortOrder =
       this->Internal->Table->horizontalHeader()->sortIndicatorOrder();
 
     // Sort the table by channel
     this->Internal->Table->sortItems(1);
-    for(int i = 0; i < this->Internal->numVisibleRows; ++i)
-      {
+    for (int i = 0; i < this->Internal->numVisibleRows; ++i)
+    {
       // Enable/Disable the checkboxes
       QTableWidgetItem* item = this->Internal->Table->item(i, 0);
       item->setCheckState(Qt::CheckState(state));
-      }
+    }
     // Restore the current sorting state
     this->Internal->Table->sortItems(currentSortingColumn, currentSortOrder);
-    }
+  }
 }
 
 //-----------------------------------------------------------------------------
-vvLaserSelectionDialog::vvLaserSelectionDialog(QWidget *p) : QDialog(p)
+vvLaserSelectionDialog::vvLaserSelectionDialog(QWidget* p)
+  : QDialog(p)
 {
   this->Internal = new pqInternal();
   this->Internal->setupUi(this);
   this->Internal->setup();
   this->Internal->restoreSettings();
 
-  QObject::connect(this->Internal->Table, SIGNAL(itemChanged(QTableWidgetItem*)),
-                   this, SLOT(onItemChanged(QTableWidgetItem*)));
+  QObject::connect(this->Internal->Table, SIGNAL(itemChanged(QTableWidgetItem*)), this,
+    SLOT(onItemChanged(QTableWidgetItem*)));
 
-  QObject::connect(this->Internal->Toggle, SIGNAL(clicked()),
-                   this, SLOT(onToggleSelected()));
+  QObject::connect(this->Internal->Toggle, SIGNAL(clicked()), this, SLOT(onToggleSelected()));
 
-  QObject::connect(this->Internal->EnableDisableAll, SIGNAL(stateChanged(int)),
-                   this, SLOT(onEnableDisableAll(int)));
+  QObject::connect(this->Internal->EnableDisableAll, SIGNAL(stateChanged(int)), this,
+    SLOT(onEnableDisableAll(int)));
 
-    QObject::connect(this->Internal->apply, SIGNAL(clicked()),
-                   this, SIGNAL(laserSelectionChanged()));
+  QObject::connect(this->Internal->apply, SIGNAL(clicked()), this, SIGNAL(laserSelectionChanged()));
 
-    QObject::connect(this->Internal->DisplayMoreCorrections, SIGNAL(toggled(bool)),
-                   this, SLOT(onDisplayMoreCorrectionsChanged()));
+  QObject::connect(this->Internal->DisplayMoreCorrections, SIGNAL(toggled(bool)), this,
+    SLOT(onDisplayMoreCorrectionsChanged()));
 
-  QObject::connect(this, SIGNAL(accepted()),
-    this, SLOT(saveSortIndicator()));
+  QObject::connect(this, SIGNAL(accepted()), this, SLOT(saveSortIndicator()));
 
-  QObject::connect(this, SIGNAL(rejected()),
-    this, SLOT(saveSortIndicator()));
+  QObject::connect(this, SIGNAL(rejected()), this, SLOT(saveSortIndicator()));
 
   this->Internal->Table->setSortingEnabled(true);
 }
@@ -298,39 +297,34 @@ vvLaserSelectionDialog::vvLaserSelectionDialog(QWidget *p) : QDialog(p)
 QVector<int> vvLaserSelectionDialog::getLaserSelectionSelector()
 {
   QVector<int> result(NUM_LASER_MAX, 1);
-  for(int i = 0; i < this->Internal->Table->rowCount(); ++i)
-    {
+  for (int i = 0; i < this->Internal->Table->rowCount(); ++i)
+  {
     QTableWidgetItem* value = this->Internal->Table->item(i, 1);
     int channel = value->data(Qt::EditRole).toInt();
     assert(channel < NUM_LASER_MAX && channel >= 0);
     QTableWidgetItem* item = this->Internal->Table->item(i, 0);
     result[channel] = (item->checkState() == Qt::Checked) && !this->Internal->Table->isRowHidden(i);
-    }
+  }
   return result;
 }
 
 //-----------------------------------------------------------------------------
 void vvLaserSelectionDialog::setLasersCorrections(const QVector<double>& verticalCorrection,
-                                                const QVector<double>& rotationalCorrection,
-                                                const QVector<double>& distanceCorrection,
-                                                const QVector<double>& distanceCorrectionX,
-                                                const QVector<double>& distanceCorrectionY,
-                                                const QVector<double>& verticalOffsetCorrection,
-                                                const QVector<double>& horizontalOffsetCorrection,
-                                                const QVector<double>& focalDistance,
-                                                const QVector<double>& focalSlope,
-                                                const QVector<double>& minIntensity,
-                                                const QVector<double>& maxIntensity,
-                                                int nchannels)
-                                                {
+  const QVector<double>& rotationalCorrection, const QVector<double>& distanceCorrection,
+  const QVector<double>& distanceCorrectionX, const QVector<double>& distanceCorrectionY,
+  const QVector<double>& verticalOffsetCorrection,
+  const QVector<double>& horizontalOffsetCorrection, const QVector<double>& focalDistance,
+  const QVector<double>& focalSlope, const QVector<double>& minIntensity,
+  const QVector<double>& maxIntensity, int nchannels)
+{
 
-  for(int i = 0; i < this->Internal->Table->rowCount(); ++i)
-    {
+  for (int i = 0; i < this->Internal->Table->rowCount(); ++i)
+  {
     QTableWidgetItem* value = this->Internal->Table->item(i, 1);
     int channel = value->data(Qt::EditRole).toInt();
 
     assert(channel < NUM_LASER_MAX && channel >= 0);
-    int col=2;
+    int col = 2;
     QTableWidgetItem* item = this->Internal->Table->item(i, col++);
     item->setData(Qt::EditRole, verticalCorrection[channel]);
 
@@ -363,48 +357,48 @@ void vvLaserSelectionDialog::setLasersCorrections(const QVector<double>& vertica
 
     item = this->Internal->Table->item(i, col++);
     item->setData(Qt::EditRole, maxIntensity[channel]);
-
-    }
+  }
 
   // Display the number of rows according to the number of channels
   if (nchannels != this->Internal->numVisibleRows)
-    {
+  {
     this->Internal->numVisibleRows = nchannels;
 
     // Sort the table by channel. It's important for hiding the right rows later
     this->Internal->Table->sortItems(1);
 
-    for(int i = 0; i < this->Internal->Table->rowCount(); ++i)
+    for (int i = 0; i < this->Internal->Table->rowCount(); ++i)
+    {
+      // Display the number of rows according to the number of channels
+      if (i < this->Internal->numVisibleRows)
       {
-        // Display the number of rows according to the number of channels
-        if (i < this->Internal->numVisibleRows)
-          {
-          this->Internal->Table->showRow(i);
-          }
-        // Hide the remaining rows
-        else
-          {
-          this->Internal->Table->hideRow(i);
-          }
+        this->Internal->Table->showRow(i);
+      }
+      // Hide the remaining rows
+      else
+      {
+        this->Internal->Table->hideRow(i);
       }
     }
+  }
   // Sort the table by prefered sort order, or by vertical correction by default
-  this->Internal->Table->sortItems(this->Internal->sortingColumnId, this->Internal->sortingColumnOrder);
+  this->Internal->Table->sortItems(
+    this->Internal->sortingColumnId, this->Internal->sortingColumnOrder);
   this->Internal->Table->resizeColumnsToContents();
-
 }
 
 //-----------------------------------------------------------------------------
 void vvLaserSelectionDialog::setLaserSelectionSelector(const QVector<int>& mask)
 {
-  for(int i = 0; i < this->Internal->Table->rowCount(); ++i)
-    {
+  for (int i = 0; i < this->Internal->Table->rowCount(); ++i)
+  {
     QTableWidgetItem* item = this->Internal->Table->item(i, 0);
     QTableWidgetItem* value = this->Internal->Table->item(i, 1);
     int channel = value->data(Qt::EditRole).toInt();
     assert(channel < NUM_LASER_MAX && channel >= 0);
-    item->setCheckState(mask[channel] && !this->Internal->Table->isRowHidden(i) ? Qt::Checked : Qt::Unchecked);
-    }
+    item->setCheckState(
+      mask[channel] && !this->Internal->Table->isRowHidden(i) ? Qt::Checked : Qt::Unchecked);
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -416,10 +410,10 @@ vvLaserSelectionDialog::~vvLaserSelectionDialog()
 //-----------------------------------------------------------------------------
 void vvLaserSelectionDialog::accept()
 {
-  if(this->Internal->saveCheckBox->isChecked())
-    {
+  if (this->Internal->saveCheckBox->isChecked())
+  {
     this->Internal->saveSettings();
-    }
+  }
   QDialog::accept();
 }
 
@@ -427,9 +421,9 @@ void vvLaserSelectionDialog::accept()
 void vvLaserSelectionDialog::onDisplayMoreCorrectionsChanged()
 {
   for (int i = 3; i < 13; i++)
-    {
-    this->Internal->Table->setColumnHidden(i,!this->Internal->DisplayMoreCorrections->isChecked());
-    }
+  {
+    this->Internal->Table->setColumnHidden(i, !this->Internal->DisplayMoreCorrections->isChecked());
+  }
   this->Internal->Table->resizeColumnsToContents();
 }
 
@@ -448,7 +442,9 @@ void vvLaserSelectionDialog::setDisplayMoreSelectionsChecked(bool state)
 //-----------------------------------------------------------------------------
 void vvLaserSelectionDialog::saveSortIndicator()
 {
-  this->Internal->sortingColumnId = this->Internal->Table->horizontalHeader()->sortIndicatorSection();
-  this->Internal->sortingColumnOrder = this->Internal->Table->horizontalHeader()->sortIndicatorOrder();
+  this->Internal->sortingColumnId =
+    this->Internal->Table->horizontalHeader()->sortIndicatorSection();
+  this->Internal->sortingColumnOrder =
+    this->Internal->Table->horizontalHeader()->sortIndicatorOrder();
   this->Internal->saveSettings();
 }
