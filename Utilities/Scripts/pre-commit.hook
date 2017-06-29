@@ -1,0 +1,23 @@
+#!/bin/sh
+#
+has_unstaged_changes=`git diff --ignore-submodules=all`
+[ ! -z "$has_unstaged_changes" ] && git stash --keep-index 
+./Utilities/Scripts/clang-format.bash --cached
+has_reformatted=`git diff --ignore-submodules=all`
+if [ ! -z "$has_reformatted" ]; then
+    echo "Your staged changes are ill-formated."
+    if [ -z "$has_unstaged_changes" ]; then
+        git add -u
+        echo " Reformated changes have been staged. Please review."
+        exit 1
+    else
+        git checkout . --quiet
+        git stash pop --index --quiet
+        echo " You have unstaged changes, so we cannot automatically reformat."
+        echo " Please manually run \"./Utilities/Scripts/clang-format.bash --cached\","
+        echo " and review the changes."
+        exit 1
+    fi
+fi
+[ ! -z "$has_unstaged_changes" ] && git stash pop --index
+exit 0
