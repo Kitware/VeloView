@@ -20,7 +20,7 @@
    All rights reserved.
 
    ParaView is a free software; you can redistribute it and/or modify it
-   under the terms of the ParaView license version 1.2. 
+   under the terms of the ParaView license version 1.2.
 
    See License_v1.2.txt for the full ParaView license.
    A copy of this license can be obtained by contacting
@@ -44,22 +44,22 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 =========================================================================*/
 #include "pqObjectPanel.h"
 
-#include <pqView.h>
-#include <pqPVApplicationCore.h>
 #include <pqAnimationManager.h>
 #include <pqAnimationScene.h>
+#include <pqPVApplicationCore.h>
+#include <pqView.h>
 
-#include <vtkSMSourceProxy.h>
-#include <vtkSMPropertyHelper.h>
 #include <vtkSMIntVectorProperty.h>
+#include <vtkSMPropertyHelper.h>
+#include <vtkSMSourceProxy.h>
 
-#include <QFileDialog>
-#include <QPushButton>
-#include <QVBoxLayout>
 #include <QCheckBox>
-#include <QSlider>
+#include <QFileDialog>
 #include <QLabel>
+#include <QPushButton>
+#include <QSlider>
 #include <QTimer>
+#include <QVBoxLayout>
 
 class pqVelodyneHDLSource : public pqObjectPanel
 {
@@ -67,8 +67,8 @@ class pqVelodyneHDLSource : public pqObjectPanel
   Q_OBJECT
 
 public:
-
-  pqVelodyneHDLSource(pqProxy* proxy, QWidget* p) : pqObjectPanel(proxy, p)
+  pqVelodyneHDLSource(pqProxy* proxy, QWidget* p)
+    : pqObjectPanel(proxy, p)
   {
     this->LastTime = 0.0;
 
@@ -77,7 +77,6 @@ public:
     this->Timer = new QTimer(this);
     this->Timer->setInterval(33);
     this->connect(this->Timer, SIGNAL(timeout()), SLOT(onPollSource()));
-
 
     QHBoxLayout* buttonLayout = new QHBoxLayout;
     this->PlayButton = new QPushButton("Play");
@@ -94,21 +93,18 @@ public:
     layout->addWidget(this->ChoosePacketFileButton);
     this->connect(this->ChoosePacketFileButton, SIGNAL(clicked()), SLOT(onChoosePacketFile()));
 
-
     this->CalibrationFileNameLabel = new QLabel("Calibration file: <none>");
     this->ChooseCalibrationFileButton = new QPushButton("Choose calibration file");
     layout->addWidget(this->CalibrationFileNameLabel);
     layout->addWidget(this->ChooseCalibrationFileButton);
-    this->connect(this->ChooseCalibrationFileButton, SIGNAL(clicked()), SLOT(onChooseCalibrationFile()));
-
+    this->connect(
+      this->ChooseCalibrationFileButton, SIGNAL(clicked()), SLOT(onChooseCalibrationFile()));
 
     this->OutputFileNameLabel = new QLabel("Output file: <none>");
     this->ChooseOutputFileButton = new QPushButton("Choose output file");
     layout->addWidget(this->OutputFileNameLabel);
     layout->addWidget(this->ChooseOutputFileButton);
     this->connect(this->ChooseOutputFileButton, SIGNAL(clicked()), SLOT(onChooseOutputFile()));
-
-
 
     /*
     layout->addWidget(new QLabel);
@@ -141,32 +137,26 @@ public:
 
 public slots:
 
-  void onPlay()
-  {
-    this->setStreaming(true);
-  }
+  void onPlay() { this->setStreaming(true); }
 
-  void onStop()
-  {
-    this->setStreaming(false);
-  }
+  void onStop() { this->setStreaming(false); }
 
   void setStreaming(bool checked)
   {
     vtkSMSourceProxy* sourceProxy = vtkSMSourceProxy::SafeDownCast(this->proxy());
     if (!sourceProxy)
-      {
+    {
       return;
-      }
+    }
 
     if (checked)
-      {
+    {
       sourceProxy->InvokeCommand("Start");
-      }
+    }
     else
-      {
+    {
       sourceProxy->InvokeCommand("Stop");
-      }
+    }
 
     this->PlayButton->setEnabled(!checked);
     this->StopButton->setEnabled(checked);
@@ -178,13 +168,13 @@ public slots:
   void onAutoRefreshChecked(bool checked)
   {
     if (checked)
-      {
+    {
       this->Timer->start();
-      }
+    }
     else
-      {
+    {
       this->Timer->stop();
-      }
+    }
   }
 
   void onSliderValueChanged(int sliderValue)
@@ -192,47 +182,42 @@ public slots:
     int timeoutMax = 5000;
     int timeout = timeoutMax * sliderValue / 200.0;
     this->Timer->setInterval(timeout);
-    this->AutoRefreshLabel->setText(QString("Auto refresh timeout: %0 s").arg(timeout/1000.0,  0, 'f', 2));
+    this->AutoRefreshLabel->setText(
+      QString("Auto refresh timeout: %0 s").arg(timeout / 1000.0, 0, 'f', 2));
   }
 
-  void onRefreshClicked()
-  {
-    this->onPollSource();
-  }
+  void onRefreshClicked() { this->onPollSource(); }
 
   void onChoosePacketFile()
   {
     QString selectedFiler("*.pcap");
-    QString fileName = QFileDialog::getOpenFileName(this, tr("Choose Packet File"),
-                            QString(""),
-                            tr("pcap (*.pcap)"), &selectedFiler);
+    QString fileName = QFileDialog::getOpenFileName(
+      this, tr("Choose Packet File"), QString(""), tr("pcap (*.pcap)"), &selectedFiler);
     this->setFileName(fileName);
   }
 
   void onChooseCalibrationFile()
   {
     QString selectedFiler("*.xml");
-    QString fileName = QFileDialog::getOpenFileName(this, tr("Choose Calibration File"),
-                            QString(""),
-                            tr("xml (*.xml)"), &selectedFiler);
+    QString fileName = QFileDialog::getOpenFileName(
+      this, tr("Choose Calibration File"), QString(""), tr("xml (*.xml)"), &selectedFiler);
     this->setCalibrationFileName(fileName);
   }
 
   void onChooseOutputFile()
   {
     QString selectedFiler("*.pcap");
-    QString fileName = QFileDialog::getSaveFileName(this, tr("Choose Output File"),
-                            QString(""),
-                            tr("pcap (*.pcap)"), &selectedFiler);
+    QString fileName = QFileDialog::getSaveFileName(
+      this, tr("Choose Output File"), QString(""), tr("pcap (*.pcap)"), &selectedFiler);
     this->setOutputFileName(fileName);
   }
 
   void setFileName(QString fileName)
   {
     if (!QFileInfo(fileName).isFile())
-      {
+    {
       return;
-      }
+    }
 
     this->FileNameLabel->setText(QString("Packet file: %1").arg(QFileInfo(fileName).fileName()));
 
@@ -244,11 +229,12 @@ public slots:
   void setCalibrationFileName(QString fileName)
   {
     if (!QFileInfo(fileName).isFile())
-      {
+    {
       return;
-      }
+    }
 
-    this->CalibrationFileNameLabel->setText(QString("Calibration file: %1").arg(QFileInfo(fileName).fileName()));
+    this->CalibrationFileNameLabel->setText(
+      QString("Calibration file: %1").arg(QFileInfo(fileName).fileName()));
 
     vtkSMSourceProxy* sourceProxy = vtkSMSourceProxy::SafeDownCast(this->proxy());
     vtkSMPropertyHelper(sourceProxy, "CorrectionsFile").Set(fileName.toAscii().data());
@@ -257,7 +243,8 @@ public slots:
 
   void setOutputFileName(QString fileName)
   {
-    this->OutputFileNameLabel->setText(QString("Output file: %1").arg(QFileInfo(fileName).fileName()));
+    this->OutputFileNameLabel->setText(
+      QString("Output file: %1").arg(QFileInfo(fileName).fileName()));
 
     vtkSMSourceProxy* sourceProxy = vtkSMSourceProxy::SafeDownCast(this->proxy());
     vtkSMPropertyHelper(sourceProxy, "OutputFile").Set(fileName.toAscii().data());
@@ -268,9 +255,9 @@ public slots:
   {
     vtkSMSourceProxy* sourceProxy = vtkSMSourceProxy::SafeDownCast(this->proxy());
     if (!sourceProxy)
-      {
+    {
       return;
-      }
+    }
 
     sourceProxy->InvokeCommand("Poll");
     sourceProxy->UpdatePipelineInformation();
@@ -278,29 +265,26 @@ public slots:
     double lastTime = 0;
     int nElements = vtkSMPropertyHelper(sourceProxy, "TimestepValues").GetNumberOfElements();
     if (nElements)
-      {
-      lastTime = vtkSMPropertyHelper(sourceProxy, "TimestepValues").GetAsDouble(nElements-1);
-      }
+    {
+      lastTime = vtkSMPropertyHelper(sourceProxy, "TimestepValues").GetAsDouble(nElements - 1);
+    }
 
     bool latestTimestepChanged = (lastTime != this->LastTime);
     this->LastTime = lastTime;
 
     if (latestTimestepChanged && this->snapToLatestTimeStep())
-      {
-      pqPVApplicationCore::instance()->animationManager()->
-        getActiveScene()->getProxy()->InvokeCommand("GoToLast");
-      }
+    {
+      pqPVApplicationCore::instance()
+        ->animationManager()
+        ->getActiveScene()
+        ->getProxy()
+        ->InvokeCommand("GoToLast");
+    }
   }
 
-
-
-  bool snapToLatestTimeStep()
-  {
-    return true;
-  }
+  bool snapToLatestTimeStep() { return true; }
 
 protected:
-
   QLabel* FileNameLabel;
   QLabel* CalibrationFileNameLabel;
   QLabel* OutputFileNameLabel;

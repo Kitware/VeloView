@@ -26,6 +26,7 @@ class VelodyneHDLPythonQT_EXPORT vvLoadDataReaction : public pqLoadDataReaction
 {
   Q_OBJECT
   typedef pqLoadDataReaction Superclass;
+
 public:
   vvLoadDataReaction(QAction* parent, bool separatePositionFile);
   virtual ~vvLoadDataReaction();
@@ -37,13 +38,13 @@ public:
 protected:
   /// Called when the action is triggered.
   virtual void onTriggered()
-    {
-    pqPipelineSource *source = vvLoadDataReaction::loadData();
+  {
+    pqPipelineSource* source = vvLoadDataReaction::loadData();
     if (source)
-      {
+    {
       emit this->loadedData(source);
-      }
     }
+  }
 private slots:
   void onDataLoaded(pqPipelineSource*);
 

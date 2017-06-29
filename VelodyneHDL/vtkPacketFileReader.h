@@ -37,51 +37,44 @@
 
 // Some versions of libpcap do not have PCAP_NETMASK_UNKNOWN
 #if !defined(PCAP_NETMASK_UNKNOWN)
-  #define PCAP_NETMASK_UNKNOWN 0xffffffff
+#define PCAP_NETMASK_UNKNOWN 0xffffffff
 #endif
 
 class vtkPacketFileReader
 {
 public:
+  vtkPacketFileReader() { this->PCAPFile = 0; }
 
-  vtkPacketFileReader()
-  {
-    this->PCAPFile = 0;
-  }
+  ~vtkPacketFileReader() { this->Close(); }
 
-  ~vtkPacketFileReader()
-  {
-    this->Close();
-  }
-
-  //This function is called to read a savefile .pcap
-  //1-Open a savefile in the tcpdump/libcap format to read packet
-  //2-A packet filter is then compile to convert an high level filtering 
+  // This function is called to read a savefile .pcap
+  // 1-Open a savefile in the tcpdump/libcap format to read packet
+  // 2-A packet filter is then compile to convert an high level filtering
   //  expression in a program that can be interpreted by the kernel-level filtering engine
-  //3- The compiled filter is then associate to the capture
+  // 3- The compiled filter is then associate to the capture
   bool Open(const std::string& filename)
   {
     char errbuff[PCAP_ERRBUF_SIZE];
-    pcap_t *pcapFile = pcap_open_offline(filename.c_str (), errbuff);
+    pcap_t* pcapFile = pcap_open_offline(filename.c_str(), errbuff);
     if (!pcapFile)
-      {
+    {
       this->LastError = errbuff;
       return false;
-      }
+    }
 
     struct bpf_program filter;
 
     if (pcap_compile(pcapFile, &filter, "udp", 0, PCAP_NETMASK_UNKNOWN) == -1)
-      {
+    {
       this->LastError = pcap_geterr(pcapFile);
       return false;
-      }
+    }
 
     if (pcap_setfilter(pcapFile, &filter) == -1)
-      {
+    {
       this->LastError = pcap_geterr(pcapFile);
       return false;
-      }
+    }
 
     this->FileName = filename;
     this->PCAPFile = pcapFile;
@@ -89,30 +82,21 @@ public:
     return true;
   }
 
-  bool IsOpen()
-  {
-    return (this->PCAPFile != 0);
-  }
+  bool IsOpen() { return (this->PCAPFile != 0); }
 
   void Close()
   {
     if (this->PCAPFile)
-      {
+    {
       pcap_close(this->PCAPFile);
       this->PCAPFile = 0;
       this->FileName.clear();
-      }
+    }
   }
 
-  const std::string& GetLastError()
-  {
-    return this->LastError;
-  }
+  const std::string& GetLastError() { return this->LastError; }
 
-  const std::string& GetFileName()
-  {
-    return this->FileName;
-  }
+  const std::string& GetFileName() { return this->FileName; }
 
   void GetFilePosition(fpos_t* position)
   {
@@ -134,28 +118,29 @@ public:
 #endif
   }
 
-  bool NextPacket(const unsigned char*& data, unsigned int& dataLength, double& timeSinceStart, pcap_pkthdr** headerReference=NULL)
+  bool NextPacket(const unsigned char*& data, unsigned int& dataLength, double& timeSinceStart,
+    pcap_pkthdr** headerReference = NULL)
   {
     if (!this->PCAPFile)
-      {
+    {
       return false;
-      }
+    }
 
-    struct pcap_pkthdr *header;
+    struct pcap_pkthdr* header;
     int returnValue = pcap_next_ex(this->PCAPFile, &header, &data);
     if (returnValue < 0)
-      {
+    {
       this->Close();
       return false;
-      }
+    }
 
     if (headerReference != NULL)
-      {
+    {
       *headerReference = header;
       dataLength = header->len;
       timeSinceStart = GetElapsedTime(header->ts, this->StartTime);
       return true;
-      }
+    }
 
     // The ethernet header is 42 bytes long; unnecessary
     const unsigned int bytesToSkip = 42;
@@ -166,7 +151,6 @@ public:
   }
 
 protected:
-
   double GetElapsedTime(const struct timeval& end, const struct timeval& start)
   {
     return (end.tv_sec - start.tv_sec) + (end.tv_usec - start.tv_usec) / 1000000.00;

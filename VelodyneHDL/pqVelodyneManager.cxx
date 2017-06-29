@@ -13,8 +13,8 @@
 // limitations under the License.
 #include "pqVelodyneManager.h"
 
-#include "vtkPVConfig.h" //  needed for PARAVIEW_VERSION
 #include "vtkLASFileWriter.h"
+#include "vtkPVConfig.h" //  needed for PARAVIEW_VERSION
 #include "vtkVelodyneHDLReader.h"
 #include "vtkVelodyneTransformInterpolator.h"
 #include "vvLoadDataReaction.h"
@@ -23,10 +23,10 @@
 #include <pqActiveObjects.h>
 #include <pqApplicationCore.h>
 #include <pqDataRepresentation.h>
+#include <pqPVApplicationCore.h>
 #include <pqPipelineSource.h>
 #include <pqPythonDialog.h>
 #include <pqPythonManager.h>
-#include <pqPVApplicationCore.h>
 #include <pqRenderView.h>
 #include <pqServer.h>
 #include <pqServerManagerModel.h>
@@ -48,8 +48,8 @@
 #include <QFileInfo>
 #include <QLabel>
 #include <QMainWindow>
-#include <QTimer>
 #include <QProgressDialog>
+#include <QTimer>
 
 //-----------------------------------------------------------------------------
 class pqVelodyneManager::pqInternal
@@ -60,18 +60,19 @@ class pqVelodyneManager::pqInternal
 QPointer<pqVelodyneManager> pqVelodyneManagerInstance = NULL;
 
 //-----------------------------------------------------------------------------
-pqVelodyneManager *pqVelodyneManager::instance()
+pqVelodyneManager* pqVelodyneManager::instance()
 {
   if (!pqVelodyneManagerInstance)
-    {
+  {
     pqVelodyneManagerInstance = new pqVelodyneManager(pqApplicationCore::instance());
-    }
+  }
 
   return pqVelodyneManagerInstance;
 }
 
 //-----------------------------------------------------------------------------
-pqVelodyneManager::pqVelodyneManager(QObject *p) : QObject(p)
+pqVelodyneManager::pqVelodyneManager(QObject* p)
+  : QObject(p)
 {
   this->Internal = new pqInternal;
 }
@@ -86,37 +87,44 @@ pqVelodyneManager::~pqVelodyneManager()
 void pqVelodyneManager::pythonStartup()
 {
   QStringList pythonDirs;
-  pythonDirs << QCoreApplication::applicationDirPath()  + "/../Python" // MacOSX application bundle
-             << QCoreApplication::applicationDirPath()  + "/../../../../lib" // Mac OS X Plugin build
-             << QCoreApplication::applicationDirPath()  + "/../../../../lib/site-packages" // MacOSX application bundle in build directory
-             << QCoreApplication::applicationDirPath()  + "/site-packages" // Windows NMake build directory and install tree
-             << QCoreApplication::applicationDirPath()  + "/../lib" // Linux build tree
-             << QCoreApplication::applicationDirPath()  + "/../lib/site-packages" // Linux build tree
-             << QCoreApplication::applicationDirPath()  + "/../lib/paraview-" + PARAVIEW_VERSION // Windows install tree
-             << QCoreApplication::applicationDirPath()  + "/../lib/paraview-" + PARAVIEW_VERSION + "/site-packages" // Windows install tree
-             << QCoreApplication::applicationDirPath()  + "/../lib/paraview-" + PARAVIEW_VERSION + "/site-packages/vtk" // Windows install tree
-             << QCoreApplication::applicationDirPath()  + "/../paraview-" + PARAVIEW_VERSION // Linux 4.3+ install tree
-             << QCoreApplication::applicationDirPath()  + "/../paraview-" + PARAVIEW_VERSION + "/site-packages" // Linux 4.3+ install tree
-             << QCoreApplication::applicationDirPath()  + "/../paraview-" + PARAVIEW_VERSION + "/site-packages/vtk"; // Linux 4.3+ install tree
+  pythonDirs << QCoreApplication::applicationDirPath() + "/../Python" // MacOSX application bundle
+             << QCoreApplication::applicationDirPath() + "/../../../../lib" // Mac OS X Plugin build
+             << QCoreApplication::applicationDirPath() +
+      "/../../../../lib/site-packages" // MacOSX application bundle in build directory
+             << QCoreApplication::applicationDirPath() +
+      "/site-packages" // Windows NMake build directory and install tree
+             << QCoreApplication::applicationDirPath() + "/../lib"               // Linux build tree
+             << QCoreApplication::applicationDirPath() + "/../lib/site-packages" // Linux build tree
+             << QCoreApplication::applicationDirPath() + "/../lib/paraview-" +
+      PARAVIEW_VERSION // Windows install tree
+             << QCoreApplication::applicationDirPath() + "/../lib/paraview-" + PARAVIEW_VERSION +
+      "/site-packages" // Windows install tree
+             << QCoreApplication::applicationDirPath() + "/../lib/paraview-" + PARAVIEW_VERSION +
+      "/site-packages/vtk" // Windows install tree
+             << QCoreApplication::applicationDirPath() + "/../paraview-" +
+      PARAVIEW_VERSION // Linux 4.3+ install tree
+             << QCoreApplication::applicationDirPath() + "/../paraview-" + PARAVIEW_VERSION +
+      "/site-packages" // Linux 4.3+ install tree
+             << QCoreApplication::applicationDirPath() + "/../paraview-" + PARAVIEW_VERSION +
+      "/site-packages/vtk"; // Linux 4.3+ install tree
 
   foreach (const QString& dirname, pythonDirs)
+  {
+    if (QDir(dirname).exists())
     {
-      if (QDir(dirname).exists())
-        {
-        vtkPythonInterpreter::PrependPythonPath(dirname.toAscii().data());
-        }
+      vtkPythonInterpreter::PrependPythonPath(dirname.toAscii().data());
     }
+  }
 
   vtkPythonInterpreter::RunSimpleString("import PythonQt");
   PythonQt::self()->addDecorators(new vvPythonQtDecorators());
   vtkPythonInterpreter::RunSimpleString("import veloview");
 
-  this->runPython(QString(
-      "import PythonQt\n"
-      "QtGui = PythonQt.QtGui\n"
-      "QtCore = PythonQt.QtCore\n"
-      "import veloview.applogic as vv\n"
-      "vv.start()\n"));
+  this->runPython(QString("import PythonQt\n"
+                          "QtGui = PythonQt.QtGui\n"
+                          "QtCore = PythonQt.QtCore\n"
+                          "import veloview.applogic as vv\n"
+                          "vv.start()\n"));
 
   pqSettings* const settings = pqApplicationCore::instance()->settings();
   const QVariant& gridVisible =
@@ -125,19 +133,19 @@ void pqVelodyneManager::pythonStartup()
 
   bool showDialogAtStartup = false;
   if (showDialogAtStartup)
-    {
+  {
     pqPythonManager* manager = pqPVApplicationCore::instance()->pythonManager();
     pqPythonDialog* dialog = manager->pythonShellDialog();
     dialog->show();
     dialog->raise();
     dialog->activateWindow();
-    }
+  }
 }
 
 //-----------------------------------------------------------------------------
 void pqVelodyneManager::runPython(const QString& statements)
 {
-  //printf("runPython(\"%s\")\n", qPrintable(statements));
+  // printf("runPython(\"%s\")\n", qPrintable(statements));
   pqPythonManager* manager = pqPVApplicationCore::instance()->pythonManager();
   pqPythonDialog* dialog = manager->pythonShellDialog();
   dialog->runString(statements);
@@ -147,9 +155,7 @@ void pqVelodyneManager::runPython(const QString& statements)
 void pqVelodyneManager::onEnableCrashAnalysis(bool crashAnalysisEnabled)
 {
   pqSettings* const Settings = pqApplicationCore::instance()->settings();
-  Settings->setValue(
-    "VelodyneHDLPlugin/MainWindow/EnableCrashAnalysis",
-    crashAnalysisEnabled);
+  Settings->setValue("VelodyneHDLPlugin/MainWindow/EnableCrashAnalysis", crashAnalysisEnabled);
 }
 
 //-----------------------------------------------------------------------------
@@ -160,18 +166,19 @@ void pqVelodyneManager::onResetCalibrationFile()
 }
 
 //-----------------------------------------------------------------------------
-void pqVelodyneManager::saveFramesToPCAP(vtkSMSourceProxy* proxy, int startFrame, int endFrame, const QString& filename)
+void pqVelodyneManager::saveFramesToPCAP(
+  vtkSMSourceProxy* proxy, int startFrame, int endFrame, const QString& filename)
 {
   if (!proxy)
-    {
+  {
     return;
-    }
+  }
 
   vtkVelodyneHDLReader* reader = vtkVelodyneHDLReader::SafeDownCast(proxy->GetClientSideObject());
   if (!reader)
-    {
+  {
     return;
-    }
+  }
 
   reader->Open();
   reader->DumpFrames(startFrame, endFrame, filename.toAscii().data());
@@ -179,90 +186,81 @@ void pqVelodyneManager::saveFramesToPCAP(vtkSMSourceProxy* proxy, int startFrame
 }
 
 //-----------------------------------------------------------------------------
-void pqVelodyneManager::saveFramesToLAS(
-  vtkVelodyneHDLReader* reader, vtkPolyData* position,
+void pqVelodyneManager::saveFramesToLAS(vtkVelodyneHDLReader* reader, vtkPolyData* position,
   int startFrame, int endFrame, const QString& filename, int positionMode)
 {
   if (!reader || (positionMode > 0 && !position))
-    {
+  {
     return;
-    }
+  }
 
   vtkLASFileWriter writer(qPrintable(filename));
 
   if (positionMode > 0) // not sensor-relative
-    {
+  {
     vtkVelodyneTransformInterpolator* const interp = reader->GetInterpolator();
     writer.SetTimeRange(interp->GetMinimumT(), interp->GetMaximumT());
 
     if (positionMode > 1) // Absolute geoposition
-      {
-      vtkDataArray* const zoneData =
-        position->GetFieldData()->GetArray("zone");
-      vtkDataArray* const eastingData =
-        position->GetPointData()->GetArray("easting");
-      vtkDataArray* const northingData =
-        position->GetPointData()->GetArray("northing");
-      vtkDataArray* const heightData =
-        position->GetPointData()->GetArray("height");
+    {
+      vtkDataArray* const zoneData = position->GetFieldData()->GetArray("zone");
+      vtkDataArray* const eastingData = position->GetPointData()->GetArray("easting");
+      vtkDataArray* const northingData = position->GetPointData()->GetArray("northing");
+      vtkDataArray* const heightData = position->GetPointData()->GetArray("height");
 
-      if (zoneData && zoneData->GetNumberOfTuples() &&
-          eastingData && eastingData->GetNumberOfTuples() &&
-          northingData && northingData->GetNumberOfTuples() &&
-          heightData && heightData->GetNumberOfTuples())
-        {
+      if (zoneData && zoneData->GetNumberOfTuples() && eastingData &&
+        eastingData->GetNumberOfTuples() && northingData && northingData->GetNumberOfTuples() &&
+        heightData && heightData->GetNumberOfTuples())
+      {
         const int gcs = // should in some cases use 32700?
           32600 + static_cast<int>(zoneData->GetComponent(0, 0));
 
         if (positionMode == 3) // Absolute lat/lon
-          {
+        {
           writer.SetGeoConversion(gcs, 4326); // ...or 32700?
-          writer.SetPrecision(1e-8); // about 1 mm
-          }
-
-        writer.SetOrigin(gcs,
-                         eastingData->GetComponent(0, 0),
-                         northingData->GetComponent(0, 0),
-                         heightData->GetComponent(0, 0));
+          writer.SetPrecision(1e-8);          // about 1 mm
         }
+
+        writer.SetOrigin(gcs, eastingData->GetComponent(0, 0), northingData->GetComponent(0, 0),
+          heightData->GetComponent(0, 0));
       }
     }
+  }
 
-  QProgressDialog progress("Exporting LAS...", "Abort Export",
-                           startFrame, startFrame + (endFrame - startFrame)*2,
-                           getMainWindow());
+  QProgressDialog progress("Exporting LAS...", "Abort Export", startFrame,
+    startFrame + (endFrame - startFrame) * 2, getMainWindow());
   progress.setWindowModality(Qt::WindowModal);
 
   reader->Open();
   for (int frame = startFrame; frame <= endFrame; ++frame)
-    {
+  {
     progress.setValue(frame);
 
-    if(progress.wasCanceled())
-      {
+    if (progress.wasCanceled())
+    {
       reader->Close();
       return;
-      }
+    }
 
     const vtkSmartPointer<vtkPolyData>& data = reader->GetFrame(frame);
     writer.UpdateMetaData(data.GetPointer());
-    }
+  }
 
   writer.FlushMetaData();
 
   for (int frame = startFrame; frame <= endFrame; ++frame)
-    {
+  {
     progress.setValue(endFrame + (frame - startFrame));
 
-    if(progress.wasCanceled())
-      {
+    if (progress.wasCanceled())
+    {
       reader->Close();
       return;
-      }
+    }
 
     const vtkSmartPointer<vtkPolyData>& data = reader->GetFrame(frame);
     writer.WriteFrame(data.GetPointer());
-    }
+  }
 
   reader->Close();
 }
@@ -274,22 +272,20 @@ void pqVelodyneManager::setup()
 }
 
 //-----------------------------------------------------------------------------
-void pqVelodyneManager::openData(
-  const QString& filename, const QString& positionFilename)
+void pqVelodyneManager::openData(const QString& filename, const QString& positionFilename)
 {
   if (!positionFilename.isEmpty())
-    {
-    this->runPython(
-      QString("vv.openPCAP('%1', '%2')\n").arg(filename, positionFilename));
-    }
+  {
+    this->runPython(QString("vv.openPCAP('%1', '%2')\n").arg(filename, positionFilename));
+  }
   else if (QFileInfo(filename).suffix() == "pcap")
-    {
+  {
     this->runPython(QString("vv.openPCAP('%1')\n").arg(filename));
-    }
+  }
   else
-    {
+  {
     this->runPython(QString("vv.openData('%1')\n").arg(filename));
-    }
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -299,13 +295,13 @@ void pqVelodyneManager::onMeasurementGrid(bool gridVisible)
   settings->setValue("VelodyneHDLPlugin/MeasurementGrid/Visibility", gridVisible);
 
   if (gridVisible)
-    {
+  {
     this->runPython("vv.showMeasurementGrid()\n");
-    }
+  }
   else
-    {
+  {
     this->runPython("vv.hideMeasurementGrid()\n");
-    }
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -315,23 +311,23 @@ void pqVelodyneManager::onOpenSensor()
 }
 
 //-----------------------------------------------------------------------------
-pqServer *pqVelodyneManager::getActiveServer()
+pqServer* pqVelodyneManager::getActiveServer()
 {
-  pqApplicationCore *app = pqApplicationCore::instance();
-  pqServerManagerModel *smModel = app->getServerManagerModel();
-  pqServer *server = smModel->getItemAtIndex<pqServer*>(0);
+  pqApplicationCore* app = pqApplicationCore::instance();
+  pqServerManagerModel* smModel = app->getServerManagerModel();
+  pqServer* server = smModel->getItemAtIndex<pqServer*>(0);
   return server;
 }
 
 //-----------------------------------------------------------------------------
-QWidget *pqVelodyneManager::getMainWindow()
+QWidget* pqVelodyneManager::getMainWindow()
 {
-  foreach(QWidget *topWidget, QApplication::topLevelWidgets())
-    {
+  foreach (QWidget* topWidget, QApplication::topLevelWidgets())
+  {
     if (qobject_cast<QMainWindow*>(topWidget))
-      {
+    {
       return topWidget;
-      }
     }
+  }
   return NULL;
 }

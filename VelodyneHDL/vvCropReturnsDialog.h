@@ -29,7 +29,7 @@ class VelodyneHDLPlugin_EXPORT vvCropReturnsDialog : public QDialog
   Q_PROPERTY(QVector3D secondCorner READ secondCorner WRITE setSecondCorner)
 
 public:
-  vvCropReturnsDialog(QWidget *p=0);
+  vvCropReturnsDialog(QWidget* p = 0);
   virtual ~vvCropReturnsDialog();
 
   bool croppingEnabled() const;

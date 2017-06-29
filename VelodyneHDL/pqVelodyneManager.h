@@ -40,8 +40,7 @@ class VelodyneHDLPythonQT_EXPORT pqVelodyneManager : public QObject
   Q_OBJECT
 
 public:
-
-  static pqVelodyneManager *instance();
+  static pqVelodyneManager* instance();
 
   virtual ~pqVelodyneManager();
 
@@ -53,15 +52,14 @@ public:
 
   /// Convenience function for destroying a pipeline object and all of its
   /// consumers.
-  //static void destroyPipelineSourceAndConsumers(pqPipelineSource *source);
+  // static void destroyPipelineSourceAndConsumers(pqPipelineSource *source);
 
   /// Finds a pipeline source with the given SM XML name.  If there is more than
   /// one, the first is returned.
-  //static pqPipelineSource *findPipelineSource(const char *SMName);
+  // static pqPipelineSource *findPipelineSource(const char *SMName);
 
   void setSource(pqPipelineSource* source);
   pqPipelineSource* source();
-
 
   void setup();
 
@@ -69,14 +67,11 @@ public:
 
   void runPython(const QString& statements);
 
-  static void saveFramesToPCAP(vtkSMSourceProxy* proxy,
-                               int startFrame, int endFrame,
-                               const QString& filename);
+  static void saveFramesToPCAP(
+    vtkSMSourceProxy* proxy, int startFrame, int endFrame, const QString& filename);
 
-  static void saveFramesToLAS(vtkVelodyneHDLReader* reader,
-                              vtkPolyData* position,
-                              int startFrame, int endFrame,
-                              const QString& filename, int positionMode);
+  static void saveFramesToLAS(vtkVelodyneHDLReader* reader, vtkPolyData* position, int startFrame,
+    int endFrame, const QString& filename, int positionMode);
 
 public slots:
 
@@ -92,11 +87,10 @@ signals:
   void sourceCreated();
 
 private:
-
-  pqVelodyneManager(QObject *p);
+  pqVelodyneManager(QObject* p);
 
   class pqInternal;
-  pqInternal *Internal;
+  pqInternal* Internal;
 
   Q_DISABLE_COPY(pqVelodyneManager);
 };

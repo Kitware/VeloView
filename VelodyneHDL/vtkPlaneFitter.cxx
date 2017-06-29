@@ -28,13 +28,13 @@
 
 #include "vtkPlaneFitter.h"
 
+#include "vtkDoubleArray.h"
+#include "vtkNew.h"
 #include "vtkObjectFactory.h"
 #include "vtkPointSet.h"
 #include "vtkSmartPointer.h"
-#include "vtkDoubleArray.h"
 #include "vtkThreshold.h"
 #include "vtkUnstructuredGrid.h"
-#include "vtkNew.h"
 
 #include <Eigen/Dense>
 
@@ -58,10 +58,9 @@ void vtkPlaneFitter::PrintSelf(ostream& os, vtkIndent indent)
 }
 
 //-----------------------------------------------------------------------------
-void vtkPlaneFitter::PlaneFit(vtkPointSet* pts, double origin[3], double normal[3],
-                              double &minDist, double &maxDist, double &stdDev,
-                              double channelMean[32], double channelStdDev[32],
-                              vtkIdType channelNpts[32])
+void vtkPlaneFitter::PlaneFit(vtkPointSet* pts, double origin[3], double normal[3], double& minDist,
+  double& maxDist, double& stdDev, double channelMean[32], double channelStdDev[32],
+  vtkIdType channelNpts[32])
 {
   using namespace Eigen;
 
@@ -69,15 +68,14 @@ void vtkPlaneFitter::PlaneFit(vtkPointSet* pts, double origin[3], double normal[
   ptdata->DeepCopy(pts->GetPoints()->GetData());
 
   const vtkIdType n = ptdata->GetNumberOfTuples();
-  if(n < 1)
-    {
+  if (n < 1)
+  {
     return;
-    }
+  }
 
   assert(ptdata->GetNumberOfComponents() == 3);
   Map<MatrixXd> eigpointsraw(static_cast<double*>(ptdata->GetVoidPointer(0)),
-                             ptdata->GetNumberOfComponents(),
-                             ptdata->GetNumberOfTuples());
+    ptdata->GetNumberOfComponents(), ptdata->GetNumberOfTuples());
 
   MatrixXd eigpoints = eigpointsraw.transpose();
 
@@ -86,10 +84,10 @@ void vtkPlaneFitter::PlaneFit(vtkPointSet* pts, double origin[3], double normal[
   mean = eigpoints.colwise().sum() / n;
   assert(mean.size() == 3);
 
-  for(int i = 0; i < 3; ++i)
-    {
+  for (int i = 0; i < 3; ++i)
+  {
     origin[i] = mean[i];
-    }
+  }
 
   eigpoints.rowwise() -= mean.transpose();
 
@@ -99,10 +97,10 @@ void vtkPlaneFitter::PlaneFit(vtkPointSet* pts, double origin[3], double normal[
   assert(enormal.size() == 3);
   assert(std::fabs(enormal.norm() - 1.0) < 1.0e-8);
 
-  for(int i = 0; i < 3; ++i)
-    {
+  for (int i = 0; i < 3; ++i)
+  {
     normal[i] = enormal[i];
-    }
+  }
 
   VectorXd distances = eigpoints * enormal;
   assert(distances.size() == n);
@@ -110,12 +108,12 @@ void vtkPlaneFitter::PlaneFit(vtkPointSet* pts, double origin[3], double normal[
   minDist = distances.minCoeff();
   maxDist = distances.maxCoeff();
 
-  stdDev = std::sqrt(distances.squaredNorm() / (n-1));
+  stdDev = std::sqrt(distances.squaredNorm() / (n - 1));
 
-  for(int i = 0; i < 32; ++i)
-    {
+  for (int i = 0; i < 32; ++i)
+  {
     vtkNew<vtkThreshold> threshold;
-    threshold->ThresholdBetween(i,i);
+    threshold->ThresholdBetween(i, i);
     threshold->SetInputData(pts);
     threshold->SetInputArrayToProcess(0, 0, 0, vtkDataObject::FIELD_ASSOCIATION_POINTS, "laser_id");
     threshold->SetOutputPointsPrecision(vtkAlgorithm::DEFAULT_PRECISION);
@@ -123,23 +121,21 @@ void vtkPlaneFitter::PlaneFit(vtkPointSet* pts, double origin[3], double normal[
 
     channelNpts[i] = threshold->GetOutput()->GetNumberOfPoints();
 
-
     vtkSmartPointer<vtkDoubleArray> threshdata = vtkSmartPointer<vtkDoubleArray>::New();
     threshdata->DeepCopy(threshold->GetOutput()->GetPoints()->GetData());
 
     const vtkIdType n = threshdata->GetNumberOfTuples();
-    if(n < 2)
-      {
+    if (n < 2)
+    {
       channelMean[i] = 0.0;
       channelStdDev[i] = 0.0;
       continue;
-      }
+    }
 
     assert(threshdata->GetNumberOfComponents() == 3);
     assert(threshdata->GetNumberOfTuples() >= 2);
     Map<MatrixXd> channelraw(static_cast<double*>(threshdata->GetVoidPointer(0)),
-                             threshdata->GetNumberOfComponents(),
-                             threshdata->GetNumberOfTuples());
+      threshdata->GetNumberOfComponents(), threshdata->GetNumberOfTuples());
 
     MatrixXd channelpts = channelraw.transpose();
     channelpts.rowwise() -= mean.transpose();
@@ -147,10 +143,10 @@ void vtkPlaneFitter::PlaneFit(vtkPointSet* pts, double origin[3], double normal[
     VectorXd channelds = channelpts * enormal;
 
     double cmean = channelds.sum() / channelds.size();
-    double cstddev = std::sqrt((channelds.array() - cmean).matrix().squaredNorm() / (channelds.size()-1));
+    double cstddev =
+      std::sqrt((channelds.array() - cmean).matrix().squaredNorm() / (channelds.size() - 1));
 
     channelMean[i] = cmean;
     channelStdDev[i] = cstddev;
-    }
-
+  }
 }

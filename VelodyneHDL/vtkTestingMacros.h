@@ -15,14 +15,13 @@
 #ifndef VTK_TESTING_MACROS_H
 #define VTK_TESTING_MACROS_H
 
-#define ASSERT_EQUALS(X, Y)                                             \
-  if((X) != (Y))                                                        \
-    {                                                                   \
-    std::cerr << "For " << #X << " == " << #Y << std::endl;             \
-    std::cerr << "ERROR: " << (X) << " != " << (Y) << std::endl;        \
-    std::cerr << __FILE__ << " at " << __LINE__ << std::endl;           \
-    return 1;                                                           \
-    }                                                                   \
-
+#define ASSERT_EQUALS(X, Y)                                                                        \
+  if ((X) != (Y))                                                                                  \
+  {                                                                                                \
+    std::cerr << "For " << #X << " == " << #Y << std::endl;                                        \
+    std::cerr << "ERROR: " << (X) << " != " << (Y) << std::endl;                                   \
+    std::cerr << __FILE__ << " at " << __LINE__ << std::endl;                                      \
+    return 1;                                                                                      \
+  }
 
 #endif

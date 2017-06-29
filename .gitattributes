@@ -1,2 +1,4 @@
 Superbuild/Projects/patches/*.patch -text
 *.pdf binary
+*.h format.clang-format
+*.cxx format.clang-format

@@ -24,7 +24,7 @@ class VelodyneHDLPlugin_EXPORT vvCalibrationDialog : public QDialog
   Q_OBJECT
 
 public:
-  vvCalibrationDialog(QWidget *p=0);
+  vvCalibrationDialog(QWidget* p = 0);
   virtual ~vvCalibrationDialog();
 
   Q_INVOKABLE QString selectedCalibrationFile() const;

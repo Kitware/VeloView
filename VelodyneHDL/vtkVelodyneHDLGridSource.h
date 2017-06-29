@@ -38,7 +38,7 @@
 class VTK_EXPORT vtkVelodyneHDLGridSource : public vtkPolyDataAlgorithm
 {
 public:
-  static vtkVelodyneHDLGridSource *New();
+  static vtkVelodyneHDLGridSource* New();
   vtkTypeMacro(vtkVelodyneHDLGridSource, vtkPolyDataAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent);
 
@@ -63,17 +63,16 @@ public:
   vtkSetVector3Macro(Color, double);
   vtkGetVector3Macro(Color, double);
 
-  static vtkSmartPointer<vtkPolyData> CreateGrid(int gridNbTicks, double scale, double origin[3], double normal[3]);
+  static vtkSmartPointer<vtkPolyData> CreateGrid(
+    int gridNbTicks, double scale, double origin[3], double normal[3]);
 
 protected:
   vtkVelodyneHDLGridSource();
   ~vtkVelodyneHDLGridSource();
 
-  int RequestData(vtkInformation *,
-                  vtkInformationVector **,
-                  vtkInformationVector *);
+  int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
 
-  //width of the grid in number of square
+  // width of the grid in number of square
   int GridNbTicks;
   double Scale;
   double DistanceResolutionM;
@@ -83,9 +82,7 @@ protected:
   double Color[3];
 
 private:
-
   vtkVelodyneHDLGridSource(const vtkVelodyneHDLGridSource&);
-  void operator = (const vtkVelodyneHDLGridSource&);
-
+  void operator=(const vtkVelodyneHDLGridSource&);
 };
 #endif

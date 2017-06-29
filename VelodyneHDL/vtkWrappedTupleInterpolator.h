@@ -40,7 +40,7 @@ public:
   vtkTypeMacro(vtkWrappedTupleInterpolator, vtkTupleInterpolator);
   void PrintSelf(ostream& os, vtkIndent indent);
 
-  static vtkWrappedTupleInterpolator *New();
+  static vtkWrappedTupleInterpolator* New();
 
   void InterpolateTuple1(double t, double tuple[1]);
   void InterpolateTuple2(double t, double tuple[2]);
@@ -55,8 +55,8 @@ protected:
   virtual ~vtkWrappedTupleInterpolator();
 
 private:
-  vtkWrappedTupleInterpolator(const vtkWrappedTupleInterpolator&);  // Not implemented.
-  void operator=(const vtkWrappedTupleInterpolator&);  // Not implemented.
+  vtkWrappedTupleInterpolator(const vtkWrappedTupleInterpolator&); // Not implemented.
+  void operator=(const vtkWrappedTupleInterpolator&);              // Not implemented.
 };
 
 #endif

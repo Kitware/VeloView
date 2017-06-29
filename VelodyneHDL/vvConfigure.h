@@ -16,22 +16,21 @@
 
 #if defined(WIN32)
 
- #if defined(VelodyneHDLPlugin_EXPORTS)
-  #define VelodyneHDLPlugin_EXPORT __declspec( dllexport )
- #else
-  #define VelodyneHDLPlugin_EXPORT __declspec( dllimport )
- #endif
-
- #if defined(VelodyneHDLPythonQT_EXPORTS)
-  #define VelodyneHDLPythonQT_EXPORT __declspec( dllexport )
- #else
-  #define VelodyneHDLPythonQT_EXPORT __declspec( dllimport )
- #endif
-
+#if defined(VelodyneHDLPlugin_EXPORTS)
+#define VelodyneHDLPlugin_EXPORT __declspec(dllexport)
 #else
- #define VelodyneHDLPlugin_EXPORT
- #define VelodyneHDLPythonQT_EXPORT
+#define VelodyneHDLPlugin_EXPORT __declspec(dllimport)
 #endif
 
+#if defined(VelodyneHDLPythonQT_EXPORTS)
+#define VelodyneHDLPythonQT_EXPORT __declspec(dllexport)
+#else
+#define VelodyneHDLPythonQT_EXPORT __declspec(dllimport)
+#endif
+
+#else
+#define VelodyneHDLPlugin_EXPORT
+#define VelodyneHDLPythonQT_EXPORT
+#endif
 
 #endif // __vvConfigure_h

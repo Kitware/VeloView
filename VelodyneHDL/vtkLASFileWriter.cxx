@@ -41,23 +41,22 @@ projPJ CreateProj(int epsg)
 }
 
 //-----------------------------------------------------------------------------
-Eigen::Vector3d ConvertGcs(
-  Eigen::Vector3d p, projPJ inProj, projPJ outProj)
+Eigen::Vector3d ConvertGcs(Eigen::Vector3d p, projPJ inProj, projPJ outProj)
 {
   if (pj_is_latlong(inProj))
-    {
+  {
     p[0] *= DEG_TO_RAD;
     p[1] *= DEG_TO_RAD;
-    }
+  }
 
   double* const data = p.data();
   pj_transform(inProj, outProj, 1, 1, data + 0, data + 1, data + 2);
 
   if (pj_is_latlong(outProj))
-    {
+  {
     p[0] *= RAD_TO_DEG;
     p[1] *= RAD_TO_DEG;
-    }
+  }
 
   return p;
 }
@@ -80,9 +79,9 @@ PROJ* CreateProj(int utmZone, bool south)
   utmparams.push_back("+no_defs");
   utmparams.push_back(buffer);
   if (south)
-    {
+  {
     utmparams.push_back("+south");
-    }
+  }
 
   return proj_init(utmparams.size(), const_cast<char**>(&(utmparams[0])));
 }
@@ -106,7 +105,6 @@ Eigen::Vector3d InvertProj(Eigen::Vector3d in, PROJ* proj)
 }
 
 #endif
-
 }
 
 //-----------------------------------------------------------------------------
@@ -160,14 +158,13 @@ vtkLASFileWriter::vtkLASFileWriter(const char* filename)
 
   this->Internal->npoints = 0;
 
-  for(int i = 0; i < 3; ++i)
-    {
+  for (int i = 0; i < 3; ++i)
+  {
     this->Internal->MaxPt[i] = -std::numeric_limits<double>::max();
     this->Internal->MinPt[i] = std::numeric_limits<double>::max();
-    }
+  }
 
-  this->Internal->Stream.open(
-    filename, std::ios::out | std::ios::trunc | std::ios::binary);
+  this->Internal->Stream.open(filename, std::ios::out | std::ios::trunc | std::ios::binary);
 
   liblas::Header header;
   header.SetSoftwareId("VeloView");
@@ -199,27 +196,25 @@ void vtkLASFileWriter::SetTimeRange(double min, double max)
 }
 
 //-----------------------------------------------------------------------------
-void vtkLASFileWriter::SetOrigin(
-  int gcs, double easting, double northing, double height)
+void vtkLASFileWriter::SetOrigin(int gcs, double easting, double northing, double height)
 {
   // Set internal UTM offset
   Eigen::Vector3d origin(easting, northing, height);
   this->Internal->Origin = origin;
 
-  // Convert offset to output GCS, if a geoconversion is set up
+// Convert offset to output GCS, if a geoconversion is set up
 #ifdef PJ_VERSION // 4.8 or later
   if (this->Internal->OutProj)
-    {
-    origin =
-      ConvertGcs(origin, this->Internal->InProj, this->Internal->OutProj);
+  {
+    origin = ConvertGcs(origin, this->Internal->InProj, this->Internal->OutProj);
     gcs = this->Internal->OutGcs;
-    }
+  }
 #else
   if (this->Internal->Proj)
-    {
+  {
     origin = InvertProj(origin, this->Internal->Proj);
     gcs = this->Internal->OutGcs;
-    }
+  }
 #endif
 
   // Update header
@@ -228,22 +223,22 @@ void vtkLASFileWriter::SetOrigin(
   header.SetOffset(origin[0], origin[1], origin[2]);
 
   try
-    {
+  {
     liblas::SpatialReference srs;
     std::ostringstream ss;
     ss << "EPSG:" << gcs;
     srs.SetFromUserInput(ss.str());
 
     header.SetSRS(srs);
-    }
+  }
   catch (std::logic_error)
-    {
+  {
     std::cerr << "failed to set SRS (logic)" << std::endl;
-    }
+  }
   catch (std::runtime_error)
-    {
+  {
     std::cerr << "failed to set SRS" << std::endl;
-    }
+  }
 
   this->Internal->Writer->SetHeader(header);
   this->Internal->Writer->WriteHeader();
@@ -285,33 +280,30 @@ void vtkLASFileWriter::SetPrecision(double neTol, double hTol)
 void vtkLASFileWriter::WriteFrame(vtkPolyData* data)
 {
   vtkPoints* const points = data->GetPoints();
-  vtkDataArray* const intensityData =
-    data->GetPointData()->GetArray("intensity");
-  vtkDataArray* const laserIdData =
-    data->GetPointData()->GetArray("laser_id");
-  vtkDataArray* const timestampData =
-    data->GetPointData()->GetArray("timestamp");
+  vtkDataArray* const intensityData = data->GetPointData()->GetArray("intensity");
+  vtkDataArray* const laserIdData = data->GetPointData()->GetArray("laser_id");
+  vtkDataArray* const timestampData = data->GetPointData()->GetArray("timestamp");
 
   const vtkIdType numPoints = points->GetNumberOfPoints();
   for (vtkIdType n = 0; n < numPoints; ++n)
-    {
+  {
     const double time = timestampData->GetComponent(n, 0) * 1e-6;
     if (time >= this->Internal->MinTime && time <= this->Internal->MaxTime)
-      {
+    {
       Eigen::Vector3d pos;
       points->GetPoint(n, pos.data());
       pos += this->Internal->Origin;
 
 #ifdef PJ_VERSION // 4.8 or later
       if (this->Internal->OutProj)
-        {
+      {
         pos = ConvertGcs(pos, this->Internal->InProj, this->Internal->OutProj);
-        }
+      }
 #else
       if (this->Internal->Proj)
-        {
+      {
         pos = InvertProj(pos, this->Internal->Proj);
-        }
+      }
 #endif
 
       liblas::Point p(&this->Internal->Writer->GetHeader());
@@ -323,8 +315,8 @@ void vtkLASFileWriter::WriteFrame(vtkPolyData* data)
       p.SetTime(time);
 
       this->Internal->Writer->WritePoint(p);
-      }
     }
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -344,45 +336,43 @@ void vtkLASFileWriter::FlushMetaData()
 void vtkLASFileWriter::UpdateMetaData(vtkPolyData* data)
 {
   vtkPoints* const points = data->GetPoints();
-  vtkDataArray* const timestampData =
-    data->GetPointData()->GetArray("timestamp");
+  vtkDataArray* const timestampData = data->GetPointData()->GetArray("timestamp");
 
   const vtkIdType numPoints = points->GetNumberOfPoints();
   for (vtkIdType n = 0; n < numPoints; ++n)
-    {
+  {
     const double time = timestampData->GetComponent(n, 0) * 1e-6;
     if (time >= this->Internal->MinTime && time <= this->Internal->MaxTime)
-      {
+    {
       Eigen::Vector3d pos;
       points->GetPoint(n, pos.data());
       pos += this->Internal->Origin;
 
 #ifdef PJ_VERSION // 4.8 or later
       if (this->Internal->OutProj)
-        {
+      {
         pos = ConvertGcs(pos, this->Internal->InProj, this->Internal->OutProj);
-        }
+      }
 #else
       if (this->Internal->Proj)
-        {
+      {
         pos = InvertProj(pos, this->Internal->Proj);
-        }
+      }
 #endif
 
       this->Internal->npoints++;
 
-      for(int i = 0; i < 3; ++i)
+      for (int i = 0; i < 3; ++i)
+      {
+        if (pos[i] > this->Internal->MaxPt[i])
         {
-        if(pos[i] > this->Internal->MaxPt[i])
-          {
           this->Internal->MaxPt[i] = pos[i];
-          }
-        if(pos[i] < this->Internal->MinPt[i])
-          {
-          this->Internal->MinPt[i] = pos[i];
-          }
         }
-
+        if (pos[i] < this->Internal->MinPt[i])
+        {
+          this->Internal->MinPt[i] = pos[i];
+        }
       }
     }
+  }
 }

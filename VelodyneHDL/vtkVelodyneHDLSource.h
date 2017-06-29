@@ -45,7 +45,7 @@ public:
   vtkTypeMacro(vtkVelodyneHDLSource, vtkPolyDataAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent);
 
-  static vtkVelodyneHDLSource *New();
+  static vtkVelodyneHDLSource* New();
 
   void Poll();
 
@@ -94,17 +94,12 @@ public:
   void SetCropRegion(double[6]);
   void SetCropRegion(double, double, double, double, double, double);
 
-  void GetLaserCorrections(
-    double verticalCorrection[HDL_MAX_NUM_LASERS],
-    double rotationalCorrection[HDL_MAX_NUM_LASERS],
-    double distanceCorrection[HDL_MAX_NUM_LASERS],
-    double distanceCorrectionX[HDL_MAX_NUM_LASERS],
-    double distanceCorrectionY[HDL_MAX_NUM_LASERS],
+  void GetLaserCorrections(double verticalCorrection[HDL_MAX_NUM_LASERS],
+    double rotationalCorrection[HDL_MAX_NUM_LASERS], double distanceCorrection[HDL_MAX_NUM_LASERS],
+    double distanceCorrectionX[HDL_MAX_NUM_LASERS], double distanceCorrectionY[HDL_MAX_NUM_LASERS],
     double verticalOffsetCorrection[HDL_MAX_NUM_LASERS],
-    double horizontalOffsetCorrection[HDL_MAX_NUM_LASERS],
-    double focalDistance[HDL_MAX_NUM_LASERS],
-    double focalSlope[HDL_MAX_NUM_LASERS],
-    double minIntensity[HDL_MAX_NUM_LASERS],
+    double horizontalOffsetCorrection[HDL_MAX_NUM_LASERS], double focalDistance[HDL_MAX_NUM_LASERS],
+    double focalSlope[HDL_MAX_NUM_LASERS], double minIntensity[HDL_MAX_NUM_LASERS],
     double maxIntensity[HDL_MAX_NUM_LASERS]);
 
   unsigned int GetDualReturnFilter() const;
@@ -135,36 +130,32 @@ public:
   void UnloadDatasets();
 
 protected:
+  virtual int RequestInformation(vtkInformation* request, vtkInformationVector** inputVector,
+    vtkInformationVector* outputVector);
 
-
-  virtual int RequestInformation(vtkInformation *request,
-                         vtkInformationVector **inputVector,
-                         vtkInformationVector *outputVector);
-
-  virtual int RequestData(vtkInformation *request,
-                          vtkInformationVector **inputVector,
-                          vtkInformationVector *outputVector);
+  virtual int RequestData(vtkInformation* request, vtkInformationVector** inputVector,
+    vtkInformationVector* outputVector);
 
   vtkVelodyneHDLSource();
   virtual ~vtkVelodyneHDLSource();
 
-  int LIDARPort; /*!< The port to receive LIDAR information. Default is 2368 */
-  int GPSPort; /*!< The port to receive GPS information. Default is 8308 */
-  int ForwardedLIDARPort;  /*!< The port to send LIDAR forwarded packets*/
-  int ForwardedGPSPort; /*!< The port to send GPS forwarded packets*/
+  int LIDARPort;                  /*!< The port to receive LIDAR information. Default is 2368 */
+  int GPSPort;                    /*!< The port to receive GPS information. Default is 8308 */
+  int ForwardedLIDARPort;         /*!< The port to send LIDAR forwarded packets*/
+  int ForwardedGPSPort;           /*!< The port to send GPS forwarded packets*/
   std::string ForwardedIpAddress; /*!< The ip to send forwarded packets*/
-  bool isForwarding; /*!< Allowing the forwarding of the packets*/
+  bool isForwarding;              /*!< Allowing the forwarding of the packets*/
   bool isCrashAnalysing;
   std::string PacketFile;
   std::string OutputFile;
   std::string CorrectionsFile;
 
 private:
-  vtkVelodyneHDLSource(const vtkVelodyneHDLSource&);  // Not implemented.
-  void operator=(const vtkVelodyneHDLSource&);  // Not implemented.
+  vtkVelodyneHDLSource(const vtkVelodyneHDLSource&); // Not implemented.
+  void operator=(const vtkVelodyneHDLSource&);       // Not implemented.
 
   class vtkInternal;
-  vtkInternal * Internal;
+  vtkInternal* Internal;
 };
 
 #endif

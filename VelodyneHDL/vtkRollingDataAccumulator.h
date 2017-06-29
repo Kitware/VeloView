@@ -16,14 +16,17 @@
 
 #ifndef VTKROLLINGDATAACCUMULATOR_H
 #define VTKROLLINGDATAACCUMULATOR_H
-struct TypeValueDataPair{
+struct TypeValueDataPair
+{
   unsigned int timestamp;
   unsigned char dataType;
   unsigned char dataValue;
-  TypeValueDataPair(unsigned int timestamp_,
-                    unsigned char dataType_,
-                    unsigned char dataValue_) :
-    timestamp(timestamp_),dataType(dataType_), dataValue(dataValue_) { }
+  TypeValueDataPair(unsigned int timestamp_, unsigned char dataType_, unsigned char dataValue_)
+    : timestamp(timestamp_)
+    , dataType(dataType_)
+    , dataValue(dataValue_)
+  {
+  }
 };
 
 class vtkRollingDataAccumulator
@@ -34,24 +37,24 @@ public:
   void setTotalExpectedDataLength();
   bool areRollingDataReady() const;
   bool getDSRCalibrationData() const;
-  bool getGoodSequenceId(int & idRollingSequence) const;
-  bool getAlignedRollingData(std::vector<unsigned char> & data) const;
+  bool getGoodSequenceId(int& idRollingSequence) const;
+  bool getAlignedRollingData(std::vector<unsigned char>& data) const;
   void clear();
   vtkRollingDataAccumulator();
   ~vtkRollingDataAccumulator();
 
   template <typename T>
-  T fromTwoLittleEndianBytes(unsigned char b1,unsigned char b2)
-    {
-    return static_cast<T>( (static_cast<unsigned short>(b2) << 8)
-                                      + static_cast<unsigned short>(b1));
-    }
+  T fromTwoLittleEndianBytes(unsigned char b1, unsigned char b2)
+  {
+    return static_cast<T>((static_cast<unsigned short>(b2) << 8) + static_cast<unsigned short>(b1));
+  }
 
 protected:
   std::vector<TypeValueDataPair> accumulatedData;
   std::vector<unsigned char> accumulatedDataType;
   std::vector<unsigned char> accumulatedValue;
   std::vector<long> beginPosition;
+
 private:
   static const long expectedLength = 4160;
   static const int numberOfRoundNeeded = 3;

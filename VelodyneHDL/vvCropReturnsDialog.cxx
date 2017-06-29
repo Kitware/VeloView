@@ -29,7 +29,10 @@
 class vvCropReturnsDialog::pqInternal : public Ui::vvCropReturnsDialog
 {
 public:
-  pqInternal() : Settings(pqApplicationCore::instance()->settings()) {}
+  pqInternal()
+    : Settings(pqApplicationCore::instance()->settings())
+  {
+  }
 
   void saveSettings();
   void restoreSettings();
@@ -44,7 +47,6 @@ public:
   void onYSliderChanged(double vmin, double vmax);
   void onZSliderChanged(double vmin, double vmax);
   void updateRangeValues(bool isSliderMode);
-
 
   ctkDoubleRangeSlider XDoubleRangeSlider;
   ctkDoubleRangeSlider YDoubleRangeSlider;
@@ -65,90 +67,72 @@ public:
 void vvCropReturnsDialog::pqInternal::saveSettings()
 {
   this->Settings->setValue(
-    "VelodyneHDLPlugin/CropReturnsDialog/EnableCropping",
-    this->CropGroupBox->isChecked());
+    "VelodyneHDLPlugin/CropReturnsDialog/EnableCropping", this->CropGroupBox->isChecked());
 
   this->Settings->setValue(
-    "VelodyneHDLPlugin/CropReturnsDialog/CropOutside",
-    this->CropOutsideCheckBox->isChecked());
+    "VelodyneHDLPlugin/CropReturnsDialog/CropOutside", this->CropOutsideCheckBox->isChecked());
 
-  this->Settings->setValue(
-    "VelodyneHDLPlugin/CropReturnsDialog/FirstCornerX",
-    xRange[0]);
-  this->Settings->setValue(
-    "VelodyneHDLPlugin/CropReturnsDialog/FirstCornerY",
-    yRange[0]);
-  this->Settings->setValue(
-    "VelodyneHDLPlugin/CropReturnsDialog/FirstCornerZ",
-    zRange[0]);
-  this->Settings->setValue(
-    "VelodyneHDLPlugin/CropReturnsDialog/SecondCornerX",
-    xRange[1]);
-  this->Settings->setValue(
-    "VelodyneHDLPlugin/CropReturnsDialog/SecondCornerY",
-    yRange[1]);
-  this->Settings->setValue(
-    "VelodyneHDLPlugin/CropReturnsDialog/SecondCornerZ",
-    zRange[1]);
+  this->Settings->setValue("VelodyneHDLPlugin/CropReturnsDialog/FirstCornerX", xRange[0]);
+  this->Settings->setValue("VelodyneHDLPlugin/CropReturnsDialog/FirstCornerY", yRange[0]);
+  this->Settings->setValue("VelodyneHDLPlugin/CropReturnsDialog/FirstCornerZ", zRange[0]);
+  this->Settings->setValue("VelodyneHDLPlugin/CropReturnsDialog/SecondCornerX", xRange[1]);
+  this->Settings->setValue("VelodyneHDLPlugin/CropReturnsDialog/SecondCornerY", yRange[1]);
+  this->Settings->setValue("VelodyneHDLPlugin/CropReturnsDialog/SecondCornerZ", zRange[1]);
 }
 
 //-----------------------------------------------------------------------------
 void vvCropReturnsDialog::pqInternal::restoreSettings()
 {
   this->sphericalRadioButton->setChecked(
-    this->Settings->value(
-      "VelodyneHDLPlugin/CropReturnsDialog/sphericalRadioButton",
-      false).toBool());
+    this->Settings->value("VelodyneHDLPlugin/CropReturnsDialog/sphericalRadioButton", false)
+      .toBool());
 
   this->cartesianRadioButton->setChecked(
-    this->Settings->value(
-      "VelodyneHDLPlugin/CropReturnsDialog/cartesianRadioButton",
-      false).toBool());
+    this->Settings->value("VelodyneHDLPlugin/CropReturnsDialog/cartesianRadioButton", false)
+      .toBool());
 
-  if(this->cartesianRadioButton->isChecked())
-    {
+  if (this->cartesianRadioButton->isChecked())
+  {
     this->SetCartesianSettings();
-    }
+  }
 
-  if(this->sphericalRadioButton->isChecked())
-    {
+  if (this->sphericalRadioButton->isChecked())
+  {
     this->SetSphericalSettings();
-    }
+  }
 
   this->CropGroupBox->setChecked(
-    this->Settings->value(
-      "VelodyneHDLPlugin/CropReturnsDialog/EnableCropping",
-      false).toBool());
+    this->Settings->value("VelodyneHDLPlugin/CropReturnsDialog/EnableCropping", false).toBool());
 
-  this->CropOutsideCheckBox->setChecked(
-    this->Settings->value(
-      "VelodyneHDLPlugin/CropReturnsDialog/CropOutside",
-      this->CropOutsideCheckBox->isChecked()).toBool());
+  this->CropOutsideCheckBox->setChecked(this->Settings
+                                          ->value("VelodyneHDLPlugin/CropReturnsDialog/CropOutside",
+                                            this->CropOutsideCheckBox->isChecked())
+                                          .toBool());
 
-  this->X1SpinBox->setValue (
-    this->Settings->value(
-      "VelodyneHDLPlugin/CropReturnsDialog/FirstCornerX",
-      this->X1SpinBox->value()).toDouble());
-  this->Y1SpinBox->setValue (
-    this->Settings->value(
-      "VelodyneHDLPlugin/CropReturnsDialog/FirstCornerY",
-      this->Y1SpinBox->value()).toDouble());
-  this->Z1SpinBox->setValue (
-    this->Settings->value(
-      "VelodyneHDLPlugin/CropReturnsDialog/FirstCornerZ",
-      this->Z1SpinBox->value()).toDouble());
-  this->X2SpinBox->setValue (
-    this->Settings->value(
-      "VelodyneHDLPlugin/CropReturnsDialog/SecondCornerX",
-      this->X2SpinBox->value()).toDouble());
-  this->Y2SpinBox->setValue (
-    this->Settings->value(
-      "VelodyneHDLPlugin/CropReturnsDialog/SecondCornerY",
-      this->Y2SpinBox->value()).toDouble());
-  this->Z2SpinBox->setValue (
-    this->Settings->value(
-      "VelodyneHDLPlugin/CropReturnsDialog/SecondCornerZ",
-      this->Z2SpinBox->value()).toDouble());
+  this->X1SpinBox->setValue(
+    this->Settings
+      ->value("VelodyneHDLPlugin/CropReturnsDialog/FirstCornerX", this->X1SpinBox->value())
+      .toDouble());
+  this->Y1SpinBox->setValue(
+    this->Settings
+      ->value("VelodyneHDLPlugin/CropReturnsDialog/FirstCornerY", this->Y1SpinBox->value())
+      .toDouble());
+  this->Z1SpinBox->setValue(
+    this->Settings
+      ->value("VelodyneHDLPlugin/CropReturnsDialog/FirstCornerZ", this->Z1SpinBox->value())
+      .toDouble());
+  this->X2SpinBox->setValue(
+    this->Settings
+      ->value("VelodyneHDLPlugin/CropReturnsDialog/SecondCornerX", this->X2SpinBox->value())
+      .toDouble());
+  this->Y2SpinBox->setValue(
+    this->Settings
+      ->value("VelodyneHDLPlugin/CropReturnsDialog/SecondCornerY", this->Y2SpinBox->value())
+      .toDouble());
+  this->Z2SpinBox->setValue(
+    this->Settings
+      ->value("VelodyneHDLPlugin/CropReturnsDialog/SecondCornerZ", this->Z2SpinBox->value())
+      .toDouble());
 
   xRange[0] = this->X1SpinBox->value();
   xRange[1] = this->X2SpinBox->value();
@@ -173,26 +157,38 @@ void vvCropReturnsDialog::pqInternal::restoreSettings()
 }
 
 //-----------------------------------------------------------------------------
-vvCropReturnsDialog::vvCropReturnsDialog(QWidget *p)
-  : QDialog(p), Internal(new pqInternal)
+vvCropReturnsDialog::vvCropReturnsDialog(QWidget* p)
+  : QDialog(p)
+  , Internal(new pqInternal)
 {
   this->Internal->setupUi(this);
 
   this->Internal->InitializeDoubleRangeSlider();
 
-  connect(this->Internal->X1SpinBox,SIGNAL(valueChanged(double)), this,SLOT(onSpinBoxChanged(double)));
-  connect(this->Internal->X2SpinBox,SIGNAL(valueChanged(double)), this,SLOT(onSpinBoxChanged(double)));
-  connect(this->Internal->Y1SpinBox,SIGNAL(valueChanged(double)), this,SLOT(onSpinBoxChanged(double)));
-  connect(this->Internal->Y2SpinBox,SIGNAL(valueChanged(double)), this,SLOT(onSpinBoxChanged(double)));
-  connect(this->Internal->Z1SpinBox,SIGNAL(valueChanged(double)), this,SLOT(onSpinBoxChanged(double)));
-  connect(this->Internal->Z2SpinBox,SIGNAL(valueChanged(double)), this,SLOT(onSpinBoxChanged(double)));
-  connect(&this->Internal->XDoubleRangeSlider,SIGNAL(positionsChanged(double,double)),this,SLOT(onXSliderChanged(double,double)));
-  connect(&this->Internal->YDoubleRangeSlider,SIGNAL(positionsChanged(double,double)),this,SLOT(onYSliderChanged(double,double)));
-  connect(&this->Internal->ZDoubleRangeSlider,SIGNAL(positionsChanged(double,double)),this,SLOT(onZSliderChanged(double,double)));
-  connect(this->Internal->sliderModeCheckBox,SIGNAL(clicked()),this,SLOT(onSliderBoxToggled()));
-  connect(this->Internal->noneRadioButton,SIGNAL(clicked()),this,SLOT(onNoneToggled()));
-  connect(this->Internal->cartesianRadioButton,SIGNAL(clicked()),this,SLOT(onCartesianToggled()));
-  connect(this->Internal->sphericalRadioButton,SIGNAL(clicked()),this,SLOT(onSphericalToggled()));
+  connect(
+    this->Internal->X1SpinBox, SIGNAL(valueChanged(double)), this, SLOT(onSpinBoxChanged(double)));
+  connect(
+    this->Internal->X2SpinBox, SIGNAL(valueChanged(double)), this, SLOT(onSpinBoxChanged(double)));
+  connect(
+    this->Internal->Y1SpinBox, SIGNAL(valueChanged(double)), this, SLOT(onSpinBoxChanged(double)));
+  connect(
+    this->Internal->Y2SpinBox, SIGNAL(valueChanged(double)), this, SLOT(onSpinBoxChanged(double)));
+  connect(
+    this->Internal->Z1SpinBox, SIGNAL(valueChanged(double)), this, SLOT(onSpinBoxChanged(double)));
+  connect(
+    this->Internal->Z2SpinBox, SIGNAL(valueChanged(double)), this, SLOT(onSpinBoxChanged(double)));
+  connect(&this->Internal->XDoubleRangeSlider, SIGNAL(positionsChanged(double, double)), this,
+    SLOT(onXSliderChanged(double, double)));
+  connect(&this->Internal->YDoubleRangeSlider, SIGNAL(positionsChanged(double, double)), this,
+    SLOT(onYSliderChanged(double, double)));
+  connect(&this->Internal->ZDoubleRangeSlider, SIGNAL(positionsChanged(double, double)), this,
+    SLOT(onZSliderChanged(double, double)));
+  connect(this->Internal->sliderModeCheckBox, SIGNAL(clicked()), this, SLOT(onSliderBoxToggled()));
+  connect(this->Internal->noneRadioButton, SIGNAL(clicked()), this, SLOT(onNoneToggled()));
+  connect(
+    this->Internal->cartesianRadioButton, SIGNAL(clicked()), this, SLOT(onCartesianToggled()));
+  connect(
+    this->Internal->sphericalRadioButton, SIGNAL(clicked()), this, SLOT(onSphericalToggled()));
   connect(this->Internal->CropGroupBox, SIGNAL(clicked()), this, SLOT(onCropGroupBoxToggled()));
 
   // Without configuration file, the cartesian mode is set by default
@@ -236,18 +232,15 @@ QVector3D vvCropReturnsDialog::firstCorner() const
   this->Internal->GetCropRegion(cropRegion);
 
   const pqInternal* const d = this->Internal.data();
-  if(this->Internal->sphericalRadioButton->isChecked())
-    {
-    return QVector3D(cropRegion[0],
-                     cropRegion[2],
-                     qMin(cropRegion[4], cropRegion[5]));
-    }
+  if (this->Internal->sphericalRadioButton->isChecked())
+  {
+    return QVector3D(cropRegion[0], cropRegion[2], qMin(cropRegion[4], cropRegion[5]));
+  }
   else
-    {
-    return QVector3D(qMin(cropRegion[0], cropRegion[1]),
-                     qMin(cropRegion[2], cropRegion[3]),
-                     qMin(cropRegion[4], cropRegion[5]));
-    }
+  {
+    return QVector3D(qMin(cropRegion[0], cropRegion[1]), qMin(cropRegion[2], cropRegion[3]),
+      qMin(cropRegion[4], cropRegion[5]));
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -257,18 +250,15 @@ QVector3D vvCropReturnsDialog::secondCorner() const
   this->Internal->GetCropRegion(cropRegion);
 
   const pqInternal* const d = this->Internal.data();
-  if(this->Internal->sphericalRadioButton->isChecked())
-    {
-    return QVector3D(cropRegion[1],
-                     cropRegion[3],
-                     qMax(cropRegion[4], cropRegion[5]));
-    }
+  if (this->Internal->sphericalRadioButton->isChecked())
+  {
+    return QVector3D(cropRegion[1], cropRegion[3], qMax(cropRegion[4], cropRegion[5]));
+  }
   else
-    {
-    return QVector3D(qMax(cropRegion[0], cropRegion[1]),
-                     qMax(cropRegion[2], cropRegion[3]),
-                     qMax(cropRegion[4], cropRegion[5]));
-    }
+  {
+    return QVector3D(qMax(cropRegion[0], cropRegion[1]), qMax(cropRegion[2], cropRegion[3]),
+      qMax(cropRegion[4], cropRegion[5]));
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -292,16 +282,14 @@ void vvCropReturnsDialog::setSecondCorner(QVector3D corner)
 //-----------------------------------------------------------------------------
 void vvCropReturnsDialog::accept()
 {
-  if(this->Internal->saveCheckBox->isChecked())
-    {
+  if (this->Internal->saveCheckBox->isChecked())
+  {
     this->Internal->saveSettings();
-    }
+  }
 
-  this->Internal->Settings->setValue(
-    "VelodyneHDLPlugin/CropReturnsDialog/cartesianRadioButton",
+  this->Internal->Settings->setValue("VelodyneHDLPlugin/CropReturnsDialog/cartesianRadioButton",
     this->Internal->cartesianRadioButton->isChecked());
-  this->Internal->Settings->setValue(
-    "VelodyneHDLPlugin/CropReturnsDialog/sphericalRadioButton",
+  this->Internal->Settings->setValue("VelodyneHDLPlugin/CropReturnsDialog/sphericalRadioButton",
     this->Internal->sphericalRadioButton->isChecked());
 
   QDialog::accept();
@@ -409,22 +397,22 @@ int vvCropReturnsDialog::GetCropMode() const
   // 1 -> Spherical
   // 2 -> Cylindric
   // 3 -> None
-  if(this->Internal->cartesianRadioButton->isChecked())
-    {
+  if (this->Internal->cartesianRadioButton->isChecked())
+  {
     return 1;
-    }
-  else if(this->Internal->sphericalRadioButton->isChecked())
-    {
+  }
+  else if (this->Internal->sphericalRadioButton->isChecked())
+  {
     return 2;
-    }
+  }
   else if (this->Internal->noneRadioButton->isChecked())
-    {
+  {
     return 0;
-    }
+  }
   else
-    {
+  {
     return 3;
-    }
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -489,12 +477,12 @@ void vvCropReturnsDialog::pqInternal::SwitchSliderMode(bool isSliderMode)
   this->Z1SpinBox->setVisible(!isSliderMode);
   this->Z2SpinBox->setVisible(!isSliderMode);
 
-  if(isSliderMode)
-    {
-    this->onXSliderChanged(this->xRange[0],this->xRange[1]);
-    this->onYSliderChanged(this->yRange[0],this->yRange[1]);
-    this->onZSliderChanged(this->zRange[0],this->zRange[1]);
-    }
+  if (isSliderMode)
+  {
+    this->onXSliderChanged(this->xRange[0], this->xRange[1]);
+    this->onYSliderChanged(this->yRange[0], this->yRange[1]);
+    this->onZSliderChanged(this->zRange[0], this->zRange[1]);
+  }
 
   this->XDoubleRangeSlider.setMinimumValue(this->xRange[0]);
   this->YDoubleRangeSlider.setMinimumValue(this->yRange[0]);
@@ -514,8 +502,8 @@ void vvCropReturnsDialog::pqInternal::SwitchSliderMode(bool isSliderMode)
 //-----------------------------------------------------------------------------
 void vvCropReturnsDialog::pqInternal::GetCropRegion(double output[6])
 {
-  if(this->sliderModeCheckBox->isChecked())
-    {
+  if (this->sliderModeCheckBox->isChecked())
+  {
     output[0] = this->XDoubleRangeSlider.minimumValue();
     output[1] = this->XDoubleRangeSlider.maximumValue();
 
@@ -524,9 +512,9 @@ void vvCropReturnsDialog::pqInternal::GetCropRegion(double output[6])
 
     output[4] = this->ZDoubleRangeSlider.minimumValue();
     output[5] = this->ZDoubleRangeSlider.maximumValue();
-    }
+  }
   else
-    {
+  {
     output[0] = this->X1SpinBox->value();
     output[1] = this->X2SpinBox->value();
 
@@ -535,7 +523,7 @@ void vvCropReturnsDialog::pqInternal::GetCropRegion(double output[6])
 
     output[4] = this->Z1SpinBox->value();
     output[5] = this->Z2SpinBox->value();
-    }
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -588,7 +576,6 @@ void vvCropReturnsDialog::pqInternal::onXSliderChanged(double vmin, double vmax)
   std::stringstream label;
   label << "[" << vmin << ";" << vmax << "]";
   this->XRangeLabel.setText(QString(label.str().c_str()));
-  
 }
 
 //-----------------------------------------------------------------------------
@@ -609,24 +596,24 @@ void vvCropReturnsDialog::pqInternal::onZSliderChanged(double vmin, double vmax)
 
 void vvCropReturnsDialog::pqInternal::updateRangeValues(bool isSliderMode)
 {
-  if(isSliderMode)
-    {
+  if (isSliderMode)
+  {
     this->xRange[0] = this->XDoubleRangeSlider.minimumValue();
     this->xRange[1] = this->XDoubleRangeSlider.maximumValue();
     this->yRange[0] = this->YDoubleRangeSlider.minimumValue();
     this->yRange[1] = this->YDoubleRangeSlider.maximumValue();
     this->zRange[0] = this->ZDoubleRangeSlider.minimumValue();
     this->zRange[1] = this->ZDoubleRangeSlider.maximumValue();
-    }
+  }
   else
-    {
+  {
     this->xRange[0] = this->X1SpinBox->value();
     this->xRange[1] = this->X2SpinBox->value();
     this->yRange[0] = this->Y1SpinBox->value();
     this->yRange[1] = this->Y2SpinBox->value();
     this->zRange[0] = this->Z1SpinBox->value();
     this->zRange[1] = this->Z2SpinBox->value();
-    }
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -658,7 +645,7 @@ void vvCropReturnsDialog::UpdateDialogWithCurrentSetting()
 {
   this->onCropGroupBoxToggled();
   if (this->Internal->noneRadioButton->isChecked())
-    {
+  {
     this->onNoneToggled();
-    }
+  }
 }

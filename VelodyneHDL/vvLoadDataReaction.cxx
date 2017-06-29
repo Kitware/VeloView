@@ -28,23 +28,23 @@
 #include "vtkPVArrayInformation.h"
 #include "vtkPVDataInformation.h"
 #include "vtkPVDataSetAttributesInformation.h"
+#include "vtkSMPVRepresentationProxy.h"
 #include "vtkSMPropertyHelper.h"
 #include "vtkSMProxy.h"
 #include "vtkSMProxyManager.h"
 #include "vtkSMReaderFactory.h"
 #include "vtkSMRepresentationProxy.h"
-#include "vtkSMPVRepresentationProxy.h"
 
-#include <QFileInfo>
-#include <QFileDialog>
 #include <QDir>
+#include <QFileDialog>
+#include <QFileInfo>
 
 //-----------------------------------------------------------------------------
-vvLoadDataReaction::vvLoadDataReaction(
-  QAction* parentAction, bool separatePositionFile)
-  : Superclass(parentAction), SeparatePositionFile(separatePositionFile)
+vvLoadDataReaction::vvLoadDataReaction(QAction* parentAction, bool separatePositionFile)
+  : Superclass(parentAction)
+  , SeparatePositionFile(separatePositionFile)
 {
-  //QObject::connect(this, SIGNAL(loadedData(pqPipelineSource*)),
+  // QObject::connect(this, SIGNAL(loadedData(pqPipelineSource*)),
   //  this, SLOT(onDataLoaded(pqPipelineSource*)));
 }
 
@@ -59,34 +59,35 @@ void vvLoadDataReaction::onDataLoaded(pqPipelineSource* source)
   pqObjectBuilder* builder = pqApplicationCore::instance()->getObjectBuilder();
 
   if (this->PreviousSource)
-    {
+  {
     builder->destroy(this->PreviousSource);
-    }
+  }
   Q_ASSERT(this->PreviousSource == NULL);
 
   this->PreviousSource = source;
   pqActiveObjects::instance().setActiveSource(source);
-  pqPipelineRepresentation* repr = qobject_cast<pqPipelineRepresentation*>(
-    builder->createDataRepresentation(
-    source->getOutputPort(0), pqActiveObjects::instance().activeView()));
+  pqPipelineRepresentation* repr =
+    qobject_cast<pqPipelineRepresentation*>(builder->createDataRepresentation(
+      source->getOutputPort(0), pqActiveObjects::instance().activeView()));
   if (!repr)
-    {
+  {
     qWarning("Failed to create representation");
     return;
-    }
+  }
 
   vtkSMPropertyHelper(repr->getProxy(), "Representation").Set("Points");
   vtkSMPropertyHelper(repr->getProxy(), "InterpolateScalarsBeforeMapping").Set(0);
 
   // color by "intensity" if array is present.
-  vtkSMPVRepresentationProxy* pvrp = vtkSMPVRepresentationProxy::SafeDownCast(repr->getRepresentationProxy());
+  vtkSMPVRepresentationProxy* pvrp =
+    vtkSMPVRepresentationProxy::SafeDownCast(repr->getRepresentationProxy());
   vtkPVDataInformation* info = repr->getInputDataInformation();
   vtkPVArrayInformation* arrayInfo =
     info->GetPointDataInformation()->GetArrayInformation("intensity");
   if (arrayInfo != NULL && pvrp != NULL)
-    {
+  {
     pvrp->SetScalarColoring("intensity", vtkDataObject::FIELD_ASSOCIATION_POINTS);
-    }
+  }
 
   repr->getProxy()->UpdateVTKObjects();
   repr->renderViewEventually();
@@ -97,54 +98,53 @@ void vvLoadDataReaction::onDataLoaded(pqPipelineSource* source)
 pqPipelineSource* vvLoadDataReaction::loadData()
 {
   pqServer* server = pqActiveObjects::instance().activeServer();
-  vtkSMReaderFactory* readerFactory =
-    vtkSMProxyManager::GetProxyManager()->GetReaderFactory();
+  vtkSMReaderFactory* readerFactory = vtkSMProxyManager::GetProxyManager()->GetReaderFactory();
   QString filters = readerFactory->GetSupportedFileTypes(server->session());
   if (!filters.isEmpty())
-    {
+  {
     filters += ";;";
-    }
+  }
   filters += "All files (*)";
 
-
   pqSettings* settings = pqApplicationCore::instance()->settings();
-  QString defaultDir = settings->value("VelodyneHDLPlugin/OpenData/DefaultDir", QDir::homePath()).toString();
+  QString defaultDir =
+    settings->value("VelodyneHDLPlugin/OpenData/DefaultDir", QDir::homePath()).toString();
 
   QString positionFileName;
   QString fileName;
 
   if (this->SeparatePositionFile)
-    {
-    fileName = QFileDialog::getOpenFileName(
-      pqCoreUtilities::mainWidget(), tr("Open LiDAR File"), defaultDir,
-      "Wireshark Capture (*.pcap);;All files(*)");
+  {
+    fileName = QFileDialog::getOpenFileName(pqCoreUtilities::mainWidget(), tr("Open LiDAR File"),
+      defaultDir, "Wireshark Capture (*.pcap);;All files(*)");
 
     if (fileName.isEmpty())
-      {
+    {
       return NULL;
-      }
+    }
 
-    positionFileName = QFileDialog::getOpenFileName(
-      pqCoreUtilities::mainWidget(), tr("Open Position File"), defaultDir,
-      "Applanix POSCAP Position Data Text Export (*.txt);;All files (*)");
+    positionFileName =
+      QFileDialog::getOpenFileName(pqCoreUtilities::mainWidget(), tr("Open Position File"),
+        defaultDir, "Applanix POSCAP Position Data Text Export (*.txt);;All files (*)");
 
     if (positionFileName.isEmpty())
-      {
-      return NULL;
-      }
-    }
-  else
     {
+      return NULL;
+    }
+  }
+  else
+  {
     fileName = QFileDialog::getOpenFileName(
       pqCoreUtilities::mainWidget(), tr("Open File"), defaultDir, filters);
 
     if (fileName.isEmpty())
-      {
+    {
       return NULL;
-      }
     }
+  }
 
-  settings->setValue("VelodyneHDLPlugin/OpenData/DefaultDir", QFileInfo(fileName).absoluteDir().absolutePath());
+  settings->setValue(
+    "VelodyneHDLPlugin/OpenData/DefaultDir", QFileInfo(fileName).absoluteDir().absolutePath());
 
   pqVelodyneManager::instance()->openData(fileName, positionFileName);
 

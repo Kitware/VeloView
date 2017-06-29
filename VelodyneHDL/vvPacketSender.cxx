@@ -13,11 +13,11 @@
 // limitations under the License.
 
 #include "vvPacketSender.h"
-#include "vtkPacketFileReader.h"
 #include "vtkDataPacket.h"
+#include "vtkPacketFileReader.h"
 
-#include <boost/thread/thread.hpp>
 #include <boost/asio.hpp>
+#include <boost/thread/thread.hpp>
 
 using namespace DataPacketFixedLength;
 
@@ -25,17 +25,15 @@ using namespace DataPacketFixedLength;
 class vvPacketSender::vvInternal
 {
 public:
-  vvInternal(std::string destinationIp,
-             int lidarPort,
-             int positionPort) :
-    LIDARSocket(0),
-    PositionSocket(0),
-    PacketReader(0),
-    Done(false),
-    PacketCount(0),
-    lastTimestamp(0),
-    LIDAREndpoint(boost::asio::ip::address_v4::from_string(destinationIp), lidarPort),
-    PositionEndpoint(boost::asio::ip::address_v4::from_string(destinationIp), positionPort)
+  vvInternal(std::string destinationIp, int lidarPort, int positionPort)
+    : LIDARSocket(0)
+    , PositionSocket(0)
+    , PacketReader(0)
+    , Done(false)
+    , PacketCount(0)
+    , lastTimestamp(0)
+    , LIDAREndpoint(boost::asio::ip::address_v4::from_string(destinationIp), lidarPort)
+    , PositionEndpoint(boost::asio::ip::address_v4::from_string(destinationIp), positionPort)
   {
   }
 
@@ -49,21 +47,19 @@ public:
   boost::asio::ip::udp::endpoint LIDAREndpoint;
   boost::asio::ip::udp::endpoint PositionEndpoint;
   boost::asio::io_service IOService;
-  };
+};
 
 //-----------------------------------------------------------------------------
-vvPacketSender::vvPacketSender(std::string pcapfile,
-                               std::string destinationIp,
-                               int lidarPort,
-                               int positionPort) :
-  Internal(new vvPacketSender::vvInternal(destinationIp, lidarPort, positionPort))
+vvPacketSender::vvPacketSender(
+  std::string pcapfile, std::string destinationIp, int lidarPort, int positionPort)
+  : Internal(new vvPacketSender::vvInternal(destinationIp, lidarPort, positionPort))
 {
   this->Internal->PacketReader = new vtkPacketFileReader;
   this->Internal->PacketReader->Open(pcapfile);
-  if(!this->Internal->PacketReader->IsOpen())
-    {
+  if (!this->Internal->PacketReader->IsOpen())
+  {
     throw std::runtime_error("Unable to open packet file");
-    }
+  }
 
   this->Internal->LIDARSocket = new boost::asio::ip::udp::socket(this->Internal->IOService);
   this->Internal->LIDARSocket->open(this->Internal->LIDAREndpoint.protocol());
@@ -87,39 +83,39 @@ vvPacketSender::~vvPacketSender()
 //-----------------------------------------------------------------------------
 int vvPacketSender::pumpPacket()
 {
-  if(this->Internal->Done)
-    {
+  if (this->Internal->Done)
+  {
     return std::numeric_limits<double>::max();
-    }
+  }
 
   const unsigned char* data = 0;
   unsigned int dataLength = 0;
   double timeSinceStart = 0;
   int timeDiff = 0;
   if (!this->Internal->PacketReader->NextPacket(data, dataLength, timeSinceStart))
-    {
+  {
     this->Internal->Done = true;
     return timeSinceStart;
-    }
+  }
 
-  if( (dataLength == 512) )
-    {
-    size_t bytesSent = this->Internal->PositionSocket->send_to(boost::asio::buffer(data, dataLength),
-                                                               this->Internal->PositionEndpoint);
-    }
+  if ((dataLength == 512))
+  {
+    size_t bytesSent = this->Internal->PositionSocket->send_to(
+      boost::asio::buffer(data, dataLength), this->Internal->PositionEndpoint);
+  }
 
   // Recurse until we get to the right kind of packet
   else
-  //if (dataLength == 1206)
-    {
-    const HDLDataPacket* dataPacket = reinterpret_cast<const HDLDataPacket *>(data);
-    timeDiff = static_cast<int>(dataPacket->gpsTimestamp) - static_cast<int>(this->Internal->lastTimestamp);
+  // if (dataLength == 1206)
+  {
+    const HDLDataPacket* dataPacket = reinterpret_cast<const HDLDataPacket*>(data);
+    timeDiff =
+      static_cast<int>(dataPacket->gpsTimestamp) - static_cast<int>(this->Internal->lastTimestamp);
     this->Internal->lastTimestamp = dataPacket->gpsTimestamp;
     ++this->Internal->PacketCount;
-    size_t bytesSent = this->Internal->LIDARSocket->send_to(boost::asio::buffer(data, dataLength),
-                                                            this->Internal->LIDAREndpoint);
-    }
-
+    size_t bytesSent = this->Internal->LIDARSocket->send_to(
+      boost::asio::buffer(data, dataLength), this->Internal->LIDAREndpoint);
+  }
 
   return timeDiff;
 }

@@ -26,7 +26,8 @@ class vvSelectFramesDialog::pqInternal : public Ui::vvSelectFramesDialog
 };
 
 //-----------------------------------------------------------------------------
-vvSelectFramesDialog::vvSelectFramesDialog(QWidget *p) : QDialog(p)
+vvSelectFramesDialog::vvSelectFramesDialog(QWidget* p)
+  : QDialog(p)
 {
   this->Internal = new pqInternal;
   this->Internal->setupUi(this);
@@ -43,13 +44,12 @@ vvSelectFramesDialog::~vvSelectFramesDialog()
 void vvSelectFramesDialog::accept()
 {
   if (this->Internal->FrameStop->value() < this->Internal->FrameStart->value())
-    {
-    QMessageBox::critical(
-      this, "Invalid frame range",
+  {
+    QMessageBox::critical(this, "Invalid frame range",
       "The requested frame range is not valid. "
       "The start frame must be less than or equal to the stop frame.");
     return;
-    }
+  }
 
   this->saveState();
   QDialog::accept();
@@ -59,34 +59,34 @@ void vvSelectFramesDialog::accept()
 int vvSelectFramesDialog::frameMode() const
 {
   if (this->Internal->CurrentFrameButton->isChecked())
-    {
+  {
     return CURRENT_FRAME;
-    }
+  }
   else if (this->Internal->AllFramesButton->isChecked())
-    {
+  {
     return ALL_FRAMES;
-    }
+  }
   else
-    {
+  {
     return FRAME_RANGE;
-    }
+  }
 }
 
 //-----------------------------------------------------------------------------
 void vvSelectFramesDialog::setFrameMode(int frameMode)
 {
   if (frameMode == CURRENT_FRAME)
-    {
+  {
     this->Internal->CurrentFrameButton->setChecked(true);
-    }
+  }
   else if (frameMode == ALL_FRAMES)
-    {
+  {
     this->Internal->AllFramesButton->setChecked(true);
-    }
+  }
   else if (frameMode == FRAME_RANGE)
-    {
+  {
     this->Internal->FrameRangeButton->setChecked(true);
-    }
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -129,68 +129,68 @@ void vvSelectFramesDialog::setFrameStride(int frameStride)
 int vvSelectFramesDialog::framePack() const
 {
   if (this->Internal->FilePerFrameButton->isChecked())
-    {
+  {
     return FILE_PER_FRAME;
-    }
+  }
   else
-    {
+  {
     return SINGLE_FILE;
-    }
+  }
 }
 
 //-----------------------------------------------------------------------------
 void vvSelectFramesDialog::setFramePack(int framePack)
 {
   if (framePack == SINGLE_FILE)
-    {
+  {
     this->Internal->SingleFileButton->setChecked(true);
-    }
+  }
   else if (framePack == FILE_PER_FRAME)
-    {
+  {
     this->Internal->FilePerFrameButton->setChecked(true);
-    }
+  }
 }
 
 //-----------------------------------------------------------------------------
 int vvSelectFramesDialog::frameTransform() const
 {
   if (this->Internal->RelativeButton->isChecked())
-    {
+  {
     return RELATIVE_GEOPOSITION;
-    }
+  }
   else if (this->Internal->AbsoluteUtmButton->isChecked())
-    {
+  {
     return ABSOLUTE_GEOPOSITION_UTM;
-    }
+  }
   else if (this->Internal->AbsoluteLatLonButton->isChecked())
-    {
+  {
     return ABSOLUTE_GEOPOSITION_LATLON;
-    }
+  }
   else
-    {
+  {
     return SENSOR;
-    }
+  }
 }
 
 //-----------------------------------------------------------------------------
 void vvSelectFramesDialog::setFrameTransform(int frameTransform)
 {
   if (frameTransform == SENSOR)
-    {
+  {
     this->Internal->SensorButton->setChecked(true);
-    }
+  }
   else if (frameTransform == RELATIVE_GEOPOSITION)
-    {
+  {
     this->Internal->RelativeButton->setChecked(true);
-    }
+  }
   else if (frameTransform == ABSOLUTE_GEOPOSITION_UTM)
-    {
+  {
     this->Internal->AbsoluteUtmButton->setChecked(true);
-    }
+  }
   else if (frameTransform == ABSOLUTE_GEOPOSITION_LATLON)
-    {
+  {
     this->Internal->AbsoluteLatLonButton->setChecked(true);
-    }
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -249,11 +249,15 @@ void vvSelectFramesDialog::saveState()
 void vvSelectFramesDialog::restoreState()
 {
   pqSettings* settings = pqApplicationCore::instance()->settings();
-  this->restoreGeometry(settings->value("VelodyneHDLPlugin/SelectFramesDialog/Geometry").toByteArray());
-  this->setFrameMode(settings->value("VelodyneHDLPlugin/SelectFramesDialog/Mode", CURRENT_FRAME).toInt());
+  this->restoreGeometry(
+    settings->value("VelodyneHDLPlugin/SelectFramesDialog/Geometry").toByteArray());
+  this->setFrameMode(
+    settings->value("VelodyneHDLPlugin/SelectFramesDialog/Mode", CURRENT_FRAME).toInt());
   this->setFrameStart(settings->value("VelodyneHDLPlugin/SelectFramesDialog/Start", 0).toInt());
   this->setFrameStop(settings->value("VelodyneHDLPlugin/SelectFramesDialog/Stop", 10).toInt());
   this->setFrameStride(settings->value("VelodyneHDLPlugin/SelectFramesDialog/Stride", 1).toInt());
-  this->setFramePack(settings->value("VelodyneHDLPlugin/SelectFramesDialog/Pack", SINGLE_FILE).toInt());
-  this->setFrameTransform(settings->value("VelodyneHDLPlugin/SelectFramesDialog/Transform", SENSOR).toInt());
+  this->setFramePack(
+    settings->value("VelodyneHDLPlugin/SelectFramesDialog/Pack", SINGLE_FILE).toInt());
+  this->setFrameTransform(
+    settings->value("VelodyneHDLPlugin/SelectFramesDialog/Transform", SENSOR).toInt());
 }

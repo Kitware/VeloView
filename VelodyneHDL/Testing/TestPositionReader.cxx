@@ -12,23 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
-#include "vtkVelodyneHDLPositionReader.h"
 #include "vtkTestingMacros.h"
+#include "vtkVelodyneHDLPositionReader.h"
 
 #include <vtkNew.h>
 
-#include <string>
-#include <iostream>
 #include <cstdlib>
+#include <iostream>
+#include <string>
 
 int main(int argc, char* argv[])
 {
   if (argc < 2)
-    {
+  {
     std::cout << "Usage: " << argv[0] << " <pcap file> [TEST_SPECS]" << std::endl;
     return 1;
-    }
+  }
 
   std::string filename = argv[1];
 
@@ -41,10 +40,10 @@ int main(int argc, char* argv[])
   std::cout << "Number of samples: " << poly->GetNumberOfPoints() << std::endl;
 
   // Validate arguments
-  if(argc > 2)
-    {
+  if (argc > 2)
+  {
     ASSERT_EQUALS(poly->GetNumberOfPoints(), atoi(argv[2]));
-    }
+  }
 
   return 0;
 }

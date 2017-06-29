@@ -47,30 +47,28 @@ vtkProcessingSample::~vtkProcessingSample()
 }
 
 //----------------------------------------------------------------------------
-int vtkProcessingSample::RequestData(
-  vtkInformation* vtkNotUsed(request),
-  vtkInformationVector **inputVector,
-  vtkInformationVector *outputVector)
+int vtkProcessingSample::RequestData(vtkInformation* vtkNotUsed(request),
+  vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
-  vtkInformation *inInfo = inputVector[0]->GetInformationObject(0);
-  vtkPolyData *input = vtkPolyData::SafeDownCast(inInfo->Get(vtkDataObject::DATA_OBJECT()));
+  vtkInformation* inInfo = inputVector[0]->GetInformationObject(0);
+  vtkPolyData* input = vtkPolyData::SafeDownCast(inInfo->Get(vtkDataObject::DATA_OBJECT()));
 
-  vtkInformation *outInfo = outputVector->GetInformationObject(0);
-  vtkPolyData *output = vtkPolyData::SafeDownCast(outInfo->Get(vtkDataObject::DATA_OBJECT()));
+  vtkInformation* outInfo = outputVector->GetInformationObject(0);
+  vtkPolyData* output = vtkPolyData::SafeDownCast(outInfo->Get(vtkDataObject::DATA_OBJECT()));
 
   vtkPoints* points = input->GetPoints();
-  if(!points || !points->GetNumberOfPoints())
-    {
+  if (!points || !points->GetNumberOfPoints())
+  {
     return 1;
-    }
+  }
 
   Eigen::Vector3d meanpoints;
-  for(vtkIdType i = 0; i < points->GetNumberOfPoints(); ++i)
-    {
+  for (vtkIdType i = 0; i < points->GetNumberOfPoints(); ++i)
+  {
     Eigen::Vector3d point;
     points->GetPoint(i, point.data());
     meanpoints += point;
-    }
+  }
   meanpoints /= points->GetNumberOfPoints();
 
   // Create a sphere at the center location
@@ -80,28 +78,30 @@ int vtkProcessingSample::RequestData(
   spheresource->Update();
 
   // Get the intensities and laser ids for points
-  vtkUnsignedCharArray* intensities = vtkUnsignedCharArray::SafeDownCast(input->GetPointData()->GetArray("intensity"));
-  vtkUnsignedCharArray* laserid = vtkUnsignedCharArray::SafeDownCast(input->GetPointData()->GetArray("laser_id"));
+  vtkUnsignedCharArray* intensities =
+    vtkUnsignedCharArray::SafeDownCast(input->GetPointData()->GetArray("intensity"));
+  vtkUnsignedCharArray* laserid =
+    vtkUnsignedCharArray::SafeDownCast(input->GetPointData()->GetArray("laser_id"));
 
   // Compute the max, min intensity for laser 3
   int minimum_intensity = std::numeric_limits<int>::max();
   int maximum_intensity = 0;
-  for(vtkIdType i = 0; i < points->GetNumberOfPoints(); ++i)
-    {
+  for (vtkIdType i = 0; i < points->GetNumberOfPoints(); ++i)
+  {
     int laser = laserid->GetValue(i);
-    if(laser == 3)
-      {
+    if (laser == 3)
+    {
       int point_intensity = intensities->GetValue(i);
-      if(point_intensity < minimum_intensity)
-        {
+      if (point_intensity < minimum_intensity)
+      {
         minimum_intensity = point_intensity;
-        }
-      if(point_intensity > maximum_intensity)
-        {
+      }
+      if (point_intensity > maximum_intensity)
+      {
         maximum_intensity = point_intensity;
-        }
       }
     }
+  }
 
   // Add field data with some numbers
   vtkSmartPointer<vtkFloatArray> fielddata = vtkSmartPointer<vtkFloatArray>::New();
@@ -122,5 +122,5 @@ int vtkProcessingSample::RequestData(
 //----------------------------------------------------------------------------
 void vtkProcessingSample::PrintSelf(ostream& os, vtkIndent indent)
 {
-  this->Superclass::PrintSelf(os,indent);
+  this->Superclass::PrintSelf(os, indent);
 }

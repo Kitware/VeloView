@@ -12,21 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 #include "vtkPacketFileReader.h"
-#include "vtkVelodyneHDLSource.h"
 #include "vtkVelodyneHDLReader.h"
+#include "vtkVelodyneHDLSource.h"
 #include "vvPacketSender.h"
 
 #include <vtkDataArray.h>
+#include <vtkNew.h>
 #include <vtkPointData.h>
 #include <vtkTimerLog.h>
-#include <vtkNew.h>
 
-#include <map>
-#include <string>
 #include <cmath>
 #include <cstdio>
+#include <map>
+#include <string>
 
 #include <boost/thread/thread.hpp>
 
@@ -36,7 +35,8 @@
 //-----------------------------------------------------------------------------
 int main(int argc, char* argv[])
 {
-  if (argc != 3) {
+  if (argc != 3)
+  {
     std::cout << "Usage: " << argv[0] << " <packet file> <calibration>" << std::endl;
     return 1;
   }
@@ -48,32 +48,32 @@ int main(int argc, char* argv[])
   source->Start();
 
   try
-    {
+  {
     std::string destinationIp = "127.0.0.1";
     int dataPort = 2368;
     vvPacketSender sender(filename, destinationIp, dataPort);
-    //socket.connect(destinationEndpoint);
+    // socket.connect(destinationEndpoint);
 
-    for(size_t i = 0; i < 500; ++i)
-      {
+    for (size_t i = 0; i < 500; ++i)
+    {
       sender.pumpPacket();
       boost::this_thread::sleep(boost::posix_time::microseconds(200));
-      }
+    }
     source->Update();
     vtkPolyData* result = source->GetOutput();
 
-    while(!sender.done())
-      {
+    while (!sender.done())
+    {
       sender.pumpPacket();
       boost::this_thread::sleep(boost::posix_time::microseconds(200));
-      }
+    }
 
     source->Stop();
-    }
-  catch( std::exception& e )
-    {
+  }
+  catch (std::exception& e)
+  {
     std::cout << "Caught Exception: " << e.what() << std::endl;
     return 1;
-    }
+  }
   return 0;
 }
