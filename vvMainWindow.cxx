@@ -116,7 +116,53 @@ private:
     new pqCrashRecoveryBehavior(window);
     new pqAutoLoadPluginXMLBehavior(window);
     new pqCommandLineOptionsBehavior(window);
-    new pqPersistentMainWindowStateBehavior(window);
+
+    // Check if the settings are well formed i.e. if an OriginalMainWindow
+    // state was previously saved. If not, we don't want to automatically
+    // restore the settings state nor save it on quitting VeloView.
+    // An OriginalMainWindow state will be force saved once the UI is completly
+    // set up.
+    pqSettings* const settings = pqApplicationCore::instance()->settings();
+    bool shouldClearSettings = false;
+    QStringList keys = settings->allKeys();
+
+    if (keys.size() == 0)
+    {
+      // There were no settings before, let's save the current state as
+      // OriginalMainWindow state
+      shouldClearSettings = true;
+    }
+    else
+    {
+      // Checks if the existing settings are well formed and if not, clear them.
+      // An original MainWindow state will be force saved later once the UI is
+      // entirely set up
+      for (int keyIndex = 0; keyIndex < keys.size(); ++keyIndex)
+      {
+        if (keys[keyIndex].contains("OriginalMainWindow"))
+        {
+          shouldClearSettings = true;
+          break;
+        }
+      }
+    }
+
+    if (shouldClearSettings)
+    {
+      new pqPersistentMainWindowStateBehavior(window);
+    }
+    else
+    {
+      if (keys.size() > 0)
+      {
+        vtkGenericWarningMacro("Settings weren't set correctly. Clearing settings.")
+      }
+
+      // As pqPersistentMainWindowStateBehavior is not created right now,
+      // we can clear the settings as the current bad state won't be saved on
+      // closing VeloView
+      settings->clear();
+    }
 
     // Connect to builtin server.
     pqObjectBuilder* builder = core->getObjectBuilder();
