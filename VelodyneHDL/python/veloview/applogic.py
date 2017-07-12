@@ -1601,6 +1601,7 @@ def onChooseCalibrationFile():
 
     if reader is not None:
         reader.GetClientSideObject().SetSensorTransform(sensorTransform)
+        reader.CalibrationFile = calibrationFile
         reloadCurrentFrame()
 
     elif sensor is not None:
