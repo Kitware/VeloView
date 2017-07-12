@@ -42,15 +42,15 @@ enum HDLBlock
 
 enum SensorType
 {
-  HDL32E = 0x21,
-  VLP16 = 0x22,
-  VLP32AB = 0x23,
-  VLP16HiRes = 0x24,
-  VLP32C = 0x28,
+  HDL32E = 0x21,     // decimal: 33
+  VLP16 = 0x22,      // decimal: 34
+  VLP32AB = 0x23,    // decimal: 35
+  VLP16HiRes = 0x24, // decimal: 36
+  VLP32C = 0x28,     // decimal: 40
 
   // Work around : this is not defined by any specification
   // But it is usefull to define
-  HDL64 = 0xa0,
+  HDL64 = 0xa0, // decimal: 160
 };
 static int num_laser(SensorType sensorType)
 {

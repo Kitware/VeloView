@@ -2240,12 +2240,14 @@ bool vtkVelodyneHDLReader::isReportedSensorAndCalibrationFileConsistent(bool sho
       std::stringstream warningMessage;
       if (reportedSensorNumberLaser == 0)
       {
-        warningMessage << "The data-packet from the sensor has an unrecognised factory byte";
+        warningMessage << "The data-packet from the sensor has an unrecognised "
+                       << "factory byte (0x" << hex << Internal->ReportedSensor << dec << ")";
       }
       else
       {
-        warningMessage << "The data-packet from the sensor has a factory byte recognized"
-                       << " as having " << reportedSensorNumberLaser << " lasers";
+        warningMessage << "The data-packet from the sensor has a factory byte "
+                       << "(0x" << hex << Internal->ReportedSensor << dec << ") "
+                       << "recognized as having " << reportedSensorNumberLaser << " lasers";
       }
       warningMessage << ", Veloview will interpret data-packets and show points"
                      << " based on the XML calibration file only (currently: "
