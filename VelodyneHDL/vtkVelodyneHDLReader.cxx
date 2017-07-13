@@ -831,7 +831,17 @@ void vtkVelodyneHDLReader::SetCorrectionsFile(const std::string& correctionsFile
     if (!boost::filesystem::exists(correctionsFile) ||
       boost::filesystem::is_directory(correctionsFile))
     {
-      vtkErrorMacro("Invalid sensor configuration file" << correctionsFile);
+      std::ostringstream errorMessage("Invalid sensor configuration file ");
+      errorMessage << correctionsFile << ": ";
+      if (!boost::filesystem::exists(correctionsFile))
+      {
+        errorMessage << "File not found!";
+      }
+      else
+      {
+        errorMessage << "It is a directory!";
+      }
+      vtkErrorMacro(<< errorMessage.str());
       return;
     }
     this->Internal->LoadCorrectionsFile(correctionsFile);
