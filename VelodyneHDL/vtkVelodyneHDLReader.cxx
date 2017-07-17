@@ -2166,6 +2166,10 @@ int vtkVelodyneHDLReader::ReadFrameInformation()
             isEmptyFrame = false;
         }
       }
+      else
+      {
+        isEmptyFrame = false;
+      }
 
       if (firingData.rotationalPosition < lastAzimuth)
       {
