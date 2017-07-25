@@ -17,6 +17,7 @@
 #include "pqReaction.h"
 
 class pqView;
+class QDockWidget;
 
 class vvToggleSpreadSheetReaction : public pqReaction
 {
@@ -24,7 +25,7 @@ class vvToggleSpreadSheetReaction : public pqReaction
   typedef pqReaction Superclass;
 
 public:
-  vvToggleSpreadSheetReaction(QAction* action, pqView* view);
+  vvToggleSpreadSheetReaction(QAction* action, pqView* view, QDockWidget* docker);
   virtual ~vvToggleSpreadSheetReaction();
 
 private slots:
@@ -35,6 +36,7 @@ private:
 
   QAction* Action;
   pqView* View;
+  QDockWidget* Docker;
 };
 
 #endif

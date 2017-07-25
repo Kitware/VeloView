@@ -225,6 +225,7 @@
     <bool>false</bool>
    </attribute>
    <addaction name="actionOverheadView"/>
+   <addaction name="actionChartView"/>
   </widget>
   <widget class="QDockWidget" name="colorMapEditorDock">
    <property name="windowTitle">
@@ -992,6 +993,21 @@
    </property>
    <property name="toolTip">
     <string>Launch slam in streaming mode</string>
+    </property>
+   </action>
+  <action name="actionChartView">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="VelodyneHDL/images/resources.qrc">
+     <normaloff>:/VelodyneHDLPlugin/csv.png</normaloff>:/VelodyneHDLPlugin/csv.png</iconset>
+   </property>
+   <property name="text">
+    <string>Chart View</string>
+   </property>
+   <property name="toolTip">
+    <string>Show the gps data in a chart view</string>
    </property>
   </action>
  </widget>

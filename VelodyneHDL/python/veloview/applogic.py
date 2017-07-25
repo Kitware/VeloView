@@ -76,7 +76,8 @@ class AppLogic(object):
         self.reader = None
         self.position = (None, None, None)
         self.sensor = None
-        #self.ransac = None
+
+        self.posreaderSave = None
 
         self.fps = [0,0]
         
@@ -573,6 +574,8 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
     g.Radius = 5.0
     smp.Show(g)
 
+    app.posreaderSave = posreader
+
     if posreader.GetClientSideObject().GetOutput().GetNumberOfPoints():
         reader.GetClientSideObject().SetInterpolator(
             posreader.GetClientSideObject().GetInterpolator())
@@ -599,6 +602,9 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
 
         app.position = (posreader, None, g)
         smp.Render(app.overheadView)
+
+        # Update Chart Views
+        toggleShowChart()
     else:
         if positionFilename is not None:
             QtGui.QMessageBox.warning(getMainWindow(), 'Georeferencing data invalid',
@@ -2138,6 +2144,13 @@ def openRecentFile(filename):
 def getRecentFiles():
     return list(getPVSettings().value('VelodyneHDLPlugin/RecentFiles', []) or [])
 
+def getChartViewProxies():
+    chartViewProxies = list()
+    for proxy in smp.servermanager.ProxyManager():
+        if proxy.GetXMLName() == 'XYChartView':
+            chartViewProxies.append(proxy)
+
+    return chartViewProxies
 
 def updateRecentFiles():
     settings = getPVSettings()
@@ -2190,6 +2203,7 @@ def toggleRPM():
 
 def toggleLaunchSlam():
     slam.launch()
+    slam.updateChartView()
 
 def toggleLaunchStreamSlam():
     app.slamStream = slam.launchStreamSlam()
@@ -2262,6 +2276,8 @@ def toggleCrashAnalysis():
 
     app.EnableCrashAnalysis = app.actions['actionEnableCrashAnalysis'].isChecked()
 
+def toggleShowChart():
+    slam.updateChartView()
 
 def setViewTo(axis,sign):
     view = smp.GetActiveView()
@@ -2456,6 +2472,7 @@ def setupActions():
     app.actions['actionSelectDualReturn2'].connect('triggered()',toggleSelectDualReturn)
     app.actions['actionLaunchSlam'].connect('triggered()', toggleLaunchSlam)
     app.actions['actionStreamSlam'].connect('triggered()', toggleLaunchStreamSlam)
+    app.actions['actionChartView'].connect('triggered()',toggleShowChart)
     app.EnableCrashAnalysis = app.actions['actionEnableCrashAnalysis'].isChecked()
 
     # Restore action states from settings

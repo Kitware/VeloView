@@ -57,15 +57,19 @@
 #include <pqStandardPropertyWidgetInterface.h>
 #include <pqStandardViewFrameActionsImplementation.h>
 #include <pqVelodyneManager.h>
+#include <pqXYChartView.h>
 #include <vtkPVPlugin.h>
 #include <vtkSMPropertyHelper.h>
 
+#include <QDockWidget>
 #include <QLabel>
 #include <QSplitter>
 
 #include <cassert>
 #include <iostream>
 #include <sstream>
+#include <vector>
+
 // Declare the plugin to load.
 PV_PLUGIN_IMPORT_INIT(VelodyneHDLPlugin);
 PV_PLUGIN_IMPORT_INIT(PythonQtPlugin);
@@ -92,8 +96,46 @@ public:
     window->raise();
     window->activateWindow();
   }
+  void CreateDockChartView(vvMainWindow* window, const char* objectNameWithoutSpace)
+  {
+    pqObjectBuilder* builder = pqApplicationCore::instance()->getObjectBuilder();
+    pqServer* server = pqActiveObjects::instance().activeServer();
+
+    pqView* chartView = builder->createView(pqXYChartView::XYChartViewType(), server);
+    chartView->getProxy()->UpdateVTKObjects();
+    chartView->widget()->setMinimumSize(400, 200);
+
+    QDockWidget* dock = this->AddDockView(window, objectNameWithoutSpace, chartView->widget());
+    new vvToggleSpreadSheetReaction(this->Ui.actionChartView, chartView, dock);
+  }
+  QDockWidget* AddDockView(vvMainWindow* window, const char* objectName, QWidget* viewToDisplay)
+  {
+    QDockWidget* dock = new QDockWidget(window);
+    this->DockViews.push_back(dock);
+
+    // Keep in mind, we prefix Qt name of the dock widgets by "dock", it makes search
+    // easier.
+    QString prefixedObjectName("dock");
+    prefixedObjectName += objectName;
+    dock->setObjectName(prefixedObjectName);
+
+    // We let them live to the right to simulate the old VeloView behavior.
+    dock->setAllowedAreas(Qt::RightDockWidgetArea);
+    window->addDockWidget(Qt::RightDockWidgetArea, dock);
+
+    dock->setVisible(false);
+    dock->setWidget(viewToDisplay);
+    dock->setWindowTitle(objectName);
+
+    // It avoids user to close it manually by clicking on the cross, and come close
+    // to the old VeloView behavior
+    dock->setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable);
+    return dock;
+  }
+
   Ui::vvMainWindow Ui;
   pqRenderView* MainView;
+  std::vector<QDockWidget*> DockViews;
 
 private:
   void paraviewInit(vvMainWindow* window)
@@ -150,27 +192,29 @@ private:
     // Add the main widget to the left
     splitter->addWidget(view->widget());
 
-    QSplitter* vSplitter = new QSplitter(Qt::Vertical);
-    splitter->addWidget(vSplitter);
-
     pqView* overheadView = builder->createView(pqRenderView::renderViewType(), server);
-    //    overheadView->SetInteractionMode("2D");
     overheadView->getProxy()->UpdateVTKObjects();
-    // dont add to the splitter just yet
+    overheadView->widget()->setMinimumSize(400, 200);
     // TODO: These sizes should not be absolute things
-    overheadView->widget()->setMinimumSize(300, 200);
-    vSplitter->addWidget(overheadView->widget());
-    new vvToggleSpreadSheetReaction(this->Ui.actionOverheadView, overheadView);
+    // overheadView->SetInteractionMode("2D");
 
     pqView* spreadsheetView = builder->createView(pqSpreadSheetView::spreadsheetViewType(), server);
     spreadsheetView->getProxy()->UpdateVTKObjects();
-    vSplitter->addWidget(spreadsheetView->widget());
-    new vvToggleSpreadSheetReaction(this->Ui.actionSpreadsheet, spreadsheetView);
-    pqSpreadSheetView* ssview = qobject_cast<pqSpreadSheetView*>(spreadsheetView);
     assert(spreadsheetView);
+    spreadsheetView->widget()->setMinimumSize(400, 200);
+    pqSpreadSheetView* ssview = qobject_cast<pqSpreadSheetView*>(spreadsheetView);
     pqSpreadSheetViewDecorator* dec = new pqSpreadSheetViewDecorator(ssview);
     dec->setPrecision(3);
     dec->setFixedRepresentation(true);
+
+    QDockWidget* dock = this->AddDockView(window, "OverHead", overheadView->widget());
+    new vvToggleSpreadSheetReaction(this->Ui.actionOverheadView, overheadView, dock);
+
+    dock = this->AddDockView(window, "SpreadSheet", spreadsheetView->widget());
+    new vvToggleSpreadSheetReaction(this->Ui.actionSpreadsheet, spreadsheetView, dock);
+
+    this->CreateDockChartView(window, "Slam_XYZ");
+    this->CreateDockChartView(window, "Slam_PitchRollYaw");
 
     pqActiveObjects::instance().setActiveView(view);
   }
@@ -265,6 +309,7 @@ vvMainWindow::vvMainWindow()
 //-----------------------------------------------------------------------------
 vvMainWindow::~vvMainWindow()
 {
+  this->Internals->Ui.colorMapEditorDock->close();
   delete this->Internals;
   this->Internals = NULL;
 }
