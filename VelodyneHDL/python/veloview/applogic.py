@@ -768,7 +768,7 @@ def saveCSVCurrentFrame(filename):
     rotateCSVFile(filename)
 
 def saveCSVCurrentFrameSelection(filename):
-    source = smp.GetActiveSource()
+    source = getReader()
     selection = source.GetSelectionOutput(0)
     extractSelection = smp.ExtractSelection(Input = source, Selection = selection.Selection)
     w = smp.CreateWriter(filename, extractSelection)
