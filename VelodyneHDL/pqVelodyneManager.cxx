@@ -13,6 +13,7 @@
 // limitations under the License.
 #include "pqVelodyneManager.h"
 
+#include "vtkPVConfig.h" //  needed for PARAVIEW_VERSION
 #include "vtkLASFileWriter.h"
 #include "vtkVelodyneHDLReader.h"
 #include "vtkVelodyneTransformInterpolator.h"
@@ -91,9 +92,12 @@ void pqVelodyneManager::pythonStartup()
              << QCoreApplication::applicationDirPath()  + "/site-packages" // Windows NMake build directory and install tree
              << QCoreApplication::applicationDirPath()  + "/../lib" // Linux build tree
              << QCoreApplication::applicationDirPath()  + "/../lib/site-packages" // Linux build tree
-             << QCoreApplication::applicationDirPath()  + "/../lib/paraview-4.2" // Windows install tree
-             << QCoreApplication::applicationDirPath()  + "/../lib/paraview-4.2/site-packages" // Windows install tree
-             << QCoreApplication::applicationDirPath()  + "/../lib/paraview-4.2/site-packages/vtk"; // Windows install tree
+             << QCoreApplication::applicationDirPath()  + "/../lib/paraview-" + PARAVIEW_VERSION // Windows install tree
+             << QCoreApplication::applicationDirPath()  + "/../lib/paraview-" + PARAVIEW_VERSION + "/site-packages" // Windows install tree
+             << QCoreApplication::applicationDirPath()  + "/../lib/paraview-" + PARAVIEW_VERSION + "/site-packages/vtk" // Windows install tree
+             << QCoreApplication::applicationDirPath()  + "/../paraview-" + PARAVIEW_VERSION // Linux 4.3+ install tree
+             << QCoreApplication::applicationDirPath()  + "/../paraview-" + PARAVIEW_VERSION + "/site-packages" // Linux 4.3+ install tree
+             << QCoreApplication::applicationDirPath()  + "/../paraview-" + PARAVIEW_VERSION + "/site-packages/vtk"; // Linux 4.3+ install tree
 
   foreach (const QString& dirname, pythonDirs)
     {

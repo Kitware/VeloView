@@ -131,6 +131,7 @@ int vtkVelodyneHDLPositionReader::vtkInternal::ProcessHDLPacket(const unsigned c
 {
   if(bytes != 512)
     {
+    // Data-Packet Specifications says that position-packets are 512 byte long.
     return 0;
     }
 
