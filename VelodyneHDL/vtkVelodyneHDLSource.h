@@ -89,6 +89,7 @@ public:
 
   double GetDistanceResolutionM();
 
+  void SetCropMode(int);
   void SetCropReturns(int);
   void SetCropOutside(int);
   void SetCropRegion(double[6]);

@@ -1325,17 +1325,20 @@ bool vtkVelodyneHDLReader::vtkInternal::shouldBeCroppedOut(double pos[3], double
       // Spherical mode
       {
         double R = std::sqrt(pos[0] * pos[0] + pos[1] * pos[1] + pos[2] * pos[2]);
+        double vertAngle = std::atan2(pos[2], std::sqrt(pos[0] * pos[0] + pos[1] * pos[1]));
+        vertAngle *= 180.0 / vtkMath::Pi();
         bool pointInsideOfBounds;
-        if (this->CropRegion[0] <= this->CropRegion[1])
+        if (this->CropRegion[0] <= this->CropRegion[1]) // 0 is NOT in theta range
         {
           pointInsideOfBounds = theta >= this->CropRegion[0] && theta <= this->CropRegion[1] &&
             R >= this->CropRegion[4] && R <= this->CropRegion[5];
         }
-        else
+        else // theta range includes 0
         {
           pointInsideOfBounds = (theta >= this->CropRegion[0] || theta <= this->CropRegion[1]) &&
             R >= this->CropRegion[4] && R <= this->CropRegion[5];
         }
+        pointInsideOfBounds &= (vertAngle > this->CropRegion[2] && vertAngle < this->CropRegion[3]);
         return ((pointInsideOfBounds && this->CropOutside) ||
           (!pointInsideOfBounds && !this->CropOutside));
         break;

@@ -915,6 +915,14 @@ void vtkVelodyneHDLSource::GetLaserSelection(int LaserSelection[HDL_MAX_NUM_LASE
 }
 
 //-----------------------------------------------------------------------------
+void vtkVelodyneHDLSource::SetCropMode(int cm)
+{
+  boost::lock_guard<boost::mutex> lock(this->Internal->Consumer->ReaderMutex);
+
+  this->Internal->Consumer->GetReader()->SetCropMode(cm);
+  this->Modified();
+}
+//-----------------------------------------------------------------------------
 void vtkVelodyneHDLSource::SetCropReturns(int cr)
 {
   boost::lock_guard<boost::mutex> lock(this->Internal->Consumer->ReaderMutex);
