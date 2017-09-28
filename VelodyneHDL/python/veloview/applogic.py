@@ -1620,20 +1620,14 @@ def onCropReturns(show = True):
     firstCorner = QtGui.QVector3D()
     secondCorner = QtGui.QVector3D()
 
-    reader = getReader()
-    sensor = getSensor()
+    readerOrSensor = getReader() or getSensor()
 
-    if reader is not None:
-        cropEnabled = reader.CropReturns
-        cropOutside = reader.CropOutside
-        firstCorner = QtGui.QVector3D(reader.CropRegion[0], reader.CropRegion[2], reader.CropRegion[4])
-        secondCorner = QtGui.QVector3D(reader.CropRegion[1], reader.CropRegion[3], reader.CropRegion[5])
-
-    if sensor is not None:
-        cropEnabled = sensor.CropReturns
-        cropOutside = sensor.CropOutside
-        firstCorner = QtGui.QVector3D(sensor.CropRegion[0], sensor.CropRegion[2], sensor.CropRegion[4])
-        secondCorner = QtGui.QVector3D(sensor.CropRegion[1], sensor.CropRegion[3], sensor.CropRegion[5])
+    # Retrieve current values to fill the UI
+    if readerOrSensor is not None:
+        cropEnabled = readerOrSensor.CropReturns
+        cropOutside = readerOrSensor.CropOutside
+        firstCorner = QtGui.QVector3D(readerOrSensor.CropRegion[0], readerOrSensor.CropRegion[2], readerOrSensor.CropRegion[4])
+        secondCorner = QtGui.QVector3D(readerOrSensor.CropRegion[1], readerOrSensor.CropRegion[3], readerOrSensor.CropRegion[5])
 
     #show the dialog box
     if show:
@@ -1651,22 +1645,13 @@ def onCropReturns(show = True):
         if not dialog.exec_():
             return
 
-    if reader is not None:
-        reader.CropReturns = dialog.croppingEnabled
-        reader.CropOutside = dialog.cropOutside
-        reader.GetClientSideObject().SetCropMode(dialog.GetCropMode())
+    if readerOrSensor is not None:
+        readerOrSensor.CropReturns = dialog.croppingEnabled
+        readerOrSensor.CropOutside = dialog.cropOutside
+        readerOrSensor.GetClientSideObject().SetCropMode(dialog.GetCropMode())
         p1 = dialog.firstCorner
         p2 = dialog.secondCorner
-        reader.CropRegion = [p1.x(), p2.x(), p1.y(), p2.y(), p1.z(), p2.z()]
-        if show:
-            smp.Render()
-
-    if sensor is not None:
-        sensor.CropReturns = dialog.croppingEnabled
-        sensor.CropOutside = dialog.cropOutside
-        p1 = dialog.firstCorner
-        p2 = dialog.secondCorner
-        sensor.CropRegion = [p1.x(), p2.x(), p1.y(), p2.y(), p1.z(), p2.z()]
+        readerOrSensor.CropRegion = [p1.x(), p2.x(), p1.y(), p2.y(), p1.z(), p2.z()]
         if show:
             smp.Render()
 

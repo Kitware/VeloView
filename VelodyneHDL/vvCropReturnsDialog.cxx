@@ -325,34 +325,37 @@ void vvCropReturnsDialog::pqInternal::SetSphericalSettings()
 
   // Here we take the spherical coordinates used in mathematics (and not physic)
   // (r,theta,phi)
-  // theta is between [0,360]
-  this->X1SpinBox->setMinimum(0);
-  this->X2SpinBox->setMinimum(0);
-  this->XDoubleRangeSlider.setMinimum(0);
-  this->X1SpinBox->setMaximum(360);
-  this->X2SpinBox->setMaximum(360);
-  this->XDoubleRangeSlider.setMaximum(360);
-  // phi is between [0,180]
-  this->Y1SpinBox->setMinimum(0);
-  this->Y2SpinBox->setMinimum(0);
-  this->YDoubleRangeSlider.setMinimum(0);
-  this->Y1SpinBox->setMaximum(180);
-  this->Y2SpinBox->setMaximum(180);
-  this->YDoubleRangeSlider.setMaximum(180);
+  double minR = 0, maxR = 240;
+  double minTheta = 0, maxTheta = 360; // Rotational Angle
+  double minPhi = -90, maxPhi = 90;    // Vertical Angle
+  // theta is between [minTheta,maxTheta] - Rotational Angle
+  this->X1SpinBox->setMinimum(minTheta);
+  this->X2SpinBox->setMinimum(minTheta);
+  this->XDoubleRangeSlider.setMinimum(minTheta);
+  this->X1SpinBox->setMaximum(maxTheta);
+  this->X2SpinBox->setMaximum(maxTheta);
+  this->XDoubleRangeSlider.setMaximum(maxTheta);
+  // phi is between [minPhi,maxPhi] - Vertical Angle
+  this->Y1SpinBox->setMinimum(minPhi);
+  this->Y2SpinBox->setMinimum(minPhi);
+  this->YDoubleRangeSlider.setMinimum(minPhi);
+  this->Y1SpinBox->setMaximum(maxPhi);
+  this->Y2SpinBox->setMaximum(maxPhi);
+  this->YDoubleRangeSlider.setMaximum(maxPhi);
   // R is positive
-  this->Z1SpinBox->setMinimum(0);
-  this->Z2SpinBox->setMinimum(0);
-  this->ZDoubleRangeSlider.setMinimum(0);
-  this->Z1SpinBox->setMaximum(120);
-  this->Z2SpinBox->setMaximum(120);
-  this->ZDoubleRangeSlider.setMaximum(120);
+  this->Z1SpinBox->setMinimum(minR);
+  this->Z2SpinBox->setMinimum(minR);
+  this->ZDoubleRangeSlider.setMinimum(minR);
+  this->Z1SpinBox->setMaximum(maxR);
+  this->Z2SpinBox->setMaximum(maxR);
+  this->ZDoubleRangeSlider.setMaximum(maxR);
 }
 
 //-----------------------------------------------------------------------------
 void vvCropReturnsDialog::pqInternal::SetCartesianSettings()
 {
-  double minV = -150;
-  double maxV = 150;
+  double maxV = 300;
+  double minV = -maxV;
   this->ActivateSpinBox();
   // change the labels
   this->XLabel->setText("X");

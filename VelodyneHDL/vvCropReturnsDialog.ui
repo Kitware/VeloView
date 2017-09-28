@@ -74,10 +74,10 @@
            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
           </property>
           <property name="minimum">
-           <double>-100.000000000000000</double>
+           <double>-300.000000000000000</double>
           </property>
           <property name="maximum">
-           <double>100.000000000000000</double>
+           <double>300.000000000000000</double>
           </property>
          </widget>
         </item>
@@ -87,10 +87,10 @@
            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
           </property>
           <property name="minimum">
-           <double>-100.000000000000000</double>
+           <double>-300.000000000000000</double>
           </property>
           <property name="maximum">
-           <double>100.000000000000000</double>
+           <double>300.000000000000000</double>
           </property>
          </widget>
         </item>
@@ -114,10 +114,10 @@
            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
           </property>
           <property name="minimum">
-           <double>-100.000000000000000</double>
+           <double>-300.000000000000000</double>
           </property>
           <property name="maximum">
-           <double>100.000000000000000</double>
+           <double>300.000000000000000</double>
           </property>
          </widget>
         </item>
@@ -127,10 +127,10 @@
            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
           </property>
           <property name="minimum">
-           <double>-100.000000000000000</double>
+           <double>-300.000000000000000</double>
           </property>
           <property name="maximum">
-           <double>100.000000000000000</double>
+           <double>300.000000000000000</double>
           </property>
          </widget>
         </item>
@@ -154,10 +154,10 @@
            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
           </property>
           <property name="minimum">
-           <double>-100.000000000000000</double>
+           <double>-300.000000000000000</double>
           </property>
           <property name="maximum">
-           <double>100.000000000000000</double>
+           <double>300.000000000000000</double>
           </property>
          </widget>
         </item>
@@ -167,10 +167,10 @@
            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
           </property>
           <property name="minimum">
-           <double>-100.000000000000000</double>
+           <double>-300.000000000000000</double>
           </property>
           <property name="maximum">
-           <double>100.000000000000000</double>
+           <double>300.000000000000000</double>
           </property>
          </widget>
         </item>
