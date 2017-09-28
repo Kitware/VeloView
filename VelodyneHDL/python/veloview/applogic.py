@@ -536,6 +536,7 @@ def openPCAP(filename, positionFilename=None):
     if positionFilename is None:
         posreader = smp.VelodyneHDLPositionReader(guiName="Position",
                                                   FileName=filename)
+        posreader.GetClientSideObject().SetShouldWarnOnWeirdGPSData(app.geolocationToolBar.visible)
     else:
         posreader = smp.ApplanixPositionReader(guiName="Position",
                                                FileName=positionFilename)
@@ -543,7 +544,6 @@ def openPCAP(filename, positionFilename=None):
         posreader.BaseRoll = calibration.gpsRoll
         posreader.BasePitch = calibration.gpsPitch
 
-    posreader.GetClientSideObject().SetShouldWarnOnWeirdGPSData(app.geolocationToolBar.visible)
     smp.Show(posreader)
 
     # Create a sphere glyph
@@ -579,8 +579,8 @@ def openPCAP(filename, positionFilename=None):
         smp.Render(app.overheadView)
     else:
         if positionFilename is not None:
-            QtGui.QMessageBox.warning(getMainWindow(), 'Georeferncing data invalid',
-                                      'File %s is not supported' % positionFilename)
+            QtGui.QMessageBox.warning(getMainWindow(), 'Georeferencing data invalid',
+                                      'File %s is empty or not supported' % positionFilename)
 
         smp.Delete(posreader)
 
@@ -768,7 +768,7 @@ def saveCSVCurrentFrame(filename):
     rotateCSVFile(filename)
 
 def saveCSVCurrentFrameSelection(filename):
-    source = smp.GetActiveSource()
+    source = getReader()
     selection = source.GetSelectionOutput(0)
     extractSelection = smp.ExtractSelection(Input = source, Selection = selection.Selection)
     w = smp.CreateWriter(filename, extractSelection)
