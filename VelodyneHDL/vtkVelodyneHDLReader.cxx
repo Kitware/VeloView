@@ -435,6 +435,7 @@ public:
   RPMCalculator RpmCalculator;
 
   int LastAzimuth;
+  int LastAzimuthSlope;
   unsigned int LastTimestamp;
   double currentRpm;
   std::vector<double> RpmByFrames;
@@ -493,6 +494,7 @@ public:
   bool shouldBeCroppedOut(double pos[3], double theta);
 
   void ProcessHDLPacket(unsigned char* data, std::size_t bytesReceived);
+  static bool shouldSplitFrame(uint16_t, int, int&);
 
   double ComputeTimestamp(unsigned int tohTime);
   void ComputeOrientation(double timestamp, vtkTransform* geotransform);
@@ -2083,7 +2085,7 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(
       ? 0
       : (firingData->blockIdentifier == BLOCK_32_TO_63 ? 32 : 0);
 
-    if (firingData->rotationalPosition < this->LastAzimuth)
+    if (shouldSplitFrame(firingData->rotationalPosition, this->LastAzimuth, this->LastAzimuthSlope))
     {
       this->SplitFrame();
       this->LastAzimuth = -1;
@@ -2101,6 +2103,32 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(
 
     this->LastAzimuth = firingData->rotationalPosition;
   }
+}
+
+bool vtkVelodyneHDLReader::vtkInternal::shouldSplitFrame(
+  uint16_t curRotationalPosition, int prevRotationalPosition, int& LastAzimuthSlope)
+{
+  int curRotationalPositionSlope = curRotationalPosition - prevRotationalPosition;
+  if (curRotationalPositionSlope == 0)
+    return false;
+  int isSlopeSameDirection = curRotationalPositionSlope * LastAzimuthSlope;
+  // curRotationalPosition has same slope as before: no split
+  if (isSlopeSameDirection > 0)
+    return false;
+  // curRotationalPosition has different slope as before: split and reset slope
+  if (isSlopeSameDirection < 0)
+  {
+    LastAzimuthSlope = 0;
+    return true;
+  }
+  // LastAzimuthSlope not set: set the slope
+  if (LastAzimuthSlope == 0 && curRotationalPositionSlope != 0)
+  {
+    LastAzimuthSlope = curRotationalPositionSlope;
+    return false;
+  }
+  vtkGenericWarningMacro("Unhandled sequence of rotationalPosition.");
+  return false;
 }
 
 //-----------------------------------------------------------------------------
@@ -2125,11 +2153,13 @@ int vtkVelodyneHDLReader::ReadFrameInformation()
   double timeSinceStart = 0;
 
   unsigned int lastAzimuth = 0;
+  int lastAzimuthSlope = 0;
   unsigned int lastTimestamp = 0;
 
   std::vector<fpos_t> filePositions;
   std::vector<int> skips;
   unsigned long long numberOfFiringPackets = 0;
+  unsigned long long lastnumberOfFiringPackets = 0;
 
   fpos_t lastFilePosition;
   reader.GetFilePosition(&lastFilePosition);
@@ -2174,18 +2204,25 @@ int vtkVelodyneHDLReader::ReadFrameInformation()
         isEmptyFrame = false;
       }
 
-      if (firingData.rotationalPosition < lastAzimuth)
+      if (vtkVelodyneHDLReader::vtkInternal::shouldSplitFrame(
+            firingData.rotationalPosition, lastAzimuth, lastAzimuthSlope))
       {
         // Add file position if the frame is not empty
         if (!isEmptyFrame || !this->Internal->IgnoreEmptyFrames)
         {
           filePositions.push_back(lastFilePosition);
           skips.push_back(i);
+          std::cout << std::endl
+                    << "End of frame. #packets: "
+                    << numberOfFiringPackets - lastnumberOfFiringPackets << std::endl
+                    << "RotationalPositions: ";
+          lastnumberOfFiringPackets = numberOfFiringPackets;
         }
         this->UpdateProgress(0.0);
         // We start a new frame, reinitialize the boolean
         isEmptyFrame = true;
       }
+      std::cout << firingData.rotationalPosition << ", ";
 
       lastAzimuth = firingData.rotationalPosition;
     }
