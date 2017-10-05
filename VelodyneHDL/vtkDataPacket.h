@@ -47,6 +47,7 @@ enum SensorType
   VLP32AB = 0x23,    // decimal: 35
   VLP16HiRes = 0x24, // decimal: 36
   VLP32C = 0x28,     // decimal: 40
+  VelArray = 0x31,   // decimal: 49
 
   // Work around : this is not defined by any specification
   // But it is usefull to define
@@ -61,6 +62,7 @@ static int num_laser(SensorType sensorType)
     case HDL32E:
     case VLP32AB:
     case VLP32C:
+    case VelArray:
       return 32;
     case VLP16:
     case VLP16HiRes:
@@ -103,6 +105,18 @@ struct HDLFiringData
   HDLLaserReturn laserReturns[HDL_LASER_PER_FIRING];
 
   inline bool isUpperBlock() const { return blockIdentifier == BLOCK_32_TO_63; }
+  inline bool isVelArrayFiring() const { return blockIdentifier < 0xaaff; }
+  inline uint16_t getElevation1000th() const
+  {
+    if (isVelArrayFiring())
+    {
+      return blockIdentifier;
+      // If the elevation is not NBO, then use the following
+      // uint8_t * bytes = reinterpret_cast<uint8_t *>(&blockIdentifier);
+      // return bytes[0] << 8 + bytes[1] << 0;
+    }
+    return 0;
+  }
 };
 
 struct HDLDataPacket
@@ -130,11 +144,14 @@ struct HDLDataPacket
     if (dataLength != getDataByteLength())
       return false;
     const HDLDataPacket* dataPacket = reinterpret_cast<const HDLDataPacket*>(data);
-    return (dataPacket->firingData[0].blockIdentifier == BLOCK_0_TO_31 ||
-      dataPacket->firingData[0].blockIdentifier == BLOCK_32_TO_63);
+    return (true || (dataPacket->factoryField2 == VelArray) ||
+      (dataPacket->firingData[0].blockIdentifier == BLOCK_0_TO_31) ||
+      (dataPacket->firingData[0].blockIdentifier == BLOCK_32_TO_63));
   }
 
   inline bool isHDL64() const { return firingData[1].isUpperBlock(); }
+
+  inline bool isVelArray() const { return firingData[0].isVelArrayFiring(); }
 
   inline bool isDualModeReturn() const { return isDualModeReturn(isHDL64()); }
   inline bool isDualModeReturn(const bool isHDL64) const
