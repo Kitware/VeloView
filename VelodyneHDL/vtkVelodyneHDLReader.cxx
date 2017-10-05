@@ -350,6 +350,7 @@ public:
     this->CropMode = Cartesian;
     this->ShouldAddDualReturnArray = false;
     this->alreadyWarnedForIgnoredHDL64FiringPacket = false;
+    this->OutputPacketProcessingDebugInfo = false;
     this->SensorPowerMode = 0;
     this->Skip = 0;
     this->LastAzimuth = -1;
@@ -420,6 +421,8 @@ public:
   bool IsHDL64Data;
   bool IgnoreEmptyFrames;
   bool alreadyWarnedForIgnoredHDL64FiringPacket;
+
+  bool OutputPacketProcessingDebugInfo;
 
   // Bolean to manage the correction of intensity which indicates if the user want to correct the
   // intensities
@@ -555,6 +558,22 @@ void vtkVelodyneHDLReader::SetIgnoreZeroDistances(int value)
   if (this->Internal->IgnoreZeroDistances != value)
   {
     this->Internal->IgnoreZeroDistances = value;
+    this->Modified();
+  }
+}
+
+//-----------------------------------------------------------------------------
+int vtkVelodyneHDLReader::GetOutputPacketProcessingDebugInfo() const
+{
+  return this->Internal->OutputPacketProcessingDebugInfo;
+}
+
+//-----------------------------------------------------------------------------
+void vtkVelodyneHDLReader::SetOutputPacketProcessingDebugInfo(int value)
+{
+  if (this->Internal->OutputPacketProcessingDebugInfo != value)
+  {
+    this->Internal->OutputPacketProcessingDebugInfo = value;
     this->Modified();
   }
 }
@@ -1236,6 +1255,14 @@ vtkSmartPointer<T> CreateDataArray(const char* name, vtkIdType np, vtkPolyData* 
   return array;
 }
 }
+
+#define PacketProcessingDebugMacro(x)                                                              \
+  {                                                                                                \
+    if (this->Internal->OutputPacketProcessingDebugInfo)                                           \
+    {                                                                                              \
+      std::cout << " " x;                                                                          \
+    }                                                                                              \
+  }
 
 //-----------------------------------------------------------------------------
 vtkSmartPointer<vtkPolyData> vtkVelodyneHDLReader::vtkInternal::CreateData(vtkIdType numberOfPoints)
@@ -2212,17 +2239,16 @@ int vtkVelodyneHDLReader::ReadFrameInformation()
         {
           filePositions.push_back(lastFilePosition);
           skips.push_back(i);
-          std::cout << std::endl
-                    << "End of frame. #packets: "
-                    << numberOfFiringPackets - lastnumberOfFiringPackets << std::endl
-                    << "RotationalPositions: ";
+          PacketProcessingDebugMacro(<< "\n\nEnd of frame. #packets: "
+                                     << numberOfFiringPackets - lastnumberOfFiringPackets << "\n\n"
+                                     << "RotationalPositions: ");
           lastnumberOfFiringPackets = numberOfFiringPackets;
         }
         this->UpdateProgress(0.0);
         // We start a new frame, reinitialize the boolean
         isEmptyFrame = true;
       }
-      std::cout << firingData.rotationalPosition << ", ";
+      PacketProcessingDebugMacro(<< firingData.rotationalPosition << ", ");
 
       lastAzimuth = firingData.rotationalPosition;
     }

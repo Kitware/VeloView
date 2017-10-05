@@ -113,6 +113,9 @@ public:
 
   void GetXMLColorTable(double XMLColorTable[]);
 
+  int GetOutputPacketProcessingDebugInfo() const;
+  void SetOutputPacketProcessingDebugInfo(int);
+
   int GetIgnoreZeroDistances() const;
   void SetIgnoreZeroDistances(int);
 
