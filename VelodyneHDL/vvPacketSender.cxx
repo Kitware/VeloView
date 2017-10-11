@@ -98,6 +98,7 @@ int vvPacketSender::pumpPacket()
     return timeSinceStart;
   }
 
+  // Position packet
   if ((dataLength == 512))
   {
     size_t bytesSent = this->Internal->PositionSocket->send_to(
