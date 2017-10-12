@@ -503,7 +503,7 @@ def openPCAP(filename, positionFilename=None):
                                    CalibrationFile=calibrationFile,
                                    ApplyTransform=(app.transformMode > 0),
                                    NumberOfTrailingFrames=app.trailingFramesSpinBox.value,
-                                   PointsSkip=app.trailingFramesSpinBox.value)
+                                   FiringsSkip=app.trailingFramesSpinBox.value)
 
     app.reader = reader
     app.filenameLabel.setText('File: %s' % os.path.basename(filename))
@@ -1862,20 +1862,20 @@ def addShortcuts(keySequenceStr, function):
 
 
 def onTrailingFramesChanged(numFrames):
-    try:
-        app.reader.NumberOfTrailingFrames = numFrames
-        smp.Render()
-        smp.Render(getSpreadSheetViewProxy())
-    except AttributeError:
-        pass
+    hdlSource = app.sensor or app.reader
 
-def onPointsSkipChanged(pr):
-    try:
-        app.reader.PointsSkip = pr
+    if hdlSource is not None:
+        hdlSource.NumberOfTrailingFrames = numFrames
         smp.Render()
         smp.Render(getSpreadSheetViewProxy())
-    except AttributeError:
-        pass
+
+def onFiringsSkipChanged(pr):
+    hdlSource = app.sensor or app.reader
+
+    if hdlSource is not None:
+        hdlSource.FiringsSkip = pr
+        smp.Render()
+        smp.Render(getSpreadSheetViewProxy())
 
 def setupTimeSliderWidget():
 
@@ -2489,19 +2489,19 @@ def setupActions():
     app.actions['actionTrailingFramesSelector'] = timeToolBar.addWidget(spinBox)
     app.actions['actionTrailingFramesSelector'].setVisible(True)
 
-    pointsSkipLabel = QtGui.QLabel('Skip:')
-    pointsSkipLabel.toolTip = "Number of Points to Skip"
-    timeToolBar.addWidget(pointsSkipLabel)
+    FiringsSkipLabel = QtGui.QLabel('Skip:')
+    FiringsSkipLabel.toolTip = "Number of Points to Skip"
+    timeToolBar.addWidget(FiringsSkipLabel)
 
-    pointsSkipBox = QtGui.QSpinBox()
-    pointsSkipBox.toolTip = "Number of Points to Skip"
-    pointsSkipBox.setMinimum(0)
-    pointsSkipBox.setMaximum(100)
-    pointsSkipBox.connect('valueChanged(int)', onPointsSkipChanged)
-    app.pointsSkipSpinBox = pointsSkipBox
+    FiringsSkipBox = QtGui.QSpinBox()
+    FiringsSkipBox.toolTip = "Number of Points to Skip"
+    FiringsSkipBox.setMinimum(0)
+    FiringsSkipBox.setMaximum(100)
+    FiringsSkipBox.connect('valueChanged(int)', onFiringsSkipChanged)
+    app.FiringsSkipSpinBox = FiringsSkipBox
 
-    app.actions['actionPointsSkipSelector'] = timeToolBar.addWidget(pointsSkipBox)
-    app.actions['actionPointsSkipSelector'].setVisible(True)
+    app.actions['actionFiringsSkipSelector'] = timeToolBar.addWidget(FiringsSkipBox)
+    app.actions['actionFiringsSkipSelector'].setVisible(True)
 
     buttons = {}
     for button in getPlaybackToolBar().findChildren('QToolButton'):
