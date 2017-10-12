@@ -1162,7 +1162,7 @@ int vtkVelodyneHDLSource::RequestData(vtkInformation* vtkNotUsed(request),
   }
 
   double actualTime;
-  vtkSmartPointer<vtkPolyData> polyData = nullptr;
+  vtkSmartPointer<vtkPolyData> polyData(NULL);
   if (this->Internal->Consumer->GetNumberOfTrailingFrames() > 0)
   {
     polyData = this->Internal->Consumer->GetDatasetsForTime(
