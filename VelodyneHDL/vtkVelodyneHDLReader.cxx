@@ -521,6 +521,8 @@ public:
   // Parameters ready by calibration
   std::vector<double> cos_lookup_table_;
   std::vector<double> sin_lookup_table_;
+  std::vector<double> cos_lookup_table_1000_;
+  std::vector<double> sin_lookup_table_1000_;
   HDLLaserCorrection laser_corrections_[HDL_MAX_NUM_LASERS];
   double XMLColorTable[HDL_MAX_NUM_LASERS][3];
   int CalibrationReportedNumLasers;
@@ -1595,6 +1597,15 @@ void vtkVelodyneHDLReader::vtkInternal::InitTrigonometricTables()
       cos_lookup_table_[i] = std::cos(rad);
       sin_lookup_table_[i] = std::sin(rad);
     }
+    const int max_firing_subelevation_in_1000th_of_degrees = 11250;
+    cos_lookup_table_1000_.resize(max_firing_subelevation_in_1000th_of_degrees);
+    sin_lookup_table_1000_.resize(max_firing_subelevation_in_1000th_of_degrees);
+    for (unsigned int i = 0; i < max_firing_subelevation_in_1000th_of_degrees; i++)
+    {
+      double rad = HDL_Grabber_toRadians(i / 1000.0);
+      cos_lookup_table_1000_[i] = std::cos(rad);
+      sin_lookup_table_1000_[i] = std::sin(rad);
+    }
   }
 }
 
@@ -1950,10 +1961,10 @@ void vtkVelodyneHDLReader::vtkInternal::ComputeCorrectedValues(const unsigned sh
          sinVertCorrection = correction->sinVertCorrection;
   if (elevation != 0)
   {
-    cosVertCorrection = correction->cosVertCorrection * this->cos_lookup_table_[elevation / 10] -
-      correction->sinVertCorrection * this->sin_lookup_table_[elevation / 10];
-    sinVertCorrection = correction->sinVertCorrection * this->cos_lookup_table_[elevation / 10] +
-      correction->cosVertCorrection * this->sin_lookup_table_[elevation / 10];
+    cosVertCorrection = correction->cosVertCorrection * this->cos_lookup_table_1000_[elevation] -
+      correction->sinVertCorrection * this->sin_lookup_table_1000_[elevation];
+    sinVertCorrection = correction->sinVertCorrection * this->cos_lookup_table_1000_[elevation] +
+      correction->cosVertCorrection * this->sin_lookup_table_1000_[elevation];
   }
   double cosVertOffsetCorrection = correction->verticalOffsetCorrection * cosVertCorrection;
   double sinVertOffsetCorrection = correction->verticalOffsetCorrection * sinVertCorrection;
