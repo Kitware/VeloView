@@ -26,6 +26,7 @@
 
 =========================================================================*/
 #include "vtkVelodyneHDLSource.h"
+#include "vtkAppendPolyData.h"
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
 #include "vtkNew.h"
@@ -146,6 +147,7 @@ public:
     this->ShouldCheckSensor = true;
     this->MaxNumberOfDatasets = 1000;
     this->LastTime = 0.0;
+    this->NumberOfTrailingFrames = 0;
   }
 
   void HandleSensorData(const unsigned char* data, unsigned int length)
@@ -191,6 +193,30 @@ public:
     {
       actualTime = this->Timesteps[stepIndex];
       return this->Datasets[stepIndex];
+    }
+    actualTime = 0;
+    return 0;
+  }
+
+  vtkSmartPointer<vtkPolyData> GetDatasetsForTime(
+  double timeRequest, double& actualTime, int NumberOfTrailingFrames)
+  {
+    boost::lock_guard<boost::mutex> lock(this->ConsumerMutex);
+
+    size_t stepIndex = this->GetIndexForTime(timeRequest);
+    if (stepIndex < this->Timesteps.size())
+    {
+      actualTime = this->Timesteps[stepIndex];
+      // merge datasets with a vtkAppendPolydata. (if speed is low, maybe just return a multibock
+      // where each block is a timestep)
+      vtkSmartPointer<vtkAppendPolyData> appendFilter = vtkSmartPointer<vtkAppendPolyData>::New();
+      for (int i = stepIndex - std::min(stepIndex, static_cast<size_t>(NumberOfTrailingFrames)); i < stepIndex; ++i)
+      {
+        appendFilter->AddInputData(this->Datasets[i]);
+      }
+
+      appendFilter->Update();
+      return vtkSmartPointer<vtkPolyData>(appendFilter->GetOutput());
     }
     actualTime = 0;
     return 0;
@@ -271,6 +297,16 @@ public:
     this->Timesteps.clear();
   }
 
+  void SetNumberOfTrailingFrames(int numberTrailing)
+  {
+    this->NumberOfTrailingFrames = std::max(0, numberTrailing);
+  }
+
+  int GetNumberOfTrailingFrames()
+  {
+    return this->NumberOfTrailingFrames;
+  }
+
   // Hold this when running reader code code or modifying its internals
   boost::mutex ReaderMutex;
 
@@ -320,6 +356,7 @@ protected:
   bool NewData;
   int MaxNumberOfDatasets;
   double LastTime;
+  int NumberOfTrailingFrames;
 
   // Hold this when modifying internals of reader
   boost::mutex ConsumerMutex;
@@ -1125,8 +1162,17 @@ int vtkVelodyneHDLSource::RequestData(vtkInformation* vtkNotUsed(request),
   }
 
   double actualTime;
-  vtkSmartPointer<vtkPolyData> polyData =
-    this->Internal->Consumer->GetDatasetForTime(timeRequest, actualTime);
+  vtkSmartPointer<vtkPolyData> polyData = nullptr;
+  if (this->Internal->Consumer->GetNumberOfTrailingFrames() > 0)
+  {
+    polyData = this->Internal->Consumer->GetDatasetsForTime(
+      timeRequest, actualTime, this->Internal->Consumer->GetNumberOfTrailingFrames());
+  }
+  else
+  {
+    polyData = this->Internal->Consumer->GetDatasetForTime(timeRequest, actualTime);
+  }
+
   if (polyData)
   {
     // printf("request %f, returning %f\n", timeRequest, actualTime);
@@ -1147,4 +1193,19 @@ void vtkVelodyneHDLSource::PrintSelf(ostream& os, vtkIndent indent)
 void vtkVelodyneHDLSource::SetIntensitiesCorrected(const bool& state)
 {
   this->Internal->Consumer->GetReader()->SetIntensitiesCorrected(state);
+}
+
+//-----------------------------------------------------------------------------
+void vtkVelodyneHDLSource::SetPointsSkip(int pr)
+{
+  this->Internal->Consumer->GetReader()->SetPointsSkip(pr);
+  this->Internal->Consumer->GetReader()->Modified();
+}
+
+//-----------------------------------------------------------------------------
+void vtkVelodyneHDLSource::SetNumberOfTrailingFrames(int numTrailing)
+{
+  // No need to call Modify method after setting the trailing frame
+  // since the VelodyneHDLSource is a temporal filter
+  this->Internal->Consumer->SetNumberOfTrailingFrames(numTrailing);
 }

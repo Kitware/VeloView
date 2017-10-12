@@ -1862,20 +1862,20 @@ def addShortcuts(keySequenceStr, function):
 
 
 def onTrailingFramesChanged(numFrames):
-    try:
-        app.reader.NumberOfTrailingFrames = numFrames
+    hdlSource = app.sensor or app.reader
+
+    if hdlSource is not None:
+        hdlSource.NumberOfTrailingFrames = numFrames
         smp.Render()
         smp.Render(getSpreadSheetViewProxy())
-    except AttributeError:
-        pass
 
 def onPointsSkipChanged(pr):
-    try:
-        app.reader.PointsSkip = pr
+    hdlSource = app.sensor or app.reader
+
+    if hdlSource is not None:
+        hdlSource.PointsSkip = pr
         smp.Render()
         smp.Render(getSpreadSheetViewProxy())
-    except AttributeError:
-        pass
 
 def setupTimeSliderWidget():
 

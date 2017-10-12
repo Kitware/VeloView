@@ -84,6 +84,13 @@ public:
   vtkSetMacro(isCrashAnalysing, bool);
   vtkGetMacro(isCrashAnalysing, bool);
 
+  // Description:
+  // Number of frames behind current frame to read.  Zero indicates only
+  // show the current frame.  Negative numbers are invalid.
+  void SetNumberOfTrailingFrames(int numberTrailing);
+
+  void SetPointsSkip(int);
+
   void SetLaserSelection(int LaserSelection[HDL_MAX_NUM_LASERS]);
   void GetLaserSelection(int LaserSelection[HDL_MAX_NUM_LASERS]);
 

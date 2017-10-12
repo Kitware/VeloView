@@ -41,6 +41,30 @@
       </IntVectorProperty>
 
       <IntVectorProperty
+          name="PointsSkip"
+          animateable="0"
+          command="SetPointsSkip"
+          default_values="0"
+          number_of_elements="1">
+          <IntRangeDomain name="range" min="0" max="99"/>
+        <Documentation>
+          Skip points set to 2 or higher
+        </Documentation>
+      </IntVectorProperty>
+
+      <IntVectorProperty
+          name="NumberOfTrailingFrames"
+          animateable="0"
+          command="SetNumberOfTrailingFrames"
+          default_values="0"
+          number_of_elements="1">
+          <IntRangeDomain name="range" min="0" max="10000"/>
+        <Documentation>
+          Number of frames before the current frame to show
+        </Documentation>
+      </IntVectorProperty>
+
+      <IntVectorProperty
           name="CropOutside"
           animateable="0"
           command="SetCropOutside"
