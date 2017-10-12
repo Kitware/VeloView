@@ -27,7 +27,7 @@ for pcap, conf in tests.iteritems():
                                  CalibrationFile = calibPath,
                                  ApplyTransform = False,
                                  NumberOfTrailingFrames = 0,
-                                 PointsSkip = 000)
+                                 FiringsSkip = 000)
   reader.GetClientSideObject().ReadFrameInformation()
   w = vv.smp.XMLPPolyDataWriter(FileName = vtpPath + pcap[:-5] + ".vtp",
                              Input = reader,

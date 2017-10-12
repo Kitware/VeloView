@@ -89,7 +89,7 @@ public:
   // show the current frame.  Negative numbers are invalid.
   void SetNumberOfTrailingFrames(int numberTrailing);
 
-  void SetPointsSkip(int);
+  void SetFiringsSkip(int);
 
   void SetLaserSelection(int LaserSelection[HDL_MAX_NUM_LASERS]);
   void GetLaserSelection(int LaserSelection[HDL_MAX_NUM_LASERS]);

@@ -131,7 +131,7 @@ public:
   // A trick to workaround failure to wrap LaserSelection
   void SetDummyProperty(int);
 
-  void SetPointsSkip(int);
+  void SetFiringsSkip(int);
 
   void SetCropReturns(int);
   void SetCropOutside(int);

@@ -41,9 +41,9 @@
       </IntVectorProperty>
 
       <IntVectorProperty
-          name="PointsSkip"
+          name="FiringsSkip"
           animateable="0"
-          command="SetPointsSkip"
+          command="SetFiringsSkip"
           default_values="0"
           number_of_elements="1">
           <IntRangeDomain name="range" min="0" max="99"/>

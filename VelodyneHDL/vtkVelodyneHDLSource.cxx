@@ -199,7 +199,7 @@ public:
   }
 
   vtkSmartPointer<vtkPolyData> GetDatasetsForTime(
-  double timeRequest, double& actualTime, int NumberOfTrailingFrames)
+    double timeRequest, double& actualTime, int NumberOfTrailingFrames)
   {
     boost::lock_guard<boost::mutex> lock(this->ConsumerMutex);
 
@@ -210,7 +210,8 @@ public:
       // merge datasets with a vtkAppendPolydata. (if speed is low, maybe just return a multibock
       // where each block is a timestep)
       vtkSmartPointer<vtkAppendPolyData> appendFilter = vtkSmartPointer<vtkAppendPolyData>::New();
-      for (int i = stepIndex - std::min(stepIndex, static_cast<size_t>(NumberOfTrailingFrames)); i < stepIndex; ++i)
+      for (int i = stepIndex - std::min(stepIndex, static_cast<size_t>(NumberOfTrailingFrames));
+           i < stepIndex; ++i)
       {
         appendFilter->AddInputData(this->Datasets[i]);
       }
@@ -302,10 +303,7 @@ public:
     this->NumberOfTrailingFrames = std::max(0, numberTrailing);
   }
 
-  int GetNumberOfTrailingFrames()
-  {
-    return this->NumberOfTrailingFrames;
-  }
+  int GetNumberOfTrailingFrames() { return this->NumberOfTrailingFrames; }
 
   // Hold this when running reader code code or modifying its internals
   boost::mutex ReaderMutex;
@@ -1196,9 +1194,9 @@ void vtkVelodyneHDLSource::SetIntensitiesCorrected(const bool& state)
 }
 
 //-----------------------------------------------------------------------------
-void vtkVelodyneHDLSource::SetPointsSkip(int pr)
+void vtkVelodyneHDLSource::SetFiringsSkip(int pr)
 {
-  this->Internal->Consumer->GetReader()->SetPointsSkip(pr);
+  this->Internal->Consumer->GetReader()->SetFiringsSkip(pr);
   this->Internal->Consumer->GetReader()->Modified();
 }
 

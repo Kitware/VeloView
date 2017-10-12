@@ -360,7 +360,7 @@ public:
     this->SplitCounter = 0;
     this->NumberOfTrailingFrames = 0;
     this->ApplyTransform = 0;
-    this->PointsSkip = 0;
+    this->FiringsSkip = 0;
     this->CropReturns = false;
     this->CropOutside = false;
     this->CropRegion[0] = this->CropRegion[1] = 0.0;
@@ -472,7 +472,7 @@ public:
   // User configurable parameters
   int NumberOfTrailingFrames;
   int ApplyTransform;
-  int PointsSkip;
+  int FiringsSkip;
   bool IgnoreZeroDistances;
   bool UseIntraFiringAdjustment;
 
@@ -779,9 +779,9 @@ void vtkVelodyneHDLReader::SetDummyProperty(int vtkNotUsed(dummy))
 }
 
 //-----------------------------------------------------------------------------
-void vtkVelodyneHDLReader::SetPointsSkip(int pr)
+void vtkVelodyneHDLReader::SetFiringsSkip(int pr)
 {
-  this->Internal->PointsSkip = pr;
+  this->Internal->FiringsSkip = pr;
   this->Modified();
 }
 
@@ -2120,7 +2120,7 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(
     }
 
     // Skip this firing every PointSkip
-    if (this->PointsSkip == 0 || firingBlock % (this->PointsSkip + 1) == 0)
+    if (this->FiringsSkip == 0 || firingBlock % (this->FiringsSkip + 1) == 0)
     {
       this->ProcessFiring(firingData, multiBlockLaserIdOffset, firingBlock, azimuthDiff, timestamp,
         rawtime,
