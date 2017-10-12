@@ -1102,6 +1102,7 @@ void vtkVelodyneHDLReader::DumpFrames(int startFrame, int endFrame, const std::s
   double timeSinceStart = 0;
 
   unsigned int lastAzimuth = 0;
+  int LastAzimuthSlope = 0;
   int currentFrame = startFrame;
 
   this->Internal->Reader->SetFilePosition(&this->Internal->FilePositions[startFrame]);
@@ -1128,9 +1129,10 @@ void vtkVelodyneHDLReader::DumpFrames(int startFrame, int endFrame, const std::s
 
     for (int i = skip; i < HDL_FIRING_PER_PKT; ++i)
     {
-      HDLFiringData firingData = dataPacket->firingData[i];
+      const HDLFiringData& firingData = dataPacket->firingData[i];
 
-      if (firingData.rotationalPosition < lastAzimuth)
+      if (this->Internal->shouldSplitFrame(
+            firingData.rotationalPosition, lastAzimuth, LastAzimuthSlope))
       {
         currentFrame++;
         if (currentFrame > endFrame)

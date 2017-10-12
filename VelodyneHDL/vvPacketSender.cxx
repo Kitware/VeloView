@@ -64,12 +64,14 @@ vvPacketSender::vvPacketSender(
   this->Internal->LIDARSocket = new boost::asio::ip::udp::socket(this->Internal->IOService);
   this->Internal->LIDARSocket->open(this->Internal->LIDAREndpoint.protocol());
   this->Internal->LIDARSocket->set_option(boost::asio::ip::udp::socket::reuse_address(true));
-  this->Internal->LIDARSocket->set_option(boost::asio::ip::multicast::enable_loopback(true)); //Allow to send the packet on the same machine
+  // Allow to send the packet on the same machine
+  this->Internal->LIDARSocket->set_option(boost::asio::ip::multicast::enable_loopback(true));
 
   this->Internal->PositionSocket = new boost::asio::ip::udp::socket(this->Internal->IOService);
   this->Internal->PositionSocket->open(this->Internal->PositionEndpoint.protocol());
   this->Internal->PositionSocket->set_option(boost::asio::ip::udp::socket::reuse_address(true));
-  this->Internal->PositionSocket->set_option(boost::asio::ip::multicast::enable_loopback(true)); //Allow to send the packet on the same machine
+  // Allow to send the packet on the same machine
+  this->Internal->PositionSocket->set_option(boost::asio::ip::multicast::enable_loopback(true));
 }
 
 //-----------------------------------------------------------------------------
@@ -98,6 +100,7 @@ int vvPacketSender::pumpPacket()
     return timeSinceStart;
   }
 
+  // Position packet
   if ((dataLength == 512))
   {
     size_t bytesSent = this->Internal->PositionSocket->send_to(
@@ -113,6 +116,8 @@ int vvPacketSender::pumpPacket()
       static_cast<int>(dataPacket->gpsTimestamp) - static_cast<int>(this->Internal->lastTimestamp);
     this->Internal->lastTimestamp = dataPacket->gpsTimestamp;
     ++this->Internal->PacketCount;
+    HDLDataPacket* modifiableDataPacket = const_cast<HDLDataPacket*>(dataPacket);
+
     size_t bytesSent = this->Internal->LIDARSocket->send_to(
       boost::asio::buffer(data, dataLength), this->Internal->LIDAREndpoint);
   }
