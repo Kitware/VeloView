@@ -680,7 +680,7 @@ const std::string& vtkVelodyneHDLReader::GetCorrectionsFile()
 
 #define PARAM(z, n, data) int x##n,
 #define VAL(z, n, data) x##n,
-#define B_HDL_MAX_NUM_LASERS 64
+#define B_HDL_MAX_NUM_LASERS 128
 void vtkVelodyneHDLReader::SetLaserSelection(BOOST_PP_REPEAT(
   BOOST_PP_DEC(B_HDL_MAX_NUM_LASERS), PARAM, "") int BOOST_PP_CAT(x, B_HDL_MAX_NUM_LASERS))
 {
@@ -2090,7 +2090,7 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(
 
   this->IsHDL64Data |= dataPacket->isHDL64();
 
-  if (!IsHDL64Data)
+  if (!IsHDL64Data || dataPacket->isVLS128())
   { // with HDL64, it should be filled by LoadCorrectionsFromStreamData
     this->ReportedSensor = dataPacket->getSensorType();
     this->ReportedSensorReturnMode = dataPacket->getDualReturnSensorMode();
@@ -2121,7 +2121,9 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(
     int multiBlockLaserIdOffset =
         (firingData->blockIdentifier == BLOCK_0_TO_31)  ?  0 :(
         (firingData->blockIdentifier == BLOCK_32_TO_63) ? 32 :(
-                                                           0));
+        (firingData->blockIdentifier == BLOCK_64_TO_95) ? 64 :(
+        (firingData->blockIdentifier == BLOCK_96_TO_127)? 96 :(
+                                                           0))));
     // clang-format on
 
     if (shouldSplitFrame(firingData->rotationalPosition, this->LastAzimuth, this->LastAzimuthSlope))
