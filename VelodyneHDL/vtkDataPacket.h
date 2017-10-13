@@ -31,13 +31,15 @@ namespace DataPacketFixedLength
 
 static const int HDL_NUM_ROT_ANGLES = 36001;
 static const int HDL_LASER_PER_FIRING = 32;
-static const int HDL_MAX_NUM_LASERS = 64;
+static const int HDL_MAX_NUM_LASERS = 128;
 static const int HDL_FIRING_PER_PKT = 12;
 
 enum HDLBlock
 {
   BLOCK_0_TO_31 = 0xeeff,
   BLOCK_32_TO_63 = 0xddff,
+  BLOCK_64_TO_95 = 0xccff,
+  BLOCK_96_TO_127 = 0xbbff,
 };
 
 enum SensorType
@@ -51,6 +53,7 @@ enum SensorType
   // Work around : this is not defined by any specification
   // But it is usefull to define
   HDL64 = 0xa0, // decimal: 160
+  VLS128 = 0xa1, // decimal: 161
 };
 static int num_laser(SensorType sensorType)
 {
@@ -65,6 +68,8 @@ static int num_laser(SensorType sensorType)
     case VLP16:
     case VLP16HiRes:
       return 16;
+    case VLS128:
+      return 128;
     default:
       return 0;
   }
@@ -113,6 +118,8 @@ struct HDLDataPacket
   uint8_t factoryField2;
   SensorType getSensorType() const
   {
+    if (isVLS128())
+      return VLS128;
     if (isHDL64())
       return HDL64;
     return static_cast<SensorType>(factoryField2);
@@ -136,6 +143,11 @@ struct HDLDataPacket
 
   inline bool isHDL64() const { return firingData[1].isUpperBlock(); }
 
+  inline bool isVLS128() const
+  {
+    return firingData[2].blockIdentifier == BLOCK_64_TO_95 &&
+      firingData[3].blockIdentifier == BLOCK_96_TO_127;
+  }
   inline bool isDualModeReturn() const { return isDualModeReturn(isHDL64()); }
   inline bool isDualModeReturn(const bool isHDL64) const
   {

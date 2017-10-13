@@ -1973,7 +1973,7 @@ def onGridProperties():
 
 
 def onLaserSelection(show = True):
-    nchannels = 64
+    nchannels = 128
     oldmask = [1] * nchannels
     reader = getReader()
     sensor = getSensor()
