@@ -2110,9 +2110,12 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(
   for (; firingBlock < HDL_FIRING_PER_PKT; ++firingBlock)
   {
     HDLFiringData* firingData = &(dataPacket->firingData[firingBlock]);
-    int multiBlockLaserIdOffset = (firingData->blockIdentifier == BLOCK_0_TO_31)
-      ? 0
-      : (firingData->blockIdentifier == BLOCK_32_TO_63 ? 32 : 0);
+    // clang-format off
+    int multiBlockLaserIdOffset =
+        (firingData->blockIdentifier == BLOCK_0_TO_31)  ?  0 :(
+        (firingData->blockIdentifier == BLOCK_32_TO_63) ? 32 :(
+                                                           0));
+    // clang-format on
 
     if (shouldSplitFrame(firingData->rotationalPosition, this->LastAzimuth, this->LastAzimuthSlope))
     {
