@@ -37,7 +37,7 @@ static const int HDL_FIRING_PER_PKT = 12;
 enum HDLBlock
 {
   BLOCK_0_TO_31 = 0xeeff,
-  BLOCK_32_TO_63 = 0xddff
+  BLOCK_32_TO_63 = 0xddff,
 };
 
 enum SensorType

@@ -23,7 +23,7 @@ class vtkVelodyneHDLSource;
 class vtkPolyData;
 
 // Helper functions
-bool compare(const double *const a, const double *const b, const size_t N, double epsilon);
+bool compare(const double* const a, const double* const b, const size_t N, double epsilon);
 
 template <size_t N>
 bool compare(double const (&a)[N], double const (&b)[N], double epsilon)
@@ -31,7 +31,7 @@ bool compare(double const (&a)[N], double const (&b)[N], double epsilon)
   return compare(a, b, N, epsilon);
 }
 
-std::string toString(const double *const d, const size_t N);
+std::string toString(const double* const d, const size_t N);
 
 template <size_t N>
 std::string toString(double const (&d)[N])
@@ -45,10 +45,9 @@ vtkPolyData* GetCurrentFrame(vtkVelodyneHDLSource* HDLsource, int index);
 
 int GetNumberOfTimesteps(vtkVelodyneHDLSource* HDLSource);
 
-std::vector<std::string> GenerateFileList(const std::string &metaFileName);
+std::vector<std::string> GenerateFileList(const std::string& metaFileName);
 
-vtkPolyData* GetCurrentReference(const std::vector<std::string> &referenceFilesList,
-  int index);
+vtkPolyData* GetCurrentReference(const std::vector<std::string>& referenceFilesList, int index);
 
 // Test functions
 /**

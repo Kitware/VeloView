@@ -29,8 +29,8 @@
  * @param vtpFileName meta-file containing the list of files to test against each frames
  * @return 0 on success, 1 on failure
  */
-int TestFile(const std::string &correctionFileName, const std::string &pcapFileName,
-  const std::vector<std::string> &referenceFilesList)
+int TestFile(const std::string& correctionFileName, const std::string& pcapFileName,
+  const std::vector<std::string>& referenceFilesList)
 {
   int retVal = 0;
 
@@ -101,7 +101,6 @@ int TestFile(const std::string &correctionFileName, const std::string &pcapFileN
     }
   }
 
-
   std::cout << "Testing..." << std::endl;
 
   retVal += TestFrameCount(GetNumberOfTimesteps(HDLsource.Get()), referenceFilesList.size());
@@ -152,8 +151,7 @@ int main(int argc, char* argv[])
 {
   if (argc < 3)
   {
-    std::cerr << "Wrong number of arguments. Usage: TestLiveStream TEST_DIR SHARE_DIR"
-      << std::endl;
+    std::cerr << "Wrong number of arguments. Usage: TestLiveStream TEST_DIR SHARE_DIR" << std::endl;
 
     return 1;
   }
@@ -211,7 +209,8 @@ int main(int argc, char* argv[])
 
   referenceFilesList = GenerateFileList(referenceFileName);
 
-  retVal += TestFile(correctionsFileName, pcapFileName, referenceFilesList);;
+  retVal += TestFile(correctionsFileName, pcapFileName, referenceFilesList);
+  ;
 
   // HDL-64 Single
   // Note: Live calibration passes an empty string as correction file

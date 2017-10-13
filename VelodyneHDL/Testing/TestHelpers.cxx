@@ -28,7 +28,7 @@
 
 // Helper functions
 //-----------------------------------------------------------------------------
-bool compare(const double *const a, const double *const b, const size_t N, double epsilon)
+bool compare(const double* const a, const double* const b, const size_t N, double epsilon)
 {
   for (size_t i = 0; i < N; ++i)
   {
@@ -41,7 +41,7 @@ bool compare(const double *const a, const double *const b, const size_t N, doubl
 }
 
 //-----------------------------------------------------------------------------
-std::string toString(const double *const d, const size_t N)
+std::string toString(const double* const d, const size_t N)
 {
   std::ostringstream strs;
   strs << "(";
@@ -84,12 +84,10 @@ vtkPolyData* GetCurrentFrame(vtkVelodyneHDLSource* HDLsource, int index)
 
   vtkInformation* outInfo = HDLsource->GetExecutive()->GetOutputInformation(0);
 
-  double* timeSteps =
-      outInfo->Get(vtkStreamingDemandDrivenPipeline::TIME_STEPS());
+  double* timeSteps = outInfo->Get(vtkStreamingDemandDrivenPipeline::TIME_STEPS());
 
   double updateTime = timeSteps[index];
-  outInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP(),
-    updateTime);
+  outInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP(), updateTime);
 
   HDLsource->Update();
 
@@ -101,7 +99,7 @@ vtkPolyData* GetCurrentFrame(vtkVelodyneHDLSource* HDLsource, int index)
 }
 
 //-----------------------------------------------------------------------------
-std::vector<std::string> GenerateFileList(const std::string &metaFileName)
+std::vector<std::string> GenerateFileList(const std::string& metaFileName)
 {
   int lastSeparator = metaFileName.find_last_of("/\\");
   std::string dir = metaFileName.substr(0, lastSeparator);
@@ -126,8 +124,7 @@ std::vector<std::string> GenerateFileList(const std::string &metaFileName)
 }
 
 //-----------------------------------------------------------------------------
-vtkPolyData* GetCurrentReference(const std::vector<std::string> &referenceFilesList,
-  int index)
+vtkPolyData* GetCurrentReference(const std::vector<std::string>& referenceFilesList, int index)
 {
   vtkNew<vtkXMLPolyDataReader> reader;
   reader->SetFileName(referenceFilesList[index].c_str());
@@ -144,8 +141,8 @@ int TestFrameCount(unsigned int frameCount, unsigned int referenceCount)
 {
   if (frameCount != referenceCount)
   {
-    std::cerr << "Wrong frame count. Expected " << referenceCount << ", got "
-      << frameCount << std::endl;
+    std::cerr << "Wrong frame count. Expected " << referenceCount << ", got " << frameCount
+              << std::endl;
 
     return 1;
   }
@@ -162,8 +159,8 @@ int TestPointCount(vtkPolyData* currentFrame, vtkPolyData* currentReference)
 
   if (currentFrameNbPoints != currentReferenceNbPoints)
   {
-    std::cerr << "Wrong point count. Expected " << currentReferenceNbPoints
-      << ", got " << currentFrameNbPoints << std::endl;
+    std::cerr << "Wrong point count. Expected " << currentReferenceNbPoints << ", got "
+              << currentFrameNbPoints << std::endl;
 
     return 1;
   }
@@ -188,9 +185,8 @@ int TestPointDataStructure(vtkPolyData* currentFrame, vtkPolyData* currentRefere
 
   if (currentFrameNbPointDataArrays != currentReferenceNbPointDataArrays)
   {
-    std::cerr << "Wrong point data array count. Expected "
-      << currentReferenceNbPointDataArrays << ", got "<< currentFrameNbPointDataArrays
-      << std::endl;
+    std::cerr << "Wrong point data array count. Expected " << currentReferenceNbPointDataArrays
+              << ", got " << currentFrameNbPointDataArrays << std::endl;
 
     return 1;
   }
@@ -207,9 +203,8 @@ int TestPointDataStructure(vtkPolyData* currentFrame, vtkPolyData* currentRefere
 
     if (currentFrameArrayName != currentReferenceArrayName)
     {
-      std::cerr << "Wrong array name for frame. Expected "
-        << currentReferenceArrayName << ", got" << currentFrameArrayName
-        << std::endl;
+      std::cerr << "Wrong array name for frame. Expected " << currentReferenceArrayName << ", got"
+                << currentFrameArrayName << std::endl;
 
       retVal = 1;
     }
@@ -220,8 +215,8 @@ int TestPointDataStructure(vtkPolyData* currentFrame, vtkPolyData* currentRefere
     if (currentFrameNbComponents != currentReferenceNbComponents)
     {
       std::cerr << "Wrong number of components for array " << currentReferenceArrayName
-        << ". Expected " << currentReferenceNbComponents
-        << ", got " << currentFrameNbComponents << std::endl;
+                << ". Expected " << currentReferenceNbComponents << ", got "
+                << currentFrameNbComponents << std::endl;
 
       retVal = 1;
     }
@@ -232,8 +227,8 @@ int TestPointDataStructure(vtkPolyData* currentFrame, vtkPolyData* currentRefere
     if (currentFrameNbTuples != currentReferenceNbTuples)
     {
       std::cerr << "Wrong number of components for array " << currentReferenceArrayName
-        << " at frame. Expected " << currentReferenceNbTuples << ", got "
-        << currentFrameNbTuples << std::endl;
+                << " at frame. Expected " << currentReferenceNbTuples << ", got "
+                << currentFrameNbTuples << std::endl;
 
       retVal = 1;
     }
@@ -268,13 +263,14 @@ int TestPointDataValues(vtkPolyData* currentFrame, vtkPolyData* currentReference
 
       if (!compare(frameTuple, referenceTuple, nbComp, 1e-12))
       {
-        if ((long)(*referenceTuple - *frameTuple) % 3600*1e6 ==0) continue;
-        std::cerr << "Tuples " << idTuple << " doesn't match for array "
-          << idArray << " ("<< currentReferenceArray->GetName() << "). Expected "
-          << toString(referenceTuple, nbComp) << ", got "
-          << toString(frameTuple, nbComp) << std::endl;
+        if ((long)(*referenceTuple - *frameTuple) % 3600 * 1e6 == 0)
+          continue;
+        std::cerr << "Tuples " << idTuple << " doesn't match for array " << idArray << " ("
+                  << currentReferenceArray->GetName() << "). Expected "
+                  << toString(referenceTuple, nbComp) << ", got " << toString(frameTuple, nbComp)
+                  << std::endl;
 
-          retVal = 1;
+        retVal = 1;
       }
     }
   }
@@ -297,17 +293,16 @@ int TestPointPositions(vtkPolyData* currentFrame, vtkPolyData* currentReference)
   double framePoint[3];
   double referencePoint[3];
 
-  for (int currentPointId = 0;
-    currentPointId < currentFramePoints->GetNumberOfPoints(); ++currentPointId)
+  for (int currentPointId = 0; currentPointId < currentFramePoints->GetNumberOfPoints();
+       ++currentPointId)
   {
     currentFramePoints->GetPoint(currentPointId, framePoint);
     currentReferencePoints->GetPoint(currentPointId, referencePoint);
 
     if (!compare(framePoint, referencePoint, 1e-12))
     {
-      std::cerr << "Wrong point coordinates at point " << currentPointId
-        << ". Expected (" << toString(referencePoint) << ", got "
-        << toString(framePoint) << std::endl;
+      std::cerr << "Wrong point coordinates at point " << currentPointId << ". Expected ("
+                << toString(referencePoint) << ", got " << toString(framePoint) << std::endl;
 
       retVal = 1;
     }
@@ -320,17 +315,17 @@ int TestPointPositions(vtkPolyData* currentFrame, vtkPolyData* currentReference)
 int TestRPMValues(vtkPolyData* currentFrame, vtkPolyData* currentReference)
 {
   // Get the current frame RPM
-  double currentFrameRPM = currentFrame->GetFieldData()
-    ->GetArray("RotationPerMinute")->GetTuple1(0);
+  double currentFrameRPM =
+    currentFrame->GetFieldData()->GetArray("RotationPerMinute")->GetTuple1(0);
 
   // Get the reference point data corresponding to the current frame
-  double currentReferenceRPM = currentReference->GetFieldData()
-    ->GetArray("RotationPerMinute")->GetTuple1(0);
+  double currentReferenceRPM =
+    currentReference->GetFieldData()->GetArray("RotationPerMinute")->GetTuple1(0);
 
   if (!vtkMathUtilities::FuzzyCompare(currentFrameRPM, currentReferenceRPM, 1.0))
   {
-    std::cerr << "Wrong RPM value. Expected " << currentReferenceRPM
-      << ", got " << currentFrameRPM << std::endl;
+    std::cerr << "Wrong RPM value. Expected " << currentReferenceRPM << ", got " << currentFrameRPM
+              << std::endl;
 
     return 1;
   }
