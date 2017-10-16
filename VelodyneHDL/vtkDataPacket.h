@@ -52,7 +52,7 @@ enum SensorType
 
   // Work around : this is not defined by any specification
   // But it is usefull to define
-  HDL64 = 0xa0, // decimal: 160
+  HDL64 = 0xa0,  // decimal: 160
   VLS128 = 0xa1, // decimal: 161
 };
 static int num_laser(SensorType sensorType)
@@ -148,7 +148,12 @@ struct HDLDataPacket
     return firingData[2].blockIdentifier == BLOCK_64_TO_95 &&
       firingData[3].blockIdentifier == BLOCK_96_TO_127;
   }
-  inline bool isDualModeReturn() const { return isDualModeReturn(isHDL64()); }
+  inline bool isDualModeReturn() const
+  {
+    if (isVLS128())
+      return isDualModeReturnVLS128();
+    return isDualModeReturn(isHDL64());
+  }
   inline bool isDualModeReturn(const bool isHDL64) const
   {
     if (isHDL64)
@@ -164,8 +169,14 @@ struct HDLDataPacket
   {
     return firingData[2].rotationalPosition == firingData[0].rotationalPosition;
   }
+  inline bool isDualModeReturnVLS128() const
+  {
+    return firingData[4].rotationalPosition == firingData[0].rotationalPosition;
+  }
   inline bool isDualReturnFiringBlock(const int firingBlock)
   {
+    if (isVLS128())
+      return isDualModeReturnVLS128() && isDualBlockOfDualPacket128(firingBlock);
     if (isHDL64())
       return isDualModeReturnHDL64() && isDualBlockOfDualPacket64(firingBlock);
     else
@@ -176,6 +187,10 @@ struct HDLDataPacket
   {
     return isHDL64 ? isDualBlockOfDualPacket64(firingBlock)
                    : isDualBlockOfDualPacket16Or32(firingBlock);
+  }
+  inline static bool isDualBlockOfDualPacket128(const int firingBlock)
+  {
+    return (firingBlock % 8 >= 4);
   }
   inline static bool isDualBlockOfDualPacket64(const int firingBlock)
   {
