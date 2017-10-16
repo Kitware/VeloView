@@ -406,6 +406,7 @@ public:
   vtkSmartPointer<vtkUnsignedCharArray> LaserId;
   vtkSmartPointer<vtkUnsignedShortArray> Azimuth;
   vtkSmartPointer<vtkDoubleArray> Distance;
+  vtkSmartPointer<vtkUnsignedShortArray> DistanceRaw;
   vtkSmartPointer<vtkDoubleArray> Timestamp;
   vtkSmartPointer<vtkDoubleArray> VerticalAngle;
   vtkSmartPointer<vtkUnsignedIntArray> RawTime;
@@ -1291,6 +1292,8 @@ vtkSmartPointer<vtkPolyData> vtkVelodyneHDLReader::vtkInternal::CreateData(vtkId
   this->LaserId = CreateDataArray<vtkUnsignedCharArray>("laser_id", numberOfPoints, polyData);
   this->Azimuth = CreateDataArray<vtkUnsignedShortArray>("azimuth", numberOfPoints, polyData);
   this->Distance = CreateDataArray<vtkDoubleArray>("distance_m", numberOfPoints, polyData);
+  this->DistanceRaw =
+    CreateDataArray<vtkUnsignedShortArray>("distance_raw", numberOfPoints, polyData);
   this->Timestamp = CreateDataArray<vtkDoubleArray>("adjustedtime", numberOfPoints, polyData);
   this->RawTime = CreateDataArray<vtkUnsignedIntArray>("timestamp", numberOfPoints, polyData);
   this->DistanceFlag = CreateDataArray<vtkIntArray>("dual_distance", numberOfPoints, 0);
@@ -1473,6 +1476,7 @@ void vtkVelodyneHDLReader::vtkInternal::PushFiringData(const unsigned char laser
           geotransform->InternalTransformPoint(pos, pos);
           this->Points->SetPoint(dualPointId, pos);
           this->Distance->SetValue(dualPointId, distanceM);
+          this->DistanceRaw->SetValue(dualPointId, laserReturn->distance);
           this->Intensity->SetValue(dualPointId, intensity);
           this->Timestamp->SetValue(dualPointId, timestamp);
           this->RawTime->SetValue(dualPointId, rawtime);
@@ -1515,6 +1519,7 @@ void vtkVelodyneHDLReader::vtkInternal::PushFiringData(const unsigned char laser
   this->Timestamp->InsertNextValue(timestamp);
   this->RawTime->InsertNextValue(rawtime);
   this->Distance->InsertNextValue(distanceM);
+  this->DistanceRaw->InsertNextValue(laserReturn->distance);
   this->LastPointId[rawLaserId] = thisPointId;
   this->VerticalAngle->InsertNextValue(this->laser_corrections_[laserId].verticalCorrection);
 }
