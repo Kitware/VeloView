@@ -354,6 +354,7 @@ public:
     this->SensorPowerMode = 0;
     this->Skip = 0;
     this->LastAzimuth = -1;
+    this->LastAzimuthSlope = 0;
     this->LastTimestamp = std::numeric_limits<unsigned int>::max();
     this->TimeAdjust = std::numeric_limits<double>::quiet_NaN();
     this->Reader = 0;
@@ -884,6 +885,7 @@ void vtkVelodyneHDLReader::UnloadPerFrameData()
 {
   std::fill(this->Internal->LastPointId, this->Internal->LastPointId + HDL_MAX_NUM_LASERS, -1);
   this->Internal->LastAzimuth = -1;
+  this->Internal->LastAzimuthSlope = 0;
   this->Internal->LastTimestamp = std::numeric_limits<unsigned int>::max();
   this->Internal->TimeAdjust = std::numeric_limits<double>::quiet_NaN();
 
