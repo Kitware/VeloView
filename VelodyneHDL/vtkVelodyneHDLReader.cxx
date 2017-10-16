@@ -2106,7 +2106,7 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(
   // assert(azimuthDiff > 0);
 
   // Add DualReturn-specific arrays if newly detected dual return packet
-  if (dataPacket->isDualModeReturn(this->IsHDL64Data) && !this->HasDualReturn)
+  if (dataPacket->isDualModeReturn() && !this->HasDualReturn)
   {
     this->HasDualReturn = true;
     this->CurrentDataset->GetPointData()->AddArray(this->DistanceFlag.GetPointer());
@@ -2126,6 +2126,9 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(
                                                            0))));
     // clang-format on
 
+    if (firingData->blockIdentifier == 0) // VLS-128 dual mode last 4 blocks
+      continue;
+
     if (shouldSplitFrame(firingData->rotationalPosition, this->LastAzimuth, this->LastAzimuthSlope))
     {
       this->SplitFrame();
@@ -2137,9 +2140,8 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(
     if (this->FiringsSkip == 0 || firingBlock % (this->FiringsSkip + 1) == 0)
     {
       this->ProcessFiring(firingData, multiBlockLaserIdOffset, firingBlock, azimuthDiff, timestamp,
-        rawtime,
-        this->HasDualReturn && dataPacket->isDualBlockOfDualPacket(this->IsHDL64Data, firingBlock),
-        this->HasDualReturn, geotransform.GetPointer());
+        rawtime, dataPacket->isDualReturnFiringBlock(firingBlock), dataPacket->isDualModeReturn(),
+        geotransform.GetPointer());
     }
 
     this->LastAzimuth = firingData->rotationalPosition;
@@ -2229,6 +2231,8 @@ int vtkVelodyneHDLReader::ReadFrameInformation()
     {
       const HDLFiringData& firingData = dataPacket->firingData[i];
 
+      if (firingData.blockIdentifier == 0) // VLS-128 dual mode last 4 blocks
+        continue;
       IsHDL64Data |= (firingData.blockIdentifier == BLOCK_32_TO_63);
 
       // Test if all lasers had a positive distance
