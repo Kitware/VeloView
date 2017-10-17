@@ -43,22 +43,24 @@ def fitPlane():
 
     try:
         pd = extracter.GetClientSideObject().GetOutput()
+        max_laser_id = pd.GetPointData().GetArray("laser_id").GetRange()[1]
+        nchannels = 2**vtk.vtkMath.CeilLog2(int(max_laser_id))
 
         origin = range(3)
         normal = range(3)
         mind, maxd, stddev = vtk.mutable(0), vtk.mutable(0), vtk.mutable(0)
 
-        channelMean = range(32)
-        channelStdDev = range(32)
-        channelNpts = range(32)
+        channelMean = range(nchannels)
+        channelStdDev = range(nchannels)
+        channelNpts = range(nchannels)
 
-        vvmod.vtkPlaneFitter.PlaneFit(pd, origin, normal, mind, maxd, stddev, channelMean, channelStdDev, channelNpts)
+        vvmod.vtkPlaneFitter.PlaneFit(pd, origin, normal, mind, maxd, stddev, channelMean, channelStdDev, channelNpts, nchannels)
         rows = [['overall', origin, normal, 0.0, stddev, stddev, pd.GetNumberOfPoints()]]
         rows = rows + [['%d' % i, origin, normal,
                         channelMean[i], channelStdDev[i],
                         math.sqrt(channelMean[i]**2 + channelStdDev[i]**2),
                         channelNpts[i]]
-                       for i in range(32)]
+                       for i in range(nchannels)]
 
         def rowconverter(x):
             try:
