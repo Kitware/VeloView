@@ -45,8 +45,9 @@ public:
   virtual void PrintSelf(ostream& os, vtkIndent indent);
 
   static void PlaneFit(vtkPointSet* pts, double origin[3], double normal[3], double& minDist,
-    double& maxDist, double& stdDev, double channelMean[32], double channelStdDev[32],
-    vtkIdType channelNpts[32]);
+    double& maxDist, double& stdDev, double channelMean[HDL_MAX_NUM_LASERS],
+    double channelStdDev[HDL_MAX_NUM_LASERS], vtkIdType channelNpts[HDL_MAX_NUM_LASERS],
+    unsigned int nchannels);
 
 protected:
   vtkPlaneFitter();

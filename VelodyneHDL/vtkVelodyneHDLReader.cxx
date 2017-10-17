@@ -354,6 +354,7 @@ public:
     this->SensorPowerMode = 0;
     this->Skip = 0;
     this->LastAzimuth = -1;
+    this->LastAzimuthSlope = 0;
     this->LastTimestamp = std::numeric_limits<unsigned int>::max();
     this->TimeAdjust = std::numeric_limits<double>::quiet_NaN();
     this->Reader = 0;
@@ -405,6 +406,7 @@ public:
   vtkSmartPointer<vtkUnsignedCharArray> LaserId;
   vtkSmartPointer<vtkUnsignedShortArray> Azimuth;
   vtkSmartPointer<vtkDoubleArray> Distance;
+  vtkSmartPointer<vtkUnsignedShortArray> DistanceRaw;
   vtkSmartPointer<vtkDoubleArray> Timestamp;
   vtkSmartPointer<vtkDoubleArray> VerticalAngle;
   vtkSmartPointer<vtkUnsignedIntArray> RawTime;
@@ -884,6 +886,7 @@ void vtkVelodyneHDLReader::UnloadPerFrameData()
 {
   std::fill(this->Internal->LastPointId, this->Internal->LastPointId + HDL_MAX_NUM_LASERS, -1);
   this->Internal->LastAzimuth = -1;
+  this->Internal->LastAzimuthSlope = 0;
   this->Internal->LastTimestamp = std::numeric_limits<unsigned int>::max();
   this->Internal->TimeAdjust = std::numeric_limits<double>::quiet_NaN();
 
@@ -1289,6 +1292,8 @@ vtkSmartPointer<vtkPolyData> vtkVelodyneHDLReader::vtkInternal::CreateData(vtkId
   this->LaserId = CreateDataArray<vtkUnsignedCharArray>("laser_id", numberOfPoints, polyData);
   this->Azimuth = CreateDataArray<vtkUnsignedShortArray>("azimuth", numberOfPoints, polyData);
   this->Distance = CreateDataArray<vtkDoubleArray>("distance_m", numberOfPoints, polyData);
+  this->DistanceRaw =
+    CreateDataArray<vtkUnsignedShortArray>("distance_raw", numberOfPoints, polyData);
   this->Timestamp = CreateDataArray<vtkDoubleArray>("adjustedtime", numberOfPoints, polyData);
   this->RawTime = CreateDataArray<vtkUnsignedIntArray>("timestamp", numberOfPoints, polyData);
   this->DistanceFlag = CreateDataArray<vtkIntArray>("dual_distance", numberOfPoints, 0);
@@ -1471,6 +1476,7 @@ void vtkVelodyneHDLReader::vtkInternal::PushFiringData(const unsigned char laser
           geotransform->InternalTransformPoint(pos, pos);
           this->Points->SetPoint(dualPointId, pos);
           this->Distance->SetValue(dualPointId, distanceM);
+          this->DistanceRaw->SetValue(dualPointId, laserReturn->distance);
           this->Intensity->SetValue(dualPointId, intensity);
           this->Timestamp->SetValue(dualPointId, timestamp);
           this->RawTime->SetValue(dualPointId, rawtime);
@@ -1513,6 +1519,7 @@ void vtkVelodyneHDLReader::vtkInternal::PushFiringData(const unsigned char laser
   this->Timestamp->InsertNextValue(timestamp);
   this->RawTime->InsertNextValue(rawtime);
   this->Distance->InsertNextValue(distanceM);
+  this->DistanceRaw->InsertNextValue(laserReturn->distance);
   this->LastPointId[rawLaserId] = thisPointId;
   this->VerticalAngle->InsertNextValue(this->laser_corrections_[laserId].verticalCorrection);
 }
@@ -1637,7 +1644,7 @@ void vtkVelodyneHDLReader::vtkInternal::LoadCorrectionsFile(const std::string& c
         {
           boost::property_tree::ptree calibrationData = px.second;
           int index = -1;
-          HDLLaserCorrection xmlData = { 0 };
+          HDLLaserCorrection xmlData;
 
           BOOST_FOREACH (boost::property_tree::ptree::value_type& item, calibrationData)
           {
@@ -2096,7 +2103,7 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(
   {
     azimuthDiff = diffs[HDL_FIRING_PER_PKT - 2];
   }
-  assert(azimuthDiff > 0);
+  // assert(azimuthDiff > 0);
 
   // Add DualReturn-specific arrays if newly detected dual return packet
   if (dataPacket->isDualModeReturn(this->IsHDL64Data) && !this->HasDualReturn)
@@ -2110,9 +2117,12 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(
   for (; firingBlock < HDL_FIRING_PER_PKT; ++firingBlock)
   {
     HDLFiringData* firingData = &(dataPacket->firingData[firingBlock]);
-    int multiBlockLaserIdOffset = (firingData->blockIdentifier == BLOCK_0_TO_31)
-      ? 0
-      : (firingData->blockIdentifier == BLOCK_32_TO_63 ? 32 : 0);
+    // clang-format off
+    int multiBlockLaserIdOffset =
+        (firingData->blockIdentifier == BLOCK_0_TO_31)  ?  0 :(
+        (firingData->blockIdentifier == BLOCK_32_TO_63) ? 32 :(
+                                                           0));
+    // clang-format on
 
     if (shouldSplitFrame(firingData->rotationalPosition, this->LastAzimuth, this->LastAzimuthSlope))
     {

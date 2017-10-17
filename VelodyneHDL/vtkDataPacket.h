@@ -37,7 +37,7 @@ static const int HDL_FIRING_PER_PKT = 12;
 enum HDLBlock
 {
   BLOCK_0_TO_31 = 0xeeff,
-  BLOCK_32_TO_63 = 0xddff
+  BLOCK_32_TO_63 = 0xddff,
 };
 
 enum SensorType
@@ -202,6 +202,14 @@ struct HDLLaserCorrection // Internal representation of per-laser correction
   double cosVertCorrection;
   double sinVertOffsetCorrection;
   double cosVertOffsetCorrection;
+  HDLLaserCorrection()
+  {
+    rotationalCorrection = verticalCorrection = 0;
+    distanceCorrection = distanceCorrectionX = distanceCorrectionY = 0;
+    verticalOffsetCorrection = horizontalOffsetCorrection = 0;
+    focalDistance = focalSlope = closeSlope = 0;
+    minIntensity = maxIntensity = 0;
+  }
 };
 
 struct HDLRGB

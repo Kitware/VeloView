@@ -59,8 +59,8 @@ void vtkPlaneFitter::PrintSelf(ostream& os, vtkIndent indent)
 
 //-----------------------------------------------------------------------------
 void vtkPlaneFitter::PlaneFit(vtkPointSet* pts, double origin[3], double normal[3], double& minDist,
-  double& maxDist, double& stdDev, double channelMean[32], double channelStdDev[32],
-  vtkIdType channelNpts[32])
+  double& maxDist, double& stdDev, double channelMean[], double channelStdDev[],
+  vtkIdType channelNpts[], unsigned int nchannels)
 {
   using namespace Eigen;
 
@@ -110,7 +110,7 @@ void vtkPlaneFitter::PlaneFit(vtkPointSet* pts, double origin[3], double normal[
 
   stdDev = std::sqrt(distances.squaredNorm() / (n - 1));
 
-  for (int i = 0; i < 32; ++i)
+  for (int i = 0; i < nchannels; ++i)
   {
     vtkNew<vtkThreshold> threshold;
     threshold->ThresholdBetween(i, i);
