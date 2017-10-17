@@ -2085,7 +2085,8 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(
     int localDiff = (36000 + dataPacket->firingData[i + 1].rotationalPosition -
                       dataPacket->firingData[i].rotationalPosition) %
       36000;
-    if (dataPacket->firingData[i + 1].blockIdentifier == 0) // VLS-128 dual mode last 4 blocks
+    if (dataPacket->firingData[i + 1].blockIdentifier == 0 ||
+      dataPacket->firingData[i + 1].blockIdentifier == 0xFFFF) // VLS-128 dual mode last 4 blocks
       localDiff = 0;
     diffs[i] = localDiff;
   }
@@ -2128,7 +2129,8 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(
                                                            0))));
     // clang-format on
 
-    if (firingData->blockIdentifier == 0) // VLS-128 dual mode last 4 blocks
+    if (firingData->blockIdentifier == 0 ||
+      firingData->blockIdentifier == 0xFFFF) // VLS-128 dual mode last 4 blocks
       continue;
 
     if (shouldSplitFrame(firingData->rotationalPosition, this->LastAzimuth, this->LastAzimuthSlope))
@@ -2233,7 +2235,8 @@ int vtkVelodyneHDLReader::ReadFrameInformation()
     {
       const HDLFiringData& firingData = dataPacket->firingData[i];
 
-      if (firingData.blockIdentifier == 0) // VLS-128 dual mode last 4 blocks
+      if (firingData.blockIdentifier == 0 ||
+        firingData.blockIdentifier == 0xFFFF) // VLS-128 dual mode last 4 blocks
         continue;
       IsHDL64Data |= (firingData.blockIdentifier == BLOCK_32_TO_63);
 
