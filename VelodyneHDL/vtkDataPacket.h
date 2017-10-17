@@ -202,6 +202,14 @@ struct HDLLaserCorrection // Internal representation of per-laser correction
   double cosVertCorrection;
   double sinVertOffsetCorrection;
   double cosVertOffsetCorrection;
+  HDLLaserCorrection()
+  {
+    rotationalCorrection = verticalCorrection = 0;
+    distanceCorrection = distanceCorrectionX = distanceCorrectionY = 0;
+    verticalOffsetCorrection = horizontalOffsetCorrection = 0;
+    focalDistance = focalSlope = closeSlope = 0;
+    minIntensity = maxIntensity = 0;
+  }
 };
 
 struct HDLRGB

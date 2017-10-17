@@ -1644,7 +1644,7 @@ void vtkVelodyneHDLReader::vtkInternal::LoadCorrectionsFile(const std::string& c
         {
           boost::property_tree::ptree calibrationData = px.second;
           int index = -1;
-          HDLLaserCorrection xmlData = { 0 };
+          HDLLaserCorrection xmlData;
 
           BOOST_FOREACH (boost::property_tree::ptree::value_type& item, calibrationData)
           {
