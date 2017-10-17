@@ -2103,7 +2103,7 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(
   {
     azimuthDiff = diffs[HDL_FIRING_PER_PKT - 2];
   }
-  assert(azimuthDiff > 0);
+  // assert(azimuthDiff > 0);
 
   // Add DualReturn-specific arrays if newly detected dual return packet
   if (dataPacket->isDualModeReturn(this->IsHDL64Data) && !this->HasDualReturn)
