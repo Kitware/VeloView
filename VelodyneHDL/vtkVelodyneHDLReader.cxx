@@ -2085,6 +2085,8 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(
     int localDiff = (36000 + dataPacket->firingData[i + 1].rotationalPosition -
                       dataPacket->firingData[i].rotationalPosition) %
       36000;
+    if (dataPacket->firingData[i + 1].blockIdentifier == 0) // VLS-128 dual mode last 4 blocks
+      localDiff = 0;
     diffs[i] = localDiff;
   }
 
