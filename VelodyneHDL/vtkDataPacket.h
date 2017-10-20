@@ -145,8 +145,10 @@ struct HDLDataPacket
 
   inline bool isVLS128() const
   {
-    return firingData[2].blockIdentifier == BLOCK_64_TO_95 &&
-      firingData[3].blockIdentifier == BLOCK_96_TO_127;
+    return (firingData[2].blockIdentifier == BLOCK_64_TO_95 &&
+             firingData[3].blockIdentifier == BLOCK_96_TO_127) ||
+      (firingData[4].blockIdentifier == BLOCK_64_TO_95 &&
+             firingData[6].blockIdentifier == BLOCK_96_TO_127);
   }
   inline bool isDualModeReturn() const
   {
@@ -169,10 +171,7 @@ struct HDLDataPacket
   {
     return firingData[2].rotationalPosition == firingData[0].rotationalPosition;
   }
-  inline bool isDualModeReturnVLS128() const
-  {
-    return firingData[4].rotationalPosition == firingData[0].rotationalPosition;
-  }
+  inline bool isDualModeReturnVLS128() const { return factoryField1 == DUAL_RETURN; }
   inline bool isDualReturnFiringBlock(const int firingBlock)
   {
     if (isVLS128())
@@ -190,7 +189,7 @@ struct HDLDataPacket
   }
   inline static bool isDualBlockOfDualPacket128(const int firingBlock)
   {
-    return (firingBlock % 8 >= 4);
+    return (firingBlock % 2 == 1);
   }
   inline static bool isDualBlockOfDualPacket64(const int firingBlock)
   {
