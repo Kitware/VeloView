@@ -516,6 +516,10 @@ def openPCAP(filename, positionFilename=None):
 
     reader.GetClientSideObject().SetSensorTransform(sensorTransform)
 
+    reader.GetClientSideObject().SetIgnoreZeroDistances(app.actions['actionIgnoreZeroDistances'].isChecked())
+    reader.GetClientSideObject().SetIntraFiringAdjust(app.actions['actionIntraFiringAdjust'].isChecked())
+    reader.GetClientSideObject().SetIgnoreEmptyFrames(app.actions['actionIgnoreEmptyFrames'].isChecked())
+
     if SAMPLE_PROCESSING_MODE:
         processor = smp.ProcessingSample(reader)
 
@@ -612,10 +616,6 @@ def openPCAP(filename, positionFilename=None):
 
     app.actions['actionShowRPM'].enabled = True
     app.actions['actionCorrectIntensityValues'].enabled = True
-
-    reader.GetClientSideObject().SetIgnoreZeroDistances(app.actions['actionIgnoreZeroDistances'].isChecked())
-    reader.GetClientSideObject().SetIntraFiringAdjust(app.actions['actionIntraFiringAdjust'].isChecked())
-    reader.GetClientSideObject().SetIgnoreEmptyFrames(app.actions['actionIgnoreEmptyFrames'].isChecked())
 
     #Auto adjustment of the grid size with the distance resolution
     app.distanceResolutionM = reader.GetClientSideObject().GetDistanceResolutionM()
