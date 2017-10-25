@@ -2127,7 +2127,6 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(
     if (shouldSplitFrame(firingData->rotationalPosition, this->LastAzimuth, this->LastAzimuthSlope))
     {
       this->SplitFrame();
-      this->LastAzimuth = -1;
       this->LastTimestamp = std::numeric_limits<unsigned int>::max();
     }
 
@@ -2147,6 +2146,9 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(
 bool vtkVelodyneHDLReader::vtkInternal::shouldSplitFrame(
   uint16_t curRotationalPosition, int prevRotationalPosition, int& LastAzimuthSlope)
 {
+  // If we dont have previous RotationalPosition, dont split
+  if (prevRotationalPosition == -1)
+    return false;
   int curRotationalPositionSlope = curRotationalPosition - prevRotationalPosition;
   if (curRotationalPositionSlope == 0)
     return false;
