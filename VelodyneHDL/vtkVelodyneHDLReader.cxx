@@ -2253,9 +2253,10 @@ int vtkVelodyneHDLReader::ReadFrameInformation()
         {
           filePositions.push_back(lastFilePosition);
           skips.push_back(i);
-          PacketProcessingDebugMacro(<< "\n\nEnd of frame. #packets: "
-                                     << numberOfFiringPackets - lastnumberOfFiringPackets << "\n\n"
-                                     << "RotationalPositions: ");
+          PacketProcessingDebugMacro(
+            << "\n\nEnd of frame #" << filePositions.size()
+            << ". #packets: " << numberOfFiringPackets - lastnumberOfFiringPackets << "\n\n"
+            << "RotationalPositions: ");
           lastnumberOfFiringPackets = numberOfFiringPackets;
         }
         this->UpdateProgress(0.0);
