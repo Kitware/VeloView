@@ -345,7 +345,7 @@ def getDefaultSaveFileName(extension, suffix='', appendFrameNumber=False):
         return '%s%s.%s' % (basename, suffix, extension)
 
 
-def chooseCalibration():
+def chooseCalibration(calibrationFilename=None):
 
     class Calibration(object):
         def __init__(self, dialog):
@@ -371,11 +371,17 @@ def chooseCalibration():
             self.sensorTransform.SetMatrix(vm)
 
 
-    dialog = vvCalibrationDialog(getMainWindow())
-    if not dialog.exec_():
-        return None
+    if calibrationFilename is None:
+        dialog = vvCalibrationDialog(getMainWindow())
+        if not dialog.exec_():
+            return None
 
-    return Calibration(dialog)
+        return Calibration(dialog)
+    else:
+        dialog = vvCalibrationDialog(getMainWindow())
+        result = Calibration(dialog)
+        result.calibrationFile = calibrationFilename
+        return result
 
 
 def restoreLaserSelectionDialog():
@@ -471,11 +477,16 @@ def openSensor():
     sensor.GetClientSideObject().SetIgnoreEmptyFrames(app.actions['actionIgnoreEmptyFrames'].isChecked())
 
 
-def openPCAP(filename, positionFilename=None):
+def openPCAP(filename, positionFilename=None, calibrationFilename=None):
 
-    calibration = chooseCalibration()
+    calibration = chooseCalibration(calibrationFilename)
     if not calibration:
         return
+
+    if calibrationFilename is not None:
+        # Here you cqn manually set calibration dialog variables
+        # calibration.gpsYaw = 0
+        pass
 
     calibrationFile = calibration.calibrationFile
     sensorTransform = calibration.sensorTransform
