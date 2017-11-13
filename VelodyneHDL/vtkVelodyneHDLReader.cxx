@@ -1244,7 +1244,7 @@ vtkSmartPointer<vtkPolyData> vtkVelodyneHDLReader::GetFrame(int frameNumber)
 
 namespace
 {
-template <typename T>
+template<typename T>
 vtkSmartPointer<T> CreateDataArray(const char* name, vtkIdType np, vtkPolyData* pd)
 {
   vtkSmartPointer<T> array = vtkSmartPointer<T>::New();
