@@ -345,7 +345,7 @@ def getDefaultSaveFileName(extension, suffix='', appendFrameNumber=False):
         return '%s%s.%s' % (basename, suffix, extension)
 
 
-def chooseCalibration():
+def chooseCalibration(calibrationFilename=None):
 
     class Calibration(object):
         def __init__(self, dialog):
@@ -372,10 +372,14 @@ def chooseCalibration():
 
 
     dialog = vvCalibrationDialog(getMainWindow())
-    if not dialog.exec_():
-        return None
-
-    return Calibration(dialog)
+    if calibrationFilename is None:
+        if not dialog.exec_():
+            return None
+        return Calibration(dialog)
+    else:
+        result = Calibration(dialog)
+        result.calibrationFile = calibrationFilename
+        return result
 
 
 def restoreLaserSelectionDialog():
@@ -471,11 +475,16 @@ def openSensor():
     sensor.GetClientSideObject().SetIgnoreEmptyFrames(app.actions['actionIgnoreEmptyFrames'].isChecked())
 
 
-def openPCAP(filename, positionFilename=None):
+def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrationUIArgs=None):
 
-    calibration = chooseCalibration()
+    calibration = chooseCalibration(calibrationFilename)
     if not calibration:
         return
+
+    if calibrationFilename is not None and calibrationUIArgs is not None and isinstance(calibrationUIArgs, dict):
+        for k in calibrationUIArgs.keys():
+          if hasattr(calibration, k):
+            setattr(calibration, k, calibrationUIArgs[k])
 
     calibrationFile = calibration.calibrationFile
     sensorTransform = calibration.sensorTransform
