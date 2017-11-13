@@ -475,17 +475,16 @@ def openSensor():
     sensor.GetClientSideObject().SetIgnoreEmptyFrames(app.actions['actionIgnoreEmptyFrames'].isChecked())
 
 
-def openPCAP(filename, positionFilename=None, calibrationFilename=None):
+def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrationUIArgs=None):
 
     calibration = chooseCalibration(calibrationFilename)
     if not calibration:
         return
 
-    if calibrationFilename is not None:
-        # Here you can manually set variables only showing up in the calib dialog
-        # e.g.
-        # calibration.gpsYaw = 0
-        pass
+    if calibrationFilename is not None and calibrationUIArgs is not None and isinstance(calibrationUIArgs,dict):
+        for k in calibrationUIArgs.keys():
+          if hasattr(calibration,k):
+            getattr(calibration,k)=calibrationUIArgs[k]
 
     calibrationFile = calibration.calibrationFile
     sensorTransform = calibration.sensorTransform
