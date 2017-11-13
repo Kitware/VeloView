@@ -371,14 +371,12 @@ def chooseCalibration(calibrationFilename=None):
             self.sensorTransform.SetMatrix(vm)
 
 
+    dialog = vvCalibrationDialog(getMainWindow())
     if calibrationFilename is None:
-        dialog = vvCalibrationDialog(getMainWindow())
         if not dialog.exec_():
             return None
-
         return Calibration(dialog)
     else:
-        dialog = vvCalibrationDialog(getMainWindow())
         result = Calibration(dialog)
         result.calibrationFile = calibrationFilename
         return result
@@ -484,7 +482,8 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None):
         return
 
     if calibrationFilename is not None:
-        # Here you cqn manually set calibration dialog variables
+        # Here you can manually set variables only showing up in the calib dialog
+        # e.g.
         # calibration.gpsYaw = 0
         pass
 
