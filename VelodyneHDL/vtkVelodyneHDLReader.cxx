@@ -1153,7 +1153,7 @@ void vtkVelodyneHDLReader::DumpFrames(int startFrame, int endFrame, const std::s
 
 //-----------------------------------------------------------------------------
 vtkSmartPointer<vtkPolyData> vtkVelodyneHDLReader::GetFrameRange(
-  int startFrame, int wantedNumberOfFrames)
+  int startFrame, int wantedNumberOfTrailingFrames)
 {
   this->UnloadPerFrameData();
   if (!this->Internal->Reader)
@@ -1173,15 +1173,15 @@ vtkSmartPointer<vtkPolyData> vtkVelodyneHDLReader::GetFrameRange(
 
   if (startFrame < 0)
   {
-    wantedNumberOfFrames -= startFrame;
+    wantedNumberOfTrailingFrames += startFrame;
     startFrame = 0;
   }
-  assert(wantedNumberOfFrames > 0);
+  assert(wantedNumberOfTrailingFrames >= 0);
 
   this->Internal->Reader->SetFilePosition(&this->Internal->FilePositions[startFrame]);
   this->Internal->Skip = this->Internal->Skips[startFrame];
 
-  this->Internal->SplitCounter = wantedNumberOfFrames;
+  this->Internal->SplitCounter = wantedNumberOfTrailingFrames;
 
   while (this->Internal->Reader->NextPacket(data, dataLength, timeSinceStart))
   {
