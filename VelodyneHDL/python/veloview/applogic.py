@@ -481,10 +481,10 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
     if not calibration:
         return
 
-    if calibrationFilename is not None and calibrationUIArgs is not None and isinstance(calibrationUIArgs,dict):
+    if calibrationFilename is not None and calibrationUIArgs is not None and isinstance(calibrationUIArgs, dict):
         for k in calibrationUIArgs.keys():
-          if hasattr(calibration,k):
-            getattr(calibration,k)=calibrationUIArgs[k]
+          if hasattr(calibration, k):
+            setattr(calibration, k, calibrationUIArgs[k])
 
     calibrationFile = calibration.calibrationFile
     sensorTransform = calibration.sensorTransform
