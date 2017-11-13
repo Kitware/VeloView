@@ -54,7 +54,7 @@ using DataPacketFixedLength::HDL_MAX_NUM_LASERS;
 namespace
 {
 static const int NBR_PACKETS_SAVED = 1000;
-template <typename T>
+template<typename T>
 class SynchronizedQueue
 {
 public:
@@ -510,7 +510,7 @@ public:
     // larger packet arrives unexpectedly we'll notice it.
     this->Socket.async_receive(boost::asio::buffer(this->RXBuffer, 1500),
       boost::bind(&PacketReceiver::SocketCallback, this, boost::asio::placeholders::error,
-                                 boost::asio::placeholders::bytes_transferred));
+        boost::asio::placeholders::bytes_transferred));
   }
 
   void EnableCrashAnalysing(

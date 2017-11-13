@@ -43,7 +43,7 @@ public:
   vtkRollingDataAccumulator();
   ~vtkRollingDataAccumulator();
 
-  template <typename T>
+  template<typename T>
   T fromTwoLittleEndianBytes(unsigned char b1, unsigned char b2)
   {
     return static_cast<T>((static_cast<unsigned short>(b2) << 8) + static_cast<unsigned short>(b1));

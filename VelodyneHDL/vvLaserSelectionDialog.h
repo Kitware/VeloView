@@ -19,7 +19,7 @@
 #include "vvConfigure.h"
 
 class QTableWidgetItem;
-template <typename T>
+template<typename T>
 class QVector;
 
 class VelodyneHDLPlugin_EXPORT vvLaserSelectionDialog : public QDialog

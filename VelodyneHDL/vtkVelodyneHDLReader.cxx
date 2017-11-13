@@ -1153,7 +1153,7 @@ void vtkVelodyneHDLReader::DumpFrames(int startFrame, int endFrame, const std::s
 
 //-----------------------------------------------------------------------------
 vtkSmartPointer<vtkPolyData> vtkVelodyneHDLReader::GetFrameRange(
-  int startFrame, int wantedNumberOfFrames)
+  int startFrame, int wantedNumberOfTrailingFrames)
 {
   this->UnloadPerFrameData();
   if (!this->Internal->Reader)
@@ -1173,15 +1173,15 @@ vtkSmartPointer<vtkPolyData> vtkVelodyneHDLReader::GetFrameRange(
 
   if (startFrame < 0)
   {
-    wantedNumberOfFrames -= startFrame;
+    wantedNumberOfTrailingFrames += startFrame;
     startFrame = 0;
   }
-  assert(wantedNumberOfFrames > 0);
+  assert(wantedNumberOfTrailingFrames >= 0);
 
   this->Internal->Reader->SetFilePosition(&this->Internal->FilePositions[startFrame]);
   this->Internal->Skip = this->Internal->Skips[startFrame];
 
-  this->Internal->SplitCounter = wantedNumberOfFrames;
+  this->Internal->SplitCounter = wantedNumberOfTrailingFrames;
 
   while (this->Internal->Reader->NextPacket(data, dataLength, timeSinceStart))
   {
@@ -1244,7 +1244,7 @@ vtkSmartPointer<vtkPolyData> vtkVelodyneHDLReader::GetFrame(int frameNumber)
 
 namespace
 {
-template <typename T>
+template<typename T>
 vtkSmartPointer<T> CreateDataArray(const char* name, vtkIdType np, vtkPolyData* pd)
 {
   vtkSmartPointer<T> array = vtkSmartPointer<T>::New();
@@ -2127,7 +2127,6 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(
     if (shouldSplitFrame(firingData->rotationalPosition, this->LastAzimuth, this->LastAzimuthSlope))
     {
       this->SplitFrame();
-      this->LastAzimuth = -1;
       this->LastTimestamp = std::numeric_limits<unsigned int>::max();
     }
 
@@ -2147,6 +2146,9 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(
 bool vtkVelodyneHDLReader::vtkInternal::shouldSplitFrame(
   uint16_t curRotationalPosition, int prevRotationalPosition, int& LastAzimuthSlope)
 {
+  // If we dont have previous RotationalPosition, dont split
+  if (prevRotationalPosition == -1)
+    return false;
   int curRotationalPositionSlope = curRotationalPosition - prevRotationalPosition;
   if (curRotationalPositionSlope == 0)
     return false;
@@ -2251,9 +2253,10 @@ int vtkVelodyneHDLReader::ReadFrameInformation()
         {
           filePositions.push_back(lastFilePosition);
           skips.push_back(i);
-          PacketProcessingDebugMacro(<< "\n\nEnd of frame. #packets: "
-                                     << numberOfFiringPackets - lastnumberOfFiringPackets << "\n\n"
-                                     << "RotationalPositions: ");
+          PacketProcessingDebugMacro(
+            << "\n\nEnd of frame #" << filePositions.size()
+            << ". #packets: " << numberOfFiringPackets - lastnumberOfFiringPackets << "\n\n"
+            << "RotationalPositions: ");
           lastnumberOfFiringPackets = numberOfFiringPackets;
         }
         this->UpdateProgress(0.0);

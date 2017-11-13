@@ -8,3 +8,5 @@ AlwaysBreakAfterDefinitionReturnType: None
 BreakBeforeBraces: Allman
 ColumnLimit: 100
 Standard: Cpp03
+BinPackArguments: true
+BinPackParameters: true

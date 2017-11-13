@@ -59,8 +59,8 @@ bool vtkRollingDataAccumulator::getGoodSequenceId(int& idRollingSequence) const
 
   while (idRollingSequence < (beginPosition.size() - 1) &&
     (beginPosition[idRollingSequence] < byteBeforeMarker ||
-           ((beginPosition[idRollingSequence + 1] - beginPosition[idRollingSequence]) !=
-             expectedLength)))
+      ((beginPosition[idRollingSequence + 1] - beginPosition[idRollingSequence]) !=
+        expectedLength)))
   {
     idRollingSequence++;
   }
