@@ -17,10 +17,10 @@
 #include "vtkMatrix4x4.h"
 #include "vtkObjectFactory.h"
 #include "vtkProp3D.h"
-#include "vtkQuaternion.h"
-#include "vtkQuaternionInterpolator.h"
+#include "../vtkPatchVeloView/vtkVeloViewQuaternion.h"
+#include "../vtkPatchVeloView/vtkVeloViewQuaternionInterpolator.h"
 #include "vtkTransform.h"
-#include "vtkTupleInterpolator.h"
+#include "../vtkPatchVeloView/vtkVeloViewTupleInterpolator.h"
 #include <list>
 
 vtkStandardNewMacro(vtkVelodyneTransformInterpolator);
@@ -33,7 +33,7 @@ struct vtkQTransform
   double Time;
   double P[3];
   double S[3];
-  vtkQuaterniond Q;
+  vtkVeloViewQuaterniond Q;
 
   vtkQTransform()
   {
@@ -79,9 +79,9 @@ vtkVelodyneTransformInterpolator::vtkVelodyneTransformInterpolator()
   this->InterpolationType = INTERPOLATION_TYPE_SPLINE;
 
   // Spline interpolation
-  this->PositionInterpolator = vtkTupleInterpolator::New();
-  this->ScaleInterpolator = vtkTupleInterpolator::New();
-  this->RotationInterpolator = vtkQuaternionInterpolator::New();
+  this->PositionInterpolator = vtkVeloViewTupleInterpolator::New();
+  this->ScaleInterpolator = vtkVeloViewTupleInterpolator::New();
+  this->RotationInterpolator = vtkVeloViewQuaternionInterpolator::New();
 
   // Quaternion interpolation
   this->TransformList = new vtkTransformList;
@@ -244,7 +244,7 @@ void vtkVelodyneTransformInterpolator::RemoveTransform(double t)
 }
 
 //----------------------------------------------------------------------------
-void vtkVelodyneTransformInterpolator::SetPositionInterpolator(vtkTupleInterpolator* pi)
+void vtkVelodyneTransformInterpolator::SetPositionInterpolator(vtkVeloViewTupleInterpolator* pi)
 {
   if (this->PositionInterpolator != pi)
   {
@@ -262,7 +262,7 @@ void vtkVelodyneTransformInterpolator::SetPositionInterpolator(vtkTupleInterpola
 }
 
 //----------------------------------------------------------------------------
-void vtkVelodyneTransformInterpolator::SetScaleInterpolator(vtkTupleInterpolator* si)
+void vtkVelodyneTransformInterpolator::SetScaleInterpolator(vtkVeloViewTupleInterpolator* si)
 {
   if (this->ScaleInterpolator != si)
   {
@@ -280,7 +280,7 @@ void vtkVelodyneTransformInterpolator::SetScaleInterpolator(vtkTupleInterpolator
 }
 
 //----------------------------------------------------------------------------
-void vtkVelodyneTransformInterpolator::SetRotationInterpolator(vtkQuaternionInterpolator* ri)
+void vtkVelodyneTransformInterpolator::SetRotationInterpolator(vtkVeloViewQuaternionInterpolator* ri)
 {
   if (this->RotationInterpolator != ri)
   {
@@ -310,15 +310,15 @@ void vtkVelodyneTransformInterpolator::InitializeInterpolation()
   {
     if (!this->PositionInterpolator)
     {
-      this->PositionInterpolator = vtkTupleInterpolator::New();
+      this->PositionInterpolator = vtkVeloViewTupleInterpolator::New();
     }
     if (!this->ScaleInterpolator)
     {
-      this->ScaleInterpolator = vtkTupleInterpolator::New();
+      this->ScaleInterpolator = vtkVeloViewTupleInterpolator::New();
     }
     if (!this->RotationInterpolator)
     {
-      this->RotationInterpolator = vtkQuaternionInterpolator::New();
+      this->RotationInterpolator = vtkVeloViewQuaternionInterpolator::New();
     }
 
     if (this->InterpolationType == INTERPOLATION_TYPE_LINEAR)
@@ -346,13 +346,47 @@ void vtkVelodyneTransformInterpolator::InitializeInterpolation()
     this->ScaleInterpolator->SetNumberOfComponents(3);
 
     // Okay, now we can load the interpolators with data
-    TransformListIterator iter = this->TransformList->begin();
-    for (; iter != this->TransformList->end(); ++iter)
+    // Initialize the data pointers
+    int nb = this->TransformList->size();
+    double *time = new double[nb];
+    double **Position = new double*[3];
+    double **Scale = new double*[3];
+    for (int k = 0; k < 3; ++k)
     {
-      this->PositionInterpolator->AddTuple(iter->Time, iter->P);
-      this->ScaleInterpolator->AddTuple(iter->Time, iter->S);
-      this->RotationInterpolator->AddQuaternion(iter->Time, iter->Q);
+      Position[k] = new double[nb];
+      Scale[k] = new double[nb];
     }
+
+    // Fill the data pointers
+    TransformListIterator iter = this->TransformList->begin();
+    int count = 0;
+    for ( ; iter != this->TransformList->end(); ++iter)
+    {
+      /*this->PositionInterpolator->AddTuple(iter->Time,iter->P);
+      this->ScaleInterpolator->AddTuple(iter->Time,iter->S);*/
+      Position[0][count] = iter->P[0];
+      Position[1][count] = iter->P[1];
+      Position[2][count] = iter->P[2];
+      Scale[0][count] = iter->S[0];
+      Scale[1][count] = iter->S[1];
+      Scale[2][count] = iter->S[2];
+      time[count] = iter->Time;
+      this->RotationInterpolator->AddQuaternion(iter->Time,iter->Q);
+      count++;
+    }
+
+    // Fill the interpolators
+    this->PositionInterpolator->FillFromData(nb, time, Position);
+    this->ScaleInterpolator->FillFromData(nb, time, Scale);
+
+    for (int k = 0; k < 3; ++k)
+    {
+      delete [] Position[k];
+      delete [] Scale[k];
+    }
+
+    delete [] Position;
+    delete [] Scale;
 
     this->Initialized = 1;
     this->InitializeTime.Modified();
@@ -383,9 +417,9 @@ void vtkVelodyneTransformInterpolator::InterpolateTransform(double t, vtkTransfo
   }
 
   double P[3], S[3], Q[4];
-  vtkQuaterniond q;
-  this->PositionInterpolator->InterpolateTuple(t, P);
-  this->ScaleInterpolator->InterpolateTuple(t, S);
+  vtkVeloViewQuaterniond q;
+  this->PositionInterpolator->InterpolateTupleDichotomic(t, P);
+  this->ScaleInterpolator->InterpolateTupleDichotomic(t, S);
   this->RotationInterpolator->InterpolateQuaternion(t, q);
   Q[0] = vtkMath::DegreesFromRadians(q.GetRotationAngleAndAxis(Q + 1));
 
