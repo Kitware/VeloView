@@ -2309,14 +2309,15 @@ int vtkVelodyneHDLReader::ReadFrameInformation()
           PacketProcessingDebugMacro(
             << "\n\nEnd of frame #" << filePositions.size()
             << ". #packets: " << numberOfFiringPackets - lastnumberOfFiringPackets << "\n\n"
-            << "RotationalPositions: ");
+            << "(RotationalPositions,deflection): ");
           lastnumberOfFiringPackets = numberOfFiringPackets;
         }
         this->UpdateProgress(0.0);
         // We start a new frame, reinitialize the boolean
         isEmptyFrame = true;
       }
-      PacketProcessingDebugMacro(<< firingData.rotationalPosition << ", ");
+      PacketProcessingDebugMacro(<< std::setw(5) << "(" << firingData.rotationalPosition << ", "
+                                 << firingData.getElevation1000th() << "), " << std::endl);
     }
 
     // Accumulate HDL64 Status byte data
