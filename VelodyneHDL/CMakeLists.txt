@@ -104,6 +104,9 @@ if(PARAVIEW_BUILD_QT_GUI)
     vtkRollingDataAccumulator.cxx
     vvPacketSender.cxx
     vtkSlam.cxx
+    ../vtkPatchVeloView/vtkVeloViewPiecewiseFunction.cxx
+    ../vtkPatchVeloView/vtkVeloViewQuaternionInterpolator.cxx
+    ../vtkPatchVeloView/vtkVeloViewTupleInterpolator.cxx
     )
 
   QT4_WRAP_CPP(moc_srcs ${MOC_HEADERS})
