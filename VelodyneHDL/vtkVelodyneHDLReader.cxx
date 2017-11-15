@@ -342,6 +342,8 @@ class FramingState
 {
   int LastAzimuth;
   int LastAzimuthSlope;
+  int LastElevation;
+  int LastElevationSlope;
 
 public:
   FramingState() { reset(); }
@@ -349,12 +351,31 @@ public:
   {
     LastAzimuth = -1;
     LastAzimuthSlope = 0;
+    LastElevation = -1;
+    LastElevationSlope = 0;
   }
   bool hasChangedWithValue(const HDLFiringData& firingData)
   {
     bool hasLastAzimuth = (LastAzimuth != -1);
     bool azimuthFrameSplit = hasChangedWithValue(
       firingData.rotationalPosition, hasLastAzimuth, LastAzimuth, LastAzimuthSlope);
+
+    bool hasLastElevation = (LastElevation != -1);
+    int previousElevation = LastElevation;
+    bool elevationSplit = hasChangedWithValue(
+      firingData.getElevation1000th(), hasLastElevation, LastElevation, LastElevationSlope);
+    if (azimuthFrameSplit)
+    {
+      if (firingData.getElevation1000th() == previousElevation)
+      {
+        // Change of azimuth scanning direction, without a elevation change
+        // Either a double sweep with same elevation or fixed elevation
+        // That is a new frame. Reset the elevationSlope
+        LastElevationSlope = 0;
+        return true;
+      }
+      return elevationSplit;
+    }
     return azimuthFrameSplit;
   }
 
