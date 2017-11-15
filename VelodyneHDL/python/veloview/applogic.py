@@ -33,6 +33,7 @@ import planefit
 
 from PythonQt.paraview import vvCalibrationDialog, vvCropReturnsDialog, vvSelectFramesDialog
 from VelodyneHDLPluginPython import vtkVelodyneHDLReader
+from VelodyneHDLPluginPython import vtkPCLRansacModel
 
 _repCache = {}
 
@@ -74,6 +75,7 @@ class AppLogic(object):
         self.reader = None
         self.position = (None, None, None)
         self.sensor = None
+        self.ransac = None
 
         self.fps = [0,0]
 
@@ -518,6 +520,8 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
     app.reader = reader
     app.filenameLabel.setText('File: %s' % os.path.basename(filename))
     onCropReturns(False) # Dont show the dialog just restore settings
+
+    app.ransac = smp.PCLRansacModel(Input = reader)
 
     # Resetting laser selection dialog according to the opened PCAP file
     # and restoring the dialog visibility afterward

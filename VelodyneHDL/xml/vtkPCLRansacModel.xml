@@ -1,0 +1,22 @@
+<ServerManagerConfiguration>
+  <!-- Begin vtkPCLRansacModel -->
+  <ProxyGroup name="filters">
+    <SourceProxy name="PCLRansacModel" class="vtkPCLRansacModel" label="PCLRansac Model">
+      <Documentation
+        short_help="Compute ransac algorithm according to the selected model"
+        long_help="Compute ransac algorithm according to the selected model">
+        Compute ransac algorithm according to the selected model
+      </Documentation>
+
+    <InputProperty
+      name="Input"
+      command="SetInputConnection">
+      <DataTypeDomain name="input_type">
+        <DataType value="vtkPolyData"/>
+      </DataTypeDomain>
+    </InputProperty>
+
+    </SourceProxy>
+  </ProxyGroup>
+  <!-- End vtkPCLRansacModel -->
+</ServerManagerConfiguration>
