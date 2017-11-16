@@ -16,6 +16,8 @@
 #define _vtkDataPacket_h
 
 #include <iomanip>
+#include <iostream>
+#include <unordered_map>
 #include <stdio.h>
 #include <vector>
 #ifdef _MSC_VER
@@ -52,6 +54,19 @@ enum SensorType
   // But it is usefull to define
   HDL64 = 0xa0, // decimal: 160
 };
+
+static std::string SensorTypeToString(SensorType type)
+{
+  std::unordered_map<SensorType, std::string> toStringMap;
+  toStringMap[SensorType::HDL32E] = "HDL-32E";
+  toStringMap[SensorType::VLP16] = "VLP-16";
+  toStringMap[SensorType::VLP32AB] = "VLP-32AB";
+  toStringMap[SensorType::VLP16HiRes] = "VLP-16 Hi-Res";
+  toStringMap[SensorType::VLP32C] = "VLP-32C";
+  toStringMap[SensorType::HDL64] = "HDL-64";
+  return toStringMap[type];
+}
+
 static int num_laser(SensorType sensorType)
 {
   switch (sensorType)
@@ -76,6 +91,16 @@ enum DualReturnSensorMode
   LAST_RETURN = 0x38,
   DUAL_RETURN = 0x39,
 };
+
+static std::string DualReturnSensorModeToString(DualReturnSensorMode type)
+{
+  std::unordered_map<DualReturnSensorMode, std::string> toStringMap;
+  toStringMap[DualReturnSensorMode::STRONGEST_RETURN] = "STRONGEST RETURN";
+  toStringMap[DualReturnSensorMode::LAST_RETURN] = "LAST RETURN";
+  toStringMap[DualReturnSensorMode::DUAL_RETURN] = "DUAL RETURN";
+  return toStringMap[type];
+}
+
 enum PowerMode
 {
   NO_INTERNAL_CORRECTION_0 = 0xa0,
@@ -122,6 +147,14 @@ struct HDLDataPacket
     if (isHDL64())
       return isDualModeReturnHDL64() ? DUAL_RETURN : STRONGEST_RETURN;
     return static_cast<DualReturnSensorMode>(factoryField1);
+  }
+  uint8_t GetFactoryField1() const // read only
+  {
+    return factoryField1;
+  }
+  uint8_t GetFactoryField2() const // read only
+  {
+    return factoryField2;
   }
   static const unsigned int getDataByteLength() { return 1206; }
   static const unsigned int getPacketByteLength() { return getDataByteLength() + 42; }

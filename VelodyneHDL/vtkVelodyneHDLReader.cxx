@@ -417,10 +417,14 @@ public:
   vtkSmartPointer<vtkDoubleArray> SelectedDualReturn;
   bool ShouldAddDualReturnArray;
 
+  // sensor information
   bool HasDualReturn;
   SensorType ReportedSensor;
   DualReturnSensorMode ReportedSensorReturnMode;
   bool IsHDL64Data;
+  uint8_t ReportedFactoryField1;
+  uint8_t ReportedFactoryField2;
+
   bool IgnoreEmptyFrames;
   bool alreadyWarnedForIgnoredHDL64FiringPacket;
 
@@ -523,6 +527,54 @@ public:
     const HDLLaserCorrection* correction, double pos[3], double& distanceM, short& intensity,
     bool correctIntensity);
 };
+
+//-----------------------------------------------------------------------------
+int vtkVelodyneHDLReader::GetReportedFactoryField1()
+{
+  return this->Internal->ReportedFactoryField1;
+}
+
+//-----------------------------------------------------------------------------
+int vtkVelodyneHDLReader::GetReportedFactoryField2()
+{
+  return this->Internal->ReportedFactoryField2;
+}
+
+//-----------------------------------------------------------------------------
+std::string vtkVelodyneHDLReader::GetReportedSensorType()
+{
+  return SensorTypeToString(this->Internal->ReportedSensor);
+}
+
+//-----------------------------------------------------------------------------
+std::string vtkVelodyneHDLReader::GetReportedSensorMode()
+{
+  return DualReturnSensorModeToString(this->Internal->ReportedSensorReturnMode);
+}
+
+//-----------------------------------------------------------------------------
+std::string vtkVelodyneHDLReader::GetSensorInformation()
+{
+  // temporary stream to convert integer into hex code
+  std::stringstream stream1;
+  std::stringstream stream2;
+
+  // convert factoryField1
+  stream1 << std::hex << this->GetReportedFactoryField1();
+  std::string factoryField1(stream1.str());
+
+  // convert factoryField2
+  stream2 << std::hex << this->GetReportedFactoryField2();
+  std::string factoryField2(stream2.str());
+
+  std::stringstream streamInfo;
+  streamInfo << "Factory Field 1: " << this->GetReportedFactoryField1()
+             << " (hex: 0x" << factoryField1 << " ) " << this->GetReportedSensorMode()
+             << "  |  " << "Factory Field 2: " << this->GetReportedFactoryField2()
+             << " (hex: 0x" << factoryField2 << " ) " << this->GetReportedSensorType();
+
+  return std::string(streamInfo.str());
+}
 
 //-----------------------------------------------------------------------------
 vtkStandardNewMacro(vtkVelodyneHDLReader);
@@ -2297,6 +2349,8 @@ bool vtkVelodyneHDLReader::updateReportedSensor(
     const HDLDataPacket* dataPacket = reinterpret_cast<const HDLDataPacket*>(data);
     this->Internal->IsHDL64Data = dataPacket->isHDL64();
     this->Internal->ReportedSensor = dataPacket->getSensorType();
+    this->Internal->ReportedFactoryField1 = dataPacket->factoryField1;
+    this->Internal->ReportedFactoryField2 = dataPacket->factoryField2;
     return true;
   }
   return false;

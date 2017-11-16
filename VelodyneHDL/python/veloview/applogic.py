@@ -105,6 +105,7 @@ class AppLogic(object):
         self.filenameLabel = QtGui.QLabel()
         self.statusLabel = QtGui.QLabel()
         self.timeLabel = QtGui.QLabel()
+        self.sensorInformationLabel = QtGui.QLabel()
 
 
 class IconPaths(object):
@@ -1947,6 +1948,7 @@ def setupStatusBar():
     statusBar.addWidget(app.filenameLabel)
     statusBar.addWidget(app.statusLabel)
     statusBar.addWidget(app.timeLabel)
+    statusBar.addWidget(app.sensorInformationLabel)
 
 
 def setActionIcon(actionName, iconPath):
@@ -1957,6 +1959,10 @@ def onTimeChanged():
 
     frame = int(getTimeKeeper().getTime())
     app.timeLabel.setText('  Frame: %s' % frame)
+    reader = getReader()
+
+    if reader is not None:
+        app.sensorInformationLabel.setText(reader.GetClientSideObject().GetSensorInformation())
 
     for widget in (app.timeSlider, app.timeSpinBox):
         widget.blockSignals(True)
