@@ -76,6 +76,22 @@ public:
       return false;
     }
 
+    const unsigned int loopback_header_size = 4;
+    const unsigned int ethernet_header_size = 14;
+    auto linktype = pcap_datalink(pcapFile);
+    switch (linktype)
+    {
+      case DLT_EN10MB:
+        this->FrameHeaderLength = ethernet_header_size;
+        break;
+      case DLT_NULL:
+        this->FrameHeaderLength = loopback_header_size;
+        break;
+      default:
+        this->LastError = "Unknown link type in pcap file. Cannot tell where the payload is.";
+        return false;
+    }
+
     this->FileName = filename;
     this->PCAPFile = pcapFile;
     this->StartTime.tv_sec = this->StartTime.tv_usec = 0;
@@ -142,8 +158,11 @@ public:
       return true;
     }
 
-    // The ethernet header is 42 bytes long; unnecessary
-    const unsigned int bytesToSkip = 42;
+    // Only return the payload. (Assumes IPv4 + UDP)
+    const unsigned int ipv4_header_size = 20;
+    const unsigned int udp_header_size = 8;
+    const unsigned int bytesToSkip = FrameHeaderLength + ipv4_header_size + udp_header_size;
+
     dataLength = header->len - bytesToSkip;
     data = data + bytesToSkip;
     timeSinceStart = GetElapsedTime(header->ts, this->StartTime);
@@ -160,6 +179,7 @@ protected:
   std::string FileName;
   std::string LastError;
   struct timeval StartTime;
+  unsigned int FrameHeaderLength;
 };
 
 #endif
