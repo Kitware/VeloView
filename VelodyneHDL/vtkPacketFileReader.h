@@ -164,6 +164,8 @@ public:
     const unsigned int bytesToSkip = FrameHeaderLength + ipv4_header_size + udp_header_size;
 
     dataLength = header->len - bytesToSkip;
+    if (header->len > header->caplen)
+      dataLength = header->caplen - bytesToSkip;
     data = data + bytesToSkip;
     timeSinceStart = GetElapsedTime(header->ts, this->StartTime);
     return true;
