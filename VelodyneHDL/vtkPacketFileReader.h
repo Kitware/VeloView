@@ -158,10 +158,11 @@ public:
       return true;
     }
 
-    // Only return the payload. (Assumes IPv4 + UDP)
-    const unsigned int ipv4_header_size = 20;
+    // Only return the payload.
+    // We read the actual IP header length (v4 & v6) + assumes UDP
+    const unsigned int ip_header_size = (data[FrameHeaderLength + 0] & 0xf) * 4;
     const unsigned int udp_header_size = 8;
-    const unsigned int bytesToSkip = FrameHeaderLength + ipv4_header_size + udp_header_size;
+    const unsigned int bytesToSkip = FrameHeaderLength + ip_header_size + udp_header_size;
 
     dataLength = header->len - bytesToSkip;
     if (header->len > header->caplen)
