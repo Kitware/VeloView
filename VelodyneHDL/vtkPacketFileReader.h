@@ -135,7 +135,7 @@ public:
   }
 
   bool NextPacket(const unsigned char*& data, unsigned int& dataLength, double& timeSinceStart,
-    pcap_pkthdr** headerReference = NULL)
+    pcap_pkthdr** headerReference = NULL, unsigned int* dataHeaderLength = NULL)
   {
     if (!this->PCAPFile)
     {
@@ -150,25 +150,23 @@ public:
       return false;
     }
 
-    if (headerReference != NULL)
-    {
-      *headerReference = header;
-      dataLength = header->len;
-      timeSinceStart = GetElapsedTime(header->ts, this->StartTime);
-      return true;
-    }
-
     // Only return the payload.
     // We read the actual IP header length (v4 & v6) + assumes UDP
-    const unsigned int ip_header_size = (data[FrameHeaderLength + 0] & 0xf) * 4;
-    const unsigned int udp_header_size = 8;
-    const unsigned int bytesToSkip = FrameHeaderLength + ip_header_size + udp_header_size;
+    const unsigned int ipHeaderLength = (data[FrameHeaderLength + 0] & 0xf) * 4;
+    const unsigned int udpHeaderLength = 8;
+    const unsigned int bytesToSkip = FrameHeaderLength + ipHeaderLength + udpHeaderLength;
 
     dataLength = header->len - bytesToSkip;
     if (header->len > header->caplen)
       dataLength = header->caplen - bytesToSkip;
     data = data + bytesToSkip;
     timeSinceStart = GetElapsedTime(header->ts, this->StartTime);
+
+    if (headerReference != NULL && dataHeaderLength != NULL)
+    {
+      *headerReference = header;
+      *dataHeaderLength = bytesToSkip;
+    }
     return true;
   }
 

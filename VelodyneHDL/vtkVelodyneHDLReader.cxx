@@ -1160,6 +1160,7 @@ void vtkVelodyneHDLReader::DumpFrames(int startFrame, int endFrame, const std::s
   pcap_pkthdr* header = 0;
   const unsigned char* data = 0;
   unsigned int dataLength = 0;
+  unsigned int dataHeaderLength = 0;
   double timeSinceStart = 0;
 
   FramingState currentFrameState;
@@ -1168,24 +1169,23 @@ void vtkVelodyneHDLReader::DumpFrames(int startFrame, int endFrame, const std::s
   this->Internal->Reader->SetFilePosition(&this->Internal->FilePositions[startFrame]);
   int skip = this->Internal->Skips[startFrame];
   const unsigned int ethernetUDPHeaderLength = 42;
-  while (this->Internal->Reader->NextPacket(data, dataLength, timeSinceStart, &header) &&
+  while (this->Internal->Reader->NextPacket(
+           data, dataLength, timeSinceStart, &header, &dataHeaderLength) &&
     currentFrame <= endFrame)
   {
-    if (dataLength == (HDLDataPacket::getDataByteLength() + ethernetUDPHeaderLength) ||
-      dataLength == (512 + ethernetUDPHeaderLength))
+    if (dataLength == HDLDataPacket::getDataByteLength() || dataLength == 512)
     {
-      writer.WritePacket(header, const_cast<unsigned char*>(data));
+      writer.WritePacket(header, const_cast<unsigned char*>(data) - dataHeaderLength);
     }
 
     // dont check for frame counts if it was not a firing packet
-    if (dataLength != HDLDataPacket::getPacketByteLength())
+    if (dataLength != HDLDataPacket::getDataByteLength())
     {
       continue;
     }
 
     // Check if we cycled a frame and decrement
-    const HDLDataPacket* dataPacket =
-      reinterpret_cast<const HDLDataPacket*>(data + ethernetUDPHeaderLength);
+    const HDLDataPacket* dataPacket = reinterpret_cast<const HDLDataPacket*>(data);
 
     for (int i = skip; i < HDL_FIRING_PER_PKT; ++i)
     {
