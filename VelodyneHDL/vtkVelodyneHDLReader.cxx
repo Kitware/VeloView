@@ -434,6 +434,8 @@ public:
     this->LaserSelection.resize(HDL_MAX_NUM_LASERS, true);
     this->DualReturnFilter = 0;
     this->IsHDL64Data = false;
+    this->ReportedFactoryField1 = 0;
+    this->ReportedFactoryField2 = 0;
     this->CalibrationReportedNumLasers = -1;
     this->IgnoreEmptyFrames = true;
     this->distanceResolutionM = 0.002;
@@ -477,10 +479,14 @@ public:
   vtkSmartPointer<vtkDoubleArray> SelectedDualReturn;
   bool ShouldAddDualReturnArray;
 
+  // sensor information
   bool HasDualReturn;
   SensorType ReportedSensor;
   DualReturnSensorMode ReportedSensorReturnMode;
   bool IsHDL64Data;
+  uint8_t ReportedFactoryField1;
+  uint8_t ReportedFactoryField2;
+
   bool IgnoreEmptyFrames;
   bool alreadyWarnedForIgnoredHDL64FiringPacket;
 
@@ -582,6 +588,23 @@ public:
     const HDLLaserCorrection* correction, double pos[3], double& distanceM, short& intensity,
     bool correctIntensity);
 };
+
+//-----------------------------------------------------------------------------
+std::string vtkVelodyneHDLReader::GetSensorInformation()
+{
+  std::stringstream streamInfo;
+  streamInfo << "Factory Field 1: " << (int) this->Internal->ReportedFactoryField1
+             << " (hex: 0x" << std::hex << (int) this->Internal->ReportedFactoryField1
+             << std::dec << " ) " << DataPacketFixedLength::DualReturnSensorModeToString(
+                  static_cast<DualReturnSensorMode>(this->Internal->ReportedFactoryField1))
+             << "  |  "
+             << "Factory Field 2: " << (int) this->Internal->ReportedFactoryField2
+             << " (hex: 0x" << std::hex << (int) this->Internal->ReportedFactoryField2
+             << std::dec << " ) " << DataPacketFixedLength::SensorTypeToString(
+                  static_cast<SensorType>(this->Internal->ReportedFactoryField2));
+
+  return std::string(streamInfo.str());
+}
 
 //-----------------------------------------------------------------------------
 vtkStandardNewMacro(vtkVelodyneHDLReader);
@@ -2330,6 +2353,8 @@ bool vtkVelodyneHDLReader::updateReportedSensor(
     const HDLDataPacket* dataPacket = reinterpret_cast<const HDLDataPacket*>(data);
     this->Internal->IsHDL64Data = dataPacket->isHDL64();
     this->Internal->ReportedSensor = dataPacket->getSensorType();
+    this->Internal->ReportedFactoryField1 = dataPacket->factoryField1;
+    this->Internal->ReportedFactoryField2 = dataPacket->factoryField2;
     return true;
   }
   return false;
