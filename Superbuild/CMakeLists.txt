@@ -93,7 +93,7 @@ string (STRIP "${cxxflags}" cxxflags)
 string (STRIP "${cflags}"  cflags)
 #-----------------------------------------------------------------------------
 ## Top-level options. These must be limited to a commonly used subset with
-## default values being used for building VeloView binaries.
+## default values being used for building the binaries.
 #option(PV_COMMAND_LINE_TOOLS_ONLY
 #  "Turn this ON to build command lines tools alone." OFF)
 

@@ -19,7 +19,7 @@ project(VeloView)
 # Disallow in-source build
 if ("${VeloView_SOURCE_DIR}"  STREQUAL "${VeloView_BINARY_DIR}")
   message(FATAL_ERROR
-    "VeloView requires an out of source Build. "
+    "${SOFTWARE_NAME} requires an out of source Build. "
     "Please create a separate binary directory and run CMake there.")
 endif()
 
@@ -152,8 +152,8 @@ if(NOT APPLE)
   set(vv_configurefile_dest "${CMAKE_CURRENT_BINARY_DIR}/share/")
   set(vv_installfile_dest share)
 else()
-  set(vv_configurefile_dest "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/VeloView.app/Contents/Resources/")
-  set(vv_installfile_dest "${VV_INSTALL_RUNTIME_DIR}/VeloView.app/Contents/Resources")
+  set(vv_configurefile_dest "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${SOFTWARE_NAME}.app/Contents/Resources/")
+  set(vv_installfile_dest "${VV_INSTALL_RUNTIME_DIR}/${SOFTWARE_NAME}.app/Contents/Resources")
 endif()
 set(vv_installed_xml_files "")
 foreach(vv_xml_file ${VV_SHARED_FILES})
