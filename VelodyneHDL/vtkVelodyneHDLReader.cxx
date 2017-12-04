@@ -375,6 +375,8 @@ public:
     this->LaserSelection.resize(HDL_MAX_NUM_LASERS, true);
     this->DualReturnFilter = 0;
     this->IsHDL64Data = false;
+    this->ReportedFactoryField1 = 0;
+    this->ReportedFactoryField2 = 0;
     this->CalibrationReportedNumLasers = -1;
     this->IgnoreEmptyFrames = true;
     this->distanceResolutionM = 0.002;
@@ -529,49 +531,18 @@ public:
 };
 
 //-----------------------------------------------------------------------------
-int vtkVelodyneHDLReader::GetReportedFactoryField1()
-{
-  return this->Internal->ReportedFactoryField1;
-}
-
-//-----------------------------------------------------------------------------
-int vtkVelodyneHDLReader::GetReportedFactoryField2()
-{
-  return this->Internal->ReportedFactoryField2;
-}
-
-//-----------------------------------------------------------------------------
-std::string vtkVelodyneHDLReader::GetReportedSensorType()
-{
-  return SensorTypeToString(this->Internal->ReportedSensor);
-}
-
-//-----------------------------------------------------------------------------
-std::string vtkVelodyneHDLReader::GetReportedSensorMode()
-{
-  return DualReturnSensorModeToString(this->Internal->ReportedSensorReturnMode);
-}
-
-//-----------------------------------------------------------------------------
 std::string vtkVelodyneHDLReader::GetSensorInformation()
 {
-  // temporary stream to convert integer into hex code
-  std::stringstream stream1;
-  std::stringstream stream2;
-
-  // convert factoryField1
-  stream1 << std::hex << this->GetReportedFactoryField1();
-  std::string factoryField1(stream1.str());
-
-  // convert factoryField2
-  stream2 << std::hex << this->GetReportedFactoryField2();
-  std::string factoryField2(stream2.str());
-
   std::stringstream streamInfo;
-  streamInfo << "Factory Field 1: " << this->GetReportedFactoryField1()
-             << " (hex: 0x" << factoryField1 << " ) " << this->GetReportedSensorMode()
-             << "  |  " << "Factory Field 2: " << this->GetReportedFactoryField2()
-             << " (hex: 0x" << factoryField2 << " ) " << this->GetReportedSensorType();
+  streamInfo << "Factory Field 1: " << (int) this->Internal->ReportedFactoryField1
+             << " (hex: 0x" << std::hex << (int) this->Internal->ReportedFactoryField1
+             << std::dec << " ) " << DataPacketFixedLength::DualReturnSensorModeToString(
+                  static_cast<DualReturnSensorMode>(this->Internal->ReportedFactoryField1))
+             << "  |  "
+             << "Factory Field 2: " << (int) this->Internal->ReportedFactoryField2
+             << " (hex: 0x" << std::hex << (int) this->Internal->ReportedFactoryField2
+             << std::dec << " ) " << DataPacketFixedLength::SensorTypeToString(
+                  static_cast<SensorType>(this->Internal->ReportedFactoryField2));
 
   return std::string(streamInfo.str());
 }

@@ -148,14 +148,6 @@ struct HDLDataPacket
       return isDualModeReturnHDL64() ? DUAL_RETURN : STRONGEST_RETURN;
     return static_cast<DualReturnSensorMode>(factoryField1);
   }
-  uint8_t GetFactoryField1() const // read only
-  {
-    return factoryField1;
-  }
-  uint8_t GetFactoryField2() const // read only
-  {
-    return factoryField2;
-  }
   static const unsigned int getDataByteLength() { return 1206; }
   static const unsigned int getPacketByteLength() { return getDataByteLength() + 42; }
   static inline bool isValidPacket(const unsigned char* data, unsigned int dataLength)
