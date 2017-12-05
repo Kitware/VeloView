@@ -653,14 +653,18 @@ public:
       if (getenv("HOME"))
       {
         appDir = getenv("HOME");
-        appDir += "/VeloView/";
+        appDir += "/";
+        appDir += SOFTWARE_NAME;
+        appDir += "/";
       }
       else
       {
         // On Windows, it's a concatanation of 2 environment variables
         appDir = getenv("HOMEDRIVE");
         appDir += getenv("HOMEPATH");
-        appDir += "\\VeloView\\";
+        appDir += "\\";
+        appDir += SOFTWARE_NAME;
+        appDir += "\\";
       }
 
       // Checking if the application directory exists in the home directory and create it otherwise

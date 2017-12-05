@@ -593,14 +593,14 @@ public:
 std::string vtkVelodyneHDLReader::GetSensorInformation()
 {
   std::stringstream streamInfo;
-  streamInfo << "Factory Field 1: " << (int) this->Internal->ReportedFactoryField1
-             << " (hex: 0x" << std::hex << (int) this->Internal->ReportedFactoryField1
-             << std::dec << " ) " << DataPacketFixedLength::DualReturnSensorModeToString(
+  streamInfo << "Factory Field 1: " << (int)this->Internal->ReportedFactoryField1 << " (hex: 0x"
+             << std::hex << (int)this->Internal->ReportedFactoryField1 << std::dec << " ) "
+             << DataPacketFixedLength::DualReturnSensorModeToString(
                   static_cast<DualReturnSensorMode>(this->Internal->ReportedFactoryField1))
              << "  |  "
-             << "Factory Field 2: " << (int) this->Internal->ReportedFactoryField2
-             << " (hex: 0x" << std::hex << (int) this->Internal->ReportedFactoryField2
-             << std::dec << " ) " << DataPacketFixedLength::SensorTypeToString(
+             << "Factory Field 2: " << (int)this->Internal->ReportedFactoryField2 << " (hex: 0x"
+             << std::hex << (int)this->Internal->ReportedFactoryField2 << std::dec << " ) "
+             << DataPacketFixedLength::SensorTypeToString(
                   static_cast<SensorType>(this->Internal->ReportedFactoryField2));
 
   return std::string(streamInfo.str());
@@ -2402,7 +2402,7 @@ bool vtkVelodyneHDLReader::isReportedSensorAndCalibrationFileConsistent(bool sho
                        << "(0x" << hex << Internal->ReportedSensor << dec << ") "
                        << "recognized as having " << reportedSensorNumberLaser << " lasers";
       }
-      warningMessage << ", Veloview will interpret data-packets and show points"
+      warningMessage << ", " << SOFTWARE_NAME << " will interpret data-packets and show points"
                      << " based on the XML calibration file only (currently: "
                      << this->Internal->CalibrationReportedNumLasers << " lasers).";
       vtkGenericWarningMacro(<< warningMessage.str());
