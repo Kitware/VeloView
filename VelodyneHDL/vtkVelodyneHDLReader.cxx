@@ -1982,10 +1982,20 @@ void vtkVelodyneHDLReader::vtkInternal::ComputeCorrectedValues(const unsigned sh
          sinVertCorrection = correction->sinVertCorrection;
   if (elevation != 0)
   {
-    cosVertCorrection = correction->cosVertCorrection * this->cos_lookup_table_1000_[elevation] -
-      correction->sinVertCorrection * this->sin_lookup_table_1000_[elevation];
-    sinVertCorrection = correction->sinVertCorrection * this->cos_lookup_table_1000_[elevation] +
-      correction->cosVertCorrection * this->sin_lookup_table_1000_[elevation];
+    if (elevation < this->sin_lookup_table_1000_.size())
+    {
+      cosVertCorrection = correction->cosVertCorrection * this->cos_lookup_table_1000_[elevation] -
+        correction->sinVertCorrection * this->sin_lookup_table_1000_[elevation];
+      sinVertCorrection = correction->sinVertCorrection * this->cos_lookup_table_1000_[elevation] +
+        correction->cosVertCorrection * this->sin_lookup_table_1000_[elevation];
+    }
+    else
+    {
+      double vertAngleRad =
+        M_PI / 180.0 * (correction->verticalCorrection + static_cast<double>(elevation) / 1000.0);
+      cosVertCorrection = std::cos(vertAngleRad);
+      sinVertCorrection = std::sin(vertAngleRad);
+    }
   }
   double cosVertOffsetCorrection = correction->verticalOffsetCorrection * cosVertCorrection;
   double sinVertOffsetCorrection = correction->verticalOffsetCorrection * sinVertCorrection;
