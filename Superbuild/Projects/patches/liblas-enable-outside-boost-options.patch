@@ -1,0 +1,30 @@
+From b7bb8cde2b874e888b3a1b40233e44c76593eee1 Mon Sep 17 00:00:00 2001
+From: Dan Lipsa <dan.lipsa@kitware.com>
+Date: Mon, 23 Oct 2017 17:37:33 -0400
+Subject: [PATCH] Enable outside packages to set boost options.
+
+---
+ CMakeLists.txt | 8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 82fc991a..032b5e49 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -190,8 +190,12 @@ message(STATUS "Searching for Boost 1.38+ - done")
+ # on windows in the compilation documentation.
+ if(WIN32)
+   if (MSVC)
+-    set(Boost_USE_STATIC_LIBS   ON)
+-    set(Boost_USE_MULTITHREADED ON)
++    if (NOT DEFINED Boost_USE_STATIC_LIBS)
++      set(Boost_USE_STATIC_LIBS   ON)
++    endif()
++    if (NOT DEFINED Boost_USE_MULTITHREADED)
++      set(Boost_USE_MULTITHREADED ON)
++    endif()
+   endif(MSVC)
+ endif(WIN32)
+ 
+-- 
+2.11.0

@@ -1,5 +1,5 @@
-add_external_project(pythonqt
-  DEPENDS qt python
+superbuild_add_project(pythonqt
+  DEPENDS qt4 python
 
   CMAKE_ARGS
     -DBUILD_SHARED_LIBS:BOOL=ON

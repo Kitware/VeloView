@@ -8,64 +8,38 @@
 #   ..
 # endif()
 
-if (WIN32)
-  if (VV_BUILD_ARCHITECTURE EQUAL 64)
-    add_revision(python
-      URL "http://www.paraview.org/files/dependencies/python+deps.tar.bz2"
-      URL_MD5 "4318b8f771eda5606d9ce7f0be9f82e1")
-  else ()
-    add_revision(python
-      URL "http://www.paraview.org/files/dependencies/python+deps-x32.tar.bz2"
-      URL_MD5 "6ba441784a672e08379d23ddd61146f0")
-  endif ()
-elseif (CROSS_BUILD_STAGE STREQUAL "CROSS")
-  add_revision(python
-    URL "http://www.paraview.org/files/dependencies/Python-2.7.3_CMake-7d1eb56.tar.bz2"
-    URL_MD5 "48121a265837f825b1136ca8cf9bc4cd")
-else()
-  add_revision(python
-    URL "http://paraview.org/files/dependencies/Python-2.7.11.tgz"
-    URL_MD5 "6b6076ec9e93f05dd63e47eb9c15728b")
-endif()
 
-add_revision(qt
+superbuild_set_customizable_revision(qt4
   URL "http://download.qt-project.org/archive/qt/4.8/4.8.6/qt-everywhere-opensource-src-4.8.6.tar.gz"
   URL_MD5 2edbe4d6c2eff33ef91732602f3518eb)
 
-add_revision(pythonqt
+superbuild_set_revision(pythonqt
   GIT_REPOSITORY git://github.com/commontk/PythonQt.git
   GIT_TAG patched-6)
 
 set(PARAVIEW_VERSION 5.1)
-add_revision(paraview
+superbuild_set_revision(paraview
   GIT_REPOSITORY https://gitlab.kitware.com/bjacquet/paraview.git
-  GIT_TAG origin/point-cloud-rep)
+  GIT_TAG origin/veloview)
 
-add_revision(veloview
+superbuild_set_revision(veloview
     SOURCE_DIR ${CMAKE_SOURCE_DIR}/..
     DOWNLOAD_COMMAND "")
 
 if (WIN32)
-  add_revision(pcap
+  superbuild_set_revision(pcap
     GIT_REPOSITORY git://github.com/patmarion/winpcap.git
     GIT_TAG master)
 else()
-  add_revision(pcap
+  superbuild_set_revision(pcap
     URL "http://www.tcpdump.org/release/libpcap-1.4.0.tar.gz"
     URL_MD5 "56e88a5aabdd1e04414985ac24f7e76c")
 endif()
 
-add_revision(boost
-  URL "https://sourceforge.net/projects/boost/files/boost/1.63.0/boost_1_63_0.tar.gz"
-  URL_MD5 7b493c08bc9557bbde7e29091f28b605)
-
-add_revision(eigen
+superbuild_set_revision(eigen
   URL http://vtk.org/files/support/eigen-3.1.2.tar.gz
   URL_MD5 bb639388192cb80f1ee797f5dbdbe74f)
 
-#add_revision(liblas
-#  GIT_REPOSITORY git://github.com/libLAS/libLAS
-#  GIT_TAG 6e8657336ba445fcec3c9e70c2ebcd2e25af40b9)
-add_revision(liblas
-  GIT_REPOSITORY git://github.com/bastienjacquet/libLAS.git
-  GIT_TAG fix-windows-stdint)
+superbuild_set_revision(liblas
+  URL     "http://www.paraview.org/files/dependencies/libLAS-1.8.1.tar.bz2"
+  URL_MD5 2e6a975dafdf57f59a385ccb87eb5919)

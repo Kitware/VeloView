@@ -1,6 +1,7 @@
-add_external_project(paraview
-  DEPENDS qt python pythonqt
-
+superbuild_add_project(paraview
+  DEPENDS qt4 python pythonqt
+  DEFAULT_ON
+  DEBUGGABLE
   CMAKE_ARGS
     -DBUILD_SHARED_LIBS:BOOL=ON
     -DBUILD_TESTING:BOOL=OFF
