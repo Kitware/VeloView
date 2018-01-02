@@ -141,24 +141,24 @@ struct HDLDataPacket
       dataPacket->firingData[0].blockIdentifier == BLOCK_32_TO_63);
   }
 
-  inline bool isHDL64() const { return firingData[1].isUpperBlock(); }
+  inline bool isHDL64() const
+  {
+    return firingData[1].blockIdentifier == BLOCK_32_TO_63 &&
+      firingData[2].blockIdentifier == BLOCK_0_TO_31;
+  }
 
   inline bool isVLS128() const
   {
     return (firingData[2].blockIdentifier == BLOCK_64_TO_95 &&
              firingData[3].blockIdentifier == BLOCK_96_TO_127) ||
       (firingData[4].blockIdentifier == BLOCK_64_TO_95 &&
-             firingData[6].blockIdentifier == BLOCK_96_TO_127);
+        firingData[6].blockIdentifier == BLOCK_96_TO_127);
   }
   inline bool isDualModeReturn() const
   {
     if (isVLS128())
       return isDualModeReturnVLS128();
-    return isDualModeReturn(isHDL64());
-  }
-  inline bool isDualModeReturn(const bool isHDL64) const
-  {
-    if (isHDL64)
+    if (isHDL64())
       return isDualModeReturnHDL64();
     else
       return isDualModeReturn16Or32();

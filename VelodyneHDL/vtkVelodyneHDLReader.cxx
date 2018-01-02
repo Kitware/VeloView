@@ -2085,15 +2085,18 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(
     int localDiff = (36000 + dataPacket->firingData[i + 1].rotationalPosition -
                       dataPacket->firingData[i].rotationalPosition) %
       36000;
+
+    // Skip dummy blocks of VLS-128 dual mode last 4 blocks
     if (dataPacket->firingData[i + 1].blockIdentifier == 0 ||
-      dataPacket->firingData[i + 1].blockIdentifier == 0xFFFF) // VLS-128 dual mode last 4 blocks
+      dataPacket->firingData[i + 1].blockIdentifier == 0xFFFF)
       localDiff = 0;
+
     diffs[i] = localDiff;
   }
 
   this->IsHDL64Data |= dataPacket->isHDL64();
 
-  if (!IsHDL64Data || dataPacket->isVLS128())
+  if (!IsHDL64Data)
   { // with HDL64, it should be filled by LoadCorrectionsFromStreamData
     this->ReportedSensor = dataPacket->getSensorType();
     this->ReportedSensorReturnMode = dataPacket->getDualReturnSensorMode();
@@ -2105,6 +2108,10 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(
   if (this->IsHDL64Data)
   {
     azimuthDiff = diffs[HDL_FIRING_PER_PKT - 2];
+  }
+  else if (dataPacket->isVLS128())
+  {
+    azimuthDiff = diffs[HDL_FIRING_PER_PKT - 1];
   }
   // assert(azimuthDiff > 0);
 
@@ -2129,8 +2136,8 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(
                                                            0))));
     // clang-format on
 
-    if (firingData->blockIdentifier == 0 ||
-      firingData->blockIdentifier == 0xFFFF) // VLS-128 dual mode last 4 blocks
+    // Skip dummy blocks of VLS-128 dual mode last 4 blocks
+    if (firingData->blockIdentifier == 0 || firingData->blockIdentifier == 0xFFFF)
       continue;
 
     if (shouldSplitFrame(firingData->rotationalPosition, this->LastAzimuth, this->LastAzimuthSlope))
@@ -2230,15 +2237,15 @@ int vtkVelodyneHDLReader::ReadFrameInformation()
     //      {
     //      printf("missed %d packets\n",  static_cast<int>(floor((timeDiff/553.0) + 0.5)));
     //      }
+    IsHDL64Data |= dataPacket->isHDL64();
 
     for (int i = 0; i < HDL_FIRING_PER_PKT; ++i)
     {
       const HDLFiringData& firingData = dataPacket->firingData[i];
 
-      if (firingData.blockIdentifier == 0 ||
-        firingData.blockIdentifier == 0xFFFF) // VLS-128 dual mode last 4 blocks
+      // Skip dummy blocks of VLS-128 dual mode last 4 blocks
+      if (firingData.blockIdentifier == 0 || firingData.blockIdentifier == 0xFFFF)
         continue;
-      IsHDL64Data |= (firingData.blockIdentifier == BLOCK_32_TO_63);
 
       // Test if all lasers had a positive distance
       if (this->Internal->IgnoreZeroDistances)
