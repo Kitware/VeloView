@@ -179,6 +179,9 @@ public:
   void SetSelectedPointsWithDualReturn(double* data, int Npoints);
   void SetShouldAddDualReturnArray(bool input);
 
+  // Information about the sensor from dataPacket
+  std::string GetSensorInformation();
+
 protected:
   vtkVelodyneHDLReader();
   ~vtkVelodyneHDLReader();

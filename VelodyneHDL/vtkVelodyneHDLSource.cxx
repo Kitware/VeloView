@@ -831,6 +831,12 @@ void vtkVelodyneHDLSource::UnloadDatasets()
 }
 
 //-----------------------------------------------------------------------------
+std::string vtkVelodyneHDLSource::GetSensorInformation()
+{
+  return this->Internal->Consumer->GetReader()->GetSensorInformation();
+}
+
+//-----------------------------------------------------------------------------
 int vtkVelodyneHDLSource::GetIgnoreZeroDistances() const
 {
   return this->Internal->Consumer->GetReader()->GetIgnoreZeroDistances();
