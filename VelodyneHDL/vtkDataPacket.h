@@ -70,6 +70,8 @@ static std::string SensorTypeToString(SensorType type)
       return "VLP-16 Hi-Res";
     case SensorType::VLP32C:
       return "VLP-32C";
+    case SensorType::VelArray:
+      return "Velarray";
     case SensorType::HDL64:
       return "HDL-64";
     default:
@@ -82,6 +84,7 @@ static std::string SensorTypeToString(SensorType type)
   toStringMap[SensorType::VLP32AB] = "VLP-32AB";
   toStringMap[SensorType::VLP16HiRes] = "VLP-16 Hi-Res";
   toStringMap[SensorType::VLP32C] = "VLP-32C";
+  toStringMap[SensorType::VelArray] = "Velarray";
   toStringMap[SensorType::HDL64] = "HDL-64";
   return toStringMap[type];
   */
