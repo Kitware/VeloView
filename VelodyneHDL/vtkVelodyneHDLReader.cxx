@@ -1899,28 +1899,6 @@ void vtkVelodyneHDLReader::vtkInternal::SplitFrame(bool force)
 
   this->CurrentDataset->SetVerts(this->NewVertexCells(this->CurrentDataset->GetNumberOfPoints()));
 
-  /* Commented to remove the point-cloud based method computation from SplitFrame
-  // The strategy is to compute an average RPM. The RPM is
-  // computed using chunks of size 1000. If the dataset doesn't
-  // have enought points, we reduce the size of the chunk.
-  double RPMValue = -1;
-  int chunkSize = 1000;
-  int nbrTry = 1;
-
-  // Minimum chunk size of 32
-  while( (RPMValue == -1) && nbrTry <= 5)
-  {
-    RPMValue = ComputeAverageRPM(this->CurrentDataset, chunkSize / nbrTry);
-    nbrTry++;
-  }
-
-  // if the number of points is under 32
-  if (RPMValue == -1)
-  {
-    vtkGenericWarningMacro("Not enough points in the dataset, RPM couldn't be computed");
-  }
-  */
-
   // Compute the rpm and reset
   this->currentRpm = this->RpmCalculator.GetRPM();
   this->RpmCalculator.Reset();
@@ -2090,7 +2068,7 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessFiring(HDLFiringData* firingData,
   unsigned int rawtime, bool isThisFiringDualReturnData, bool isDualReturnPacket,
   vtkTransform* geotransform)
 {
-  // Non dual return piece of a dual return packet: init last point of laser
+  // First return block of a dual return packet: init last point of laser
   if (!isThisFiringDualReturnData &&
     (!this->IsHDL64Data || (this->IsHDL64Data && ((firingBlock % 4) == 0))))
   {
@@ -2278,9 +2256,8 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(
     if (this->FiringsSkip == 0 || firingBlock % (this->FiringsSkip + 1) == 0)
     {
       this->ProcessFiring(firingData, multiBlockLaserIdOffset, firingBlock, azimuthDiff, timestamp,
-        rawtime,
-        this->HasDualReturn && dataPacket->isDualBlockOfDualPacket(this->IsHDL64Data, firingBlock),
-        this->HasDualReturn, geotransform.GetPointer());
+        rawtime, dataPacket->isDualReturnFiringBlock(firingBlock), dataPacket->isDualModeReturn(),
+        geotransform.GetPointer());
     }
   }
 }

@@ -213,8 +213,6 @@ struct HDLDataPacket
 
   inline bool isHDL64() const { return firingData[1].isUpperBlock(); }
 
-  inline bool isVelArray() const { return firingData[0].isVelArrayFiring(); }
-
   inline bool isDualModeReturn() const { return isDualModeReturn(isHDL64()); }
   inline bool isDualModeReturn(const bool isHDL64) const
   {
@@ -239,11 +237,6 @@ struct HDLDataPacket
       return isDualModeReturn16Or32() && isDualBlockOfDualPacket16Or32(firingBlock);
   }
 
-  inline static bool isDualBlockOfDualPacket(const bool isHDL64, const int firingBlock)
-  {
-    return isHDL64 ? isDualBlockOfDualPacket64(firingBlock)
-                   : isDualBlockOfDualPacket16Or32(firingBlock);
-  }
   inline static bool isDualBlockOfDualPacket64(const int firingBlock)
   {
     return (firingBlock % 4 >= 2);
