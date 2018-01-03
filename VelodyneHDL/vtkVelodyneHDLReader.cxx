@@ -593,6 +593,7 @@ public:
 std::string vtkVelodyneHDLReader::GetSensorInformation()
 {
   std::stringstream streamInfo;
+  // clang-format off
   streamInfo << "Factory Field 1: " << (int) this->Internal->ReportedFactoryField1
              << " (hex: 0x" << std::hex << (int) this->Internal->ReportedFactoryField1
              << std::dec << " ) " << DataPacketFixedLength::DualReturnSensorModeToString(
@@ -602,7 +603,7 @@ std::string vtkVelodyneHDLReader::GetSensorInformation()
              << " (hex: 0x" << std::hex << (int) this->Internal->ReportedFactoryField2
              << std::dec << " ) " << DataPacketFixedLength::SensorTypeToString(
                   static_cast<SensorType>(this->Internal->ReportedFactoryField2));
-
+  // clang-format on
   return std::string(streamInfo.str());
 }
 

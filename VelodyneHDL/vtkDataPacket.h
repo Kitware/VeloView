@@ -17,8 +17,8 @@
 
 #include <iomanip>
 #include <iostream>
-#include <unordered_map>
 #include <stdio.h>
+#include <unordered_map>
 #include <vector>
 #ifdef _MSC_VER
 #include <boost/cstdint.hpp>
@@ -57,22 +57,23 @@ enum SensorType
 
 static std::string SensorTypeToString(SensorType type)
 {
-    switch (type) {
-      case SensorType::HDL32E:
-        return "HDL-32E";
-      case SensorType::VLP16:
-        return "VLP-16";
-      case SensorType::VLP32AB:
-        return "VLP-32AB";
-      case SensorType::VLP16HiRes:
-        return "VLP-16 Hi-Res";
-      case SensorType::VLP32C:
-        return "VLP-32C";
-      case SensorType::HDL64:
-        return "HDL-64";
-      default:
-        return "Unkown";
-      }
+  switch (type)
+  {
+    case SensorType::HDL32E:
+      return "HDL-32E";
+    case SensorType::VLP16:
+      return "VLP-16";
+    case SensorType::VLP32AB:
+      return "VLP-32AB";
+    case SensorType::VLP16HiRes:
+      return "VLP-16 Hi-Res";
+    case SensorType::VLP32C:
+      return "VLP-32C";
+    case SensorType::HDL64:
+      return "HDL-64";
+    default:
+      return "Unkown";
+  }
   /*
   std::unordered_map<SensorType, std::string> toStringMap;
   toStringMap[SensorType::HDL32E] = "HDL-32E";
@@ -112,16 +113,17 @@ enum DualReturnSensorMode
 
 static std::string DualReturnSensorModeToString(DualReturnSensorMode type)
 {
-    switch (type) {
-      case DualReturnSensorMode::STRONGEST_RETURN:
-        return "STRONGEST RETURN";
-      case DualReturnSensorMode::LAST_RETURN:
-        return "LAST RETURN";
-      case DualReturnSensorMode::DUAL_RETURN:
-        return "DUAL RETURN";
-      default:
-        return "Unkown";
-      }
+  switch (type)
+  {
+    case DualReturnSensorMode::STRONGEST_RETURN:
+      return "STRONGEST RETURN";
+    case DualReturnSensorMode::LAST_RETURN:
+      return "LAST RETURN";
+    case DualReturnSensorMode::DUAL_RETURN:
+      return "DUAL RETURN";
+    default:
+      return "Unkown";
+  }
   /*
   std::unordered_map<DualReturnSensorMode, std::string> toStringMap;
   toStringMap[DualReturnSensorMode::STRONGEST_RETURN] = "STRONGEST RETURN";
