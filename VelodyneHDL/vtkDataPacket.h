@@ -144,7 +144,7 @@ struct HDLDataPacket
     if (dataLength != getDataByteLength())
       return false;
     const HDLDataPacket* dataPacket = reinterpret_cast<const HDLDataPacket*>(data);
-    return (true || (dataPacket->factoryField2 == VelArray) ||
+    return ((dataPacket->factoryField2 == VelArray) ||
       (dataPacket->firingData[0].blockIdentifier == BLOCK_0_TO_31) ||
       (dataPacket->firingData[0].blockIdentifier == BLOCK_32_TO_63));
   }
