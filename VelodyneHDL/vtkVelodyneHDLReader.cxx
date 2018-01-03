@@ -338,6 +338,66 @@ void GetSphericalCoordinates(double p_in[3], double p_out[3])
 }
 
 //-----------------------------------------------------------------------------
+class FramingState
+{
+  int LastAzimuth;
+  int LastAzimuthSlope;
+
+public:
+  FramingState() { reset(); }
+  void reset()
+  {
+    LastAzimuth = -1;
+    LastAzimuthSlope = 0;
+  }
+  bool hasChangedWithValue(const HDLFiringData& firingData)
+  {
+    bool hasLastAzimuth = (LastAzimuth != -1);
+    bool azimuthFrameSplit = hasChangedWithValue(
+      firingData.rotationalPosition, hasLastAzimuth, LastAzimuth, LastAzimuthSlope);
+    return azimuthFrameSplit;
+  }
+
+  static bool hasChangedWithValue(int curValue, bool& hasLastValue, int& lastValue, int& lastSlope)
+  {
+    // If we dont have previous value, dont change
+    if (!hasLastValue)
+    {
+      lastValue = curValue;
+      hasLastValue = true;
+      return false;
+    }
+    int curSlope = curValue - lastValue;
+    lastValue = curValue;
+    if (curSlope == 0)
+      return false;
+    int isSlopeSameDirection = curSlope * lastSlope;
+    // curSlope has same sign as lastSlope: no change
+    if (isSlopeSameDirection > 0)
+      return false;
+    // curSlope has different sign as lastSlope: change!
+    else if (isSlopeSameDirection < 0)
+    {
+      lastSlope = 0;
+      return true;
+    }
+    // LastAzimuthSlope not set: set the slope
+    if (lastSlope == 0 && curSlope != 0)
+    {
+      lastSlope = curSlope;
+      return false;
+    }
+    vtkGenericWarningMacro("Unhandled sequence of value in state.");
+    return false;
+  }
+
+  static bool willChangeWithValue(int curValue, bool hasLastValue, int lastValue, int lastSlope)
+  {
+    return hasChangedWithValue(curValue, hasLastValue, lastValue, lastSlope);
+  }
+};
+
+//-----------------------------------------------------------------------------
 class vtkVelodyneHDLReader::vtkInternal
 {
 public:
@@ -353,8 +413,7 @@ public:
     this->OutputPacketProcessingDebugInfo = false;
     this->SensorPowerMode = 0;
     this->Skip = 0;
-    this->LastAzimuth = -1;
-    this->LastAzimuthSlope = 0;
+    this->CurrentFrameState = new FramingState;
     this->LastTimestamp = std::numeric_limits<unsigned int>::max();
     this->TimeAdjust = std::numeric_limits<double>::quiet_NaN();
     this->Reader = 0;
@@ -375,6 +434,8 @@ public:
     this->LaserSelection.resize(HDL_MAX_NUM_LASERS, true);
     this->DualReturnFilter = 0;
     this->IsHDL64Data = false;
+    this->ReportedFactoryField1 = 0;
+    this->ReportedFactoryField2 = 0;
     this->CalibrationReportedNumLasers = -1;
     this->IgnoreEmptyFrames = true;
     this->distanceResolutionM = 0.002;
@@ -390,6 +451,7 @@ public:
     {
       delete this->rollingCalibrationData;
     }
+    delete this->CurrentFrameState;
   }
 
   std::vector<vtkSmartPointer<vtkPolyData> > Datasets;
@@ -417,10 +479,14 @@ public:
   vtkSmartPointer<vtkDoubleArray> SelectedDualReturn;
   bool ShouldAddDualReturnArray;
 
+  // sensor information
   bool HasDualReturn;
   SensorType ReportedSensor;
   DualReturnSensorMode ReportedSensorReturnMode;
   bool IsHDL64Data;
+  uint8_t ReportedFactoryField1;
+  uint8_t ReportedFactoryField2;
+
   bool IgnoreEmptyFrames;
   bool alreadyWarnedForIgnoredHDL64FiringPacket;
 
@@ -439,8 +505,7 @@ public:
   // - For now, we will use the packet dependant method
   RPMCalculator RpmCalculator;
 
-  int LastAzimuth;
-  int LastAzimuthSlope;
+  FramingState* CurrentFrameState;
   unsigned int LastTimestamp;
   double currentRpm;
   std::vector<double> RpmByFrames;
@@ -523,6 +588,24 @@ public:
     const HDLLaserCorrection* correction, double pos[3], double& distanceM, short& intensity,
     bool correctIntensity);
 };
+
+//-----------------------------------------------------------------------------
+std::string vtkVelodyneHDLReader::GetSensorInformation()
+{
+  std::stringstream streamInfo;
+  // clang-format off
+  streamInfo << "Factory Field 1: " << (int) this->Internal->ReportedFactoryField1
+             << " (hex: 0x" << std::hex << (int) this->Internal->ReportedFactoryField1
+             << std::dec << " ) " << DataPacketFixedLength::DualReturnSensorModeToString(
+                  static_cast<DualReturnSensorMode>(this->Internal->ReportedFactoryField1))
+             << "  |  "
+             << "Factory Field 2: " << (int) this->Internal->ReportedFactoryField2
+             << " (hex: 0x" << std::hex << (int) this->Internal->ReportedFactoryField2
+             << std::dec << " ) " << DataPacketFixedLength::SensorTypeToString(
+                  static_cast<SensorType>(this->Internal->ReportedFactoryField2));
+  // clang-format on
+  return std::string(streamInfo.str());
+}
 
 //-----------------------------------------------------------------------------
 vtkStandardNewMacro(vtkVelodyneHDLReader);
@@ -885,8 +968,7 @@ void vtkVelodyneHDLReader::SetCorrectionsFile(const std::string& correctionsFile
 void vtkVelodyneHDLReader::UnloadPerFrameData()
 {
   std::fill(this->Internal->LastPointId, this->Internal->LastPointId + HDL_MAX_NUM_LASERS, -1);
-  this->Internal->LastAzimuth = -1;
-  this->Internal->LastAzimuthSlope = 0;
+  this->Internal->CurrentFrameState->reset();
   this->Internal->LastTimestamp = std::numeric_limits<unsigned int>::max();
   this->Internal->TimeAdjust = std::numeric_limits<double>::quiet_NaN();
 
@@ -1102,40 +1184,38 @@ void vtkVelodyneHDLReader::DumpFrames(int startFrame, int endFrame, const std::s
   pcap_pkthdr* header = 0;
   const unsigned char* data = 0;
   unsigned int dataLength = 0;
+  unsigned int dataHeaderLength = 0;
   double timeSinceStart = 0;
 
-  unsigned int lastAzimuth = 0;
-  int LastAzimuthSlope = 0;
+  FramingState currentFrameState;
   int currentFrame = startFrame;
 
   this->Internal->Reader->SetFilePosition(&this->Internal->FilePositions[startFrame]);
   int skip = this->Internal->Skips[startFrame];
   const unsigned int ethernetUDPHeaderLength = 42;
-  while (this->Internal->Reader->NextPacket(data, dataLength, timeSinceStart, &header) &&
+  while (this->Internal->Reader->NextPacket(
+           data, dataLength, timeSinceStart, &header, &dataHeaderLength) &&
     currentFrame <= endFrame)
   {
-    if (dataLength == (HDLDataPacket::getDataByteLength() + ethernetUDPHeaderLength) ||
-      dataLength == (512 + ethernetUDPHeaderLength))
+    if (dataLength == HDLDataPacket::getDataByteLength() || dataLength == 512)
     {
-      writer.WritePacket(header, const_cast<unsigned char*>(data));
+      writer.WritePacket(header, const_cast<unsigned char*>(data) - dataHeaderLength);
     }
 
     // dont check for frame counts if it was not a firing packet
-    if (dataLength != HDLDataPacket::getPacketByteLength())
+    if (dataLength != HDLDataPacket::getDataByteLength())
     {
       continue;
     }
 
     // Check if we cycled a frame and decrement
-    const HDLDataPacket* dataPacket =
-      reinterpret_cast<const HDLDataPacket*>(data + ethernetUDPHeaderLength);
+    const HDLDataPacket* dataPacket = reinterpret_cast<const HDLDataPacket*>(data);
 
     for (int i = skip; i < HDL_FIRING_PER_PKT; ++i)
     {
       const HDLFiringData& firingData = dataPacket->firingData[i];
 
-      if (this->Internal->shouldSplitFrame(
-            firingData.rotationalPosition, lastAzimuth, LastAzimuthSlope))
+      if (currentFrameState.hasChangedWithValue(firingData))
       {
         currentFrame++;
         if (currentFrame > endFrame)
@@ -1143,7 +1223,6 @@ void vtkVelodyneHDLReader::DumpFrames(int startFrame, int endFrame, const std::s
           break;
         }
       }
-      lastAzimuth = firingData.rotationalPosition;
     }
     skip = 0;
   }
@@ -1153,7 +1232,7 @@ void vtkVelodyneHDLReader::DumpFrames(int startFrame, int endFrame, const std::s
 
 //-----------------------------------------------------------------------------
 vtkSmartPointer<vtkPolyData> vtkVelodyneHDLReader::GetFrameRange(
-  int startFrame, int wantedNumberOfFrames)
+  int startFrame, int wantedNumberOfTrailingFrames)
 {
   this->UnloadPerFrameData();
   if (!this->Internal->Reader)
@@ -1173,15 +1252,15 @@ vtkSmartPointer<vtkPolyData> vtkVelodyneHDLReader::GetFrameRange(
 
   if (startFrame < 0)
   {
-    wantedNumberOfFrames -= startFrame;
+    wantedNumberOfTrailingFrames += startFrame;
     startFrame = 0;
   }
-  assert(wantedNumberOfFrames > 0);
+  assert(wantedNumberOfTrailingFrames >= 0);
 
   this->Internal->Reader->SetFilePosition(&this->Internal->FilePositions[startFrame]);
   this->Internal->Skip = this->Internal->Skips[startFrame];
 
-  this->Internal->SplitCounter = wantedNumberOfFrames;
+  this->Internal->SplitCounter = wantedNumberOfTrailingFrames;
 
   while (this->Internal->Reader->NextPacket(data, dataLength, timeSinceStart))
   {
@@ -1244,7 +1323,7 @@ vtkSmartPointer<vtkPolyData> vtkVelodyneHDLReader::GetFrame(int frameNumber)
 
 namespace
 {
-template <typename T>
+template<typename T>
 vtkSmartPointer<T> CreateDataArray(const char* name, vtkIdType np, vtkPolyData* pd)
 {
   vtkSmartPointer<T> array = vtkSmartPointer<T>::New();
@@ -2140,10 +2219,9 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(
     if (firingData->blockIdentifier == 0 || firingData->blockIdentifier == 0xFFFF)
       continue;
 
-    if (shouldSplitFrame(firingData->rotationalPosition, this->LastAzimuth, this->LastAzimuthSlope))
+    if (this->CurrentFrameState->hasChangedWithValue(*firingData))
     {
       this->SplitFrame();
-      this->LastAzimuth = -1;
       this->LastTimestamp = std::numeric_limits<unsigned int>::max();
     }
 
@@ -2154,36 +2232,21 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(
         rawtime, dataPacket->isDualReturnFiringBlock(firingBlock), dataPacket->isDualModeReturn(),
         geotransform.GetPointer());
     }
-
-    this->LastAzimuth = firingData->rotationalPosition;
   }
 }
 
+/*
+//-----------------------------------------------------------------------------
 bool vtkVelodyneHDLReader::vtkInternal::shouldSplitFrame(
   uint16_t curRotationalPosition, int prevRotationalPosition, int& LastAzimuthSlope)
 {
-  int curRotationalPositionSlope = curRotationalPosition - prevRotationalPosition;
-  if (curRotationalPositionSlope == 0)
-    return false;
-  int isSlopeSameDirection = curRotationalPositionSlope * LastAzimuthSlope;
-  // curRotationalPosition has same slope as before: no split
-  if (isSlopeSameDirection > 0)
-    return false;
-  // curRotationalPosition has different slope as before: split and reset slope
-  if (isSlopeSameDirection < 0)
-  {
-    LastAzimuthSlope = 0;
-    return true;
+    bool hasPrevAzimuth = (prevRotationalPosition!=-1);
+    bool azimuthFrameSplit = FramingState::hasChangedWithValue(curRotationalPosition,
+hasPrevAzimuth,
+                        prevRotationalPosition, LastAzimuthSlope);
+    return azimuthFrameSplit;
   }
-  // LastAzimuthSlope not set: set the slope
-  if (LastAzimuthSlope == 0 && curRotationalPositionSlope != 0)
-  {
-    LastAzimuthSlope = curRotationalPositionSlope;
-    return false;
-  }
-  vtkGenericWarningMacro("Unhandled sequence of rotationalPosition.");
-  return false;
-}
+*/
 
 //-----------------------------------------------------------------------------
 double vtkVelodyneHDLReader::GetDistanceResolutionM()
@@ -2206,8 +2269,7 @@ int vtkVelodyneHDLReader::ReadFrameInformation()
   unsigned int dataLength = 0;
   double timeSinceStart = 0;
 
-  unsigned int lastAzimuth = 0;
-  int lastAzimuthSlope = 0;
+  FramingState currentFrameState;
   unsigned int lastTimestamp = 0;
 
   std::vector<fpos_t> filePositions;
@@ -2261,17 +2323,17 @@ int vtkVelodyneHDLReader::ReadFrameInformation()
         isEmptyFrame = false;
       }
 
-      if (vtkVelodyneHDLReader::vtkInternal::shouldSplitFrame(
-            firingData.rotationalPosition, lastAzimuth, lastAzimuthSlope))
+      if (currentFrameState.hasChangedWithValue(firingData))
       {
         // Add file position if the frame is not empty
         if (!isEmptyFrame || !this->Internal->IgnoreEmptyFrames)
         {
           filePositions.push_back(lastFilePosition);
           skips.push_back(i);
-          PacketProcessingDebugMacro(<< "\n\nEnd of frame. #packets: "
-                                     << numberOfFiringPackets - lastnumberOfFiringPackets << "\n\n"
-                                     << "RotationalPositions: ");
+          PacketProcessingDebugMacro(
+            << "\n\nEnd of frame #" << filePositions.size()
+            << ". #packets: " << numberOfFiringPackets - lastnumberOfFiringPackets << "\n\n"
+            << "RotationalPositions: ");
           lastnumberOfFiringPackets = numberOfFiringPackets;
         }
         this->UpdateProgress(0.0);
@@ -2279,8 +2341,6 @@ int vtkVelodyneHDLReader::ReadFrameInformation()
         isEmptyFrame = true;
       }
       PacketProcessingDebugMacro(<< firingData.rotationalPosition << ", ");
-
-      lastAzimuth = firingData.rotationalPosition;
     }
 
     // Accumulate HDL64 Status byte data
@@ -2312,6 +2372,8 @@ bool vtkVelodyneHDLReader::updateReportedSensor(
     const HDLDataPacket* dataPacket = reinterpret_cast<const HDLDataPacket*>(data);
     this->Internal->IsHDL64Data = dataPacket->isHDL64();
     this->Internal->ReportedSensor = dataPacket->getSensorType();
+    this->Internal->ReportedFactoryField1 = dataPacket->factoryField1;
+    this->Internal->ReportedFactoryField2 = dataPacket->factoryField2;
     return true;
   }
   return false;

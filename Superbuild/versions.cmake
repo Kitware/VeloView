@@ -38,7 +38,7 @@ add_revision(pythonqt
 
 set(PARAVIEW_VERSION 5.1)
 add_revision(paraview
-  GIT_REPOSITORY git@gitlab.kitware.com:bjacquet/paraview.git
+  GIT_REPOSITORY https://gitlab.kitware.com/bjacquet/paraview.git
   GIT_TAG origin/veloview)
 
 add_revision(veloview

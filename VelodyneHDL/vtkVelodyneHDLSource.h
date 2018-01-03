@@ -134,8 +134,9 @@ public:
   void SetIntraFiringAdjust(int);
 
   bool GetCorrectionsInitialized();
-
   void UnloadDatasets();
+
+  std::string GetSensorInformation();
 
 protected:
   virtual int RequestInformation(vtkInformation* request, vtkInformationVector** inputVector,

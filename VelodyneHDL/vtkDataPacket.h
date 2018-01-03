@@ -16,7 +16,9 @@
 #define _vtkDataPacket_h
 
 #include <iomanip>
+#include <iostream>
 #include <stdio.h>
+#include <unordered_map>
 #include <vector>
 #ifdef _MSC_VER
 #include <boost/cstdint.hpp>
@@ -55,6 +57,38 @@ enum SensorType
   HDL64 = 0xa0,  // decimal: 160
   VLS128 = 0xa1, // decimal: 161
 };
+
+static std::string SensorTypeToString(SensorType type)
+{
+  switch (type)
+  {
+    case SensorType::HDL32E:
+      return "HDL-32E";
+    case SensorType::VLP16:
+      return "VLP-16";
+    case SensorType::VLP32AB:
+      return "VLP-32AB";
+    case SensorType::VLP16HiRes:
+      return "VLP-16 Hi-Res";
+    case SensorType::VLP32C:
+      return "VLP-32C";
+    case SensorType::HDL64:
+      return "HDL-64";
+    default:
+      return "Unkown";
+  }
+  /*
+  std::unordered_map<SensorType, std::string> toStringMap;
+  toStringMap[SensorType::HDL32E] = "HDL-32E";
+  toStringMap[SensorType::VLP16] = "VLP-16";
+  toStringMap[SensorType::VLP32AB] = "VLP-32AB";
+  toStringMap[SensorType::VLP16HiRes] = "VLP-16 Hi-Res";
+  toStringMap[SensorType::VLP32C] = "VLP-32C";
+  toStringMap[SensorType::HDL64] = "HDL-64";
+  return toStringMap[type];
+  */
+}
+
 static int num_laser(SensorType sensorType)
 {
   switch (sensorType)
@@ -81,6 +115,29 @@ enum DualReturnSensorMode
   LAST_RETURN = 0x38,
   DUAL_RETURN = 0x39,
 };
+
+static std::string DualReturnSensorModeToString(DualReturnSensorMode type)
+{
+  switch (type)
+  {
+    case DualReturnSensorMode::STRONGEST_RETURN:
+      return "STRONGEST RETURN";
+    case DualReturnSensorMode::LAST_RETURN:
+      return "LAST RETURN";
+    case DualReturnSensorMode::DUAL_RETURN:
+      return "DUAL RETURN";
+    default:
+      return "Unkown";
+  }
+  /*
+  std::unordered_map<DualReturnSensorMode, std::string> toStringMap;
+  toStringMap[DualReturnSensorMode::STRONGEST_RETURN] = "STRONGEST RETURN";
+  toStringMap[DualReturnSensorMode::LAST_RETURN] = "LAST RETURN";
+  toStringMap[DualReturnSensorMode::DUAL_RETURN] = "DUAL RETURN";
+  return toStringMap[type];
+  */
+}
+
 enum PowerMode
 {
   NO_INTERNAL_CORRECTION_0 = 0xa0,
@@ -131,7 +188,6 @@ struct HDLDataPacket
     return static_cast<DualReturnSensorMode>(factoryField1);
   }
   static const unsigned int getDataByteLength() { return 1206; }
-  static const unsigned int getPacketByteLength() { return getDataByteLength() + 42; }
   static inline bool isValidPacket(const unsigned char* data, unsigned int dataLength)
   {
     if (dataLength != getDataByteLength())

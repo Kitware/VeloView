@@ -76,6 +76,22 @@ public:
       return false;
     }
 
+    const unsigned int loopback_header_size = 4;
+    const unsigned int ethernet_header_size = 14;
+    auto linktype = pcap_datalink(pcapFile);
+    switch (linktype)
+    {
+      case DLT_EN10MB:
+        this->FrameHeaderLength = ethernet_header_size;
+        break;
+      case DLT_NULL:
+        this->FrameHeaderLength = loopback_header_size;
+        break;
+      default:
+        this->LastError = "Unknown link type in pcap file. Cannot tell where the payload is.";
+        return false;
+    }
+
     this->FileName = filename;
     this->PCAPFile = pcapFile;
     this->StartTime.tv_sec = this->StartTime.tv_usec = 0;
@@ -119,7 +135,7 @@ public:
   }
 
   bool NextPacket(const unsigned char*& data, unsigned int& dataLength, double& timeSinceStart,
-    pcap_pkthdr** headerReference = NULL)
+    pcap_pkthdr** headerReference = NULL, unsigned int* dataHeaderLength = NULL)
   {
     if (!this->PCAPFile)
     {
@@ -134,19 +150,23 @@ public:
       return false;
     }
 
-    if (headerReference != NULL)
-    {
-      *headerReference = header;
-      dataLength = header->len;
-      timeSinceStart = GetElapsedTime(header->ts, this->StartTime);
-      return true;
-    }
+    // Only return the payload.
+    // We read the actual IP header length (v4 & v6) + assumes UDP
+    const unsigned int ipHeaderLength = (data[FrameHeaderLength + 0] & 0xf) * 4;
+    const unsigned int udpHeaderLength = 8;
+    const unsigned int bytesToSkip = FrameHeaderLength + ipHeaderLength + udpHeaderLength;
 
-    // The ethernet header is 42 bytes long; unnecessary
-    const unsigned int bytesToSkip = 42;
     dataLength = header->len - bytesToSkip;
+    if (header->len > header->caplen)
+      dataLength = header->caplen - bytesToSkip;
     data = data + bytesToSkip;
     timeSinceStart = GetElapsedTime(header->ts, this->StartTime);
+
+    if (headerReference != NULL && dataHeaderLength != NULL)
+    {
+      *headerReference = header;
+      *dataHeaderLength = bytesToSkip;
+    }
     return true;
   }
 
@@ -160,6 +180,7 @@ protected:
   std::string FileName;
   std::string LastError;
   struct timeval StartTime;
+  unsigned int FrameHeaderLength;
 };
 
 #endif

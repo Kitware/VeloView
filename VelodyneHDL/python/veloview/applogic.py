@@ -105,6 +105,7 @@ class AppLogic(object):
         self.filenameLabel = QtGui.QLabel()
         self.statusLabel = QtGui.QLabel()
         self.timeLabel = QtGui.QLabel()
+        self.sensorInformationLabel = QtGui.QLabel()
 
 
 class IconPaths(object):
@@ -345,7 +346,7 @@ def getDefaultSaveFileName(extension, suffix='', appendFrameNumber=False):
         return '%s%s.%s' % (basename, suffix, extension)
 
 
-def chooseCalibration():
+def chooseCalibration(calibrationFilename=None):
 
     class Calibration(object):
         def __init__(self, dialog):
@@ -372,10 +373,14 @@ def chooseCalibration():
 
 
     dialog = vvCalibrationDialog(getMainWindow())
-    if not dialog.exec_():
-        return None
-
-    return Calibration(dialog)
+    if calibrationFilename is None:
+        if not dialog.exec_():
+            return None
+        return Calibration(dialog)
+    else:
+        result = Calibration(dialog)
+        result.calibrationFile = calibrationFilename
+        return result
 
 
 def restoreLaserSelectionDialog():
@@ -422,6 +427,9 @@ def openSensor():
     sensor.GetClientSideObject().SetisCrashAnalysing(app.EnableCrashAnalysis)
     sensor.GetClientSideObject().SetForwardedIpAddress(ipAddressForwarding)
     sensor.GetClientSideObject().SetSensorTransform(sensorTransform)
+    sensor.GetClientSideObject().SetIgnoreZeroDistances(app.actions['actionIgnoreZeroDistances'].isChecked())
+    sensor.GetClientSideObject().SetIntraFiringAdjust(app.actions['actionIntraFiringAdjust'].isChecked())
+    sensor.GetClientSideObject().SetIgnoreEmptyFrames(app.actions['actionIgnoreEmptyFrames'].isChecked())
     sensor.UpdatePipeline()
     sensor.Start()
 
@@ -432,7 +440,7 @@ def openSensor():
 
     app.sensor = sensor
     app.colorByInitialized = False
-    app.filenameLabel.setText('Live sensor stream.')
+    app.filenameLabel.setText('Live sensor stream (Port:'+str(LIDARPort)+')' )
     enablePlaybackActions()
     enableSaveActions()
 
@@ -446,6 +454,7 @@ def openSensor():
         prep = smp.Show(processor)
     smp.Render()
 
+    updateUIwithNewFrame()
     showSourceInSpreadSheet(sensor)
 
     app.actions['actionShowRPM'].enabled = True
@@ -466,16 +475,17 @@ def openSensor():
     app.actions['actionDualReturnIntensityHigh'].enabled = True
     app.actions['actionDualReturnIntensityLow'].enabled = True
 
-    sensor.GetClientSideObject().SetIgnoreZeroDistances(app.actions['actionIgnoreZeroDistances'].isChecked())
-    sensor.GetClientSideObject().SetIntraFiringAdjust(app.actions['actionIntraFiringAdjust'].isChecked())
-    sensor.GetClientSideObject().SetIgnoreEmptyFrames(app.actions['actionIgnoreEmptyFrames'].isChecked())
 
+def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrationUIArgs=None):
 
-def openPCAP(filename, positionFilename=None):
-
-    calibration = chooseCalibration()
+    calibration = chooseCalibration(calibrationFilename)
     if not calibration:
         return
+
+    if calibrationFilename is not None and calibrationUIArgs is not None and isinstance(calibrationUIArgs, dict):
+        for k in calibrationUIArgs.keys():
+          if hasattr(calibration, k):
+            setattr(calibration, k, calibrationUIArgs[k])
 
     calibrationFile = calibration.calibrationFile
     sensorTransform = calibration.sensorTransform
@@ -626,11 +636,7 @@ def openPCAP(filename, positionFilename=None):
     smp.SetActiveSource(reader)
     updatePosition()
     resetCamera()
-    
-    #Remove the Rotation per minute from color label comboBox
-    ComboBox = getMainWindow().findChild('vvColorToolbar').findChild('pqDisplayColorWidget').findChildren('QComboBox')[0]
-    n = ComboBox.findText('RotationPerMinute')
-    ComboBox.removeItem(n)
+    updateUIwithNewFrame()
 
 
 
@@ -1938,6 +1944,7 @@ def setupStatusBar():
     statusBar.addWidget(app.filenameLabel)
     statusBar.addWidget(app.statusLabel)
     statusBar.addWidget(app.timeLabel)
+    statusBar.addWidget(app.sensorInformationLabel)
 
 
 def setActionIcon(actionName, iconPath):
@@ -1945,23 +1952,12 @@ def setActionIcon(actionName, iconPath):
 
 
 def onTimeChanged():
-
     frame = int(getTimeKeeper().getTime())
-    app.timeLabel.setText('  Frame: %s' % frame)
-
     for widget in (app.timeSlider, app.timeSpinBox):
         widget.blockSignals(True)
         widget.setValue(frame)
         widget.blockSignals(False)
-
-    #Remove the Rotation per minute from color label comboBox
-    ComboBox = getMainWindow().findChild('vvColorToolbar').findChild('pqDisplayColorWidget').findChildren('QComboBox')[0]
-    n = ComboBox.findText('RotationPerMinute')
-    ComboBox.removeItem(n)
-
-    if getSensor():
-        showRPM()
-    
+    updateUIwithNewFrame()
 
 def onGridProperties():
     if gridAdjustmentDialog.showDialog(getMainWindow(), app.grid, app.gridProperties):
@@ -2607,3 +2603,16 @@ def reloadCurrentFrame():
         source.DummyProperty = not source.DummyProperty
         smp.Render()
         smp.Render(getSpreadSheetViewProxy())
+    updateUIwithNewFrame()
+
+def updateUIwithNewFrame():
+    frame = int(getTimeKeeper().getTime())
+    app.timeLabel.setText('  Frame: %s' % frame)
+
+    reader = getReader() or getSensor()
+    if reader is not None:
+        app.sensorInformationLabel.setText(reader.GetClientSideObject().GetSensorInformation())
+        #Remove the Rotation per minute from color label comboBox
+    ComboBox = getMainWindow().findChild('vvColorToolbar').findChild('pqDisplayColorWidget').findChildren('QComboBox')[0]
+    n = ComboBox.findText('RotationPerMinute')
+    ComboBox.removeItem(n)

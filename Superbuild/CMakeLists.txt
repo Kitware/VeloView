@@ -34,8 +34,10 @@ if (APPLE)
   mark_as_advanced(APPLY_MOUNTAIN_LION_FIX)
   # Fix stdlic being wrongly used instead of libc++
   #   (as it conflicts with boost which always uses libc++)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
-  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++")
+  # REMOVED as this prevents qt to build its bootstrap target compatible with 10.4 
+  # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
+  # set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++")
+
 elseif (UNIX)
   set (platform "unix")
 elseif (WIN32)
