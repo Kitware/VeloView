@@ -2086,7 +2086,7 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessFiring(HDLFiringData* firingData,
               firingBlock + (isDualReturnPacket ? 2 : 1), 0, isDualReturnPacket);
             blockdsr0 = VLP32AdjustTimeStamp(firingBlock, 0, isDualReturnPacket);
           }
-          else
+          else if (this->ReportedSensor == HDL32E)
           {
             timestampadjustment = HDL32AdjustTimeStamp(firingBlock, dsr, isDualReturnPacket);
             nextblockdsr0 = HDL32AdjustTimeStamp(
