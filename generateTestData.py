@@ -1,6 +1,6 @@
 import os, re
 
-# edit this line with the path to VeloView sources directory
+# edit this line with the path to software sources directory
 sourceDir = ""
 pcapFolder= sourceDir + "/Testing/Data/"
 calibFolder= sourceDir + "/share/"

@@ -13,12 +13,13 @@
 # limitations under the License.
 
 cmake_minimum_required(VERSION 2.8.8 FATAL_ERROR)
+include("branding.cmake")
 project(VeloView)
 
 # Disallow in-source build
 if ("${VeloView_SOURCE_DIR}"  STREQUAL "${VeloView_BINARY_DIR}")
   message(FATAL_ERROR
-    "VeloView requires an out of source Build. "
+    "${SOFTWARE_NAME} requires an out of source Build. "
     "Please create a separate binary directory and run CMake there.")
 endif()
 
@@ -151,8 +152,8 @@ if(NOT APPLE)
   set(vv_configurefile_dest "${CMAKE_CURRENT_BINARY_DIR}/share/")
   set(vv_installfile_dest share)
 else()
-  set(vv_configurefile_dest "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/VeloView.app/Contents/Resources/")
-  set(vv_installfile_dest "${VV_INSTALL_RUNTIME_DIR}/VeloView.app/Contents/Resources")
+  set(vv_configurefile_dest "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${SOFTWARE_NAME}.app/Contents/Resources/")
+  set(vv_installfile_dest "${VV_INSTALL_RUNTIME_DIR}/${SOFTWARE_NAME}.app/Contents/Resources")
 endif()
 set(vv_installed_xml_files "")
 foreach(vv_xml_file ${VV_SHARED_FILES})
@@ -169,9 +170,9 @@ unset(vv_installfile_dest)
 # paraview from installed location.
 set (PARAVIEW_INSTALL_LIB_DIR "lib/paraview-${PARAVIEW_VERSION_MAJOR}.${PARAVIEW_VERSION_MINOR}")
 
-build_paraview_client(VeloView
-  TITLE "VeloView ${VV_VERSION_FULL} ${VV_BUILD_ARCHITECTURE}-bit"
-  ORGANIZATION "Velodyne Lidar"
+build_paraview_client(${SOFTWARE_NAME}
+  TITLE "${SOFTWARE_NAME} ${VV_VERSION_FULL} ${VV_BUILD_ARCHITECTURE}-bit"
+  ORGANIZATION "${VENDOR}"
   VERSION_MAJOR ${VV_VERSION_MAJOR}
   VERSION_MINOR ${VV_VERSION_MINOR}
   VERSION_PATCH ${VV_VERSION_PATCH}
@@ -190,4 +191,4 @@ build_paraview_client(VeloView
 )
 
 # We directly link against the plugin and import them statically.
-target_link_libraries(VeloView LINK_PUBLIC VelodyneHDLPlugin VelodyneHDLPythonQT ${PYTHONQTPLUGIN_LIBRARY} ${PYTHONQT_LIBRARIES})
+target_link_libraries(${SOFTWARE_NAME} LINK_PUBLIC VelodyneHDLPlugin VelodyneHDLPythonQT ${PYTHONQTPLUGIN_LIBRARY} ${PYTHONQT_LIBRARIES})

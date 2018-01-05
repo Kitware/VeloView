@@ -1,3 +1,4 @@
+include(../branding.cmake)
 project(VelodyneHDLPlugin)
 cmake_minimum_required(VERSION 2.8)
 
@@ -217,35 +218,35 @@ if (NOT APPLE)
 
 else()
   install(TARGETS VelodyneHDLPlugin
-          RUNTIME DESTINATION ${VV_INSTALL_RUNTIME_DIR}/VeloView.app/Contents/Libraries
-          LIBRARY DESTINATION ${VV_INSTALL_RUNTIME_DIR}/VeloView.app/Contents/Libraries
+          RUNTIME DESTINATION ${VV_INSTALL_RUNTIME_DIR}/${SOFTWARE_NAME}.app/Contents/Libraries
+          LIBRARY DESTINATION ${VV_INSTALL_RUNTIME_DIR}/${SOFTWARE_NAME}.app/Contents/Libraries
           COMPONENT Runtime)
 
   install(TARGETS VelodyneHDLPluginPython
-          RUNTIME DESTINATION ${VV_INSTALL_RUNTIME_DIR}/VeloView.app/Contents/Libraries
-          LIBRARY DESTINATION ${VV_INSTALL_RUNTIME_DIR}/VeloView.app/Contents/Libraries
+          RUNTIME DESTINATION ${VV_INSTALL_RUNTIME_DIR}/${SOFTWARE_NAME}.app/Contents/Libraries
+          LIBRARY DESTINATION ${VV_INSTALL_RUNTIME_DIR}/${SOFTWARE_NAME}.app/Contents/Libraries
           COMPONENT Runtime)
 
   install(TARGETS VelodyneHDLPluginPythonD
-          RUNTIME DESTINATION ${VV_INSTALL_RUNTIME_DIR}/VeloView.app/Contents/Libraries
-          LIBRARY DESTINATION ${VV_INSTALL_RUNTIME_DIR}/VeloView.app/Contents/Libraries
+          RUNTIME DESTINATION ${VV_INSTALL_RUNTIME_DIR}/${SOFTWARE_NAME}.app/Contents/Libraries
+          LIBRARY DESTINATION ${VV_INSTALL_RUNTIME_DIR}/${SOFTWARE_NAME}.app/Contents/Libraries
           COMPONENT Runtime)
 
   install(TARGETS VelodyneHDLPythonQT
-          RUNTIME DESTINATION ${VV_INSTALL_RUNTIME_DIR}/VeloView.app/Contents/Libraries
-          LIBRARY DESTINATION ${VV_INSTALL_RUNTIME_DIR}/VeloView.app/Contents/Libraries
+          RUNTIME DESTINATION ${VV_INSTALL_RUNTIME_DIR}/${SOFTWARE_NAME}.app/Contents/Libraries
+          LIBRARY DESTINATION ${VV_INSTALL_RUNTIME_DIR}/${SOFTWARE_NAME}.app/Contents/Libraries
           COMPONENT Runtime)
 
   # install paraview python modules
-  install(DIRECTORY ${ParaView_DIR}/lib/site-packages/paraview DESTINATION ${VV_INSTALL_RUNTIME_DIR}/VeloView.app/Contents/Python)
+  install(DIRECTORY ${ParaView_DIR}/lib/site-packages/paraview DESTINATION ${VV_INSTALL_RUNTIME_DIR}/${SOFTWARE_NAME}.app/Contents/Python)
   file(GLOB python_libs ${ParaView_DIR}/lib/*Python.so)
-  install(FILES ${python_libs} DESTINATION ${VV_INSTALL_RUNTIME_DIR}/VeloView.app/Contents/Libraries)
+  install(FILES ${python_libs} DESTINATION ${VV_INSTALL_RUNTIME_DIR}/${SOFTWARE_NAME}.app/Contents/Libraries)
 
-  install(FILES ${VeloView_SOURCE_DIR}/Documentation/VeloView_Developer_Guide.pdf DESTINATION ${VV_INSTALL_RUNTIME_DIR}/VeloView.app/Contents/Resources)
-  configure_file(${VeloView_SOURCE_DIR}/Documentation/VeloView_Developer_Guide.pdf ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/VeloView.app/Contents/Resources/VeloView_Developer_Guide.pdf)
+  install(FILES ${VeloView_SOURCE_DIR}/Documentation/VeloView_Developer_Guide.pdf DESTINATION ${VV_INSTALL_RUNTIME_DIR}/${SOFTWARE_NAME}.app/Contents/Resources)
+  configure_file(${VeloView_SOURCE_DIR}/Documentation/VeloView_Developer_Guide.pdf ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${SOFTWARE_NAME}.app/Contents/Resources/VeloView_Developer_Guide.pdf)
 
-  install(FILES ${VeloView_SOURCE_DIR}/Documentation/VeloView_User_Guide.pdf DESTINATION ${VV_INSTALL_RUNTIME_DIR}/VeloView.app/Contents/Resources)
-  configure_file(${VeloView_SOURCE_DIR}/Documentation/VeloView_User_Guide.pdf ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/VeloView.app/Contents/Resources/VeloView_User_Guide.pdf)
+  install(FILES ${VeloView_SOURCE_DIR}/Documentation/VeloView_User_Guide.pdf DESTINATION ${VV_INSTALL_RUNTIME_DIR}/${SOFTWARE_NAME}.app/Contents/Resources)
+  configure_file(${VeloView_SOURCE_DIR}/Documentation/VeloView_User_Guide.pdf ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${SOFTWARE_NAME}.app/Contents/Resources/VeloView_User_Guide.pdf)
 
 endif()
 

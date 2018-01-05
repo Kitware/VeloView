@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# if VeloView runs from a build directory then we need
+# if it runs from a build directory then we need
 # to add ParaView python modules to the sys.path.
 
 import sys

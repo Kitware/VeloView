@@ -1,17 +1,18 @@
 include(veloview.bundle.common)
+include(${VeloViewSuperBuild_SOURCE_DIR}/../branding.cmake)
 
 #------------------------------------------------------------------------------
 # set NSIS install specific stuff.
 
 set (CPACK_NSIS_MENU_LINKS
-  "bin/VeloView.exe" "VeloView"
+  "bin/${SOFTWARE_NAME}.exe" "${SOFTWARE_NAME}"
   "doc/VeloView_Developer_Guide.pdf" "Developer Guide")
 
-set(CPACK_PACKAGE_EXECUTABLES "VeloView" "VeloView" ${CPACK_PACKAGE_EXECUTABLES})
-set(CPACK_CREATE_DESKTOP_LINKS "VeloView" ${CPACK_CREATE_DESKTOP_LINKS})
+set(CPACK_PACKAGE_EXECUTABLES "${SOFTWARE_NAME}" "${SOFTWARE_NAME}" ${CPACK_PACKAGE_EXECUTABLES})
+set(CPACK_CREATE_DESKTOP_LINKS "${SOFTWARE_NAME}" ${CPACK_CREATE_DESKTOP_LINKS})
 set(CPACK_NSIS_MODIFY_PATH ON)
 
-set(AppName VeloView)
+set(AppName ${SOFTWARE_NAME})
 
 install(DIRECTORY "${install_location}/bin/"
         DESTINATION "bin"

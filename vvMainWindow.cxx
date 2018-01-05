@@ -64,7 +64,8 @@
 #include <QSplitter>
 
 #include <cassert>
-
+#include <iostream>
+#include <sstream>
 // Declare the plugin to load.
 PV_PLUGIN_IMPORT_INIT(VelodyneHDLPlugin);
 PV_PLUGIN_IMPORT_INIT(PythonQtPlugin);
@@ -229,6 +230,36 @@ vvMainWindow::vvMainWindow()
 
   PV_PLUGIN_IMPORT(VelodyneHDLPlugin);
   PV_PLUGIN_IMPORT(PythonQtPlugin);
+
+  // Branding
+  std::stringstream ss;
+  ss << "Reset " << SOFTWARE_NAME << " settings";
+  QString text = QString(ss.str().c_str());
+  this->Internals->Ui.actionResetConfigurationFile->setText(text);
+  ss.str("");
+  ss.clear();
+
+  ss << "This will reset all " << SOFTWARE_NAME << " settings by default";
+  text = QString(ss.str().c_str());
+  this->Internals->Ui.actionResetConfigurationFile->setIconText(text);
+  ss.str("");
+  ss.clear();
+
+  ss << "About " << SOFTWARE_NAME;
+  text = QString(ss.str().c_str());
+  this->Internals->Ui.actionAbout_VeloView->setText(text);
+  ss.str("");
+  ss.clear();
+
+  ss << SOFTWARE_NAME << " Developer Guide";
+  text = QString(ss.str().c_str());
+  this->Internals->Ui.actionVeloViewDeveloperGuide->setText(text);
+  ss.str("");
+  ss.clear();
+
+  ss << SOFTWARE_NAME << " User Guide";
+  text = QString(ss.str().c_str());
+  this->Internals->Ui.actionVeloViewUserGuide->setText(text);
 }
 
 //-----------------------------------------------------------------------------

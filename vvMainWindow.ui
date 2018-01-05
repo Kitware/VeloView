@@ -512,12 +512,12 @@
   </action>
   <action name="actionAbout_VeloView">
    <property name="text">
-    <string>About VeloView</string>
+    <string>About ...</string>
    </property>
   </action>
   <action name="actionVeloViewDeveloperGuide">
    <property name="text">
-    <string>VeloView Developer Guide</string>
+    <string>Developer's Guide</string>
    </property>
   </action>
   <action name="actionRecent_file1">
@@ -651,7 +651,7 @@
   </action>
   <action name="actionVeloViewUserGuide">
    <property name="text">
-    <string>VeloView User Guide</string>
+    <string>User's Guide</string>
    </property>
    <property name="shortcut">
     <string>F1</string>

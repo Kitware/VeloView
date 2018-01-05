@@ -5,16 +5,16 @@ include(CPack)
 
 install(CODE "
      file(INSTALL DESTINATION \"\${CMAKE_INSTALL_PREFIX}\" USE_SOURCE_PERMISSIONS TYPE DIRECTORY FILES
-          \"${install_location}/bin/VeloView.app\")
+          \"${install_location}/bin/${SOFTWARE_NAME}.app\")
 
      file(INSTALL DESTINATION \"\${CMAKE_INSTALL_PREFIX}\" USE_SOURCE_PERMISSIONS TYPE FILE FILES
           \"${VeloViewSuperBuild_SOURCE_DIR}/../Documentation/VeloView_Developer_Guide.pdf\")
 
-     file(WRITE \"\${CMAKE_INSTALL_PREFIX}/VeloView.app/Contents/Resources/qt.conf\"
+     file(WRITE \"\${CMAKE_INSTALL_PREFIX}/${SOFTWARE_NAME}.app/Contents/Resources/qt.conf\"
                 \"\")
      execute_process(
        COMMAND ${CMAKE_CURRENT_LIST_DIR}/fixup_bundle.py
-               \"\${CMAKE_INSTALL_PREFIX}/VeloView.app\"
+               \"\${CMAKE_INSTALL_PREFIX}/${SOFTWARE_NAME}.app\"
                \"${install_location}/lib\"
                \"${SuperBuild_BINARY_DIR}/paraview/src/paraview-build/lib\"
                \"${install_location}/Applications/paraview.app/Contents/Plugins\")

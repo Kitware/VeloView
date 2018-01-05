@@ -167,7 +167,7 @@ vtkLASFileWriter::vtkLASFileWriter(const char* filename)
   this->Internal->Stream.open(filename, std::ios::out | std::ios::trunc | std::ios::binary);
 
   liblas::Header header;
-  header.SetSoftwareId("VeloView");
+  header.SetSoftwareId(SOFTWARE_NAME);
   header.SetDataFormatId(liblas::ePointFormat1);
   header.SetScale(1e-3, 1e-3, 1e-3);
   this->Internal->Writer = new liblas::Writer(this->Internal->Stream, header);
