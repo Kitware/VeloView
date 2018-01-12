@@ -525,8 +525,8 @@ public:
   int SplitCounter;
 
   // Parameters ready by calibration
-  std::vector<double> cos_lookup_table_;
-  std::vector<double> sin_lookup_table_;
+  std::vector<double> cos_lut_100th_degrees_;
+  std::vector<double> sin_lut_100th_degrees_;
   HDLLaserCorrection laser_corrections_[HDL_MAX_NUM_LASERS];
   double XMLColorTable[HDL_MAX_NUM_LASERS][3];
   int CalibrationReportedNumLasers;
@@ -1606,15 +1606,15 @@ void vtkVelodyneHDLReader::vtkInternal::PushFiringData(const unsigned char laser
 //-----------------------------------------------------------------------------
 void vtkVelodyneHDLReader::vtkInternal::InitTrigonometricTables()
 {
-  if (cos_lookup_table_.size() == 0 || sin_lookup_table_.size() == 0)
+  if (cos_lut_100th_degrees_.size() == 0 || sin_lut_100th_degrees_.size() == 0)
   {
-    cos_lookup_table_.resize(HDL_NUM_ROT_ANGLES);
-    sin_lookup_table_.resize(HDL_NUM_ROT_ANGLES);
+    cos_lut_100th_degrees_.resize(HDL_NUM_ROT_ANGLES);
+    sin_lut_100th_degrees_.resize(HDL_NUM_ROT_ANGLES);
     for (unsigned int i = 0; i < HDL_NUM_ROT_ANGLES; i++)
     {
       double rad = HDL_Grabber_toRadians(i / 100.0);
-      cos_lookup_table_[i] = std::cos(rad);
-      sin_lookup_table_[i] = std::sin(rad);
+      cos_lut_100th_degrees_[i] = std::cos(rad);
+      sin_lut_100th_degrees_[i] = std::sin(rad);
     }
   }
 }
@@ -1930,18 +1930,18 @@ void vtkVelodyneHDLReader::vtkInternal::ComputeCorrectedValues(const unsigned sh
   double cosAzimuth, sinAzimuth;
   if (correction->rotationalCorrection == 0)
   {
-    cosAzimuth = this->cos_lookup_table_[azimuth];
-    sinAzimuth = this->sin_lookup_table_[azimuth];
+    cosAzimuth = this->cos_lut_100th_degrees_[azimuth];
+    sinAzimuth = this->sin_lut_100th_degrees_[azimuth];
   }
   else
   {
     // realAzimuth = azimuth/100 - rotationalCorrection
     // cos(a-b) = cos(a)*cos(b) + sin(a)*sin(b)
     // sin(a-b) = sin(a)*cos(b) - cos(a)*sin(b)
-    cosAzimuth = this->cos_lookup_table_[azimuth] * correction->cosRotationalCorrection +
-      this->sin_lookup_table_[azimuth] * correction->sinRotationalCorrection;
-    sinAzimuth = this->sin_lookup_table_[azimuth] * correction->cosRotationalCorrection -
-      this->cos_lookup_table_[azimuth] * correction->sinRotationalCorrection;
+    cosAzimuth = this->cos_lut_100th_degrees_[azimuth] * correction->cosRotationalCorrection +
+      this->sin_lut_100th_degrees_[azimuth] * correction->sinRotationalCorrection;
+    sinAzimuth = this->sin_lut_100th_degrees_[azimuth] * correction->cosRotationalCorrection -
+      this->cos_lut_100th_degrees_[azimuth] * correction->sinRotationalCorrection;
   }
   // Compute the distance in the xy plane (w/o accounting for rotation)
   /**the new term of 'vert_offset * sin_vert_angle'
