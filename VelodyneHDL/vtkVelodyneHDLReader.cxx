@@ -1318,12 +1318,16 @@ vtkSmartPointer<vtkPolyData> vtkVelodyneHDLReader::GetFrame(int frameNumber)
   this->Internal->Reader->SetFilePosition(&this->Internal->FilePositions[frameNumber]);
   this->Internal->Skip = this->Internal->Skips[frameNumber];
 
+  unsigned int count = 0;
   while (this->Internal->Reader->NextPacket(data, dataLength, timeSinceStart))
   {
+    count++;
+    std::cout << "Packet processed : " << count << std::endl;
     this->ProcessHDLPacket(const_cast<unsigned char*>(data), dataLength);
 
     if (this->Internal->Datasets.size())
     {
+      std::cout << "Split !" << std::endl;
       return this->Internal->Datasets.back();
     }
   }
