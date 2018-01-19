@@ -1525,7 +1525,7 @@ def playbackTick():
             return
 
         if view.ViewTime == timesteps[-1]:
-            return
+            return # Already on last frame, cannot go forward
 
         if not app.colorByInitialized:
             sensor.UpdatePipeline()
@@ -2612,7 +2612,7 @@ def updateUIwithNewFrame():
     reader = getReader() or getSensor()
     if reader is not None:
         app.sensorInformationLabel.setText(reader.GetClientSideObject().GetSensorInformation())
-        #Remove the Rotation per minute from color label comboBox
+    #Remove the Rotation per minute from color label comboBox
     ComboBox = getMainWindow().findChild('vvColorToolbar').findChild('pqDisplayColorWidget').findChildren('QComboBox')[0]
     n = ComboBox.findText('RotationPerMinute')
     ComboBox.removeItem(n)

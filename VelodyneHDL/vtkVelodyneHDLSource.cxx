@@ -1138,8 +1138,8 @@ int vtkVelodyneHDLSource::RequestInformation(
   const size_t nTimesteps = timesteps.size();
   if (nTimesteps > 0)
   {
-    outInfo->Set(vtkStreamingDemandDrivenPipeline::TIME_STEPS(), &timesteps.front(),
-      static_cast<int>(nTimesteps));
+    outInfo->Set(
+      vtkStreamingDemandDrivenPipeline::TIME_STEPS(), &timesteps[0], static_cast<int>(nTimesteps));
   }
   else
   {
