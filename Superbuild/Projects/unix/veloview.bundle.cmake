@@ -33,6 +33,8 @@ file(GLOB lib_files_so
   "${install_location}/lib/liblas*.so*"
   "${install_location}/lib/libboost*.so*" # could be replqce by a package dependency
   "${install_location}/lib/libQt*.so*" #  could be replqce by a package dependency
+  "${install_location}/lib/libfreetype*.so*"
+  "${install_location}/lib/libfontconfig*.so*"
 )
 install(FILES ${lib_files_so}
   DESTINATION "lib/veloview-${VV_VERSION}"

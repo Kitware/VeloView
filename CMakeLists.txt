@@ -155,20 +155,19 @@ set (source_files
   vvLoadDataReaction.cxx
   )
 
-qt4_wrap_cpp(moc_source_files
+qt5_wrap_cpp(moc_source_files
   vvColorToolbar.h
   vvMainWindow.h
   vvToggleSpreadSheetReaction.h
-  vvLoadDataReaction.h
   )
 
-qt4_wrap_ui(ui_source_files
+qt5_wrap_ui(ui_source_files
   vvColorToolbar.ui
   vvMainWindow.ui
   vvAboutDialog.ui
   )
 
-qt4_add_resources(rcs_source_files
+qt5_add_resources(rcs_source_files
   vvResources.qrc)
 
 include_directories(

@@ -46,12 +46,15 @@ function (superbuild_find_projects var)
     cxx11
     eigen
     liblas
+    freetype
     paraview
     pcap
     png
     python
     pythonqt
+    qt
     qt4
+    qt5
     veloview
     veloview.bundle
     zlib
@@ -64,6 +67,7 @@ function (superbuild_find_projects var)
 
     if (NOT APPLE)
       list(APPEND projects
+        fontconfig
         gperf
       )
     endif()

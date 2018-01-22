@@ -30,6 +30,8 @@ def GetSelectionSource(proxy=None):
 
 def fitPlane():
     src = smp.GetActiveSource()
+    if not src:
+        return
 
     selection = GetSelectionSource(src)
 

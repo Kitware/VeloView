@@ -13,14 +13,18 @@ superbuild_set_customizable_revision(qt4
   URL "http://download.qt-project.org/archive/qt/4.8/4.8.6/qt-everywhere-opensource-src-4.8.6.tar.gz"
   URL_MD5 2edbe4d6c2eff33ef91732602f3518eb)
 
+superbuild_set_customizable_revision(qt5
+  URL "http://download.qt.io/archive/qt/5.6/5.6.2/single/qt-everywhere-opensource-src-5.6.2.tar.gz"
+  URL_MD5 1b1b1f929d0cd83680354a0c83d8e945)
+
 superbuild_set_revision(pythonqt
   GIT_REPOSITORY git://github.com/commontk/PythonQt.git
-  GIT_TAG patched-6)
+  GIT_TAG patched-5)
 
-set(PARAVIEW_VERSION 5.1)
+set(PARAVIEW_VERSION 5.4)
 superbuild_set_revision(paraview
   GIT_REPOSITORY https://gitlab.kitware.com/bjacquet/paraview.git
-  GIT_TAG origin/veloview)
+  GIT_TAG origin/5.4CustomForVeloview)
 
 superbuild_set_revision(veloview
     SOURCE_DIR ${CMAKE_SOURCE_DIR}/..

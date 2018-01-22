@@ -1,6 +1,8 @@
 project(VelodyneHDLPlugin)
 cmake_minimum_required(VERSION 3.1 FATAL_ERROR)
 
+include_directories("ctk")
+
 #-----------------------------------------------------------------------------
 # Temporary Fix
 #-----------------------------------------------------------------------------
@@ -112,24 +114,33 @@ if(PARAVIEW_BUILD_QT_GUI)
     Ui/vvCropReturnsDialog.h
     Ui/vvLaserSelectionDialog.h
     Ui/vvSelectFramesDialog.h
+    ctk/ctkValueProxy.h
+    ctk/ctkRangeSlider.h
+    ctk/ctkDoubleRangeSlider.h
     )
 
   set(resources
     Ui/images/resources.qrc)
 
   # call some qt macro to create moc and code
-  QT4_WRAP_CPP(moc_srcs ${MOC_HEADERS})
-  QT4_WRAP_UI(ui_srcs ${UI_FILES})
-  QT4_ADD_RESOURCES(resource_srcs ${resources})
+  qt_wrap_cpp(moc_srcs ${MOC_HEADERS})
+  qt_wrap_ui(ui_srcs ${UI_FILES})
+  qt_add_resources(resource_srcs ${resources})
 
   list(APPEND gui_sources
     ${moc_srcs}
     ${ui_srcs}
     ${resource_srcs}
-    Ui/vvCalibrationDialog.cxx
-    Ui/vvCropReturnsDialog.cxx
-    Ui/vvLaserSelectionDialog.cxx
-    Ui/vvSelectFramesDialog.cxx
+    vvCalibrationDialog.cxx
+    vvCropReturnsDialog.cxx
+    vvLaserSelectionDialog.cxx
+    vvSelectFramesDialog.cxx
+    ctk/ctkPimpl.h
+    ctk/ctkCoreExport.h
+    ctk/ctkRangeSlider.cpp
+    ctk/ctkWidgetsExport.h
+    ctk/ctkDoubleRangeSlider.cpp
+    ctk/ctkValueProxy.cpp
     )
 
   # TODO I don"t get this dependancy is for
@@ -265,7 +276,7 @@ set(MOC_HEADERS
   )
 
 set(moc_srcs)
-QT4_WRAP_CPP(moc_srcs ${MOC_HEADERS})
+qt_wrap_cpp(moc_srcs "${MOC_HEADERS}")
 
 set(gui_sources)
 list(APPEND gui_sources
