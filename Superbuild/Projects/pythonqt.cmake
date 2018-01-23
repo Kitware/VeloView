@@ -1,5 +1,5 @@
 superbuild_add_project(pythonqt
-  DEPENDS qt python
+  DEPENDS qt5 python
   CMAKE_ARGS
     -DBUILD_SHARED_LIBS:BOOL=ON
     -DPythonQt_QT_VERSION:STRING=${qt_version}

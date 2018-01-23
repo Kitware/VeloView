@@ -1,5 +1,5 @@
 superbuild_add_project(veloview
-  DEPENDS paraview qt pcap boost eigen liblas
+  DEPENDS paraview qt5 pcap boost eigen liblas
   DEFAULT_ON
   CMAKE_ARGS
     -DBUILD_SHARED_LIBS:BOOL=ON

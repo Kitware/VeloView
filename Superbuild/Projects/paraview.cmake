@@ -1,5 +1,5 @@
 superbuild_add_project(paraview
-  DEPENDS qt python pythonqt
+  DEPENDS qt5 python pythonqt
   DEFAULT_ON
   DEBUGGABLE
   CMAKE_ARGS

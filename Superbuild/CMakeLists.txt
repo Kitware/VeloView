@@ -43,6 +43,7 @@ function (superbuild_find_projects var)
   # Some of these allow using system libraries.
   set(projects
     boost
+    bzip2
     cxx11
     eigen
     liblas
@@ -52,8 +53,6 @@ function (superbuild_find_projects var)
     png
     python
     pythonqt
-    qt
-    qt4
     qt5
     veloview
     veloview.bundle
@@ -92,6 +91,21 @@ if (WIN32)
     mark_as_advanced(DEVENV_PATH NMAKE_PATH)
   endif()
 endif()
+
+# skiped module as defined in paraview superbuild.
+# One difference: pythonQt needs Multimedia so we don't skip it.
+set(qt5_skip_modules
+  qtconnectivity
+  qtgamepad
+  qtlocation
+  qtsensors
+  qtserialport
+  qtwayland
+  qtwebchannel
+  qtwebengine
+  qtwebsockets)
+list(APPEND qt5_process_environment
+  BUILD_IN_SOURCE 1)
 
 set(boost_libraries
   chrono

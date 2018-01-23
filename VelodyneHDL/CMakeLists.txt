@@ -123,9 +123,9 @@ if(PARAVIEW_BUILD_QT_GUI)
     Ui/images/resources.qrc)
 
   # call some qt macro to create moc and code
-  qt_wrap_cpp(moc_srcs ${MOC_HEADERS})
-  qt_wrap_ui(ui_srcs ${UI_FILES})
-  qt_add_resources(resource_srcs ${resources})
+  qt5_wrap_cpp(moc_srcs ${MOC_HEADERS})
+  qt5_wrap_ui(ui_srcs ${UI_FILES})
+  qt5_add_resources(resource_srcs ${resources})
 
   list(APPEND gui_sources
     ${moc_srcs}
@@ -276,7 +276,7 @@ set(MOC_HEADERS
   )
 
 set(moc_srcs)
-qt_wrap_cpp(moc_srcs "${MOC_HEADERS}")
+qt5_wrap_cpp(moc_srcs "${MOC_HEADERS}")
 
 set(gui_sources)
 list(APPEND gui_sources
