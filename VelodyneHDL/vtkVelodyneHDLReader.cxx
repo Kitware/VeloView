@@ -564,7 +564,8 @@ public:
   unsigned int DualReturnFilter;
 
   void SplitFrame(bool force = false);
-  vtkSmartPointer<vtkPolyData> CreateData(vtkIdType numberOfPoints);
+  static const vtkIdType defaultPrereservedNumberOfPointsPerFrame = 60000;
+  vtkSmartPointer<vtkPolyData> CreateData(vtkIdType numberOfPoints, vtkIdType prereservedNumberOfPoints = defaultPrereservedNumberOfPointsPerFrame);
   vtkSmartPointer<vtkCellArray> NewVertexCells(vtkIdType numberOfVerts);
 
   void Init();
@@ -1045,7 +1046,7 @@ int vtkVelodyneHDLReader::RequestData(
   {
     vtkErrorMacro("Cannot meet timestep request: " << timestep << ".  Have "
                                                    << this->GetNumberOfFrames() << " datasets.");
-    output->ShallowCopy(this->Internal->CreateData(0));
+    output->ShallowCopy(this->Internal->CreateData(0, 0));
     return 0;
   }
 
@@ -1339,12 +1340,12 @@ vtkSmartPointer<vtkPolyData> vtkVelodyneHDLReader::GetFrame(int frameNumber)
 namespace
 {
 template<typename T>
-vtkSmartPointer<T> CreateDataArray(const char* name, vtkIdType np, vtkPolyData* pd)
+vtkSmartPointer<T> CreateDataArray(const char* name, vtkIdType np, vtkIdType prereserved_np, vtkPolyData* pd)
 {
   vtkSmartPointer<T> array = vtkSmartPointer<T>::New();
-  array->Allocate(60000);
+  array->Allocate(prereserved_np);
   array->SetName(name);
-  array->SetNumberOfTuples(np);
+  if (np>0) array->SetNumberOfTuples(np);
 
   if (pd)
   {
@@ -1364,38 +1365,39 @@ vtkSmartPointer<T> CreateDataArray(const char* name, vtkIdType np, vtkPolyData* 
   }
 
 //-----------------------------------------------------------------------------
-vtkSmartPointer<vtkPolyData> vtkVelodyneHDLReader::vtkInternal::CreateData(vtkIdType numberOfPoints)
+vtkSmartPointer<vtkPolyData> vtkVelodyneHDLReader::vtkInternal::CreateData(vtkIdType numberOfPoints,
+                                                                           vtkIdType prereservedNumberOfPoints)
 {
   vtkSmartPointer<vtkPolyData> polyData = vtkSmartPointer<vtkPolyData>::New();
 
   // points
   vtkNew<vtkPoints> points;
   points->SetDataTypeToFloat();
-  points->Allocate(60000);
-  points->SetNumberOfPoints(numberOfPoints);
+  points->Allocate(prereservedNumberOfPoints);
+  if (numberOfPoints>0) points->SetNumberOfPoints(numberOfPoints);
   points->GetData()->SetName("Points_m_XYZ");
   polyData->SetPoints(points.GetPointer());
   polyData->SetVerts(NewVertexCells(numberOfPoints));
 
   // intensity
   this->Points = points.GetPointer();
-  this->PointsX = CreateDataArray<vtkDoubleArray>("X", numberOfPoints, polyData);
-  this->PointsY = CreateDataArray<vtkDoubleArray>("Y", numberOfPoints, polyData);
-  this->PointsZ = CreateDataArray<vtkDoubleArray>("Z", numberOfPoints, polyData);
-  this->Intensity = CreateDataArray<vtkUnsignedCharArray>("intensity", numberOfPoints, polyData);
-  this->LaserId = CreateDataArray<vtkUnsignedCharArray>("laser_id", numberOfPoints, polyData);
-  this->Azimuth = CreateDataArray<vtkUnsignedShortArray>("azimuth", numberOfPoints, polyData);
-  this->Distance = CreateDataArray<vtkDoubleArray>("distance_m", numberOfPoints, polyData);
+  this->PointsX = CreateDataArray<vtkDoubleArray>("X", numberOfPoints, prereservedNumberOfPoints, polyData);
+  this->PointsY = CreateDataArray<vtkDoubleArray>("Y", numberOfPoints, prereservedNumberOfPoints, polyData);
+  this->PointsZ = CreateDataArray<vtkDoubleArray>("Z", numberOfPoints, prereservedNumberOfPoints, polyData);
+  this->Intensity = CreateDataArray<vtkUnsignedCharArray>("intensity", numberOfPoints, prereservedNumberOfPoints, polyData);
+  this->LaserId = CreateDataArray<vtkUnsignedCharArray>("laser_id", numberOfPoints, prereservedNumberOfPoints, polyData);
+  this->Azimuth = CreateDataArray<vtkUnsignedShortArray>("azimuth", numberOfPoints, prereservedNumberOfPoints, polyData);
+  this->Distance = CreateDataArray<vtkDoubleArray>("distance_m", numberOfPoints, prereservedNumberOfPoints, polyData);
   this->DistanceRaw =
-    CreateDataArray<vtkUnsignedShortArray>("distance_raw", numberOfPoints, polyData);
-  this->Timestamp = CreateDataArray<vtkDoubleArray>("adjustedtime", numberOfPoints, polyData);
-  this->RawTime = CreateDataArray<vtkUnsignedIntArray>("timestamp", numberOfPoints, polyData);
-  this->DistanceFlag = CreateDataArray<vtkIntArray>("dual_distance", numberOfPoints, 0);
-  this->IntensityFlag = CreateDataArray<vtkIntArray>("dual_intensity", numberOfPoints, 0);
-  this->Flags = CreateDataArray<vtkUnsignedIntArray>("dual_flags", numberOfPoints, 0);
+    CreateDataArray<vtkUnsignedShortArray>("distance_raw", numberOfPoints, prereservedNumberOfPoints, polyData);
+  this->Timestamp = CreateDataArray<vtkDoubleArray>("adjustedtime", numberOfPoints, prereservedNumberOfPoints, polyData);
+  this->RawTime = CreateDataArray<vtkUnsignedIntArray>("timestamp", numberOfPoints, prereservedNumberOfPoints, polyData);
+  this->DistanceFlag = CreateDataArray<vtkIntArray>("dual_distance", numberOfPoints, prereservedNumberOfPoints, 0);
+  this->IntensityFlag = CreateDataArray<vtkIntArray>("dual_intensity", numberOfPoints, prereservedNumberOfPoints, 0);
+  this->Flags = CreateDataArray<vtkUnsignedIntArray>("dual_flags", numberOfPoints, prereservedNumberOfPoints, 0);
   this->DualReturnMatching =
-    CreateDataArray<vtkIdTypeArray>("dual_return_matching", numberOfPoints, 0);
-  this->VerticalAngle = CreateDataArray<vtkDoubleArray>("vertical_angle", numberOfPoints, polyData);
+    CreateDataArray<vtkIdTypeArray>("dual_return_matching", numberOfPoints, prereservedNumberOfPoints, 0);
+  this->VerticalAngle = CreateDataArray<vtkDoubleArray>("vertical_angle", numberOfPoints, prereservedNumberOfPoints, polyData);
 
   // FieldData : RPM
   vtkSmartPointer<vtkDoubleArray> rpmData = vtkSmartPointer<vtkDoubleArray>::New();
@@ -1424,8 +1426,8 @@ vtkSmartPointer<vtkCellArray> vtkVelodyneHDLReader::vtkInternal::NewVertexCells(
   vtkIdType* ids = cells->GetPointer(0);
   for (vtkIdType i = 0; i < numberOfVerts; ++i)
   {
-    ids[i * 2] = 1;
-    ids[i * 2 + 1] = i;
+    *(ids++) = 1;
+    *(ids++) = i;
   }
 
   vtkSmartPointer<vtkCellArray> cellArray = vtkSmartPointer<vtkCellArray>::New();
@@ -1856,7 +1858,8 @@ void vtkVelodyneHDLReader::vtkInternal::Init()
 //-----------------------------------------------------------------------------
 void vtkVelodyneHDLReader::vtkInternal::SplitFrame(bool force)
 {
-  if ((this->IgnoreEmptyFrames && this->CurrentDataset->GetNumberOfPoints() == 0) && !force)
+  const vtkIdType nPtsOfCurrentDataset= this->CurrentDataset->GetNumberOfPoints();
+  if ((this->IgnoreEmptyFrames && nPtsOfCurrentDataset == 0) && !force)
   {
     return;
   }
@@ -1872,7 +1875,7 @@ void vtkVelodyneHDLReader::vtkInternal::SplitFrame(bool force)
     this->LastPointId[n] = -1;
   }
 
-  this->CurrentDataset->SetVerts(this->NewVertexCells(this->CurrentDataset->GetNumberOfPoints()));
+  this->CurrentDataset->SetVerts(this->NewVertexCells(nPtsOfCurrentDataset));
 
   // Compute the rpm and reset
   this->currentRpm = this->RpmCalculator.GetRPM();
@@ -1882,7 +1885,10 @@ void vtkVelodyneHDLReader::vtkInternal::SplitFrame(bool force)
     ->GetArray("RotationPerMinute")
     ->SetTuple1(0, this->currentRpm);
   this->Datasets.push_back(this->CurrentDataset);
-  this->CurrentDataset = this->CreateData(0);
+  // prereserve for 50% points more than actually received in previous frame
+  const vtkIdType preservedNPtsForNextFrame =
+      std::max((vtkIdType) (nPtsOfCurrentDataset * 1.5), defaultPrereservedNumberOfPointsPerFrame);
+  this->CurrentDataset = this->CreateData(0, preservedNPtsForNextFrame);
 }
 
 //-----------------------------------------------------------------------------
