@@ -2123,7 +2123,8 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessFiring(HDLFiringData* firingData,
         }
         case 32:
         {
-          if (this->ReportedSensor == VLP32AB || this->ReportedSensor == VLP32C)
+          if (this->ReportedSensor == VLP32AB || this->ReportedSensor == VLP32C ||
+            this->ReportedSensor == VelArray)
           {
             timestampadjustment = VLP32AdjustTimeStamp(firingBlock, dsr, isDualReturnPacket);
             nextblockdsr0 = VLP32AdjustTimeStamp(
@@ -2200,13 +2201,14 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(
   int firingBlock = this->Skip;
   this->Skip = 0;
 
-  // Compute the total azimuth advanced during one full firing block
+  // Compute the list of total azimuth advanced during one full firing block
   std::vector<int> diffs(HDL_FIRING_PER_PKT - 1);
   for (int i = 0; i < HDL_FIRING_PER_PKT - 1; ++i)
   {
-    int localDiff = (36000 + dataPacket->firingData[i + 1].getRotationalPosition() -
-                      dataPacket->firingData[i].getRotationalPosition()) %
-      36000;
+    int localDiff = (36000 + 18000 + dataPacket->firingData[i + 1].rotationalPosition -
+                      dataPacket->firingData[i].rotationalPosition) %
+        36000 -
+      18000;
     diffs[i] = localDiff;
   }
 
@@ -2251,7 +2253,9 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(
       this->SplitFrame();
       this->LastTimestamp = std::numeric_limits<unsigned int>::max();
     }
-
+    // For variable speed sensors, get this firing block exact azimuthDiff
+    if (dataPacket->getSensorType() == VelArray)
+      azimuthDiff = dataPacket->getRotationalDiffForVelarrayFiring(firingBlock);
     // Skip this firing every PointSkip
     if (this->FiringsSkip == 0 || firingBlock % (this->FiringsSkip + 1) == 0)
     {

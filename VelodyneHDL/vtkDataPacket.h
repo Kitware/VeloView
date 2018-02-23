@@ -245,6 +245,28 @@ struct HDLDataPacket
   {
     return (firingBlock % 2 == 1);
   }
+
+  inline int getRotationalDiffForVelarrayFiring(int firingBlock)
+  {
+    if (static_cast<DualReturnSensorMode>(factoryField1) == DUAL_RETURN)
+    {
+      if (firingBlock > 9)
+        firingBlock = 9;
+      return static_cast<int>((36000 + 18000 + firingData[firingBlock + 2].rotationalPosition -
+                                firingData[firingBlock].rotationalPosition) %
+               36000) -
+        18000;
+    }
+    else
+    {
+      if (firingBlock > 10)
+        firingBlock = 10;
+      return static_cast<int>((36000 + 18000 + firingData[firingBlock + 1].rotationalPosition -
+                                firingData[firingBlock].rotationalPosition) %
+               36000) -
+        18000;
+    }
+  }
 };
 
 struct HDLLaserCorrection // Internal representation of per-laser correction
