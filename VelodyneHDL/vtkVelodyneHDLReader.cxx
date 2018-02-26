@@ -2163,7 +2163,9 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessFiring(HDLFiringData* firingData,
     if ((!this->IgnoreZeroDistances || firingData->laserReturns[dsr].distance != 0.0) &&
       this->LaserSelection[laserId])
     {
-      this->PushFiringData(laserId, rawLaserId, azimuth + azimuthadjustment, firingElevation100th,
+      const unsigned short adjustedAzimuth =
+        (36000 + (static_cast<int>(azimuth) + azimuthadjustment)) % 36000;
+      this->PushFiringData(laserId, rawLaserId, adjustedAzimuth, firingElevation100th,
         timestamp + timestampadjustment, rawtime + static_cast<unsigned int>(timestampadjustment),
         &(firingData->laserReturns[dsr]), &(laser_corrections_[dsr + firingBlockLaserOffset]),
         geotransform, isThisFiringDualReturnData);
