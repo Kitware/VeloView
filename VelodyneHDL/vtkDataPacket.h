@@ -256,15 +256,15 @@ struct HDLDataPacket
     {
       if (firingBlock > 11 - 2) // no next firingBlock: compute diff from previous
         firingBlock = 9;        // i.e. firingAzimuth[n] - firingAzimuth[n-2]
-      return unsignedAngleDiffTo_m180_180deg(
-        firingData[firingBlock + 2].rotationalPosition, firingData[firingBlock].rotationalPosition);
+      return unsignedAngleDiffTo_m180_180deg(firingData[firingBlock + 2].getRotationalPosition(),
+        firingData[firingBlock].getRotationalPosition());
     }
     else
     {
       if (firingBlock > 11 - 1) // no next firingBlock: compute diff from previous
         firingBlock = 10;       // i.e. firingAzimuth[n] - firingAzimuth[n-1]
-      return unsignedAngleDiffTo_m180_180deg(
-        firingData[firingBlock + 1].rotationalPosition, firingData[firingBlock].rotationalPosition);
+      return unsignedAngleDiffTo_m180_180deg(firingData[firingBlock + 1].getRotationalPosition(),
+        firingData[firingBlock].getRotationalPosition());
     }
   }
 };

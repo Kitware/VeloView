@@ -2231,8 +2231,8 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(
   std::vector<int> diffs(HDL_FIRING_PER_PKT - 1);
   for (int i = 0; i < HDL_FIRING_PER_PKT - 1; ++i)
   {
-    int localDiff = (36000 + 18000 + dataPacket->firingData[i + 1].rotationalPosition -
-                      dataPacket->firingData[i].rotationalPosition) %
+    int localDiff = (36000 + 18000 + dataPacket->firingData[i + 1].getRotationalPosition() -
+                      dataPacket->firingData[i].getRotationalPosition()) %
         36000 -
       18000;
     diffs[i] = localDiff;
