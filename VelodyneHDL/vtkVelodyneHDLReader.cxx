@@ -250,6 +250,24 @@ double HDL64EAdjustTimeStamp(int firingblock, int dsr, const bool isDualReturnMo
       TimeOffsetMicroSec[(dsrReversed % 4)] + (dsrReversed / 4) * TimeOffsetMicroSec[3];
   }
 }
+double VelArrayAdjustTimeStamp(
+  unsigned int firingblock, unsigned int dsr, const bool isDualReturnMode)
+{
+  const static double dt = 2.304;
+  const static double firingblock_num_cycles = 18;
+  const static double firingblock_duration = (dt * firingblock_num_cycles);
+  const static int n_simultaneous_firing = 2;
+  if (!isDualReturnMode)
+  {
+    return (firingblock * firingblock_duration) +
+      static_cast<int>(dsr / n_simultaneous_firing) * dt;
+  }
+  else
+  {
+    return (firingblock_duration * static_cast<unsigned int>(firingblock / 2)) +
+      static_cast<int>(dsr / n_simultaneous_firing) * dt;
+  }
+}
 } // End namespace
 
 //-----------------------------------------------------------------------------
@@ -2123,13 +2141,19 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessFiring(HDLFiringData* firingData,
         }
         case 32:
         {
-          if (this->ReportedSensor == VLP32AB || this->ReportedSensor == VLP32C ||
-            this->ReportedSensor == VelArray)
+          if (this->ReportedSensor == VLP32AB || this->ReportedSensor == VLP32C)
           {
             timestampadjustment = VLP32AdjustTimeStamp(firingBlock, dsr, isDualReturnPacket);
             nextblockdsr0 = VLP32AdjustTimeStamp(
               firingBlock + (isDualReturnPacket ? 2 : 1), 0, isDualReturnPacket);
             blockdsr0 = VLP32AdjustTimeStamp(firingBlock, 0, isDualReturnPacket);
+          }
+          else if (this->ReportedSensor == VelArray)
+          {
+            timestampadjustment = VelArrayAdjustTimeStamp(firingBlock, dsr, isDualReturnPacket);
+            nextblockdsr0 = VelArrayAdjustTimeStamp(
+              firingBlock + (isDualReturnPacket ? 2 : 1), 0, isDualReturnPacket);
+            blockdsr0 = VelArrayAdjustTimeStamp(firingBlock, 0, isDualReturnPacket);
           }
           else
           {
