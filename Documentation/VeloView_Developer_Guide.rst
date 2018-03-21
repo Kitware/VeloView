@@ -6,8 +6,8 @@ VeloView Developer Guide
 Software developer documentation for the VeloView application and libraries
 ---------------------------------------------------------------------------
 
-:copyright: Copyright (c) 2013, Velodyne Lidar. All rights reserved.
-:version: 1.0.8
+:copyright: Copyright (c) 2018, Velodyne Lidar. All rights reserved.
+:version: 3.5.0
 
 .. contents:: Table of Contents
 .. section-numbering::
@@ -21,10 +21,12 @@ Build instructions
 Superbuild overview
 -------------------
 
-VeloView uses a cmake *superbuild* to download and compile third party projects
-that are dependencies of VeloView.  The superbuild will give you the option
-to use system installations of third party projects instead of compiling them
-as a superbuild step.  Some dependencies, on certain platforms, must be compiled
+VeloView uses a CMake *superbuild* system. This is a cmake project that defines
+dependencies and third party projects as CMake targets, such that their tested
+versions are automatically downloaded, compiled and linked to.
+The superbuild will give you the option to use system installations of third
+party projects instead of compiling themas a superbuild step.
+Some dependencies, on certain platforms, must be compiled
 by the superbuild, and there is no option to use a system version.
 
 Getting the source code
@@ -33,15 +35,17 @@ Getting the source code
 The VeloView software is hosted in a git repository on github.com  Use the
 following command line to checkout the source code::
 
-    git clone git://public.kitware.com/VeloView.git
+    git clone git@github.com:Kitware/VeloView.git
 
 
-External dependencies
+Veloview dependencies
 ---------------------
 
 The VeloView application and libraries have several external library dependencies.
 As explained in the `Superbuild overview`_, the dependencies will be downloaded
-and compiled automatically during the build step.  See `Configure and build instructions`_.
+and compiled automatically during the build step of the Superbuild.
+Exact project urls and versions can be found in Superbuild/versions.cmake.
+See `Configure and build instructions`_.
 
 pcap
 ~~~~
@@ -51,7 +55,8 @@ Windows, we use the Winpcap project which includes libpcap but also includes Win
 specific drivers.  Since the winpcap project only provides Visual Studio project
 files, which may be out dated, the superbuild does not attempt to compile winpcap.
 Instead, a git repository containing headers and precompiled .lib and .dll files
-is used.  The repository url is https://github.com/patmarion/winpcap.
+is used.  The repository url can be found in Superbuild/versions.cmake
+
 
 Boost
 ~~~~~
@@ -76,22 +81,23 @@ in C++ libraries, and the libraries are wrapped for Python using VTK's Python wr
 PythonQt
 ~~~~~~~~
 
-PythonQt is used from a specific git commit sha1, but a specific released version.
-PythonQt is used to build Qt applications using Python.  PythonQt has support
+PythonQt is used to build Qt applications from Python.  PythonQt has support
 for wrapping types derived from Qt objects and VTK objects.
+PythonQt is used from a specific git branch, to mach the Qt version.
+
 
 VTK and ParaView
 ~~~~~~~~~~~~~~~~
 
-The required VTK version is 6.0.  The required ParaView version is 4.0.  The
+The required VTK version is 7.0.  The required ParaView version is 5.1.  The
 ParaView repository includes VTK, so the superbuild only needs to checkout
 and build ParaView in order to satisfy both dependencies.  A specific git commit
 sha1 is used instead of a specific released version.  The commit sha1 is very similar
-to the version 4.0 release but it has a few commits from the ParaView master branch
-cherry-picked onto it.  The commits added are those that resolve some issues with
-the Python console and add the PythonQtPlugin for ParaView.  The PythonQtPlugin
-is a small plugin that initializes the PythonQt library and makes it available
-in the ParaView Python console.
+to the mainstream release version but it has a few commits from the ParaView
+master branch cherry-picked onto it.  The commits added are those that resolve
+some issues with the Python console and add the PythonQtPlugin for ParaView.
+The PythonQtPluginis a small plugin that initializes the PythonQt library and
+makes it available in the ParaView Python console.
 
 Configure and build instructions
 --------------------------------
@@ -120,36 +126,30 @@ the build type.  Most users will want to select Release.
 You can set the CMAKE_INSTALL_PREFIX to determine where the VeloView binaries
 are installed when you run make install.
 
-After cmake has generated the build files, just run make to run the superbuild:
+After cmake has generated the build files, you can compile the superbuild using:
 
-    make
-
-On Mac and Linux computers, you can run parallel make with *make -j*.  Parallel
-make is not supported on Windows because the Windows build uses NMake.
+    cmake --build .
 
 Windows build instructions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Because the superbuild compiles Python, and Python only supplies Visual Studio
-project files for Visual Studio 9, you must use Visual Studio 9 for compiling
-the VeloView superbuild on Windows.  If you decide to use a system install of
-Python instead, then you can avoid the Visual Studio version requirement. But,
-be warned that other versions of Visual Studio have not been tested with VeloView.
+The superbuild has been tested on Visual Studio 11 (2012).
+It might work with other versions of Visual Studio, but be warned that they
+have not been tested with VeloView.
 
 You can build VeloView for 32bit or 64bit.  The target architecture is decided
-by the command prompt environment that is used when running CMake.  Make sure to
-open the command prompt by opening the Visual Studio Tools command prompt.
-When selecting the generator in cmake-gui on Windows, you should select NMake Makefiles
-using the default native compilers.  It is possible to make a 32bit build on a 64bit
-Windows computer by opening the Visual Studio Tools command prompt that is initialized
-for the 32bit compiler environment.
+at CMake configure time, when CMake is launch from the MS Visual Studio
+"Cross-tool command prompt" environment.
+When selecting the generator in cmake-gui on Windows, you should select the 
+appropriate version.
 
-After generating NMake Makefiles, just run *make* to run the superbuild.  NMake
-does not support parallel builds, so the build can take quite some time to complete
-on Windows, especially when compiling Qt instead of using a system install of Qt.
+After generating the Makefiles, just run *make* or *cmake --build .* to run
+the superbuild.  NMake and Visual Studio does not support parallel builds, so
+the build can take quite some time to complete on Windows, especially when
+compiling Qt instead of using a system install of Qt.
 
 Mac build instructions
-----------------------
+~~~~~~~~~~~~~~~~~~~~~~
 
 For Mac builds, it is best to use system installs of Qt and Python.  You can use
 a package manager like Homebrew or macports to install these libraries system wide
@@ -160,11 +160,13 @@ use a system version of Boost, as long as the static Boost archive libraries
 are available (the libraries with the .a extension).  If you are unsure, it is
 better to let the superbuild build Boost for you.
 
+    cmake -DENABLE_veloview:BOOL=ON -DCMAKE_OSX_ARCHITECTURES:STRING="x86_64" -DCMAKE_OSX_SYSROOT:STRING=/path/to/XcodeSDK/Developer/SDKs ../SuperBuild
+
 
 Linux build instructions
-------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~
 
-These steps are for Ubuntu 14.04.4 LTS. First, install the following
+These steps are for Ubuntu 16.04.4 LTS. First, install the following
 dependencies using the apt-get command. This is the full list used in the tested
 setup::
 
@@ -179,15 +181,7 @@ setup::
     qt4-dev-tools
     zlib1g-dev
 
-By default, Ubuntu packages version 2.8 of CMake. You will need a later version.
-To upgrade, either build CMake from source or run the following::
-
-    sudo apt-get install software-properties-common
-    sudo add-apt-repository ppa:george-edison55/cmake-3.x
-    sudo apt-get update
-    sudo apt-get install --reinstall cmake
-
-This will install CMake 3.2, which is sufficient to build VeloView.
+By default, Ubuntu packages version 3.5.1 of CMake, so you should be fine.
 
 On Linux, libpcap can either be installed as a package or built from source. If
 you wish to build it from source you will need to apt-get install flex and
@@ -214,7 +208,7 @@ building. To do that, run the following in bash::
 
     export QT_SELECT=qt4
 
-Then run `make` or `make -jN` as usual to run the superbuild.
+Then run `cmake --build .`, `make` or `make -jN` as usual to run the superbuild.
 
 
 Packaging

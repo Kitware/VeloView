@@ -1,278 +1,469 @@
 %PDF-1.4
 %“Œ‹ž ReportLab Generated PDF document http://www.reportlab.com
 1 0 obj
-<< /F1 2 0 R /F2 3 0 R /F3 48 0 R /F4 50 0 R /F5 53 0 R >>
+<<
+/F1 2 0 R /F2 3 0 R /F3 48 0 R /F4 50 0 R /F5 53 0 R
+>>
 endobj
 2 0 obj
-<< /BaseFont /Helvetica /Encoding /WinAnsiEncoding /Name /F1 /Subtype /Type1 /Type /Font >>
+<<
+/BaseFont /Helvetica /Encoding /WinAnsiEncoding /Name /F1 /Subtype /Type1 /Type /Font
+>>
 endobj
 3 0 obj
-<< /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding /Name /F2 /Subtype /Type1 /Type /Font >>
+<<
+/BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding /Name /F2 /Subtype /Type1 /Type /Font
+>>
 endobj
 4 0 obj
-<< /Border [ 0 0 0 ] /Contents () /Dest [ 49 0 R /XYZ 62.69291 206.0236 0 ] /Rect [ 62.69291 599.0236 161.6029 611.0236 ] /Subtype /Link /Type /Annot >>
+<<
+/Border [ 0 0 0 ] /Contents () /Dest [ 49 0 R /XYZ 62.69291 206.0236 0 ] /Rect [ 62.69291 599.0236 161.6029 611.0236 ] /Subtype /Link /Type /Annot
+>>
 endobj
 5 0 obj
-<< /Border [ 0 0 0 ] /Contents () /Dest [ 49 0 R /XYZ 62.69291 206.0236 0 ] /Rect [ 527.0227 599.7736 532.5827 611.7736 ] /Subtype /Link /Type /Annot >>
+<<
+/Border [ 0 0 0 ] /Contents () /Dest [ 49 0 R /XYZ 62.69291 206.0236 0 ] /Rect [ 527.0227 599.7736 532.5827 611.7736 ] /Subtype /Link /Type /Annot
+>>
 endobj
 6 0 obj
-<< /Border [ 0 0 0 ] /Contents () /Dest [ 49 0 R /XYZ 62.69291 173.0236 0 ] /Rect [ 82.69291 581.0236 194.9629 593.0236 ] /Subtype /Link /Type /Annot >>
+<<
+/Border [ 0 0 0 ] /Contents () /Dest [ 49 0 R /XYZ 62.69291 173.0236 0 ] /Rect [ 82.69291 581.0236 194.9629 593.0236 ] /Subtype /Link /Type /Annot
+>>
 endobj
 7 0 obj
-<< /Border [ 0 0 0 ] /Contents () /Dest [ 49 0 R /XYZ 62.69291 173.0236 0 ] /Rect [ 527.0227 581.7736 532.5827 593.7736 ] /Subtype /Link /Type /Annot >>
+<<
+/Border [ 0 0 0 ] /Contents () /Dest [ 49 0 R /XYZ 62.69291 173.0236 0 ] /Rect [ 527.0227 581.7736 532.5827 593.7736 ] /Subtype /Link /Type /Annot
+>>
 endobj
 8 0 obj
-<< /Border [ 0 0 0 ] /Contents () /Dest [ 55 0 R /XYZ 62.69291 765.0236 0 ] /Rect [ 82.69291 563.0236 211.1029 575.0236 ] /Subtype /Link /Type /Annot >>
+<<
+/Border [ 0 0 0 ] /Contents () /Dest [ 54 0 R /XYZ 62.69291 765.0236 0 ] /Rect [ 82.69291 563.0236 211.1029 575.0236 ] /Subtype /Link /Type /Annot
+>>
 endobj
 9 0 obj
-<< /Border [ 0 0 0 ] /Contents () /Dest [ 55 0 R /XYZ 62.69291 765.0236 0 ] /Rect [ 527.0227 563.7736 532.5827 575.7736 ] /Subtype /Link /Type /Annot >>
+<<
+/Border [ 0 0 0 ] /Contents () /Dest [ 54 0 R /XYZ 62.69291 765.0236 0 ] /Rect [ 527.0227 563.7736 532.5827 575.7736 ] /Subtype /Link /Type /Annot
+>>
 endobj
 10 0 obj
-<< /Border [ 0 0 0 ] /Contents () /Dest [ 55 0 R /XYZ 62.69291 671.8236 0 ] /Rect [ 82.69291 545.0236 206.6529 557.0236 ] /Subtype /Link /Type /Annot >>
+<<
+/Border [ 0 0 0 ] /Contents () /Dest [ 54 0 R /XYZ 62.69291 671.8236 0 ] /Rect [ 82.69291 545.0236 209.9829 557.0236 ] /Subtype /Link /Type /Annot
+>>
 endobj
 11 0 obj
-<< /Border [ 0 0 0 ] /Contents () /Dest [ 55 0 R /XYZ 62.69291 671.8236 0 ] /Rect [ 527.0227 545.7736 532.5827 557.7736 ] /Subtype /Link /Type /Annot >>
+<<
+/Border [ 0 0 0 ] /Contents () /Dest [ 54 0 R /XYZ 62.69291 671.8236 0 ] /Rect [ 527.0227 545.7736 532.5827 557.7736 ] /Subtype /Link /Type /Annot
+>>
 endobj
 12 0 obj
-<< /Border [ 0 0 0 ] /Contents () /Dest [ 55 0 R /XYZ 62.69291 599.8236 0 ] /Rect [ 102.6929 527.0236 154.9529 539.0236 ] /Subtype /Link /Type /Annot >>
+<<
+/Border [ 0 0 0 ] /Contents () /Dest [ 54 0 R /XYZ 62.69291 587.8236 0 ] /Rect [ 102.6929 527.0236 154.9529 539.0236 ] /Subtype /Link /Type /Annot
+>>
 endobj
 13 0 obj
-<< /Border [ 0 0 0 ] /Contents () /Dest [ 55 0 R /XYZ 62.69291 599.8236 0 ] /Rect [ 527.0227 527.7736 532.5827 539.7736 ] /Subtype /Link /Type /Annot >>
+<<
+/Border [ 0 0 0 ] /Contents () /Dest [ 54 0 R /XYZ 62.69291 587.8236 0 ] /Rect [ 527.0227 527.7736 532.5827 539.7736 ] /Subtype /Link /Type /Annot
+>>
 endobj
 14 0 obj
-<< /Border [ 0 0 0 ] /Contents () /Dest [ 55 0 R /XYZ 62.69291 506.8236 0 ] /Rect [ 102.6929 509.0236 158.8429 521.0236 ] /Subtype /Link /Type /Annot >>
+<<
+/Border [ 0 0 0 ] /Contents () /Dest [ 54 0 R /XYZ 62.69291 494.8236 0 ] /Rect [ 102.6929 509.0236 158.8429 521.0236 ] /Subtype /Link /Type /Annot
+>>
 endobj
 15 0 obj
-<< /Border [ 0 0 0 ] /Contents () /Dest [ 55 0 R /XYZ 62.69291 506.8236 0 ] /Rect [ 527.0227 509.7736 532.5827 521.7736 ] /Subtype /Link /Type /Annot >>
+<<
+/Border [ 0 0 0 ] /Contents () /Dest [ 54 0 R /XYZ 62.69291 494.8236 0 ] /Rect [ 527.0227 509.7736 532.5827 521.7736 ] /Subtype /Link /Type /Annot
+>>
 endobj
 16 0 obj
-<< /Border [ 0 0 0 ] /Contents () /Dest [ 55 0 R /XYZ 62.69291 449.8236 0 ] /Rect [ 102.6929 491.0236 143.8329 503.0236 ] /Subtype /Link /Type /Annot >>
+<<
+/Border [ 0 0 0 ] /Contents () /Dest [ 54 0 R /XYZ 62.69291 437.8236 0 ] /Rect [ 102.6929 491.0236 143.8329 503.0236 ] /Subtype /Link /Type /Annot
+>>
 endobj
 17 0 obj
-<< /Border [ 0 0 0 ] /Contents () /Dest [ 55 0 R /XYZ 62.69291 449.8236 0 ] /Rect [ 527.0227 491.7736 532.5827 503.7736 ] /Subtype /Link /Type /Annot >>
+<<
+/Border [ 0 0 0 ] /Contents () /Dest [ 54 0 R /XYZ 62.69291 437.8236 0 ] /Rect [ 527.0227 491.7736 532.5827 503.7736 ] /Subtype /Link /Type /Annot
+>>
 endobj
 18 0 obj
-<< /Border [ 0 0 0 ] /Contents () /Dest [ 55 0 R /XYZ 62.69291 392.8236 0 ] /Rect [ 102.6929 473.0236 164.4029 485.0236 ] /Subtype /Link /Type /Annot >>
+<<
+/Border [ 0 0 0 ] /Contents () /Dest [ 54 0 R /XYZ 62.69291 380.8236 0 ] /Rect [ 102.6929 473.0236 164.4029 485.0236 ] /Subtype /Link /Type /Annot
+>>
 endobj
 19 0 obj
-<< /Border [ 0 0 0 ] /Contents () /Dest [ 55 0 R /XYZ 62.69291 392.8236 0 ] /Rect [ 527.0227 473.7736 532.5827 485.7736 ] /Subtype /Link /Type /Annot >>
+<<
+/Border [ 0 0 0 ] /Contents () /Dest [ 54 0 R /XYZ 62.69291 380.8236 0 ] /Rect [ 527.0227 473.7736 532.5827 485.7736 ] /Subtype /Link /Type /Annot
+>>
 endobj
 20 0 obj
-<< /Border [ 0 0 0 ] /Contents () /Dest [ 55 0 R /XYZ 62.69291 323.8236 0 ] /Rect [ 102.6929 455.0236 174.9629 467.0236 ] /Subtype /Link /Type /Annot >>
+<<
+/Border [ 0 0 0 ] /Contents () /Dest [ 54 0 R /XYZ 62.69291 311.8236 0 ] /Rect [ 102.6929 455.0236 174.9629 467.0236 ] /Subtype /Link /Type /Annot
+>>
 endobj
 21 0 obj
-<< /Border [ 0 0 0 ] /Contents () /Dest [ 55 0 R /XYZ 62.69291 323.8236 0 ] /Rect [ 527.0227 455.7736 532.5827 467.7736 ] /Subtype /Link /Type /Annot >>
+<<
+/Border [ 0 0 0 ] /Contents () /Dest [ 54 0 R /XYZ 62.69291 311.8236 0 ] /Rect [ 527.0227 455.7736 532.5827 467.7736 ] /Subtype /Link /Type /Annot
+>>
 endobj
 22 0 obj
-<< /Border [ 0 0 0 ] /Contents () /Dest [ 55 0 R /XYZ 62.69291 254.8236 0 ] /Rect [ 102.6929 437.0236 217.7529 449.0236 ] /Subtype /Link /Type /Annot >>
+<<
+/Border [ 0 0 0 ] /Contents () /Dest [ 54 0 R /XYZ 62.69291 254.8236 0 ] /Rect [ 102.6929 437.0236 217.7529 449.0236 ] /Subtype /Link /Type /Annot
+>>
 endobj
 23 0 obj
-<< /Border [ 0 0 0 ] /Contents () /Dest [ 55 0 R /XYZ 62.69291 254.8236 0 ] /Rect [ 527.0227 437.7736 532.5827 449.7736 ] /Subtype /Link /Type /Annot >>
+<<
+/Border [ 0 0 0 ] /Contents () /Dest [ 54 0 R /XYZ 62.69291 254.8236 0 ] /Rect [ 527.0227 437.7736 532.5827 449.7736 ] /Subtype /Link /Type /Annot
+>>
 endobj
 24 0 obj
-<< /Border [ 0 0 0 ] /Contents () /Dest [ 55 0 R /XYZ 62.69291 137.8236 0 ] /Rect [ 82.69291 419.0236 244.9929 431.0236 ] /Subtype /Link /Type /Annot >>
+<<
+/Border [ 0 0 0 ] /Contents () /Dest [ 54 0 R /XYZ 62.69291 137.8236 0 ] /Rect [ 82.69291 419.0236 244.9929 431.0236 ] /Subtype /Link /Type /Annot
+>>
 endobj
 25 0 obj
-<< /Border [ 0 0 0 ] /Contents () /Dest [ 55 0 R /XYZ 62.69291 137.8236 0 ] /Rect [ 527.0227 419.7736 532.5827 431.7736 ] /Subtype /Link /Type /Annot >>
+<<
+/Border [ 0 0 0 ] /Contents () /Dest [ 54 0 R /XYZ 62.69291 137.8236 0 ] /Rect [ 527.0227 419.7736 532.5827 431.7736 ] /Subtype /Link /Type /Annot
+>>
 endobj
 26 0 obj
-<< /Border [ 0 0 0 ] /Contents () /Dest [ 56 0 R /XYZ 62.69291 531.0236 0 ] /Rect [ 102.6929 401.0236 251.0829 413.0236 ] /Subtype /Link /Type /Annot >>
+<<
+/Border [ 0 0 0 ] /Contents () /Dest [ 55 0 R /XYZ 62.69291 561.0236 0 ] /Rect [ 102.6929 401.0236 251.0829 413.0236 ] /Subtype /Link /Type /Annot
+>>
 endobj
 27 0 obj
-<< /Border [ 0 0 0 ] /Contents () /Dest [ 56 0 R /XYZ 62.69291 531.0236 0 ] /Rect [ 527.0227 401.7736 532.5827 413.7736 ] /Subtype /Link /Type /Annot >>
+<<
+/Border [ 0 0 0 ] /Contents () /Dest [ 55 0 R /XYZ 62.69291 561.0236 0 ] /Rect [ 527.0227 401.7736 532.5827 413.7736 ] /Subtype /Link /Type /Annot
+>>
 endobj
 28 0 obj
-<< /Border [ 0 0 0 ] /Contents () /Dest [ 56 0 R /XYZ 62.69291 330.0236 0 ] /Rect [ 82.69291 383.0236 201.0729 395.0236 ] /Subtype /Link /Type /Annot >>
+<<
+/Border [ 0 0 0 ] /Contents () /Dest [ 55 0 R /XYZ 62.69291 420.0236 0 ] /Rect [ 102.6929 383.0236 229.4129 395.0236 ] /Subtype /Link /Type /Annot
+>>
 endobj
 29 0 obj
-<< /Border [ 0 0 0 ] /Contents () /Dest [ 56 0 R /XYZ 62.69291 330.0236 0 ] /Rect [ 527.0227 383.7736 532.5827 395.7736 ] /Subtype /Link /Type /Annot >>
+<<
+/Border [ 0 0 0 ] /Contents () /Dest [ 55 0 R /XYZ 62.69291 420.0236 0 ] /Rect [ 527.0227 383.7736 532.5827 395.7736 ] /Subtype /Link /Type /Annot
+>>
 endobj
 30 0 obj
-<< /Border [ 0 0 0 ] /Contents () /Dest [ 56 0 R /XYZ 62.69291 222.0236 0 ] /Rect [ 82.69291 365.0236 206.0829 377.0236 ] /Subtype /Link /Type /Annot >>
+<<
+/Border [ 0 0 0 ] /Contents () /Dest [ 55 0 R /XYZ 62.69291 285.0236 0 ] /Rect [ 102.6929 365.0236 234.4229 377.0236 ] /Subtype /Link /Type /Annot
+>>
 endobj
 31 0 obj
-<< /Border [ 0 0 0 ] /Contents () /Dest [ 56 0 R /XYZ 62.69291 222.0236 0 ] /Rect [ 527.0227 365.7736 532.5827 377.7736 ] /Subtype /Link /Type /Annot >>
+<<
+/Border [ 0 0 0 ] /Contents () /Dest [ 55 0 R /XYZ 62.69291 285.0236 0 ] /Rect [ 527.0227 365.7736 532.5827 377.7736 ] /Subtype /Link /Type /Annot
+>>
 endobj
 32 0 obj
-<< /Border [ 0 0 0 ] /Contents () /Dest [ 57 0 R /XYZ 62.69291 261.0236 0 ] /Rect [ 82.69291 347.0236 151.6229 359.0236 ] /Subtype /Link /Type /Annot >>
+<<
+/Border [ 0 0 0 ] /Contents () /Dest [ 56 0 R /XYZ 62.69291 449.4236 0 ] /Rect [ 82.69291 347.0236 151.6229 359.0236 ] /Subtype /Link /Type /Annot
+>>
 endobj
 33 0 obj
-<< /Border [ 0 0 0 ] /Contents () /Dest [ 57 0 R /XYZ 62.69291 261.0236 0 ] /Rect [ 527.0227 347.7736 532.5827 359.7736 ] /Subtype /Link /Type /Annot >>
+<<
+/Border [ 0 0 0 ] /Contents () /Dest [ 56 0 R /XYZ 62.69291 449.4236 0 ] /Rect [ 527.0227 347.7736 532.5827 359.7736 ] /Subtype /Link /Type /Annot
+>>
 endobj
 34 0 obj
-<< /Border [ 0 0 0 ] /Contents () /Dest [ 57 0 R /XYZ 62.69291 189.0236 0 ] /Rect [ 102.6929 329.0236 237.7529 341.0236 ] /Subtype /Link /Type /Annot >>
+<<
+/Border [ 0 0 0 ] /Contents () /Dest [ 56 0 R /XYZ 62.69291 377.4236 0 ] /Rect [ 102.6929 329.0236 237.7529 341.0236 ] /Subtype /Link /Type /Annot
+>>
 endobj
 35 0 obj
-<< /Border [ 0 0 0 ] /Contents () /Dest [ 57 0 R /XYZ 62.69291 189.0236 0 ] /Rect [ 527.0227 329.7736 532.5827 341.7736 ] /Subtype /Link /Type /Annot >>
+<<
+/Border [ 0 0 0 ] /Contents () /Dest [ 56 0 R /XYZ 62.69291 377.4236 0 ] /Rect [ 527.0227 329.7736 532.5827 341.7736 ] /Subtype /Link /Type /Annot
+>>
 endobj
 36 0 obj
-<< /Border [ 0 0 0 ] /Contents () /Dest [ 58 0 R /XYZ 62.69291 675.0236 0 ] /Rect [ 102.6929 311.0236 216.0829 323.0236 ] /Subtype /Link /Type /Annot >>
+<<
+/Border [ 0 0 0 ] /Contents () /Dest [ 57 0 R /XYZ 62.69291 765.0236 0 ] /Rect [ 102.6929 311.0236 216.0829 323.0236 ] /Subtype /Link /Type /Annot
+>>
 endobj
 37 0 obj
-<< /Border [ 0 0 0 ] /Contents () /Dest [ 58 0 R /XYZ 62.69291 675.0236 0 ] /Rect [ 527.0227 311.7736 532.5827 323.7736 ] /Subtype /Link /Type /Annot >>
+<<
+/Border [ 0 0 0 ] /Contents () /Dest [ 57 0 R /XYZ 62.69291 765.0236 0 ] /Rect [ 527.0227 311.7736 532.5827 323.7736 ] /Subtype /Link /Type /Annot
+>>
 endobj
 38 0 obj
-<< /Border [ 0 0 0 ] /Contents () /Dest [ 58 0 R /XYZ 62.69291 438.0236 0 ] /Rect [ 62.69291 293.0236 156.0629 305.0236 ] /Subtype /Link /Type /Annot >>
+<<
+/Border [ 0 0 0 ] /Contents () /Dest [ 57 0 R /XYZ 62.69291 528.0236 0 ] /Rect [ 62.69291 293.0236 156.0629 305.0236 ] /Subtype /Link /Type /Annot
+>>
 endobj
 39 0 obj
-<< /Border [ 0 0 0 ] /Contents () /Dest [ 58 0 R /XYZ 62.69291 438.0236 0 ] /Rect [ 527.0227 293.7736 532.5827 305.7736 ] /Subtype /Link /Type /Annot >>
+<<
+/Border [ 0 0 0 ] /Contents () /Dest [ 57 0 R /XYZ 62.69291 528.0236 0 ] /Rect [ 527.0227 293.7736 532.5827 305.7736 ] /Subtype /Link /Type /Annot
+>>
 endobj
 40 0 obj
-<< /Border [ 0 0 0 ] /Contents () /Dest [ 58 0 R /XYZ 62.69291 405.0236 0 ] /Rect [ 82.69291 275.0236 218.3229 287.0236 ] /Subtype /Link /Type /Annot >>
+<<
+/Border [ 0 0 0 ] /Contents () /Dest [ 57 0 R /XYZ 62.69291 495.0236 0 ] /Rect [ 82.69291 275.0236 218.3229 287.0236 ] /Subtype /Link /Type /Annot
+>>
 endobj
 41 0 obj
-<< /Border [ 0 0 0 ] /Contents () /Dest [ 58 0 R /XYZ 62.69291 405.0236 0 ] /Rect [ 527.0227 275.7736 532.5827 287.7736 ] /Subtype /Link /Type /Annot >>
+<<
+/Border [ 0 0 0 ] /Contents () /Dest [ 57 0 R /XYZ 62.69291 495.0236 0 ] /Rect [ 527.0227 275.7736 532.5827 287.7736 ] /Subtype /Link /Type /Annot
+>>
 endobj
 42 0 obj
-<< /Border [ 0 0 0 ] /Contents () /Dest [ 58 0 R /XYZ 62.69291 297.0236 0 ] /Rect [ 82.69291 257.0236 177.1829 269.0236 ] /Subtype /Link /Type /Annot >>
+<<
+/Border [ 0 0 0 ] /Contents () /Dest [ 57 0 R /XYZ 62.69291 387.0236 0 ] /Rect [ 82.69291 257.0236 177.1829 269.0236 ] /Subtype /Link /Type /Annot
+>>
 endobj
 43 0 obj
-<< /Border [ 0 0 0 ] /Contents () /Dest [ 58 0 R /XYZ 62.69291 297.0236 0 ] /Rect [ 527.0227 257.7736 532.5827 269.7736 ] /Subtype /Link /Type /Annot >>
+<<
+/Border [ 0 0 0 ] /Contents () /Dest [ 57 0 R /XYZ 62.69291 387.0236 0 ] /Rect [ 527.0227 257.7736 532.5827 269.7736 ] /Subtype /Link /Type /Annot
+>>
 endobj
 44 0 obj
-<< /Border [ 0 0 0 ] /Contents () /Dest [ 59 0 R /XYZ 62.69291 765.0236 0 ] /Rect [ 82.69291 239.0236 161.0629 251.0236 ] /Subtype /Link /Type /Annot >>
+<<
+/Border [ 0 0 0 ] /Contents () /Dest [ 57 0 R /XYZ 62.69291 219.0236 0 ] /Rect [ 82.69291 239.0236 161.0629 251.0236 ] /Subtype /Link /Type /Annot
+>>
 endobj
 45 0 obj
-<< /Border [ 0 0 0 ] /Contents () /Dest [ 59 0 R /XYZ 62.69291 765.0236 0 ] /Rect [ 527.0227 239.7736 532.5827 251.7736 ] /Subtype /Link /Type /Annot >>
+<<
+/Border [ 0 0 0 ] /Contents () /Dest [ 57 0 R /XYZ 62.69291 219.0236 0 ] /Rect [ 527.0227 239.7736 532.5827 251.7736 ] /Subtype /Link /Type /Annot
+>>
 endobj
 46 0 obj
-<< /Border [ 0 0 0 ] /Contents () /Dest [ 59 0 R /XYZ 62.69291 615.0236 0 ] /Rect [ 82.69291 221.0236 197.1929 233.0236 ] /Subtype /Link /Type /Annot >>
+<<
+/Border [ 0 0 0 ] /Contents () /Dest [ 58 0 R /XYZ 62.69291 765.0236 0 ] /Rect [ 82.69291 221.0236 197.1929 233.0236 ] /Subtype /Link /Type /Annot
+>>
 endobj
 47 0 obj
-<< /Border [ 0 0 0 ] /Contents () /Dest [ 59 0 R /XYZ 62.69291 615.0236 0 ] /Rect [ 527.0227 221.7736 532.5827 233.7736 ] /Subtype /Link /Type /Annot >>
+<<
+/Border [ 0 0 0 ] /Contents () /Dest [ 58 0 R /XYZ 62.69291 765.0236 0 ] /Rect [ 527.0227 221.7736 532.5827 233.7736 ] /Subtype /Link /Type /Annot
+>>
 endobj
 48 0 obj
-<< /BaseFont /Helvetica-Oblique /Encoding /WinAnsiEncoding /Name /F3 /Subtype /Type1 /Type /Font >>
+<<
+/BaseFont /Helvetica-Oblique /Encoding /WinAnsiEncoding /Name /F3 /Subtype /Type1 /Type /Font
+>>
 endobj
 49 0 obj
-<< /Annots [ 4 0 R 5 0 R 6 0 R 7 0 R 8 0 R 9 0 R 10 0 R 11 0 R 12 0 R 13 0 R 
+<<
+/Annots [ 4 0 R 5 0 R 6 0 R 7 0 R 8 0 R 9 0 R 10 0 R 11 0 R 12 0 R 13 0 R 
   14 0 R 15 0 R 16 0 R 17 0 R 18 0 R 19 0 R 20 0 R 21 0 R 22 0 R 23 0 R 
   24 0 R 25 0 R 26 0 R 27 0 R 28 0 R 29 0 R 30 0 R 31 0 R 32 0 R 33 0 R 
   34 0 R 35 0 R 36 0 R 37 0 R 38 0 R 39 0 R 40 0 R 41 0 R 42 0 R 43 0 R 
-  44 0 R 45 0 R 46 0 R 47 0 R ] /Contents 86 0 R /MediaBox [ 0 0 595.2756 841.8898 ] /Parent 85 0 R /Resources << /Font 1 0 R /ProcSet [ /PDF /Text /ImageB /ImageC /ImageI ] >> /Rotate 0 
-  /Trans <<  >> /Type /Page >>
+  44 0 R 45 0 R 46 0 R 47 0 R ] /Contents 85 0 R /MediaBox [ 0 0 595.2756 841.8898 ] /Parent 84 0 R /Resources <<
+/Font 1 0 R /ProcSet [ /PDF /Text /ImageB /ImageC /ImageI ]
+>> /Rotate 0 
+  /Trans <<
+
+>> /Type /Page
+>>
 endobj
 50 0 obj
-<< /BaseFont /Courier /Encoding /WinAnsiEncoding /Name /F4 /Subtype /Type1 /Type /Font >>
+<<
+/BaseFont /Courier /Encoding /WinAnsiEncoding /Name /F4 /Subtype /Type1 /Type /Font
+>>
 endobj
 51 0 obj
-<< /Border [ 0 0 0 ] /Contents () /Dest [ 49 0 R /XYZ 62.69291 176.0236 0 ] /Rect [ 62.69291 623.8236 153.8537 635.8236 ] /Subtype /Link /Type /Annot >>
+<<
+/Border [ 0 0 0 ] /Contents () /Dest [ 49 0 R /XYZ 62.69291 176.0236 0 ] /Rect [ 62.69291 623.8236 153.8537 635.8236 ] /Subtype /Link /Type /Annot
+>>
 endobj
 52 0 obj
-<< /Border [ 0 0 0 ] /Contents () /Dest [ 55 0 R /XYZ 62.69291 140.8236 0 ] /Rect [ 107.7229 611.8236 247.7829 623.8236 ] /Subtype /Link /Type /Annot >>
+<<
+/Border [ 0 0 0 ] /Contents () /Dest [ 54 0 R /XYZ 62.69291 140.8236 0 ] /Rect [ 62.69291 599.8236 202.7529 611.8236 ] /Subtype /Link /Type /Annot
+>>
 endobj
 53 0 obj
-<< /BaseFont /Helvetica-BoldOblique /Encoding /WinAnsiEncoding /Name /F5 /Subtype /Type1 /Type /Font >>
+<<
+/BaseFont /Helvetica-BoldOblique /Encoding /WinAnsiEncoding /Name /F5 /Subtype /Type1 /Type /Font
+>>
 endobj
 54 0 obj
-<< /A << /S /URI /Type /Action /URI (https://github.com/patmarion/winpcap) >> /Border [ 0 0 0 ] /Rect [ 153.2729 518.8236 318.9029 530.8236 ] /Subtype /Link /Type /Annot >>
+<<
+/Annots [ 51 0 R 52 0 R ] /Contents 86 0 R /MediaBox [ 0 0 595.2756 841.8898 ] /Parent 84 0 R /Resources <<
+/Font 1 0 R /ProcSet [ /PDF /Text /ImageB /ImageC /ImageI ]
+>> /Rotate 0 
+  /Trans <<
+
+>> /Type /Page
+>>
 endobj
 55 0 obj
-<< /Annots [ 51 0 R 52 0 R 54 0 R ] /Contents 87 0 R /MediaBox [ 0 0 595.2756 841.8898 ] /Parent 85 0 R /Resources << /Font 1 0 R /ProcSet [ /PDF /Text /ImageB /ImageC /ImageI ] >> /Rotate 0 
-  /Trans <<  >> /Type /Page >>
+<<
+/Contents 87 0 R /MediaBox [ 0 0 595.2756 841.8898 ] /Parent 84 0 R /Resources <<
+/Font 1 0 R /ProcSet [ /PDF /Text /ImageB /ImageC /ImageI ]
+>> /Rotate 0 /Trans <<
+
+>> 
+  /Type /Page
+>>
 endobj
 56 0 obj
-<< /Contents 88 0 R /MediaBox [ 0 0 595.2756 841.8898 ] /Parent 85 0 R /Resources << /Font 1 0 R /ProcSet [ /PDF /Text /ImageB /ImageC /ImageI ] >> /Rotate 0 /Trans <<  >> 
-  /Type /Page >>
+<<
+/Contents 88 0 R /MediaBox [ 0 0 595.2756 841.8898 ] /Parent 84 0 R /Resources <<
+/Font 1 0 R /ProcSet [ /PDF /Text /ImageB /ImageC /ImageI ]
+>> /Rotate 0 /Trans <<
+
+>> 
+  /Type /Page
+>>
 endobj
 57 0 obj
-<< /Contents 89 0 R /MediaBox [ 0 0 595.2756 841.8898 ] /Parent 85 0 R /Resources << /Font 1 0 R /ProcSet [ /PDF /Text /ImageB /ImageC /ImageI ] >> /Rotate 0 /Trans <<  >> 
-  /Type /Page >>
+<<
+/Contents 89 0 R /MediaBox [ 0 0 595.2756 841.8898 ] /Parent 84 0 R /Resources <<
+/Font 1 0 R /ProcSet [ /PDF /Text /ImageB /ImageC /ImageI ]
+>> /Rotate 0 /Trans <<
+
+>> 
+  /Type /Page
+>>
 endobj
 58 0 obj
-<< /Contents 90 0 R /MediaBox [ 0 0 595.2756 841.8898 ] /Parent 85 0 R /Resources << /Font 1 0 R /ProcSet [ /PDF /Text /ImageB /ImageC /ImageI ] >> /Rotate 0 /Trans <<  >> 
-  /Type /Page >>
+<<
+/Contents 90 0 R /MediaBox [ 0 0 595.2756 841.8898 ] /Parent 84 0 R /Resources <<
+/Font 1 0 R /ProcSet [ /PDF /Text /ImageB /ImageC /ImageI ]
+>> /Rotate 0 /Trans <<
+
+>> 
+  /Type /Page
+>>
 endobj
 59 0 obj
-<< /Contents 91 0 R /MediaBox [ 0 0 595.2756 841.8898 ] /Parent 85 0 R /Resources << /Font 1 0 R /ProcSet [ /PDF /Text /ImageB /ImageC /ImageI ] >> /Rotate 0 /Trans <<  >> 
-  /Type /Page >>
+<<
+/Outlines 61 0 R /PageLabels 91 0 R /PageMode /UseNone /Pages 84 0 R /Type /Catalog
+>>
 endobj
 60 0 obj
-<< /Outlines 62 0 R /PageLabels 92 0 R /PageMode /UseNone /Pages 85 0 R /Type /Catalog >>
+<<
+/Author () /CreationDate (D:20180301130022+00'00') /Creator (\(unspecified\)) /Keywords () /ModDate (D:20180301130022+00'00') /Producer (ReportLab PDF Library - www.reportlab.com) 
+  /Subject (\(unspecified\)) /Title (VeloView Developer Guide) /Trapped /False
+>>
 endobj
 61 0 obj
-<< /Author () /CreationDate (D:20160325124432+05'00') /Creator (\(unspecified\)) /Keywords () /ModDate (D:20160325124432+05'00') /Producer (ReportLab PDF Library - www.reportlab.com) 
-  /Subject (\(unspecified\)) /Title (VeloView Developer Guide) /Trapped /False >>
+<<
+/Count 27 /First 62 0 R /Last 79 0 R /Type /Outlines
+>>
 endobj
 62 0 obj
-<< /Count 27 /First 63 0 R /Last 80 0 R /Type /Outlines >>
+<<
+/Count 16 /Dest [ 49 0 R /XYZ 62.69291 206.0236 0 ] /First 63 0 R /Last 76 0 R /Next 79 0 R /Parent 61 0 R 
+  /Title (\376\377\0001\000\240\000\240\000\240\000B\000u\000i\000l\000d\000 \000i\000n\000s\000t\000r\000u\000c\000t\000i\000o\000n\000s)
+>>
 endobj
 63 0 obj
-<< /Count 16 /Dest [ 49 0 R /XYZ 62.69291 206.0236 0 ] /First 64 0 R /Last 77 0 R /Next 80 0 R /Parent 62 0 R 
-  /Title (\376\377\0001\000\240\000\240\000\240\000B\000u\000i\000l\000d\000 \000i\000n\000s\000t\000r\000u\000c\000t\000i\000o\000n\000s) >>
+<<
+/Dest [ 49 0 R /XYZ 62.69291 173.0236 0 ] /Next 64 0 R /Parent 62 0 R /Title (\376\377\0001\000.\0001\000\240\000\240\000\240\000S\000u\000p\000e\000r\000b\000u\000i\000l\000d\000 \000o\000v\000e\000r\000v\000i\000e\000w)
+>>
 endobj
 64 0 obj
-<< /Dest [ 49 0 R /XYZ 62.69291 173.0236 0 ] /Next 65 0 R /Parent 63 0 R /Title (\376\377\0001\000.\0001\000\240\000\240\000\240\000S\000u\000p\000e\000r\000b\000u\000i\000l\000d\000 \000o\000v\000e\000r\000v\000i\000e\000w) >>
+<<
+/Dest [ 54 0 R /XYZ 62.69291 765.0236 0 ] /Next 65 0 R /Parent 62 0 R /Prev 63 0 R /Title (\376\377\0001\000.\0002\000\240\000\240\000\240\000G\000e\000t\000t\000i\000n\000g\000 \000t\000h\000e\000 \000s\000o\000u\000r\000c\000e\000 \000c\000o\000d\000e)
+>>
 endobj
 65 0 obj
-<< /Dest [ 55 0 R /XYZ 62.69291 765.0236 0 ] /Next 66 0 R /Parent 63 0 R /Prev 64 0 R /Title (\376\377\0001\000.\0002\000\240\000\240\000\240\000G\000e\000t\000t\000i\000n\000g\000 \000t\000h\000e\000 \000s\000o\000u\000r\000c\000e\000 \000c\000o\000d\000e) >>
+<<
+/Count 6 /Dest [ 54 0 R /XYZ 62.69291 671.8236 0 ] /First 66 0 R /Last 71 0 R /Next 72 0 R /Parent 62 0 R 
+  /Prev 64 0 R /Title (\376\377\0001\000.\0003\000\240\000\240\000\240\000V\000e\000l\000o\000v\000i\000e\000w\000 \000d\000e\000p\000e\000n\000d\000e\000n\000c\000i\000e\000s)
+>>
 endobj
 66 0 obj
-<< /Count 6 /Dest [ 55 0 R /XYZ 62.69291 671.8236 0 ] /First 67 0 R /Last 72 0 R /Next 73 0 R /Parent 63 0 R 
-  /Prev 65 0 R /Title (\376\377\0001\000.\0003\000\240\000\240\000\240\000E\000x\000t\000e\000r\000n\000a\000l\000 \000d\000e\000p\000e\000n\000d\000e\000n\000c\000i\000e\000s) >>
+<<
+/Dest [ 54 0 R /XYZ 62.69291 587.8236 0 ] /Next 67 0 R /Parent 65 0 R /Title (\376\377\0001\000.\0003\000.\0001\000\240\000\240\000\240\000p\000c\000a\000p)
+>>
 endobj
 67 0 obj
-<< /Dest [ 55 0 R /XYZ 62.69291 599.8236 0 ] /Next 68 0 R /Parent 66 0 R /Title (\376\377\0001\000.\0003\000.\0001\000\240\000\240\000\240\000p\000c\000a\000p) >>
+<<
+/Dest [ 54 0 R /XYZ 62.69291 494.8236 0 ] /Next 68 0 R /Parent 65 0 R /Prev 66 0 R /Title (\376\377\0001\000.\0003\000.\0002\000\240\000\240\000\240\000B\000o\000o\000s\000t)
+>>
 endobj
 68 0 obj
-<< /Dest [ 55 0 R /XYZ 62.69291 506.8236 0 ] /Next 69 0 R /Parent 66 0 R /Prev 67 0 R /Title (\376\377\0001\000.\0003\000.\0002\000\240\000\240\000\240\000B\000o\000o\000s\000t) >>
+<<
+/Dest [ 54 0 R /XYZ 62.69291 437.8236 0 ] /Next 69 0 R /Parent 65 0 R /Prev 67 0 R /Title (\376\377\0001\000.\0003\000.\0003\000\240\000\240\000\240\000Q\000t)
+>>
 endobj
 69 0 obj
-<< /Dest [ 55 0 R /XYZ 62.69291 449.8236 0 ] /Next 70 0 R /Parent 66 0 R /Prev 68 0 R /Title (\376\377\0001\000.\0003\000.\0003\000\240\000\240\000\240\000Q\000t) >>
+<<
+/Dest [ 54 0 R /XYZ 62.69291 380.8236 0 ] /Next 70 0 R /Parent 65 0 R /Prev 68 0 R /Title (\376\377\0001\000.\0003\000.\0004\000\240\000\240\000\240\000P\000y\000t\000h\000o\000n)
+>>
 endobj
 70 0 obj
-<< /Dest [ 55 0 R /XYZ 62.69291 392.8236 0 ] /Next 71 0 R /Parent 66 0 R /Prev 69 0 R /Title (\376\377\0001\000.\0003\000.\0004\000\240\000\240\000\240\000P\000y\000t\000h\000o\000n) >>
+<<
+/Dest [ 54 0 R /XYZ 62.69291 311.8236 0 ] /Next 71 0 R /Parent 65 0 R /Prev 69 0 R /Title (\376\377\0001\000.\0003\000.\0005\000\240\000\240\000\240\000P\000y\000t\000h\000o\000n\000Q\000t)
+>>
 endobj
 71 0 obj
-<< /Dest [ 55 0 R /XYZ 62.69291 323.8236 0 ] /Next 72 0 R /Parent 66 0 R /Prev 70 0 R /Title (\376\377\0001\000.\0003\000.\0005\000\240\000\240\000\240\000P\000y\000t\000h\000o\000n\000Q\000t) >>
+<<
+/Dest [ 54 0 R /XYZ 62.69291 254.8236 0 ] /Parent 65 0 R /Prev 70 0 R /Title (\376\377\0001\000.\0003\000.\0006\000\240\000\240\000\240\000V\000T\000K\000 \000a\000n\000d\000 \000P\000a\000r\000a\000V\000i\000e\000w)
+>>
 endobj
 72 0 obj
-<< /Dest [ 55 0 R /XYZ 62.69291 254.8236 0 ] /Parent 66 0 R /Prev 71 0 R /Title (\376\377\0001\000.\0003\000.\0006\000\240\000\240\000\240\000V\000T\000K\000 \000a\000n\000d\000 \000P\000a\000r\000a\000V\000i\000e\000w) >>
+<<
+/Count 3 /Dest [ 54 0 R /XYZ 62.69291 137.8236 0 ] /First 73 0 R /Last 75 0 R /Next 76 0 R /Parent 62 0 R 
+  /Prev 65 0 R /Title (\376\377\0001\000.\0004\000\240\000\240\000\240\000C\000o\000n\000f\000i\000g\000u\000r\000e\000 \000a\000n\000d\000 \000b\000u\000i\000l\000d\000 \000i\000n\000s\000t\000r\000u\000c\000t\000i\000o\000n\000s)
+>>
 endobj
 73 0 obj
-<< /Count 1 /Dest [ 55 0 R /XYZ 62.69291 137.8236 0 ] /First 74 0 R /Last 74 0 R /Next 75 0 R /Parent 63 0 R 
-  /Prev 66 0 R /Title (\376\377\0001\000.\0004\000\240\000\240\000\240\000C\000o\000n\000f\000i\000g\000u\000r\000e\000 \000a\000n\000d\000 \000b\000u\000i\000l\000d\000 \000i\000n\000s\000t\000r\000u\000c\000t\000i\000o\000n\000s) >>
+<<
+/Dest [ 55 0 R /XYZ 62.69291 561.0236 0 ] /Next 74 0 R /Parent 72 0 R /Title (\376\377\0001\000.\0004\000.\0001\000\240\000\240\000\240\000W\000i\000n\000d\000o\000w\000s\000 \000b\000u\000i\000l\000d\000 \000i\000n\000s\000t\000r\000u\000c\000t\000i\000o\000n\000s)
+>>
 endobj
 74 0 obj
-<< /Dest [ 56 0 R /XYZ 62.69291 531.0236 0 ] /Parent 73 0 R /Title (\376\377\0001\000.\0004\000.\0001\000\240\000\240\000\240\000W\000i\000n\000d\000o\000w\000s\000 \000b\000u\000i\000l\000d\000 \000i\000n\000s\000t\000r\000u\000c\000t\000i\000o\000n\000s) >>
+<<
+/Dest [ 55 0 R /XYZ 62.69291 420.0236 0 ] /Next 75 0 R /Parent 72 0 R /Prev 73 0 R /Title (\376\377\0001\000.\0004\000.\0002\000\240\000\240\000\240\000M\000a\000c\000 \000b\000u\000i\000l\000d\000 \000i\000n\000s\000t\000r\000u\000c\000t\000i\000o\000n\000s)
+>>
 endobj
 75 0 obj
-<< /Dest [ 56 0 R /XYZ 62.69291 330.0236 0 ] /Next 76 0 R /Parent 63 0 R /Prev 73 0 R /Title (\376\377\0001\000.\0005\000\240\000\240\000\240\000M\000a\000c\000 \000b\000u\000i\000l\000d\000 \000i\000n\000s\000t\000r\000u\000c\000t\000i\000o\000n\000s) >>
+<<
+/Dest [ 55 0 R /XYZ 62.69291 285.0236 0 ] /Parent 72 0 R /Prev 74 0 R /Title (\376\377\0001\000.\0004\000.\0003\000\240\000\240\000\240\000L\000i\000n\000u\000x\000 \000b\000u\000i\000l\000d\000 \000i\000n\000s\000t\000r\000u\000c\000t\000i\000o\000n\000s)
+>>
 endobj
 76 0 obj
-<< /Dest [ 56 0 R /XYZ 62.69291 222.0236 0 ] /Next 77 0 R /Parent 63 0 R /Prev 75 0 R /Title (\376\377\0001\000.\0006\000\240\000\240\000\240\000L\000i\000n\000u\000x\000 \000b\000u\000i\000l\000d\000 \000i\000n\000s\000t\000r\000u\000c\000t\000i\000o\000n\000s) >>
+<<
+/Count 2 /Dest [ 56 0 R /XYZ 62.69291 449.4236 0 ] /First 77 0 R /Last 78 0 R /Parent 62 0 R /Prev 72 0 R 
+  /Title (\376\377\0001\000.\0005\000\240\000\240\000\240\000P\000a\000c\000k\000a\000g\000i\000n\000g)
+>>
 endobj
 77 0 obj
-<< /Count 2 /Dest [ 57 0 R /XYZ 62.69291 261.0236 0 ] /First 78 0 R /Last 79 0 R /Parent 63 0 R /Prev 76 0 R 
-  /Title (\376\377\0001\000.\0007\000\240\000\240\000\240\000P\000a\000c\000k\000a\000g\000i\000n\000g) >>
+<<
+/Dest [ 56 0 R /XYZ 62.69291 377.4236 0 ] /Next 78 0 R /Parent 76 0 R /Title (\376\377\0001\000.\0005\000.\0001\000\240\000\240\000\240\000P\000a\000c\000k\000a\000g\000i\000n\000g\000 \000f\000o\000r\000 \000W\000i\000n\000d\000o\000w\000s)
+>>
 endobj
 78 0 obj
-<< /Dest [ 57 0 R /XYZ 62.69291 189.0236 0 ] /Next 79 0 R /Parent 77 0 R /Title (\376\377\0001\000.\0007\000.\0001\000\240\000\240\000\240\000P\000a\000c\000k\000a\000g\000i\000n\000g\000 \000f\000o\000r\000 \000W\000i\000n\000d\000o\000w\000s) >>
+<<
+/Dest [ 57 0 R /XYZ 62.69291 765.0236 0 ] /Parent 76 0 R /Prev 77 0 R /Title (\376\377\0001\000.\0005\000.\0002\000\240\000\240\000\240\000P\000a\000c\000k\000a\000g\000i\000n\000g\000 \000f\000o\000r\000 \000M\000a\000c)
+>>
 endobj
 79 0 obj
-<< /Dest [ 58 0 R /XYZ 62.69291 675.0236 0 ] /Parent 77 0 R /Prev 78 0 R /Title (\376\377\0001\000.\0007\000.\0002\000\240\000\240\000\240\000P\000a\000c\000k\000a\000g\000i\000n\000g\000 \000f\000o\000r\000 \000M\000a\000c) >>
+<<
+/Count 4 /Dest [ 57 0 R /XYZ 62.69291 528.0236 0 ] /First 80 0 R /Last 83 0 R /Parent 61 0 R /Prev 62 0 R 
+  /Title (\376\377\0002\000\240\000\240\000\240\000D\000e\000v\000e\000l\000o\000p\000e\000r\000 \000G\000u\000i\000d\000e)
+>>
 endobj
 80 0 obj
-<< /Count 4 /Dest [ 58 0 R /XYZ 62.69291 438.0236 0 ] /First 81 0 R /Last 84 0 R /Parent 62 0 R /Prev 63 0 R 
-  /Title (\376\377\0002\000\240\000\240\000\240\000D\000e\000v\000e\000l\000o\000p\000e\000r\000 \000G\000u\000i\000d\000e) >>
+<<
+/Dest [ 57 0 R /XYZ 62.69291 495.0236 0 ] /Next 81 0 R /Parent 79 0 R /Title (\376\377\0002\000.\0001\000\240\000\240\000\240\000S\000o\000u\000r\000c\000e\000 \000c\000o\000d\000e\000 \000o\000r\000g\000a\000n\000i\000z\000a\000t\000i\000o\000n)
+>>
 endobj
 81 0 obj
-<< /Dest [ 58 0 R /XYZ 62.69291 405.0236 0 ] /Next 82 0 R /Parent 80 0 R /Title (\376\377\0002\000.\0001\000\240\000\240\000\240\000S\000o\000u\000r\000c\000e\000 \000c\000o\000d\000e\000 \000o\000r\000g\000a\000n\000i\000z\000a\000t\000i\000o\000n) >>
+<<
+/Dest [ 57 0 R /XYZ 62.69291 387.0236 0 ] /Next 82 0 R /Parent 79 0 R /Prev 80 0 R /Title (\376\377\0002\000.\0002\000\240\000\240\000\240\000P\000a\000r\000a\000V\000i\000e\000w\000 \000p\000l\000u\000g\000i\000n)
+>>
 endobj
 82 0 obj
-<< /Dest [ 58 0 R /XYZ 62.69291 297.0236 0 ] /Next 83 0 R /Parent 80 0 R /Prev 81 0 R /Title (\376\377\0002\000.\0002\000\240\000\240\000\240\000P\000a\000r\000a\000V\000i\000e\000w\000 \000p\000l\000u\000g\000i\000n) >>
+<<
+/Dest [ 57 0 R /XYZ 62.69291 219.0236 0 ] /Next 83 0 R /Parent 79 0 R /Prev 81 0 R /Title (\376\377\0002\000.\0003\000\240\000\240\000\240\000V\000T\000K\000 \000r\000e\000a\000d\000e\000r\000s)
+>>
 endobj
 83 0 obj
-<< /Dest [ 59 0 R /XYZ 62.69291 765.0236 0 ] /Next 84 0 R /Parent 80 0 R /Prev 82 0 R /Title (\376\377\0002\000.\0003\000\240\000\240\000\240\000V\000T\000K\000 \000r\000e\000a\000d\000e\000r\000s) >>
+<<
+/Dest [ 58 0 R /XYZ 62.69291 765.0236 0 ] /Parent 79 0 R /Prev 82 0 R /Title (\376\377\0002\000.\0004\000\240\000\240\000\240\000V\000e\000l\000o\000V\000i\000e\000w\000 \000a\000p\000p\000l\000i\000c\000a\000t\000i\000o\000n)
+>>
 endobj
 84 0 obj
-<< /Dest [ 59 0 R /XYZ 62.69291 615.0236 0 ] /Parent 80 0 R /Prev 83 0 R /Title (\376\377\0002\000.\0004\000\240\000\240\000\240\000V\000e\000l\000o\000V\000i\000e\000w\000 \000a\000p\000p\000l\000i\000c\000a\000t\000i\000o\000n) >>
+<<
+/Count 6 /Kids [ 49 0 R 54 0 R 55 0 R 56 0 R 57 0 R 58 0 R ] /Type /Pages
+>>
 endobj
 85 0 obj
-<< /Count 6 /Kids [ 49 0 R 55 0 R 56 0 R 57 0 R 58 0 R 59 0 R ] /Type /Pages >>
-endobj
-86 0 obj
-<< /Length 7698 >>
+<<
+/Length 7438
+>>
 stream
 1 0 0 1 0 0 cm  BT /F1 12 Tf 14.4 TL ET
 q
@@ -304,7 +495,7 @@ q
 1 0 0 1 91.03937 3 cm
 q
 0 0 0 rg
-BT 1 0 0 1 0 2 Tm /F1 10 Tf 12 TL (Copyright \(c\) 2013, Velodyne Lidar. All rights reserved.) Tj T* ET
+BT 1 0 0 1 0 2 Tm /F1 10 Tf 12 TL (Copyright \(c\) 2018, Velodyne Lidar. All rights reserved.) Tj T* ET
 Q
 Q
 q
@@ -325,7 +516,7 @@ q
 1 0 0 1 91.03937 3 cm
 q
 0 0 0 rg
-BT 1 0 0 1 0 2 Tm /F1 10 Tf 12 TL (1.0.8) Tj T* ET
+BT 1 0 0 1 0 2 Tm /F1 10 Tf 12 TL (3.5.0) Tj T* ET
 Q
 Q
 q
@@ -386,7 +577,7 @@ Q
 q
 1 0 0 1 0 327 cm
 q
-BT 1 0 0 1 20 2 Tm 12 TL /F1 10 Tf 0 0 .501961 rg (1.3   External dependencies) Tj T* ET
+BT 1 0 0 1 20 2 Tm 12 TL /F1 10 Tf 0 0 .501961 rg (1.3   Veloview dependencies) Tj T* ET
 Q
 Q
 q
@@ -512,7 +703,7 @@ Q
 q
 1 0 0 1 0 165 cm
 q
-BT 1 0 0 1 20 2 Tm 12 TL /F1 10 Tf 0 0 .501961 rg (1.5   Mac build instructions) Tj T* ET
+BT 1 0 0 1 40 2 Tm 12 TL /F1 10 Tf 0 0 .501961 rg (1.4.2   Mac build instructions) Tj T* ET
 Q
 Q
 q
@@ -526,7 +717,7 @@ Q
 q
 1 0 0 1 0 147 cm
 q
-BT 1 0 0 1 20 2 Tm 12 TL /F1 10 Tf 0 0 .501961 rg (1.6   Linux build instructions) Tj T* ET
+BT 1 0 0 1 40 2 Tm 12 TL /F1 10 Tf 0 0 .501961 rg (1.4.3   Linux build instructions) Tj T* ET
 Q
 Q
 q
@@ -540,7 +731,7 @@ Q
 q
 1 0 0 1 0 129 cm
 q
-BT 1 0 0 1 20 2 Tm 12 TL /F1 10 Tf 0 0 .501961 rg (1.7   Packaging) Tj T* ET
+BT 1 0 0 1 20 2 Tm 12 TL /F1 10 Tf 0 0 .501961 rg (1.5   Packaging) Tj T* ET
 Q
 Q
 q
@@ -554,7 +745,7 @@ Q
 q
 1 0 0 1 0 111 cm
 q
-BT 1 0 0 1 40 2 Tm 12 TL /F1 10 Tf 0 0 .501961 rg (1.7.1   Packaging for Windows) Tj T* ET
+BT 1 0 0 1 40 2 Tm 12 TL /F1 10 Tf 0 0 .501961 rg (1.5.1   Packaging for Windows) Tj T* ET
 Q
 Q
 q
@@ -568,7 +759,7 @@ Q
 q
 1 0 0 1 0 93 cm
 q
-BT 1 0 0 1 40 2 Tm 12 TL /F1 10 Tf 0 0 .501961 rg (1.7.2   Packaging for Mac) Tj T* ET
+BT 1 0 0 1 40 2 Tm 12 TL /F1 10 Tf 0 0 .501961 rg (1.5.2   Packaging for Mac) Tj T* ET
 Q
 Q
 q
@@ -632,7 +823,7 @@ q
 q
 0 0 .501961 rg
 0 0 .501961 RG
-BT 1 0 0 1 0 2 Tm /F1 10 Tf 12 TL 66.44 0 Td (6) Tj T* -66.44 0 Td ET
+BT 1 0 0 1 0 2 Tm /F1 10 Tf 12 TL 66.44 0 Td (5) Tj T* -66.44 0 Td ET
 Q
 Q
 q
@@ -665,16 +856,18 @@ BT 1 0 0 1 0 3 Tm 18 TL /F2 15 Tf 0 0 0 rg (1.1   Superbuild overview) Tj T* ET
 Q
 Q
 q
-1 0 0 1 62.69291 101.0236 cm
+1 0 0 1 62.69291 89.02362 cm
 q
-BT 1 0 0 1 0 38 Tm .237318 Tw 12 TL /F1 10 Tf 0 0 0 rg (VeloView uses a cmake ) Tj /F3 10 Tf (superbuild ) Tj /F1 10 Tf (to download and compile third party projects that are dependencies of) Tj T* 0 Tw .15436 Tw (VeloView. The superbuild will give you the option to use system installations of third party projects instead) Tj T* 0 Tw .793984 Tw (of compiling them as a superbuild step. Some dependencies, on certain platforms, must be compiled by) Tj T* 0 Tw (the superbuild, and there is no option to use a system version.) Tj T* ET
+BT 1 0 0 1 0 50 Tm .609318 Tw 12 TL /F1 10 Tf 0 0 0 rg (VeloView uses a CMake ) Tj /F3 10 Tf (superbuild) Tj /F1 10 Tf ( system. This is a cmake project that defines dependencies and third) Tj T* 0 Tw .746136 Tw (party projects as CMake targets, such that their tested versions are automatically downloaded, compiled) Tj T* 0 Tw 1.321751 Tw (and linked to. The superbuild will give you the option to use system installations of third party projects) Tj T* 0 Tw 2.753828 Tw (instead of compiling themas a superbuild step. Some dependencies, on certain platforms, must be) Tj T* 0 Tw (compiled by the superbuild, and there is no option to use a system version.) Tj T* ET
 Q
 Q
  
 endstream
 endobj
-87 0 obj
-<< /Length 5591 >>
+86 0 obj
+<<
+/Length 5489
+>>
 stream
 1 0 0 1 0 0 cm  BT /F1 12 Tf 14.4 TL ET
 q
@@ -705,7 +898,7 @@ n -6 -6 468.6898 24 re B*
 Q
 q
 0 0 0 rg
-BT 1 0 0 1 0 2 Tm /F4 10 Tf 12 TL (git clone git://public.kitware.com/VeloView.git) Tj T* ET
+BT 1 0 0 1 0 2 Tm /F4 10 Tf 12 TL (git clone git@github.com:Kitware/VeloView.git) Tj T* ET
 Q
 Q
 Q
@@ -714,68 +907,69 @@ Q
 q
 1 0 0 1 62.69291 653.8236 cm
 q
-BT 1 0 0 1 0 3 Tm 18 TL /F2 15 Tf 0 0 0 rg (1.3   External dependencies) Tj T* ET
+BT 1 0 0 1 0 3 Tm 18 TL /F2 15 Tf 0 0 0 rg (1.3   Veloview dependencies) Tj T* ET
 Q
 Q
 q
-1 0 0 1 62.69291 611.8236 cm
+1 0 0 1 62.69291 599.8236 cm
 q
-BT 1 0 0 1 0 26 Tm 1.343828 Tw 12 TL /F1 10 Tf 0 0 0 rg (The VeloView application and libraries have several external library dependencies. As explained in the) Tj T* 0 Tw 1.130814 Tw 0 0 .501961 rg (Superbuild overview) Tj 0 0 0 rg (, the dependencies will be downloaded and compiled automatically during the build) Tj T* 0 Tw (step. See ) Tj 0 0 .501961 rg (Configure and build instructions) Tj 0 0 0 rg (.) Tj T* ET
+BT 1 0 0 1 0 38 Tm 1.343828 Tw 12 TL /F1 10 Tf 0 0 0 rg (The VeloView application and libraries have several external library dependencies. As explained in the) Tj T* 0 Tw 1.130814 Tw 0 0 .501961 rg (Superbuild overview) Tj 0 0 0 rg (, the dependencies will be downloaded and compiled automatically during the build) Tj T* 0 Tw .968555 Tw (step of the Superbuild. Exact project urls and versions can be found in Superbuild/versions.cmake. See) Tj T* 0 Tw 0 0 .501961 rg (Configure and build instructions) Tj 0 0 0 rg (.) Tj T* ET
 Q
 Q
 q
-1 0 0 1 62.69291 584.8236 cm
+1 0 0 1 62.69291 572.8236 cm
 q
 BT 1 0 0 1 0 2.5 Tm 15 TL /F5 12.5 Tf 0 0 0 rg (1.3.1   pcap) Tj T* ET
 Q
 Q
 q
-1 0 0 1 62.69291 518.8236 cm
+1 0 0 1 62.69291 506.8236 cm
 q
-BT 1 0 0 1 0 50 Tm 2.238735 Tw 12 TL /F1 10 Tf 0 0 0 rg (The required pcap version is 1.4. On Mac/Linux, only libpcap is required. On Windows, we use the) Tj T* 0 Tw 1.517674 Tw (Winpcap project which includes libpcap but also includes Windows specific drivers. Since the winpcap) Tj T* 0 Tw .43061 Tw (project only provides Visual Studio project files, which may be out dated, the superbuild does not attempt) Tj T* 0 Tw .18811 Tw (to compile winpcap. Instead, a git repository containing headers and precompiled .lib and .dll files is used.) Tj T* 0 Tw (The repository url is ) Tj 0 0 .501961 rg (https://github.com/patmarion/winpcap) Tj 0 0 0 rg (.) Tj T* ET
+0 0 0 rg
+BT 1 0 0 1 0 50 Tm /F1 10 Tf 12 TL 2.238735 Tw (The required pcap version is 1.4. On Mac/Linux, only libpcap is required. On Windows, we use the) Tj T* 0 Tw 1.517674 Tw (Winpcap project which includes libpcap but also includes Windows specific drivers. Since the winpcap) Tj T* 0 Tw .43061 Tw (project only provides Visual Studio project files, which may be out dated, the superbuild does not attempt) Tj T* 0 Tw .18811 Tw (to compile winpcap. Instead, a git repository containing headers and precompiled .lib and .dll files is used.) Tj T* 0 Tw (The repository url can be found in Superbuild/versions.cmake) Tj T* ET
 Q
 Q
 q
-1 0 0 1 62.69291 491.8236 cm
+1 0 0 1 62.69291 479.8236 cm
 q
 BT 1 0 0 1 0 2.5 Tm 15 TL /F5 12.5 Tf 0 0 0 rg (1.3.2   Boost) Tj T* ET
 Q
 Q
 q
-1 0 0 1 62.69291 461.8236 cm
+1 0 0 1 62.69291 449.8236 cm
 q
 0 0 0 rg
 BT 1 0 0 1 0 14 Tm /F1 10 Tf 12 TL 1.867318 Tw (The required boost version is 1.50. Boost is used for threading and synchronization, and for network) Tj T* 0 Tw (communication. The boost thread and asio libraries are used.) Tj T* ET
 Q
 Q
 q
-1 0 0 1 62.69291 434.8236 cm
+1 0 0 1 62.69291 422.8236 cm
 q
 BT 1 0 0 1 0 2.5 Tm 15 TL /F5 12.5 Tf 0 0 0 rg (1.3.3   Qt) Tj T* ET
 Q
 Q
 q
-1 0 0 1 62.69291 404.8236 cm
+1 0 0 1 62.69291 392.8236 cm
 q
 0 0 0 rg
 BT 1 0 0 1 0 14 Tm /F1 10 Tf 12 TL 2.236654 Tw (The required Qt version is 4.8. Qt is a desktop widget library that is used to provide user interface) Tj T* 0 Tw (elements like windows and menus across the supported platforms Windows, Mac, and Linux.) Tj T* ET
 Q
 Q
 q
-1 0 0 1 62.69291 377.8236 cm
+1 0 0 1 62.69291 365.8236 cm
 q
 BT 1 0 0 1 0 2.5 Tm 15 TL /F5 12.5 Tf 0 0 0 rg (1.3.4   Python) Tj T* ET
 Q
 Q
 q
-1 0 0 1 62.69291 335.8236 cm
+1 0 0 1 62.69291 323.8236 cm
 q
 0 0 0 rg
 BT 1 0 0 1 0 26 Tm /F1 10 Tf 12 TL 2.756651 Tw (The required Python version is 2.7. VeloView uses libpython to embed a Python interpreter in the) Tj T* 0 Tw .574269 Tw (VeloView application. The core VeloView features are implemented in C++ libraries, and the libraries are) Tj T* 0 Tw (wrapped for Python using VTK's Python wrapping tools.) Tj T* ET
 Q
 Q
 q
-1 0 0 1 62.69291 308.8236 cm
+1 0 0 1 62.69291 296.8236 cm
 q
 BT 1 0 0 1 0 2.5 Tm 15 TL /F5 12.5 Tf 0 0 0 rg (1.3.5   PythonQt) Tj T* ET
 Q
@@ -784,7 +978,7 @@ q
 1 0 0 1 62.69291 266.8236 cm
 q
 0 0 0 rg
-BT 1 0 0 1 0 26 Tm /F1 10 Tf 12 TL 1.224104 Tw (PythonQt is used from a specific git commit sha1, but a specific released version. PythonQt is used to) Tj T* 0 Tw .459318 Tw (build Qt applications using Python. PythonQt has support for wrapping types derived from Qt objects and) Tj T* 0 Tw (VTK objects.) Tj T* ET
+BT 1 0 0 1 0 14 Tm /F1 10 Tf 12 TL .718651 Tw (PythonQt is used to build Qt applications from Python. PythonQt has support for wrapping types derived) Tj T* 0 Tw (from Qt objects and VTK objects. PythonQt is used from a specific git branch, to mach the Qt version.) Tj T* ET
 Q
 Q
 q
@@ -797,7 +991,7 @@ q
 1 0 0 1 62.69291 149.8236 cm
 q
 0 0 0 rg
-BT 1 0 0 1 0 74 Tm /F1 10 Tf 12 TL .351318 Tw (The required VTK version is 6.0. The required ParaView version is 4.0. The ParaView repository includes) Tj T* 0 Tw .359985 Tw (VTK, so the superbuild only needs to checkout and build ParaView in order to satisfy both dependencies.) Tj T* 0 Tw .417765 Tw (A specific git commit sha1 is used instead of a specific released version. The commit sha1 is very similar) Tj T* 0 Tw .014431 Tw (to the version 4.0 release but it has a few commits from the ParaView master branch cherry-picked onto it.) Tj T* 0 Tw 4.053318 Tw (The commits added are those that resolve some issues with the Python console and add the) Tj T* 0 Tw 1.344597 Tw (PythonQtPlugin for ParaView. The PythonQtPlugin is a small plugin that initializes the PythonQt library) Tj T* 0 Tw (and makes it available in the ParaView Python console.) Tj T* ET
+BT 1 0 0 1 0 74 Tm /F1 10 Tf 12 TL .351318 Tw (The required VTK version is 7.0. The required ParaView version is 5.1. The ParaView repository includes) Tj T* 0 Tw .359985 Tw (VTK, so the superbuild only needs to checkout and build ParaView in order to satisfy both dependencies.) Tj T* 0 Tw .417765 Tw (A specific git commit sha1 is used instead of a specific released version. The commit sha1 is very similar) Tj T* 0 Tw 3.834651 Tw (to the mainstream release version but it has a few commits from the ParaView master branch) Tj T* 0 Tw .08436 Tw (cherry-picked onto it. The commits added are those that resolve some issues with the Python console and) Tj T* 0 Tw 1.086136 Tw (add the PythonQtPlugin for ParaView. The PythonQtPluginis a small plugin that initializes the PythonQt) Tj T* 0 Tw (library and makes it available in the ParaView Python console.) Tj T* ET
 Q
 Q
 q
@@ -819,8 +1013,10 @@ Q
  
 endstream
 endobj
-88 0 obj
-<< /Length 5996 >>
+87 0 obj
+<<
+/Length 5713
+>>
 stream
 1 0 0 1 0 0 cm  BT /F1 12 Tf 14.4 TL ET
 q
@@ -873,7 +1069,7 @@ q
 1 0 0 1 62.69291 591.0236 cm
 q
 0 0 0 rg
-BT 1 0 0 1 0 2 Tm /F1 10 Tf 12 TL (After cmake has generated the build files, just run make to run the superbuild:) Tj T* ET
+BT 1 0 0 1 0 2 Tm /F1 10 Tf 12 TL (After cmake has generated the build files, you can compile the superbuild using:) Tj T* ET
 Q
 Q
 q
@@ -888,7 +1084,7 @@ q
 1 0 0 1 20 0 cm
 q
 0 0 0 rg
-BT 1 0 0 1 0 2 Tm /F1 10 Tf 12 TL (make) Tj T* ET
+BT 1 0 0 1 0 2 Tm /F1 10 Tf 12 TL (cmake --build .) Tj T* ET
 Q
 Q
 q
@@ -898,65 +1094,80 @@ q
 1 0 0 1 62.69291 573.0236 cm
 Q
 q
-1 0 0 1 62.69291 543.0236 cm
-q
-BT 1 0 0 1 0 14 Tm .50832 Tw 12 TL /F1 10 Tf 0 0 0 rg (On Mac and Linux computers, you can run parallel make with ) Tj /F3 10 Tf (make -j) Tj /F1 10 Tf (. Parallel make is not supported on) Tj T* 0 Tw (Windows because the Windows build uses NMake.) Tj T* ET
-Q
-Q
-q
-1 0 0 1 62.69291 516.0236 cm
+1 0 0 1 62.69291 546.0236 cm
 q
 BT 1 0 0 1 0 2.5 Tm 15 TL /F5 12.5 Tf 0 0 0 rg (1.4.1   Windows build instructions) Tj T* ET
 Q
 Q
 q
-1 0 0 1 62.69291 462.0236 cm
+1 0 0 1 62.69291 516.0236 cm
 q
 0 0 0 rg
-BT 1 0 0 1 0 38 Tm /F1 10 Tf 12 TL .969269 Tw (Because the superbuild compiles Python, and Python only supplies Visual Studio project files for Visual) Tj T* 0 Tw .569398 Tw (Studio 9, you must use Visual Studio 9 for compiling the VeloView superbuild on Windows. If you decide) Tj T* 0 Tw .568221 Tw (to use a system install of Python instead, then you can avoid the Visual Studio version requirement. But,) Tj T* 0 Tw (be warned that other versions of Visual Studio have not been tested with VeloView.) Tj T* ET
+BT 1 0 0 1 0 14 Tm /F1 10 Tf 12 TL 1.157633 Tw (The superbuild has been tested on Visual Studio 11 \(2012\). It might work with other versions of Visual) Tj T* 0 Tw (Studio, but be warned that they have not been tested with VeloView.) Tj T* ET
 Q
 Q
 q
-1 0 0 1 62.69291 384.0236 cm
+1 0 0 1 62.69291 474.0236 cm
 q
 0 0 0 rg
-BT 1 0 0 1 0 62 Tm /F1 10 Tf 12 TL 1.577485 Tw (You can build VeloView for 32bit or 64bit. The target architecture is decided by the command prompt) Tj T* 0 Tw .60436 Tw (environment that is used when running CMake. Make sure to open the command prompt by opening the) Tj T* 0 Tw 2.243059 Tw (Visual Studio Tools command prompt. When selecting the generator in cmake-gui on Windows, you) Tj T* 0 Tw .167765 Tw (should select NMake Makefiles using the default native compilers. It is possible to make a 32bit build on a) Tj T* 0 Tw 1.239318 Tw (64bit Windows computer by opening the Visual Studio Tools command prompt that is initialized for the) Tj T* 0 Tw (32bit compiler environment.) Tj T* ET
+BT 1 0 0 1 0 26 Tm /F1 10 Tf 12 TL 1.36936 Tw (You can build VeloView for 32bit or 64bit. The target architecture is decided at CMake configure time,) Tj T* 0 Tw 1.955366 Tw (when CMake is launch from the MS Visual Studio "Cross-tool command prompt" environment. When) Tj T* 0 Tw (selecting the generator in cmake-gui on Windows, you should select the appropriate version.) Tj T* ET
 Q
 Q
 q
-1 0 0 1 62.69291 342.0236 cm
+1 0 0 1 62.69291 432.0236 cm
 q
-BT 1 0 0 1 0 26 Tm .683318 Tw 12 TL /F1 10 Tf 0 0 0 rg (After generating NMake Makefiles, just run ) Tj /F3 10 Tf (make ) Tj /F1 10 Tf (to run the superbuild. NMake does not support parallel) Tj T* 0 Tw 1.68311 Tw (builds, so the build can take quite some time to complete on Windows, especially when compiling Qt) Tj T* 0 Tw (instead of using a system install of Qt.) Tj T* ET
+BT 1 0 0 1 0 26 Tm .635868 Tw 12 TL /F1 10 Tf 0 0 0 rg (After generating the Makefiles, just run ) Tj /F3 10 Tf (make) Tj /F1 10 Tf ( or ) Tj /F3 10 Tf (cmake --build .) Tj /F1 10 Tf ( to run the superbuild. NMake and Visual) Tj T* 0 Tw .895868 Tw (Studio does not support parallel builds, so the build can take quite some time to complete on Windows,) Tj T* 0 Tw (especially when compiling Qt instead of using a system install of Qt.) Tj T* ET
 Q
 Q
 q
-1 0 0 1 62.69291 312.0236 cm
+1 0 0 1 62.69291 405.0236 cm
 q
-BT 1 0 0 1 0 3 Tm 18 TL /F2 15 Tf 0 0 0 rg (1.5   Mac build instructions) Tj T* ET
+BT 1 0 0 1 0 2.5 Tm 15 TL /F5 12.5 Tf 0 0 0 rg (1.4.2   Mac build instructions) Tj T* ET
 Q
 Q
 q
-1 0 0 1 62.69291 234.0236 cm
+1 0 0 1 62.69291 327.0236 cm
 q
 0 0 0 rg
 BT 1 0 0 1 0 62 Tm /F1 10 Tf 12 TL .817488 Tw (For Mac builds, it is best to use system installs of Qt and Python. You can use a package manager like) Tj T* 0 Tw 1.649983 Tw (Homebrew or macports to install these libraries system wide prior to compiling VeloView. The system) Tj T* 0 Tw .655777 Tw (version of pcap on Mac is too old to be used with VeloView, so the superbuild will always download and) Tj T* 0 Tw .815542 Tw (compile the correct version of pcap. You can choose to build Boost with the superbuild or use a system) Tj T* 0 Tw 2.20528 Tw (version of Boost, as long as the static Boost archive libraries are available \(the libraries with the .a) Tj T* 0 Tw (extension\). If you are unsure, it is better to let the superbuild build Boost for you.) Tj T* ET
 Q
 Q
 q
-1 0 0 1 62.69291 204.0236 cm
-q
-BT 1 0 0 1 0 3 Tm 18 TL /F2 15 Tf 0 0 0 rg (1.6   Linux build instructions) Tj T* ET
-Q
+1 0 0 1 62.69291 321.0236 cm
 Q
 q
-1 0 0 1 62.69291 174.0236 cm
+1 0 0 1 62.69291 297.0236 cm
+0 0 0 rg
+BT /F1 10 Tf 12 TL ET
+BT 1 0 0 1 0 2 Tm  T* ET
+q
+1 0 0 1 20 0 cm
 q
 0 0 0 rg
-BT 1 0 0 1 0 14 Tm /F1 10 Tf 12 TL 2.476412 Tw (These steps are for Ubuntu 14.04.4 LTS. First, install the following dependencies using the apt-get) Tj T* 0 Tw (command. This is the full list used in the tested setup:) Tj T* ET
+BT 1 0 0 1 0 14 Tm /F1 10 Tf 12 TL 9.954882 Tw (cmake -DENABLE_veloview:BOOL=ON -DCMAKE_OSX_ARCHITECTURES:STRING="x86_64") Tj T* 0 Tw (-DCMAKE_OSX_SYSROOT:STRING=/path/to/XcodeSDK/Developer/SDKs ../SuperBuild) Tj T* ET
 Q
 Q
 q
-1 0 0 1 62.69291 80.82362 cm
+Q
+Q
+q
+1 0 0 1 62.69291 297.0236 cm
+Q
+q
+1 0 0 1 62.69291 270.0236 cm
+q
+BT 1 0 0 1 0 2.5 Tm 15 TL /F5 12.5 Tf 0 0 0 rg (1.4.3   Linux build instructions) Tj T* ET
+Q
+Q
+q
+1 0 0 1 62.69291 240.0236 cm
+q
+0 0 0 rg
+BT 1 0 0 1 0 14 Tm /F1 10 Tf 12 TL 2.476412 Tw (These steps are for Ubuntu 16.04.4 LTS. First, install the following dependencies using the apt-get) Tj T* 0 Tw (command. This is the full list used in the tested setup:) Tj T* ET
+Q
+Q
+q
+1 0 0 1 62.69291 98.82362 cm
 q
 q
 1 0 0 1 0 0 cm
@@ -966,95 +1177,48 @@ q
 .662745 .662745 .662745 RG
 .5 w
 .960784 .960784 .862745 rg
-n -6 -6 468.6898 84 re B*
+n -6 -6 468.6898 132 re B*
 Q
 q
 0 0 0 rg
-BT 1 0 0 1 0 62 Tm /F4 10 Tf 12 TL (git) Tj T* (cmake-curses-gui) Tj T* (build-essential) Tj T* (libboost-all-dev) Tj T* (libxt-dev) Tj T* (libbz2-dev) Tj T* ET
+BT 1 0 0 1 0 110 Tm /F4 10 Tf 12 TL (git) Tj T* (cmake-curses-gui) Tj T* (build-essential) Tj T* (libboost-all-dev) Tj T* (libxt-dev) Tj T* (libbz2-dev) Tj T* (libqt4-dev) Tj T* (qt4-default) Tj T* (qt4-dev-tools) Tj T* (zlib1g-dev) Tj T* ET
 Q
 Q
 Q
+Q
+Q
+q
+1 0 0 1 62.69291 78.82362 cm
+q
+0 0 0 rg
+BT 1 0 0 1 0 2 Tm /F1 10 Tf 12 TL (By default, Ubuntu packages version 3.5.1 of CMake, so you should be fine.) Tj T* ET
 Q
 Q
  
 endstream
 endobj
-89 0 obj
-<< /Length 5465 >>
+88 0 obj
+<<
+/Length 4930
+>>
 stream
 1 0 0 1 0 0 cm  BT /F1 12 Tf 14.4 TL ET
 q
-1 0 0 1 62.69291 703.8236 cm
-q
-q
-1 0 0 1 0 0 cm
-q
-1 0 0 1 6.6 6.6 cm
-q
-.662745 .662745 .662745 RG
-.5 w
-.960784 .960784 .862745 rg
-n -6 -6 468.6898 60 re B*
-Q
-q
-0 0 0 rg
-BT 1 0 0 1 0 38 Tm /F4 10 Tf 12 TL (libqt4-dev) Tj T* (qt4-default) Tj T* (qt4-dev-tools) Tj T* (zlib1g-dev) Tj T* ET
-Q
-Q
-Q
-Q
-Q
-q
-1 0 0 1 62.69291 671.8236 cm
-q
-0 0 0 rg
-BT 1 0 0 1 0 14 Tm /F1 10 Tf 12 TL .176457 Tw (By default, Ubuntu packages version 2.8 of CMake. You will need a later version. To upgrade, either build) Tj T* 0 Tw (CMake from source or run the following:) Tj T* ET
-Q
-Q
-q
-1 0 0 1 62.69291 602.6236 cm
-q
-q
-1 0 0 1 0 0 cm
-q
-1 0 0 1 6.6 6.6 cm
-q
-.662745 .662745 .662745 RG
-.5 w
-.960784 .960784 .862745 rg
-n -6 -6 468.6898 60 re B*
-Q
-q
-0 0 0 rg
-BT 1 0 0 1 0 38 Tm /F4 10 Tf 12 TL (sudo apt-get install software-properties-common) Tj T* (sudo add-apt-repository ppa:george-edison55/cmake-3.x) Tj T* (sudo apt-get update) Tj T* (sudo apt-get install --reinstall cmake) Tj T* ET
-Q
-Q
-Q
-Q
-Q
-q
-1 0 0 1 62.69291 582.6236 cm
-q
-0 0 0 rg
-BT 1 0 0 1 0 2 Tm /F1 10 Tf 12 TL (This will install CMake 3.2, which is sufficient to build VeloView.) Tj T* ET
-Q
-Q
-q
-1 0 0 1 62.69291 540.6236 cm
+1 0 0 1 62.69291 729.0236 cm
 q
 0 0 0 rg
 BT 1 0 0 1 0 26 Tm /F1 10 Tf 12 TL 1.178988 Tw (On Linux, libpcap can either be installed as a package or built from source. If you wish to build it from) Tj T* 0 Tw 1.153876 Tw (source you will need to apt-get install flex and byacc. If you want to use the packaged version, apt-get) Tj T* 0 Tw (install libpcap-dev. If you're unsure, build it from source.) Tj T* ET
 Q
 Q
 q
-1 0 0 1 62.69291 510.6236 cm
+1 0 0 1 62.69291 699.0236 cm
 q
 0 0 0 rg
 BT 1 0 0 1 0 14 Tm /F1 10 Tf 12 TL .896457 Tw (Clone the git repository, and from a separate build directory configure using CMake by pointing it at the) Tj T* 0 Tw (Superbuild directory:) Tj T* ET
 Q
 Q
 q
-1 0 0 1 62.69291 477.4236 cm
+1 0 0 1 62.69291 665.8236 cm
 q
 q
 1 0 0 1 0 0 cm
@@ -1074,14 +1238,14 @@ Q
 Q
 Q
 q
-1 0 0 1 62.69291 457.4236 cm
+1 0 0 1 62.69291 645.8236 cm
 q
 0 0 0 rg
 BT 1 0 0 1 0 2 Tm /F1 10 Tf 12 TL (Enable the following options in the CMake configuration:) Tj T* ET
 Q
 Q
 q
-1 0 0 1 62.69291 388.2236 cm
+1 0 0 1 62.69291 576.6236 cm
 q
 q
 1 0 0 1 0 0 cm
@@ -1102,20 +1266,20 @@ Q
 Q
 Q
 q
-1 0 0 1 62.69291 356.2236 cm
+1 0 0 1 62.69291 544.6236 cm
 q
-BT 1 0 0 1 0 14 Tm .081235 Tw 12 TL /F1 10 Tf 0 0 0 rg (Also be sure to set the ) Tj /F3 10 Tf 0 0 0 rg (USE_SYSTEM_pcap ) Tj /F1 10 Tf 0 0 0 rg (to the appropriate value, depending on whether you chose to) Tj T* 0 Tw (use the system package or build it from source.) Tj T* ET
+BT 1 0 0 1 0 14 Tm .081235 Tw 12 TL /F1 10 Tf 0 0 0 rg (Also be sure to set the ) Tj /F3 10 Tf 0 0 0 rg (USE_SYSTEM_pcap) Tj /F1 10 Tf 0 0 0 rg ( to the appropriate value, depending on whether you chose to) Tj T* 0 Tw (use the system package or build it from source.) Tj T* ET
 Q
 Q
 q
-1 0 0 1 62.69291 326.2236 cm
+1 0 0 1 62.69291 514.6236 cm
 q
 0 0 0 rg
 BT 1 0 0 1 0 14 Tm /F1 10 Tf 12 TL .167608 Tw (If you have both Qt4 and Qt5 on your system, you will need to choose Qt4 before building. To do that, run) Tj T* 0 Tw (the following in bash:) Tj T* ET
 Q
 Q
 q
-1 0 0 1 62.69291 293.0236 cm
+1 0 0 1 62.69291 481.4236 cm
 q
 q
 1 0 0 1 0 0 cm
@@ -1136,70 +1300,56 @@ Q
 Q
 Q
 q
-1 0 0 1 62.69291 273.0236 cm
+1 0 0 1 62.69291 461.4236 cm
 q
-BT 1 0 0 1 0 2 Tm 12 TL /F1 10 Tf 0 0 0 rg (Then run ) Tj /F3 10 Tf 0 0 0 rg (make ) Tj /F1 10 Tf 0 0 0 rg (or ) Tj /F3 10 Tf 0 0 0 rg (make -jN ) Tj /F1 10 Tf 0 0 0 rg (as usual to run the superbuild.) Tj T* ET
+BT 1 0 0 1 0 2 Tm 12 TL /F1 10 Tf 0 0 0 rg (Then run ) Tj /F3 10 Tf 0 0 0 rg (cmake --build .) Tj /F1 10 Tf 0 0 0 rg (, ) Tj /F3 10 Tf 0 0 0 rg (make) Tj /F1 10 Tf 0 0 0 rg ( or ) Tj /F3 10 Tf 0 0 0 rg (make -jN) Tj /F1 10 Tf 0 0 0 rg ( as usual to run the superbuild.) Tj T* ET
 Q
 Q
 q
-1 0 0 1 62.69291 243.0236 cm
+1 0 0 1 62.69291 431.4236 cm
 q
-BT 1 0 0 1 0 3 Tm 18 TL /F2 15 Tf 0 0 0 rg (1.7   Packaging) Tj T* ET
+BT 1 0 0 1 0 3 Tm 18 TL /F2 15 Tf 0 0 0 rg (1.5   Packaging) Tj T* ET
 Q
 Q
 q
-1 0 0 1 62.69291 201.0236 cm
+1 0 0 1 62.69291 389.4236 cm
 q
 0 0 0 rg
 BT 1 0 0 1 0 26 Tm /F1 10 Tf 12 TL .25811 Tw (After building VeloView, the application will be runnable on your system. In order to distribute VeloView to) Tj T* 0 Tw 2.119983 Tw (other users you must generate a VeloView package. The packaging process is different for different) Tj T* 0 Tw (platforms.) Tj T* ET
 Q
 Q
 q
-1 0 0 1 62.69291 174.0236 cm
+1 0 0 1 62.69291 362.4236 cm
 q
-BT 1 0 0 1 0 2.5 Tm 15 TL /F5 12.5 Tf 0 0 0 rg (1.7.1   Packaging for Windows) Tj T* ET
+BT 1 0 0 1 0 2.5 Tm 15 TL /F5 12.5 Tf 0 0 0 rg (1.5.1   Packaging for Windows) Tj T* ET
 Q
 Q
 q
-1 0 0 1 62.69291 120.0236 cm
+1 0 0 1 62.69291 308.4236 cm
 q
 0 0 0 rg
 BT 1 0 0 1 0 38 Tm /F1 10 Tf 12 TL .757318 Tw (Packaging on Windows requires NSIS. Visit the NSIS website to download and install the latest version.) Tj T* 0 Tw 2.091984 Tw (NSIS is used to generate a standard Windows installer executable which will install VeloView to the) Tj T* 0 Tw 1.092126 Tw (Program Files directory. Make sure you install NSIS before configuring VeloView with CMake. After the) Tj T* 0 Tw (superbuild has completed \(you ran make and it completed without errors\) you are ready for packaging.) Tj T* ET
 Q
 Q
 q
-1 0 0 1 62.69291 78.02362 cm
+1 0 0 1 62.69291 242.4236 cm
 q
 0 0 0 rg
-BT 1 0 0 1 0 26 Tm /F1 10 Tf 12 TL .07881 Tw (Before packaging, you might want to test the VeloView install tree. You can run the make install command) Tj T* 0 Tw .57061 Tw (\(make sure you have set the CMAKE_INSTALL_PREFIX to a writable location\) and then cd to the install) Tj T* 0 Tw .56811 Tw (directory and open bin/VeloView.exe. If there are any issues, you should debug them at this point before) Tj T* 0 Tw ET
-Q
-Q
- 
-endstream
-endobj
-90 0 obj
-<< /Length 5747 >>
-stream
-1 0 0 1 0 0 cm  BT /F1 12 Tf 14.4 TL ET
-q
-1 0 0 1 62.69291 741.0236 cm
-q
-0 0 0 rg
-BT 1 0 0 1 0 14 Tm /F1 10 Tf 12 TL .429985 Tw (continuing with the packaging. Make sure you open the VeloView Python console to make sure there are) Tj T* 0 Tw (no issues with Python initialization.) Tj T* ET
+BT 1 0 0 1 0 50 Tm /F1 10 Tf 12 TL .07881 Tw (Before packaging, you might want to test the VeloView install tree. You can run the make install command) Tj T* 0 Tw .57061 Tw (\(make sure you have set the CMAKE_INSTALL_PREFIX to a writable location\) and then cd to the install) Tj T* 0 Tw .56811 Tw (directory and open bin/VeloView.exe. If there are any issues, you should debug them at this point before) Tj T* 0 Tw .429985 Tw (continuing with the packaging. Make sure you open the VeloView Python console to make sure there are) Tj T* 0 Tw (no issues with Python initialization.) Tj T* ET
 Q
 Q
 q
-1 0 0 1 62.69291 723.0236 cm
+1 0 0 1 62.69291 224.4236 cm
 q
 0 0 0 rg
 BT 1 0 0 1 0 2 Tm /F1 10 Tf 12 TL (To generate a Windows installer, run the package command:) Tj T* ET
 Q
 Q
 q
-1 0 0 1 62.69291 717.0236 cm
+1 0 0 1 62.69291 218.4236 cm
 Q
 q
-1 0 0 1 62.69291 705.0236 cm
+1 0 0 1 62.69291 206.4236 cm
 0 0 0 rg
 BT /F1 10 Tf 12 TL ET
 BT 1 0 0 1 0 2 Tm  T* ET
@@ -1214,47 +1364,56 @@ q
 Q
 Q
 q
-1 0 0 1 62.69291 705.0236 cm
+1 0 0 1 62.69291 206.4236 cm
 Q
 q
-1 0 0 1 62.69291 687.0236 cm
+1 0 0 1 62.69291 188.4236 cm
 q
 0 0 0 rg
 BT 1 0 0 1 0 2 Tm /F1 10 Tf 12 TL (The output will be a .exe installer in the current directory.) Tj T* ET
 Q
 Q
+ 
+endstream
+endobj
+89 0 obj
+<<
+/Length 6018
+>>
+stream
+1 0 0 1 0 0 cm  BT /F1 12 Tf 14.4 TL ET
+q
+1 0 0 1 62.69291 750.0236 cm
+q
+BT 1 0 0 1 0 2.5 Tm 15 TL /F5 12.5 Tf 0 0 0 rg (1.5.2   Packaging for Mac) Tj T* ET
+Q
+Q
 q
 1 0 0 1 62.69291 660.0236 cm
-q
-BT 1 0 0 1 0 2.5 Tm 15 TL /F5 12.5 Tf 0 0 0 rg (1.7.2   Packaging for Mac) Tj T* ET
-Q
-Q
-q
-1 0 0 1 62.69291 570.0236 cm
 q
 0 0 0 rg
 BT 1 0 0 1 0 74 Tm /F1 10 Tf 12 TL 2.302927 Tw (Packaging on Mac will generate a .dmg image file. Opening the .dmg file will mount a volume that) Tj T* 0 Tw .742485 Tw (contains the VeloView.app bundle. There is already a VeloView.app bundle in your build tree, but it only) Tj T* 0 Tw .013516 Tw (contains the veloview binary and not any dependent libraries. A real app bundle contains library files for all) Tj T* 0 Tw .25561 Tw (the veloview dependencies. After copying the dependent library files into the app bundle, a script runs the) Tj T* 0 Tw 1.600751 Tw (Mac tool called install_name_tool to rewrite the library dependency locations using relative paths. The) Tj T* 0 Tw 1.168555 Tw (script is in the veloview repo named fixup_bundle.py and it is executed automatically during installation) Tj T* 0 Tw (and packaging.) Tj T* ET
 Q
 Q
 q
-1 0 0 1 62.69291 504.0236 cm
+1 0 0 1 62.69291 594.0236 cm
 q
 0 0 0 rg
 BT 1 0 0 1 0 50 Tm /F1 10 Tf 12 TL .07881 Tw (Before packaging, you might want to test the VeloView install tree. You can run the make install command) Tj T* 0 Tw .57061 Tw (\(make sure you have set the CMAKE_INSTALL_PREFIX to a writable location\) and then cd to the install) Tj T* 0 Tw 1.54061 Tw (directory and open VeloView.app. If there are any issues, you should debug them at this point before) Tj T* 0 Tw .429985 Tw (continuing with the packaging. Make sure you open the VeloView Python console to make sure there are) Tj T* 0 Tw (no issues with Python initialization.) Tj T* ET
 Q
 Q
 q
-1 0 0 1 62.69291 486.0236 cm
+1 0 0 1 62.69291 576.0236 cm
 q
 0 0 0 rg
 BT 1 0 0 1 0 2 Tm /F1 10 Tf 12 TL (To generate a Mac installer, run the package command:) Tj T* ET
 Q
 Q
 q
-1 0 0 1 62.69291 480.0236 cm
+1 0 0 1 62.69291 570.0236 cm
 Q
 q
-1 0 0 1 62.69291 468.0236 cm
+1 0 0 1 62.69291 558.0236 cm
 0 0 0 rg
 BT /F1 10 Tf 12 TL ET
 BT 1 0 0 1 0 2 Tm  T* ET
@@ -1269,228 +1428,248 @@ q
 Q
 Q
 q
-1 0 0 1 62.69291 468.0236 cm
+1 0 0 1 62.69291 558.0236 cm
 Q
 q
-1 0 0 1 62.69291 450.0236 cm
+1 0 0 1 62.69291 540.0236 cm
 q
 0 0 0 rg
 BT 1 0 0 1 0 2 Tm /F1 10 Tf 12 TL (The output will be a .dmg file in the current directory.) Tj T* ET
 Q
 Q
 q
-1 0 0 1 62.69291 417.0236 cm
+1 0 0 1 62.69291 507.0236 cm
 q
 BT 1 0 0 1 0 3.5 Tm 21 TL /F2 17.5 Tf 0 0 0 rg (2   Developer Guide) Tj T* ET
 Q
 Q
 q
-1 0 0 1 62.69291 387.0236 cm
+1 0 0 1 62.69291 477.0236 cm
 q
 BT 1 0 0 1 0 3 Tm 18 TL /F2 15 Tf 0 0 0 rg (2.1   Source code organization) Tj T* ET
 Q
 Q
 q
-1 0 0 1 62.69291 309.0236 cm
+1 0 0 1 62.69291 399.0236 cm
 q
-BT 1 0 0 1 0 62 Tm .27683 Tw 12 TL /F1 10 Tf 0 0 0 rg (The VeloView source code is a mixture of VTK classes and Qt classes. The source code files with the ) Tj /F3 10 Tf (vtk) Tj T* 0 Tw .450514 Tw /F1 10 Tf (prefix are VTK classes that do not have any Qt dependencies. The classes with the ) Tj /F3 10 Tf (vv ) Tj /F1 10 Tf (or ) Tj /F3 10 Tf (pq ) Tj /F1 10 Tf (prefixes are) Tj T* 0 Tw .817633 Tw (Qt classes that depend on VTK, Qt, and ParaView's Qt libraries. The core VTK classes in VeloView are) Tj T* 0 Tw 2.71152 Tw (compiled into a plugin library named ) Tj /F3 10 Tf (libVelodyneHDLPlugin ) Tj /F1 10 Tf (that can be loaded into ParaView. The) Tj T* 0 Tw .012209 Tw (VeloView app is implemented using a mixture of the C++ Qt classes and Python code. The Python code is) Tj T* 0 Tw (mostly organized in the file ) Tj /F3 10 Tf (applogic.py ) Tj /F1 10 Tf (in the veloview Python module.) Tj T* ET
+BT 1 0 0 1 0 62 Tm .27683 Tw 12 TL /F1 10 Tf 0 0 0 rg (The VeloView source code is a mixture of VTK classes and Qt classes. The source code files with the ) Tj /F3 10 Tf (vtk) Tj /F1 10 Tf  T* 0 Tw .450514 Tw (prefix are VTK classes that do not have any Qt dependencies. The classes with the ) Tj /F3 10 Tf (vv) Tj /F1 10 Tf ( or ) Tj /F3 10 Tf (pq) Tj /F1 10 Tf ( prefixes are) Tj T* 0 Tw .817633 Tw (Qt classes that depend on VTK, Qt, and ParaView's Qt libraries. The core VTK classes in VeloView are) Tj T* 0 Tw 2.71152 Tw (compiled into a plugin library named ) Tj /F3 10 Tf (libVelodyneHDLPlugin) Tj /F1 10 Tf ( that can be loaded into ParaView. The) Tj T* 0 Tw .012209 Tw (VeloView app is implemented using a mixture of the C++ Qt classes and Python code. The Python code is) Tj T* 0 Tw (mostly organized in the file ) Tj /F3 10 Tf (applogic.py) Tj /F1 10 Tf ( in the veloview Python module.) Tj T* ET
 Q
 Q
 q
-1 0 0 1 62.69291 279.0236 cm
+1 0 0 1 62.69291 369.0236 cm
 q
 BT 1 0 0 1 0 3 Tm 18 TL /F2 15 Tf 0 0 0 rg (2.2   ParaView plugin) Tj T* ET
 Q
 Q
 q
-1 0 0 1 62.69291 225.0236 cm
+1 0 0 1 62.69291 315.0236 cm
 q
-BT 1 0 0 1 0 38 Tm 1.73248 Tw 12 TL /F1 10 Tf 0 0 0 rg (The ) Tj /F3 10 Tf (libVelodyneHDLPlugin ) Tj /F1 10 Tf (library depends on VTK, ParaView, Qt, PythonQt, Boost, and libpcap. The) Tj T* 0 Tw .607984 Tw (plugin can be loaded into the main ParaView application using ParaView version 4.0. The build specifies) Tj T* 0 Tw .924651 Tw (the static version of the boost libraries, so the plugin's only dependencies beyond ParaView are libpcap) Tj T* 0 Tw (and PythonQt library.) Tj T* ET
+BT 1 0 0 1 0 38 Tm 1.73248 Tw 12 TL /F1 10 Tf 0 0 0 rg (The ) Tj /F3 10 Tf (libVelodyneHDLPlugin) Tj /F1 10 Tf ( library depends on VTK, ParaView, Qt, PythonQt, Boost, and libpcap. The) Tj T* 0 Tw .607984 Tw (plugin can be loaded into the main ParaView application using ParaView version 4.0. The build specifies) Tj T* 0 Tw .924651 Tw (the static version of the boost libraries, so the plugin's only dependencies beyond ParaView are libpcap) Tj T* 0 Tw (and PythonQt library.) Tj T* ET
 Q
 Q
 q
-1 0 0 1 62.69291 171.0236 cm
+1 0 0 1 62.69291 261.0236 cm
 q
 0 0 0 rg
 BT 1 0 0 1 0 38 Tm /F1 10 Tf 12 TL .010988 Tw (On Windows, the plugin can be loaded as long as the libpcap and PythonQt library dll files are in the same) Tj T* 0 Tw .311318 Tw (directory. On Mac, you should use the install_name_tool to fix the library locations of these dependencies) Tj T* 0 Tw 3.709318 Tw (to be relative to @loader_path, then place the libpcap and PythonQt library files relative to the) Tj T* 0 Tw (libVelodyneHDLPlugin library.) Tj T* ET
 Q
 Q
 q
-1 0 0 1 62.69291 141.0236 cm
+1 0 0 1 62.69291 231.0236 cm
 q
-BT 1 0 0 1 0 14 Tm .384651 Tw 12 TL /F1 10 Tf 0 0 0 rg (In ParaView, the Velodyne pcap reader and Velodyne network source plugin are available in the ) Tj /F3 10 Tf (Sources) Tj T* 0 Tw /F1 10 Tf (menu.) Tj T* ET
+BT 1 0 0 1 0 14 Tm .384651 Tw 12 TL /F1 10 Tf 0 0 0 rg (In ParaView, the Velodyne pcap reader and Velodyne network source plugin are available in the ) Tj /F3 10 Tf (Sources) Tj /F1 10 Tf  T* 0 Tw (menu.) Tj T* ET
 Q
 Q
- 
-endstream
-endobj
-91 0 obj
-<< /Length 2087 >>
-stream
-1 0 0 1 0 0 cm  BT /F1 12 Tf 14.4 TL ET
 q
-1 0 0 1 62.69291 747.0236 cm
+1 0 0 1 62.69291 201.0236 cm
 q
 BT 1 0 0 1 0 3 Tm 18 TL /F2 15 Tf 0 0 0 rg (2.3   VTK readers) Tj T* ET
 Q
 Q
 q
-1 0 0 1 62.69291 681.0236 cm
+1 0 0 1 62.69291 135.0236 cm
 q
 0 0 0 rg
 BT 1 0 0 1 0 50 Tm /F1 10 Tf 12 TL .806647 Tw (VeloView, and the VelodyneHDL Plugin for ParaView included two readers/sources. The Velodyne pcap) Tj T* 0 Tw 1.386136 Tw (reader is implemented in the C++ class vtkVelodyneHDLReader.{cxx,h}. When reading a pcap file, the) Tj T* 0 Tw 1.958876 Tw (reader first scans the file and looks for frame splits when the azimuth resets from 360 degrees to 0) Tj T* 0 Tw .567882 Tw (degrees. The pcap file position is recorded for each split so that the reader can jump to frames using file) Tj T* 0 Tw (seeking.) Tj T* ET
 Q
 Q
 q
-1 0 0 1 62.69291 627.0236 cm
+1 0 0 1 62.69291 81.02362 cm
 q
 0 0 0 rg
 BT 1 0 0 1 0 38 Tm /F1 10 Tf 12 TL 1.720651 Tw (The network source reader receives UDP data packets from a Velodyne sensor using the Boost asio) Tj T* 0 Tw 2.471976 Tw (library. The network source is implemented by vtkVelodyneHDLSource.{cxx,h}. The source manages) Tj T* 0 Tw .958443 Tw (multiple threads in a producer/consumer model, and uses an instance of the vtkVelodyneHDLReader to) Tj T* 0 Tw (convert data packets into VTK point cloud data.) Tj T* ET
 Q
 Q
+ 
+endstream
+endobj
+90 0 obj
+<<
+/Length 835
+>>
+stream
+1 0 0 1 0 0 cm  BT /F1 12 Tf 14.4 TL ET
 q
-1 0 0 1 62.69291 597.0236 cm
+1 0 0 1 62.69291 747.0236 cm
 q
 BT 1 0 0 1 0 3 Tm 18 TL /F2 15 Tf 0 0 0 rg (2.4   VeloView application) Tj T* ET
 Q
 Q
 q
-1 0 0 1 62.69291 531.0236 cm
+1 0 0 1 62.69291 681.0236 cm
 q
-BT 1 0 0 1 0 50 Tm 1.19561 Tw 12 TL /F1 10 Tf 0 0 0 rg (The VeloView application is implemented using Qt in C++ and Python. The PythonQt library is used to) Tj T* 0 Tw .897045 Tw (access the C++ layer from Python. The majority of the application logic is implemented in Python in the) Tj T* 0 Tw .12332 Tw /F3 10 Tf (applogic.py ) Tj /F1 10 Tf (file. The Python code also uses Qt's uitools library to load user interface ) Tj /F3 10 Tf (.ui ) Tj /F1 10 Tf (files at runtime. Qt) Tj T* 0 Tw .318876 Tw (designer can be used to edit the .ui files. The VeloView application can be extended using Python and .ui) Tj T* 0 Tw (files.) Tj T* ET
+BT 1 0 0 1 0 50 Tm 1.19561 Tw 12 TL /F1 10 Tf 0 0 0 rg (The VeloView application is implemented using Qt in C++ and Python. The PythonQt library is used to) Tj T* 0 Tw .897045 Tw (access the C++ layer from Python. The majority of the application logic is implemented in Python in the) Tj T* 0 Tw .12332 Tw /F3 10 Tf (applogic.py) Tj /F1 10 Tf ( file. The Python code also uses Qt's uitools library to load user interface ) Tj /F3 10 Tf (.ui) Tj /F1 10 Tf ( files at runtime. Qt) Tj T* 0 Tw .318876 Tw (designer can be used to edit the .ui files. The VeloView application can be extended using Python and .ui) Tj T* 0 Tw (files.) Tj T* ET
 Q
 Q
  
 endstream
 endobj
+91 0 obj
+<<
+/Nums [ 0 92 0 R 1 93 0 R 2 94 0 R 3 95 0 R 4 96 0 R 
+  5 97 0 R ]
+>>
+endobj
 92 0 obj
-<< /Nums [ 0 93 0 R 1 94 0 R 2 95 0 R 3 96 0 R 4 97 0 R 
-  5 98 0 R ] >>
+<<
+/S /D /St 1
+>>
 endobj
 93 0 obj
-<< /S /D /St 1 >>
+<<
+/S /D /St 2
+>>
 endobj
 94 0 obj
-<< /S /D /St 2 >>
+<<
+/S /D /St 3
+>>
 endobj
 95 0 obj
-<< /S /D /St 3 >>
+<<
+/S /D /St 4
+>>
 endobj
 96 0 obj
-<< /S /D /St 4 >>
+<<
+/S /D /St 5
+>>
 endobj
 97 0 obj
-<< /S /D /St 5 >>
-endobj
-98 0 obj
-<< /S /D /St 6 >>
+<<
+/S /D /St 6
+>>
 endobj
 xref
-0 99
-0000000000 65535 f
-0000000075 00000 n
-0000000152 00000 n
-0000000262 00000 n
-0000000377 00000 n
-0000000548 00000 n
-0000000719 00000 n
-0000000890 00000 n
-0000001061 00000 n
-0000001232 00000 n
-0000001403 00000 n
-0000001575 00000 n
-0000001747 00000 n
-0000001919 00000 n
-0000002091 00000 n
-0000002263 00000 n
-0000002435 00000 n
-0000002607 00000 n
-0000002779 00000 n
-0000002951 00000 n
-0000003123 00000 n
-0000003295 00000 n
-0000003467 00000 n
-0000003639 00000 n
-0000003811 00000 n
-0000003983 00000 n
-0000004155 00000 n
-0000004327 00000 n
-0000004499 00000 n
-0000004671 00000 n
-0000004843 00000 n
-0000005015 00000 n
-0000005187 00000 n
-0000005359 00000 n
-0000005531 00000 n
-0000005703 00000 n
-0000005875 00000 n
-0000006047 00000 n
-0000006219 00000 n
-0000006391 00000 n
-0000006563 00000 n
-0000006735 00000 n
-0000006907 00000 n
-0000007079 00000 n
-0000007251 00000 n
-0000007423 00000 n
-0000007595 00000 n
-0000007767 00000 n
-0000007939 00000 n
-0000008058 00000 n
-0000008598 00000 n
-0000008707 00000 n
-0000008879 00000 n
-0000009051 00000 n
-0000009174 00000 n
-0000009366 00000 n
-0000009609 00000 n
-0000009819 00000 n
-0000010029 00000 n
-0000010239 00000 n
-0000010449 00000 n
-0000010558 00000 n
-0000010844 00000 n
-0000010922 00000 n
-0000011195 00000 n
-0000011442 00000 n
-0000011722 00000 n
-0000012032 00000 n
-0000012214 00000 n
-0000012414 00000 n
-0000012599 00000 n
-0000012804 00000 n
-0000013019 00000 n
-0000013261 00000 n
-0000013626 00000 n
-0000013905 00000 n
-0000014180 00000 n
-0000014465 00000 n
-0000014702 00000 n
-0000014969 00000 n
-0000015216 00000 n
-0000015473 00000 n
-0000015745 00000 n
-0000015985 00000 n
-0000016205 00000 n
-0000016457 00000 n
-0000016556 00000 n
-0000024311 00000 n
-0000029959 00000 n
-0000036012 00000 n
-0000041534 00000 n
-0000047338 00000 n
-0000049482 00000 n
-0000049575 00000 n
-0000049612 00000 n
-0000049649 00000 n
-0000049686 00000 n
-0000049723 00000 n
-0000049760 00000 n
+0 98
+0000000000 65535 f 
+0000000073 00000 n 
+0000000147 00000 n 
+0000000254 00000 n 
+0000000366 00000 n 
+0000000534 00000 n 
+0000000702 00000 n 
+0000000870 00000 n 
+0000001038 00000 n 
+0000001206 00000 n 
+0000001374 00000 n 
+0000001543 00000 n 
+0000001712 00000 n 
+0000001881 00000 n 
+0000002050 00000 n 
+0000002219 00000 n 
+0000002388 00000 n 
+0000002557 00000 n 
+0000002726 00000 n 
+0000002895 00000 n 
+0000003064 00000 n 
+0000003233 00000 n 
+0000003402 00000 n 
+0000003571 00000 n 
+0000003740 00000 n 
+0000003909 00000 n 
+0000004078 00000 n 
+0000004247 00000 n 
+0000004416 00000 n 
+0000004585 00000 n 
+0000004754 00000 n 
+0000004923 00000 n 
+0000005092 00000 n 
+0000005261 00000 n 
+0000005430 00000 n 
+0000005599 00000 n 
+0000005768 00000 n 
+0000005937 00000 n 
+0000006106 00000 n 
+0000006275 00000 n 
+0000006444 00000 n 
+0000006613 00000 n 
+0000006782 00000 n 
+0000006951 00000 n 
+0000007120 00000 n 
+0000007289 00000 n 
+0000007458 00000 n 
+0000007627 00000 n 
+0000007796 00000 n 
+0000007912 00000 n 
+0000008444 00000 n 
+0000008550 00000 n 
+0000008719 00000 n 
+0000008888 00000 n 
+0000009008 00000 n 
+0000009240 00000 n 
+0000009446 00000 n 
+0000009652 00000 n 
+0000009858 00000 n 
+0000010064 00000 n 
+0000010170 00000 n 
+0000010452 00000 n 
+0000010527 00000 n 
+0000010796 00000 n 
+0000011040 00000 n 
+0000011317 00000 n 
+0000011623 00000 n 
+0000011802 00000 n 
+0000011999 00000 n 
+0000012181 00000 n 
+0000012383 00000 n 
+0000012595 00000 n 
+0000012834 00000 n 
+0000013195 00000 n 
+0000013484 00000 n 
+0000013766 00000 n 
+0000014045 00000 n 
+0000014278 00000 n 
+0000014542 00000 n 
+0000014786 00000 n 
+0000015039 00000 n 
+0000015308 00000 n 
+0000015545 00000 n 
+0000015762 00000 n 
+0000016011 00000 n 
+0000016107 00000 n 
+0000023597 00000 n 
+0000029138 00000 n 
+0000034903 00000 n 
+0000039885 00000 n 
+0000045955 00000 n 
+0000046841 00000 n 
+0000046930 00000 n 
+0000046964 00000 n 
+0000046998 00000 n 
+0000047032 00000 n 
+0000047066 00000 n 
+0000047100 00000 n 
 trailer
-<< /ID 
- % ReportLab generated PDF document -- digest (http://www.reportlab.com)
- [(\(@`\\\246{-\230\337R6\223\(\025\271\236) (\(@`\\\246{-\230\337R6\223\(\025\271\236)]
- /Info 61 0 R /Root 60 0 R /Size 99 >>
+<<
+/ID 
+[<440f9f47bb7fe3311ecef4c957bc40aa><440f9f47bb7fe3311ecef4c957bc40aa>]
+% ReportLab generated PDF document -- digest (http://www.reportlab.com)
+
+/Info 60 0 R
+/Root 59 0 R
+/Size 98
+>>
 startxref
-49797
+47134
 %%EOF
