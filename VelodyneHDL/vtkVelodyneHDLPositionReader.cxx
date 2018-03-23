@@ -83,7 +83,8 @@ struct PositionPacket
   short temp[3];
   short accelx[3];
   short accely[3];
-  char sentance[73];
+  char sentance[81]; /* with NMEA revision ??2018 with "Navigational status" flag, $GPRMC sentance size may vary.
+	https://hemispheregnss.com/gnssreference/GPRMC.htm	*/
 };
 }
 
@@ -174,9 +175,9 @@ int vtkVelodyneHDLPositionReader::vtkInternal::ProcessHDLPacket(
 
   memcpy(&position.gpsTimestamp, data + 14 + 3 * 8 + 160, 4);
 
-  std::copy(data + 14 + 8 + 8 + 8 + 160 + 4 + 4, data + 14 + 8 + 8 + 8 + 160 + 4 + 4 + 72,
+  std::copy(data + 14 + 8 + 8 + 8 + 160 + 4 + 4, data + 14 + 8 + 8 + 8 + 160 + 4 + 4 + 80,
     position.sentance);
-  position.sentance[72] = '\0';
+  position.sentance[80] = '\0';
 
   return 1;
 }
