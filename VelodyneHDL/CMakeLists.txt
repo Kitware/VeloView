@@ -101,6 +101,7 @@ if(PARAVIEW_BUILD_QT_GUI)
     vtkPacketFileWriter.cxx
     vtkRollingDataAccumulator.cxx
     vvPacketSender.cxx
+    vtkSlam.cxx
     )
 
   QT4_WRAP_CPP(moc_srcs ${MOC_HEADERS})
@@ -137,6 +138,7 @@ list(APPEND servermanager_sources
   vtkPCLRansacModel.cxx
   vtkApplanixPositionReader.cxx
   vtkProcessingSample.cxx
+  vtkSlam.cxx
   vtkVelodyneHDLGridSource.cxx
   vtkVelodyneHDLReader.cxx
   vtkVelodyneHDLPositionReader.cxx
@@ -147,6 +149,7 @@ list(APPEND servermanager_xml
   xml/vtkPCLRansacModel.xml
   xml/ApplanixPositionReader.xml
   xml/ProcessingSample.xml
+  xml/SLAM.xml
   xml/VelodyneHDLGridSource.xml
   xml/VelodyneHDLReader.xml
   xml/VelodyneHDLPositionReader.xml

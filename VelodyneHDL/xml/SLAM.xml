@@ -1,0 +1,13 @@
+<ServerManagerConfiguration>
+  <!-- Begin SLAM Registration -->
+  <ProxyGroup name="filters">
+    <SourceProxy name="Slam" class="vtkSlam" label="Slam">
+      <Documentation
+        short_help="filter which performs slam on points data."
+        long_help="filter which performs slam on points data.">
+        filter which performs slam on points data.
+      </Documentation>
+    </SourceProxy>
+  </ProxyGroup>
+  <!-- End SLAM Registration -->
+</ServerManagerConfiguration>

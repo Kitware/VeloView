@@ -33,7 +33,7 @@ import planefit
 
 from PythonQt.paraview import vvCalibrationDialog, vvCropReturnsDialog, vvSelectFramesDialog
 from VelodyneHDLPluginPython import vtkVelodyneHDLReader
-from VelodyneHDLPluginPython import vtkPCLRansacModel
+#from VelodyneHDLPluginPython import vtkPCLRansacModel
 
 _repCache = {}
 
@@ -75,9 +75,11 @@ class AppLogic(object):
         self.reader = None
         self.position = (None, None, None)
         self.sensor = None
-        self.ransac = None
+        #self.ransac = None
 
         self.fps = [0,0]
+        
+        self.slam = None
 
         self.text = None
 
@@ -521,7 +523,7 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
     app.filenameLabel.setText('File: %s' % os.path.basename(filename))
     onCropReturns(False) # Dont show the dialog just restore settings
 
-    app.ransac = smp.PCLRansacModel(Input = reader)
+    #app.ransac = smp.PCLRansacModel(Input = reader)
 
     # Resetting laser selection dialog according to the opened PCAP file
     # and restoring the dialog visibility afterward
@@ -2156,6 +2158,33 @@ def toggleRPM():
 
     smp.Render()
 
+def toggleLaunchSlam():
+    #Get the active source
+    source = smp.GetActiveSource()
+    
+    #If no data are available
+    if not source :
+        return
+        
+    frameOptions = getFrameSelectionFromUser(framePackVisibility=False, frameTransformVisibility=False)
+    # If the user cancelled the computeSlam dialog, there is no frameOptions
+    if not frameOptions:
+        return
+    
+    # Instanciation of a new vtkSlamAlgorithm
+    app.slam = smp.Slam()
+    source.GetClientSideObject().SetSlam( app.slam.GetClientSideObject() )
+    
+    # set the frame mapping to relative raw
+    # get the main window
+    # mW = getMainWindow()
+    # get the geolocation toolbar
+    #geolocationToolBar = mW.findChild('QToolBar', 'geolocationToolbar')
+    # get the frame mapping combo box. The combo box doesn't have a name
+    # but since it is the only combo box it is ok
+    #frameMapping = geolocationToolBar.findChild('QComboBox', '')
+    #frameMapping.setCurrentIndex(0)
+    source.GetClientSideObject().LaunchSlam(frameOptions.start, frameOptions.stop)
 
 def toggleSelectDualReturn():
     # test if we are on osx os
@@ -2417,6 +2446,7 @@ def setupActions():
     app.actions['actionCorrectIntensityValues'].connect('triggered()',intensitiesCorrectedChanged)
     app.actions['actionSelectDualReturn'].connect('triggered()',toggleSelectDualReturn)
     app.actions['actionSelectDualReturn2'].connect('triggered()',toggleSelectDualReturn)
+    app.actions['actionLaunchSlam'].connect('triggered()', toggleLaunchSlam)
     app.EnableCrashAnalysis = app.actions['actionEnableCrashAnalysis'].isChecked()
 
     # Restore action states from settings

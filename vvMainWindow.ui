@@ -106,6 +106,7 @@
     <addaction name="menuDualReturnMode"/>
     <addaction name="actionSelectDualReturn"/>
     <addaction name="separator"/>
+    <addaction name="actionLaunchSlam"/>
     <addaction name="menuProcessing_Options"/>
     <addaction name="separator"/>
     <addaction name="actionPlay"/>
@@ -971,6 +972,14 @@
    </property>
    <property name="text">
     <string>Ignore empty frames</string>
+   </property>
+  </action>
+  <action name="actionLaunchSlam">
+   <property name="text">
+    <string>Launch Slam</string>
+   </property>
+   <property name="toolTip">
+    <string>launch slam algorithm</string>
    </property>
   </action>
  </widget>

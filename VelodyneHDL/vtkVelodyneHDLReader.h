@@ -33,6 +33,7 @@
 #define _vtkVelodyneHDLReader_h
 
 #include "vtkDataPacket.h"
+#include "vtkSlam.h"
 #include <string>
 #include <vtkPolyDataAlgorithm.h>
 #include <vtkSmartPointer.h>
@@ -140,6 +141,11 @@ public:
   void SetCropMode(int cropMode);
 
   int GetNumberOfChannels();
+
+  void SetSlam(vtkSlam* input);
+  void LaunchSlam(int startFrame, int endFrame);
+  void AddFrame(vtkSmartPointer<vtkPolyData> newFrame);
+  void AddTransform(double rx, double ry, double rz, double tx, double ty, double tz, double time);
 
   // I/O and processing functions
   void Open();
