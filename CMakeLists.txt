@@ -16,6 +16,8 @@ cmake_minimum_required(VERSION 2.8.8 FATAL_ERROR)
 include("branding.cmake")
 project(VeloView)
 
+SET(CMAKE_CXX_FLAGS "-std=c++0x")
+
 # Disallow in-source build
 if ("${VeloView_SOURCE_DIR}"  STREQUAL "${VeloView_BINARY_DIR}")
   message(FATAL_ERROR
