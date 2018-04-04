@@ -28,7 +28,7 @@
 
 #include "vtkVelodyneHDLReader.h"
 
-#include "vtkSlam.h"
+//#include "vtkSlam.h"
 #include "vtkPacketFileReader.h"
 #include "vtkPacketFileWriter.h"
 #include "vtkRollingDataAccumulator.h"
@@ -409,7 +409,7 @@ class vtkVelodyneHDLReader::vtkInternal
 public:
   vtkInternal()
   {
-    this->Slam = vtkSmartPointer<vtkSlam>::New();
+//    this->Slam = vtkSmartPointer<vtkSlam>::New();
     this->RpmCalculator.Reset();
     this->AlreadyWarnAboutCalibration = false;
     this->IgnoreZeroDistances = true;
@@ -461,6 +461,9 @@ public:
     delete this->CurrentFrameState;
   }
 
+  std::vector<std::pair<int, int> > laserIdMapping;
+  bool shouldInitializeMapping;
+
   std::vector<vtkSmartPointer<vtkPolyData> > Datasets;
   vtkSmartPointer<vtkPolyData> CurrentDataset;
 
@@ -504,7 +507,7 @@ public:
   bool WantIntensityCorrection;
 
   // SLAM algorithm
-  vtkSmartPointer<vtkSlam> Slam;
+//  vtkSmartPointer<vtkSlam> Slam;
 
   // WIP : We now have two method to compute the RPM :
   // - One method which computes the rpm using the point cloud
@@ -598,12 +601,6 @@ public:
     const HDLLaserCorrection* correction, double pos[3], double& distanceM, short& intensity,
     bool correctIntensity);
 };
-
-//-----------------------------------------------------------------------------
-void vtkVelodyneHDLReader::SetSlam(vtkSlam* input)
-{
-  this->Internal->Slam = input;
-}
 
 //-----------------------------------------------------------------------------
 std::string vtkVelodyneHDLReader::GetSensorInformation()
@@ -727,6 +724,18 @@ int vtkVelodyneHDLReader::GetApplyTransform()
 }
 
 //-----------------------------------------------------------------------------
+void vtkVelodyneHDLReader::GetLaserIdMapping(int* output) const
+{
+  cout << "LaserIdMapping start" << endl;
+  for (int i = 0; i < this->Internal->CalibrationReportedNumLasers; i++)
+  {
+    output[2*i] = this->Internal->laserIdMapping[i].first;
+    output[2*i+1] = this->Internal->laserIdMapping[i].second;
+  }
+  cout << "LaserIdMapping done" << endl;
+}
+
+//-----------------------------------------------------------------------------
 void vtkVelodyneHDLReader::SetSensorTransform(vtkTransform* transform)
 {
   if (transform)
@@ -831,121 +840,6 @@ void vtkVelodyneHDLReader::SetDualReturnFilter(unsigned int filter)
     this->Internal->DualReturnFilter = filter;
     this->Modified();
   }
-}
-
-//-----------------------------------------------------------------------------
-void vtkVelodyneHDLReader::LaunchSlam(int startFrame, int endFrame)
-{
-  // Initialization of the SLAM parameters
-  this->Internal->Interp =  vtkSmartPointer<vtkVelodyneTransformInterpolator>::New();
-  this->Internal->Interp->SetInterpolationTypeToLinear();
-  this->Internal->ApplyTransform = 0;
-  std::cout << "Interpolator initialized" << std::endl;
-
-  // Initialize the SLAM by providing the mapping
-  if (!this->Internal->Slam->GetIsSensorCalibrationProvided())
-  {
-    std::cout << "Slam: providing calibration of the sensor" << std::endl;
-    std::vector<std::pair<int, int> > laserIdMapping;
-    laserIdMapping.resize(this->Internal->CalibrationReportedNumLasers);
-    for (int i = 0; i < laserIdMapping.size(); ++i)
-    {
-      laserIdMapping[i].second = static_cast<int>(i);
-      laserIdMapping[i].first = this->Internal->laser_corrections_[i].verticalCorrection;
-    }
-    std::sort(laserIdMapping.begin(), laserIdMapping.end());
-    std::vector<int> mapping;
-    mapping.resize(laserIdMapping.size());
-    for (unsigned int k = 0; k < mapping.size(); ++k)
-    {
-      mapping[laserIdMapping[k].second] = k;
-    }
-    this->Internal->Slam->SetSensorCalibration(mapping);
-  }
-
-  if(startFrame < 0 || endFrame > this->GetNumberOfFrames())
-  {
-    vtkGenericWarningMacro("Chosen frames out of band");
-  }
-
-  QWidget* mainWindow = nullptr;
-  foreach (QWidget *widget, QApplication::topLevelWidgets())
-    {
-    if (widget->inherits("QMainWindow"))
-      {
-      mainWindow = widget;
-      }
-    }
-  QProgressDialog progress("Computing SLAM...", "Abort Slam",
-                           startFrame, startFrame + (endFrame - startFrame),
-                           mainWindow);
-  progress.setWindowModality(Qt::WindowModal);
-
-  progress.open();
-  
-  this->Open();
-  for(int k = startFrame; k <= endFrame; ++k)
-  {
-    progress.setValue(k);
-    std::cout << "Frame : " << k << std::endl;
-    vtkSmartPointer<vtkPolyData> frame = this->GetFrame(k);
-    this->AddFrame(frame);
-
-    // Required to get a chance to handle clicks on the cancel button.
-    QCoreApplication::processEvents(QEventLoop::WaitForMoreEvents, 15);
-    if(progress.wasCanceled())
-      {
-      progress.close();
-      std::ostringstream message;
-      int nbFrames = k-startFrame + 1;
-      message << "Only " << nbFrames << ((nbFrames > 1) ? " frames" : " frame");
-      message << " over " << endFrame-startFrame + 1 << " frames were computed." << std::endl;
-      message << "The results are still visible.";
-      QMessageBox::information(mainWindow, "Aborting SLAM",
-          QString::fromStdString(message.str()));
-      break;
-      }
-  }
-
-  if(this->Internal->Interp->GetNumberOfTransforms() >= 2)
-  {
-    std::cout << "Number of transform computed : " << this->Internal->Interp->GetNumberOfTransforms() << std::endl;
-  }
-  else
-  {
-    this->Internal->ApplyTransform = 0;
-  }
-}
-
-//-----------------------------------------------------------------------------
-void vtkVelodyneHDLReader::AddFrame(vtkSmartPointer<vtkPolyData> newFrame)
-{
-  if (!this->Internal->Interp)
-  {
-    vtkGenericWarningMacro("Interpolator not setted");
-    return;
-  }
-
-  this->Internal->Slam->AddFrame(newFrame);
-  //this->Internal->transformList.push_back(this->Internal->pointRegistration->getLastTransform());
-  std::vector<double> Tworld = this->Internal->Slam->GetWorldTransform();
-  // time in seconds
-  double t = newFrame->GetPointData()->GetArray("timestamp")->GetTuple1(0) * 1e-6;
-
-  std::cout << "timestamp  : " << t << std::endl;
-  std::cout << std::endl << std::endl;
-
-  double tx = Tworld[3];
-  double ty = Tworld[4];
-  double tz = Tworld[5];
-
-  double rx = Tworld[0] * 180 / vtkMath::Pi();
-  double ry = Tworld[1] * 180 / vtkMath::Pi();
-  double rz = Tworld[2] * 180 / vtkMath::Pi();
-
-  this->AddTransform(rx,ry,rz,tx,ty,tz,t);
-  
-  //this->Internal->TransformList.push_back(std::pair<double,std::vector<double> >(t,Tworld));
 }
 
 //-----------------------------------------------------------------------------
@@ -1229,30 +1123,6 @@ int vtkVelodyneHDLReader::RequestData(
     }
   }
 
-  if (!this->Internal->Slam->GetIsSensorCalibrationProvided())
-  {
-    std::cout << "Slam: providing calibration of the sensor" << std::endl;
-
-    std::vector<std::pair<int, int> > laserIdMapping;
-    laserIdMapping.resize(this->Internal->CalibrationReportedNumLasers);
-    for (int i = 0; i < laserIdMapping.size(); ++i)
-    {
-      laserIdMapping[i].second = static_cast<int>(i);
-      laserIdMapping[i].first = this->Internal->laser_corrections_[i].verticalCorrection;
-    }
-    std::sort(laserIdMapping.begin(), laserIdMapping.end());
-    std::vector<int> mapping;
-    mapping.resize(laserIdMapping.size());
-    for (unsigned int k = 0; k < mapping.size(); ++k)
-    {
-      mapping[laserIdMapping[k].second] = k;
-    }
-
-    this->Internal->Slam->SetSensorCalibration(mapping);
-  }
-  //this->Internal->Slam->AddFrame(output);
-  this->Internal->Slam->OnlyComputeKeypoints(output);
-
   this->Close();
   return 1;
 }
@@ -1451,7 +1321,7 @@ vtkSmartPointer<vtkPolyData> vtkVelodyneHDLReader::GetFrameRange(
 }
 
 //-----------------------------------------------------------------------------
-vtkSmartPointer<vtkPolyData> vtkVelodyneHDLReader::GetFrame(int frameNumber)
+vtkPolyData* vtkVelodyneHDLReader::GetFrame(int frameNumber)
 {
   this->UnloadPerFrameData();
   if (!this->Internal->Reader)
@@ -2205,6 +2075,23 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessFiring(HDLFiringData* firingData,
   {
     this->FirstPointIdOfDualReturnPair = this->Points->GetNumberOfPoints();
   }
+
+
+  if (this->shouldInitializeMapping)
+  {
+    this->laserIdMapping.resize(this->CalibrationReportedNumLasers);
+
+    for (int i = 0; i < this->CalibrationReportedNumLasers; ++i)
+    {
+      this->laserIdMapping[i].second = static_cast<int>(i);
+      this->laserIdMapping[i].first = this->laser_corrections_[i].verticalCorrection;
+    }
+    std::sort(this->laserIdMapping.begin(), this->laserIdMapping.end());
+    this->shouldInitializeMapping = false;
+  }
+
+
+
 
   for (int dsr = 0; dsr < HDL_LASER_PER_FIRING; dsr++)
   {

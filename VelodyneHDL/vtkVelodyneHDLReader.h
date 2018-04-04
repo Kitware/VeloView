@@ -33,7 +33,7 @@
 #define _vtkVelodyneHDLReader_h
 
 #include "vtkDataPacket.h"
-#include "vtkSlam.h"
+//#include "vtkSlam.h"
 #include <string>
 #include <vtkPolyDataAlgorithm.h>
 #include <vtkSmartPointer.h>
@@ -142,9 +142,6 @@ public:
 
   int GetNumberOfChannels();
 
-  void SetSlam(vtkSlam* input);
-  void LaunchSlam(int startFrame, int endFrame);
-  void AddFrame(vtkSmartPointer<vtkPolyData> newFrame);
   void AddTransform(double rx, double ry, double rz, double tx, double ty, double tz, double time);
 
   // I/O and processing functions
@@ -152,7 +149,7 @@ public:
   void Close();
   int ReadFrameInformation();
   int GetNumberOfFrames();
-  vtkSmartPointer<vtkPolyData> GetFrame(int frameNumber);
+  vtkPolyData* GetFrame(int frameNumber);
   vtkSmartPointer<vtkPolyData> GetFrameRange(int frameNumber, int numberOfFrames);
 
   void DumpFrames(int startFrame, int endFrame, const std::string& filename);
@@ -164,6 +161,8 @@ public:
 
   vtkVelodyneTransformInterpolator* GetInterpolator() const;
   void SetInterpolator(vtkVelodyneTransformInterpolator* interpolator);
+
+  void GetLaserIdMapping(int* output) const;
 
   void SetSensorTransform(vtkTransform*);
 

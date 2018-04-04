@@ -87,6 +87,7 @@
 #include <vtkUnsignedCharArray.h>
 #include <vtkUnsignedShortArray.h>
 #include <vtkTransform.h>
+#include <vtkPoints.h>
 // EIGEN
 #include <Eigen/Dense>
 // PCL
@@ -96,6 +97,356 @@
 //#include <ceres/include/ceres/ceres.h>
 
 vtkStandardNewMacro(vtkSlam);
+
+// It represents the dimensions of the voxelisation of the
+// 3D space. The space is divided into voxel to compute faster
+// the mapping. The voxelisation cube is updated at each sweep
+// and the points which are too far are removed.
+class RollingGrid {
+public:
+  RollingGrid()
+  {
+    // should initialize using Tworld + size / 2
+    grid_offsetX = 0;
+    grid_offsetY = 0;
+    grid_offsetZ = 0;
+
+    LeafVoxelFilterSize = 0.2;
+  }
+
+  // roll the grid to enable adding new point cloud
+  void Roll(Eigen::Matrix<double, 6, 1> &T)
+  {
+    // Very basic implementation where the grid is not circular
+
+    // compute the position of the new frame center in the grid
+    int frameCenterX = std::floor(T[3] / VoxelSize) - grid_offsetX;
+    int frameCenterY = std::floor(T[4] / VoxelSize) - grid_offsetY;
+    int frameCenterZ = std::floor(T[5] / VoxelSize) - grid_offsetZ;
+
+    // shift the voxel grid to the left
+    while (frameCenterX - std::ceil(PointCloud_NbVoxelX / 2) <= 0)
+    {
+      for (int j = 0; j < Grid_NbVoxelY; j++)
+      {
+        for (int k = 0; k < Grid_NbVoxelZ; k++)
+        {
+          for (int i = Grid_NbVoxelX - 1; i > 0; i--)
+          {
+            grid[i][j][k] = grid[i-1][j][k];
+          }
+          grid[0][j][k].reset(new pcl::PointCloud<Point>());
+        }
+      }
+      frameCenterX++;
+      grid_offsetX--;
+//      cout << "left";
+    }
+
+    // shift the voxel grid to the right
+    while (frameCenterX + std::ceil(PointCloud_NbVoxelX / 2) >= Grid_NbVoxelX - 1)
+    {
+      for (int j = 0; j < Grid_NbVoxelY; j++)
+      {
+        for (int k = 0; k < Grid_NbVoxelZ; k++)
+        {
+          for (int i = 0; i < Grid_NbVoxelX - 1; i++)
+          {
+            grid[i][j][k] = grid[i+1][j][k];
+          }
+          grid[Grid_NbVoxelX-1][j][k].reset(new pcl::PointCloud<Point>());
+        }
+      }
+      frameCenterX--;
+      grid_offsetX++;
+//      cout << "right";
+    }
+
+    // shift the voxel grid to the bottom
+    while (frameCenterY - std::ceil(PointCloud_NbVoxelY / 2) <= 0)
+    {
+      for (int i = 0; i < Grid_NbVoxelX; i++)
+      {
+        for (int k = 0; k < Grid_NbVoxelZ; k++)
+        {
+          for (int j = Grid_NbVoxelY - 1; j > 0; j--)
+          {
+            grid[i][j][k] = grid[i][j-1][k];
+          }
+          grid[i][0][k].reset(new pcl::PointCloud<Point>());
+        }
+      }
+      frameCenterY++;
+      grid_offsetY--;
+//      cout << "bottom";
+    }
+
+    // shift the voxel grid to the top
+    while (frameCenterY + std::ceil(PointCloud_NbVoxelY / 2) >= Grid_NbVoxelY - 1)
+    {
+      for (int i = 0; i < Grid_NbVoxelX; i++)
+      {
+        for (int k = 0; k < Grid_NbVoxelZ; k++)
+        {
+          for (int j = 0; j < Grid_NbVoxelY - 1; j++)
+          {
+            grid[i][j][k] = grid[i][j+1][k];
+          }
+          grid[i][Grid_NbVoxelY-1][k].reset(new pcl::PointCloud<Point>());
+        }
+      }
+      frameCenterY--;
+      grid_offsetY++;
+//      cout << "top";
+    }
+
+    // shift the voxel grid to the "camera"
+    while (frameCenterZ - std::ceil(PointCloud_NbVoxelZ / 2) <= 0)
+    {
+      for (int i = 0; i < Grid_NbVoxelX; i++)
+      {
+        for (int j = 0; j < Grid_NbVoxelY; j++)
+        {
+          for (int k = Grid_NbVoxelZ - 1; k > 0; k--)
+          {
+            grid[i][j][k] = grid[i][j][k-1];
+          }
+          grid[i][j][0].reset(new pcl::PointCloud<Point>());
+        }
+      }
+      frameCenterZ++;
+      grid_offsetZ--;
+//      cout << "camera";
+    }
+
+    // shift the voxel grid to the "horizon"
+    while (frameCenterZ + std::ceil(PointCloud_NbVoxelZ  / 2) >= Grid_NbVoxelZ - 1)
+    {
+      for (int i = 0; i < Grid_NbVoxelX; i++)
+      {
+        for (int j = 0; j < Grid_NbVoxelY; j++)
+        {
+          for (int k = 0; k < Grid_NbVoxelZ - 1; k++)
+          {
+            grid[i][j][k] = grid[i][j][k+1];
+          }
+          grid[i][j][Grid_NbVoxelZ-1].reset(new pcl::PointCloud<Point>());
+        }
+      }
+      frameCenterZ--;
+      grid_offsetZ++;
+//      cout << "horizon";
+    }
+  }
+
+  // get points arround T
+  pcl::PointCloud<Point>::Ptr Get(Eigen::Matrix<double, 6, 1> &T)
+  {
+    // compute the position of the new frame center in the grid
+    int frameCenterX = std::floor(T[3] / VoxelSize) - grid_offsetX;
+    int frameCenterY = std::floor(T[4] / VoxelSize) - grid_offsetY;
+    int frameCenterZ = std::floor(T[5] / VoxelSize) - grid_offsetZ;
+
+    pcl::PointCloud<Point>::Ptr intersection(new pcl::PointCloud<Point>);
+
+    // Get all voxel in intersection should use ceil here
+    for (int i = frameCenterX - std::ceil(PointCloud_NbVoxelX / 2); i <= frameCenterX + std::ceil(PointCloud_NbVoxelX / 2); i++)
+    {
+      for (int j = frameCenterY - std::ceil(PointCloud_NbVoxelY / 2); j <= frameCenterY + std::ceil(PointCloud_NbVoxelY / 2); j++)
+      {
+        for (int k = frameCenterZ - std::ceil(PointCloud_NbVoxelZ / 2); k <= frameCenterZ + std::ceil(PointCloud_NbVoxelZ / 2); k++)
+        {
+          pcl::PointCloud<Point>:: Ptr voxel = grid[i][j][k];
+          for (int l = 0; l < voxel->size(); l++)
+          {
+            intersection->push_back(voxel->at(l));
+          }
+        }
+      }
+    }
+    cout << "Get value at position: (" << frameCenterX << "," <<  frameCenterY << "," << frameCenterZ << ") +- " << std::ceil(PointCloud_NbVoxelX / 2) << endl;
+    return intersection;
+  }
+
+  // add some points to the grid
+  void Add(pcl::PointCloud<Point>::Ptr pointcloud)
+  {
+    this->vizualisation.clear();
+
+    // Voxel to filte because new points were add
+    int voxelToFilter[Grid_NbVoxelX][Grid_NbVoxelY][Grid_NbVoxelZ] = {0};
+
+    // Add points in the rolling grid
+    int outlier = 0; // point who are not in the rolling grid
+    for (int i = 0; i < pointcloud->size(); i++)
+    {
+      Point pts = pointcloud->points[i];
+      // find the closest coordinate
+      int cubeIdxX = std::floor(pts.x / VoxelSize) - grid_offsetX;
+      int cubeIdxY = std::floor(pts.y / VoxelSize) - grid_offsetY;
+      int cubeIdxZ = std::floor(pts.z / VoxelSize) - grid_offsetZ;
+
+
+      if (cubeIdxX >= 0 && cubeIdxX < Grid_NbVoxelX &&
+        cubeIdxY >= 0 && cubeIdxY < Grid_NbVoxelY &&
+        cubeIdxZ >= 0 && cubeIdxZ < Grid_NbVoxelZ)
+      {
+        voxelToFilter[cubeIdxX][cubeIdxY][cubeIdxZ] = 1;
+        grid[cubeIdxX][cubeIdxY][cubeIdxZ]->push_back(pts);
+        // for vizualization purpose only
+        this->vizualisation.push_back(cubeIdxX);
+      }
+      else
+      {
+        this->vizualisation.push_back(-1);
+        outlier++;
+      }
+    }
+
+    std::cout << "Point outside rolling grid = " << outlier << endl;
+
+    // Filter the modify pointCloud
+    pcl::VoxelGrid<Point> downSizeFilter;
+    downSizeFilter.setLeafSize(LeafVoxelFilterSize, LeafVoxelFilterSize, LeafVoxelFilterSize); // one point per 20x20x20 cm
+    int imin, imax, jmin, jmax, kmin, kmax;
+    imin = jmin = kmin = 51;
+    imax = jmax = kmax = -1;
+    for (int i = 0; i < Grid_NbVoxelX; i++)
+    {
+      for (int j = 0; j < Grid_NbVoxelY; j++)
+      {
+        for (int k = 0; k < Grid_NbVoxelZ; k++)
+        {
+          if (voxelToFilter[i][j][k] == 1)
+          {
+            imin = std::min(i,imin);
+            jmin = std::min(j,jmin);
+            kmin = std::min(k,kmin);
+            imax = std::max(i,imax);
+            jmax = std::max(j,jmax);
+            kmax = std::max(k,kmax);
+
+            pcl::PointCloud<Point>::Ptr tmp(new pcl::PointCloud<Point>());
+            downSizeFilter.setInputCloud(grid[i][j][k]);
+            downSizeFilter.filter(*tmp);
+          }
+        }
+      }
+    }
+    cout << "Add value at position: (" << imin << "-" << imax <<"," << jmin << "-" << jmax <<"," << kmin << "-" << kmax << ")" << endl;
+    cout << "grid offset : " << grid_offsetX << ", " << grid_offsetY << ", " << grid_offsetZ << endl;
+  }
+
+  // vizualize
+  std::vector<int> vizualize()
+  {
+    return this->vizualisation;
+  }
+
+  // return size
+  int Size()
+  {
+    int size = 0;
+    for (int i = 0; i < Grid_NbVoxelX; i++)
+    {
+      for (int j = 0; j < Grid_NbVoxelY; j++)
+      {
+        for (int k = 0; k < Grid_NbVoxelZ; k++)
+        {
+          size += grid[i][j][k]->size();
+        }
+      }
+    }
+    return size;
+  }
+
+  const unsigned int Get_VoxelSize() const
+  {
+    return this->VoxelSize;
+  }
+  void Set_VoxelSize(const unsigned int size)
+  {
+    this->VoxelSize = size;
+  }
+
+  void Get_Grid_NbVoxel(double nbVoxel[3]) const
+  {
+    nbVoxel[0] = this->Grid_NbVoxelX;
+    nbVoxel[1] = this->Grid_NbVoxelY;
+    nbVoxel[2] = this->Grid_NbVoxelZ;
+  }
+  void Set_Grid_NbVoxel(const double nbVoxel[3])
+  {
+    this->Grid_NbVoxelX = nbVoxel[0];
+    this->Grid_NbVoxelY = nbVoxel[1];
+    this->Grid_NbVoxelZ = nbVoxel[2];
+    grid.resize(Grid_NbVoxelX);
+    for (int i = 0; i < Grid_NbVoxelX; i++)
+    {
+      grid[i].resize(Grid_NbVoxelY);
+      for (int j = 0; j < Grid_NbVoxelY; j++)
+      {
+        grid[i][j].resize(Grid_NbVoxelZ);
+        for (int k = 0; k < Grid_NbVoxelZ; k++)
+        {
+          grid[i][j][k].reset(new pcl::PointCloud<Point>());
+        }
+      }
+    }
+  }
+
+  void Get_PointCloud_NbVoxel(double nbVoxel[3]) const
+  {
+    nbVoxel[0] = this->PointCloud_NbVoxelX;
+    nbVoxel[1] = this->PointCloud_NbVoxelY;
+    nbVoxel[2] = this->PointCloud_NbVoxelZ;
+  }
+  void Set_PointCloud_NbVoxel(const double nbVoxel[3])
+  {
+    this->PointCloud_NbVoxelX = nbVoxel[0];
+    this->PointCloud_NbVoxelY = nbVoxel[1];
+    this->PointCloud_NbVoxelZ = nbVoxel[2];
+  }
+
+  const double Get_LeafVoxelFilterSize() const
+  {
+    return this->LeafVoxelFilterSize;
+  }
+  void Set_LeafVoxelFilterSize(const unsigned int size)
+  {
+    this->LeafVoxelFilterSize = size;
+  }
+
+private:
+  //////////// CONSTANT ///////////////
+  // voxel size in m (a voxel is a cube)
+  unsigned int VoxelSize;
+
+  // number of voxel / axis
+  unsigned int Grid_NbVoxelX;
+  unsigned int Grid_NbVoxelY;
+  unsigned int Grid_NbVoxelZ;
+
+  // Size of a pointcloud in voxel
+  unsigned int PointCloud_NbVoxelX;
+  unsigned int PointCloud_NbVoxelY;
+  unsigned int PointCloud_NbVoxelZ;
+
+  double LeafVoxelFilterSize;
+
+  //////////// Variable ///////////////
+  // grid of pointcloud
+  std::vector<std::vector<std::vector<pcl::PointCloud<Point>::Ptr>>> grid;
+//pcl::PointCloud<Point>::Ptr grid[Grid_NbVoxelX][Grid_NbVoxelY][Grid_NbVoxelZ];
+  // voxel grid offset in world coordinate
+  int grid_offsetX;
+  int grid_offsetY;
+  int grid_offsetZ;
+
+  // vizualisation
+  std::vector<int> vizualisation;
+};
+
 
 //-----------------------------------------------------------------------------
 Eigen::Matrix<double, 3, 3> GetRotationMatrix(Eigen::Matrix<double, 6, 1> T)
@@ -215,7 +566,7 @@ void vtkSlam::StopTimeAndDisplay(std::string functionName)
 }
 
 //-----------------------------------------------------------------------------
-std::vector<double> vtkSlam::GetWorldTransform()
+void vtkSlam::GetWorldTransform(double* Tworld)
 {
   // Rotation and translation relative
   Eigen::Matrix<double, 3, 3> Rw;
@@ -226,16 +577,16 @@ std::vector<double> vtkSlam::GetWorldTransform()
   double rx = std::atan2(Rw(2, 1), Rw(2, 2));
   double ry = -std::asin(Rw(2, 0));
   double rz = std::atan2(Rw(1, 0), Rw(0, 0));
-  std::vector<double> res(6, 0);
+//  std::vector<double> res(6, 0);
   
-  res[0] = rx;
-  res[1] = ry;
-  res[2] = rz;
-  res[3] = this->Tworld(3);
-  res[4] = this->Tworld(4);
-  res[5] = this->Tworld(5);
+  Tworld[0] = rx;
+  Tworld[1] = ry;
+  Tworld[2] = rz;
+  Tworld[3] = this->Tworld(3);
+  Tworld[4] = this->Tworld(4);
+  Tworld[5] = this->Tworld(5);
 
-  return res;
+//  return res;
 }
 
 //-----------------------------------------------------------------------------
@@ -243,12 +594,38 @@ void vtkSlam::ResetAlgorithm()
 {
   this->DisplayMode = true; // switch to false to improve speed
   this->NeighborWidth = 5; // size indicated in Zhang paper
-  this->EgoMotionMaxIter = 25; // So that 4 icp will be made
+  this->EgoMotionMaxIter = 25; // So that 5 icp will be made
+  this->MappingMaxIter = 25; // So that 5 icp will be made
+  this->MappingIcpFrequence = 5;
+  this->EgoMotionIcpFrequence = 5;
+  this->MinDistanceToSensor = 3.0;
   this->MaxEdgePerScanLine = 40;
   this->MaxPlanarsPerScanLine = 60;
+  this->PlaneCurvatureThreshold = 1.0 / 10; // 10 meters radius
+  this->EdgeCurvatureThreshold = 1.0 / 10; // 10 meters radius
+
+  this->EgoMotion_LineDistance_k = 3;
+  this->EgoMotion_LineDistance_factor = 30.0;
+
+  this->EgoMotion_PlaneDistance_k = 3;
+  this->EgoMotion_PlaneDistance_factor1 = 30.0;
+  this->EgoMotion_PlaneDistance_factor2 = 3.0;
+
+  this->Mapping_LineDistance_k = 5;
+  this->Mapping_LineDistance_factor = 10.0;
+
+  this->Mapping_PlaneDistance_k = 5;
+  this->Mapping_PlaneDistance_factor1 = 30.0;
+  this->Mapping_PlaneDistance_factor2 = 3.0;
+
+  this->MinPointToLineOrEdgeDistance = 2.0;
+
   this->NbrFrameProcessed = 0;
   this->EgoMotionIterMade = 0;
+  this->MappingIterMade = 0;
+  this->MappingIterMade = 0;
   this->NLasers = 0;
+  this->AngleResolution = 1.2 * (0.4 / 180.0 * vtkMath::Pi());  // azimutal resolution of the VLP-16. We add an extra 20 %
   this->LaserIdMapping.clear();
   this->LaserIdMapping.resize(0);
   this->FromVTKtoPCLMapping.clear();
@@ -281,6 +658,27 @@ void vtkSlam::ResetAlgorithm()
               0, 0, 0, 1, 0, 0,
               0, 0, 0, 0, 1, 0,
               0, 0, 0, 0, 0, 1;
+
+//  delete EdgesPointsLocalMap;
+//  delete PlanarPointsLocalMap;
+  EdgesPointsLocalMap = new RollingGrid();
+  PlanarPointsLocalMap = new RollingGrid();
+  LocalMap = new RollingGrid();
+
+
+  EdgesPointsLocalMap->Set_VoxelSize(10);
+  PlanarPointsLocalMap->Set_VoxelSize(10);
+  LocalMap->Set_VoxelSize(10);
+
+  double nbVoxel[3] = {50,50,50};
+  EdgesPointsLocalMap->Set_Grid_NbVoxel(nbVoxel);
+  PlanarPointsLocalMap->Set_Grid_NbVoxel(nbVoxel);
+  LocalMap->Set_Grid_NbVoxel(nbVoxel);
+
+  nbVoxel[0] = nbVoxel[1] = nbVoxel[2] = 16;
+  EdgesPointsLocalMap->Set_PointCloud_NbVoxel(nbVoxel);
+  PlanarPointsLocalMap->Set_PointCloud_NbVoxel(nbVoxel);
+  LocalMap->Set_PointCloud_NbVoxel(nbVoxel);
 
   // Represent the distance that the lidar has made during one sweep
   // if it is moving at a speed of 90 km/h and spinning at a rpm
@@ -321,13 +719,21 @@ void vtkSlam::PrepareDataForNextFrame()
   this->Label.resize(this->NLasers);
 
   this->EgoMotionIterMade = 0;
+  this->MappingIterMade = 0;
 }
-
 //-----------------------------------------------------------------------------
-void vtkSlam::SetSensorCalibration(std::vector<int> mapping)
+void vtkSlam::SetSensorCalibration(int* mapping, int nbLaser)
 {
-  this->NLasers = mapping.size();
-  this->LaserIdMapping = mapping;
+  cout << "SetSensorCalibration start" << endl;
+  this->NLasers = nbLaser;
+  this->LaserIdMapping.resize(this->NLasers);
+  for (int i = 0; i < this->NLasers; ++i)
+  {
+    cout << "i :" << i  << endl;
+    int indice = static_cast<int>(mapping[2*i+1]);
+    cout << "indice :" << indice  << endl;
+    this->LaserIdMapping[indice] = i;
+  }
   this->pclCurrentFrameByScan.resize(this->NLasers);
 
   std::cout << "mapping is : " << std::endl;
@@ -402,6 +808,7 @@ void vtkSlam::DisplayCurvatureScores(vtkSmartPointer<vtkPolyData> input)
   indexArray2->SetName("index_in_scanLine2");
   idArray->Allocate(input->GetNumberOfPoints());
   idArray->SetName("iDLaser_of_points");
+
   for (unsigned int k = 0; k < input->GetNumberOfPoints(); ++k)
   {
     unsigned int scan = this->FromVTKtoPCLMapping[k].first;
@@ -451,6 +858,21 @@ void vtkSlam::DisplayCurvatureScores(vtkSmartPointer<vtkPolyData> input)
   input->GetPointData()->AddArray(indexArray);
   input->GetPointData()->AddArray(indexArray2);
   input->GetPointData()->AddArray(idArray);
+
+}
+
+//-----------------------------------------------------------------------------
+void vtkSlam::DisplayRollingGrid(vtkSmartPointer<vtkPolyData> input)
+{
+  vtkSmartPointer<vtkIntArray> rollingGridArray = vtkSmartPointer<vtkIntArray>::New();
+  rollingGridArray->Allocate(input->GetNumberOfPoints());
+  rollingGridArray->SetName("rolling_grid");
+  std::vector<int> map = LocalMap->vizualize();
+  for (unsigned int k = 0; k < input->GetNumberOfPoints(); ++k)
+  {
+    rollingGridArray->InsertNextTuple1(map[k]);
+  }
+  input->GetPointData()->AddArray(rollingGridArray);
 }
 
 //-----------------------------------------------------------------------------
@@ -482,14 +904,19 @@ void vtkSlam::OnlyComputeKeypoints(vtkSmartPointer<vtkPolyData> newFrame)
 }
 
 //-----------------------------------------------------------------------------
-void vtkSlam::AddFrame(vtkSmartPointer<vtkPolyData> newFrame)
+void vtkSlam::AddFrame(vtkPolyData* newFrame)
 {
+  this->vtkCurrentFrame = newFrame;
   // Check if the number of lasers has been set
   if (this->NLasers == 0)
   {
     vtkGenericWarningMacro("Frame added without specifying the number of lasers");
   }
-  std::cout << "Processing frame : " << this->NbrFrameProcessed << std:: endl;
+
+  std::cout << "#########################################################" << std::endl
+            << "Processing frame : " << this->NbrFrameProcessed << std:: endl
+            << "#########################################################" << std::endl
+            << std::endl;
 
   // Reset the members variables used during the last
   // processed frame so that they can be used again
@@ -500,13 +927,54 @@ void vtkSlam::AddFrame(vtkSmartPointer<vtkPolyData> newFrame)
   // odometry and mapping steps
   if (this->NbrFrameProcessed == 0)
   {
-    std::cout << "Slam initialization" << std::endl;
+    std::cout << "Slam initialization!" << std::endl;
+
     // Convert the new frame into pcl format and sort
     // the laser scan-lines by vertical angle
     this->ConvertAndSortScanLines(newFrame);
 
     // Compute the edges and planars keypoints
     this->ComputeKeyPoints(newFrame);
+
+//    Tworld << 0.1,0.1,0.1,1,1,1;
+
+    cout << "###LocalMap###" << endl;
+    // Transform point cloud into world referential
+    for (unsigned int i = 0; i < this->pclCurrentFrame->size(); ++i)
+    {
+      this->TransformToWorld(this->pclCurrentFrame->at(i), this->Tworld);
+    }
+    LocalMap->Roll(this->Tworld);
+    LocalMap->Add(pclCurrentFrame);
+
+    cout << "Size of rolling grid : " << LocalMap->Size() << endl;
+
+    cout << "###EdgesPointsLocalMap###" << endl;
+    // Transform point cloud into world referential
+    pcl::PointCloud<Point>::Ptr CurrentEdgesPoints_w(new pcl::PointCloud<Point>());
+    for (unsigned int i = 0; i < this->CurrentEdgesPoints->size(); ++i)
+    {
+      CurrentEdgesPoints_w->push_back(this->CurrentEdgesPoints->at(i));
+      this->TransformToWorld(CurrentEdgesPoints_w->at(i), this->Tworld);
+    }
+    EdgesPointsLocalMap->Roll(this->Tworld);
+    EdgesPointsLocalMap->Add(CurrentEdgesPoints_w);
+
+    cout << "###PlanarPointsLocalMap###" << endl;
+    // Transform point cloud into world referential
+    pcl::PointCloud<Point>::Ptr CurrentPlanarsPoints_w(new pcl::PointCloud<Point>());
+    for (unsigned int i = 0; i < this->CurrentPlanarsPoints->size(); ++i)
+    {
+      CurrentPlanarsPoints_w->push_back(this->CurrentPlanarsPoints->at(i));
+      this->TransformToWorld(CurrentPlanarsPoints_w->at(i), this->Tworld);
+    }
+    PlanarPointsLocalMap->Roll(this->Tworld);
+    PlanarPointsLocalMap->Add(CurrentPlanarsPoints_w);
+
+    if (this->DisplayMode)
+    {
+      this->DisplayRollingGrid(vtkCurrentFrame);
+    }
 
     // Current keypoints become previous ones
     this->PreviousEdgesPoints = this->CurrentEdgesPoints;
@@ -518,12 +986,12 @@ void vtkSlam::AddFrame(vtkSmartPointer<vtkPolyData> newFrame)
   // Convert the new frame into pcl format and sort
   // the laser scan-lines by vertical angle
   this->InitTime();
-  this->ConvertAndSortScanLines(newFrame);
+  this->ConvertAndSortScanLines(vtkCurrentFrame);
   this->StopTimeAndDisplay("Sorting lines");
 
   // Compute the edges and planars keypoints
   this->InitTime();
-  this->ComputeKeyPoints(newFrame);
+  this->ComputeKeyPoints(vtkCurrentFrame);
   this->StopTimeAndDisplay("Keypoints extraction");
 
   // Perfom EgoMotion
@@ -537,6 +1005,11 @@ void vtkSlam::AddFrame(vtkSmartPointer<vtkPolyData> newFrame)
   this->InitTime();
   //this->TransformCurrentKeypointsToEnd();
   this->StopTimeAndDisplay("Undistortion");
+
+  // Perform Mapping
+  this->InitTime();
+  this->Mapping();
+  this->StopTimeAndDisplay("Mapping");
 
   // Current keypoints become previous ones
   this->PreviousEdgesPoints = this->CurrentEdgesPoints;
@@ -559,6 +1032,32 @@ void vtkSlam::AddFrame(vtkSmartPointer<vtkPolyData> newFrame)
   std::cout << "World : " << std::endl;
   std::cout << "angles : " << std::endl << angles << std::endl;
   std::cout << "trans : " << std::endl << trans << std::endl;
+
+  // update new frame
+//  pcl::PointCloud<Point>::Ptr tmp = this->EdgesPointsLocalMap->Get(this->Tworld);
+//  // create points
+//  vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
+//  vtkSmartPointer<vtkCellArray> vertices = vtkSmartPointer<vtkCellArray>::New();
+
+//  for (int i = 0 ; i < tmp->size(); i++)
+//  {
+//    float p[3] = {tmp->at(i).x, tmp->at(i).y, tmp->at(i).z};
+
+//    // Create the topology of the point (a vertex)
+
+//    vtkIdType pid[1];
+//    pid[0] = points->InsertNextPoint(p);
+//    vertices->InsertNextCell(1,pid);
+
+//  }
+//  // Create a polydata object
+//  vtkSmartPointer<vtkPolyData> point = vtkSmartPointer<vtkPolyData>::New();
+
+//  // Set the points and vertices we created as the geometry and topology of the polydata
+//  point->SetPoints(points);
+//  point->SetVerts(vertices);
+
+//  newFrame = point;
 
   return;
 }
@@ -599,6 +1098,7 @@ void vtkSlam::ConvertAndSortScanLines(vtkSmartPointer<vtkPolyData> input)
     yL.normal_y = id;
 
     // add the current point to its corresponding laser scan
+    this->pclCurrentFrame->push_back(yL);
     this->pclCurrentFrameByScan[id]->push_back(yL);
     this->FromVTKtoPCLMapping[index] = std::pair<int, int>(id, this->pclCurrentFrameByScan[id]->size() - 1);
     this->FromPCLtoVTKMapping[id].push_back(index);
@@ -788,8 +1288,6 @@ void vtkSlam::InvalidPointWithBadCriteria()
   Eigen::Matrix<double, 3, 1> dX, X, Xn, Xp;
   double dL, L, Ln, expectedLength, dLn, dLp;
   Point currentPoint, nextPoint, previousPoint;
-  // azimutal resolution of the VLP-16. We add an extra 20 %
-  double const angleResolution = 1.2 * (0.4 / 180.0 * vtkMath::Pi());
 
   // loop over scan lines
   for (unsigned int scanLine = 0; scanLine < this->NLasers; ++scanLine)
@@ -828,7 +1326,7 @@ void vtkSlam::InvalidPointWithBadCriteria()
       // the expected length between two firing of the same laser
       // depend on the distance and the angular resolution of the
       // sensor.
-      expectedLength = 2.0 *  std::tan(angleResolution / 2.0) * L;
+      expectedLength = 2.0 *  std::tan(this->AngleResolution / 2.0) * L;
 
       // if the length between the two firing
       // if more than n-th the expected length
@@ -877,7 +1375,7 @@ void vtkSlam::InvalidPointWithBadCriteria()
         }
       }
       // Invalid points which are too close from the sensor
-      if (L < 3.0)
+      if (L < this->MinDistanceToSensor)
       {
         this->IsPointValid[scanLine][index] = 0;
       }
@@ -937,8 +1435,7 @@ void vtkSlam::SetKeyPointsLabels(vtkSmartPointer<vtkPolyData> input)
       }
 
       // thresh
-      double curvThresh = 1.0 / 4.0; // 4 meters radius
-      if (curvature < 0.1)
+      if (curvature < this->EdgeCurvatureThreshold)
       {
         break;
       }
@@ -978,8 +1475,7 @@ void vtkSlam::SetKeyPointsLabels(vtkSmartPointer<vtkPolyData> input)
       }
 
       // thresh
-      double curvThresh = 1.0 / 15.0; // 15 meters radius
-      if (curvature > 0.1)
+      if (curvature > this->PlaneCurvatureThreshold)
       {
         break;
       }
@@ -1102,6 +1598,25 @@ void vtkSlam::TransformCurrentKeypointsToEnd()
     this->TransformToEnd(currentPoint, transformedPoint, this->Trelative);
     this->CurrentPlanarsPoints->points[k] = transformedPoint;
   }
+}
+
+//-----------------------------------------------------------------------------
+void vtkSlam::TransformToWorld(Point& p, Eigen::Matrix<double, 6, 1>& T)
+{
+  // Rotation and translation and points
+  Eigen::Matrix<double, 3, 3> Rw;
+  Eigen::Matrix<double, 3, 1> Tw;
+  Eigen::Matrix<double, 3, 1> P;
+
+  Rw = GetRotationMatrix(T);
+  Tw << T(3), T(4), T(5);
+  P << p.x, p.y, p.z;
+
+  P = Rw * P + Tw;
+
+  p.x = P(0);
+  p.y = P(1);
+  p.z = P(2);
 }
 
 //-----------------------------------------------------------------------------
@@ -1464,15 +1979,32 @@ void vtkSlam::ComputePlaneDistanceParameters(std::vector<int>& matchPlaneIndex1,
 
 //-----------------------------------------------------------------------------
 void vtkSlam::ComputeLineDistanceParametersAccurate(pcl::KdTreeFLANN<Point>::Ptr kdtreePreviousEdges, Eigen::Matrix<double, 3, 3>& R,
-                                                    Eigen::Matrix<double, 3, 1>& dT, Point p)
+                                                    Eigen::Matrix<double, 3, 1>& dT, Point p, std::string step)
 {
   // number of neighbors edge points required to approximate
   // the corresponding egde line
-  unsigned int requiredNearest = 4;
-  if (this->NLasers > 16)
-    requiredNearest = 5;
+  unsigned int requiredNearest;
+  unsigned int significantly_factor;
+  if (step == "egoMotion")
+  {
+    requiredNearest = this->EgoMotion_LineDistance_k;
+    significantly_factor = this->EgoMotion_LineDistance_k;
+//    if (this->NLasers > 16)
+//      requiredNearest = 5;
+  }
+  else if (step == "mapping")
+  {
+    requiredNearest = this->Mapping_LineDistance_k;
+    significantly_factor = this->Mapping_LineDistance_factor;
+//    if (this->NLasers > 16)
+//      requiredNearest = 5;
+  }
+  else
+  {
+    throw "ComputeLineDistanceParametersAccurate function got invalide step parameter";
+  }
 
-  Eigen::Matrix<double, 3, 1> P0, P, P1, n, X;
+  Eigen::Matrix<double, 3, 1> P0, P, n;
   Eigen::Matrix<double, 3, 3> A;
 
   // Transform the point using the current pose estimation
@@ -1487,55 +2019,45 @@ void vtkSlam::ComputeLineDistanceParametersAccurate(pcl::KdTreeFLANN<Point>::Ptr
 
   // if the nearest edges are too far from the
   // current edge keypoint we skip this point.
-  if (nearestDist[requiredNearest - 1] > 2.0)
+  if (nearestDist[requiredNearest - 1] > this->MinPointToLineOrEdgeDistance)
   {
     return;
   }
+
+  // TODO use a RANSAC and then a PCA instead of just a PCA
+  // eliminate point more distant than X meters from the Line
 
   // Compute PCA to determine best line approximation
   // of the requiredNearest nearest edges points extracted
   // Thans to the PCA we will check the shape of the neighborhood
   // and keep it if it is distributed along a line
-  Eigen::MatrixXd M(requiredNearest, 3);
-  Eigen::Matrix<double, 3, 1> mean;
-  mean << 0, 0, 0;
-  for (unsigned int k = 0; k < requiredNearest; ++k)
+  Eigen::MatrixXd data(requiredNearest,3);
+  for (unsigned int k = 0; k < requiredNearest; k++)
   {
-    p = this->PreviousEdgesPoints->points[nearestIndex[k]];
-    X << p.x, p.y, p.z;
-    mean += X;
-    M(k, 0) = X(0);
-    M(k, 1) = X(1);
-    M(k, 2) = X(2);
+    Point pt = kdtreePreviousEdges->getInputCloud()->points[nearestIndex[k]];
+    data.row(k) << pt.x, pt.y, pt.z;
   }
+  Eigen::Matrix<double, 3, 1> mean = data.colwise().mean();
+  Eigen::MatrixXd centered = data.rowwise() - mean.transpose();
+  Eigen::MatrixXd cov = centered.transpose() * centered;
+  Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eig(cov);
 
-  mean /= static_cast<double>(requiredNearest);
-  for (unsigned int k = 0; k < requiredNearest; ++k)
-  {
-    M(k, 0) -= mean(0);
-    M(k, 1) -= mean(1);
-    M(k, 2) -= mean(2);
-  }
-  Eigen::Matrix<double, 3, 3> G = M.transpose() * M;
 
   // Eigen values
   Eigen::MatrixXd D(1,3);
   // Eigen vectors
   Eigen::MatrixXd V(3,3);
 
-  Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(G);
-  D = es.eigenvalues();
-  V = es.eigenvectors();
+  D = eig.eigenvalues();
+  V = eig.eigenvectors();
 
   // if the first eigen value is significantly higher than
   // the second one, it means the sourrounding points are 
   // distributed on a edge line
-  if (D(2, 0) > 30 * D(1, 0))
+  if (D(2) > significantly_factor * D(1))
   {
     // n is the director vector of the line
-    n(0) = V(0, 2);
-    n(1) = V(1, 2);
-    n(2) = V(2, 2);
+    n = V.col(2);
     n.normalized();
   }
   else
@@ -1563,15 +2085,34 @@ void vtkSlam::ComputeLineDistanceParametersAccurate(pcl::KdTreeFLANN<Point>::Ptr
 
 //-----------------------------------------------------------------------------
 void vtkSlam::ComputePlaneDistanceParametersAccurate(pcl::KdTreeFLANN<Point>::Ptr kdtreePreviousPlanes, Eigen::Matrix<double, 3, 3>& R,
-                                                     Eigen::Matrix<double, 3, 1>& dT, Point p)
+                                                     Eigen::Matrix<double, 3, 1>& dT, Point p, std::string step)
 {
   // number of neighbors edge points required to approximate
   // the corresponding egde line
-  unsigned int requiredNearest = 8;
-  if (this->NLasers > 16)
-    requiredNearest = 7;
+  unsigned int requiredNearest;
+  unsigned int significantlyFactor1, significantlyFactor2;
+  if (step == "egoMotion")
+  {
+    significantlyFactor1 = this->EgoMotion_PlaneDistance_factor1;
+    significantlyFactor2 = this->EgoMotion_PlaneDistance_factor2;
+    requiredNearest = this->EgoMotion_PlaneDistance_k;
+//    if (this->NLasers > 16)
+//      requiredNearest = 7;
+  }
+  else if (step == "mapping")
+  {
+    significantlyFactor1 = this->Mapping_PlaneDistance_factor1;
+    significantlyFactor2 = this->Mapping_PlaneDistance_factor2;
+    requiredNearest = this->Mapping_PlaneDistance_k;
+//    if (this->NLasers > 16)
+//      requiredNearest = 7;
+  }
+  else
+  {
+    throw "ComputeLineDistanceParametersAccurate function got invalide step parameter";
+  }
 
-  Eigen::Matrix<double, 3, 1> P0, P, P1, P2, n, X;
+  Eigen::Matrix<double, 3, 1> P0, P, n;
   Eigen::Matrix<double, 3, 3> A;
 
   // Transform the point using the current pose estimation
@@ -1586,54 +2127,46 @@ void vtkSlam::ComputePlaneDistanceParametersAccurate(pcl::KdTreeFLANN<Point>::Pt
 
   // if the nearest planars are too far from the
   // current planar keypoint we skip this point.
-  if (nearestDist[requiredNearest - 1] > 2.0)
+  if (nearestDist[requiredNearest - 1] > this->MinPointToLineOrEdgeDistance)
   {
     return;
   }
+  // TODO use a RANSAC and then a PCA instead of just a PCA
+  // eliminate point more distant than X meters from the Plane
 
   // Compute PCA to determine best line approximation
   // of the requiredNearest nearest edges points extracted
   // Thanks to the PCA we will check the shape of the neighborhood
   // and keep it if it is distributed along a line
-  Eigen::MatrixXd M(requiredNearest, 3);
-  Eigen::Matrix<double, 3, 1> mean;
-  mean << 0, 0, 0;
-  for (unsigned int k = 0; k < requiredNearest; ++k)
-  {
-    p = this->PreviousPlanarsPoints->points[nearestIndex[k]];
-    X << p.x, p.y, p.z;
-    mean += X;
-    M(k, 0) = X(0);
-    M(k, 1) = X(1);
-    M(k, 2) = X(2);
-  }
-  mean /= static_cast<double>(requiredNearest);
 
-  for (unsigned int k = 0; k < requiredNearest; ++k)
+  Eigen::MatrixXd data(requiredNearest,3);
+  for (unsigned int k = 0; k < requiredNearest; k++)
   {
-    M(k, 0) -= mean(0);
-    M(k, 1) -= mean(1);
-    M(k, 2) -= mean(2);
+    Point pt = kdtreePreviousPlanes->getInputCloud()->points[nearestIndex[k]];
+    data.row(k) << pt.x, pt.y, pt.z;
   }
-  Eigen::Matrix<double, 3, 3> G = M.transpose() * M;
+  Eigen::Matrix<double, 3, 1> mean = data.colwise().mean();
+  Eigen::MatrixXd centered = data.rowwise() - mean.transpose();
+  Eigen::MatrixXd cov = centered.transpose() * centered;
+  Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eig(cov);
 
   // Eigen values
   Eigen::MatrixXd D(1,3);
   // Eigen vectors
   Eigen::MatrixXd V(3,3);
 
-  Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(G);
-  D = es.eigenvalues();
-  V = es.eigenvectors();
+  D = eig.eigenvalues();
+  V = eig.eigenvectors();
 
   // if the second eigen value is close to the highest one
   // and bigger than the smallest one it means that the points
   // are distributed among a plane
   Eigen::Matrix<double, 3, 1> u, v;
-  if ( (3 * D(1, 0) > D(2, 0)) && (D(1, 0) > 30 * D(0, 0)) )
+  if ( (significantlyFactor2 * D(1) > D(2)) && (D(1) > significantlyFactor1 * D(0)) )
   {
-    u << V(0, 2), V(1, 2), V(2, 2);
-    v << V(0, 1), V(1, 1), V(2, 1);
+    u = V.col(2);
+    v = V.col(1);
+
   }
   else
   {
@@ -1843,7 +2376,7 @@ void vtkSlam::ComputeEgoMotion()
     R = GetRotationMatrix(this->Trelative);
     dT << this->Trelative(3), this->Trelative(4), this->Trelative(5);
 
-    if (iterCount % iterFindMatches == 0)
+    if (iterCount % this->EgoMotionIcpFrequence == 0)
     {
       this->ResetDistanceParameters();
     }
@@ -1862,10 +2395,10 @@ void vtkSlam::ComputeEgoMotion()
       //currentPoint = transformedPoint;
 
       // Find the closest correspondence edge line of the current edge point
-      if (iterCount % iterFindMatches == 0)
+      if (iterCount % this->EgoMotionIcpFrequence == 0)
       {
         //this->FindEdgeLineMatch(currentPoint, kdtreePreviousEdges, matchEdgeIndex1, matchEdgeIndex2, edgeIndex, R, dT);
-        this->ComputeLineDistanceParametersAccurate(kdtreePreviousEdges, R, dT, currentPoint);
+        this->ComputeLineDistanceParametersAccurate(kdtreePreviousEdges, R, dT, currentPoint, "egoMotion");
         nbrEdgesUsed = this->Xvalues.size();
       }
 
@@ -1885,10 +2418,10 @@ void vtkSlam::ComputeEgoMotion()
       //currentPoint = transformedPoint;
 
       // Find the closest correspondence edge line of the current edge point
-      if (iterCount % iterFindMatches == 0)
+      if (iterCount % this->EgoMotionIcpFrequence == 0)
       {
         //this->FindPlaneMatch(currentPoint, kdtreePreviousPlanes, matchPlaneIndex1, matchPlaneIndex2, matchPlaneIndex3, planarIndex, R, dT);
-        this->ComputePlaneDistanceParametersAccurate(kdtreePreviousPlanes, R, dT, currentPoint);
+        this->ComputePlaneDistanceParametersAccurate(kdtreePreviousPlanes, R, dT, currentPoint, "egoMotion");
         nbrPlanesUsed = this->Xvalues.size() - nbrEdgesUsed;
       }
 
@@ -1980,6 +2513,183 @@ void vtkSlam::ComputeEgoMotion()
 }
 
 //-----------------------------------------------------------------------------
+void vtkSlam::Mapping()
+{
+  std::vector<double> costFunction(0, 0);
+  double lambda = 0.1;
+
+  // contruct kd-tree for fast search
+  pcl::KdTreeFLANN<Point>::Ptr kdtreeEdges(new pcl::KdTreeFLANN<Point>());
+  pcl::KdTreeFLANN<Point>::Ptr kdtreePlanes(new pcl::KdTreeFLANN<Point>());
+
+  pcl::PointCloud<Point>::Ptr subEdgesPointsLocalMap = this->EdgesPointsLocalMap->Get(this->Tworld);
+  pcl::PointCloud<Point>::Ptr subPlanarPointsLocalMap = this->PlanarPointsLocalMap->Get(this->Tworld);
+
+  kdtreeEdges->setInputCloud(subEdgesPointsLocalMap);
+  kdtreePlanes->setInputCloud(subPlanarPointsLocalMap);
+
+//  cout << "Nb of Egde available for ICP : " << this->EdgesPointsLocalMap->Get(this->Tworld)->size() << " and Planes : " << this->PlanarPointsLocalMap->Get(this->Tworld)->size() << endl;
+
+  unsigned int usedEdges = 0;
+  unsigned int usedPlanes = 0;
+
+  // ICP - Levenberg-Marquardt loop
+  for (int iterCount = 0; iterCount < this->MappingMaxIter; ++iterCount)
+  {
+    cout << "####### Iter : " << MappingIterMade << endl;
+    // Rotation and translation at this step      
+    Eigen::Matrix<double, 3, 3> R;
+    Eigen::Matrix<double, 3, 1> dT;
+
+    R = GetRotationMatrix(this->Tworld);
+    dT << this->Tworld(3), this->Tworld(4), this->Tworld(5);
+
+
+    Point currentPoint;
+
+    // ### Perform matching every once in a while
+    if (iterCount % this->MappingIcpFrequence == 0)
+    {
+      // clear all data
+      this->Xvalues.clear();
+      this->Xvalues.resize(0);
+      this->Avalues.clear();
+      this->Avalues.resize(0);
+      this->Pvalues.clear();
+      this->Pvalues.resize(0);
+
+      // loop over edges
+      for (unsigned int edgeIndex = 0; edgeIndex < this->CurrentEdgesPoints->size(); ++edgeIndex)
+      {
+        currentPoint = this->CurrentEdgesPoints->points[edgeIndex];
+
+        // Find the closest correspondence edge line of the current edge point
+        this->ComputeLineDistanceParametersAccurate(kdtreeEdges, R, dT, currentPoint, "mapping");
+        usedEdges = this->Xvalues.size();
+      }
+
+      // loop over surfaces
+      for (unsigned int planarIndex = 0; planarIndex < this->CurrentPlanarsPoints->size(); ++planarIndex)
+      {
+        currentPoint = this->CurrentPlanarsPoints->points[planarIndex];
+
+        // Find the closest correspondence edge line of the current edge point
+        this->ComputePlaneDistanceParametersAccurate(kdtreePlanes, R, dT, currentPoint, "mapping");
+        usedPlanes = this->Xvalues.size() - usedEdges;
+      }
+    }
+
+    // ### Perfom optimization step
+
+    // f(R, T) = sum(fi(R, T))
+    // fi(R, T) = sqrt((R*X+T-P).t * A * (R*X+T-P)
+    // J: residual jacobians, [dfi(R, T)/dR, dfi(R, T)/dT]
+    // Y: residual values, fi(R, T)
+    Eigen::MatrixXd J, Y;
+    this->ComputeResidualValues(this->Avalues, this->Xvalues, this->Pvalues, R, dT, Y);
+    this->ComputeResidualJacobians(this->Avalues, this->Xvalues, this->Pvalues, this->Tworld, J);
+
+    // RMSE
+    costFunction.push_back(0);
+    for (unsigned int kk = 0; kk < Y.rows(); ++kk)
+    {
+      costFunction[costFunction.size() - 1] += Y(kk);
+    }
+    costFunction[costFunction.size() - 1] /= static_cast<double>(this->Xvalues.size());
+
+    Eigen::MatrixXd Jt = J.transpose();
+    Eigen::MatrixXd JtJ = Jt * J;
+    Eigen::MatrixXd JtY = Jt * Y;
+
+    // The next step of the L-M algorithm is computed by solving
+    // (JtJ + lambda * diagJtJ) = Jt * Y. To avoid the computation
+    // of the inverse of (JtJ + lambda * diagJtJ) we use a gauss-pivot
+    // algorithm to solve the linear equation for this particular point
+    Eigen::ColPivHouseholderQR<Eigen::MatrixXd> dec(JtJ + lambda * this->I6);
+    Eigen::Matrix<double, 6, 1> X = dec.solve(JtY);
+
+    // Check if the cost function has not increase
+    // in the last iteration. If it does, we are too
+    // away from the solution to use the Gauss-Newton
+    // algorithm. Increase lambda to drift toward gradient descent
+    Eigen::Matrix<double, 6, 1> Tcandidate;
+    cout << "step : " << X << endl;
+    Tcandidate = this->Tworld - X;
+    Eigen::Matrix<double, 3, 3> Rcandidate = GetRotationMatrix(Tcandidate);
+    Eigen::Matrix<double, 3, 1> dTcandidate;
+    dTcandidate << Tcandidate(3), Tcandidate(4), Tcandidate(5);
+    Eigen::MatrixXd Ycandidate;
+    this->ComputeResidualValues(this->Avalues, this->Xvalues, this->Pvalues, Rcandidate, dTcandidate, Ycandidate);
+    double newCost = 0;
+    for (unsigned int kk = 0; kk < Ycandidate.rows(); ++kk)
+    {
+      newCost += Ycandidate(kk);
+    }
+    newCost /= static_cast<double>(this->Xvalues.size());
+
+    if (newCost > costFunction[costFunction.size() - 1])
+    {
+      lambda = 10.0 * lambda;
+    }
+    else
+    {
+      this->Tworld = Tcandidate;
+      lambda = 1.0 / 3.0 * lambda;
+    }
+
+    this->MappingIterMade = iterCount + 1;
+
+    std::cout << "edges : " << usedEdges << " planes : " << usedPlanes << std::endl;
+    std::cout << "Tworld : " << Tworld << endl;
+    std::cout << "Trel : " << this->Trelative << endl;
+    std::cout << "cost : " << newCost << endl;;
+    cout << "lambda : " << lambda << endl;
+
+  }
+
+  std::cout << "cost goes from : " << costFunction[0] << " to : " << costFunction[costFunction.size() - 1] << std::endl;
+  std::cout << "used keypoints : " << this->Xvalues.size() << std::endl;
+  std::cout << "edges : " << usedEdges << " planes : " << usedPlanes << std::endl;
+//  std::cout << "nbr rejection : " << nbrRejection << std::endl;
+  std::cout << "final lambda value : " << lambda << std::endl;
+
+  // Update LocalMap
+  for (unsigned int i = 0; i < this->pclCurrentFrame->size(); ++i)
+  {
+    this->TransformToWorld(this->pclCurrentFrame->at(i), this->Tworld);
+  }
+  LocalMap->Roll(this->Tworld);
+  LocalMap->Add(this->pclCurrentFrame);
+
+  // Update EdgeMap
+  pcl::PointCloud<Point>::Ptr CurrentEdgesPoints_w(new pcl::PointCloud<Point>());
+  for (unsigned int i = 0; i < this->CurrentEdgesPoints->size(); ++i)
+  {
+    CurrentEdgesPoints_w->push_back(this->CurrentEdgesPoints->at(i));
+    this->TransformToWorld(CurrentEdgesPoints_w->at(i), this->Tworld);
+  }
+  EdgesPointsLocalMap->Roll(this->Tworld);
+  EdgesPointsLocalMap->Add(CurrentEdgesPoints_w);
+
+  // Update PlanarMap
+  pcl::PointCloud<Point>::Ptr CurrentPlanarsPoints_w(new pcl::PointCloud<Point>());
+  for (unsigned int i = 0; i < this->CurrentPlanarsPoints->size(); ++i)
+  {
+    CurrentPlanarsPoints_w->push_back(this->CurrentPlanarsPoints->at(i));
+    this->TransformToWorld(CurrentPlanarsPoints_w->at(i), this->Tworld);
+  }
+  PlanarPointsLocalMap->Roll(this->Tworld);
+  PlanarPointsLocalMap->Add(CurrentPlanarsPoints_w);
+
+
+  // Display rolling grid
+  if (this->DisplayMode)
+  {
+    this->DisplayRollingGrid(vtkCurrentFrame);
+  }
+}
+
+//-----------------------------------------------------------------------------
 void vtkSlam::ResetDistanceParameters()
 {
   this->Xvalues.clear();
@@ -2026,3 +2736,56 @@ void vtkSlam::UpdateTworldUsingTrelative()
   this->Tworld(4) = newTw(1);
   this->Tworld(5) = newTw(2);
 }
+
+//-----------------------------------------------------------------------------
+/*const*/ unsigned int vtkSlam::Get_RollingGrid_VoxelSize() const
+{
+  return this->EdgesPointsLocalMap->Get_VoxelSize();
+}
+
+void vtkSlam::Set_RollingGrid_VoxelSize(const unsigned int size)
+{
+  this->EdgesPointsLocalMap->Set_VoxelSize(size);
+  this->PlanarPointsLocalMap->Set_VoxelSize(size);
+  this->LocalMap->Set_VoxelSize(size);
+}
+
+//-----------------------------------------------------------------------------
+void vtkSlam::Get_RollingGrid_Grid_NbVoxel(double nbVoxel[3]) const
+{
+  this->EdgesPointsLocalMap->Get_Grid_NbVoxel(nbVoxel);
+}
+
+void vtkSlam::Set_RollingGrid_Grid_NbVoxel(const double nbVoxel[3])
+{
+  this->EdgesPointsLocalMap->Set_Grid_NbVoxel(nbVoxel);
+  this->PlanarPointsLocalMap->Set_Grid_NbVoxel(nbVoxel);
+  this->LocalMap->Set_Grid_NbVoxel(nbVoxel);
+}
+
+//-----------------------------------------------------------------------------
+void vtkSlam::Get_RollingGrid_PointCloud_NbVoxel(double nbVoxel[3]) const
+{
+  this->EdgesPointsLocalMap->Get_PointCloud_NbVoxel(nbVoxel);
+}
+
+void vtkSlam::Set_RollingGrid_PointCloud_NbVoxel(const double nbVoxel[3])
+{
+  this->EdgesPointsLocalMap->Set_PointCloud_NbVoxel(nbVoxel);
+  this->PlanarPointsLocalMap->Set_PointCloud_NbVoxel(nbVoxel);
+  this->LocalMap->Set_PointCloud_NbVoxel(nbVoxel);
+}
+
+//-----------------------------------------------------------------------------
+/*const*/ double vtkSlam::Get_RollingGrid_LeafVoxelFilterSize() const
+{
+  return this->EdgesPointsLocalMap->Get_LeafVoxelFilterSize();
+}
+
+void vtkSlam::Set_RollingGrid_LeafVoxelFilterSize(const unsigned int size)
+{
+  this->EdgesPointsLocalMap->Set_LeafVoxelFilterSize(size);
+  this->PlanarPointsLocalMap->Set_LeafVoxelFilterSize(size);
+  this->LocalMap->Set_LeafVoxelFilterSize(size);
+}
+

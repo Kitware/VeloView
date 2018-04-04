@@ -30,6 +30,7 @@ import kiwiviewerExporter
 import gridAdjustmentDialog
 import aboutDialog
 import planefit
+import slam
 
 from PythonQt.paraview import vvCalibrationDialog, vvCropReturnsDialog, vvSelectFramesDialog
 from VelodyneHDLPluginPython import vtkVelodyneHDLReader
@@ -2159,32 +2160,7 @@ def toggleRPM():
     smp.Render()
 
 def toggleLaunchSlam():
-    #Get the active source
-    source = smp.GetActiveSource()
-    
-    #If no data are available
-    if not source :
-        return
-        
-    frameOptions = getFrameSelectionFromUser(framePackVisibility=False, frameTransformVisibility=False)
-    # If the user cancelled the computeSlam dialog, there is no frameOptions
-    if not frameOptions:
-        return
-    
-    # Instanciation of a new vtkSlamAlgorithm
-    app.slam = smp.Slam()
-    source.GetClientSideObject().SetSlam( app.slam.GetClientSideObject() )
-    
-    # set the frame mapping to relative raw
-    # get the main window
-    # mW = getMainWindow()
-    # get the geolocation toolbar
-    #geolocationToolBar = mW.findChild('QToolBar', 'geolocationToolbar')
-    # get the frame mapping combo box. The combo box doesn't have a name
-    # but since it is the only combo box it is ok
-    #frameMapping = geolocationToolBar.findChild('QComboBox', '')
-    #frameMapping.setCurrentIndex(0)
-    source.GetClientSideObject().LaunchSlam(frameOptions.start, frameOptions.stop)
+    slam.launch()
 
 def toggleSelectDualReturn():
     # test if we are on osx os

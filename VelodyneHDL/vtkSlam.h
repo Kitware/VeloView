@@ -59,6 +59,18 @@
 #ifndef VTK_SLAM_H
 #define VTK_SLAM_H
 
+#define slamGetMacro(prefix,name,type) \
+type Get_##prefix##_##name () const\
+  { \
+  return this->name; \
+  }
+
+#define slamSetMacro(prefix,name,type) \
+void Set_##prefix##_##name (const type _arg) \
+{ \
+  this->name = _arg; \
+}
+
 // LOCAL
 #include "vtkPCLConversions.h"
 // STD
@@ -74,24 +86,10 @@
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/kdtree/kdtree_flann.h>
 
+
 class vtkVelodyneTransformInterpolator;
-
+class RollingGrid;
 typedef pcl::PointXYZINormal Point;
-
-// It represents the dimensions of the voxelisation of the
-// 3D space. The space is divided into voxel to compute faster
-// the mapping. The voxelisation cube is updated at each sweep 
-// and the points which are too far are removed. 
-const int NVoxelWidth = 30;
-const int NVoxelHeight = 30;
-const int NVoxelDepth = 30;
-
-// During the Levenberg-Marquardt algoritm
-// keypoints will have to be match with planes
-// and lines of the previous frame. This parameter
-// indicates how many ieteration we want to do before
-// running the closest-point matching again
-const int iterFindMatches = 5;
 
 class VTK_EXPORT vtkSlam : public vtkPolyDataAlgorithm
 {
@@ -106,7 +104,7 @@ public:
   // From this frame; keypoints will be computed and extracted
   // in order to recover the ego-motion of the lidar sensor
   // and to update the map using keypoints and ego-motion
-  void AddFrame(vtkSmartPointer<vtkPolyData> newFrame);
+  void AddFrame(vtkPolyData* newFrame);
 
   // Reset the algorithm. Notice that this function
   // will erase the map and all transformations that
@@ -116,7 +114,7 @@ public:
   // Provide the calibration of the current sensor.
   // The mapping indicates the number of laser and
   // the mapping of the laser id
-  void SetSensorCalibration(std::vector<int> mapping);
+  void SetSensorCalibration(int* mapping, int nbLaser);
 
   // Indicate if the sensor calibration: number
   // of lasers and mapping of the laser id has been
@@ -124,11 +122,100 @@ public:
   bool GetIsSensorCalibrationProvided();
 
   // Get the computed world transform so far
-  std::vector<double> GetWorldTransform();
+  void GetWorldTransform(double* Tworld);
 
   // Only compute the keypoint extraction to display result
   // This function is usefull for debugging
   void OnlyComputeKeypoints(vtkSmartPointer<vtkPolyData> newFrame);
+
+  // Get/Set General
+  slamGetMacro(,DisplayMode,bool)
+  slamSetMacro(,DisplayMode,bool)
+
+  slamGetMacro(,MaxDistBetweenTwoFrames,double)
+  slamSetMacro(,MaxDistBetweenTwoFrames,double)
+
+  slamGetMacro(,AngleResolution,double)
+  slamSetMacro(,AngleResolution,double)
+
+  // Get/Set RollingGrid
+  /*const*/ unsigned int Get_RollingGrid_VoxelSize() const;
+  void Set_RollingGrid_VoxelSize(const unsigned int size);
+
+  void Get_RollingGrid_Grid_NbVoxel(double nbVoxel[3]) const;
+  void Set_RollingGrid_Grid_NbVoxel(const double nbVoxel[3]);
+
+  void Get_RollingGrid_PointCloud_NbVoxel(double nbVoxel[3]) const;
+  void Set_RollingGrid_PointCloud_NbVoxel(const double nbVoxel[3]);
+
+  /*const*/ double Get_RollingGrid_LeafVoxelFilterSize() const;
+  void Set_RollingGrid_LeafVoxelFilterSize(const unsigned int size);
+
+  // Get/Set Keypoint
+  slamGetMacro(Keypoint,MaxEdgePerScanLine,unsigned int)
+  slamSetMacro(Keypoint,MaxEdgePerScanLine,unsigned int)
+
+  slamGetMacro(Keypoint,MaxPlanarsPerScanLine,unsigned int)
+  slamSetMacro(Keypoint,MaxPlanarsPerScanLine,unsigned int)
+
+  slamGetMacro(Keypoint,MinDistanceToSensor,double)
+  slamSetMacro(Keypoint,MinDistanceToSensor,double)
+
+  slamGetMacro(Keypoint,PlaneCurvatureThreshold,double)
+  slamSetMacro(Keypoint,PlaneCurvatureThreshold,double)
+
+  slamGetMacro(Keypoint,EdgeCurvatureThreshold,double)
+  slamSetMacro(Keypoint,EdgeCurvatureThreshold,double)
+
+  // Get/Set EgoMotion
+  slamGetMacro(EgoMotion,EgoMotionMaxIter,unsigned int)
+  slamSetMacro(EgoMotion,EgoMotionMaxIter,unsigned int)
+
+  slamGetMacro(EgoMotion,EgoMotionIcpFrequence,unsigned int)
+  slamSetMacro(EgoMotion,EgoMotionIcpFrequence,unsigned int)
+
+  slamGetMacro(EgoMotion,EgoMotion_LineDistance_k,unsigned int)
+  slamSetMacro(EgoMotion,EgoMotion_LineDistance_k,unsigned int)
+
+  slamGetMacro(EgoMotion,EgoMotion_LineDistance_factor,double)
+  slamSetMacro(EgoMotion,EgoMotion_LineDistance_factor,double)
+
+  slamGetMacro(EgoMotion,EgoMotion_PlaneDistance_k,unsigned int)
+  slamSetMacro(EgoMotion,EgoMotion_PlaneDistance_k,unsigned int)
+
+  slamGetMacro(EgoMotion,EgoMotion_PlaneDistance_factor1,double)
+  slamSetMacro(EgoMotion,EgoMotion_PlaneDistance_factor1,double)
+
+  slamGetMacro(EgoMotion,EgoMotion_PlaneDistance_factor2,double)
+  slamSetMacro(EgoMotion,EgoMotion_PlaneDistance_factor2,double)
+
+  // Get/Set Mapping
+  slamGetMacro(Mapping,MappingMaxIter,unsigned int)
+  slamSetMacro(Mapping,MappingMaxIter,unsigned int)
+
+  slamGetMacro(Mapping,MappingIcpFrequence,unsigned int)
+  slamSetMacro(Mapping,MappingIcpFrequence,unsigned int)
+
+  slamGetMacro(Mapping,Mapping_LineDistance_k,unsigned int)
+  slamSetMacro(Mapping,Mapping_LineDistance_k,unsigned int)
+
+  slamGetMacro(Mapping,Mapping_LineDistance_factor,double)
+  slamSetMacro(Mapping,Mapping_LineDistance_factor,double)
+
+  slamGetMacro(Mapping,Mapping_PlaneDistance_k,unsigned int)
+  slamSetMacro(Mapping,Mapping_PlaneDistance_k,unsigned int)
+
+  slamGetMacro(Mapping,Mapping_PlaneDistance_factor1,double)
+  slamSetMacro(Mapping,Mapping_PlaneDistance_factor1,double)
+
+  slamGetMacro(Mapping,Mapping_PlaneDistance_factor2,double)
+  slamSetMacro(Mapping,Mapping_PlaneDistance_factor2,double)
+
+  // Get/Set EgoMotion and Mapping
+  slamGetMacro(Mapping,MinPointToLineOrEdgeDistance,double)
+  slamSetMacro(Mapping,MinPointToLineOrEdgeDistance,double)
+
+
 
 protected:
   // vtkPolyDataAlgorithm functions
@@ -155,6 +242,11 @@ private:
   pcl::PointCloud<Point>::Ptr PreviousEdgesPoints;
   pcl::PointCloud<Point>::Ptr PreviousPlanarsPoints;
 
+  // keypoints local map
+  RollingGrid* EdgesPointsLocalMap;
+  RollingGrid* PlanarPointsLocalMap;
+  RollingGrid* LocalMap;
+
   // Mapping of the lasers id
   std::vector<int> LaserIdMapping;
 
@@ -167,6 +259,7 @@ private:
   std::vector<std::vector<std::pair<double, int> > > DepthGap;
   std::vector<std::vector<int> > IsPointValid;
   std::vector<std::vector<int> > Label;
+
   // with of the neighbor used to compute discrete
   // differential operators
   int NeighborWidth;
@@ -174,13 +267,23 @@ private:
   // Number of lasers scan lines composing the pointcloud
   unsigned int NLasers;
 
+  // maximal angle resolution of the lidar
+  double AngleResolution;
+
   // Number of frame that have been processed
   unsigned int NbrFrameProcessed;
+
+  // minimal point/sensor sensor to consider a point as valid
+  double MinDistanceToSensor;
 
   // Indicated the number max of keypoints
   // that we admit per laser scan line
   unsigned int MaxEdgePerScanLine;
   unsigned int MaxPlanarsPerScanLine;
+
+  // Curvature threshold to select a point
+  double EdgeCurvatureThreshold;
+  double PlaneCurvatureThreshold;
 
   // The max distance allowed between two frames
   // If the distance is over this limit, the ICP
@@ -194,6 +297,37 @@ private:
   unsigned int EgoMotionMaxIter;
   unsigned int EgoMotionIterMade;
 
+  // Maximum number of iteration
+  // in the mapping optimization step
+  unsigned int MappingMaxIter;
+  unsigned int MappingIterMade;
+
+  // During the Levenberg-Marquardt algoritm
+  // keypoints will have to be match with planes
+  // and lines of the previous frame. This parameter
+  // indicates how many ieteration we want to do before
+  // running the closest-point matching again
+  unsigned int EgoMotionIcpFrequence;
+  unsigned int MappingIcpFrequence;
+
+  // When computing the point/line and point/plane distance
+  // in the ICP, the kNearest edge/plane points from the current
+  // points are selected to approximate the line/plane using a PCA
+  unsigned int Mapping_LineDistance_k;
+  double Mapping_LineDistance_factor;
+
+  unsigned int Mapping_PlaneDistance_k;
+  double Mapping_PlaneDistance_factor1;
+  double Mapping_PlaneDistance_factor2;
+
+  unsigned int EgoMotion_LineDistance_k;
+  double EgoMotion_LineDistance_factor;
+
+  unsigned int EgoMotion_PlaneDistance_k;
+  double EgoMotion_PlaneDistance_factor1;
+  double EgoMotion_PlaneDistance_factor2;
+
+  double MinPointToLineOrEdgeDistance;
   // Transformation to map the current pointcloud
   // in the referential of the previous one
   Eigen::Matrix<double, 6, 1> Trelative;
@@ -240,6 +374,11 @@ private:
   // the keypoints extracted.
   void ComputeEgoMotion();
 
+  // Map the position of the sensor from
+  // the current frame in the world referential
+  // using the map and the keypoints extracted.
+  void Mapping();
+
   // Transform the input point acquired at time t1 to the
   // initial time t0. So that the deformation induced by
   // the motion of the sensor will be removed. We use the assumption
@@ -260,6 +399,9 @@ private:
   // This can be done using estimated egomotion and assuming
   // a constant angular velocity and velocity during a sweep
   void TransformCurrentKeypointsToEnd();
+
+  // Transform the input point already undistort into Tworld.
+  void TransformToWorld(Point& p, Eigen::Matrix<double, 6, 1>& T);
 
   // From the input point p, find the nearest edge line from
   // the previous point cloud keypoints
@@ -283,9 +425,9 @@ private:
 
   // More accurate but slower
   void ComputeLineDistanceParametersAccurate(pcl::KdTreeFLANN<Point>::Ptr kdtreePreviousEdges, Eigen::Matrix<double, 3, 3>& R,
-                                             Eigen::Matrix<double, 3, 1>& dT, Point p);
+                                             Eigen::Matrix<double, 3, 1>& dT, Point p, std::string step);
   void ComputePlaneDistanceParametersAccurate(pcl::KdTreeFLANN<Point>::Ptr kdtreePreviousPlanes, Eigen::Matrix<double, 3, 3>& R,
-                                              Eigen::Matrix<double, 3, 1>& dT, Point p);
+                                              Eigen::Matrix<double, 3, 1>& dT, Point p, std::string step);
 
   // we want to minimize F(R,T) = sum(fi(R,T)^2)
   // for a given i; fi is called a residual value and
@@ -326,6 +468,7 @@ private:
   void DisplayRelAdv(vtkSmartPointer<vtkPolyData> input);
   void DisplayKeypointsResults(vtkSmartPointer<vtkPolyData> input);
   void DisplayCurvatureScores(vtkSmartPointer<vtkPolyData> input);
+  void DisplayRollingGrid(vtkSmartPointer<vtkPolyData> input);
 
   // Indicate if we are in display mode or not
   // Display mode will add arrays showing some
