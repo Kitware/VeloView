@@ -45,6 +45,7 @@ public:
   void SetTimeRange(double min, double max);
   void SetOrigin(int gcs, double easting, double northing, double height);
   void SetGeoConversion(int in, int out);
+  void SetGeoConversion(int in, int out, int utmZone, bool isLatLon);
   void SetPrecision(double neTol, double hTol = 1e-3);
 
   void UpdateMetaData(vtkPolyData* data);

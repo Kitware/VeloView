@@ -784,15 +784,38 @@ def saveCSVCurrentFrameSelection(filename):
     smp.Delete(w)
     rotateCSVFile(filename)
 
-def saveLASFrames(filename, first, last, transform):
+# transform parameter indicates the coordinates system and
+# the referential for the exported points clouds:
+# - 0 Sensor: sensor referential, cartesian coordinate system
+# - 1: Relative Geoposition: NED base centered at the first position
+#      of the sensor, cartesian coordinate system
+# - 2: Absolute Geoposition: NED base centered at the corresponding
+#      UTM zone, cartesian coordinate system
+# - 3: Absolute Geoposition Lat/Lon: Lat / Lon coordinate system
+def saveLASFrames(filename, first, last, transform = 0):
     reader = getReader().GetClientSideObject()
-    position = getPosition().GetClientSideObject().GetOutput()
 
-    PythonQt.paraview.pqVelodyneManager.saveFramesToLAS(
-        reader, position, first, last, filename, transform)
+    # Check that we have a position provider
+    if getPosition() is not None:
+        position = getPosition().GetClientSideObject().GetOutput()
+
+        PythonQt.paraview.pqVelodyneManager.saveFramesToLAS(
+            reader, position, first, last, filename, transform)
+
+    else:
+        PythonQt.paraview.pqVelodyneManager.saveFramesToLAS(
+            reader, None, first, last, filename, transform)
 
 
-def saveLASCurrentFrame(filename, transform):
+# transform parameter indicates the coordinates system and
+# the referential for the exported points clouds:
+# - 0 Sensor: sensor referential, cartesian coordinate system
+# - 1: Relative Geoposition: NED base centered at the first position
+#      of the sensor, cartesian coordinate system
+# - 2: Absolute Geoposition: NED base centered at the corresponding
+#      UTM zone, cartesian coordinate system
+# - 3: Absolute Geoposition Lat/Lon: Lat / Lon coordinate system
+def saveLASCurrentFrame(filename, transform = 0):
     t = app.scene.AnimationTime
     saveLASFrames(filename, t, t, transform)
 
@@ -829,8 +852,15 @@ def saveCSV(filename, timesteps):
     kiwiviewerExporter.zipDir(outDir, filename)
     kiwiviewerExporter.shutil.rmtree(tempDir)
 
-
-def saveLAS(filename, timesteps, transform):
+# transform parameter indicates the coordinates system and
+# the referential for the exported points clouds:
+# - 0 Sensor: sensor referential, cartesian coordinate system
+# - 1: Relative Geoposition: NED base centered at the first position
+#      of the sensor, cartesian coordinate system
+# - 2: Absolute Geoposition: NED base centered at the corresponding
+#      UTM zone, cartesian coordinate system
+# - 3: Absolute Geoposition Lat/Lon: Lat / Lon coordinate system
+def saveLAS(filename, timesteps, transform = 0):
 
     tempDir = kiwiviewerExporter.tempfile.mkdtemp()
     basenameWithoutExtension = os.path.splitext(os.path.basename(filename))[0]
