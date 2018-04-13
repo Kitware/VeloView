@@ -447,8 +447,13 @@ def openSensor():
     onCropReturns(False) # Dont show the dialog just restore settings
     onLaserSelection(False)
 
+    # todo: autoload
+    smp.LoadPlugin('/home/michael/Dev/veloview/build/install/lib/paraview-5.1/libPointCloudPlugin.so')
+
     rep = smp.Show(sensor)
     rep.InterpolateScalarsBeforeMapping = 0
+    rep.Representation = 'Point Cloud'
+    rep.ColorArrayName = 'intensity'
 
     if SAMPLE_PROCESSING_MODE:
         prep = smp.Show(processor)
@@ -539,7 +544,13 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
 
     smp.GetActiveView().ViewTime = 0.0
 
+    # todo: autoload
+    smp.LoadPlugin('/home/michael/Dev/veloview/build/install/lib/paraview-5.1/libPointCloudPlugin.so')
+
     rep = smp.Show(reader)
+    rep.Representation = 'Point Cloud'
+    rep.ColorArrayName = 'intensity'
+
     if SAMPLE_PROCESSING_MODE:
         prep = smp.Show(processor)
     app.scene.UpdateAnimationUsingDataTimeSteps()
@@ -601,7 +612,7 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
     smp.SetActiveView(app.mainView)
 
     rep.InterpolateScalarsBeforeMapping = 0
-    setDefaultLookupTables(reader)
+    #setDefaultLookupTables(reader)
     colorByIntensity(reader)
 
     initializeRPMText()
