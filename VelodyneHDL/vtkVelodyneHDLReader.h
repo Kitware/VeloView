@@ -158,7 +158,7 @@ public:
   std::vector<vtkSmartPointer<vtkPolyData> >& GetDatasets();
 
   // Transform related functions
-
+  void CreateLinearInterpolator();
   vtkVelodyneTransformInterpolator* GetInterpolator() const;
   void SetInterpolator(vtkVelodyneTransformInterpolator* interpolator);
 

@@ -625,6 +625,7 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
     # there's no dual return on the current frame later on
     app.actions['actionSelectDualReturn'].enabled = True
     app.actions['actionSelectDualReturn2'].enabled = True
+    app.actions['actionLaunchSlam'].enabled = True
     app.actions['actionDualReturnModeDual'].enabled = True
     app.actions['actionDualReturnDistanceNear'].enabled = True
     app.actions['actionDualReturnDistanceFar'].enabled = True
@@ -1162,6 +1163,7 @@ def close():
 
     app.actions['actionSelectDualReturn'].enabled = False
     app.actions['actionSelectDualReturn2'].enabled = False
+    app.actions['actionLaunchSlam'].enabled = False
     app.actions['actionDualReturnModeDual'].enabled = False
     app.actions['actionDualReturnDistanceNear'].enabled = False
     app.actions['actionDualReturnDistanceFar'].enabled = False
@@ -1827,6 +1829,7 @@ def start():
     disablePlaybackActions()
     disableSaveActions()
     app.actions['actionSelectDualReturn'].setEnabled(False)
+    app.actions['actionLaunchSlam'].setEnabled(False)
     app.actions['actionMeasure'].setEnabled(view.CameraParallelProjection)
     setupStatusBar()
     setupTimeSliderWidget()

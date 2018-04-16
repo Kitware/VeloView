@@ -75,6 +75,7 @@ if(PARAVIEW_BUILD_QT_GUI)
     vvCropReturnsDialog.ui
     vvLaserSelectionDialog.ui
     vvSelectFramesDialog.ui
+    vvSlamConfigurationDialog.ui
     )
 
   set(MOC_HEADERS
@@ -83,6 +84,7 @@ if(PARAVIEW_BUILD_QT_GUI)
     vvCropReturnsDialog.h
     vvLaserSelectionDialog.h
     vvSelectFramesDialog.h
+    vvSlamConfigurationDialog.h
     )
 
   set(resources
@@ -124,6 +126,7 @@ if(PARAVIEW_BUILD_QT_GUI)
     vvCropReturnsDialog.cxx
     vvLaserSelectionDialog.cxx
     vvSelectFramesDialog.cxx
+    vvSlamConfigurationDialog.cxx
     )
 
   list(APPEND deps

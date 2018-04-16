@@ -60,13 +60,13 @@
 #define VTK_SLAM_H
 
 #define slamGetMacro(prefix,name,type) \
-type Get_##prefix##_##name () const\
+type Get##prefix##_##name () const\
   { \
   return this->name; \
   }
 
 #define slamSetMacro(prefix,name,type) \
-void Set_##prefix##_##name (const type _arg) \
+void Set##prefix##_##name (const type _arg) \
 { \
   this->name = _arg; \
 }
@@ -152,68 +152,68 @@ public:
   void Set_RollingGrid_LeafVoxelFilterSize(const unsigned int size);
 
   // Get/Set Keypoint
-  slamGetMacro(Keypoint,MaxEdgePerScanLine,unsigned int)
-  slamSetMacro(Keypoint,MaxEdgePerScanLine,unsigned int)
+  slamGetMacro(_Keypoint,MaxEdgePerScanLine,unsigned int)
+  slamSetMacro(_Keypoint,MaxEdgePerScanLine,unsigned int)
 
-  slamGetMacro(Keypoint,MaxPlanarsPerScanLine,unsigned int)
-  slamSetMacro(Keypoint,MaxPlanarsPerScanLine,unsigned int)
+  slamGetMacro(_Keypoint,MaxPlanarsPerScanLine,unsigned int)
+  slamSetMacro(_Keypoint,MaxPlanarsPerScanLine,unsigned int)
 
-  slamGetMacro(Keypoint,MinDistanceToSensor,double)
-  slamSetMacro(Keypoint,MinDistanceToSensor,double)
+  slamGetMacro(_Keypoint,MinDistanceToSensor,double)
+  slamSetMacro(_Keypoint,MinDistanceToSensor,double)
 
-  slamGetMacro(Keypoint,PlaneCurvatureThreshold,double)
-  slamSetMacro(Keypoint,PlaneCurvatureThreshold,double)
+  slamGetMacro(_Keypoint,PlaneCurvatureThreshold,double)
+  slamSetMacro(_Keypoint,PlaneCurvatureThreshold,double)
 
-  slamGetMacro(Keypoint,EdgeCurvatureThreshold,double)
-  slamSetMacro(Keypoint,EdgeCurvatureThreshold,double)
+  slamGetMacro(_Keypoint,EdgeCurvatureThreshold,double)
+  slamSetMacro(_Keypoint,EdgeCurvatureThreshold,double)
 
   // Get/Set EgoMotion
-  slamGetMacro(EgoMotion,EgoMotionMaxIter,unsigned int)
-  slamSetMacro(EgoMotion,EgoMotionMaxIter,unsigned int)
+  slamGetMacro(,EgoMotion_MaxIter,unsigned int)
+  slamSetMacro(,EgoMotion_MaxIter,unsigned int)
 
-  slamGetMacro(EgoMotion,EgoMotionIcpFrequence,unsigned int)
-  slamSetMacro(EgoMotion,EgoMotionIcpFrequence,unsigned int)
+  slamGetMacro(,EgoMotion_IcpFrequence,unsigned int)
+  slamSetMacro(,EgoMotion_IcpFrequence,unsigned int)
 
-  slamGetMacro(EgoMotion,EgoMotion_LineDistance_k,unsigned int)
-  slamSetMacro(EgoMotion,EgoMotion_LineDistance_k,unsigned int)
+  slamGetMacro(,EgoMotion_LineDistance_k,unsigned int)
+  slamSetMacro(,EgoMotion_LineDistance_k,unsigned int)
 
-  slamGetMacro(EgoMotion,EgoMotion_LineDistance_factor,double)
-  slamSetMacro(EgoMotion,EgoMotion_LineDistance_factor,double)
+  slamGetMacro(,EgoMotion_LineDistance_factor,double)
+  slamSetMacro(,EgoMotion_LineDistance_factor,double)
 
-  slamGetMacro(EgoMotion,EgoMotion_PlaneDistance_k,unsigned int)
-  slamSetMacro(EgoMotion,EgoMotion_PlaneDistance_k,unsigned int)
+  slamGetMacro(,EgoMotion_PlaneDistance_k,unsigned int)
+  slamSetMacro(,EgoMotion_PlaneDistance_k,unsigned int)
 
-  slamGetMacro(EgoMotion,EgoMotion_PlaneDistance_factor1,double)
-  slamSetMacro(EgoMotion,EgoMotion_PlaneDistance_factor1,double)
+  slamGetMacro(,EgoMotion_PlaneDistance_factor1,double)
+  slamSetMacro(,EgoMotion_PlaneDistance_factor1,double)
 
-  slamGetMacro(EgoMotion,EgoMotion_PlaneDistance_factor2,double)
-  slamSetMacro(EgoMotion,EgoMotion_PlaneDistance_factor2,double)
+  slamGetMacro(,EgoMotion_PlaneDistance_factor2,double)
+  slamSetMacro(,EgoMotion_PlaneDistance_factor2,double)
 
   // Get/Set Mapping
-  slamGetMacro(Mapping,MappingMaxIter,unsigned int)
-  slamSetMacro(Mapping,MappingMaxIter,unsigned int)
+  slamGetMacro(,Mapping_MaxIter,unsigned int)
+  slamSetMacro(,Mapping_MaxIter,unsigned int)
 
-  slamGetMacro(Mapping,MappingIcpFrequence,unsigned int)
-  slamSetMacro(Mapping,MappingIcpFrequence,unsigned int)
+  slamGetMacro(,Mapping_IcpFrequence,unsigned int)
+  slamSetMacro(,Mapping_IcpFrequence,unsigned int)
 
-  slamGetMacro(Mapping,Mapping_LineDistance_k,unsigned int)
-  slamSetMacro(Mapping,Mapping_LineDistance_k,unsigned int)
+  slamGetMacro(,Mapping_LineDistance_k,unsigned int)
+  slamSetMacro(,Mapping_LineDistance_k,unsigned int)
 
-  slamGetMacro(Mapping,Mapping_LineDistance_factor,double)
-  slamSetMacro(Mapping,Mapping_LineDistance_factor,double)
+  slamGetMacro(,Mapping_LineDistance_factor,double)
+  slamSetMacro(,Mapping_LineDistance_factor,double)
 
-  slamGetMacro(Mapping,Mapping_PlaneDistance_k,unsigned int)
-  slamSetMacro(Mapping,Mapping_PlaneDistance_k,unsigned int)
+  slamGetMacro(,Mapping_PlaneDistance_k,unsigned int)
+  slamSetMacro(,Mapping_PlaneDistance_k,unsigned int)
 
-  slamGetMacro(Mapping,Mapping_PlaneDistance_factor1,double)
-  slamSetMacro(Mapping,Mapping_PlaneDistance_factor1,double)
+  slamGetMacro(,Mapping_PlaneDistance_factor1,double)
+  slamSetMacro(,Mapping_PlaneDistance_factor1,double)
 
-  slamGetMacro(Mapping,Mapping_PlaneDistance_factor2,double)
-  slamSetMacro(Mapping,Mapping_PlaneDistance_factor2,double)
+  slamGetMacro(,Mapping_PlaneDistance_factor2,double)
+  slamSetMacro(,Mapping_PlaneDistance_factor2,double)
 
   // Get/Set EgoMotion and Mapping
-  slamGetMacro(Mapping,MinPointToLineOrEdgeDistance,double)
-  slamSetMacro(Mapping,MinPointToLineOrEdgeDistance,double)
+  slamGetMacro(,MinPointToLineOrEdgeDistance,double)
+  slamSetMacro(,MinPointToLineOrEdgeDistance,double)
 
 
 
@@ -227,6 +227,9 @@ protected:
 private:
   vtkSlam(const vtkSlam&);
   void operator = (const vtkSlam&);
+  // Polydata which represents the trajectory computed
+  vtkSmartPointer<vtkPolyData> Trajectory;
+  vtkSmartPointer<vtkPolyLine> LineData;
 
   // Current point cloud stored in two differents
   // formats: PCL-pointcloud and vtkPolyData
@@ -294,12 +297,12 @@ private:
 
   // Maximum number of iteration
   // in the ego motion optimization step
-  unsigned int EgoMotionMaxIter;
+  unsigned int EgoMotion_MaxIter;
   unsigned int EgoMotionIterMade;
 
   // Maximum number of iteration
   // in the mapping optimization step
-  unsigned int MappingMaxIter;
+  unsigned int Mapping_MaxIter;
   unsigned int MappingIterMade;
 
   // During the Levenberg-Marquardt algoritm
@@ -307,8 +310,8 @@ private:
   // and lines of the previous frame. This parameter
   // indicates how many ieteration we want to do before
   // running the closest-point matching again
-  unsigned int EgoMotionIcpFrequence;
-  unsigned int MappingIcpFrequence;
+  unsigned int EgoMotion_IcpFrequence;
+  unsigned int Mapping_IcpFrequence;
 
   // When computing the point/line and point/plane distance
   // in the ICP, the kNearest edge/plane points from the current

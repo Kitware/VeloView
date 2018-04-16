@@ -264,6 +264,7 @@ public:
         }
       }
     }
+//    cout << "Get value at position: (" << frameCenterX << "," <<  frameCenterY << "," << frameCenterZ << ") +- " << std::ceil(PointCloud_NbVoxelX / 2) << endl;
     return intersection;
   }
 
@@ -273,7 +274,7 @@ public:
     this->vizualisation.clear();
 
     // Voxel to filte because new points were add
-    std::vector<std::vector<std::vector<int> > > voxelToFilter(Grid_NbVoxelX, std::vector<std::vector<int> >(Grid_NbVoxelY, std::vector<int>(Grid_NbVoxelZ, 0)));
+    int voxelToFilter[Grid_NbVoxelX][Grid_NbVoxelY][Grid_NbVoxelZ] = {0};
 
     // Add points in the rolling grid
     int outlier = 0; // point who are not in the rolling grid
@@ -686,10 +687,11 @@ void vtkSlam::ResetAlgorithm()
 
   // output of the vtk filter
   this->Trajectory = vtkSmartPointer<vtkPolyData>::New();
-  this->LineData = vtkSmartPointer<vtkPolyLine>::New();
+  vtkSmartPointer<vtkPolyLine> lineData = vtkSmartPointer<vtkPolyLine>::New();
 
   // add the required array in the trajectory
   vtkNew<vtkPoints> points;
+  vtkNew<vtkPolyLine> line;
   vtkNew<vtkCellArray> cells;
   CreateDataArray<vtkDoubleArray>("time", 0, this->Trajectory);
   CreateDataArray<vtkDoubleArray>("roll", 0, this->Trajectory);
