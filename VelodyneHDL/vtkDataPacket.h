@@ -166,17 +166,20 @@ struct HDLFiringData
 
   inline bool isUpperBlock() const { return blockIdentifier == BLOCK_32_TO_63; }
   inline bool isVelArrayFiring() const { return blockIdentifier < 0xaaff; }
-  inline uint16_t getElevation1000th() const
+  inline uint16_t getElevation100th() const
   {
-    if (isVelArrayFiring())
-    {
-      return blockIdentifier;
-      // If the elevation is not NBO, then use the following
-      // uint8_t * bytes = reinterpret_cast<uint8_t *>(&blockIdentifier);
-      // return bytes[0] << 8 + bytes[1] << 0;
-    }
+    // if (isVelArrayFiring())
+    //{
+    return blockIdentifier & 0x7FFF; // First bit is the scanning direction
+    // If the elevation is not NBO, then use the following
+    // uint8_t * bytes = reinterpret_cast<uint8_t *>(&blockIdentifier);
+    // return bytes[0] << 8 + bytes[1] << 0;
+    //}
     return 0;
   }
+  inline int getScanningVerticalDir() const { return blockIdentifier >> 15; }
+  inline int getScanningHorizontalDir() const { return rotationalPosition >> 15; }
+  inline uint16_t getRotationalPosition() const { return rotationalPosition & 0x7FFF; }
 };
 
 struct HDLDataPacket
@@ -222,11 +225,11 @@ struct HDLDataPacket
   }
   inline bool isDualModeReturn16Or32() const
   {
-    return firingData[1].rotationalPosition == firingData[0].rotationalPosition;
+    return firingData[1].getRotationalPosition() == firingData[0].getRotationalPosition();
   }
   inline bool isDualModeReturnHDL64() const
   {
-    return firingData[2].rotationalPosition == firingData[0].rotationalPosition;
+    return firingData[2].getRotationalPosition() == firingData[0].getRotationalPosition();
   }
   inline bool isDualReturnFiringBlock(const int firingBlock)
   {

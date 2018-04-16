@@ -141,14 +141,14 @@ struct RPMCalculator
 
   void AddData(HDLDataPacket* HDLPacket, unsigned int rawtime)
   {
-    if (HDLPacket->firingData[0].rotationalPosition < this->MinAngle)
+    if (HDLPacket->firingData[0].getRotationalPosition() < this->MinAngle)
     {
-      this->MinAngle = HDLPacket->firingData[0].rotationalPosition;
+      this->MinAngle = HDLPacket->firingData[0].getRotationalPosition();
       this->ValueReady[0] = true;
     }
-    if (HDLPacket->firingData[0].rotationalPosition > this->MaxAngle)
+    if (HDLPacket->firingData[0].getRotationalPosition() > this->MaxAngle)
     {
-      this->MaxAngle = HDLPacket->firingData[0].rotationalPosition;
+      this->MaxAngle = HDLPacket->firingData[0].getRotationalPosition();
       this->ValueReady[1] = true;
     }
     if (rawtime < this->MinTime)
@@ -340,38 +340,43 @@ void GetSphericalCoordinates(double p_in[3], double p_out[3])
 //-----------------------------------------------------------------------------
 class FramingState
 {
-  int LastAzimuth;
-  int LastAzimuthSlope;
+  int LastAzimuthDir;
+  int LastElevationDir;
   int LastElevation;
-  int LastElevationSlope;
 
 public:
   FramingState() { reset(); }
   void reset()
   {
-    LastAzimuth = -1;
-    LastAzimuthSlope = 0;
+    LastAzimuthDir = -1;
+    LastElevationDir = -1;
     LastElevation = -1;
-    LastElevationSlope = 0;
   }
   bool hasChangedWithValue(const HDLFiringData& firingData)
   {
-    bool hasLastAzimuth = (LastAzimuth != -1);
-    bool azimuthFrameSplit = hasChangedWithValue(
-      firingData.rotationalPosition, hasLastAzimuth, LastAzimuth, LastAzimuthSlope);
+    bool hasLastAzimuth = (LastAzimuthDir != -1);
+    // bool azimuthFrameSplit = hasChangedWithValue(
+    //  firingData.getRotationalPosition(), hasLastAzimuth, LastAzimuth, LastAzimuthSlope);
+    bool azimuthFrameSplit =
+      hasLastAzimuth ? (firingData.getScanningHorizontalDir() == LastAzimuthDir) : false;
+    LastAzimuthDir = firingData.getScanningHorizontalDir();
 
-    bool hasLastElevation = (LastElevation != -1);
+    bool hasLastElevation = (LastElevationDir != -1);
     int previousElevation = LastElevation;
-    bool elevationSplit = hasChangedWithValue(
-      firingData.getElevation1000th(), hasLastElevation, LastElevation, LastElevationSlope);
+    bool elevationSplit =
+      hasLastElevation ? (firingData.getScanningVerticalDir() == LastElevationDir) : false;
+    ;
+    LastElevationDir = firingData.getScanningVerticalDir();
+    LastElevation = firingData.getElevation100th();
+
     if (azimuthFrameSplit)
     {
-      if (firingData.getElevation1000th() == previousElevation)
+      if (firingData.getElevation100th() == previousElevation)
       {
         // Change of azimuth scanning direction, without a elevation change
         // Either a double sweep with same elevation or fixed elevation
         // That is a new frame. Reset the elevationSlope
-        LastElevationSlope = 0;
+        LastElevationDir = -1;
         return true;
       }
       return elevationSplit;
@@ -1491,22 +1496,22 @@ bool vtkVelodyneHDLReader::vtkInternal::shouldBeCroppedOut(double pos[3], double
 }
 //-----------------------------------------------------------------------------
 void vtkVelodyneHDLReader::vtkInternal::PushFiringData(const unsigned char laserId,
-  const unsigned char rawLaserId, unsigned short azimuth,
-  const unsigned short firingElevation1000th, const double timestamp, const unsigned int rawtime,
-  const HDLLaserReturn* laserReturn, const HDLLaserCorrection* correction,
-  vtkTransform* geotransform, const bool isFiringDualReturnData)
+  const unsigned char rawLaserId, unsigned short azimuth, const unsigned short firingElevation100th,
+  const double timestamp, const unsigned int rawtime, const HDLLaserReturn* laserReturn,
+  const HDLLaserCorrection* correction, vtkTransform* geotransform,
+  const bool isFiringDualReturnData)
 {
   azimuth %= 36000;
   const vtkIdType thisPointId = this->Points->GetNumberOfPoints();
   short intensity = laserReturn->intensity;
-  double firingElevation = static_cast<double>(firingElevation1000th) / 1000.0;
+  double firingElevation = static_cast<double>(firingElevation100th) / 100.0;
 
   // Compute raw position
   double distanceM;
   double pos[3];
   bool applyIntensityCorrection =
     this->WantIntensityCorrection && this->IsHDL64Data && !(this->SensorPowerMode == CorrectionOn);
-  ComputeCorrectedValues(azimuth, firingElevation1000th, laserReturn, correction, pos, distanceM,
+  ComputeCorrectedValues(azimuth, firingElevation100th, laserReturn, correction, pos, distanceM,
     intensity, applyIntensityCorrection);
 
   // Apply sensor transform
@@ -2005,18 +2010,18 @@ void vtkVelodyneHDLReader::vtkInternal::ComputeCorrectedValues(const unsigned sh
   double cosVertCorrection = correction->cosVertCorrection,
          sinVertCorrection = correction->sinVertCorrection;
   if (elevation != 0)
-  {
-    if (elevation < this->sin_lookup_table_1000_.size())
-    {
-      cosVertCorrection = correction->cosVertCorrection * this->cos_lookup_table_1000_[elevation] -
-        correction->sinVertCorrection * this->sin_lookup_table_1000_[elevation];
-      sinVertCorrection = correction->sinVertCorrection * this->cos_lookup_table_1000_[elevation] +
-        correction->cosVertCorrection * this->sin_lookup_table_1000_[elevation];
-    }
-    else
+  { /*
+     if (elevation < this->sin_lookup_table_1000_.size())
+     {
+       cosVertCorrection = correction->cosVertCorrection * this->cos_lookup_table_1000_[elevation] -
+         correction->sinVertCorrection * this->sin_lookup_table_1000_[elevation];
+       sinVertCorrection = correction->sinVertCorrection * this->cos_lookup_table_1000_[elevation] +
+         correction->cosVertCorrection * this->sin_lookup_table_1000_[elevation];
+     }
+     else*/
     {
       double vertAngleRad =
-        M_PI / 180.0 * (correction->verticalCorrection + static_cast<double>(elevation) / 1000.0);
+        M_PI / 180.0 * (correction->verticalCorrection + static_cast<double>(elevation) / 100.0);
       cosVertCorrection = std::cos(vertAngleRad);
       sinVertCorrection = std::sin(vertAngleRad);
     }
@@ -2092,13 +2097,13 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessFiring(HDLFiringData* firingData,
     this->FirstPointIdOfDualReturnPair = this->Points->GetNumberOfPoints();
   }
 
-  unsigned short firingElevation1000th = firingData->getElevation1000th();
+  unsigned short firingElevation100th = firingData->getElevation100th();
 
   for (int dsr = 0; dsr < HDL_LASER_PER_FIRING; dsr++)
   {
     const unsigned char rawLaserId = static_cast<unsigned char>(dsr + firingBlockLaserOffset);
     unsigned char laserId = rawLaserId;
-    const unsigned short azimuth = firingData->rotationalPosition;
+    const unsigned short azimuth = firingData->getRotationalPosition();
 
     // Detect VLP-16 data and adjust laser id if necessary
     int firingWithinBlock = 0;
@@ -2179,7 +2184,7 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessFiring(HDLFiringData* firingData,
     if ((!this->IgnoreZeroDistances || firingData->laserReturns[dsr].distance != 0.0) &&
       this->LaserSelection[laserId])
     {
-      this->PushFiringData(laserId, rawLaserId, azimuth + azimuthadjustment, firingElevation1000th,
+      this->PushFiringData(laserId, rawLaserId, azimuth + azimuthadjustment, firingElevation100th,
         timestamp + timestampadjustment, rawtime + static_cast<unsigned int>(timestampadjustment),
         &(firingData->laserReturns[dsr]), &(laser_corrections_[dsr + firingBlockLaserOffset]),
         geotransform, isThisFiringDualReturnData);
@@ -2221,8 +2226,8 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(
   std::vector<int> diffs(HDL_FIRING_PER_PKT - 1);
   for (int i = 0; i < HDL_FIRING_PER_PKT - 1; ++i)
   {
-    int localDiff = (36000 + dataPacket->firingData[i + 1].rotationalPosition -
-                      dataPacket->firingData[i].rotationalPosition) %
+    int localDiff = (36000 + dataPacket->firingData[i + 1].getRotationalPosition() -
+                      dataPacket->firingData[i].getRotationalPosition()) %
       36000;
     diffs[i] = localDiff;
   }
@@ -2382,8 +2387,8 @@ int vtkVelodyneHDLReader::ReadFrameInformation()
         // We start a new frame, reinitialize the boolean
         isEmptyFrame = true;
       }
-      PacketProcessingDebugMacro(<< std::setw(5) << "(" << firingData.rotationalPosition << ", "
-                                 << firingData.getElevation1000th() << "), " << std::endl);
+      PacketProcessingDebugMacro(<< std::setw(5) << "(" << firingData.getRotationalPosition()
+                                 << ", " << firingData.getElevation100th() << "), " << std::endl);
     }
 
     // Accumulate HDL64 Status byte data
