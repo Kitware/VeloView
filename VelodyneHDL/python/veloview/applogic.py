@@ -38,6 +38,15 @@ _repCache = {}
 
 SAMPLE_PROCESSING_MODE = False
 
+def vtkGetFileNameFromPluginName(pluginName):
+  import os
+  if os.name == "nt":
+    return pluginName + ".dll";
+  elif os.name == "mac":
+    return "lib" + pluginName + ".dylib";
+  else:
+    return "lib" + pluginName + ".so";
+
 def cachedGetRepresentation(src, view):
     try:
         return _repCache[(src, view)]
@@ -82,6 +91,8 @@ class AppLogic(object):
         self.laserSelectionDialog = None
 
         self.gridProperties = None
+
+        smp.LoadPlugin(vtkGetFileNameFromPluginName('PointCloudPlugin'))
 
     def setupTimers(self):
         self.playTimer = QtCore.QTimer()
@@ -447,9 +458,6 @@ def openSensor():
     onCropReturns(False) # Dont show the dialog just restore settings
     onLaserSelection(False)
 
-    # todo: autoload
-    smp.LoadPlugin('/home/michael/Dev/veloview/build/install/lib/paraview-5.1/libPointCloudPlugin.so')
-
     rep = smp.Show(sensor)
     rep.InterpolateScalarsBeforeMapping = 0
     rep.Representation = 'Point Cloud'
@@ -544,9 +552,6 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
 
     smp.GetActiveView().ViewTime = 0.0
 
-    # todo: autoload
-    smp.LoadPlugin('/home/michael/Dev/veloview/build/install/lib/paraview-5.1/libPointCloudPlugin.so')
-
     rep = smp.Show(reader)
     rep.Representation = 'Point Cloud'
     rep.ColorArrayName = 'intensity'
@@ -612,6 +617,9 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
     smp.SetActiveView(app.mainView)
 
     rep.InterpolateScalarsBeforeMapping = 0
+
+    rep.Representation = 'Point Cloud'
+    rep.ColorArrayName = 'intensity'
     #setDefaultLookupTables(reader)
     colorByIntensity(reader)
 
