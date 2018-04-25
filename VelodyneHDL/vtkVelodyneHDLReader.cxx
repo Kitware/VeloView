@@ -369,6 +369,7 @@ public:
     LastElevationDir = firingData.getScanningVerticalDir();
     LastElevation = firingData.getElevation100th();
 
+    return elevationSplit && azimuthFrameSplit;
     if (azimuthFrameSplit)
     {
       if (firingData.getElevation100th() == previousElevation)
