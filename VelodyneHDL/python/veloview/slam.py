@@ -75,21 +75,23 @@ def launch():
 
     # initialize the nb of laser and their mapping
     NLaser = source.GetNumberOfChannels()
-    laserIdMapping = range(NLaser*2)
+    laserIdMapping = range(NLaser * 2)
     source.GetLaserIdMapping(laserIdMapping)
     slam.GetClientSideObject().SetSensorCalibration(laserIdMapping, NLaser)
 
-    slam.GetClientSideObject().Set_DisplayMode(True)
+    slam.GetClientSideObject().Set_DisplayMode(False)
 
     # Set parameter selected by the user
 
     # mode
+    streamMode = False
     if slamDialog.frameMode == vvSlamConfigurationDialog.FRAME_RANGE:
         start = slamDialog.frameStart
         stop = slamDialog.frameStop
     elif slamDialog.frameMode == vvSlamConfigurationDialog.CURRENT_FRAME:
-        start = applogic.app.scene.AnimationTime - 1
-        stop = applogic.app.scene.AnimationTime
+        start = applogic.app.scene.StartTime
+        stop = applogic.app.scene.EndTime
+        streamMode = True
     elif slamDialog.frameMode == vvSlamConfigurationDialog.ALL_FRAMES:
         start = applogic.app.scene.StartTime
         stop = applogic.app.scene.EndTime
@@ -104,21 +106,25 @@ def launch():
     slam.GetClientSideObject().Set_Keypoint_PlaneCurvatureThreshold(slamDialog.Keypoint_PlaneCurvatureThreshold)
     slam.GetClientSideObject().Set_Keypoint_EdgeCurvatureThreshold(slamDialog.Keypoint_EdgeCurvatureThreshold)
     # Egomotion
-    slam.GetClientSideObject().Set_EgoMotion_MaxIter(slamDialog.EgoMotion_MaxIter)
-    slam.GetClientSideObject().Set_EgoMotion_IcpFrequence(slamDialog.EgoMotion_IcpFrequence)
-    slam.GetClientSideObject().Set_EgoMotion_LineDistance_k(slamDialog.EgoMotion_LineDistance_k)
-    slam.GetClientSideObject().Set_EgoMotion_LineDistance_factor(slamDialog.EgoMotion_LineDistance_factor)
-    slam.GetClientSideObject().Set_EgoMotion_PlaneDistance_k(slamDialog.EgoMotion_PlaneDistance_k)
-    slam.GetClientSideObject().Set_EgoMotion_PlaneDistance_factor1(slamDialog.EgoMotion_PlaneDistance_factor1)
-    slam.GetClientSideObject().Set_EgoMotion_PlaneDistance_factor2(slamDialog.EgoMotion_PlaneDistance_factor2)
+    slam.GetClientSideObject().Set_EgoMotionMaxIter(slamDialog.EgoMotion_MaxIter)
+    slam.GetClientSideObject().Set_EgoMotionIcpFrequence(slamDialog.EgoMotion_IcpFrequence)
+    slam.GetClientSideObject().Set_EgoMotionLineDistanceNbrNeighbors(slamDialog.EgoMotion_LineDistance_k)
+    slam.GetClientSideObject().Set_EgoMotionLineDistancefactor(slamDialog.EgoMotion_LineDistance_factor)
+    slam.GetClientSideObject().Set_EgoMotionPlaneDistanceNbrNeighbors(slamDialog.EgoMotion_PlaneDistance_k)
+    slam.GetClientSideObject().Set_EgoMotionPlaneDistancefactor1(slamDialog.EgoMotion_PlaneDistance_factor1)
+    slam.GetClientSideObject().Set_EgoMotionPlaneDistancefactor2(slamDialog.EgoMotion_PlaneDistance_factor2)
+    slam.GetClientSideObject().Set_EgoMotionMaxLineDistance(slamDialog.EgoMotion_Line_Max_Distance)
+    slam.GetClientSideObject().Set_EgoMotionMaxPlaneDistance(slamDialog.EgoMotion_Plane_Max_Distance)
     # Mapping
-    slam.GetClientSideObject().Set_Mapping_MaxIter(slamDialog.Mapping_MaxIter)
-    slam.GetClientSideObject().Set_Mapping_IcpFrequence(slamDialog.Mapping_IcpFrequence)
-    slam.GetClientSideObject().Set_Mapping_LineDistance_k(slamDialog.Mapping_LineDistance_k)
-    slam.GetClientSideObject().Set_Mapping_LineDistance_factor(slamDialog.Mapping_LineDistance_factor)
-    slam.GetClientSideObject().Set_Mapping_PlaneDistance_k(slamDialog.Mapping_PlaneDistance_k)
-    slam.GetClientSideObject().Set_Mapping_PlaneDistance_factor1(slamDialog.Mapping_PlaneDistance_factor1)
-    slam.GetClientSideObject().Set_Mapping_PlaneDistance_factor2(slamDialog.Mapping_PlaneDistance_factor2)
+    slam.GetClientSideObject().Set_MappingMaxIter(slamDialog.Mapping_MaxIter)
+    slam.GetClientSideObject().Set_MappingIcpFrequence(slamDialog.Mapping_IcpFrequence)
+    slam.GetClientSideObject().Set_MappingLineDistanceNbrNeighbors(slamDialog.Mapping_LineDistance_k)
+    slam.GetClientSideObject().Set_MappingLineDistancefactor(slamDialog.Mapping_LineDistance_factor)
+    slam.GetClientSideObject().Set_MappingPlaneDistanceNbrNeighbors(slamDialog.Mapping_PlaneDistance_k)
+    slam.GetClientSideObject().Set_MappingPlaneDistancefactor1(slamDialog.Mapping_PlaneDistance_factor1)
+    slam.GetClientSideObject().Set_MappingPlaneDistancefactor2(slamDialog.Mapping_PlaneDistance_factor2)
+    slam.GetClientSideObject().Set_MappingMaxLineDistance(slamDialog.Mapping_Line_Max_Distance)
+    slam.GetClientSideObject().Set_MappingMaxPlaneDistance(slamDialog.Mapping_Plane_Max_Distance)
 
 #    debug = True
 #    if debug:
@@ -129,17 +135,12 @@ def launch():
     progressDialog.setModal(True)
     progressDialog.show()
 
-
-    MaxiPolyData = vtk.vtkAppendPolyData()
     # iteration
     for i in range(int(start), int(stop)+1):
         # get the current frame
         polyData = source.GetFrame(i)
         # compute the SLAM for the current frame
         slam.GetClientSideObject().AddFrame(polyData)
-
-        # Append polydata with debug array
-        MaxiPolyData.AddInputData(polyData)
 
         # get the transformation computed
         Tworld = range(6)
@@ -181,12 +182,68 @@ def launch():
 
     slam.GetClientSideObject().Update()
 
-    t = smp.Transform()
-    t.GetClientSideObject().SetInputConnection(MaxiPolyData.GetOutputPort())
     # Reset Active source tp the data
     smp.SetActiveSource(applogic.getReader())
-    smp.SetActiveSource(t)
 
     # View slam output
     smp.Show(slam, applogic.app.overheadView)
 #    slam.GetLocalEdgesKeypointMap();
+
+def launchStreamSlam():
+    # get data
+    source = applogic.getReader()
+    source = source.GetClientSideObject()
+
+    #If no data are available
+    if not source :
+        return
+
+    # execute the gui
+    slamDialog = vvSlamConfigurationDialog(applogic.getMainWindow())
+    if not slamDialog.exec_():
+        return
+
+    # Instanciation of a new vtkSlamAlgorithm
+    slam = smp.Slam()
+
+    # open file
+    source.Open()
+    # create Linear Interpolator()
+    source.CreateLinearInterpolator()
+
+    # initialize the nb of laser and their mapping
+    NLaser = source.GetNumberOfChannels()
+    laserIdMapping = range(NLaser * 2)
+    source.GetLaserIdMapping(laserIdMapping)
+    slam.GetClientSideObject().SetSensorCalibration(laserIdMapping, NLaser)
+
+    slam.GetClientSideObject().Set_DisplayMode(False)
+
+    # Set parameter selected by the user
+    # General
+    slam.GetClientSideObject().Set_RollingGrid_Grid_NbVoxel([slamDialog.NbVoxel,slamDialog.NbVoxel,slamDialog.NbVoxel])
+    slam.GetClientSideObject().Set_AngleResolution(slamDialog.AngleResolution * vtk.vtkMath.Pi() / 180)
+    # Keypoint
+    slam.GetClientSideObject().Set_Keypoint_MaxEdgePerScanLine(slamDialog.Keypoint_MaxEdgePerScanLine)
+    slam.GetClientSideObject().Set_Keypoint_MaxPlanarsPerScanLine(slamDialog.Keypoint_MaxPlanarsPerScanLine)
+    slam.GetClientSideObject().Set_Keypoint_MinDistanceToSensor(slamDialog.Keypoint_MinDistanceToSensor)
+    slam.GetClientSideObject().Set_Keypoint_PlaneCurvatureThreshold(slamDialog.Keypoint_PlaneCurvatureThreshold)
+    slam.GetClientSideObject().Set_Keypoint_EdgeCurvatureThreshold(slamDialog.Keypoint_EdgeCurvatureThreshold)
+    # Egomotion
+    slam.GetClientSideObject().Set_EgoMotionMaxIter(slamDialog.EgoMotion_MaxIter)
+    slam.GetClientSideObject().Set_EgoMotionIcpFrequence(slamDialog.EgoMotion_IcpFrequence)
+    slam.GetClientSideObject().Set_EgoMotionLineDistanceNbrNeighbors(slamDialog.EgoMotion_LineDistance_k)
+    slam.GetClientSideObject().Set_EgoMotionLineDistancefactor(slamDialog.EgoMotion_LineDistance_factor)
+    slam.GetClientSideObject().Set_EgoMotionPlaneDistanceNbrNeighbors(slamDialog.EgoMotion_PlaneDistance_k)
+    slam.GetClientSideObject().Set_EgoMotionPlaneDistancefactor1(slamDialog.EgoMotion_PlaneDistance_factor1)
+    slam.GetClientSideObject().Set_EgoMotionPlaneDistancefactor2(slamDialog.EgoMotion_PlaneDistance_factor2)
+    # Mapping
+    slam.GetClientSideObject().Set_MappingMaxIter(slamDialog.Mapping_MaxIter)
+    slam.GetClientSideObject().Set_MappingIcpFrequence(slamDialog.Mapping_IcpFrequence)
+    slam.GetClientSideObject().Set_MappingLineDistanceNbrNeighbors(slamDialog.Mapping_LineDistance_k)
+    slam.GetClientSideObject().Set_MappingLineDistancefactor(slamDialog.Mapping_LineDistance_factor)
+    slam.GetClientSideObject().Set_MappingPlaneDistanceNbrNeighbors(slamDialog.Mapping_PlaneDistance_k)
+    slam.GetClientSideObject().Set_MappingPlaneDistancefactor1(slamDialog.Mapping_PlaneDistance_factor1)
+    slam.GetClientSideObject().Set_MappingPlaneDistancefactor2(slamDialog.Mapping_PlaneDistance_factor2)
+
+    return slam

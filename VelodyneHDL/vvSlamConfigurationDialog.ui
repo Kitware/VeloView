@@ -60,17 +60,20 @@
             <string>Edges</string>
            </property>
            <layout class="QGridLayout" name="gridLayout_10">
-            <item row="1" column="1">
-             <widget class="QDoubleSpinBox" name="Mapping_LineDistance_factor">
-              <property name="value">
-               <double>10.000000000000000</double>
-              </property>
-             </widget>
-            </item>
             <item row="0" column="1">
              <widget class="QSpinBox" name="Mapping_LineDistance_k">
               <property name="value">
-               <number>5</number>
+               <number>3</number>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="1">
+             <widget class="QDoubleSpinBox" name="Mapping_LineDistance_factor">
+              <property name="maximum">
+               <double>999.990000000000009</double>
+              </property>
+              <property name="value">
+               <double>5.000000000000000</double>
               </property>
              </widget>
             </item>
@@ -88,10 +91,24 @@
               </property>
              </widget>
             </item>
-            <item row="2" column="0">
+            <item row="3" column="0">
              <widget class="QLabel" name="label_11">
               <property name="text">
                <string/>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="0">
+             <widget class="QLabel" name="label_27">
+              <property name="text">
+               <string>max distance</string>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="1">
+             <widget class="QDoubleSpinBox" name="Mapping_Line_Max_Distance">
+              <property name="value">
+               <double>0.040000000000000</double>
               </property>
              </widget>
             </item>
@@ -104,20 +121,6 @@
             <string>Planes</string>
            </property>
            <layout class="QGridLayout" name="gridLayout_9">
-            <item row="2" column="1">
-             <widget class="QDoubleSpinBox" name="Mapping_PlaneDistance_factor2">
-              <property name="value">
-               <double>3.000000000000000</double>
-              </property>
-             </widget>
-            </item>
-            <item row="1" column="1">
-             <widget class="QDoubleSpinBox" name="Mapping_PlaneDistance_factor1">
-              <property name="value">
-               <double>30.000000000000000</double>
-              </property>
-             </widget>
-            </item>
             <item row="0" column="1">
              <widget class="QSpinBox" name="Mapping_PlaneDistance_k">
               <property name="value">
@@ -125,10 +128,30 @@
               </property>
              </widget>
             </item>
+            <item row="1" column="1">
+             <widget class="QDoubleSpinBox" name="Mapping_PlaneDistance_factor1">
+              <property name="maximum">
+               <double>999.990000000000009</double>
+              </property>
+              <property name="value">
+               <double>50.000000000000000</double>
+              </property>
+             </widget>
+            </item>
             <item row="0" column="0">
              <widget class="QLabel" name="label_23">
               <property name="text">
                <string># Neighbor</string>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="1">
+             <widget class="QDoubleSpinBox" name="Mapping_PlaneDistance_factor2">
+              <property name="maximum">
+               <double>999.990000000000009</double>
+              </property>
+              <property name="value">
+               <double>5.000000000000000</double>
               </property>
              </widget>
             </item>
@@ -143,6 +166,20 @@
              <widget class="QLabel" name="label_24">
               <property name="text">
                <string>factor1</string>
+              </property>
+             </widget>
+            </item>
+            <item row="3" column="0">
+             <widget class="QLabel" name="label_28">
+              <property name="text">
+               <string>max distance</string>
+              </property>
+             </widget>
+            </item>
+            <item row="3" column="1">
+             <widget class="QDoubleSpinBox" name="Mapping_Plane_Max_Distance">
+              <property name="value">
+               <double>0.040000000000000</double>
               </property>
              </widget>
             </item>
@@ -181,6 +218,9 @@
          </item>
          <item row="1" column="1">
           <widget class="QSpinBox" name="Keypoint_MaxPlanarsPerScanLine">
+           <property name="maximum">
+            <number>999</number>
+           </property>
            <property name="value">
             <number>60</number>
            </property>
@@ -188,8 +228,11 @@
          </item>
          <item row="0" column="1">
           <widget class="QSpinBox" name="Keypoint_MaxEdgePerScanLine">
+           <property name="maximum">
+            <number>999</number>
+           </property>
            <property name="value">
-            <number>40</number>
+            <number>99</number>
            </property>
           </widget>
          </item>
@@ -225,21 +268,27 @@
          </item>
          <item row="0" column="4">
           <widget class="QDoubleSpinBox" name="Keypoint_PlaneCurvatureThreshold">
+           <property name="maximum">
+            <double>999.990000000000009</double>
+           </property>
            <property name="singleStep">
             <double>0.100000000000000</double>
            </property>
            <property name="value">
-            <double>0.100000000000000</double>
+            <double>2.000000000000000</double>
            </property>
           </widget>
          </item>
          <item row="1" column="4">
           <widget class="QDoubleSpinBox" name="Keypoint_EdgeCurvatureThreshold">
+           <property name="maximum">
+            <double>999.990000000000009</double>
+           </property>
            <property name="singleStep">
             <double>0.100000000000000</double>
            </property>
            <property name="value">
-            <double>0.100000000000000</double>
+            <double>1.000000000000000</double>
            </property>
           </widget>
          </item>
@@ -272,13 +321,6 @@
             <string>Edges</string>
            </property>
            <layout class="QGridLayout" name="gridLayout_7">
-            <item row="0" column="0">
-             <widget class="QLabel" name="label_17">
-              <property name="text">
-               <string># Neighbor</string>
-              </property>
-             </widget>
-            </item>
             <item row="1" column="0">
              <widget class="QLabel" name="label_16">
               <property name="text">
@@ -286,10 +328,17 @@
               </property>
              </widget>
             </item>
-            <item row="1" column="1">
-             <widget class="QDoubleSpinBox" name="EgoMotion_LineDistance_factor">
-              <property name="value">
-               <double>30.000000000000000</double>
+            <item row="0" column="0">
+             <widget class="QLabel" name="label_17">
+              <property name="text">
+               <string># Neighbor</string>
+              </property>
+             </widget>
+            </item>
+            <item row="3" column="0">
+             <widget class="QLabel" name="label_10">
+              <property name="text">
+               <string/>
               </property>
              </widget>
             </item>
@@ -300,10 +349,30 @@
               </property>
              </widget>
             </item>
+            <item row="1" column="1">
+             <widget class="QDoubleSpinBox" name="EgoMotion_LineDistance_factor">
+              <property name="maximum">
+               <double>999.990000000000009</double>
+              </property>
+              <property name="value">
+               <double>5.000000000000000</double>
+              </property>
+             </widget>
+            </item>
             <item row="2" column="0">
-             <widget class="QLabel" name="label_10">
+             <widget class="QLabel" name="label_9">
               <property name="text">
-               <string/>
+               <string>max distance</string>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="1">
+             <widget class="QDoubleSpinBox" name="EgoMotion_Line_Max_Distance">
+              <property name="singleStep">
+               <double>0.010000000000000</double>
+              </property>
+              <property name="value">
+               <double>0.040000000000000</double>
               </property>
              </widget>
             </item>
@@ -316,17 +385,37 @@
             <string>Planes</string>
            </property>
            <layout class="QGridLayout" name="gridLayout_8">
-            <item row="0" column="1">
-             <widget class="QSpinBox" name="EgoMotion_PlaneDistance_k">
-              <property name="value">
-               <number>3</number>
-              </property>
-             </widget>
-            </item>
             <item row="2" column="0">
              <widget class="QLabel" name="label_20">
               <property name="text">
                <string>factor2</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="1">
+             <widget class="QDoubleSpinBox" name="EgoMotion_PlaneDistance_factor1">
+              <property name="maximum">
+               <double>999.990000000000009</double>
+              </property>
+              <property name="value">
+               <double>50.000000000000000</double>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="1">
+             <widget class="QSpinBox" name="EgoMotion_PlaneDistance_k">
+              <property name="value">
+               <number>5</number>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="1">
+             <widget class="QDoubleSpinBox" name="EgoMotion_PlaneDistance_factor2">
+              <property name="maximum">
+               <double>999.990000000000009</double>
+              </property>
+              <property name="value">
+               <double>5.000000000000000</double>
               </property>
              </widget>
             </item>
@@ -337,24 +426,24 @@
               </property>
              </widget>
             </item>
-            <item row="1" column="1">
-             <widget class="QDoubleSpinBox" name="EgoMotion_PlaneDistance_factor1">
-              <property name="value">
-               <double>30.000000000000000</double>
-              </property>
-             </widget>
-            </item>
-            <item row="2" column="1">
-             <widget class="QDoubleSpinBox" name="EgoMotion_PlaneDistance_factor2">
-              <property name="value">
-               <double>3.000000000000000</double>
-              </property>
-             </widget>
-            </item>
             <item row="1" column="0">
              <widget class="QLabel" name="label_19">
               <property name="text">
                <string>factor1</string>
+              </property>
+             </widget>
+            </item>
+            <item row="3" column="0">
+             <widget class="QLabel" name="label_26">
+              <property name="text">
+               <string>max distance</string>
+              </property>
+             </widget>
+            </item>
+            <item row="3" column="1">
+             <widget class="QDoubleSpinBox" name="EgoMotion_Plane_Max_Distance">
+              <property name="value">
+               <double>0.040000000000000</double>
               </property>
              </widget>
             </item>

@@ -81,6 +81,7 @@ class AppLogic(object):
         self.fps = [0,0]
         
         self.slam = None
+        self.slamStream = None
 
         self.text = None
 
@@ -1393,6 +1394,31 @@ def onPlayTimer():
         # if we are in playback mode, compute the targetFps
         # using the rpm of the current frame
         if getReader():
+            if app.actions['actionStreamSlam'].isChecked():
+                source = getReader()
+                setTransformMode(0)
+                polyData = source.GetClientSideObject().GetOutput()
+                # compute the SLAM for the current frame
+                app.slamStream.GetClientSideObject().AddFrame(polyData)
+
+                # get the transformation computed
+                Tworld = range(6)
+                app.slamStream.GetClientSideObject().GetWorldTransform(Tworld)
+                t = polyData.GetPointData().GetArray("adjustedtime").GetTuple1(0) * 1e-6
+
+                # convert in degree
+                rx = Tworld[0] * 180 / vtk.vtkMath.Pi()
+                ry = Tworld[1] * 180 / vtk.vtkMath.Pi()
+                rz = Tworld[2] * 180 / vtk.vtkMath.Pi()
+                # permute the axes
+                tx = Tworld[3]
+                ty = Tworld[4]
+                tz = Tworld[5]
+
+                # add the transform
+                source.GetClientSideObject().AddTransform(rx, ry, rz, tx, ty, tz, t)
+                setTransformMode(1)
+
             # Get the computed rpm of the current frame
             rpmArray = getReader().GetClientSideObject().GetOutput().GetFieldData().GetArray('RotationPerMinute')
 
@@ -2165,6 +2191,9 @@ def toggleRPM():
 def toggleLaunchSlam():
     slam.launch()
 
+def toggleLaunchStreamSlam():
+    app.slamStream = slam.launchStreamSlam()
+    
 def toggleSelectDualReturn():
     # test if we are on osx os
     osName = str(sys.platform)
@@ -2426,6 +2455,7 @@ def setupActions():
     app.actions['actionSelectDualReturn'].connect('triggered()',toggleSelectDualReturn)
     app.actions['actionSelectDualReturn2'].connect('triggered()',toggleSelectDualReturn)
     app.actions['actionLaunchSlam'].connect('triggered()', toggleLaunchSlam)
+    app.actions['actionStreamSlam'].connect('triggered()', toggleLaunchStreamSlam)
     app.EnableCrashAnalysis = app.actions['actionEnableCrashAnalysis'].isChecked()
 
     # Restore action states from settings
@@ -2491,7 +2521,7 @@ def setupActions():
     spinBox = QtGui.QSpinBox()
     spinBox.toolTip = "Number of trailing frames"
     spinBox.setMinimum(0)
-    spinBox.setMaximum(100)
+    spinBox.setMaximum(10000)
     spinBox.connect('valueChanged(int)', onTrailingFramesChanged)
     app.trailingFramesSpinBox = spinBox
 

@@ -28,18 +28,22 @@ class VelodyneHDLPlugin_EXPORT vvSlamConfigurationDialog : public QDialog
   Q_PROPERTY(int EgoMotion_MaxIter READ EgoMotion_MaxIter)
   Q_PROPERTY(int EgoMotion_IcpFrequence READ EgoMotion_IcpFrequence)
   Q_PROPERTY(int EgoMotion_LineDistance_k READ EgoMotion_LineDistance_k)
-  Q_PROPERTY(int EgoMotion_LineDistance_factor READ EgoMotion_LineDistance_factor)
+  Q_PROPERTY(double EgoMotion_LineDistance_factor READ EgoMotion_LineDistance_factor)
   Q_PROPERTY(int EgoMotion_PlaneDistance_k READ EgoMotion_PlaneDistance_k)
-  Q_PROPERTY(int EgoMotion_PlaneDistance_factor1 READ EgoMotion_PlaneDistance_factor1)
-  Q_PROPERTY(int EgoMotion_PlaneDistance_factor2 READ EgoMotion_PlaneDistance_factor2)
+  Q_PROPERTY(double EgoMotion_PlaneDistance_factor1 READ EgoMotion_PlaneDistance_factor1)
+  Q_PROPERTY(double EgoMotion_PlaneDistance_factor2 READ EgoMotion_PlaneDistance_factor2)
+  Q_PROPERTY(double EgoMotion_Line_Max_Distance READ EgoMotion_Line_Max_Distance)
+  Q_PROPERTY(double EgoMotion_Plane_Max_Distance READ EgoMotion_Plane_Max_Distance)
   //Mapping
   Q_PROPERTY(int Mapping_MaxIter READ Mapping_MaxIter)
   Q_PROPERTY(int Mapping_IcpFrequence READ Mapping_IcpFrequence)
   Q_PROPERTY(int Mapping_LineDistance_k READ Mapping_LineDistance_k)
-  Q_PROPERTY(int Mapping_LineDistance_factor READ Mapping_LineDistance_factor)
+  Q_PROPERTY(double Mapping_LineDistance_factor READ Mapping_LineDistance_factor)
   Q_PROPERTY(int Mapping_PlaneDistance_k READ Mapping_PlaneDistance_k)
-  Q_PROPERTY(int Mapping_PlaneDistance_factor1 READ Mapping_PlaneDistance_factor1)
-  Q_PROPERTY(int Mapping_PlaneDistance_factor2 READ Mapping_PlaneDistance_factor2)
+  Q_PROPERTY(double Mapping_PlaneDistance_factor1 READ Mapping_PlaneDistance_factor1)
+  Q_PROPERTY(double Mapping_PlaneDistance_factor2 READ Mapping_PlaneDistance_factor2)
+  Q_PROPERTY(double Mapping_Line_Max_Distance READ Mapping_Line_Max_Distance)
+  Q_PROPERTY(double Mapping_Plane_Max_Distance READ Mapping_Plane_Max_Distance)
   Q_ENUMS(FrameMode)
 
 public:
@@ -69,6 +73,8 @@ public:
   int EgoMotion_PlaneDistance_k();
   double EgoMotion_PlaneDistance_factor1();
   double EgoMotion_PlaneDistance_factor2();
+  double EgoMotion_Line_Max_Distance();
+  double EgoMotion_Plane_Max_Distance();
 
   // Mapping
   int Mapping_MaxIter();
@@ -78,6 +84,8 @@ public:
   int Mapping_PlaneDistance_k();
   double Mapping_PlaneDistance_factor1();
   double Mapping_PlaneDistance_factor2();
+  double Mapping_Line_Max_Distance();
+  double Mapping_Plane_Max_Distance();
 
   enum FrameMode
   {

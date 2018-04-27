@@ -28,7 +28,7 @@
 
 #include "vtkVelodyneHDLReader.h"
 
-//#include "vtkSlam.h"
+// #include "vtkSlam.h"
 #include "vtkPacketFileReader.h"
 #include "vtkPacketFileWriter.h"
 #include "vtkRollingDataAccumulator.h"
@@ -409,7 +409,7 @@ class vtkVelodyneHDLReader::vtkInternal
 public:
   vtkInternal()
   {
-//    this->Slam = vtkSmartPointer<vtkSlam>::New();
+    // this->Slam = vtkSmartPointer<vtkSlam>::New();
     this->RpmCalculator.Reset();
     this->AlreadyWarnAboutCalibration = false;
     this->IgnoreZeroDistances = true;
@@ -507,7 +507,7 @@ public:
   bool WantIntensityCorrection;
 
   // SLAM algorithm
-//  vtkSmartPointer<vtkSlam> Slam;
+  // vtkSmartPointer<vtkSlam> Slam;
 
   // WIP : We now have two method to compute the RPM :
   // - One method which computes the rpm using the point cloud
@@ -726,11 +726,18 @@ int vtkVelodyneHDLReader::GetApplyTransform()
 //-----------------------------------------------------------------------------
 void vtkVelodyneHDLReader::GetLaserIdMapping(int* output) const
 {
-  cout << "LaserIdMapping start" << endl;
+  this->Internal->laserIdMapping.resize(this->Internal->CalibrationReportedNumLasers);
+  for (int i = 0; i < this->Internal->CalibrationReportedNumLasers; ++i)
+  {
+    this->Internal->laserIdMapping[i].second = static_cast<int>(i);
+    this->Internal->laserIdMapping[i].first = this->Internal->laser_corrections_[i].verticalCorrection;
+  }
+  std::sort(this->Internal->laserIdMapping.begin(), this->Internal->laserIdMapping.end());
+
   for (int i = 0; i < this->Internal->CalibrationReportedNumLasers; i++)
   {
-    output[2*i] = this->Internal->laserIdMapping[i].first;
-    output[2*i+1] = this->Internal->laserIdMapping[i].second;
+    output[2 * i] = this->Internal->laserIdMapping[i].first;
+    output[2 * i + 1] = this->Internal->laserIdMapping[i].second;
   }
   cout << "LaserIdMapping done" << endl;
 }
@@ -866,7 +873,8 @@ void vtkVelodyneHDLReader::AddTransform(double rx, double ry, double rz, double 
   mappingTransform->RotateZ(rz);
   double pos[3] = {tx,ty,tz};
   mappingTransform->Translate(pos);
-  this->Internal->Interp->AddTransform(time,mappingTransform.GetPointer());
+  this->Internal->Interp->AddTransform(time, mappingTransform.GetPointer());
+  this->Internal->Interp->Modified();
 }
 
 //-----------------------------------------------------------------------------
@@ -2098,8 +2106,6 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessFiring(HDLFiringData* firingData,
     std::sort(this->laserIdMapping.begin(), this->laserIdMapping.end());
     this->shouldInitializeMapping = false;
   }
-
-
 
 
   for (int dsr = 0; dsr < HDL_LASER_PER_FIRING; dsr++)

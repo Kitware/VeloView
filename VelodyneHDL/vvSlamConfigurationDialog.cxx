@@ -8,6 +8,10 @@ vvSlamConfigurationDialog::vvSlamConfigurationDialog(QWidget *parent) :
   ui(new Ui::vvSlamConfigurationDialog)
 {
   ui->setupUi(this);
+  this->ui->Start->setMinimum(0);
+  this->ui->End->setMinimum(0);
+  this->ui->Start->setMaximum(50000);
+  this->ui->End->setMaximum(50000);
 }
 
 vvSlamConfigurationDialog::~vvSlamConfigurationDialog()
@@ -130,6 +134,16 @@ double vvSlamConfigurationDialog::EgoMotion_PlaneDistance_factor2()
   return ui->EgoMotion_PlaneDistance_factor2->value();
 }
 
+double vvSlamConfigurationDialog::EgoMotion_Line_Max_Distance()
+{
+  return ui->EgoMotion_Line_Max_Distance->value();
+}
+
+double vvSlamConfigurationDialog::EgoMotion_Plane_Max_Distance()
+{
+  return ui->EgoMotion_Line_Max_Distance->value();
+}
+
 //--------------------------------------------------------------//
 //                         Mapping
 //--------------------------------------------------------------//
@@ -166,4 +180,14 @@ double vvSlamConfigurationDialog::Mapping_PlaneDistance_factor1()
 double vvSlamConfigurationDialog::Mapping_PlaneDistance_factor2()
 {
   return ui->Mapping_PlaneDistance_factor2->value();
+}
+
+double vvSlamConfigurationDialog::Mapping_Line_Max_Distance()
+{
+  return ui->Mapping_Line_Max_Distance->value();
+}
+
+double vvSlamConfigurationDialog::Mapping_Plane_Max_Distance()
+{
+  return ui->Mapping_Plane_Max_Distance->value();
 }
