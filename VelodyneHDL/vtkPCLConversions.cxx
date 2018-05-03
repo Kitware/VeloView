@@ -90,6 +90,48 @@ vtkSmartPointer<vtkPolyData> vtkPCLConversions::PolyDataFromPCDFile(const std::s
 }
 
 //----------------------------------------------------------------------------
+vtkSmartPointer<vtkPolyData> vtkPCLConversions::PolyDataFromPointCloud(pcl::PointCloud<pcl::PointXYZINormal>::ConstPtr cloud)
+{
+  vtkIdType nr_points = cloud->points.size();
+
+  vtkNew<vtkPoints> points;
+  points->SetDataTypeToFloat();
+  points->SetNumberOfPoints(nr_points);
+
+  if (cloud->is_dense)
+  {
+    for (vtkIdType i = 0; i < nr_points; ++i) {
+      float point[3] = {cloud->points[i].x, cloud->points[i].y, cloud->points[i].z};
+      points->SetPoint(i, point);
+    }
+  }
+  else
+  {
+    vtkIdType j = 0;    // true point index
+    for (vtkIdType i = 0; i < nr_points; ++i)
+    {
+      // Check if the point is invalid
+      if (!pcl_isfinite (cloud->points[i].x) ||
+          !pcl_isfinite (cloud->points[i].y) ||
+          !pcl_isfinite (cloud->points[i].z))
+        continue;
+
+      float point[3] = {cloud->points[i].x, cloud->points[i].y, cloud->points[i].z};
+      // TODO: handle Normal and intensity?
+      points->SetPoint(j, point);
+      j++;
+    }
+    nr_points = j;
+    points->SetNumberOfPoints(nr_points);
+  }
+
+  vtkSmartPointer<vtkPolyData> polyData = vtkSmartPointer<vtkPolyData>::New();
+  polyData->SetPoints(points.GetPointer());
+  polyData->SetVerts(NewVertexCells(nr_points));
+  return polyData;
+}
+
+//----------------------------------------------------------------------------
 vtkSmartPointer<vtkPolyData> vtkPCLConversions::PolyDataFromPointCloud(pcl::PointCloud<pcl::PointXYZ>::ConstPtr cloud)
 {
   vtkIdType nr_points = cloud->points.size();

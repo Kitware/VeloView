@@ -72,6 +72,7 @@
 #include "vtkSlam.h"
 #include "vtkVelodyneHDLReader.h"
 #include "vtkVelodyneTransformInterpolator.h"
+#include "vtkPCLConversions.h"
 // STD
 #include <sstream>
 #include <algorithm>
@@ -100,6 +101,8 @@
 #include <vtkUnsignedShortArray.h>
 #include <vtkTransform.h>
 #include <vtkPoints.h>
+#include <vtkTransform.h>
+#include <vtkTransformPolyDataFilter.h>
 // EIGEN
 #include <Eigen/Dense>
 // PCL
@@ -285,6 +288,29 @@ public:
     return intersection;
   }
 
+  // get all points
+  pcl::PointCloud<Point>::Ptr Get()
+  {
+    pcl::PointCloud<Point>::Ptr intersection(new pcl::PointCloud<Point>);
+
+    // Get all voxel in intersection should use ceil here
+    for (unsigned int i = 0; i < Grid_NbVoxelX; i++)
+    {
+      for (unsigned int j = 0; j < Grid_NbVoxelY; j++)
+      {
+        for (unsigned int k = 0; k < Grid_NbVoxelZ; k++)
+        {
+          pcl::PointCloud<Point>:: Ptr voxel = this->grid[i][j][k];
+          for (int l = 0; l < voxel->size(); l++)
+          {
+            intersection->push_back(voxel->at(l));
+          }
+        }
+      }
+    }
+    return intersection;
+  }
+
   // add some points to the grid
   void Add(pcl::PointCloud<Point>::Ptr pointcloud)
   {
@@ -342,14 +368,8 @@ public:
     }
   }
 
-  // vizualize
-  std::vector<int> vizualize()
-  {
-    return this->vizualisation;
-  }
-
   // return size
-  int Size()
+  int NumberOfPoints()
   {
     int size = 0;
     for (int i = 0; i < this->Grid_NbVoxelX; i++)
@@ -514,13 +534,137 @@ vtkSmartPointer<vtkCellArray> NewVertexCells(vtkIdType numberOfVerts)
 int vtkSlam::RequestData(vtkInformation *vtkNotUsed(request),
 vtkInformationVector **inputVector, vtkInformationVector *outputVector)
 {
-  // Get the output
-  vtkPolyData *output = vtkPolyData::GetData(outputVector);
-  vtkInformation *info = outputVector->GetInformationObject(0);
+  // get info
+  vtkInformation *outInfo0 = outputVector->GetInformationObject(0);
+  vtkInformation *outInfo1 = outputVector->GetInformationObject(1);
+  vtkInformation *outInfo2 = outputVector->GetInformationObject(2);
+  vtkInformation *outInfo3 = outputVector->GetInformationObject(3);
 
-  // Fill output port
-  output->ShallowCopy(this->Trajectory);
+  // get output
+  vtkPolyData *output0 = vtkPolyData::SafeDownCast(
+    outInfo0->Get(vtkDataObject::DATA_OBJECT()));
+  vtkPolyData *output1 = vtkPolyData::SafeDownCast(
+    outInfo1->Get(vtkDataObject::DATA_OBJECT()));
+  vtkPolyData *output2 = vtkPolyData::SafeDownCast(
+    outInfo2->Get(vtkDataObject::DATA_OBJECT()));
+  vtkPolyData *output3 = vtkPolyData::SafeDownCast(
+    outInfo3->Get(vtkDataObject::DATA_OBJECT()));
 
+  // output trajectory
+  // create polyLine
+  vtkSmartPointer<vtkPolyLine> polyLine = vtkSmartPointer<vtkPolyLine>::New();
+  int NbPosition = Trajectory->GetNumberOfPoints();
+  polyLine->GetPointIds()->SetNumberOfIds(NbPosition);
+  for(unsigned int i = 0; i < NbPosition; i++)
+  {
+    polyLine->GetPointIds()->SetId(i,i);
+  }
+  // create cells to Trajectory
+  vtkSmartPointer<vtkCellArray> cells = vtkSmartPointer<vtkCellArray>::New();
+  cells->InsertNextCell(polyLine);
+  Trajectory->SetLines(cells);
+  output1->ShallowCopy(this->Trajectory);
+
+  // output last frame processed with all debug information if displayMode == True
+  // transform
+  vtkSmartPointer<vtkTransform> transform = vtkSmartPointer<vtkTransform>::New();
+  transform->Translate(Tworld[3], Tworld[4], Tworld[5]);
+  transform->RotateX(Tworld[0] * 180 / vtkMath::Pi());
+  transform->RotateY(Tworld[1] * 180 / vtkMath::Pi());
+  transform->RotateZ(Tworld[2] * 180 / vtkMath::Pi());
+  // transform filter
+  vtkSmartPointer<vtkTransformPolyDataFilter> transformFilter = vtkSmartPointer<vtkTransformPolyDataFilter>::New();
+  transformFilter->SetInputData(this->vtkCurrentFrame);
+  transformFilter->SetTransform(transform);
+  transformFilter->Update();
+  output0->ShallowCopy(transformFilter->GetOutput());
+
+  // output EdgesPointsLocalMap
+  vtkSmartPointer<vtkPolyData> EdgeMap = vtkPCLConversions::PolyDataFromPointCloud(this->EdgesPointsLocalMap->Get());
+  output2->ShallowCopy(EdgeMap);
+
+  // output PlanarPointsLocalMap
+  vtkSmartPointer<vtkPolyData> PlanarMap = vtkPCLConversions::PolyDataFromPointCloud(this->PlanarPointsLocalMap->Get());
+  output3->ShallowCopy(PlanarMap);
+
+  return 1;
+}
+
+int vtkSlam::RequestDataObject(vtkInformation*,
+  vtkInformationVector** inputVector ,
+  vtkInformationVector* outputVector)
+{
+
+  //output 0 - Trajectory
+  vtkInformation* outInfo0 = outputVector->GetInformationObject(0);
+  vtkPolyData* output0 = vtkPolyData::SafeDownCast(
+                                          outInfo0->Get( vtkDataObject::DATA_OBJECT() ) );
+  if ( ! output0 )
+  {
+    output0 = vtkPolyData::New();
+    outInfo0->Set( vtkDataObject::DATA_OBJECT(), output0 );
+    output0->FastDelete();
+    this->GetOutputPortInformation(0)->Set(
+                                    vtkDataObject::DATA_EXTENT_TYPE(), output0->GetExtentType() );
+  }
+
+  //output 1 - TestB
+  vtkInformation* outInfo1 = outputVector->GetInformationObject(1);
+  vtkPolyData* output1 = vtkPolyData::SafeDownCast(
+                                              outInfo1->Get( vtkDataObject::DATA_OBJECT() ) );
+  if ( ! output1 )
+  {
+    output1 = vtkPolyData::New();
+    outInfo1->Set( vtkDataObject::DATA_OBJECT(), output1 );
+    output1->FastDelete();
+    this->GetOutputPortInformation(1)->Set(
+                                    vtkDataObject::DATA_EXTENT_TYPE(), output1->GetExtentType() );
+  }
+
+  //output 2 - KeypointMap
+  vtkInformation* outInfo2 = outputVector->GetInformationObject(2);
+  vtkPolyData* output2 = vtkPolyData::SafeDownCast(
+                                              outInfo2->Get( vtkDataObject::DATA_OBJECT() ) );
+  if ( ! output2 )
+  {
+    output2 = vtkPolyData::New();
+    outInfo2->Set( vtkDataObject::DATA_OBJECT(), output2 );
+    output2->FastDelete();
+    this->GetOutputPortInformation(1)->Set(
+                                    vtkDataObject::DATA_EXTENT_TYPE(), output2->GetExtentType() );
+  }
+
+  //output 3 - KeypointMap
+  vtkInformation* outInfo3 = outputVector->GetInformationObject(3);
+  vtkPolyData* output3 = vtkPolyData::SafeDownCast(
+                                              outInfo3->Get( vtkDataObject::DATA_OBJECT() ) );
+  if ( ! output3 )
+  {
+    output3 = vtkPolyData::New();
+    outInfo3->Set( vtkDataObject::DATA_OBJECT(), output3 );
+    output3->FastDelete();
+    this->GetOutputPortInformation(1)->Set(
+                                    vtkDataObject::DATA_EXTENT_TYPE(), output3->GetExtentType() );
+  }
+  return 1;
+}
+
+//----------------------------------------------------------------------------
+int vtkSlam::RequestUpdateExtent(
+    vtkInformation* vtkNotUsed(request),
+    vtkInformationVector** inputVector,
+    vtkInformationVector* vtkNotUsed(outputVector))
+{
+  int numInputPorts = this->GetNumberOfInputPorts();
+  for (int i=0; i<numInputPorts; i++)
+  {
+    int numInputConnections = this->GetNumberOfInputConnections(i);
+    for (int j=0; j<numInputConnections; j++)
+    {
+      vtkInformation* inputInfo = inputVector[i]->GetInformationObject(j);
+      inputInfo->Set(vtkStreamingDemandDrivenPipeline::EXACT_EXTENT(), 1);
+    }
+  }
   return 1;
 }
 
@@ -549,6 +693,7 @@ void vtkSlam::PrintSelf(ostream& os, vtkIndent indent)
 vtkSlam::vtkSlam()
 {
   this->SetNumberOfInputPorts(0);
+  this->SetNumberOfOutputPorts(4);
   this->ResetAlgorithm();
 }
 
@@ -677,22 +822,18 @@ void vtkSlam::ResetAlgorithm()
 //  delete PlanarPointsLocalMap;
   EdgesPointsLocalMap = new RollingGrid();
   PlanarPointsLocalMap = new RollingGrid();
-  LocalMap = new RollingGrid();
 
 
   EdgesPointsLocalMap->Set_VoxelSize(10);
   PlanarPointsLocalMap->Set_VoxelSize(10);
-  LocalMap->Set_VoxelSize(10);
 
   double nbVoxel[3] = {50,50,50};
   EdgesPointsLocalMap->Set_Grid_NbVoxel(nbVoxel);
   PlanarPointsLocalMap->Set_Grid_NbVoxel(nbVoxel);
-  LocalMap->Set_Grid_NbVoxel(nbVoxel);
 
   nbVoxel[0] = nbVoxel[1] = nbVoxel[2] = 16;
   EdgesPointsLocalMap->Set_PointCloud_NbVoxel(nbVoxel);
   PlanarPointsLocalMap->Set_PointCloud_NbVoxel(nbVoxel);
-  LocalMap->Set_PointCloud_NbVoxel(nbVoxel);
 
   this->Set_RollingGrid_LeafVoxelFilterSize(0.2);
 
@@ -703,18 +844,14 @@ void vtkSlam::ResetAlgorithm()
 
   // output of the vtk filter
   this->Trajectory = vtkSmartPointer<vtkPolyData>::New();
-  this->LineData = vtkSmartPointer<vtkPolyLine>::New();
 
   // add the required array in the trajectory
   vtkNew<vtkPoints> points;
-  vtkNew<vtkCellArray> cells;
   CreateDataArray<vtkDoubleArray>("time", 0, this->Trajectory);
   CreateDataArray<vtkDoubleArray>("roll", 0, this->Trajectory);
   CreateDataArray<vtkDoubleArray>("pitch", 0, this->Trajectory);
   CreateDataArray<vtkDoubleArray>("yaw", 0, this->Trajectory);
-  cells->InsertNextCell(this->LineData.GetPointer());
   this->Trajectory->SetPoints(points.GetPointer());
-  this->Trajectory->SetLines(cells.GetPointer());
 }
 
 //-----------------------------------------------------------------------------
@@ -891,20 +1028,6 @@ void vtkSlam::DisplayCurvatureScores(vtkSmartPointer<vtkPolyData> input)
 }
 
 //-----------------------------------------------------------------------------
-void vtkSlam::DisplayRollingGrid(vtkSmartPointer<vtkPolyData> input)
-{
-  vtkSmartPointer<vtkIntArray> rollingGridArray = vtkSmartPointer<vtkIntArray>::New();
-  rollingGridArray->Allocate(input->GetNumberOfPoints());
-  rollingGridArray->SetName("rolling_grid");
-  std::vector<int> map = LocalMap->vizualize();
-  for (unsigned int k = 0; k < input->GetNumberOfPoints(); ++k)
-  {
-    rollingGridArray->InsertNextTuple1(map[k]);
-  }
-  input->GetPointData()->AddArray(rollingGridArray);
-}
-
-//-----------------------------------------------------------------------------
 void vtkSlam::DisplayKeypointsResults(vtkSmartPointer<vtkPolyData> input)
 {
   vtkSmartPointer<vtkIntArray> isValidArray = vtkSmartPointer<vtkIntArray>::New();
@@ -987,11 +1110,6 @@ void vtkSlam::AddFrame(vtkPolyData* newFrame)
     PlanarPointsLocalMap->Add(this->CurrentPlanarsPoints);
     std::cout << "Points added" << std::endl;
 
-    if (this->DisplayMode)
-    {
-      //this->DisplayRollingGrid(vtkCurrentFrame);
-    }
-    std::cout << "Displayed" << std::endl;
     // Current keypoints become previous ones
     this->PreviousEdgesPoints = this->CurrentEdgesPoints;
     this->PreviousPlanarsPoints = this->CurrentPlanarsPoints;
@@ -1051,20 +1169,18 @@ void vtkSlam::AddFrame(vtkPolyData* newFrame)
   std::cout << "angles : " << std::endl << angles << std::endl;
   std::cout << "trans : " << std::endl << trans << std::endl;
 
-  // Update vtkfilter output
+
+  // Update Filter output
+
+  // Update trajectory points, the cells are construct in the request Data
   this->Trajectory->GetPoints()->InsertNextPoint(this->Tworld[3], this->Tworld[4], this->Tworld[5]);
   static_cast<vtkDoubleArray*>(this->Trajectory->GetPointData()->GetArray("time"))->InsertNextValue(newFrame->GetPointData()->GetArray("timestamp")->GetTuple1(0));
   static_cast<vtkDoubleArray*>(this->Trajectory->GetPointData()->GetArray("pitch"))->InsertNextValue(this->Tworld[0]);
   static_cast<vtkDoubleArray*>(this->Trajectory->GetPointData()->GetArray("roll"))->InsertNextValue(this->Tworld[1]);
   static_cast<vtkDoubleArray*>(this->Trajectory->GetPointData()->GetArray("yaw"))->InsertNextValue(this->Tworld[2]);
 
-  this->LineData->GetPointIds()->InsertNextId(this->LineData->GetNumberOfPoints());
-
-  //Add points and cells
-  vtkNew<vtkCellArray> cells;
-  cells->InsertNextCell(this->LineData.GetPointer());
-  this->Trajectory->SetLines(cells.GetPointer());
-
+  // Indicate the filter has been modify
+  this->Modified();
   return;
 }
 
@@ -2715,14 +2831,6 @@ void vtkSlam::Mapping()
   std::cout << "edges : " << usedEdges << " planes : " << usedPlanes << std::endl;
   std::cout << "final lambda value : " << lambda << std::endl;
 
-  // Update LocalMap
-  for (unsigned int i = 0; i < this->pclCurrentFrame->size(); ++i)
-  {
-    this->TransformToWorld(this->pclCurrentFrame->at(i), this->Tworld);
-  }
-  //LocalMap->Roll(this->Tworld);
-  //LocalMap->Add(this->pclCurrentFrame);
-
   // Update EdgeMap
   pcl::PointCloud<Point>::Ptr CurrentEdgesPoints_w(new pcl::PointCloud<Point>());
   for (unsigned int i = 0; i < this->CurrentEdgesPoints->size(); ++i)
@@ -2808,7 +2916,6 @@ void vtkSlam::Set_RollingGrid_VoxelSize(const unsigned int size)
 {
   this->EdgesPointsLocalMap->Set_VoxelSize(size);
   this->PlanarPointsLocalMap->Set_VoxelSize(size);
-  this->LocalMap->Set_VoxelSize(size);
 }
 
 //-----------------------------------------------------------------------------
@@ -2821,7 +2928,6 @@ void vtkSlam::Set_RollingGrid_Grid_NbVoxel(const double nbVoxel[3])
 {
   this->EdgesPointsLocalMap->Set_Grid_NbVoxel(nbVoxel);
   this->PlanarPointsLocalMap->Set_Grid_NbVoxel(nbVoxel);
-  this->LocalMap->Set_Grid_NbVoxel(nbVoxel);
 }
 
 //-----------------------------------------------------------------------------
@@ -2834,7 +2940,6 @@ void vtkSlam::Set_RollingGrid_PointCloud_NbVoxel(const double nbVoxel[3])
 {
   this->EdgesPointsLocalMap->Set_PointCloud_NbVoxel(nbVoxel);
   this->PlanarPointsLocalMap->Set_PointCloud_NbVoxel(nbVoxel);
-  this->LocalMap->Set_PointCloud_NbVoxel(nbVoxel);
 }
 
 //-----------------------------------------------------------------------------
@@ -2848,6 +2953,5 @@ void vtkSlam::Set_RollingGrid_LeafVoxelFilterSize(const double size)
 {
   this->EdgesPointsLocalMap->Set_LeafVoxelFilterSize(size);
   this->PlanarPointsLocalMap->Set_LeafVoxelFilterSize(2.0 * size);
-  this->LocalMap->Set_LeafVoxelFilterSize(3.0 * size);
 }
 

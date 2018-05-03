@@ -10,18 +10,14 @@ from PythonQt import QtGui
 from paraview import vtk
 from PythonQt.paraview import vvSlamConfigurationDialog
 
+# global variable
 slam = None
+currentFrame = None
 
-def launch():
-
-    # get data
-    source = applogic.getReader()
-    source = source.GetClientSideObject()
-
-    #If no data are available
-    if not source :
-        return
-
+def configure(source):
+    """Let the user configure a slam instance for a given source, which must already be open
+     and return [start, stop] the intervall frames on which the slam should be launch
+    """
     # execute the gui
     slamDialog = vvSlamConfigurationDialog(applogic.getMainWindow())
     if not slamDialog.exec_():
@@ -33,8 +29,6 @@ def launch():
         smp.Delete(slam)
     slam = smp.Slam()
 
-    # open file
-    source.Open()
     # create Linear Interpolator()
     source.CreateLinearInterpolator()
 
@@ -44,7 +38,7 @@ def launch():
     source.GetLaserIdMapping(laserIdMapping)
     slam.GetClientSideObject().SetSensorCalibration(laserIdMapping, NLaser)
 
-    slam.GetClientSideObject().Set_DisplayMode(False)
+    slam.GetClientSideObject().Set_DisplayMode(True)
 
     # Set parameter selected by the user
 
@@ -91,8 +85,117 @@ def launch():
     slam.GetClientSideObject().Set_MappingMaxLineDistance(slamDialog.Mapping_Line_Max_Distance)
     slam.GetClientSideObject().Set_MappingMaxPlaneDistance(slamDialog.Mapping_Plane_Max_Distance)
 
+    return start, stop
+
+def DebugInitialize():
+    """ Debug function to run from the python shell and then run DebugNextFrame()
+    as many time as needed
+    """
+    # get data
+    source = applogic.getReader().GetClientSideObject()
+
+    #If no data are available
+    if not source :
+        return
+
+    source.Open()
+
+    # let the user configure a new slam instance
+    start, stop = configure(source)
+
+    smp.SetActiveSource(slam)
+
+
+    global currentFrame
+    currentFrame = start
+
+    # get the next current frame
+    polyData = source.GetFrame(currentFrame)
+    # compute the SLAM for the current frame
+    slam.GetClientSideObject().AddFrame(polyData)
+
+    # close file
+    source.Close()
+
+
+def DebugNextFrame():
+    """ Debug function to run from the python shell after DebugInitialize()
+    """
+    # get data
+    source = applogic.getReader().GetClientSideObject()
+
+    #If no data are available
+    if not source :
+        return
+
+    source.Open()
+
+    # increment currentFrame number
+    global currentFrame
+    currentFrame += 1
+    print currentFrame
+    # get the current frame
+    polyData = source.GetFrame(currentFrame)
+    # compute the SLAM for the current frame
+    slam.GetClientSideObject().AddFrame(polyData)
+
+    # get the transformation computed
+    Tworld = range(6)
+    slam.GetClientSideObject().GetWorldTransform(Tworld)
+    t = polyData.GetPointData().GetArray("adjustedtime").GetTuple1(0) * 1e-6
+
+    # convert in degree
+    rx = Tworld[0] * 180 / vtk.vtkMath.Pi()
+    ry = Tworld[1] * 180 / vtk.vtkMath.Pi()
+    rz = Tworld[2] * 180 / vtk.vtkMath.Pi()
+    # permute the axes
+    tx = Tworld[3]
+    ty = Tworld[4]
+    tz = Tworld[5]
+
+    # add the transform
+    source.AddTransform(rx, ry, rz, tx, ty, tz, t)
+
+    # update slam
+    slam.GetClientSideObject().Update()
+    # TODO: find why the renderer doesn't take into account the new filter output!!!
+    smp.Hide(slam[0],applogic.app.mainView)
+    smp.Show(slam[0],applogic.app.mainView)
+    smp.Hide(slam[1],applogic.app.mainView)
+    smp.Show(slam[1],applogic.app.mainView)
+    smp.Hide(slam[2],applogic.app.mainView)
+    smp.Show(slam[2],applogic.app.mainView)
+    smp.Hide(slam[3],applogic.app.mainView)
+    smp.Show(slam[4],applogic.app.mainView)
+    smp.Render()
+
+    # Enable to visualize the debug array
+    smp.SetActiveSource(slam)
+
+    # close file
+    source.Close()
+
+
+def launch():
+    """ Launche the slam with a gui and save the result
+    """
+
+    # get data
+    source = applogic.getReader()
+    source = source.GetClientSideObject()
+
+    #If no data are available
+    if not source :
+        return
+
+
+    source.Open()
+
+    # let the user configure a new slam instance
+    start, stop = configure(source)
+
     # instanciate the progress box
-    progressDialog = QtGui.QProgressDialog("Computing slam algorithm...", "Abort Slam", slamDialog.frameStart, slamDialog.frameStart + (slamDialog.frameStop - slamDialog.frameStart), None)
+    progressDialog = QtGui.QProgressDialog("Computing slam algorithm...", "Abort Slam", start, start + (stop - start), None)
     progressDialog.setModal(True)
     progressDialog.show()
 
@@ -134,15 +237,20 @@ def launch():
     source.Close()
 
     slam.GetClientSideObject().Update()
-    # Reset reader as active source so we can the paraview toolbox to visualize the different array: density, ...
+
+    # Reset reader as active source so we can use the paraview toolbox to visualize the different array: density, ...
     smp.SetActiveSource(applogic.getReader())
 
     # Display Slam output in the overhead viewer
-    smp.Show(slam, applogic.app.overheadView)
+    smp.Show(slam[1], applogic.app.overheadView)
 
 def updateChartView():
+    """ Update the chartView with the slam output:
+        the sensor position: X, Y, Z and orientation: pitch, roll, yaw
+    """
 
     def setDockTitle(objName, title):
+        """ helper function """
         dock = applogic.findQObjectByName(applogic.getMainWindow().children(), objName)
         dock.windowTitle = title
 
@@ -153,6 +261,9 @@ def updateChartView():
 
     if source is  None:
         return
+
+    # get the first port of the filter which is the trajectory
+    source = source[1]
 
     # get the chart view
     chartViews = applogic.getChartViewProxies()

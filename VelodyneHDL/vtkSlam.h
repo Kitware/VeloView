@@ -246,18 +246,19 @@ protected:
   vtkSlam();
   ~vtkSlam();
   virtual int RequestData(vtkInformation *, vtkInformationVector **, vtkInformationVector *);
+  virtual int RequestDataObject(vtkInformation *, vtkInformationVector **, vtkInformationVector *);
   virtual int RequestInformation(vtkInformation *, vtkInformationVector **, vtkInformationVector *);
-
+  virtual int RequestUpdateExtent(vtkInformation *, vtkInformationVector **, vtkInformationVector * );
 private:
   vtkSlam(const vtkSlam&);
   void operator = (const vtkSlam&);
   // Polydata which represents the trajectory computed
   vtkSmartPointer<vtkPolyData> Trajectory;
-  vtkSmartPointer<vtkPolyLine> LineData;
 
   // Current point cloud stored in two differents
   // formats: PCL-pointcloud and vtkPolyData
   vtkSmartPointer<vtkPolyData> vtkCurrentFrame;
+  vtkSmartPointer<vtkPolyData> vtkProcessedFrame;
   pcl::PointCloud<Point>::Ptr pclCurrentFrame;
   std::vector<pcl::PointCloud<Point>::Ptr> pclCurrentFrameByScan;
   std::vector<std::pair<int, int> > FromVTKtoPCLMapping;
@@ -272,7 +273,6 @@ private:
   // keypoints local map
   RollingGrid* EdgesPointsLocalMap;
   RollingGrid* PlanarPointsLocalMap;
-  RollingGrid* LocalMap;
 
   // Mapping of the lasers id
   std::vector<int> LaserIdMapping;
