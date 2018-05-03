@@ -64,6 +64,7 @@
 #include <boost/preprocessor.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
+#include <boost/algorithm/string.hpp>
 
 #include <Eigen/Dense>
 
@@ -2736,10 +2737,77 @@ const bool& vtkVelodyneHDLReader::GetWantIntensityCorrection()
 //-----------------------------------------------------------------------------
 void vtkVelodyneHDLReader::SetIntensitiesCorrected(const bool& state)
 {
-
   if (state != this->Internal->WantIntensityCorrection)
   {
     this->Internal->WantIntensityCorrection = state;
     this->Modified();
   }
+}
+
+//-----------------------------------------------------------------------------
+void vtkVelodyneHDLReader::LoadTransforms(const std::string& filename)
+{
+  std::ifstream file;
+  file.open(filename);
+
+  if (!file.is_open())
+  {
+    vtkGenericWarningMacro("Can't load the specified file");
+  }
+
+  // Create a new interpolator
+  this->CreateLinearInterpolator();
+
+  std::string line;
+  std::string expectedLine = "Time,Rx(Roll),Ry(Pitch),Rz(Yaw),X,Y,Z";
+  std::getline(file, line);
+  if (line != expectedLine)
+  {
+    vtkGenericWarningMacro("Header file not expected. Version incompability");
+  }
+
+  while (std::getline(file, line))
+  {
+    std::vector<std::string> values;
+    boost::split(values, line, boost::is_any_of(","));
+
+    // time
+    double t = std::atof(values[0].c_str());
+    // rotation
+    double rx = std::atof(values[1].c_str()) * 180.0 / vtkMath::Pi();
+    double ry = std::atof(values[2].c_str()) * 180.0 / vtkMath::Pi();
+    double rz = std::atof(values[3].c_str()) * 180.0 / vtkMath::Pi();
+    // position
+    double x = std::atof(values[4].c_str());
+    double y = std::atof(values[5].c_str());
+    double z = std::atof(values[6].c_str());
+    // add the transform
+    this->AddTransform(rx, ry, rz, x, y, z, t);
+  }
+}
+
+//-----------------------------------------------------------------------------
+void vtkVelodyneHDLReader::ExportTransforms(const std::string& filename)
+{
+  std::ofstream file;
+  file.open(filename);
+
+  if (!file.is_open())
+  {
+    vtkGenericWarningMacro("Can't write the specified file");
+  }
+
+  std::vector<std::vector<double> > transforms = this->Internal->Interp->GetTransformList();
+  std::vector<double> T;
+
+  file.precision(12);
+  file << "Time,Rx(Roll),Ry(Pitch),Rz(Yaw),X,Y,Z" << std::endl;
+  for (unsigned int k = 0; k < transforms.size(); ++k)
+  {
+    T = transforms[k];
+    file << T[0] << "," << T[1] << "," << T[2] << "," << T[3] << ","
+         << T[4] << "," << T[5] << "," << T[6] << std::endl;
+  }
+  file.close();
+  return;
 }

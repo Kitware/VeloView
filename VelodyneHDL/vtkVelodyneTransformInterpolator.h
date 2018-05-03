@@ -48,6 +48,7 @@
 #define __vtkVelodyneTransformInterpolator_h
 
 #include <vtkObject.h>
+#include <vector>
 
 class vtkTransform;
 class vtkMatrix4x4;
@@ -102,6 +103,10 @@ public:
   // fill in the transformation provided). If t is outside the range of
   // (min,max) values, then t is clamped.
   void InterpolateTransform(double t, vtkTransform* xform);
+
+  // Description:
+  // Return the transform list
+  std::vector<std::vector<double> > GetTransformList();
 
   // BTX
   // Description:

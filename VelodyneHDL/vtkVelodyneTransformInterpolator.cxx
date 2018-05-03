@@ -73,6 +73,34 @@ class vtkTransformList : public std::list<vtkQTransform>
 typedef vtkTransformList::iterator TransformListIterator;
 
 //----------------------------------------------------------------------------
+std::vector<std::vector<double> > vtkVelodyneTransformInterpolator::GetTransformList()
+{
+  std::vector<std::vector<double> > transforms;
+  // Okay, insert in sorted order
+  TransformListIterator iter = this->TransformList->begin();
+  for (TransformListIterator iter = this->TransformList->begin(); iter != this->TransformList->end(); ++iter)
+  {
+    std::vector<double> currentTransform(7, 0);
+    // time
+    currentTransform[0] = iter->Time;
+    // position
+    currentTransform[4] = iter->P[0];
+    currentTransform[5] = iter->P[1];
+    currentTransform[6] = iter->P[2];
+    // orientation
+    double A[3][3];
+    iter->Q.ToMatrix3x3(A);
+    currentTransform[1] = std::atan2(A[2][1], A[2][2]);
+    currentTransform[2] = -std::asin(A[2][0]);
+    currentTransform[3] = std::atan2(A[1][0], A[0][0]);
+
+    transforms.push_back(currentTransform);
+  }
+
+  return transforms;
+}
+
+//----------------------------------------------------------------------------
 vtkVelodyneTransformInterpolator::vtkVelodyneTransformInterpolator()
 {
   // Set up the interpolation

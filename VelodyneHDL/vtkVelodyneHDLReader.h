@@ -143,6 +143,8 @@ public:
   int GetNumberOfChannels();
 
   void AddTransform(double rx, double ry, double rz, double tx, double ty, double tz, double time);
+  void LoadTransforms(const std::string& filename);
+  void ExportTransforms(const std::string& filename);
 
   // I/O and processing functions
   void Open();

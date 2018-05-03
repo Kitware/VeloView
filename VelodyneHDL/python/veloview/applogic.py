@@ -2207,7 +2207,17 @@ def toggleLaunchSlam():
 
 def toggleLaunchStreamSlam():
     app.slamStream = slam.launchStreamSlam()
-    
+
+def toggleLoadTransform():
+    fileName = getSaveFileName('Save Transforms', 'csv')
+    reader = getReader()
+    reader.GetClientSideObject().LoadTransforms(fileName)
+
+def toggleExportTransform():
+    fileName = getSaveFileName('Save Transforms', 'csv')
+    reader = getReader()
+    reader.GetClientSideObject().ExportTransforms(fileName)
+
 def toggleSelectDualReturn():
     # test if we are on osx os
     osName = str(sys.platform)
@@ -2473,6 +2483,8 @@ def setupActions():
     app.actions['actionLaunchSlam'].connect('triggered()', toggleLaunchSlam)
     app.actions['actionStreamSlam'].connect('triggered()', toggleLaunchStreamSlam)
     app.actions['actionChartView'].connect('triggered()',toggleShowChart)
+    app.actions['actionLoadTransform'].connect('triggered()', toggleLoadTransform)
+    app.actions['actionExportTransform'].connect('triggered()', toggleExportTransform)
     app.EnableCrashAnalysis = app.actions['actionEnableCrashAnalysis'].isChecked()
 
     # Restore action states from settings
