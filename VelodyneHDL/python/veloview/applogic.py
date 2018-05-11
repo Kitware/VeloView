@@ -962,7 +962,7 @@ def onSavePosition():
 
 def onSaveLAS():
 
-    frameOptions = getFrameSelectionFromUser(framePackVisibility=True, frameTransformVisibility=False)
+    frameOptions = getFrameSelectionFromUser(framePackVisibility=True, frameTransformVisibility=True)
     if frameOptions is None:
         return
 

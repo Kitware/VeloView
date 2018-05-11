@@ -43,6 +43,7 @@
       <string>Save &amp;As</string>
      </property>
      <addaction name="actionSavePCAP"/>
+     <addaction name="actionSaveLAS"/>
      <addaction name="actionSaveCSV"/>
      <addaction name="actionSavePositionCSV"/>
     </widget>

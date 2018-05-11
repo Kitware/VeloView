@@ -40,6 +40,10 @@ class VTK_EXPORT vtkLASFileWriter
 {
 public:
   vtkLASFileWriter(const char* filename);
+  vtkLASFileWriter(const char* filename, int gcsForHeaderIfNoConversions, double easting,
+                   double northing, double height, int conversionIn,
+                   int conversionOut, double neTol, double hTol,
+                   int utmZone, bool isLatLon);
   ~vtkLASFileWriter();
 
   void SetTimeRange(double min, double max);

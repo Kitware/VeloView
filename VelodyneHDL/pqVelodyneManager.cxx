@@ -194,12 +194,23 @@ void pqVelodyneManager::saveFramesToLAS(vtkVelodyneHDLReader* reader, vtkPolyDat
     return;
   }
 
-  vtkLASFileWriter writer(qPrintable(filename));
+  startFrame += 1;
+  endFrame -= 1;
+
+  double northing = 0;
+  double easting = 0;
+  double height = 0;
+  int gcs = 0;
+  int in = 0;
+  int out = 0;
+  double neTol = 1e-3;
+  double hTol = 1e-3;
+  bool isLatLon = false;
+  int utmZone = 0;
 
   if (positionMode > 0) // not sensor-relative
   {
     vtkVelodyneTransformInterpolator* const interp = reader->GetInterpolator();
-    writer.SetTimeRange(interp->GetMinimumT(), interp->GetMaximumT());
 
     if (positionMode > 1) // Absolute geoposition
     {
@@ -212,20 +223,31 @@ void pqVelodyneManager::saveFramesToLAS(vtkVelodyneHDLReader* reader, vtkPolyDat
         eastingData->GetNumberOfTuples() && northingData && northingData->GetNumberOfTuples() &&
         heightData && heightData->GetNumberOfTuples())
       {
-        const int gcs = // should in some cases use 32700?
+        // We assume that eastingData, norhtingData and heightData are in system reference
+        // coordinates (srs) of UTM zoneData
+        gcs = // should in some cases use 32700? 32600 is for northern UTM zone, 32700 for southern UTM zone
           32600 + static_cast<int>(zoneData->GetComponent(0, 0));
-
+        utmZone = static_cast<int>(zoneData->GetComponent(0, 0));
+        out = gcs;
         if (positionMode == 3) // Absolute lat/lon
         {
-          writer.SetGeoConversion(gcs, 4326); // ...or 32700?
-          writer.SetPrecision(1e-8);          // about 1 mm
+          in = gcs; // ...or 32700?
+          out = 4326; // lat/lon (espg id code for lat-long-alt coordinates)
+          neTol = 1e-8; // about 1mm;
+          isLatLon = true;
         }
 
-        writer.SetOrigin(gcs, eastingData->GetComponent(0, 0), northingData->GetComponent(0, 0),
-          heightData->GetComponent(0, 0));
+        northing = northingData->GetComponent(0, 0);
+        easting = eastingData->GetComponent(0, 0);
+        height = heightData->GetComponent(0, 0);
       }
     }
   }
+
+  std::cout << "origin : [" << northing << ";" << easting << ";" << height << "]" << std::endl;
+  std::cout << "gcs : " << gcs << std::endl;
+
+  vtkLASFileWriter writer(qPrintable(filename), gcs, easting, northing, height, in, out, neTol, hTol, utmZone, isLatLon);
 
   QProgressDialog progress("Exporting LAS...", "Abort Export", startFrame,
     startFrame + (endFrame - startFrame) * 2, getMainWindow());
@@ -264,7 +286,6 @@ void pqVelodyneManager::saveFramesToLAS(vtkVelodyneHDLReader* reader, vtkPolyDat
 
   reader->Close();
 }
-
 //-----------------------------------------------------------------------------
 void pqVelodyneManager::setup()
 {
