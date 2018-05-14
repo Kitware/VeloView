@@ -110,6 +110,7 @@
     <addaction name="actionStreamSlam"/>
     <addaction name="actionLoadTransform"/>
     <addaction name="actionExportTransform"/>
+    <addaction name="actionMergeTransforms"/>
     <addaction name="menuProcessing_Options"/>
     <addaction name="separator"/>
     <addaction name="actionPlay"/>
@@ -1034,6 +1035,30 @@
    </property>
    <property name="toolTip">
     <string>Export Transform</string>
+   </property>
+  </action>
+  <action name="actionRecordLidarAndIMU">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="VelodyneHDL/images/resources.qrc">
+     <normaloff>:/VelodyneHDLPlugin/record_lidar_imu.png</normaloff>:/VelodyneHDLPlugin/record_lidar_imu.png</iconset>
+   </property>
+   <property name="text">
+    <string>RecordLidarAndIMU</string>
+   </property>
+  </action>
+  <action name="actionMergeTransforms">
+   <property name="icon">
+    <iconset resource="vvResources.qrc">
+     <normaloff>:/vvResources/Icons/absolute.png</normaloff>:/vvResources/Icons/absolute.png</iconset>
+   </property>
+   <property name="text">
+    <string>Merge Transforms</string>
+   </property>
+   <property name="toolTip">
+    <string>merge the transforms of different sensors</string>
    </property>
   </action>
  </widget>

@@ -34,7 +34,7 @@ import slam
 
 from PythonQt.paraview import vvCalibrationDialog, vvCropReturnsDialog, vvSelectFramesDialog
 from VelodyneHDLPluginPython import vtkVelodyneHDLReader
-#from VelodyneHDLPluginPython import vtkPCLRansacModel
+from VelodyneHDLPluginPython import vtkSensorTransformFusion
 
 _repCache = {}
 
@@ -2218,6 +2218,22 @@ def toggleExportTransform():
     reader = getReader()
     reader.GetClientSideObject().ExportTransforms(fileName)
 
+def toggleMergeTransforms():
+    fileNameIMU = getSaveFileName('Load IMU transforms', 'csv')
+    if not fileNameIMU:
+        return
+
+    fileNameSlam = getSaveFileName('Load SLAM transforms', 'csv')
+    if not fileNameSlam:
+        return
+
+    sensorFusion = vtkSensorTransformFusion()
+    sensorFusion.LoadIMUTransforms(fileNameIMU)
+    sensorFusion.LoadSLAMTransforms(fileNameSlam)
+    sensorFusion.MergeTransforms()
+    source = getReader();
+    source.GetClientSideObject().SetInterpolator(sensorFusion.GetInterpolator())
+
 def toggleSelectDualReturn():
     # test if we are on osx os
     osName = str(sys.platform)
@@ -2485,6 +2501,7 @@ def setupActions():
     app.actions['actionChartView'].connect('triggered()',toggleShowChart)
     app.actions['actionLoadTransform'].connect('triggered()', toggleLoadTransform)
     app.actions['actionExportTransform'].connect('triggered()', toggleExportTransform)
+    app.actions['actionMergeTransforms'].connect('triggered()', toggleMergeTransforms)
     app.EnableCrashAnalysis = app.actions['actionEnableCrashAnalysis'].isChecked()
 
     # Restore action states from settings

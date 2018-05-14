@@ -75,6 +75,8 @@ typedef vtkTransformList::iterator TransformListIterator;
 //----------------------------------------------------------------------------
 std::vector<std::vector<double> > vtkVelodyneTransformInterpolator::GetTransformList()
 {
+  this->InitializeInterpolation();
+
   std::vector<std::vector<double> > transforms;
   // Okay, insert in sorted order
   TransformListIterator iter = this->TransformList->begin();

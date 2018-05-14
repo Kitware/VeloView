@@ -1,0 +1,13 @@
+<ServerManagerConfiguration>
+  <!-- Begin SLAM Registration -->
+  <ProxyGroup name="filters">
+    <SourceProxy name="SensorTransformFusion" class="vtkSensorTransformFusion" label="SensorTransformFusion">
+      <Documentation
+        short_help="filter which performs sensor fusion."
+        long_help="filter which performs sensor fusion.">
+        filter which performs sensor fusion.
+      </Documentation>
+    </SourceProxy>
+  </ProxyGroup>
+  <!-- End SLAM Registration -->
+</ServerManagerConfiguration>

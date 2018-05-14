@@ -104,6 +104,7 @@ if(PARAVIEW_BUILD_QT_GUI)
     vtkRollingDataAccumulator.cxx
     vvPacketSender.cxx
     vtkSlam.cxx
+    vtkSensorTransformFusion.cxx
     ../vtkPatchVeloView/vtkVeloViewPiecewiseFunction.cxx
     ../vtkPatchVeloView/vtkVeloViewQuaternionInterpolator.cxx
     ../vtkPatchVeloView/vtkVeloViewTupleInterpolator.cxx
@@ -145,6 +146,7 @@ list(APPEND servermanager_sources
   vtkApplanixPositionReader.cxx
   vtkProcessingSample.cxx
   vtkSlam.cxx
+  vtkSensorTransformFusion.cxx
   vtkVelodyneHDLGridSource.cxx
   vtkVelodyneHDLReader.cxx
   vtkVelodyneHDLPositionReader.cxx
@@ -156,6 +158,7 @@ list(APPEND servermanager_xml
   xml/ApplanixPositionReader.xml
   xml/ProcessingSample.xml
   xml/SLAM.xml
+  xml/SensorTransformFusion.xml
   xml/VelodyneHDLGridSource.xml
   xml/VelodyneHDLReader.xml
   xml/VelodyneHDLPositionReader.xml
