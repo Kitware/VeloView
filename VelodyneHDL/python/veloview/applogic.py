@@ -1547,7 +1547,8 @@ def playbackTick():
             return # Already on last frame, cannot go forward
         elif view.ViewTime < timesteps[-2]:
             #There is more than one new frame in the queue, goToLast
-            print "Shown frame: " + str(view.ViewTime) + ", but lastest frame received is " + str(timesteps[-1]) + ". Skipping drawing of " +str(timesteps[-1]-view.ViewTime-1) + " intermediate frames to avoid lag"
+            #print "Shown frame: " + str(view.ViewTime) + ", but lastest frame received is " + str(timesteps[-1]) + ". Skipping drawing of " +str(timesteps[-1]-view.ViewTime-1) + " intermediate frames to avoid lag"
+            pass
 
         if not app.colorByInitialized:
             sensor.UpdatePipeline()
