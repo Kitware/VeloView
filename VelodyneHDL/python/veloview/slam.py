@@ -118,7 +118,7 @@ def DebugInitialize():
     source.Close()
 
 
-def DebugNextFrame():
+def DebugNextFrame(numberOfFrames = 1):
     """ Debug function to run from the python shell after DebugInitialize()
     """
     # get data
@@ -130,31 +130,32 @@ def DebugNextFrame():
 
     source.Open()
 
-    # increment currentFrame number
-    global currentFrame
-    currentFrame += 1
-    print currentFrame
-    # get the current frame
-    polyData = source.GetFrame(currentFrame)
-    # compute the SLAM for the current frame
-    slam.GetClientSideObject().AddFrame(polyData)
+    for i in range(numberOfFrames):
+        # increment currentFrame number
+        global currentFrame
+        currentFrame += 1
+        print currentFrame
+        # get the current frame
+        polyData = source.GetFrame(currentFrame)
+        # compute the SLAM for the current frame
+        slam.GetClientSideObject().AddFrame(polyData)
 
-    # get the transformation computed
-    Tworld = range(6)
-    slam.GetClientSideObject().GetWorldTransform(Tworld)
-    t = polyData.GetPointData().GetArray("adjustedtime").GetTuple1(0) * 1e-6
+        # get the transformation computed
+        Tworld = range(6)
+        slam.GetClientSideObject().GetWorldTransform(Tworld)
+        t = polyData.GetPointData().GetArray("adjustedtime").GetTuple1(0) * 1e-6
 
-    # convert in degree
-    rx = Tworld[0] * 180 / vtk.vtkMath.Pi()
-    ry = Tworld[1] * 180 / vtk.vtkMath.Pi()
-    rz = Tworld[2] * 180 / vtk.vtkMath.Pi()
-    # permute the axes
-    tx = Tworld[3]
-    ty = Tworld[4]
-    tz = Tworld[5]
+        # convert in degree
+        rx = Tworld[0] * 180 / vtk.vtkMath.Pi()
+        ry = Tworld[1] * 180 / vtk.vtkMath.Pi()
+        rz = Tworld[2] * 180 / vtk.vtkMath.Pi()
+        # permute the axes
+        tx = Tworld[3]
+        ty = Tworld[4]
+        tz = Tworld[5]
 
-    # add the transform
-    source.AddTransform(rx, ry, rz, tx, ty, tz, t)
+        # add the transform
+        source.AddTransform(rx, ry, rz, tx, ty, tz, t)
 
     # update slam
     slam.GetClientSideObject().Update()
@@ -166,7 +167,6 @@ def DebugNextFrame():
     smp.Hide(slam[2],applogic.app.mainView)
     smp.Show(slam[2],applogic.app.mainView)
     smp.Hide(slam[3],applogic.app.mainView)
-    smp.Show(slam[4],applogic.app.mainView)
     smp.Render()
 
     # Enable to visualize the debug array
