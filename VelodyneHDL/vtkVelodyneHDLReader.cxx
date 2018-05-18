@@ -1995,7 +1995,7 @@ void vtkVelodyneHDLReader::vtkInternal::ComputeOrientation(
     // NOTE: We store time in milliseconds, but the interpolator uses seconds,
     //       so we need to adjust here
     const double t = timestamp * 1e-6;
-    this->Interp->InterpolateTransform(t, geotransform);
+    this->Interp->InterpolateTransformNearest(t, geotransform);
   }
   else
   {

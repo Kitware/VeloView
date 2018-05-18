@@ -459,6 +459,55 @@ void vtkVelodyneTransformInterpolator::InterpolateTransform(double t, vtkTransfo
 }
 
 //----------------------------------------------------------------------------
+void vtkVelodyneTransformInterpolator::InterpolateTransformNearest(double t,
+                                                    vtkTransform *xform)
+{
+  if ( this->TransformList->empty() )
+    {
+    return;
+    }
+
+  // Make sure the xform and this class are initialized properly
+  xform->Identity();
+  this->InitializeInterpolation();
+
+  // Evaluate the interpolators
+  if ( t < this->TransformList->front().Time )
+    {
+    t = this->TransformList->front().Time;
+    }
+
+  else if ( t > this->TransformList->back().Time )
+    {
+    t = this->TransformList->back().Time;
+    }
+  double minDistance = std::numeric_limits<double>::max();
+  std::cout<<minDistance<<std::endl;
+  double itTime;
+  for(std::list<vtkQTransform>::iterator it = this->TransformList->begin(); it!=this->TransformList->end();++it){
+    if (t > it->Time)
+    {
+      xform->Identity();
+      xform->Translate(it->P);
+      double Q[4];
+      Q[0] = vtkMath::DegreesFromRadians(it->Q.GetRotationAngleAndAxis(Q+1));
+      xform->RotateWXYZ(Q[0],Q+1);
+      xform->Scale(it->S);
+
+      itTime = it->Time;
+    }
+    else
+    {
+      break;
+    }
+  }
+  std::cout << "t : " << t << std::endl;
+  std::cout << "itTime" <<  itTime << std::endl;
+
+  std::cout<<minDistance<<std::endl;
+}
+
+//----------------------------------------------------------------------------
 void vtkVelodyneTransformInterpolator::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);

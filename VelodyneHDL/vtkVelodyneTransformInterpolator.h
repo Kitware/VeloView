@@ -162,6 +162,7 @@ public:
   // modified outside of this class.
   unsigned long GetMTime();
 
+  void InterpolateTransformNearest(double t, vtkTransform *xform);
 protected:
   vtkVelodyneTransformInterpolator();
   virtual ~vtkVelodyneTransformInterpolator();
