@@ -1058,6 +1058,11 @@ void vtkSlam::OnlyComputeKeypoints(vtkSmartPointer<vtkPolyData> newFrame)
 //-----------------------------------------------------------------------------
 void vtkSlam::AddFrame(vtkPolyData* newFrame)
 {
+  if (!newFrame)
+  {
+    vtkGenericWarningMacro("Slam entry is a null pointer data");
+    return;
+  }
   this->vtkCurrentFrame = newFrame;
 
   // Check if the number of lasers has been set

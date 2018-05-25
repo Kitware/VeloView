@@ -1049,6 +1049,15 @@ void vtkVelodyneHDLSource::SetSensorTransform(vtkTransform* transform)
   this->Modified();
 }
 
+//-----------------------------------------------------------------------------
+void vtkVelodyneHDLSource::SetGpsTransform(vtkTransform* transform)
+{
+  boost::lock_guard<boost::mutex> lock(this->Internal->Consumer->ReaderMutex);
+
+  this->Internal->Consumer->GetReader()->SetGpsTransform(transform);
+  this->Modified();
+}
+
 //----------------------------------------------------------------------------
 void vtkVelodyneHDLSource::Start()
 {

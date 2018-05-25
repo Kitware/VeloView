@@ -469,6 +469,7 @@ public:
   vtkSmartPointer<vtkPolyData> CurrentDataset;
 
   vtkNew<vtkTransform> SensorTransform;
+  vtkNew<vtkTransform> GpsTransform;
   vtkSmartPointer<vtkVelodyneTransformInterpolator> Interp;
 
   vtkSmartPointer<vtkPoints> Points;
@@ -753,6 +754,20 @@ void vtkVelodyneHDLReader::SetSensorTransform(vtkTransform* transform)
   else
   {
     this->Internal->SensorTransform->Identity();
+  }
+  this->Modified();
+}
+
+//-----------------------------------------------------------------------------
+void vtkVelodyneHDLReader::SetGpsTransform(vtkTransform* transform)
+{
+  if (transform)
+  {
+    this->Internal->GpsTransform->SetMatrix(transform->GetMatrix());
+  }
+  else
+  {
+    this->Internal->GpsTransform->Identity();
   }
   this->Modified();
 }

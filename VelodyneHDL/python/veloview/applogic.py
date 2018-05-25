@@ -368,8 +368,9 @@ def chooseCalibration(calibrationFilename=None):
             self.isForwarding = dialog.isForwarding()
             self.ipAddressForwarding = dialog.ipAddressForwarding()
             self.sensorTransform = vtk.vtkTransform()
+            self.gpsTransform = vtk.vtkTransform()
 
-            qm = dialog.sensorTransform()
+            qm = dialog.lidarTransform()
             vm = vtk.vtkMatrix4x4()
             for row in xrange(4):
                 vm.SetElement(row, 0, qm.row(row).x())
@@ -377,6 +378,15 @@ def chooseCalibration(calibrationFilename=None):
                 vm.SetElement(row, 2, qm.row(row).z())
                 vm.SetElement(row, 3, qm.row(row).w())
             self.sensorTransform.SetMatrix(vm)
+
+            qmGps = dialog.gpsTransform()
+            vmGps = vtk.vtkMatrix4x4()
+            for row in xrange(4):
+                vmGps.SetElement(row, 0, qmGps.row(row).x())
+                vmGps.SetElement(row, 1, qmGps.row(row).y())
+                vmGps.SetElement(row, 2, qmGps.row(row).z())
+                vmGps.SetElement(row, 3, qmGps.row(row).w())
+            self.gpsTransform.SetMatrix(vmGps)
 
 
     dialog = vvCalibrationDialog(getMainWindow())
@@ -413,6 +423,7 @@ def openSensor():
 
     calibrationFile = calibration.calibrationFile
     sensorTransform = calibration.sensorTransform
+    gpsTransform = calibration.gpsTransform
     LIDARPort = calibration.lidarPort
     GPSPort = calibration.gpsPort
     LIDARForwardingPort = calibration.lidarForwardingPort
@@ -434,6 +445,7 @@ def openSensor():
     sensor.GetClientSideObject().SetisCrashAnalysing(app.EnableCrashAnalysis)
     sensor.GetClientSideObject().SetForwardedIpAddress(ipAddressForwarding)
     sensor.GetClientSideObject().SetSensorTransform(sensorTransform)
+    sensor.GetClientSideObject().SetGpsTransform(gpsTransform)
     sensor.GetClientSideObject().SetIgnoreZeroDistances(app.actions['actionIgnoreZeroDistances'].isChecked())
     sensor.GetClientSideObject().SetIntraFiringAdjust(app.actions['actionIntraFiringAdjust'].isChecked())
     sensor.GetClientSideObject().SetIgnoreEmptyFrames(app.actions['actionIgnoreEmptyFrames'].isChecked())
@@ -496,6 +508,7 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
 
     calibrationFile = calibration.calibrationFile
     sensorTransform = calibration.sensorTransform
+    gpsTransform = calibration.gpsTransform
 
     close()
 
@@ -534,6 +547,7 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
     restoreLaserSelectionDialog()
 
     reader.GetClientSideObject().SetSensorTransform(sensorTransform)
+    reader.GetClientSideObject().SetGpsTransform(gpsTransform)
 
     reader.GetClientSideObject().SetIgnoreZeroDistances(app.actions['actionIgnoreZeroDistances'].isChecked())
     reader.GetClientSideObject().SetIntraFiringAdjust(app.actions['actionIntraFiringAdjust'].isChecked())
@@ -882,6 +896,22 @@ def getSaveFileName(title, extension, defaultFileName=None):
         settings.setValue('VelodyneHDLPlugin/OpenData/DefaultDir', QtCore.QFileInfo(fileName).absoluteDir().absolutePath())
         return fileName
 
+def getOpenFileName(title, extension, defaultFileName=None):
+
+    settings = getPVSettings()
+    defaultDir = settings.value('VelodyneHDLPlugin/OpenData/DefaultDir', QtCore.QDir.homePath())
+    defaultFileName = defaultDir if not defaultFileName else os.path.join(defaultDir, defaultFileName)
+
+    nativeDialog = 0 if app.actions['actionNative_File_Dialogs'].isChecked() else QtGui.QFileDialog.DontUseNativeDialog
+
+    filters = '%s (*.%s)' % (extension, extension)
+    selectedFilter = '*.%s' % extension
+    fileName = QtGui.QFileDialog.getOpenFileName(getMainWindow(), title,
+                        defaultFileName, filters, selectedFilter, nativeDialog)
+
+    if fileName:
+        settings.setValue('VelodyneHDLPlugin/OpenData/DefaultDir', QtCore.QFileInfo(fileName).absoluteDir().absolutePath())
+        return fileName
 
 def restoreNativeFileDialogsAction():
     settings = getPVSettings()
@@ -2209,7 +2239,7 @@ def toggleLaunchStreamSlam():
     app.slamStream = slam.launchStreamSlam()
 
 def toggleLoadTransform():
-    fileName = getSaveFileName('Save Transforms', 'csv')
+    fileName = getOpenFileName('Load Transforms', 'csv')
     reader = getReader()
     reader.GetClientSideObject().LoadTransforms(fileName)
 
@@ -2219,11 +2249,11 @@ def toggleExportTransform():
     reader.GetClientSideObject().ExportTransforms(fileName)
 
 def toggleMergeTransforms():
-    fileNameIMU = getSaveFileName('Load IMU transforms', 'csv')
+    fileNameIMU = getOpenFileName('Load IMU transforms', 'csv')
     if not fileNameIMU:
         return
 
-    fileNameSlam = getSaveFileName('Load SLAM transforms', 'csv')
+    fileNameSlam = getOpenFileName('Load SLAM transforms', 'csv')
     if not fileNameSlam:
         return
 
@@ -2534,7 +2564,7 @@ def setupActions():
     geolocationToolBar.addWidget(geolocationComboBox)
 
     # Set default toolbar visibility
-    geolocationToolBar.visible = False
+    geolocationToolBar.visible = True
     app.geolocationToolBar = geolocationToolBar
     
     # Setup and add the playback speed control toolbar

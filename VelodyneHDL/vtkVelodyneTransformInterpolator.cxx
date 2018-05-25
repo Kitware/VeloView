@@ -482,7 +482,7 @@ void vtkVelodyneTransformInterpolator::InterpolateTransformNearest(double t,
     t = this->TransformList->back().Time;
     }
   double minDistance = std::numeric_limits<double>::max();
-  std::cout<<minDistance<<std::endl;
+
   double itTime;
   for(std::list<vtkQTransform>::iterator it = this->TransformList->begin(); it!=this->TransformList->end();++it){
     if (t > it->Time)
@@ -501,10 +501,6 @@ void vtkVelodyneTransformInterpolator::InterpolateTransformNearest(double t,
       break;
     }
   }
-  std::cout << "t : " << t << std::endl;
-  std::cout << "itTime" <<  itTime << std::endl;
-
-  std::cout<<minDistance<<std::endl;
 }
 
 //----------------------------------------------------------------------------

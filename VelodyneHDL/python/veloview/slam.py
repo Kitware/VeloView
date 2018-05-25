@@ -55,6 +55,8 @@ def configure(source):
         start = applogic.app.scene.StartTime
         stop = applogic.app.scene.EndTime
 
+    stop = min(stop, source.GetNumberOfFrames() - 1)
+
     # General
     slam.GetClientSideObject().Set_RollingGrid_Grid_NbVoxel([slamDialog.NbVoxel,slamDialog.NbVoxel,slamDialog.NbVoxel])
     slam.GetClientSideObject().Set_AngleResolution(slamDialog.AngleResolution * vtk.vtkMath.Pi() / 180)

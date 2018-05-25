@@ -31,11 +31,23 @@ public:
 
   Q_INVOKABLE QStringList calibrationFiles() const;
 
-  Q_INVOKABLE QMatrix4x4 sensorTransform() const;
+  Q_INVOKABLE QMatrix4x4 lidarTransform() const;
+  Q_INVOKABLE QMatrix4x4 gpsTransform() const;
 
   Q_INVOKABLE double gpsYaw() const;
   Q_INVOKABLE double gpsRoll() const;
   Q_INVOKABLE double gpsPitch() const;
+  Q_INVOKABLE double gpsX() const;
+  Q_INVOKABLE double gpsY() const;
+  Q_INVOKABLE double gpsZ() const;
+
+  Q_INVOKABLE double lidarYaw() const;
+  Q_INVOKABLE double lidarRoll() const;
+  Q_INVOKABLE double lidarPitch() const;
+  Q_INVOKABLE double lidarX() const;
+  Q_INVOKABLE double lidarY() const;
+  Q_INVOKABLE double lidarZ() const;
+
   Q_INVOKABLE int lidarPort() const;
   Q_INVOKABLE int gpsPort() const;
   Q_INVOKABLE int lidarForwardingPort() const;

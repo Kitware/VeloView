@@ -167,6 +167,7 @@ public:
   void GetLaserIdMapping(int* output) const;
 
   void SetSensorTransform(vtkTransform*);
+  void SetGpsTransform(vtkTransform*);
 
   int GetApplyTransform();
   void SetApplyTransform(int apply);

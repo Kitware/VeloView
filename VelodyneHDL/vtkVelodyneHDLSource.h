@@ -114,6 +114,7 @@ public:
   void SetDualReturnFilter(unsigned int);
 
   void SetSensorTransform(vtkTransform*);
+  void SetGpsTransform(vtkTransform*);
 
   // A trick to workaround failure to wrap LaserSelection
   void SetDummyProperty(int);
