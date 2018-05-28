@@ -189,7 +189,7 @@ void pqVelodyneManager::saveFramesToPCAP(
 void pqVelodyneManager::saveFramesToLAS(vtkVelodyneHDLReader* reader, vtkPolyData* position,
   int startFrame, int endFrame, const QString& filename, int positionMode)
 {
-  if (!reader || (positionMode > 0 && !position))
+  if (!reader)
   {
     return;
   }
@@ -214,32 +214,39 @@ void pqVelodyneManager::saveFramesToLAS(vtkVelodyneHDLReader* reader, vtkPolyDat
 
     if (positionMode > 1) // Absolute geoposition
     {
-      vtkDataArray* const zoneData = position->GetFieldData()->GetArray("zone");
-      vtkDataArray* const eastingData = position->GetPointData()->GetArray("easting");
-      vtkDataArray* const northingData = position->GetPointData()->GetArray("northing");
-      vtkDataArray* const heightData = position->GetPointData()->GetArray("height");
-
-      if (zoneData && zoneData->GetNumberOfTuples() && eastingData &&
-        eastingData->GetNumberOfTuples() && northingData && northingData->GetNumberOfTuples() &&
-        heightData && heightData->GetNumberOfTuples())
+      if (position)
       {
-        // We assume that eastingData, norhtingData and heightData are in system reference
-        // coordinates (srs) of UTM zoneData
-        gcs = // should in some cases use 32700? 32600 is for northern UTM zone, 32700 for southern UTM zone
-          32600 + static_cast<int>(zoneData->GetComponent(0, 0));
-        utmZone = static_cast<int>(zoneData->GetComponent(0, 0));
-        out = gcs;
-        if (positionMode == 3) // Absolute lat/lon
-        {
-          in = gcs; // ...or 32700?
-          out = 4326; // lat/lon (espg id code for lat-long-alt coordinates)
-          neTol = 1e-8; // about 1mm;
-          isLatLon = true;
-        }
+        vtkDataArray* const zoneData = position->GetFieldData()->GetArray("zone");
+        vtkDataArray* const eastingData = position->GetPointData()->GetArray("easting");
+        vtkDataArray* const northingData = position->GetPointData()->GetArray("northing");
+        vtkDataArray* const heightData = position->GetPointData()->GetArray("height");
 
-        northing = northingData->GetComponent(0, 0);
-        easting = eastingData->GetComponent(0, 0);
-        height = heightData->GetComponent(0, 0);
+        if (zoneData && zoneData->GetNumberOfTuples() && eastingData &&
+          eastingData->GetNumberOfTuples() && northingData && northingData->GetNumberOfTuples() &&
+          heightData && heightData->GetNumberOfTuples())
+        {
+          // We assume that eastingData, norhtingData and heightData are in system reference
+          // coordinates (srs) of UTM zoneData
+          gcs = // should in some cases use 32700? 32600 is for northern UTM zone, 32700 for southern UTM zone
+            32600 + static_cast<int>(zoneData->GetComponent(0, 0));
+          utmZone = static_cast<int>(zoneData->GetComponent(0, 0));
+          out = gcs;
+          if (positionMode == 3) // Absolute lat/lon
+          {
+            in = gcs; // ...or 32700?
+            out = 4326; // lat/lon (espg id code for lat-long-alt coordinates)
+            neTol = 1e-8; // about 1mm;
+            isLatLon = true;
+          }
+
+          northing = northingData->GetComponent(0, 0);
+          easting = eastingData->GetComponent(0, 0);
+          height = heightData->GetComponent(0, 0);
+        }
+      }
+      else
+      {
+        vtkGenericWarningMacro("Geolocation export asked but no position was provided, relative position will be used instead");
       }
     }
   }

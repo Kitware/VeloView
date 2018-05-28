@@ -815,10 +815,16 @@ def saveCSVCurrentFrameSelection(filename):
 
 def saveLASFrames(filename, first, last, transform):
     reader = getReader().GetClientSideObject()
-    position = getPosition().GetClientSideObject().GetOutput()
 
-    PythonQt.paraview.pqVelodyneManager.saveFramesToLAS(
-        reader, position, first, last, filename, transform)
+    if getPosition() is not None:
+        position = getPosition().GetClientSideObject().GetOutput()
+
+        PythonQt.paraview.pqVelodyneManager.saveFramesToLAS(
+            reader, position, first, last, filename, transform)
+
+    else:
+        PythonQt.paraview.pqVelodyneManager.saveFramesToLAS(
+            reader, None, first, last, filename, transform)
 
 
 def saveLASCurrentFrame(filename, transform):
