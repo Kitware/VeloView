@@ -750,34 +750,39 @@ void vtkSlam::ResetAlgorithm()
   this->MappingIcpFrequence = 5; // So that 5 icp will be made
   this->EgoMotionIcpFrequence = 5; // So that 5 icp will be made
   this->MinDistanceToSensor = 3.0;
-  this->MaxEdgePerScanLine = 15;
+  this->MaxEdgePerScanLine = 99;
   this->MaxPlanarsPerScanLine = 60;
-  this->PlaneCurvatureThreshold = 1.0 / 10; // 10 meters radius
-  this->EdgeCurvatureThreshold = 1.0 / 10; // 10 meters radius
-  this->MappingMaxPlaneDistance = 0.2; // 20 cm
-  this->MappingMaxLineDistance = 0.2; // 20 cm
-  this->EgoMotionMaxPlaneDistance = 0.4; // 20 cm
-  this->EgoMotionMaxPlaneDistance = 0.4; // 20 cm
+  this->PlaneCurvatureThreshold = 1.0;
+  this->EdgeCurvatureThreshold = 2.0;
+
+  this->Lambda0 = 0.1;
+  this->LambdaRatio = 1.5;
 
   // EgoMotion
   // edges
   this->EgoMotionLineDistanceNbrNeighbors = 3;
-  this->EgoMotionLineDistancefactor = 3.0;
+  this->EgoMotionLineDistancefactor = 5.0;
+  this->EgoMotionMaxLineDistance = 0.04; // 4 cm
+
   // planes
   this->EgoMotionPlaneDistanceNbrNeighbors = 5;
-  this->EgoMotionPlaneDistancefactor1 = 30.0;
-  this->EgoMotionPlaneDistancefactor2 = 3.0;
+  this->EgoMotionPlaneDistancefactor1 = 50.0;
+  this->EgoMotionPlaneDistancefactor2 = 5.0;
+  this->EgoMotionMaxPlaneDistance = 0.04; // 4 cm
 
   // Mapping
   // edges
-  this->MappingLineDistanceNbrNeighbors = 5;
-  this->MappingLineDistancefactor = 3.0;
+  this->MappingLineDistanceNbrNeighbors = 3;
+  this->MappingLineDistancefactor = 5.0;
+  this->MappingMaxLineDistance = 0.04; // 4 cm
+
   // planes
   this->MappingPlaneDistanceNbrNeighbors = 5;
-  this->MappingPlaneDistancefactor1 = 30.0;
-  this->MappingPlaneDistancefactor2 = 3.0;
+  this->MappingPlaneDistancefactor1 = 50.0;
+  this->MappingPlaneDistancefactor2 = 5.0;
+  this->MappingMaxPlaneDistance = 0.04; // 4 cm
 
-  this->MinPointToLineOrEdgeDistance = 2.0;
+  this->MaxDistanceForICPMatching = 20.0; // 20 meters
 
   this->NbrFrameProcessed = 0;
   this->EgoMotionIterMade = 0;
@@ -2160,24 +2165,23 @@ void vtkSlam::ComputeLineDistanceParametersAccurate(pcl::KdTreeFLANN<Point>::Ptr
 
   // if the nearest edges are too far from the
   // current edge keypoint we skip this point.
-  if (nearestDist[requiredNearest - 1] > this->MinPointToLineOrEdgeDistance)
+  if (nearestDist[requiredNearest - 1] > this->MaxDistanceForICPMatching)
   {
     return;
   }
-
-  // TODO use a RANSAC and then a PCA instead of just a PCA
-  // eliminate point more distant than X meters from the Line
 
   // Compute PCA to determine best line approximation
   // of the requiredNearest nearest edges points extracted
   // Thans to the PCA we will check the shape of the neighborhood
   // and keep it if it is distributed along a line
   Eigen::MatrixXd data(requiredNearest, 3);
+
   for (unsigned int k = 0; k < requiredNearest; k++)
   {
     Point pt = kdtreePreviousEdges->getInputCloud()->points[nearestIndex[k]];
     data.row(k) << pt.x, pt.y, pt.z;
   }
+
   Eigen::Matrix<double, 3, 1> mean = data.colwise().mean();
   Eigen::MatrixXd centered = data.rowwise() - mean.transpose();
   Eigen::MatrixXd cov = centered.transpose() * centered;
@@ -2256,8 +2260,6 @@ void vtkSlam::ComputePlaneDistanceParametersAccurate(pcl::KdTreeFLANN<Point>::Pt
     significantlyFactor2 = this->EgoMotionPlaneDistancefactor2;
     requiredNearest = this->EgoMotionPlaneDistanceNbrNeighbors;
     maxDist = std::pow(this->EgoMotionMaxPlaneDistance, 2);
-//    if (this->NLasers > 16)
-//      requiredNearest = 7;
   }
   else if (step == "mapping")
   {
@@ -2265,8 +2267,6 @@ void vtkSlam::ComputePlaneDistanceParametersAccurate(pcl::KdTreeFLANN<Point>::Pt
     significantlyFactor2 = this->MappingPlaneDistancefactor2;
     requiredNearest = this->MappingPlaneDistanceNbrNeighbors;
     maxDist = std::pow(this->MappingMaxPlaneDistance, 2);
-//    if (this->NLasers > 16)
-//      requiredNearest = 7;
   }
   else
   {
@@ -2288,24 +2288,23 @@ void vtkSlam::ComputePlaneDistanceParametersAccurate(pcl::KdTreeFLANN<Point>::Pt
 
   // if the nearest planars are too far from the
   // current planar keypoint we skip this point.
-  if (nearestDist[requiredNearest - 1] > this->MinPointToLineOrEdgeDistance)
+  if (nearestDist[requiredNearest - 1] > this->MaxDistanceForICPMatching)
   {
     return;
   }
-  // TODO use a RANSAC and then a PCA instead of just a PCA
-  // eliminate point more distant than X meters from the Plane
 
   // Compute PCA to determine best line approximation
   // of the requiredNearest nearest edges points extracted
   // Thanks to the PCA we will check the shape of the neighborhood
   // and keep it if it is distributed along a line
-
   Eigen::MatrixXd data(requiredNearest,3);
+
   for (unsigned int k = 0; k < requiredNearest; k++)
   {
     Point pt = kdtreePreviousPlanes->getInputCloud()->points[nearestIndex[k]];
     data.row(k) << pt.x, pt.y, pt.z;
   }
+
   Eigen::Matrix<double, 3, 1> mean = data.colwise().mean();
   Eigen::MatrixXd centered = data.rowwise() - mean.transpose();
   Eigen::MatrixXd cov = centered.transpose() * centered;
@@ -2410,10 +2409,6 @@ void vtkSlam::ComputeResidualJacobians(std::vector<Eigen::Matrix<double, 3, 3> >
 
   for (unsigned int k = 0; k < vX.size(); ++k)
   {
-    X1 = vX[k](0); X2 = vX[k](1); X3 = vX[k](2);
-    C1 = vP[k](0); C2 = vP[k](1); C3 = vP[k](2);
-    A = vA[k];
-
     // here the cost funtion is the distance between
     // the current plane/ edge point and its corresponding line / plane.
     // The distance is f(R,T)=sqrt((R*X+T - P).t * A * (R*X+T - P))
@@ -2421,6 +2416,9 @@ void vtkSlam::ComputeResidualJacobians(std::vector<Eigen::Matrix<double, 3, 3> >
     // we define g(X) = sqrt(X.t * A * X) and h(R,T)=R*X+T-P1
     // Hence, f(R,T) = g(h(R, T)) and the jacobian
     // Jf(R,T) = Jg(h(R,T))*Jh(R,T)
+    X1 = vX[k](0); X2 = vX[k](1); X3 = vX[k](2);
+    C1 = vP[k](0); C2 = vP[k](1); C3 = vP[k](2);
+    A = vA[k];
 
     // represents h(R,T)
     Eigen::Matrix<double, 3, 1> h_R_t = R * vX[k] + dT - vP[k];
@@ -2529,7 +2527,7 @@ void vtkSlam::ComputeEgoMotion()
   // quadratic part involving its hessian. The idea of the Levenberg-Marquardt
   // algorithm is to start with a gradient descent value and to slowly drift toward
   // a Gauss-Newton algortihm as we converge toward the minimum of the function
-  double lambda = 0.1;
+  double lambda = this->Lambda0;
 
   unsigned int nbrEdgesUsed = 0;
   unsigned int nbrPlanesUsed = 0;
@@ -2555,22 +2553,15 @@ void vtkSlam::ComputeEgoMotion()
     {
       currentPoint = this->CurrentEdgesPoints->points[edgeIndex];
 
-      // Transform the current point in the frame L(t_start)
-      // this->TransformToStart(currentPoint, transformedPoint, this->Trelative);
-      // currentPoint = transformedPoint;
-
       // Find the closest correspondence edge line of the current edge point
       if (iterCount % this->EgoMotionIcpFrequence == 0)
       {
-        //this->FindEdgeLineMatch(currentPoint, kdtreePreviousEdges, matchEdgeIndex1, matchEdgeIndex2, edgeIndex, R, dT);
+        // Compute the parameters of the point - line distance
+        // i.e A = (I - n*n.t)^2 with n being the director vector
+        // and P a point of the line
         this->ComputeLineDistanceParametersAccurate(kdtreePreviousEdges, R, dT, currentPoint, "egoMotion");
         nbrEdgesUsed = this->Xvalues.size();
       }
-
-      // Compute the parameters of the point - line distance
-      // i.e A = (I - n*n.t)^2 with n being the director vector
-      // and P a point of the line
-      //this->ComputeLineDistanceParameters(matchEdgeIndex1, matchEdgeIndex2, edgeIndex);
     }
 
     // loop over surfaces
@@ -2578,22 +2569,15 @@ void vtkSlam::ComputeEgoMotion()
     {
       currentPoint = this->CurrentPlanarsPoints->points[planarIndex];
 
-      // Transform the current point in the frame L(t_start)
-      // this->TransformToStart(currentPoint, transformedPoint, this->Trelative);
-      // currentPoint = transformedPoint;
-
-      // Find the closest correspondence edge line of the current edge point
+      // Find the closest correspondence plane of the current planar point
       if (iterCount % this->EgoMotionIcpFrequence == 0)
       {
-        //this->FindPlaneMatch(currentPoint, kdtreePreviousPlanes, matchPlaneIndex1, matchPlaneIndex2, matchPlaneIndex3, planarIndex, R, dT);
+        // Compute the parameters of the point - plane distance
+        // i.e A = n * n.t with n being a normal of the plane
+        // and is a point of the plane
         this->ComputePlaneDistanceParametersAccurate(kdtreePreviousPlanes, R, dT, currentPoint, "egoMotion");
         nbrPlanesUsed = this->Xvalues.size() - nbrEdgesUsed;
       }
-
-      // Compute the parameters of the point - plane distance
-      // i.e A = n * n.t with n being a normal of the plane
-      // and is a point of the plane
-      //this->ComputePlaneDistanceParameters(matchPlaneIndex1, matchPlaneIndex2, matchPlaneIndex3, planarIndex);
     }
 
     // f(R, T) = sum(fi(R, T))
@@ -2629,6 +2613,11 @@ void vtkSlam::ComputeEgoMotion()
     // algorithm to solve the linear equation for this particular point
     Eigen::ColPivHouseholderQR<Eigen::MatrixXd> dec(JtJ + lambda * diagJtJ);
     Eigen::Matrix<double, 6, 1> X = dec.solve(JtY);
+    if (!vtkMath::IsFinite(X(0)) || !vtkMath::IsFinite(X(3)))
+    {
+      vtkGenericWarningMacro("Estimated transform not finite, skip this frame");
+      break;
+    }
 
     // Check if the cost function has not increase
     // in the last iteration. If it does, we are too
@@ -2650,22 +2639,18 @@ void vtkSlam::ComputeEgoMotion()
 
     if (newCost > costFunction[costFunction.size() - 1])
     {
-      lambda = 3.0 * lambda;
+      lambda = this->LambdaRatio * lambda;
       nbrRejection++;
     }
     else
     {
       this->Trelative = Tcandidate;
-      lambda = 1.0 / 3.0 * lambda;
+      lambda = 1.0 / this->LambdaRatio * lambda;
     }
     
     this->EgoMotionIterMade = iterCount + 1;
   }
 
-  /*for (unsigned int k = 0; k < costFunction.size(); ++k)
-  {
-    std::cout << "cost EgoMotion : " << costFunction[k] << std::endl;
-  }*/
   std::cout << "cost goes from : " << costFunction[0] << " to : " << costFunction[costFunction.size() - 1] << std::endl;
   std::cout << "used keypoints : " << this->Xvalues.size() << std::endl;
   std::cout << "edges : " << nbrEdgesUsed << " planes : " << nbrPlanesUsed << std::endl;
@@ -2696,7 +2681,7 @@ void vtkSlam::Mapping()
   // quadratic part involving its hessian. The idea of the Levenberg-Marquardt
   // algorithm is to start with a gradient descent value and to slowly drift toward
   // a Gauss-Newton algortihm as we converge toward the minimum of the function
-  double lambda = 0.1;
+  double lambda = this->Lambda0;
 
   std::vector<double> costFunction(0, 0);
 
@@ -2749,7 +2734,7 @@ void vtkSlam::Mapping()
       {
         currentPoint = this->CurrentPlanarsPoints->points[planarIndex];
 
-        // Find the closest correspondence edge line of the current edge point
+        // Find the closest correspondence plane of the current planar point
         this->ComputePlaneDistanceParametersAccurate(kdtreePlanes, R, dT, currentPoint, "mapping");
         usedPlanes = this->Xvalues.size() - usedEdges;
       }
@@ -2788,6 +2773,11 @@ void vtkSlam::Mapping()
     // algorithm to solve the linear equation for this particular point
     Eigen::ColPivHouseholderQR<Eigen::MatrixXd> dec(JtJ + lambda * diagJtJ);
     Eigen::Matrix<double, 6, 1> X = dec.solve(JtY);
+    if (!vtkMath::IsFinite(X(0)) || !vtkMath::IsFinite(X(3)))
+    {
+      vtkGenericWarningMacro("Estimated transform not finite, skip this frame");
+      break;
+    }
 
     // Check if the cost function has not increase
     // in the last iteration. If it does, we are too
@@ -2809,28 +2799,17 @@ void vtkSlam::Mapping()
 
     if (newCost > costFunction[costFunction.size() - 1])
     {
-      lambda = 10.0 * lambda;
+      lambda = this->LambdaRatio * lambda;
     }
     else
     {
       this->Tworld = Tcandidate;
-      lambda = 1.0 / 3.0 * lambda;
+      lambda = 1.0 / this->LambdaRatio * lambda;
     }
 
     this->MappingIterMade = iterCount + 1;
-
-//    std::cout << "edges : " << usedEdges << " planes : " << usedPlanes << std::endl;
-//    std::cout << "Tworld : " << Tworld << endl;
-//    std::cout << "Trel : " << this->Trelative << endl;
-//    std::cout << "cost : " << newCost << endl;;
-//    cout << "lambda : " << lambda << endl;
-
   }
 
-  /*for (unsigned int k = 0; k < costFunction.size(); ++k)
-  {
-    std::cout << "cost Mapping : " << costFunction[k] << std::endl;
-  }*/
   std::cout << "cost goes from : " << costFunction[0] << " to : " << costFunction[costFunction.size() - 1] << std::endl;
   std::cout << "used keypoints : " << this->Xvalues.size() << std::endl;
   std::cout << "edges : " << usedEdges << " planes : " << usedPlanes << std::endl;
@@ -2855,12 +2834,6 @@ void vtkSlam::Mapping()
   }
   PlanarPointsLocalMap->Roll(this->Tworld);
   PlanarPointsLocalMap->Add(CurrentPlanarsPoints_w);
-
-  // Display rolling grid
-  if (this->DisplayMode)
-  {
-    //this->DisplayRollingGrid(vtkCurrentFrame);
-  }
 }
 
 //-----------------------------------------------------------------------------

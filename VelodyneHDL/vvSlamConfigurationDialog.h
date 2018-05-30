@@ -18,6 +18,9 @@ class VelodyneHDLPlugin_EXPORT vvSlamConfigurationDialog : public QDialog
   // General
   Q_PROPERTY(int NbVoxel READ NbVoxel)
   Q_PROPERTY(double AngleResolution READ AngleResolution)
+  Q_PROPERTY(double MaxDistanceForICPMatching READ MaxDistanceForICPMatching)
+  Q_PROPERTY(double Lambda0 READ Lambda0)
+  Q_PROPERTY(double LambdaRatio READ LambdaRatio)
   //Keypoint
   Q_PROPERTY(int Keypoint_MaxEdgePerScanLine READ Keypoint_MaxEdgePerScanLine)
   Q_PROPERTY(int Keypoint_MaxPlanarsPerScanLine READ Keypoint_MaxPlanarsPerScanLine)
@@ -57,6 +60,9 @@ public:
   // General
   int NbVoxel();
   double AngleResolution();
+  double MaxDistanceForICPMatching();
+  double Lambda0();
+  double LambdaRatio();
 
   //Keypoint
   int Keypoint_MaxEdgePerScanLine();

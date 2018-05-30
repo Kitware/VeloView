@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>816</width>
-    <height>618</height>
+    <height>651</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -480,13 +480,6 @@
          <string>General</string>
         </property>
         <layout class="QGridLayout" name="gridLayout_11">
-         <item row="0" column="0">
-          <widget class="QLabel" name="label_8">
-           <property name="text">
-            <string>Nb Voxel (n*n*n)</string>
-           </property>
-          </widget>
-         </item>
          <item row="0" column="1">
           <widget class="QSpinBox" name="NbVoxel">
            <property name="maximum">
@@ -504,10 +497,62 @@
            </property>
           </widget>
          </item>
+         <item row="0" column="0">
+          <widget class="QLabel" name="label_8">
+           <property name="text">
+            <string>Nb Voxel (n*n*n)</string>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="0">
+          <widget class="QLabel" name="label_30">
+           <property name="text">
+            <string>L-M lamba 0</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="1">
+          <widget class="QDoubleSpinBox" name="MaxDistanceICP">
+           <property name="value">
+            <double>20.000000000000000</double>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="1">
+          <widget class="QDoubleSpinBox" name="Lambda0">
+           <property name="singleStep">
+            <double>0.100000000000000</double>
+           </property>
+           <property name="value">
+            <double>0.100000000000000</double>
+           </property>
+          </widget>
+         </item>
          <item row="1" column="0">
           <widget class="QLabel" name="label_3">
            <property name="text">
             <string>Angle Resolution</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="0">
+          <widget class="QLabel" name="label_29">
+           <property name="text">
+            <string>Max distance ICP</string>
+           </property>
+          </widget>
+         </item>
+         <item row="4" column="0">
+          <widget class="QLabel" name="label_31">
+           <property name="text">
+            <string>L-M Lambda ratio</string>
+           </property>
+          </widget>
+         </item>
+         <item row="4" column="1">
+          <widget class="QDoubleSpinBox" name="LambdaRatio">
+           <property name="value">
+            <double>1.500000000000000</double>
            </property>
           </widget>
          </item>

@@ -60,6 +60,10 @@ def configure(source):
     # General
     slam.GetClientSideObject().Set_RollingGrid_Grid_NbVoxel([slamDialog.NbVoxel,slamDialog.NbVoxel,slamDialog.NbVoxel])
     slam.GetClientSideObject().Set_AngleResolution(slamDialog.AngleResolution * vtk.vtkMath.Pi() / 180)
+    slam.GetClientSideObject().Set_MaxDistanceForICPMatching(slamDialog.MaxDistanceForICPMatching)
+    slam.GetClientSideObject().Set_Lambda0(slamDialog.Lambda0)
+    slam.GetClientSideObject().Set_LambdaRatio(slamDialog.LambdaRatio)
+
     # Keypoint
     slam.GetClientSideObject().Set_Keypoint_MaxEdgePerScanLine(slamDialog.Keypoint_MaxEdgePerScanLine)
     slam.GetClientSideObject().Set_Keypoint_MaxPlanarsPerScanLine(slamDialog.Keypoint_MaxPlanarsPerScanLine)

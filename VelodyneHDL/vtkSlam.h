@@ -150,6 +150,15 @@ public:
   slamGetMacro(,AngleResolution, double)
   slamSetMacro(,AngleResolution, double)
 
+  slamGetMacro(,MaxDistanceForICPMatching, double)
+  slamSetMacro(,MaxDistanceForICPMatching, double)
+
+  slamGetMacro(,Lambda0, double)
+  slamSetMacro(,Lambda0, double)
+
+  slamGetMacro(,LambdaRatio, double)
+  slamSetMacro(,LambdaRatio, double)
+
   // Get/Set RollingGrid
   /*const*/ unsigned int Get_RollingGrid_VoxelSize() const;
   void Set_RollingGrid_VoxelSize(const unsigned int size);
@@ -234,12 +243,6 @@ public:
 
   slamGetMacro(,MappingMaxPlaneDistance, double)
   slamSetMacro(,MappingMaxPlaneDistance, double)
-
-  // Get/Set EgoMotion and Mapping
-  slamGetMacro(,MinPointToLineOrEdgeDistance, double)
-  slamSetMacro(,MinPointToLineOrEdgeDistance, double)
-
-
 
 protected:
   // vtkPolyDataAlgorithm functions
@@ -364,7 +367,21 @@ private:
   double EgoMotionMaxPlaneDistance;
   double EgoMotionMaxLineDistance;
 
-  double MinPointToLineOrEdgeDistance;
+  // Levenberg-Marquardt initial value of lambda
+  double Lambda0;
+
+  // Levenberg-Marquardt increase or decrease
+  // lambda factor ratio to switch between
+  // Gauss-Newton or gradient descent algorithm
+  double LambdaRatio;
+
+  // The max distance allowed between two frames
+  // If the distance is over this limit, the ICP
+  // matching will not match point and the odometry
+  // will fail. It has to be setted according to the
+  // maximum speed of the vehicule used
+  double MaxDistanceForICPMatching;
+
   // Transformation to map the current pointcloud
   // in the referential of the previous one
   Eigen::Matrix<double, 6, 1> Trelative;
