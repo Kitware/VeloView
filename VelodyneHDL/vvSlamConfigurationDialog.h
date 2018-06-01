@@ -21,12 +21,16 @@ class VelodyneHDLPlugin_EXPORT vvSlamConfigurationDialog : public QDialog
   Q_PROPERTY(double MaxDistanceForICPMatching READ MaxDistanceForICPMatching)
   Q_PROPERTY(double Lambda0 READ Lambda0)
   Q_PROPERTY(double LambdaRatio READ LambdaRatio)
+  Q_PROPERTY(bool FastSlam READ FastSlam)
   //Keypoint
   Q_PROPERTY(int Keypoint_MaxEdgePerScanLine READ Keypoint_MaxEdgePerScanLine)
   Q_PROPERTY(int Keypoint_MaxPlanarsPerScanLine READ Keypoint_MaxPlanarsPerScanLine)
   Q_PROPERTY(double Keypoint_MinDistanceToSensor READ Keypoint_MinDistanceToSensor)
   Q_PROPERTY(double Keypoint_PlaneCurvatureThreshold READ Keypoint_PlaneCurvatureThreshold)
   Q_PROPERTY(double Keypoint_EdgeCurvatureThreshold READ Keypoint_EdgeCurvatureThreshold)
+  Q_PROPERTY(double Keypoint_EdgeSinAngleThreshold READ Keypoint_EdgeSinAngleThreshold)
+  Q_PROPERTY(double Keypoint_PlaneSinAngleThreshold READ Keypoint_PlaneSinAngleThreshold)
+  Q_PROPERTY(double Keypoint_EdgeDepthGapThreshold READ Keypoint_EdgeDepthGapThreshold)
   //Egomotion
   Q_PROPERTY(int EgoMotion_MaxIter READ EgoMotion_MaxIter)
   Q_PROPERTY(int EgoMotion_IcpFrequence READ EgoMotion_IcpFrequence)
@@ -63,6 +67,7 @@ public:
   double MaxDistanceForICPMatching();
   double Lambda0();
   double LambdaRatio();
+  bool FastSlam();
 
   //Keypoint
   int Keypoint_MaxEdgePerScanLine();
@@ -70,6 +75,9 @@ public:
   double Keypoint_MinDistanceToSensor();
   double Keypoint_PlaneCurvatureThreshold();
   double Keypoint_EdgeCurvatureThreshold();
+  double Keypoint_EdgeSinAngleThreshold();
+  double Keypoint_PlaneSinAngleThreshold();
+  double Keypoint_EdgeDepthGapThreshold();
 
   // Egomotion
   int EgoMotion_MaxIter();

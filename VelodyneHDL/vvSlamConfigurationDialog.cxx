@@ -98,6 +98,12 @@ double vvSlamConfigurationDialog::LambdaRatio()
   return this->ui->LambdaRatio->value();
 }
 
+//-----------------------------------------------------------------------------
+bool vvSlamConfigurationDialog::FastSlam()
+{
+  return this->ui->FastSlam->isChecked();
+}
+
 //--------------------------------------------------------------//
 //                         Keypoint option
 //--------------------------------------------------------------//
@@ -122,14 +128,33 @@ double vvSlamConfigurationDialog::Keypoint_MinDistanceToSensor()
 //-----------------------------------------------------------------------------
 double vvSlamConfigurationDialog::Keypoint_PlaneCurvatureThreshold()
 {
-  return ui->Keypoint_PlaneCurvatureThreshold->value();
+  return 0.0;
 }
 
 //-----------------------------------------------------------------------------
 double vvSlamConfigurationDialog::Keypoint_EdgeCurvatureThreshold()
 {
-  return ui->Keypoint_EdgeCurvatureThreshold->value();
+  return 0.0;
 }
+
+//-----------------------------------------------------------------------------
+double vvSlamConfigurationDialog::Keypoint_EdgeSinAngleThreshold()
+{
+  return this->ui->Keypoint_EdgeSinAngleThreshold->value();
+}
+
+//-----------------------------------------------------------------------------
+double vvSlamConfigurationDialog::Keypoint_PlaneSinAngleThreshold()
+{
+  return this->ui->Keypoint_PlaneSinAngleThreshold->value();
+}
+
+//-----------------------------------------------------------------------------
+double vvSlamConfigurationDialog::Keypoint_EdgeDepthGapThreshold()
+{
+  return this->ui->Keypoints_EdgeDepthGapThreshold->value();
+}
+
 //--------------------------------------------------------------//
 //                         Egomotion
 //--------------------------------------------------------------//
@@ -184,7 +209,7 @@ double vvSlamConfigurationDialog::EgoMotion_Line_Max_Distance()
 //-----------------------------------------------------------------------------
 double vvSlamConfigurationDialog::EgoMotion_Plane_Max_Distance()
 {
-  return ui->EgoMotion_Line_Max_Distance->value();
+  return ui->EgoMotion_Plane_Max_Distance->value();
 }
 
 //--------------------------------------------------------------//

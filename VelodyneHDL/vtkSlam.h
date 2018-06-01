@@ -123,6 +123,9 @@ public:
   // have been computed so far
   void ResetAlgorithm();
 
+  // output the parameters value of the slam algorithm
+  void PrintParameters();
+
   // Provide the calibration of the current sensor.
   // The mapping indicates the number of laser and
   // the mapping of the laser id
@@ -159,6 +162,9 @@ public:
   slamGetMacro(,LambdaRatio, double)
   slamSetMacro(,LambdaRatio, double)
 
+  slamGetMacro(,FastSlam, bool)
+  slamSetMacro(,FastSlam, bool)
+
   // Get/Set RollingGrid
   /*const*/ unsigned int Get_RollingGrid_VoxelSize() const;
   void Set_RollingGrid_VoxelSize(const unsigned int size);
@@ -187,6 +193,15 @@ public:
 
   slamGetMacro(_Keypoint,EdgeCurvatureThreshold, double)
   slamSetMacro(_Keypoint,EdgeCurvatureThreshold, double)
+
+  slamGetMacro(_Keypoint,EdgeSinAngleThreshold, double)
+  slamSetMacro(_Keypoint,EdgeSinAngleThreshold, double)
+
+  slamGetMacro(_Keypoint,PlaneSinAngleThreshold, double)
+  slamSetMacro(_Keypoint,PlaneSinAngleThreshold, double)
+
+  slamGetMacro(_Keypoint,EdgeDepthGapThreshold, double)
+  slamSetMacro(_Keypoint,EdgeDepthGapThreshold, double)
 
   // Get/Set EgoMotion
   slamGetMacro(,EgoMotionMaxIter, unsigned int)
@@ -267,11 +282,19 @@ private:
   std::vector<std::pair<int, int> > FromVTKtoPCLMapping;
   std::vector<std::vector<int > > FromPCLtoVTKMapping;
 
+  // If set to true the mapping planars keypoints used
+  // will be the same than the EgoMotion one. If set to false
+  // all points that are not set to invalid will be used
+  // as mapping planars points.
+  bool FastSlam;
+
   // keypoints extracted
   pcl::PointCloud<Point>::Ptr CurrentEdgesPoints;
   pcl::PointCloud<Point>::Ptr CurrentPlanarsPoints;
   pcl::PointCloud<Point>::Ptr PreviousEdgesPoints;
   pcl::PointCloud<Point>::Ptr PreviousPlanarsPoints;
+  pcl::PointCloud<Point>::Ptr DensePlanarsPoints;
+  pcl::PointCloud<Point>::Ptr MappingPlanarsPoints;
 
   // keypoints local map
   RollingGrid* EdgesPointsLocalMap;
@@ -311,9 +334,12 @@ private:
   unsigned int MaxEdgePerScanLine;
   unsigned int MaxPlanarsPerScanLine;
 
-  // Curvature threshold to select a point
+  // Sharpness threshold to select a point
   double EdgeCurvatureThreshold;
   double PlaneCurvatureThreshold;
+  double EdgeSinAngleThreshold;
+  double PlaneSinAngleThreshold;
+  double EdgeDepthGapThreshold;
 
   // The max distance allowed between two frames
   // If the distance is over this limit, the ICP
@@ -493,6 +519,12 @@ private:
                                 std::vector<Eigen::Matrix<double, 3, 1> >& vP, std::vector<double> vS,
                                 Eigen::Matrix<double, 6, 1>& T, Eigen::MatrixXd& residualsJacobians);
 
+  // Instead of taking the k-nearest neigbirs in the odometry
+  // step we will take specific neighbor using the particularities
+  // of the velodyne's lidar sensor
+  void GetEgoMotionLineSpecificNeighbor(std::vector<int>& nearestValid, std::vector<float>& nearestValidDist,
+                                        unsigned int nearestSearch, pcl::KdTreeFLANN<Point>::Ptr kdtreePreviousEdges, Point p);
+  void GetEgoMotionPlaneSpecificNeighbor();
 
   // Update the world transformation by integrating
   // the relative motion recover and the previous
@@ -525,6 +557,7 @@ private:
   void DisplayKeypointsResults(vtkSmartPointer<vtkPolyData> input);
   void DisplayCurvatureScores(vtkSmartPointer<vtkPolyData> input);
   void DisplayRollingGrid(vtkSmartPointer<vtkPolyData> input);
+  void DisplayBadCriteriaIndex(vtkSmartPointer<vtkPolyData> input);
 
   // Indicate if we are in display mode or not
   // Display mode will add arrays showing some

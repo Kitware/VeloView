@@ -27,6 +27,7 @@
 =========================================================================*/
 
 #include "vtkVelodyneHDLReader.h"
+#include "vtkSlam.h"
 
 // #include "vtkSlam.h"
 #include "vtkPacketFileReader.h"
@@ -410,7 +411,7 @@ class vtkVelodyneHDLReader::vtkInternal
 public:
   vtkInternal()
   {
-    // this->Slam = vtkSmartPointer<vtkSlam>::New();
+    this->Slam = vtkSmartPointer<vtkSlam>::New();
     this->RpmCalculator.Reset();
     this->AlreadyWarnAboutCalibration = false;
     this->IgnoreZeroDistances = true;
@@ -509,7 +510,7 @@ public:
   bool WantIntensityCorrection;
 
   // SLAM algorithm
-  // vtkSmartPointer<vtkSlam> Slam;
+  vtkSmartPointer<vtkSlam> Slam;
 
   // WIP : We now have two method to compute the RPM :
   // - One method which computes the rpm using the point cloud

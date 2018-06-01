@@ -63,13 +63,15 @@ def configure(source):
     slam.GetClientSideObject().Set_MaxDistanceForICPMatching(slamDialog.MaxDistanceForICPMatching)
     slam.GetClientSideObject().Set_Lambda0(slamDialog.Lambda0)
     slam.GetClientSideObject().Set_LambdaRatio(slamDialog.LambdaRatio)
+    slam.GetClientSideObject().Set_FastSlam(slamDialog.FastSlam)
 
     # Keypoint
     slam.GetClientSideObject().Set_Keypoint_MaxEdgePerScanLine(slamDialog.Keypoint_MaxEdgePerScanLine)
     slam.GetClientSideObject().Set_Keypoint_MaxPlanarsPerScanLine(slamDialog.Keypoint_MaxPlanarsPerScanLine)
     slam.GetClientSideObject().Set_Keypoint_MinDistanceToSensor(slamDialog.Keypoint_MinDistanceToSensor)
-    slam.GetClientSideObject().Set_Keypoint_PlaneCurvatureThreshold(slamDialog.Keypoint_PlaneCurvatureThreshold)
-    slam.GetClientSideObject().Set_Keypoint_EdgeCurvatureThreshold(slamDialog.Keypoint_EdgeCurvatureThreshold)
+    slam.GetClientSideObject().Set_Keypoint_EdgeSinAngleThreshold(slamDialog.Keypoint_EdgeSinAngleThreshold)
+    slam.GetClientSideObject().Set_Keypoint_PlaneSinAngleThreshold(slamDialog.Keypoint_PlaneSinAngleThreshold)
+    slam.GetClientSideObject().Set_Keypoint_EdgeDepthGapThreshold(slamDialog.Keypoint_EdgeDepthGapThreshold)
     # Egomotion
     slam.GetClientSideObject().Set_EgoMotionMaxIter(slamDialog.EgoMotion_MaxIter)
     slam.GetClientSideObject().Set_EgoMotionIcpFrequence(slamDialog.EgoMotion_IcpFrequence)
