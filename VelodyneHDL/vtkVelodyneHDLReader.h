@@ -161,6 +161,7 @@ public:
 
   // Transform related functions
   void CreateLinearInterpolator();
+  void CreateNearestInterpolator();
   vtkVelodyneTransformInterpolator* GetInterpolator() const;
   void SetInterpolator(vtkVelodyneTransformInterpolator* interpolator);
 

@@ -22,6 +22,10 @@
 #include "vtkTransform.h"
 #include "../vtkPatchVeloView/vtkVeloViewTupleInterpolator.h"
 #include <list>
+#include <vector>
+#include <set>
+#include <algorithm>
+#include <iterator>
 
 vtkStandardNewMacro(vtkVelodyneTransformInterpolator);
 
@@ -64,6 +68,16 @@ struct vtkQTransform
       this->S[0] = this->S[1] = this->S[2] = 0.0;
     }
   }
+};
+
+class vtkQTransformComparator
+{
+public:
+  bool operator () ( const vtkQTransform& transform1,
+                     const vtkQTransform& transform2 )
+    {
+      return transform1.Time < transform2.Time;
+    }
 };
 
 // The list is arranged in increasing order in T
@@ -357,6 +371,19 @@ void vtkVelodyneTransformInterpolator::InitializeInterpolation()
       this->ScaleInterpolator->SetInterpolationTypeToLinear();
       this->RotationInterpolator->SetInterpolationTypeToLinear();
     }
+    else if (this->InterpolationType == INTERPOLATION_TYPE_NEAREST)
+    {
+      this->PositionInterpolator->SetInterpolationTypeToLinear();
+      this->ScaleInterpolator->SetInterpolationTypeToLinear();
+      this->RotationInterpolator->SetInterpolationTypeToLinear();
+      this->TransformVector.clear();
+      this->TransformVector.resize(0);
+      std::list<vtkQTransform>::iterator transform;
+      for (transform = this->TransformList->begin(); transform != this->TransformList->end(); ++transform)
+      {
+        this->TransformVector.push_back(*transform);
+      }
+    }
     else if (this->InterpolationType == INTERPOLATION_TYPE_SPLINE)
     {
       this->PositionInterpolator->SetInterpolationTypeToSpline();
@@ -431,6 +458,12 @@ void vtkVelodyneTransformInterpolator::InterpolateTransform(double t, vtkTransfo
     return;
   }
 
+  if (this->InterpolationType == INTERPOLATION_TYPE_NEAREST)
+  {
+    this->InterpolateTransformNearest(t, xform);
+    return;
+  }
+
   // Make sure the xform and this class are initialized properly
   xform->Identity();
   this->InitializeInterpolation();
@@ -462,45 +495,57 @@ void vtkVelodyneTransformInterpolator::InterpolateTransform(double t, vtkTransfo
 void vtkVelodyneTransformInterpolator::InterpolateTransformNearest(double t,
                                                     vtkTransform *xform)
 {
-  if ( this->TransformList->empty() )
-    {
+  if (this->TransformList->empty())
+  {
     return;
-    }
+  }
 
   // Make sure the xform and this class are initialized properly
   xform->Identity();
   this->InitializeInterpolation();
 
-  // Evaluate the interpolators
-  if ( t < this->TransformList->front().Time )
-    {
-    t = this->TransformList->front().Time;
-    }
-
-  else if ( t > this->TransformList->back().Time )
-    {
-    t = this->TransformList->back().Time;
-    }
-  double minDistance = std::numeric_limits<double>::max();
-
-  double itTime;
-  for(std::list<vtkQTransform>::iterator it = this->TransformList->begin(); it!=this->TransformList->end();++it){
-    if (t > it->Time)
-    {
-      xform->Identity();
-      xform->Translate(it->P);
-      double Q[4];
-      Q[0] = vtkMath::DegreesFromRadians(it->Q.GetRotationAngleAndAxis(Q+1));
-      xform->RotateWXYZ(Q[0],Q+1);
-      xform->Scale(it->S);
-
-      itTime = it->Time;
-    }
-    else
-    {
-      break;
-    }
+  if (this->TransformVector.size() < 2)
+  {
+    return;
   }
+
+  // Evaluate the interpolators
+  if (t < this->TransformList->front().Time)
+  {
+    t = this->TransformList->front().Time;
+  }
+
+  else if (t > this->TransformList->back().Time)
+  {
+    t = this->TransformList->back().Time;
+  }
+
+
+  // vtkQTransform order relation based on the Time
+  vtkQTransformComparator comparatorTimeTransform;
+
+  // Get the low bound to procees to a nearest
+  // low bounded interpolator
+  vtkQTransform transform;
+  transform.Time = t;
+  std::vector<vtkQTransform>::iterator lowerBound;
+  lowerBound = std::lower_bound(this->TransformVector.begin(), this->TransformVector.end(), transform, comparatorTimeTransform);
+
+  // Are we before the first node? If not take the
+  // previous transform to have a low bounded nearest
+  // interpolator
+  if (!(lowerBound == this->TransformVector.begin()))
+  {
+    lowerBound--;
+  }
+
+  // Get the transform
+  xform->Identity();
+  xform->Translate(lowerBound->P);
+  double Q[4];
+  Q[0] = vtkMath::DegreesFromRadians(lowerBound->Q.GetRotationAngleAndAxis(Q+1));
+  xform->RotateWXYZ(Q[0],Q+1);
+  xform->Scale(lowerBound->S);
 }
 
 //----------------------------------------------------------------------------

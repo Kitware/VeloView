@@ -782,6 +782,15 @@ void vtkVelodyneHDLReader::CreateLinearInterpolator()
 }
 
 //-----------------------------------------------------------------------------
+void vtkVelodyneHDLReader::CreateNearestInterpolator()
+{
+  // Initialize the interpolator
+  this->Internal->Interp = vtkSmartPointer<vtkVelodyneTransformInterpolator>::New();
+  this->Internal->Interp->SetInterpolationTypeToNearest();
+  this->Internal->ApplyTransform = 0;
+}
+
+//-----------------------------------------------------------------------------
 vtkVelodyneTransformInterpolator* vtkVelodyneHDLReader::GetInterpolator() const
 {
   return this->Internal->Interp;
@@ -2010,7 +2019,7 @@ void vtkVelodyneHDLReader::vtkInternal::ComputeOrientation(
     // NOTE: We store time in milliseconds, but the interpolator uses seconds,
     //       so we need to adjust here
     const double t = timestamp * 1e-6;
-    this->Interp->InterpolateTransformNearest(t, geotransform);
+    this->Interp->InterpolateTransform(t, geotransform);
   }
   else
   {
@@ -2771,7 +2780,7 @@ void vtkVelodyneHDLReader::LoadTransforms(const std::string& filename)
   }
 
   // Create a new interpolator
-  this->CreateLinearInterpolator();
+  this->CreateNearestInterpolator();
 
   std::string line;
   std::string expectedLine = "Time,Rx(Roll),Ry(Pitch),Rz(Yaw),X,Y,Z";

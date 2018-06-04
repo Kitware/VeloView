@@ -56,6 +56,7 @@ class vtkProp3D;
 class vtkVeloViewTupleInterpolator;
 class vtkVeloViewQuaternionInterpolator;
 class vtkTransformList;
+struct vtkQTransform;
 
 class VTK_EXPORT vtkVelodyneTransformInterpolator : public vtkObject
 {
@@ -114,8 +115,9 @@ public:
   enum
   {
     INTERPOLATION_TYPE_LINEAR = 0,
-    INTERPOLATION_TYPE_SPLINE,
-    INTERPOLATION_TYPE_MANUAL
+    INTERPOLATION_TYPE_SPLINE = 1,
+    INTERPOLATION_TYPE_MANUAL = 2,
+    INTERPOLATION_TYPE_NEAREST = 3
   };
   // ETX
 
@@ -127,11 +129,12 @@ public:
   // then the interpolators are expected to be directly manipulated and
   // this class does not forward the request for interpolation type to its
   // interpolators.
-  vtkSetClampMacro(InterpolationType, int, INTERPOLATION_TYPE_LINEAR, INTERPOLATION_TYPE_MANUAL);
+  vtkSetMacro(InterpolationType, int);
   vtkGetMacro(InterpolationType, int);
   void SetInterpolationTypeToLinear() { this->SetInterpolationType(INTERPOLATION_TYPE_LINEAR); }
   void SetInterpolationTypeToSpline() { this->SetInterpolationType(INTERPOLATION_TYPE_SPLINE); }
   void SetInterpolationTypeToManual() { this->SetInterpolationType(INTERPOLATION_TYPE_MANUAL); }
+  void SetInterpolationTypeToNearest(){ this->SetInterpolationType(INTERPOLATION_TYPE_NEAREST); }
 
   // Description:
   // Set/Get the tuple interpolator used to interpolate the position portion
@@ -162,13 +165,13 @@ public:
   // modified outside of this class.
   unsigned long GetMTime();
 
-  void InterpolateTransformNearest(double t, vtkTransform *xform);
 protected:
   vtkVelodyneTransformInterpolator();
   virtual ~vtkVelodyneTransformInterpolator();
 
   // Control the interpolation type
   int InterpolationType;
+  void InterpolateTransformNearest(double t, vtkTransform *xform);
 
   // Interpolators
   vtkVeloViewTupleInterpolator* PositionInterpolator;
@@ -182,6 +185,7 @@ protected:
 
   // Keep track of inserted data
   vtkTransformList* TransformList;
+  std::vector<vtkQTransform> TransformVector;
 
 private:
   vtkVelodyneTransformInterpolator(const vtkVelodyneTransformInterpolator&); // Not implemented.

@@ -30,7 +30,7 @@ def configure(source):
     slam = smp.Slam()
 
     # create Linear Interpolator()
-    source.CreateLinearInterpolator()
+    source.CreateNearestInterpolator()
 
     # initialize the nb of laser and their mapping
     NLaser = source.GetNumberOfChannels()
