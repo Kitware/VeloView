@@ -487,11 +487,11 @@ private:
   // for a given i; fi is called a residual value and
   // the jacobian of fi is called the residual jacobian
   void ComputeResidualValues(std::vector<Eigen::Matrix<double, 3, 3> >& vA, std::vector<Eigen::Matrix<double, 3, 1> >& vX,
-                             std::vector<Eigen::Matrix<double, 3, 1> >& vP, Eigen::Matrix<double, 3, 3>& R,
-                             Eigen::Matrix<double, 3, 1>& dT, Eigen::MatrixXd& residuals);
+                             std::vector<Eigen::Matrix<double, 3, 1> >& vP, std::vector<double>& vS,
+                             Eigen::Matrix<double, 3, 3>& R, Eigen::Matrix<double, 3, 1>& dT, Eigen::MatrixXd& residuals);
   void ComputeResidualJacobians(std::vector<Eigen::Matrix<double, 3, 3> >& vA, std::vector<Eigen::Matrix<double, 3, 1> >& vX,
-                                std::vector<Eigen::Matrix<double, 3, 1> >& vP, Eigen::Matrix<double, 6, 1>& T,
-                                Eigen::MatrixXd& residualsJacobians);
+                                std::vector<Eigen::Matrix<double, 3, 1> >& vP, std::vector<double> vS,
+                                Eigen::Matrix<double, 6, 1>& T, Eigen::MatrixXd& residualsJacobians);
 
 
   // Update the world transformation by integrating
@@ -509,10 +509,12 @@ private:
   // - Avalues will store the A matrix
   // - Pvalues will store the P points
   // - Xvalues will store the W points
+  // - OutlierDistScale will attenuate the distance function for outliers
   // - TimeValues store the time acquisition
   std::vector<Eigen::Matrix<double, 3, 3> > Avalues;
   std::vector<Eigen::Matrix<double, 3, 1> > Pvalues;
   std::vector<Eigen::Matrix<double, 3, 1> > Xvalues;
+  std::vector<double> OutlierDistScale;
   std::vector<double> TimeValues;
   void ResetDistanceParameters();
 

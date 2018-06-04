@@ -2235,10 +2235,22 @@ void vtkSlam::ComputeLineDistanceParametersAccurate(pcl::KdTreeFLANN<Point>::Ptr
     }
   }
 
+  // distance between current point and the corresponding matching line
+  double s = 1.0;
+  if (step == "mapping")
+  {
+    s = 1 - 0.9 * std::sqrt((P - mean).transpose() * A * (P - mean));
+    if (s < 0.1)
+    {
+      return;
+    }
+  }
+
   // store the distance parameters values
   this->Avalues.push_back(A);
   this->Pvalues.push_back(mean);
   this->Xvalues.push_back(P0);
+  this->OutlierDistScale.push_back(s);
 }
 
 //-----------------------------------------------------------------------------
@@ -2360,30 +2372,44 @@ void vtkSlam::ComputePlaneDistanceParametersAccurate(pcl::KdTreeFLANN<Point>::Pt
     }
   }
 
+  // distance between current point and the corresponding matching plane
+  double s = 1.0;
+  if (step == "mapping")
+  {
+    s = 1 - 0.9 * std::sqrt((P - mean).transpose() * A * (P - mean)) / std::sqrt(P.norm());
+    if (s < 0.1)
+    {
+      return;
+    }
+  }
+
   // store the distance parameters values
   this->Avalues.push_back(A);
   this->Pvalues.push_back(mean);
   this->Xvalues.push_back(P0);
+  this->OutlierDistScale.push_back(s);
 }
 
 //-----------------------------------------------------------------------------
 void vtkSlam::ComputeResidualValues(std::vector<Eigen::Matrix<double, 3, 3> >& vA, std::vector<Eigen::Matrix<double, 3, 1> >& vX,
-                                    std::vector<Eigen::Matrix<double, 3, 1> >& vP, Eigen::Matrix<double, 3, 3>& R,
-                                    Eigen::Matrix<double, 3, 1>& dT, Eigen::MatrixXd& residuals)
+                                    std::vector<Eigen::Matrix<double, 3, 1> >& vP, std::vector<double>& vS,
+                                    Eigen::Matrix<double, 3, 3>& R, Eigen::Matrix<double, 3, 1>& dT, Eigen::MatrixXd& residuals)
 {
   residuals = Eigen::MatrixXd(vX.size(), 1);
   Eigen::Matrix<double, 3, 1> Xp;
+  double s;
   for (unsigned int k = 0; k < vX.size(); ++k)
   {
+    s = vS[k];
     Xp = R * vX[k] + dT;
-    residuals(k) = std::sqrt(std::abs((Xp - vP[k]).transpose() * vA[k] * (Xp - vP[k])));
+    residuals(k) = s * std::sqrt(std::abs((Xp - vP[k]).transpose() * vA[k] * (Xp - vP[k])));
   }
 }
 
 //-----------------------------------------------------------------------------
 void vtkSlam::ComputeResidualJacobians(std::vector<Eigen::Matrix<double, 3, 3> >& vA, std::vector<Eigen::Matrix<double, 3, 1> >& vX,
-                                       std::vector<Eigen::Matrix<double, 3, 1> >& vP, Eigen::Matrix<double, 6, 1>& T,
-                                       Eigen::MatrixXd& residualsJacobians)
+                                       std::vector<Eigen::Matrix<double, 3, 1> >& vP, std::vector<double> vS,
+                                       Eigen::Matrix<double, 6, 1>& T, Eigen::MatrixXd& residualsJacobians)
 {
   residualsJacobians = Eigen::MatrixXd(vX.size(), 6);
 
@@ -2407,6 +2433,13 @@ void vtkSlam::ComputeResidualJacobians(std::vector<Eigen::Matrix<double, 3, 3> >
   cry = std::cos(ry); sry = std::sin(ry);
   crz = std::cos(rz); srz = std::sin(rz);
 
+  // scale factor for outliers points
+  // so that they do not have big influence
+  // on the final result (whereas pure square
+  // distance would give outlier points a too big
+  // influence on the final result)
+  double s;
+
   for (unsigned int k = 0; k < vX.size(); ++k)
   {
     // here the cost funtion is the distance between
@@ -2416,6 +2449,7 @@ void vtkSlam::ComputeResidualJacobians(std::vector<Eigen::Matrix<double, 3, 3> >
     // we define g(X) = sqrt(X.t * A * X) and h(R,T)=R*X+T-P1
     // Hence, f(R,T) = g(h(R, T)) and the jacobian
     // Jf(R,T) = Jg(h(R,T))*Jh(R,T)
+    s = vS[k];
     X1 = vX[k](0); X2 = vX[k](1); X3 = vX[k](2);
     C1 = vP[k](0); C2 = vP[k](1); C3 = vP[k](2);
     A = vA[k];
@@ -2432,7 +2466,7 @@ void vtkSlam::ComputeResidualJacobians(std::vector<Eigen::Matrix<double, 3, 3> >
     double dist = std::sqrt(h_R_t.transpose() * A * h_R_t);
     if (dist > 1e-12)
     {
-      JacobianG = h_R_t.transpose() * (A + A.transpose()) * 1.0 / (2.0 * dist);
+      JacobianG = s * s * h_R_t.transpose() * (A + A.transpose()) * 1.0 / (2.0 * dist);
     }
 
     // represent the jacobian of the H function
@@ -2585,8 +2619,8 @@ void vtkSlam::ComputeEgoMotion()
     // J: residual jacobians, [dfi(R, T)/dR, dfi(R, T)/dT]
     // Y: residual values, fi(R, T)
     Eigen::MatrixXd J, Y;
-    this->ComputeResidualValues(this->Avalues, this->Xvalues, this->Pvalues, R, dT, Y);
-    this->ComputeResidualJacobians(this->Avalues, this->Xvalues, this->Pvalues, this->Trelative, J);
+    this->ComputeResidualValues(this->Avalues, this->Xvalues, this->Pvalues, this->OutlierDistScale, R, dT, Y);
+    this->ComputeResidualJacobians(this->Avalues, this->Xvalues, this->Pvalues, this->OutlierDistScale, this->Trelative, J);
 
     // RMSE
     costFunction.push_back(0);
@@ -2629,7 +2663,7 @@ void vtkSlam::ComputeEgoMotion()
     Eigen::Matrix<double, 3, 1> dTcandidate;
     dTcandidate << Tcandidate(3), Tcandidate(4), Tcandidate(5);
     Eigen::MatrixXd Ycandidate;
-    this->ComputeResidualValues(this->Avalues, this->Xvalues, this->Pvalues, Rcandidate, dTcandidate, Ycandidate);
+    this->ComputeResidualValues(this->Avalues, this->Xvalues, this->Pvalues, this->OutlierDistScale, Rcandidate, dTcandidate, Ycandidate);
     double newCost = 0;
     for (unsigned int kk = 0; kk < Ycandidate.rows(); ++kk)
     {
@@ -2745,8 +2779,8 @@ void vtkSlam::Mapping()
     // J: residual jacobians, [dfi(R, T)/dR, dfi(R, T)/dT]
     // Y: residual values, fi(R, T)
     Eigen::MatrixXd J, Y;
-    this->ComputeResidualValues(this->Avalues, this->Xvalues, this->Pvalues, R, dT, Y);
-    this->ComputeResidualJacobians(this->Avalues, this->Xvalues, this->Pvalues, this->Tworld, J);
+    this->ComputeResidualValues(this->Avalues, this->Xvalues, this->Pvalues, this->OutlierDistScale, R, dT, Y);
+    this->ComputeResidualJacobians(this->Avalues, this->Xvalues, this->Pvalues, this->OutlierDistScale, this->Tworld, J);
 
     // RMSE
     costFunction.push_back(0);
@@ -2789,7 +2823,7 @@ void vtkSlam::Mapping()
     Eigen::Matrix<double, 3, 1> dTcandidate;
     dTcandidate << Tcandidate(3), Tcandidate(4), Tcandidate(5);
     Eigen::MatrixXd Ycandidate;
-    this->ComputeResidualValues(this->Avalues, this->Xvalues, this->Pvalues, Rcandidate, dTcandidate, Ycandidate);
+    this->ComputeResidualValues(this->Avalues, this->Xvalues, this->Pvalues, this->OutlierDistScale, Rcandidate, dTcandidate, Ycandidate);
     double newCost = 0;
     for (unsigned int kk = 0; kk < Ycandidate.rows(); ++kk)
     {
@@ -2847,6 +2881,8 @@ void vtkSlam::ResetDistanceParameters()
   this->Pvalues.resize(0);
   this->TimeValues.clear();
   this->TimeValues.resize(0);
+  this->OutlierDistScale.clear();
+  OutlierDistScale.resize(0);
 }
 
 //-----------------------------------------------------------------------------
