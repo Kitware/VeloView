@@ -782,7 +782,7 @@ void vtkSlam::ResetAlgorithm()
   this->EdgeCurvatureThreshold = 2.0;
   this->EdgeSinAngleThreshold = 0.85; // 58 degrees
   this->PlaneSinAngleThreshold = 0.5; // 30 degrees
-  this->EdgeDepthGapThreshold = 2.0; // meters
+  this->EdgeDepthGapThreshold = 0.02; // meters
 
   // Use dense planars point cloud for mapping
   this->FastSlam = true;
@@ -1322,7 +1322,9 @@ void vtkSlam::ComputeCurvature(vtkSmartPointer<vtkPolyData> input)
   Point currentPoint;
   Eigen::Matrix<double, 3, 1> X, U, V, Pleft, Pright;
   Eigen::Matrix<double, 3, 1> Nleft, Nright, centralPoint;
+  Eigen::Matrix<double, 3, 1> dirGapLeft, dirGapRight;
   Eigen::Matrix<double, 3, 3> Dleft, Dright;
+  double distCandidate;
 
   // loop over scans lines
   for (unsigned int scanLine = 0; scanLine < this->NLasers; ++scanLine)
@@ -1400,7 +1402,12 @@ void vtkSlam::ComputeCurvature(vtkSmartPointer<vtkPolyData> input)
 
         if (j < index)
         {
-          minDistLeft = std::min(minDistLeft, (X - centralPoint).norm());
+          distCandidate = (X - centralPoint).norm() / centralPoint.norm();
+          if (distCandidate < minDistLeft)
+          {
+            minDistLeft = distCandidate;
+            dirGapLeft = (X - centralPoint).normalized();
+          }
 
           // if a point of the neighborhood is too far from
           // the fitting line we considere the neighborhood as
@@ -1414,11 +1421,16 @@ void vtkSlam::ComputeCurvature(vtkSmartPointer<vtkPolyData> input)
           
         if (j > index)
         {
+          distCandidate = (X - centralPoint).norm() / centralPoint.norm();
+          if (distCandidate < minDistRight)
+          {
+            minDistRight = distCandidate;
+            dirGapRight = (X - centralPoint).normalized();
+          }
 
           // if a point of the neighborhood is too far from
           // the fitting line we considere the neighborhood as
           // non flat
-          minDistRight = std::min(minDistRight, (X - centralPoint).norm());
           double d = std::sqrt((X - Pright).transpose() * Dright * (X - Pright));
           if (d > 0.02)
           {
@@ -1427,31 +1439,40 @@ void vtkSlam::ComputeCurvature(vtkSmartPointer<vtkPolyData> input)
         }
       }
 
+      double dist1 = 0;
+      double dist2 = 0;
+
       // if both neighborhood are flat we can compute
       // the angle between them as an approximation of the
       // sharpness of the current point
-      // the distance between the current point and the closest
-      // neighborhood is used to estimate the gap
       if (rightFlat && leftFlat)
       {
-        double dist1 = std::sqrt((X - Pleft).transpose() * Dleft * (X - Pleft));
-        double dist2 = std::sqrt((X - Pright).transpose() * Dright * (X - Pright));
         this->Angles[scanLine][index].first = std::abs((Nleft.cross(Nright)).norm()); // sin of angle actually
         this->Angles[scanLine][index].second = index;
 
-        this->DepthGap[scanLine][index].first = std::max(dist1, dist2);
-        this->DepthGap[scanLine][index].second = index;
+        dist1 = std::abs(dirGapLeft.cross(Nleft).norm()) * minDistLeft;
+        dist2 = std::abs(dirGapRight.cross(Nright).norm()) * minDistRight;
       }
       // Here one side of the neighborhiood is non flat
       // Hence it is not worth to estimate the sharpness.
-      // Only the gap will be considered here. The gap is
-      // esytimated as the smallest distance between the current
-      // point and its neighborhood
+      // Only the gap will be considered here.
+      else if (rightFlat && !leftFlat)
+      {
+        dist1 = minDistLeft;
+        dist2 = std::abs(dirGapRight.cross(Nright).norm()) * minDistRight;
+      }
+      else if (!rightFlat && leftFlat)
+      {
+        dist1 = std::abs(dirGapLeft.cross(Nleft).norm()) * minDistLeft;
+        dist2 = minDistRight;
+      }
       else
       {
-        this->DepthGap[scanLine][index].first = std::max(minDistRight, minDistLeft);
-        this->DepthGap[scanLine][index].second = index;
+        dist1 = 0.5 * minDistLeft; // 0.5: minor trust
+        dist2 = 0.5 * minDistRight;
       }
+      this->DepthGap[scanLine][index].first = std::max(dist1, dist2);
+      this->DepthGap[scanLine][index].second = index;
     }
   }
 
@@ -1584,7 +1605,7 @@ void vtkSlam::InvalidPointWithBadCriteria()
       // surface nearly parallel to the laser
       // beam direction
       dLp = (X - Xp).norm();
-      if ((dLp > 1/3.0 * ratioExpectedLength * expectedLength) && (dLn > 1/3.0 * ratioExpectedLength * expectedLength))
+      if ((dLp > 1 / 4.0 * ratioExpectedLength * expectedLength) && (dLn > 1 / 4.0 * ratioExpectedLength * expectedLength))
       {
         this->IsPointValid[scanLine][index] = 0;
       }
@@ -1601,18 +1622,18 @@ void vtkSlam::SetKeyPointsLabels(vtkSmartPointer<vtkPolyData> input)
   std::cout << "extracting with: " << this->MaxEdgePerScanLine << " MaxEdgePerScanLine" << std::endl;
   std::cout << "extracting with: " << this->MaxPlanarsPerScanLine << " MaxPlanarsPerScanLine" << std::endl;
 
-  // We split the validity of points between the edges
-  // keypoints and planar keypoints. This allows to take
-  // some points as planar keypoints even if they are close
-  // to an edge keypoint. 
-  std::vector<std::vector<int> > IsPointValidForPlanar = this->IsPointValid;
-
   // loop over the scan lines
   for (unsigned int scanLine = 0; scanLine < this->NLasers; ++scanLine)
   {
     int Npts = this->pclCurrentFrameByScan[scanLine]->size();
     unsigned int nbrEdgePicked = 0;
     unsigned int nbrPlanarPicked = 0;
+
+    // We split the validity of points between the edges
+    // keypoints and planar keypoints. This allows to take
+    // some points as planar keypoints even if they are close
+    // to an edge keypoint. 
+    std::vector<int> IsPointValidForPlanar = this->IsPointValid[scanLine];
 
     // if the line is almost empty, skip it
     if (Npts < 3 * this->NeighborWidth)
@@ -1673,6 +1694,7 @@ void vtkSlam::SetKeyPointsLabels(vtkSmartPointer<vtkPolyData> input)
       this->Label[scanLine][index] = 4;
       edgesIndex.push_back(std::pair<int, int>(scanLine, index));
       nbrEdgePicked++;
+      //IsPointValidForPlanar[index] = 0;
 
       // invalid its neighborhod
       int indexBegin = index - this->NeighborWidth + 1;
@@ -1713,6 +1735,7 @@ void vtkSlam::SetKeyPointsLabels(vtkSmartPointer<vtkPolyData> input)
       this->Label[scanLine][index] = 4;
       edgesIndex.push_back(std::pair<int, int>(scanLine, index));
       nbrEdgePicked++;
+      //IsPointValidForPlanar[index] = 0;
 
       // invalid its neighborhod
       int indexBegin = index - this->NeighborWidth;
@@ -1744,15 +1767,16 @@ void vtkSlam::SetKeyPointsLabels(vtkSmartPointer<vtkPolyData> input)
       }
 
       // if the point is invalid continue
-      if (IsPointValidForPlanar[scanLine][index] == 0)
+      if (IsPointValidForPlanar[index] == 0)
       {
         continue;
       }
 
       // else indicate that the point is a planar one
-      this->Label[scanLine][index] = 2;
+      if (this->Label[scanLine][index] != 4)
+        this->Label[scanLine][index] = 2;
       planarIndex.push_back(std::pair<int, int>(scanLine, index));
-      IsPointValidForPlanar[scanLine][index] = 0;
+      IsPointValidForPlanar[index] = 0;
       this->IsPointValid[scanLine][index] = 0;
 
       // Invalid its neighbor so that we don't have too
@@ -1768,8 +1792,7 @@ void vtkSlam::SetKeyPointsLabels(vtkSmartPointer<vtkPolyData> input)
       indexEnd = std::min(Npts - 1, indexEnd);
       for (int j = indexBegin; j <= indexEnd; ++j)
       {
-        this->IsPointValid[scanLine][j] = 0;
-        IsPointValidForPlanar[scanLine][j] = 0;
+        IsPointValidForPlanar[j] = 0;
       }
       nbrPlanarPicked++;
     }
