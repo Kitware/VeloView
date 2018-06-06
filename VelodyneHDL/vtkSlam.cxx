@@ -821,7 +821,7 @@ void vtkSlam::ResetAlgorithm()
   this->MappingIterMade = 0;
   this->MappingIterMade = 0;
   this->NLasers = 0;
-  this->AngleResolution = 0.4;  // azimutal resolution of the VLP-16. We add an extra 20 %
+  this->AngleResolution = 0.4 / 180.0 * vtkMath::Pi();  // azimutal resolution of the VLP-16. We add an extra 20 %
   this->LaserIdMapping.clear();
   this->LaserIdMapping.resize(0);
   this->FromVTKtoPCLMapping.clear();
@@ -1674,12 +1674,15 @@ void vtkSlam::SetKeyPointsLabels(vtkSmartPointer<vtkPolyData> input)
       edgesIndex.push_back(std::pair<int, int>(scanLine, index));
       nbrEdgePicked++;
 
-      // Notice that we don't invalidate the neighborhood
-      // of the selected point here. It is because the depth gap
-      // is computed as the minimal distance between the point
-      // and its neighborhood. Hence, only a point on an edge
-      // can have a big value of depth gap, its neighborhood
-      // will not have a huge value
+      // invalid its neighborhod
+      int indexBegin = index - this->NeighborWidth + 1;
+      int indexEnd = index + this->NeighborWidth - 1;
+      indexBegin = std::max(0, indexBegin);
+      indexEnd = std::min(Npts - 1, indexEnd);
+      for (int j = indexBegin; j <= indexEnd; ++j)
+      {
+        this->IsPointValid[scanLine][j] = 0;
+      }
     }
 
     // Edges using angles
@@ -1759,7 +1762,11 @@ void vtkSlam::SetKeyPointsLabels(vtkSmartPointer<vtkPolyData> input)
       // if tall the planar points are on the same scan line the
       //  problem is degenerated since all the points are distributed
       // on a line.
-      for (int j = index - 4; j <= index + 4; ++j)
+      int indexBegin = index - 4;
+      int indexEnd = index + 4;
+      indexBegin = std::max(0, indexBegin);
+      indexEnd = std::min(Npts - 1, indexEnd);
+      for (int j = indexBegin; j <= indexEnd; ++j)
       {
         this->IsPointValid[scanLine][j] = 0;
         IsPointValidForPlanar[scanLine][j] = 0;
@@ -2405,6 +2412,15 @@ void vtkSlam::ComputeLineDistanceParametersAccurate(pcl::KdTreeFLANN<Point>::Ptr
     {
       return;
     }
+  }
+
+  else if (step == "egoMotion")
+  {
+    // Score the point - line matching by the angle of the
+    // line with ez. The idea is that the lidar is more accurate
+    // in line detection when those lines are colinear with the
+    // azimutal rotation axis.
+    s = 0.5 + 0.5 * n(2) * n(2); // score the match by its angle with ez
   }
 
   // store the distance parameters values
