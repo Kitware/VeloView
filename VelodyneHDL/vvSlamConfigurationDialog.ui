@@ -379,7 +379,7 @@
             <item row="0" column="1">
              <widget class="QSpinBox" name="EgoMotion_LineDistance_k">
               <property name="value">
-               <number>3</number>
+               <number>5</number>
               </property>
              </widget>
             </item>
@@ -389,7 +389,7 @@
                <double>999.990000000000009</double>
               </property>
               <property name="value">
-               <double>3.000000000000000</double>
+               <double>5.000000000000000</double>
               </property>
              </widget>
             </item>

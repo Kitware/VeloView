@@ -792,8 +792,8 @@ void vtkSlam::ResetAlgorithm()
 
   // EgoMotion
   // edges
-  this->EgoMotionLineDistanceNbrNeighbors = 3;
-  this->EgoMotionLineDistancefactor = 3.0;
+  this->EgoMotionLineDistanceNbrNeighbors = 5;
+  this->EgoMotionLineDistancefactor = 5.0;
   this->EgoMotionMaxLineDistance = 0.10; // 4 cm
 
   // planes
@@ -2310,8 +2310,19 @@ void vtkSlam::ComputeLineDistanceParametersAccurate(pcl::KdTreeFLANN<Point>::Ptr
   std::vector<int> nearestIndex;
   std::vector<float> nearestDist;
 
-
-  kdtreePreviousEdges->nearestKSearch(p, requiredNearest, nearestIndex, nearestDist);
+  if (step == "egoMotion")
+  {
+    GetEgoMotionLineSpecificNeighbor(nearestIndex, nearestDist, requiredNearest, kdtreePreviousEdges, p);
+    if (nearestIndex.size() < 2)
+    {
+      return;
+    }
+    requiredNearest = nearestIndex.size();
+  }
+  else if (step == "mapping")
+  {
+    kdtreePreviousEdges->nearestKSearch(p, requiredNearest, nearestIndex, nearestDist);
+  }
 
   // if the nearest edges are too far from the
   // current edge keypoint we skip this point.
@@ -2357,14 +2368,6 @@ void vtkSlam::ComputeLineDistanceParametersAccurate(pcl::KdTreeFLANN<Point>::Ptr
   else
   {
     return;
-  }
-
-  if(step == "egoMotion")
-  {
-    if (n(2) < 0.25)
-    {
-      return;
-    }
   }
 
   // A = (I-n*n.t).t * (I-n*n.t) = (I - n*n.t)^2
@@ -2564,8 +2567,10 @@ void vtkSlam::GetEgoMotionLineSpecificNeighbor(std::vector<int>& nearestValid, s
   kdtreePreviousEdges->nearestKSearch(p, nearestSearch, nearestIndex, nearestDist);
 
   // take the closest point
-  std::vector<int> idAlreadyTook(0, this->NLasers);
+  std::vector<int> idAlreadyTook(this->NLasers, 0);
   Point closest = kdtreePreviousEdges->getInputCloud()->points[nearestIndex[0]];
+  nearestValid.push_back(nearestIndex[0]);
+  nearestValidDist.push_back(nearestDist[0]);
 
   // invalid all possible points that
   // are on the same scan line than the
@@ -2593,6 +2598,7 @@ void vtkSlam::GetEgoMotionLineSpecificNeighbor(std::vector<int>& nearestValid, s
     {
       idAlreadyTook[id] = 1;
       nearestValid.push_back(nearestIndex[k]);
+      nearestValidDist.push_back(nearestDist[k]);
     }
   }
 }
