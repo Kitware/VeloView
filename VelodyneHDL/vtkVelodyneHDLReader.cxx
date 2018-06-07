@@ -365,11 +365,10 @@ public:
     int previousElevation = LastElevation;
     bool elevationSplit =
       hasLastElevation ? (firingData.getScanningVerticalDir() == LastElevationDir) : false;
-    ;
     LastElevationDir = firingData.getScanningVerticalDir();
     LastElevation = firingData.getElevation100th();
 
-    return elevationSplit && azimuthFrameSplit;
+    return elevationSplit;
     if (azimuthFrameSplit)
     {
       if (firingData.getElevation100th() == previousElevation)
