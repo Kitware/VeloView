@@ -82,6 +82,7 @@ def configure(source):
     slam.GetClientSideObject().Set_EgoMotionPlaneDistancefactor2(slamDialog.EgoMotion_PlaneDistance_factor2)
     slam.GetClientSideObject().Set_EgoMotionMaxLineDistance(slamDialog.EgoMotion_Line_Max_Distance)
     slam.GetClientSideObject().Set_EgoMotionMaxPlaneDistance(slamDialog.EgoMotion_Plane_Max_Distance)
+    slam.GetClientSideObject().Set_EgoMotionMinimumLineNeighborRejection(slamDialog.EgoMotionMinimalLineNeighborRejection)
     # Mapping
     slam.GetClientSideObject().Set_MappingMaxIter(slamDialog.Mapping_MaxIter)
     slam.GetClientSideObject().Set_MappingIcpFrequence(slamDialog.Mapping_IcpFrequence)
@@ -92,6 +93,8 @@ def configure(source):
     slam.GetClientSideObject().Set_MappingPlaneDistancefactor2(slamDialog.Mapping_PlaneDistance_factor2)
     slam.GetClientSideObject().Set_MappingMaxLineDistance(slamDialog.Mapping_Line_Max_Distance)
     slam.GetClientSideObject().Set_MappingMaxPlaneDistance(slamDialog.Mapping_Plane_Max_Distance)
+    slam.GetClientSideObject().Set_MappingMinimumLineNeighborRejection(slamDialog.MappingMinimalLineNeighborRejection)
+    slam.GetClientSideObject().Set_MappingLineMaxDistInlier(slamDialog.MappingMaxDistanceInlierRejection)
 
     return start, stop
 

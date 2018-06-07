@@ -41,6 +41,7 @@ class VelodyneHDLPlugin_EXPORT vvSlamConfigurationDialog : public QDialog
   Q_PROPERTY(double EgoMotion_PlaneDistance_factor2 READ EgoMotion_PlaneDistance_factor2)
   Q_PROPERTY(double EgoMotion_Line_Max_Distance READ EgoMotion_Line_Max_Distance)
   Q_PROPERTY(double EgoMotion_Plane_Max_Distance READ EgoMotion_Plane_Max_Distance)
+  Q_PROPERTY(int EgoMotionMinimalLineNeighborRejection READ EgoMotionMinimalLineNeighborRejection)
   //Mapping
   Q_PROPERTY(int Mapping_MaxIter READ Mapping_MaxIter)
   Q_PROPERTY(int Mapping_IcpFrequence READ Mapping_IcpFrequence)
@@ -51,8 +52,10 @@ class VelodyneHDLPlugin_EXPORT vvSlamConfigurationDialog : public QDialog
   Q_PROPERTY(double Mapping_PlaneDistance_factor2 READ Mapping_PlaneDistance_factor2)
   Q_PROPERTY(double Mapping_Line_Max_Distance READ Mapping_Line_Max_Distance)
   Q_PROPERTY(double Mapping_Plane_Max_Distance READ Mapping_Plane_Max_Distance)
+  Q_PROPERTY(int MappingMinimalLineNeighborRejection READ MappingMinimalLineNeighborRejection)
+  Q_PROPERTY(double MappingMaxDistanceInlierRejection READ MappingMaxDistanceInlierRejection)
   Q_ENUMS(FrameMode)
-
+  
 public:
   explicit vvSlamConfigurationDialog(QWidget *parent = 0);
   ~vvSlamConfigurationDialog();
@@ -83,6 +86,7 @@ public:
   int EgoMotion_MaxIter();
   int EgoMotion_IcpFrequence();
   int EgoMotion_LineDistance_k();
+  int EgoMotionMinimalLineNeighborRejection();
   double EgoMotion_LineDistance_factor();
   int EgoMotion_PlaneDistance_k();
   double EgoMotion_PlaneDistance_factor1();
@@ -94,12 +98,14 @@ public:
   int Mapping_MaxIter();
   int Mapping_IcpFrequence();
   int Mapping_LineDistance_k();
+  int MappingMinimalLineNeighborRejection();
   double Mapping_LineDistance_factor();
   int Mapping_PlaneDistance_k();
   double Mapping_PlaneDistance_factor1();
   double Mapping_PlaneDistance_factor2();
   double Mapping_Line_Max_Distance();
   double Mapping_Plane_Max_Distance();
+  double MappingMaxDistanceInlierRejection();
 
   enum FrameMode
   {

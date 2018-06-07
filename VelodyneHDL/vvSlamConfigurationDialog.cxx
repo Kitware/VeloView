@@ -177,6 +177,12 @@ int vvSlamConfigurationDialog::EgoMotion_LineDistance_k()
 }
 
 //-----------------------------------------------------------------------------
+int vvSlamConfigurationDialog::EgoMotionMinimalLineNeighborRejection()
+{
+  return ui->EgoMotionMinimalLineNeighborRejection->value();
+}
+
+//-----------------------------------------------------------------------------
 double vvSlamConfigurationDialog::EgoMotion_LineDistance_factor()
 {
   return ui->EgoMotion_LineDistance_factor->value();
@@ -234,6 +240,12 @@ int vvSlamConfigurationDialog::Mapping_LineDistance_k()
 }
 
 //-----------------------------------------------------------------------------
+int vvSlamConfigurationDialog::MappingMinimalLineNeighborRejection()
+{
+  return ui->MappingMinimalLineNeighborRejection->value();
+}
+
+//-----------------------------------------------------------------------------
 double vvSlamConfigurationDialog::Mapping_LineDistance_factor()
 {
   return ui->Mapping_LineDistance_factor->value();
@@ -267,4 +279,10 @@ double vvSlamConfigurationDialog::Mapping_Line_Max_Distance()
 double vvSlamConfigurationDialog::Mapping_Plane_Max_Distance()
 {
   return ui->Mapping_Plane_Max_Distance->value();
+}
+
+//-----------------------------------------------------------------------------
+double vvSlamConfigurationDialog::MappingMaxDistanceInlierRejection()
+{
+  return this->ui->MappingMaxDistanceInlierRejection->value();
 }

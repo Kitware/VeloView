@@ -213,6 +213,9 @@ public:
   slamGetMacro(,EgoMotionLineDistanceNbrNeighbors, unsigned int)
   slamSetMacro(,EgoMotionLineDistanceNbrNeighbors, unsigned int)
 
+  slamGetMacro(,EgoMotionMinimumLineNeighborRejection, unsigned int)
+  slamSetMacro(,EgoMotionMinimumLineNeighborRejection, unsigned int)
+
   slamGetMacro(,EgoMotionLineDistancefactor, double)
   slamSetMacro(,EgoMotionLineDistancefactor, double)
 
@@ -241,6 +244,9 @@ public:
   slamGetMacro(,MappingLineDistanceNbrNeighbors, unsigned int)
   slamSetMacro(,MappingLineDistanceNbrNeighbors, unsigned int)
 
+  slamGetMacro(,MappingMinimumLineNeighborRejection, unsigned int)
+  slamSetMacro(,MappingMinimumLineNeighborRejection, unsigned int)
+
   slamGetMacro(,MappingLineDistancefactor, double)
   slamSetMacro(,MappingLineDistancefactor, double)
 
@@ -258,6 +264,9 @@ public:
 
   slamGetMacro(,MappingMaxPlaneDistance, double)
   slamSetMacro(,MappingMaxPlaneDistance, double)
+
+  slamGetMacro(,MappingLineMaxDistInlier, double)
+  slamSetMacro(,MappingLineMaxDistInlier, double)
 
 protected:
   // vtkPolyDataAlgorithm functions
@@ -374,6 +383,7 @@ private:
   // values of the variance-covariance matrix of the neighborhood
   // to check if the points are distributed upon a line or a plane
   unsigned int MappingLineDistanceNbrNeighbors;
+  unsigned int MappingMinimumLineNeighborRejection;
   double MappingLineDistancefactor;
 
   unsigned int MappingPlaneDistanceNbrNeighbors;
@@ -382,8 +392,10 @@ private:
 
   double MappingMaxPlaneDistance;
   double MappingMaxLineDistance;
+  double MappingLineMaxDistInlier;
 
   unsigned int EgoMotionLineDistanceNbrNeighbors;
+  unsigned int EgoMotionMinimumLineNeighborRejection;
   double EgoMotionLineDistancefactor;
 
   unsigned int EgoMotionPlaneDistanceNbrNeighbors;
@@ -525,6 +537,13 @@ private:
   void GetEgoMotionLineSpecificNeighbor(std::vector<int>& nearestValid, std::vector<float>& nearestValidDist,
                                         unsigned int nearestSearch, pcl::KdTreeFLANN<Point>::Ptr kdtreePreviousEdges, Point p);
   void GetEgoMotionPlaneSpecificNeighbor();
+
+  // Instead of taking the k-nearest neighbors in the mapping
+  // step we will take specific neighbor using a sample consensus
+  // model
+  void GetMappingLineSpecificNeigbbor(std::vector<int>& nearestValid, std::vector<float>& nearestValidDist, double maxDistInlier,
+                                        unsigned int nearestSearch, pcl::KdTreeFLANN<Point>::Ptr kdtreePreviousEdges, Point p);
+  void GetMappingPlaneSpecificNeigbbor();
 
   // Update the world transformation by integrating
   // the relative motion recover and the previous

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>816</width>
-    <height>651</height>
+    <width>869</width>
+    <height>670</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -60,20 +60,24 @@
             <string>Edges</string>
            </property>
            <layout class="QGridLayout" name="gridLayout_10">
-            <item row="0" column="1">
-             <widget class="QSpinBox" name="Mapping_LineDistance_k">
+            <item row="1" column="0">
+             <widget class="QLabel" name="label_35">
+              <property name="text">
+               <string>Min neighbor rejection</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="1">
+             <widget class="QSpinBox" name="MappingMinimalLineNeighborRejection">
               <property name="value">
                <number>5</number>
               </property>
              </widget>
             </item>
-            <item row="1" column="1">
-             <widget class="QDoubleSpinBox" name="Mapping_LineDistance_factor">
-              <property name="maximum">
-               <double>999.990000000000009</double>
-              </property>
-              <property name="value">
-               <double>3.000000000000000</double>
+            <item row="5" column="0">
+             <widget class="QLabel" name="label_11">
+              <property name="text">
+               <string/>
               </property>
              </widget>
             </item>
@@ -84,29 +88,56 @@
               </property>
              </widget>
             </item>
-            <item row="1" column="0">
+            <item row="0" column="1">
+             <widget class="QSpinBox" name="Mapping_LineDistance_k">
+              <property name="value">
+               <number>15</number>
+              </property>
+             </widget>
+            </item>
+            <item row="3" column="1">
+             <widget class="QDoubleSpinBox" name="Mapping_LineDistance_factor">
+              <property name="maximum">
+               <double>999.990000000000009</double>
+              </property>
+              <property name="value">
+               <double>5.000000000000000</double>
+              </property>
+             </widget>
+            </item>
+            <item row="3" column="0">
              <widget class="QLabel" name="label_22">
               <property name="text">
                <string>factor1</string>
               </property>
              </widget>
             </item>
-            <item row="3" column="0">
-             <widget class="QLabel" name="label_11">
-              <property name="text">
-               <string/>
-              </property>
-             </widget>
-            </item>
-            <item row="2" column="0">
+            <item row="4" column="0">
              <widget class="QLabel" name="label_27">
               <property name="text">
                <string>max distance</string>
               </property>
              </widget>
             </item>
-            <item row="2" column="1">
+            <item row="4" column="1">
              <widget class="QDoubleSpinBox" name="Mapping_Line_Max_Distance">
+              <property name="value">
+               <double>0.100000000000000</double>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="0">
+             <widget class="QLabel" name="label_36">
+              <property name="text">
+               <string>max dist inlier rejection</string>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="1">
+             <widget class="QDoubleSpinBox" name="MappingMaxDistanceInlierRejection">
+              <property name="singleStep">
+               <double>0.010000000000000</double>
+              </property>
               <property name="value">
                <double>0.200000000000000</double>
               </property>
@@ -355,10 +386,17 @@
             <string>Edges</string>
            </property>
            <layout class="QGridLayout" name="gridLayout_7">
-            <item row="1" column="0">
+            <item row="2" column="0">
              <widget class="QLabel" name="label_16">
               <property name="text">
                <string>factor1</string>
+              </property>
+             </widget>
+            </item>
+            <item row="4" column="0">
+             <widget class="QLabel" name="label_10">
+              <property name="text">
+               <string/>
               </property>
              </widget>
             </item>
@@ -369,13 +407,6 @@
               </property>
              </widget>
             </item>
-            <item row="3" column="0">
-             <widget class="QLabel" name="label_10">
-              <property name="text">
-               <string/>
-              </property>
-             </widget>
-            </item>
             <item row="0" column="1">
              <widget class="QSpinBox" name="EgoMotion_LineDistance_k">
               <property name="value">
@@ -383,7 +414,7 @@
               </property>
              </widget>
             </item>
-            <item row="1" column="1">
+            <item row="2" column="1">
              <widget class="QDoubleSpinBox" name="EgoMotion_LineDistance_factor">
               <property name="maximum">
                <double>999.990000000000009</double>
@@ -393,20 +424,34 @@
               </property>
              </widget>
             </item>
-            <item row="2" column="0">
+            <item row="3" column="0">
              <widget class="QLabel" name="label_9">
               <property name="text">
                <string>max distance</string>
               </property>
              </widget>
             </item>
-            <item row="2" column="1">
+            <item row="3" column="1">
              <widget class="QDoubleSpinBox" name="EgoMotion_Line_Max_Distance">
               <property name="singleStep">
                <double>0.010000000000000</double>
               </property>
               <property name="value">
                <double>0.100000000000000</double>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="0">
+             <widget class="QLabel" name="label_34">
+              <property name="text">
+               <string>Min neighbor rejection</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="1">
+             <widget class="QSpinBox" name="EgoMotionMinimalLineNeighborRejection">
+              <property name="value">
+               <number>2</number>
               </property>
              </widget>
             </item>
