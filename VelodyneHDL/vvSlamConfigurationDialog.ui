@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>869</width>
-    <height>670</height>
+    <height>699</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -122,7 +122,7 @@
             <item row="4" column="1">
              <widget class="QDoubleSpinBox" name="Mapping_Line_Max_Distance">
               <property name="value">
-               <double>0.100000000000000</double>
+               <double>0.200000000000000</double>
               </property>
              </widget>
             </item>
@@ -139,7 +139,7 @@
                <double>0.010000000000000</double>
               </property>
               <property name="value">
-               <double>0.200000000000000</double>
+               <double>0.300000000000000</double>
               </property>
              </widget>
             </item>

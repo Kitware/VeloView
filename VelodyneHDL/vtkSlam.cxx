@@ -810,9 +810,9 @@ void vtkSlam::ResetAlgorithm()
   // edges
   this->MappingLineDistanceNbrNeighbors = 15;
   this->MappingMinimumLineNeighborRejection = 5;
-  this->MappingLineMaxDistInlier = 0.2; // 20 cm
+  this->MappingLineMaxDistInlier = 0.3; // 20 cm
   this->MappingLineDistancefactor = 5.0;
-  this->MappingMaxLineDistance = 0.1; // 10 cm
+  this->MappingMaxLineDistance = 0.2; // 10 cm
 
   // planes
   this->MappingPlaneDistanceNbrNeighbors = 5;
