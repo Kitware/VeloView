@@ -17,10 +17,10 @@
 #include "vtkMatrix4x4.h"
 #include "vtkObjectFactory.h"
 #include "vtkProp3D.h"
-#include "../vtkPatchVeloView/vtkVeloViewQuaternion.h"
-#include "../vtkPatchVeloView/vtkVeloViewQuaternionInterpolator.h"
+#include "vtkPatchVeloView/vtkVeloViewQuaternion.h"
+#include "vtkPatchVeloView/vtkVeloViewQuaternionInterpolator.h"
 #include "vtkTransform.h"
-#include "../vtkPatchVeloView/vtkVeloViewTupleInterpolator.h"
+#include "vtkPatchVeloView/vtkVeloViewTupleInterpolator.h"
 #include <list>
 
 vtkStandardNewMacro(vtkVelodyneTransformInterpolator);
