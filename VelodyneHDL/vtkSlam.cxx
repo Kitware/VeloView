@@ -348,7 +348,6 @@ public:
 
     // Filter the modified pointCloud
     pcl::VoxelGrid<Point> downSizeFilter;
-    std::cout << "Used LeafVoxelFilterSize: " << LeafVoxelFilterSize << std::endl;
     downSizeFilter.setLeafSize(LeafVoxelFilterSize, LeafVoxelFilterSize, LeafVoxelFilterSize); // one point per 20x20x20 cm
     for (int i = 0; i < this->Grid_NbVoxelX; i++)
     {
@@ -512,24 +511,6 @@ vtkSmartPointer<T> CreateDataArray(const char* name, vtkIdType np, vtkPolyData* 
 
   return array;
 }
-
-//-----------------------------------------------------------------------------
-vtkSmartPointer<vtkCellArray> NewVertexCells(vtkIdType numberOfVerts)
-{
-  vtkNew<vtkIdTypeArray> cells;
-  cells->SetNumberOfValues(numberOfVerts*2);
-  vtkIdType* ids = cells->GetPointer(0);
-  for (vtkIdType i = 0; i < numberOfVerts; ++i)
-    {
-    ids[i*2] = 1;
-    ids[i*2+1] = i;
-    }
-
-  vtkSmartPointer<vtkCellArray> cellArray = vtkSmartPointer<vtkCellArray>::New();
-  cellArray->SetCells(numberOfVerts, cells.GetPointer());
-  return cellArray;
-}
-
 //-----------------------------------------------------------------------------
 int vtkSlam::RequestData(vtkInformation *vtkNotUsed(request),
 vtkInformationVector **inputVector, vtkInformationVector *outputVector)
@@ -677,17 +658,10 @@ int vtkSlam::RequestInformation(vtkInformation *request,
 }
 
 //-----------------------------------------------------------------------------
-int vtkSlam::CanReadFile(const char* fname)
-{
-  return 1;
-}
-
-//-----------------------------------------------------------------------------
 void vtkSlam::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
-
 
 //-----------------------------------------------------------------------------
 vtkSlam::vtkSlam()
@@ -781,8 +755,6 @@ void vtkSlam::ResetAlgorithm()
   this->MinDistanceToSensor = 3.0;
   this->MaxEdgePerScanLine = 200;
   this->MaxPlanarsPerScanLine = 200;
-  this->PlaneCurvatureThreshold = 1.0;
-  this->EdgeCurvatureThreshold = 2.0;
   this->EdgeSinAngleThreshold = 0.85; // 58 degrees
   this->PlaneSinAngleThreshold = 0.5; // 30 degrees
   this->EdgeDepthGapThreshold = 0.02; // meters
@@ -834,12 +806,6 @@ void vtkSlam::ResetAlgorithm()
   this->FromVTKtoPCLMapping.resize(0);
   this->FromPCLtoVTKMapping.clear();
   this->FromPCLtoVTKMapping.resize(this->NLasers);
-  this->Curvature.clear();
-  this->Curvature.resize(this->NLasers);
-  this->Gradient.clear();
-  this->Gradient.resize(this->NLasers);
-  this->SecondDiff.clear();
-  this->SecondDiff.resize(this->NLasers);
   this->Angles.clear();
   this->Angles.resize(this->NLasers);
   this->DepthGap.clear();
@@ -917,12 +883,6 @@ void vtkSlam::PrepareDataForNextFrame()
   this->FromVTKtoPCLMapping.resize(0);
   this->FromPCLtoVTKMapping.clear();
   this->FromPCLtoVTKMapping.resize(this->NLasers);
-  this->Curvature.clear();
-  this->Curvature.resize(this->NLasers);
-  this->Gradient.clear();
-  this->Gradient.resize(this->NLasers);
-  this->SecondDiff.clear();
-  this->SecondDiff.resize(this->NLasers);
   this->Angles.clear();
   this->Angles.resize(this->NLasers);
   this->DepthGap.clear();
@@ -980,7 +940,6 @@ void vtkSlam::DisplayLaserIdMapping(vtkSmartPointer<vtkPolyData> input)
 //-----------------------------------------------------------------------------
 void vtkSlam::DisplayRelAdv(vtkSmartPointer<vtkPolyData> input)
 {
-  vtkDataArray* idsArray = input->GetPointData()->GetArray("laser_id");
   vtkSmartPointer<vtkDoubleArray> relAdvArray = vtkSmartPointer<vtkDoubleArray>::New();
   relAdvArray->Allocate(input->GetNumberOfPoints());
   relAdvArray->SetName("relative_adv");
@@ -996,20 +955,11 @@ void vtkSlam::DisplayRelAdv(vtkSmartPointer<vtkPolyData> input)
 //-----------------------------------------------------------------------------
 void vtkSlam::DisplayCurvatureScores(vtkSmartPointer<vtkPolyData> input)
 {
-  vtkSmartPointer<vtkDoubleArray> curvArray = vtkSmartPointer<vtkDoubleArray>::New();
-  vtkSmartPointer<vtkDoubleArray> gradArray = vtkSmartPointer<vtkDoubleArray>::New();
-  vtkSmartPointer<vtkDoubleArray> diffArray = vtkSmartPointer<vtkDoubleArray>::New();
   vtkSmartPointer<vtkDoubleArray> anglesArray = vtkSmartPointer<vtkDoubleArray>::New();
   vtkSmartPointer<vtkDoubleArray> depthArray = vtkSmartPointer<vtkDoubleArray>::New();
   vtkSmartPointer<vtkIntArray> indexArray = vtkSmartPointer<vtkIntArray>::New();
   vtkSmartPointer<vtkIntArray> indexArray2 = vtkSmartPointer<vtkIntArray>::New();
   vtkSmartPointer<vtkIntArray> idArray = vtkSmartPointer<vtkIntArray>::New();
-  curvArray->Allocate(input->GetNumberOfPoints());
-  curvArray->SetName("curvature");
-  gradArray->Allocate(input->GetNumberOfPoints());
-  gradArray->SetName("gradient_norm");
-  diffArray->Allocate(input->GetNumberOfPoints());
-  diffArray->SetName("second_derivation");
   anglesArray->Allocate(input->GetNumberOfPoints());
   anglesArray->SetName("angle_line");
   depthArray->Allocate(input->GetNumberOfPoints());
@@ -1025,9 +975,6 @@ void vtkSlam::DisplayCurvatureScores(vtkSmartPointer<vtkPolyData> input)
   {
     unsigned int scan = this->FromVTKtoPCLMapping[k].first;
     unsigned int index = this->FromVTKtoPCLMapping[k].second;
-    curvArray->InsertNextTuple1(this->Curvature[scan][index].first);
-    gradArray->InsertNextTuple1(this->Gradient[scan][index]);
-    diffArray->InsertNextTuple1(this->SecondDiff[scan][index].first);
     anglesArray->InsertNextTuple1(this->Angles[scan][index].first);
     depthArray->InsertNextTuple1(this->DepthGap[scan][index].first);
     indexArray->InsertNextTuple1(index);
@@ -1062,9 +1009,6 @@ void vtkSlam::DisplayCurvatureScores(vtkSmartPointer<vtkPolyData> input)
     }
   }
 
-  input->GetPointData()->AddArray(curvArray);
-  input->GetPointData()->AddArray(gradArray);
-  input->GetPointData()->AddArray(diffArray);
   input->GetPointData()->AddArray(anglesArray);
   input->GetPointData()->AddArray(depthArray);
   input->GetPointData()->AddArray(indexArray);
@@ -1291,9 +1235,6 @@ void vtkSlam::ComputeKeyPoints(vtkSmartPointer<vtkPolyData> input)
   // Initialize the vectors with the correct length
   for (unsigned int k = 0; k < this->NLasers; ++k)
   {
-    this->Curvature[k].resize(this->pclCurrentFrameByScan[k]->size(), std::pair<double, int>(0, 0));
-    this->Gradient[k].resize(this->pclCurrentFrameByScan[k]->size(), 0);
-    this->SecondDiff[k].resize(this->pclCurrentFrameByScan[k]->size(), std::pair<double, int>(0, 0));
     this->IsPointValid[k].resize(this->pclCurrentFrameByScan[k]->size(), 1);
     this->Label[k].resize(this->pclCurrentFrameByScan[k]->size(), 0);
     this->Angles[k].resize(this->pclCurrentFrameByScan[k]->size(), std::pair<double, int>(0, 0));
@@ -1648,14 +1589,11 @@ void vtkSlam::SetKeyPointsLabels(vtkSmartPointer<vtkPolyData> input)
     }
 
     // Sort the curvature score in a decreasing order
-    std::sort(this->Curvature[scanLine].begin(), this->Curvature[scanLine].end(), std::greater<std::pair<double, int> >());
     std::sort(this->DepthGap[scanLine].begin(), this->DepthGap[scanLine].end(), std::greater<std::pair<double, int> >());
     std::sort(this->Angles[scanLine].begin(), this->Angles[scanLine].end(), std::greater<std::pair<double, int> >());
-    std::sort(this->SecondDiff[scanLine].begin(), this->SecondDiff[scanLine].end(), std::greater<std::pair<double, int> >());
 
     double depthGap = 0;
     double sinAngle = 0;
-    double curvature = 0;
     int index = 0;
 
     if (!this->FastSlam)

@@ -126,18 +126,6 @@ double vvSlamConfigurationDialog::Keypoint_MinDistanceToSensor()
 }
 
 //-----------------------------------------------------------------------------
-double vvSlamConfigurationDialog::Keypoint_PlaneCurvatureThreshold()
-{
-  return 0.0;
-}
-
-//-----------------------------------------------------------------------------
-double vvSlamConfigurationDialog::Keypoint_EdgeCurvatureThreshold()
-{
-  return 0.0;
-}
-
-//-----------------------------------------------------------------------------
 double vvSlamConfigurationDialog::Keypoint_EdgeSinAngleThreshold()
 {
   return this->ui->Keypoint_EdgeSinAngleThreshold->value();

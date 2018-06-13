@@ -26,8 +26,6 @@ class VelodyneHDLPlugin_EXPORT vvSlamConfigurationDialog : public QDialog
   Q_PROPERTY(int Keypoint_MaxEdgePerScanLine READ Keypoint_MaxEdgePerScanLine)
   Q_PROPERTY(int Keypoint_MaxPlanarsPerScanLine READ Keypoint_MaxPlanarsPerScanLine)
   Q_PROPERTY(double Keypoint_MinDistanceToSensor READ Keypoint_MinDistanceToSensor)
-  Q_PROPERTY(double Keypoint_PlaneCurvatureThreshold READ Keypoint_PlaneCurvatureThreshold)
-  Q_PROPERTY(double Keypoint_EdgeCurvatureThreshold READ Keypoint_EdgeCurvatureThreshold)
   Q_PROPERTY(double Keypoint_EdgeSinAngleThreshold READ Keypoint_EdgeSinAngleThreshold)
   Q_PROPERTY(double Keypoint_PlaneSinAngleThreshold READ Keypoint_PlaneSinAngleThreshold)
   Q_PROPERTY(double Keypoint_EdgeDepthGapThreshold READ Keypoint_EdgeDepthGapThreshold)
@@ -76,8 +74,6 @@ public:
   int Keypoint_MaxEdgePerScanLine();
   int Keypoint_MaxPlanarsPerScanLine();
   double Keypoint_MinDistanceToSensor();
-  double Keypoint_PlaneCurvatureThreshold();
-  double Keypoint_EdgeCurvatureThreshold();
   double Keypoint_EdgeSinAngleThreshold();
   double Keypoint_PlaneSinAngleThreshold();
   double Keypoint_EdgeDepthGapThreshold();

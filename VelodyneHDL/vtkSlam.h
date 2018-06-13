@@ -110,7 +110,6 @@ public:
   static vtkSlam *New();
   vtkTypeMacro(vtkSlam, vtkPolyDataAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent);
-  int CanReadFile(const char* fname);
 
   // Add a new frame to process to the slam algorithm
   // From this frame; keypoints will be computed and extracted
@@ -187,12 +186,6 @@ public:
 
   slamGetMacro(_Keypoint,MinDistanceToSensor, double)
   slamSetMacro(_Keypoint,MinDistanceToSensor, double)
-
-  slamGetMacro(_Keypoint,PlaneCurvatureThreshold, double)
-  slamSetMacro(_Keypoint,PlaneCurvatureThreshold, double)
-
-  slamGetMacro(_Keypoint,EdgeCurvatureThreshold, double)
-  slamSetMacro(_Keypoint,EdgeCurvatureThreshold, double)
 
   slamGetMacro(_Keypoint,EdgeSinAngleThreshold, double)
   slamSetMacro(_Keypoint,EdgeSinAngleThreshold, double)
@@ -314,9 +307,6 @@ private:
 
   // Curvature and over differntial operations
   // scan by scan; point by point
-  std::vector<std::vector<std::pair<double, int> > > Curvature;
-  std::vector<std::vector<double> > Gradient;
-  std::vector<std::vector<std::pair<double, int> > > SecondDiff;
   std::vector<std::vector<std::pair<double, int> > > Angles;
   std::vector<std::vector<std::pair<double, int> > > DepthGap;
   std::vector<std::vector<int> > IsPointValid;
@@ -344,8 +334,6 @@ private:
   unsigned int MaxPlanarsPerScanLine;
 
   // Sharpness threshold to select a point
-  double EdgeCurvatureThreshold;
-  double PlaneCurvatureThreshold;
   double EdgeSinAngleThreshold;
   double PlaneSinAngleThreshold;
   double EdgeDepthGapThreshold;
