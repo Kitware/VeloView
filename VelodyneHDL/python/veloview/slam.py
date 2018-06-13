@@ -283,16 +283,16 @@ def updateChartView():
     chartViews = applogic.getChartViewProxies()
 
     # Add Orientation from Slam
-    chartViews[0].LeftAxisTitle = "orientation (rad)"
-    chartViews[0].BottomAxisTitle = "GPS time (s)"
+    chartViews[1].LeftAxisTitle = "orientation (rad)"
+    chartViews[1].BottomAxisTitle = "GPS time (s)"
     mychart = smp.Show(source,chartViews[1])
     mychart.SeriesVisibility.SetData(['pitch', 'roll', 'yaw'])
     setDockTitle('dockSlam_PitchRollYaw', 'Sensor Angles')
     smp.Render()
 
     # Add Position from Slam
-    chartViews[1].LeftAxisTitle = "position (m)"
-    chartViews[1].BottomAxisTitle = "GPS time (s)"
+    chartViews[0].LeftAxisTitle = "position (m)"
+    chartViews[0].BottomAxisTitle = "GPS time (s)"
     mychart = smp.Show(source,chartViews[0])
     mychart.SeriesVisibility.SetData(['Points_X', 'Points_Y', 'Points_Z'])
     setDockTitle('dockSlam_XYZ', 'Sensor Position')
