@@ -571,11 +571,6 @@ private:
   // results of the slam algorithm such as
   // the keypoints extracted, curvature etc
   bool DisplayMode;
-  
-  // Time processing information
-  void InitTime();
-  void StopTimeAndDisplay(std::string functionName);
-  std::clock_t Timer1, Timer2;
 
   // Identity matrix
   Eigen::Matrix<double, 3, 3> I3;

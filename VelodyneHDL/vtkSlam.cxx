@@ -111,6 +111,65 @@
 
 vtkStandardNewMacro(vtkSlam);
 
+
+namespace {
+//-----------------------------------------------------------------------------
+Eigen::Matrix3d GetRotationMatrix(Eigen::Matrix<double, 6, 1> T)
+{
+  // T(0) = rx, T(1) = ry, T(2) = rz
+  // R = Rz(rz) * Ry(ry) * Rx(rx)
+  return Eigen::Matrix3d(
+        Eigen::AngleAxisd(T(2), Eigen::Vector3d::UnitZ())       /* rotation around Z-axis */
+        * Eigen::AngleAxisd(T(1), Eigen::Vector3d::UnitY())     /* rotation around Y-axis */
+        * Eigen::AngleAxisd(T(0), Eigen::Vector3d::UnitX()));   /* rotation around X-axis */
+}
+
+//-----------------------------------------------------------------------------
+template <typename T>
+vtkSmartPointer<T> CreateDataArray(const char* name, vtkIdType np, vtkPolyData* pd)
+{
+  vtkSmartPointer<T> array = vtkSmartPointer<T>::New();
+  array->Allocate(np);
+  array->SetName(name);
+
+  if (pd)
+    {
+    pd->GetPointData()->AddArray(array);
+    }
+
+  return array;
+}
+
+//-----------------------------------------------------------------------------
+std::clock_t startTime;
+
+//-----------------------------------------------------------------------------
+void InitTime()
+{
+  startTime = std::clock();
+}
+
+//-----------------------------------------------------------------------------
+void StopTimeAndDisplay(std::string functionName)
+{
+  std::clock_t endTime = std::clock();
+  double dt = static_cast<double>(endTime - startTime) / CLOCKS_PER_SEC;
+  std::cout << "  -time elapsed in function <" << functionName << "> : " << dt << " sec" << std::endl;
+}
+
+//-----------------------------------------------------------------------------
+double Rad2Deg(double val)
+{
+  return val / vtkMath::Pi() * 180;
+}
+
+//-----------------------------------------------------------------------------
+double Deg2Rad(double val)
+{
+  return val / 180 * vtkMath::Pi();
+}
+}
+
 // The map reconstructed from the slam algorithm is stored in a voxel grid
 // which split the space in differents region. From this voxel grid it is possible
 // to only load the parts of the map which are pertinents when we run the mapping
@@ -472,45 +531,6 @@ private:
   std::vector<int> vizualisation;
 };
 
-
-//-----------------------------------------------------------------------------
-Eigen::Matrix<double, 3, 3> GetRotationMatrix(Eigen::Matrix<double, 6, 1> T)
-{
-  // Rotation and translation relative
-  Eigen::Matrix<double, 3, 3> Rx, Ry, Rz, R;
-  // rotation around X-axis
-  Rx << 1,         0,          0,
-        0, cos(T(0)), -sin(T(0)),
-        0, sin(T(0)),  cos(T(0));
-  // rotation around Y-axis
-  Ry <<  cos(T(1)), 0, sin(T(1)),
-        0,          1,         0,
-        -sin(T(1)), 0, cos(T(1));
-  // rotation around Z-axis
-  Rz << cos(T(2)), -sin(T(2)), 0,
-        sin(T(2)),  cos(T(2)), 0,
-                0,          0, 1;
-
-  // full rotation
-  R = Rz * Ry * Rx;
-  return R;
-}
-
-//-----------------------------------------------------------------------------
-template <typename T>
-vtkSmartPointer<T> CreateDataArray(const char* name, vtkIdType np, vtkPolyData* pd)
-{
-  vtkSmartPointer<T> array = vtkSmartPointer<T>::New();
-  array->Allocate(np);
-  array->SetName(name);
-
-  if (pd)
-    {
-    pd->GetPointData()->AddArray(array);
-    }
-
-  return array;
-}
 //-----------------------------------------------------------------------------
 int vtkSlam::RequestData(vtkInformation *vtkNotUsed(request),
 vtkInformationVector **inputVector, vtkInformationVector *outputVector)
@@ -674,20 +694,6 @@ vtkSlam::vtkSlam()
 //-----------------------------------------------------------------------------
 vtkSlam::~vtkSlam()
 {
-}
-
-//-----------------------------------------------------------------------------
-void vtkSlam::InitTime()
-{
-  this->Timer1 = std::clock();
-}
-
-//-----------------------------------------------------------------------------
-void vtkSlam::StopTimeAndDisplay(std::string functionName)
-{
-  this->Timer2 = std::clock();
-  double dt = static_cast<double>(this->Timer2 - this->Timer1) / CLOCKS_PER_SEC;
-  std::cout << "  -time elapsed in function <" << functionName << "> : " << dt << " sec" << std::endl;
 }
 
 //-----------------------------------------------------------------------------
@@ -1118,31 +1124,31 @@ void vtkSlam::AddFrame(vtkPolyData* newFrame)
 
   // Convert the new frame into pcl format and sort
   // the laser scan-lines by vertical angle
-  this->InitTime();
+  InitTime();
   this->ConvertAndSortScanLines(vtkCurrentFrame);
-  this->StopTimeAndDisplay("Sorting lines");
+  StopTimeAndDisplay("Sorting lines");
 
   // Compute the edges and planars keypoints
-  this->InitTime();
+  InitTime();
   this->ComputeKeyPoints(vtkCurrentFrame);
-  this->StopTimeAndDisplay("Keypoints extraction");
+  StopTimeAndDisplay("Keypoints extraction");
 
   // Perfom EgoMotion
-  this->InitTime();
+  InitTime();
   this->ComputeEgoMotion();
-  this->StopTimeAndDisplay("Ego-Motion");
+  StopTimeAndDisplay("Ego-Motion");
 
   // Transform the current keypoints to the
   // referential of the sensor at the end of
   // frame acquisition
-  this->InitTime();
+  InitTime();
   //this->TransformCurrentKeypointsToEnd();
-  this->StopTimeAndDisplay("Undistortion");
+  StopTimeAndDisplay("Undistortion");
 
   // Perform Mapping
-  this->InitTime();
+  InitTime();
   this->Mapping();
-  this->StopTimeAndDisplay("Mapping");
+  StopTimeAndDisplay("Mapping");
 
   // Current keypoints become previous ones
   this->PreviousEdgesPoints = this->CurrentEdgesPoints;
@@ -1151,17 +1157,15 @@ void vtkSlam::AddFrame(vtkPolyData* newFrame)
 
   // Information
   Eigen::Matrix<double, 3, 1> angles, trans;
-  angles << this->Trelative(0), this->Trelative(1), this->Trelative(2);
-  trans << this->Trelative(3), this->Trelative(4), this->Trelative(5);
 
-  angles = angles * 1.0 / vtkMath::Pi() * 180.0;
+  angles << Rad2Deg(this->Trelative(0)), Rad2Deg(this->Trelative(1)), Rad2Deg(this->Trelative(2));
+  trans << this->Trelative(3), this->Trelative(4), this->Trelative(5);
   std::cout << "Odometry : " << std::endl;
   std::cout << "angles : " << std::endl << angles << std::endl;
   std::cout << "trans : " << std::endl << trans << std::endl;
 
-  angles << this->Tworld(0), this->Tworld(1), this->Tworld(2);
+  angles << Rad2Deg(this->Tworld(0)), Rad2Deg(this->Tworld(1)), Rad2Deg(this->Tworld(2));
   trans << this->Tworld(3), this->Tworld(4), this->Tworld(5);
-  angles = angles * 1.0 / vtkMath::Pi() * 180.0;
   std::cout << "World : " << std::endl;
   std::cout << "angles : " << std::endl << angles << std::endl;
   std::cout << "trans : " << std::endl << trans << std::endl;
