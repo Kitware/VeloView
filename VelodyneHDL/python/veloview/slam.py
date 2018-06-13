@@ -21,7 +21,7 @@ def configure(source):
     # execute the gui
     slamDialog = vvSlamConfigurationDialog(applogic.getMainWindow())
     if not slamDialog.exec_():
-        return
+        return -1, -1
 
     global slam
     # Instanciation of a new vtkSlamAlgorithm
@@ -204,6 +204,9 @@ def launch():
 
     # let the user configure a new slam instance
     start, stop = configure(source)
+    # check if the user press on cancel
+    if start ==-1:
+        return
 
     # instanciate the progress box
     progressDialog = QtGui.QProgressDialog("Computing slam algorithm...", "Abort Slam", start, start + (stop - start), None)
