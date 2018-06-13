@@ -250,6 +250,17 @@ double HDL64EAdjustTimeStamp(int firingblock, int dsr, const bool isDualReturnMo
       TimeOffsetMicroSec[(dsrReversed % 4)] + (dsrReversed / 4) * TimeOffsetMicroSec[3];
   }
 }
+double VLS128AdjustTimeStamp(int firingblock, int dsr, const bool isDualReturnMode)
+{
+  if (!isDualReturnMode)
+  {
+    return 13.0 * (firingblock) + (dsr / 4) * 1.4;
+  }
+  else
+  {
+    return 13.0 * (firingblock / 2) + (dsr / 4) * 1.4;
+  }
+}
 } // End namespace
 
 //-----------------------------------------------------------------------------
@@ -2048,6 +2059,14 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessFiring(HDLFiringData* firingData,
       double blockdsr0 = 0, nextblockdsr0 = 1;
       switch (this->CalibrationReportedNumLasers)
       {
+        case 128:
+        {
+          timestampadjustment = VLS128AdjustTimeStamp(firingBlock, dsr, isDualReturnPacket);
+          nextblockdsr0 = VLS128AdjustTimeStamp(
+            firingBlock + (isDualReturnPacket ? 8 : 4), 0, isDualReturnPacket);
+          blockdsr0 = VLS128AdjustTimeStamp(firingBlock, 0, isDualReturnPacket);
+          break;
+        }
         case 64:
         {
           timestampadjustment = -HDL64EAdjustTimeStamp(firingBlock, dsr, isDualReturnPacket);
@@ -2136,13 +2155,14 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(
   this->Skip = 0;
 
   bool isVLS128 = dataPacket->isVLS128();
-  // Compute the total azimuth advanced during one full firing block
+  // Compute the list of total azimuth advanced during one full firing block
   std::vector<int> diffs(HDL_FIRING_PER_PKT - 1);
   for (int i = 0; i < HDL_FIRING_PER_PKT - 1; ++i)
   {
-    int localDiff = (36000 + dataPacket->firingData[i + 1].rotationalPosition -
+    int localDiff = (36000 + 18000 + dataPacket->firingData[i + 1].rotationalPosition -
                       dataPacket->firingData[i].rotationalPosition) %
-      36000;
+        36000 -
+      18000;
 
     // Skip dummy blocks of VLS-128 dual mode last 4 blocks
     if (isVLS128 && (dataPacket->firingData[i + 1].blockIdentifier == 0 ||
@@ -2204,6 +2224,8 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(
       this->LastTimestamp = std::numeric_limits<unsigned int>::max();
     }
 
+    if (isVLS128)
+      azimuthDiff = dataPacket->getRotationalDiffForVLS128(firingBlock);
     // Skip this firing every PointSkip
     if (this->FiringsSkip == 0 || firingBlock % (this->FiringsSkip + 1) == 0)
     {
