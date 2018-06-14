@@ -270,6 +270,22 @@ double VelArrayAdjustTimeStamp(
 }
 } // End namespace
 
+#define PacketProcessingDebugMacro(x)                                                              \
+  {                                                                                                \
+    if (this->Internal->OutputPacketProcessingDebugInfo)                                           \
+    {                                                                                              \
+      std::cout << " " x;                                                                          \
+    }                                                                                              \
+  }
+
+#define PacketProcessingDebugMacroInternal(x)                                                      \
+  {                                                                                                \
+    if (this->OutputPacketProcessingDebugInfo)                                                     \
+    {                                                                                              \
+      std::cout << " " x;                                                                          \
+    }                                                                                              \
+  }
+
 //-----------------------------------------------------------------------------
 double ComputeAverageRPM(vtkPolyData* cloud, int chunkSize)
 {
@@ -1354,8 +1370,11 @@ vtkSmartPointer<vtkPolyData> vtkVelodyneHDLReader::GetFrame(int frameNumber)
   this->Internal->Reader->SetFilePosition(&this->Internal->FilePositions[frameNumber]);
   this->Internal->Skip = this->Internal->Skips[frameNumber];
 
+  unsigned int count = 0;
   while (this->Internal->Reader->NextPacket(data, dataLength, timeSinceStart))
   {
+    count++;
+    PacketProcessingDebugMacro(<< "Packet processed for this frame : " << count << std::endl);
     this->ProcessHDLPacket(const_cast<unsigned char*>(data), dataLength);
 
     if (this->Internal->Datasets.size())
@@ -1386,14 +1405,6 @@ vtkSmartPointer<T> CreateDataArray(const char* name, vtkIdType np, vtkPolyData* 
   return array;
 }
 }
-
-#define PacketProcessingDebugMacro(x)                                                              \
-  {                                                                                                \
-    if (this->Internal->OutputPacketProcessingDebugInfo)                                           \
-    {                                                                                              \
-      std::cout << " " x;                                                                          \
-    }                                                                                              \
-  }
 
 //-----------------------------------------------------------------------------
 vtkSmartPointer<vtkPolyData> vtkVelodyneHDLReader::vtkInternal::CreateData(vtkIdType numberOfPoints)
@@ -2219,6 +2230,8 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(
 
   HDLDataPacket* dataPacket = reinterpret_cast<HDLDataPacket*>(data);
 
+  PacketProcessingDebugMacroInternal(<< "Packet content:\n"
+                                     << dataPacket->to_tsv_string() << std::endl);
   vtkNew<vtkTransform> geotransform;
   const unsigned int rawtime = dataPacket->gpsTimestamp;
   const double timestamp = this->ComputeTimestamp(dataPacket->gpsTimestamp);
@@ -2371,6 +2384,8 @@ int vtkVelodyneHDLReader::ReadFrameInformation()
     //      printf("missed %d packets\n",  static_cast<int>(floor((timeDiff/553.0) + 0.5)));
     //      }
 
+    PacketProcessingDebugMacro(<< "Packet #" << numberOfFiringPackets - lastnumberOfFiringPackets
+                               << ":");
     for (int i = 0; i < HDL_FIRING_PER_PKT; ++i)
     {
       const HDLFiringData& firingData = dataPacket->firingData[i];
@@ -2409,7 +2424,7 @@ int vtkVelodyneHDLReader::ReadFrameInformation()
         isEmptyFrame = true;
       }
       PacketProcessingDebugMacro(<< std::setw(5) << "(" << firingData.getRotationalPosition()
-                                 << ", " << firingData.getElevation100th() << "), " << std::endl);
+                                 << ", " << firingData.getElevation100th() << "), ");
     }
 
     // Accumulate HDL64 Status byte data

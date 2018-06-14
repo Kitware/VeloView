@@ -17,6 +17,7 @@
 
 #include <iomanip>
 #include <iostream>
+#include <sstream>
 #include <stdio.h>
 #include <unordered_map>
 #include <vector>
@@ -266,6 +267,44 @@ struct HDLDataPacket
       return unsignedAngleDiffTo_m180_180deg(firingData[firingBlock + 1].getRotationalPosition(),
         firingData[firingBlock].getRotationalPosition());
     }
+  }
+
+  std::string to_tsv_string() const
+  {
+    char sep = '\t';
+    std::stringstream ss;
+    for (int f = 0; f < HDL_FIRING_PER_PKT; f++)
+      ss << "blkIden:" << sep << std::hex << firingData[f].blockIdentifier << sep;
+    ss << std::endl;
+    for (int f = 0; f < HDL_FIRING_PER_PKT; f++)
+      ss << "blkAzm:" << sep << std::dec << firingData[f].rotationalPosition << sep;
+    ss << std::endl;
+    for (int f = 0; f < HDL_FIRING_PER_PKT; f++)
+      ss << "rawD" << sep << "intens" << sep;
+    ss << std::endl;
+    for (int dsr = 0; dsr < HDL_LASER_PER_FIRING; dsr++)
+    {
+      for (int f = 0; f < HDL_FIRING_PER_PKT; f++)
+      {
+        ss << (int)firingData[f].laserReturns[dsr].distance << sep
+           << (int)firingData[f].laserReturns[dsr].intensity << sep;
+      }
+      ss << std::endl;
+    }
+    for (int f = 0; f < HDL_FIRING_PER_PKT - 2; f++)
+      ss << sep << sep;
+    ss << "gpsTime:" << sep << (int)gpsTimestamp << sep;
+    ss << std::endl;
+    for (int f = 0; f < HDL_FIRING_PER_PKT - 2; f++)
+      ss << sep << sep;
+
+    ss << "factyField1:" << sep << "0x" << std::hex << (int)factoryField1 << sep;
+    ss << std::endl;
+    for (int f = 0; f < HDL_FIRING_PER_PKT - 2; f++)
+      ss << sep << sep;
+    ss << "factyField2:" << sep << "0x" << std::hex << (int)factoryField2 << sep;
+    ss << std::endl;
+    return ss.str();
   }
 };
 
