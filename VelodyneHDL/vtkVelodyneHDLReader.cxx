@@ -376,13 +376,13 @@ public:
     // bool azimuthFrameSplit = hasChangedWithValue(
     //  firingData.getRotationalPosition(), hasLastAzimuth, LastAzimuth, LastAzimuthSlope);
     bool azimuthFrameSplit =
-      hasLastAzimuth ? (firingData.getScanningHorizontalDir() == LastAzimuthDir) : false;
+      hasLastAzimuth ? (firingData.getScanningHorizontalDir() != LastAzimuthDir) : false;
     LastAzimuthDir = firingData.getScanningHorizontalDir();
 
     bool hasLastElevation = (LastElevationDir != -1);
     int previousElevation = LastElevation;
     bool elevationSplit =
-      hasLastElevation ? (firingData.getScanningVerticalDir() == LastElevationDir) : false;
+      hasLastElevation ? (firingData.getScanningVerticalDir() != LastElevationDir) : false;
     LastElevationDir = firingData.getScanningVerticalDir();
     LastElevation = firingData.getElevation100th();
 
