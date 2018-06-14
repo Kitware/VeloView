@@ -2342,8 +2342,9 @@ int vtkVelodyneHDLReader::ReadFrameInformation()
   unsigned long long numberOfFiringPackets = 0;
   unsigned long long lastnumberOfFiringPackets = 0;
 
-  fpos_t lastFilePosition;
+  fpos_t lastFilePosition, firstFilePosition;
   reader.GetFilePosition(&lastFilePosition);
+  firstFilePosition = lastFilePosition;
 
   bool IsHDL64Data = false;
   bool isEmptyFrame = true;
@@ -2420,6 +2421,12 @@ int vtkVelodyneHDLReader::ReadFrameInformation()
     !this->Internal->CorrectionsInitialized)
   {
     vtkGenericWarningMacro("Unable to load live calibration from pcap")
+  }
+  // Force to show the partial first frame if that is the only one.
+  if (filePositions.size() == 0)
+  {
+    filePositions.push_back(firstFilePosition);
+    skips.push_back(0);
   }
   this->Internal->FilePositions = filePositions;
   this->Internal->Skips = skips;
