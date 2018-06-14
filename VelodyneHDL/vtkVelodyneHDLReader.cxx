@@ -1700,8 +1700,8 @@ void vtkVelodyneHDLReader::vtkInternal::LoadCorrectionsFile(const std::string& c
     }
   }
 
-  int i, j;
-  i = 0;
+  int laserId, j;
+  laserId = 0;
   BOOST_FOREACH (
     boost::property_tree::ptree::value_type& p, pt.get_child("boost_serialization.DB.colors_"))
   {
@@ -1715,11 +1715,13 @@ void vtkVelodyneHDLReader::vtkInternal::LoadCorrectionsFile(const std::string& c
           double val;
           ss << v.second.data();
           ss >> val;
-
-          XMLColorTable[i][j] = val;
+          if (!ss.fail() && j < 3)
+            XMLColorTable[laserId][j] = val;
           j++;
         }
-      i++;
+      laserId++;
+      if (laserId >= HDL_MAX_NUM_LASERS)
+        break;
     }
   }
 
@@ -1741,8 +1743,12 @@ void vtkVelodyneHDLReader::vtkInternal::LoadCorrectionsFile(const std::string& c
   }
   this->CalibrationReportedNumLasers = enabledCount;
 
+  if (this->CalibrationReportedNumLasers > HDL_MAX_NUM_LASERS)
+    vtkGenericWarningMacro("LoadCorrectionsFile: more than " << HDL_MAX_NUM_LASERS
+                                                             << " lasers defined (" << enabledCount
+                                                             << "). Additional ones ignored.");
   // Getting min & max intensities from XML
-  int laserId = 0;
+  laserId = 0;
   int minIntensity[HDL_MAX_NUM_LASERS], maxIntensity[HDL_MAX_NUM_LASERS];
   BOOST_FOREACH (boost::property_tree::ptree::value_type& v,
     pt.get_child("boost_serialization.DB.minIntensity_"))
@@ -1751,7 +1757,8 @@ void vtkVelodyneHDLReader::vtkInternal::LoadCorrectionsFile(const std::string& c
     if (v.first == "item")
     {
       ss << v.second.data();
-      ss >> minIntensity[laserId];
+      if (!ss.fail() && laserId < HDL_MAX_NUM_LASERS)
+        ss >> minIntensity[laserId];
       laserId++;
     }
   }
@@ -1764,7 +1771,8 @@ void vtkVelodyneHDLReader::vtkInternal::LoadCorrectionsFile(const std::string& c
     if (v.first == "item")
     {
       ss << v.second.data();
-      ss >> maxIntensity[laserId];
+      if (!ss.fail() && laserId < HDL_MAX_NUM_LASERS)
+        ss >> maxIntensity[laserId];
       laserId++;
     }
   }
