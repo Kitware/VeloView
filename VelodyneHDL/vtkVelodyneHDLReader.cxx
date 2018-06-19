@@ -2289,7 +2289,12 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(
     }
     // For variable speed sensors, get this firing block exact azimuthDiff
     if (dataPacket->getSensorType() == VelArray)
+    {
       azimuthDiff = dataPacket->getRotationalDiffForVelarrayFiring(firingBlock);
+      // only use the azimuth-diff between firings if below 2 degrees
+      if (abs(azimuthDiff) > 200)
+        azimuthDiff = 0;
+    }
     // Skip this firing every PointSkip
     if (this->FiringsSkip == 0 || firingBlock % (this->FiringsSkip + 1) == 0)
     {
