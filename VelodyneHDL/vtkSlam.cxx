@@ -141,6 +141,21 @@ vtkSmartPointer<T> CreateDataArray(const char* name, vtkIdType np, vtkPolyData* 
 }
 
 //-----------------------------------------------------------------------------
+template <typename T>
+std::vector<size_t> sortIdx(const std::vector<T> &v)
+{
+  // initialize original index locations
+  std::vector<size_t> idx(v.size());
+  std::iota(idx.begin(), idx.end(), 0);
+
+  // sort indexes based on comparing values in v
+  std::sort(idx.begin(), idx.end(),
+       [&v](size_t i1, size_t i2) {return v[i1] > v[i2];});
+
+  return idx;
+}
+
+//-----------------------------------------------------------------------------
 std::clock_t startTime;
 
 //-----------------------------------------------------------------------------
@@ -928,6 +943,22 @@ bool vtkSlam::GetIsSensorCalibrationProvided()
 }
 
 //-----------------------------------------------------------------------------
+template <typename T, typename Tvtk>
+void vtkSlam::AddVectorToPolydataPoints(const std::vector<std::vector<T>>& vec, const char* name, vtkPolyData* pd)
+{
+  vtkSmartPointer<Tvtk> array = vtkSmartPointer<Tvtk>::New();
+  array->Allocate(pd->GetNumberOfPoints());
+  array->SetName(name);
+  for (unsigned int k = 0; k < pd->GetNumberOfPoints(); ++k)
+  {
+    unsigned int scan = this->FromVTKtoPCLMapping[k].first;
+    unsigned int index = this->FromVTKtoPCLMapping[k].second;
+    array->InsertNextTuple1(vec[scan][index]);
+  }
+  pd->GetPointData()->AddArray(array);
+}
+
+//-----------------------------------------------------------------------------
 void vtkSlam::DisplayLaserIdMapping(vtkSmartPointer<vtkPolyData> input)
 {
   vtkDataArray* idsArray = input->GetPointData()->GetArray("laser_id");
@@ -956,106 +987,6 @@ void vtkSlam::DisplayRelAdv(vtkSmartPointer<vtkPolyData> input)
     relAdvArray->InsertNextTuple1(this->pclCurrentFrameByScan[scan]->points[index].intensity);
   }
   input->GetPointData()->AddArray(relAdvArray);
-}
-
-//-----------------------------------------------------------------------------
-void vtkSlam::DisplayCurvatureScores(vtkSmartPointer<vtkPolyData> input)
-{
-  vtkSmartPointer<vtkDoubleArray> anglesArray = vtkSmartPointer<vtkDoubleArray>::New();
-  vtkSmartPointer<vtkDoubleArray> depthArray = vtkSmartPointer<vtkDoubleArray>::New();
-  vtkSmartPointer<vtkIntArray> indexArray = vtkSmartPointer<vtkIntArray>::New();
-  vtkSmartPointer<vtkIntArray> indexArray2 = vtkSmartPointer<vtkIntArray>::New();
-  vtkSmartPointer<vtkIntArray> idArray = vtkSmartPointer<vtkIntArray>::New();
-  anglesArray->Allocate(input->GetNumberOfPoints());
-  anglesArray->SetName("angle_line");
-  depthArray->Allocate(input->GetNumberOfPoints());
-  depthArray->SetName("depth_gap");
-  indexArray->Allocate(input->GetNumberOfPoints());
-  indexArray->SetName("index_in_scanLine");
-  indexArray2->Allocate(input->GetNumberOfPoints());
-  indexArray2->SetName("index_in_scanLine2");
-  idArray->Allocate(input->GetNumberOfPoints());
-  idArray->SetName("iDLaser_of_points");
-
-  for (unsigned int k = 0; k < input->GetNumberOfPoints(); ++k)
-  {
-    unsigned int scan = this->FromVTKtoPCLMapping[k].first;
-    unsigned int index = this->FromVTKtoPCLMapping[k].second;
-    anglesArray->InsertNextTuple1(this->Angles[scan][index].first);
-    depthArray->InsertNextTuple1(this->DepthGap[scan][index].first);
-    indexArray->InsertNextTuple1(index);
-    indexArray2->InsertNextTuple1(0);
-    idArray->InsertNextTuple1(this->pclCurrentFrameByScan[scan]->points[index].normal_y);
-  }
-
-  for (int scanLine = 0; scanLine < this->NLasers; ++scanLine)
-  {
-    for (int index = 0; index < this->pclCurrentFrameByScan[scanLine]->size(); ++index)
-    {
-      if (scanLine >= this->FromPCLtoVTKMapping.size())
-      {
-        std::cout << "Error in mapping nlaser" << std::endl;
-        continue;
-      }
-      if (index >= this->FromPCLtoVTKMapping[scanLine].size())
-      {
-        std::cout << "Error in mapping number of points in line : " << scanLine << std::endl;
-        continue;
-      }
-
-      int k = this->FromPCLtoVTKMapping[scanLine][index];
-
-      if (k >= input->GetNumberOfPoints())
-      {
-        std::cout << "Error in mapping, k : " << k << " is over : " << input->GetNumberOfPoints() << " for scan : " << scanLine << " point : " << index << std::endl;
-        continue;
-      }
-      
-      indexArray2->SetValue(k, index);
-    }
-  }
-
-  input->GetPointData()->AddArray(anglesArray);
-  input->GetPointData()->AddArray(depthArray);
-  input->GetPointData()->AddArray(indexArray);
-  input->GetPointData()->AddArray(indexArray2);
-  input->GetPointData()->AddArray(idArray);
-
-}
-
-//-----------------------------------------------------------------------------
-void vtkSlam::DisplayKeypointsResults(vtkSmartPointer<vtkPolyData> input)
-{
-  vtkSmartPointer<vtkIntArray> isValidArray = vtkSmartPointer<vtkIntArray>::New();
-  vtkSmartPointer<vtkIntArray> labelArray = vtkSmartPointer<vtkIntArray>::New();
-  isValidArray->Allocate(input->GetNumberOfPoints());
-  isValidArray->SetName("is_point_valid");
-  labelArray->Allocate(input->GetNumberOfPoints());
-  labelArray->SetName("keypoint_label");
-  for (unsigned int k = 0; k < input->GetNumberOfPoints(); ++k)
-  {
-    unsigned int scan = this->FromVTKtoPCLMapping[k].first;
-    unsigned int index = this->FromVTKtoPCLMapping[k].second;
-    isValidArray->InsertNextTuple1(this->IsPointValid[scan][index]);
-    labelArray->InsertNextTuple1(this->Label[scan][index]);
-  }
-  input->GetPointData()->AddArray(isValidArray);
-  input->GetPointData()->AddArray(labelArray);
-}
-
-//-----------------------------------------------------------------------------
-void vtkSlam::DisplayBadCriteriaIndex(vtkSmartPointer<vtkPolyData> input)
-{
-  vtkSmartPointer<vtkIntArray> badCriteria = vtkSmartPointer<vtkIntArray>::New();
-  badCriteria->Allocate(input->GetNumberOfPoints());
-  badCriteria->SetName("Bad_Criteria_Points");
-  for (unsigned int k = 0; k < input->GetNumberOfPoints(); ++k)
-  {
-    unsigned int scan = this->FromVTKtoPCLMapping[k].first;
-    unsigned int index = this->FromVTKtoPCLMapping[k].second;
-    badCriteria->InsertNextTuple1(this->IsPointValid[scan][index]);
-  }
-  input->GetPointData()->AddArray(badCriteria);
 }
 
 //-----------------------------------------------------------------------------
@@ -1188,10 +1119,6 @@ void vtkSlam::AddFrame(vtkPolyData* newFrame)
 //-----------------------------------------------------------------------------
 void vtkSlam::ConvertAndSortScanLines(vtkSmartPointer<vtkPolyData> input)
 {
-  if (this->DisplayMode)
-  {
-    this->DisplayLaserIdMapping(input);
-  }
   // temp var
   double xL[3]; // in {L}
   Point yL; // in {L}
@@ -1226,11 +1153,6 @@ void vtkSlam::ConvertAndSortScanLines(vtkSmartPointer<vtkPolyData> input)
     this->FromVTKtoPCLMapping[index] = std::pair<int, int>(id, this->pclCurrentFrameByScan[id]->size() - 1);
     this->FromPCLtoVTKMapping[id].push_back(index);
   }
-
-  if (DisplayMode)
-  {
-    this->DisplayRelAdv(input);
-  }
 }
 
 //-----------------------------------------------------------------------------
@@ -1241,8 +1163,8 @@ void vtkSlam::ComputeKeyPoints(vtkSmartPointer<vtkPolyData> input)
   {
     this->IsPointValid[k].resize(this->pclCurrentFrameByScan[k]->size(), 1);
     this->Label[k].resize(this->pclCurrentFrameByScan[k]->size(), 0);
-    this->Angles[k].resize(this->pclCurrentFrameByScan[k]->size(), std::pair<double, int>(0, 0));
-    this->DepthGap[k].resize(this->pclCurrentFrameByScan[k]->size(), std::pair<double, int>(0, 0));
+    this->Angles[k].resize(this->pclCurrentFrameByScan[k]->size(),0);
+    this->DepthGap[k].resize(this->pclCurrentFrameByScan[k]->size(), 0);
   }
 
   // compute keypoints scores
@@ -1251,20 +1173,8 @@ void vtkSlam::ComputeKeyPoints(vtkSmartPointer<vtkPolyData> input)
   // Invalid points with bad criteria
   this->InvalidPointWithBadCriteria();
 
-  if (this->DisplayMode)
-  {
-    this->DisplayBadCriteriaIndex(input);
-  }
-
   // labelize keypoints
   this->SetKeyPointsLabels(input);
-
-  // Display keypoints results
-  if (this->DisplayMode)
-  {
-    this->DisplayKeypointsResults(input);
-  }
-
 }
 
 //-----------------------------------------------------------------------------
@@ -1398,8 +1308,7 @@ void vtkSlam::ComputeCurvature(vtkSmartPointer<vtkPolyData> input)
       // sharpness of the current point
       if (rightFlat && leftFlat)
       {
-        this->Angles[scanLine][index].first = std::abs((Nleft.cross(Nright)).norm()); // sin of angle actually
-        this->Angles[scanLine][index].second = index;
+        this->Angles[scanLine][index] = std::abs((Nleft.cross(Nright)).norm()); // sin of angle actually
 
         dist1 = std::abs(dirGapLeft.cross(Nleft).norm()) * minDistLeft;
         dist2 = std::abs(dirGapRight.cross(Nright).norm()) * minDistRight;
@@ -1422,14 +1331,8 @@ void vtkSlam::ComputeCurvature(vtkSmartPointer<vtkPolyData> input)
         dist1 = 0.5 * minDistLeft; // 0.5: minor trust
         dist2 = 0.5 * minDistRight;
       }
-      this->DepthGap[scanLine][index].first = std::max(dist1, dist2);
-      this->DepthGap[scanLine][index].second = index;
+      this->DepthGap[scanLine][index] = std::max(dist1, dist2);
     }
-  }
-
-  if (this->DisplayMode)
-  {
-    this->DisplayCurvatureScores(input);
   }
 }
 
@@ -1593,8 +1496,8 @@ void vtkSlam::SetKeyPointsLabels(vtkSmartPointer<vtkPolyData> input)
     }
 
     // Sort the curvature score in a decreasing order
-    std::sort(this->DepthGap[scanLine].begin(), this->DepthGap[scanLine].end(), std::greater<std::pair<double, int> >());
-    std::sort(this->Angles[scanLine].begin(), this->Angles[scanLine].end(), std::greater<std::pair<double, int> >());
+    std::vector<size_t> sortedDepthGapIdx = sortIdx<double>(this->DepthGap[scanLine]);
+    std::vector<size_t> sortedAnglesIdx = sortIdx<double>(this->DepthGap[scanLine]);
 
     double depthGap = 0;
     double sinAngle = 0;
@@ -1617,8 +1520,8 @@ void vtkSlam::SetKeyPointsLabels(vtkSmartPointer<vtkPolyData> input)
     // Edges using depth gap
     for (int k = 0; k < Npts; ++k)
     {
-      depthGap = this->DepthGap[scanLine][k].first;
-      index = this->DepthGap[scanLine][k].second;
+      index = sortedDepthGapIdx[k];
+      depthGap = this->DepthGap[scanLine][index];
 
       // max keypoints reached
       if (nbrEdgePicked >= this->MaxEdgePerScanLine)
@@ -1658,8 +1561,8 @@ void vtkSlam::SetKeyPointsLabels(vtkSmartPointer<vtkPolyData> input)
     // Edges using angles
     for (int k = 0; k < Npts; ++k)
     {
-      sinAngle = this->Angles[scanLine][k].first;
-      index = this->Angles[scanLine][k].second;
+      index = sortedAnglesIdx[k];
+      sinAngle = this->Angles[scanLine][index];
 
       // max keypoints reached
       if (nbrEdgePicked >= this->MaxEdgePerScanLine)
@@ -1699,8 +1602,8 @@ void vtkSlam::SetKeyPointsLabels(vtkSmartPointer<vtkPolyData> input)
     // Planes
     for (int k = Npts - 1; k >= 0; --k)
     {
-      sinAngle = this->Angles[scanLine][k].first;
-      index = this->Angles[scanLine][k].second;
+      index = sortedAnglesIdx[k];
+      sinAngle = this->Angles[scanLine][index];
 
       // max keypoints reached
       if (nbrPlanarPicked >= this->MaxPlanarsPerScanLine)

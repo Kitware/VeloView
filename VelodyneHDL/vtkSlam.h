@@ -307,8 +307,8 @@ private:
 
   // Curvature and over differntial operations
   // scan by scan; point by point
-  std::vector<std::vector<std::pair<double, int> > > Angles;
-  std::vector<std::vector<std::pair<double, int> > > DepthGap;
+  std::vector<std::vector<double> > Angles;
+  std::vector<std::vector<double> > DepthGap;
   std::vector<std::vector<int> > IsPointValid;
   std::vector<std::vector<int> > Label;
 
@@ -559,12 +559,10 @@ private:
 
 
   // Display infos
+  template<typename T, typename Tvtk>
+  void AddVectorToPolydataPoints(const std::vector<std::vector<T>>& vec, const char* name, vtkPolyData* pd);
   void DisplayLaserIdMapping(vtkSmartPointer<vtkPolyData> input);
   void DisplayRelAdv(vtkSmartPointer<vtkPolyData> input);
-  void DisplayKeypointsResults(vtkSmartPointer<vtkPolyData> input);
-  void DisplayCurvatureScores(vtkSmartPointer<vtkPolyData> input);
-  void DisplayRollingGrid(vtkSmartPointer<vtkPolyData> input);
-  void DisplayBadCriteriaIndex(vtkSmartPointer<vtkPolyData> input);
 
   // Indicate if we are in display mode or not
   // Display mode will add arrays showing some
