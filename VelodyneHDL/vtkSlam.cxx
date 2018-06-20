@@ -207,9 +207,9 @@ public:
   RollingGrid(double posX, double posY, double posZ)
   {
     // should initialize using Tworld + size / 2
-    this->VoxelGridPosition[0] = posX;
-    this->VoxelGridPosition[1] = posY;
-    this->VoxelGridPosition[2] = posZ;
+    this->VoxelGridPosition[0] = static_cast<int>(posX);
+    this->VoxelGridPosition[1] = static_cast<int>(posY);
+    this->VoxelGridPosition[2] = static_cast<int>(posZ);;
 
     this->LeafVoxelFilterSize = 0.2;
   }
@@ -566,7 +566,31 @@ vtkInformationVector **inputVector, vtkInformationVector *outputVector)
   vtkPolyData *output3 = vtkPolyData::SafeDownCast(
     outInfo3->Get(vtkDataObject::DATA_OBJECT()));
 
-  // output trajectory
+  // output 0 - Current Frame
+  // add all debug information if displayMode == True
+  if (DisplayMode = true)
+  {
+    this->DisplayLaserIdMapping(this->vtkCurrentFrame);
+    this->DisplayRelAdv(this->vtkCurrentFrame);
+    AddVectorToPolydataPoints<double, vtkDoubleArray>(this->Angles, "angles_line", this->vtkCurrentFrame);
+    AddVectorToPolydataPoints<double, vtkDoubleArray>(this->DepthGap, "depth_gap", this->vtkCurrentFrame);
+    AddVectorToPolydataPoints<int, vtkIntArray>(this->IsPointValid, "is_point_valid", this->vtkCurrentFrame);
+    AddVectorToPolydataPoints<int, vtkIntArray>(this->Label, "keypoint_label", this->vtkCurrentFrame);
+  }
+  // get transform
+  vtkSmartPointer<vtkTransform> transform = vtkSmartPointer<vtkTransform>::New();
+  transform->Translate(Tworld[3], Tworld[4], Tworld[5]);
+  transform->RotateX(Rad2Deg(Tworld[0]));
+  transform->RotateY(Rad2Deg(Tworld[1]));
+  transform->RotateZ(Rad2Deg(Tworld[2]));
+  // create transform filter and transformt the current frame
+  vtkSmartPointer<vtkTransformPolyDataFilter> transformFilter = vtkSmartPointer<vtkTransformPolyDataFilter>::New();
+  transformFilter->SetInputData(this->vtkCurrentFrame);
+  transformFilter->SetTransform(transform);
+  transformFilter->Update();
+  output0->ShallowCopy(transformFilter->GetOutput());
+
+  // output 1 - Trajectory
   // create polyLine
   vtkSmartPointer<vtkPolyLine> polyLine = vtkSmartPointer<vtkPolyLine>::New();
   int NbPosition = Trajectory->GetNumberOfPoints();
@@ -575,31 +599,17 @@ vtkInformationVector **inputVector, vtkInformationVector *outputVector)
   {
     polyLine->GetPointIds()->SetId(i,i);
   }
-  // create cells to Trajectory
+  // create cells for Trajectory
   vtkSmartPointer<vtkCellArray> cells = vtkSmartPointer<vtkCellArray>::New();
   cells->InsertNextCell(polyLine);
   Trajectory->SetLines(cells);
   output1->ShallowCopy(this->Trajectory);
 
-  // output last frame processed with all debug information if displayMode == True
-  // transform
-  vtkSmartPointer<vtkTransform> transform = vtkSmartPointer<vtkTransform>::New();
-  transform->Translate(Tworld[3], Tworld[4], Tworld[5]);
-  transform->RotateX(Tworld[0] * 180 / vtkMath::Pi());
-  transform->RotateY(Tworld[1] * 180 / vtkMath::Pi());
-  transform->RotateZ(Tworld[2] * 180 / vtkMath::Pi());
-  // transform filter
-  vtkSmartPointer<vtkTransformPolyDataFilter> transformFilter = vtkSmartPointer<vtkTransformPolyDataFilter>::New();
-  transformFilter->SetInputData(this->vtkCurrentFrame);
-  transformFilter->SetTransform(transform);
-  transformFilter->Update();
-  output0->ShallowCopy(transformFilter->GetOutput());
-
-  // output EdgesPointsLocalMap
+  // output 2 - Edges Map
   vtkSmartPointer<vtkPolyData> EdgeMap = vtkPCLConversions::PolyDataFromPointCloud(this->EdgesPointsLocalMap->Get());
   output2->ShallowCopy(EdgeMap);
 
-  // output PlanarPointsLocalMap
+  // output 3 - Planar Points Map
   vtkSmartPointer<vtkPolyData> PlanarMap = vtkPCLConversions::PolyDataFromPointCloud(this->PlanarPointsLocalMap->Get());
   output3->ShallowCopy(PlanarMap);
 
@@ -611,7 +621,7 @@ int vtkSlam::RequestDataObject(vtkInformation*,
   vtkInformationVector* outputVector)
 {
 
-  //output 0 - Trajectory
+  // output 0 - Current Frame
   vtkInformation* outInfo0 = outputVector->GetInformationObject(0);
   vtkPolyData* output0 = vtkPolyData::SafeDownCast(
                                           outInfo0->Get( vtkDataObject::DATA_OBJECT() ) );
@@ -624,7 +634,7 @@ int vtkSlam::RequestDataObject(vtkInformation*,
                                     vtkDataObject::DATA_EXTENT_TYPE(), output0->GetExtentType() );
   }
 
-  //output 1 - TestB
+  // output 1 - Trajectory
   vtkInformation* outInfo1 = outputVector->GetInformationObject(1);
   vtkPolyData* output1 = vtkPolyData::SafeDownCast(
                                               outInfo1->Get( vtkDataObject::DATA_OBJECT() ) );
@@ -637,7 +647,7 @@ int vtkSlam::RequestDataObject(vtkInformation*,
                                     vtkDataObject::DATA_EXTENT_TYPE(), output1->GetExtentType() );
   }
 
-  //output 2 - KeypointMap
+  // output 2 - Edges Map
   vtkInformation* outInfo2 = outputVector->GetInformationObject(2);
   vtkPolyData* output2 = vtkPolyData::SafeDownCast(
                                               outInfo2->Get( vtkDataObject::DATA_OBJECT() ) );
@@ -650,7 +660,7 @@ int vtkSlam::RequestDataObject(vtkInformation*,
                                     vtkDataObject::DATA_EXTENT_TYPE(), output2->GetExtentType() );
   }
 
-  //output 3 - KeypointMap
+  // output 3 - Planar Points Map
   vtkInformation* outInfo3 = outputVector->GetInformationObject(3);
   vtkPolyData* output3 = vtkPolyData::SafeDownCast(
                                               outInfo3->Get( vtkDataObject::DATA_OBJECT() ) );
@@ -709,6 +719,8 @@ vtkSlam::vtkSlam()
 //-----------------------------------------------------------------------------
 vtkSlam::~vtkSlam()
 {
+  delete EdgesPointsLocalMap;
+  delete PlanarPointsLocalMap;
 }
 
 //-----------------------------------------------------------------------------
@@ -769,15 +781,15 @@ void vtkSlam::ResetAlgorithm()
 {
   this->DisplayMode = true; // switch to false to improve speed
   this->NeighborWidth = 3; // size indicated in Zhang paper
-  this->EgoMotionMaxIter = 15; // So that 5 icp will be made
-  this->MappingMaxIter = 15; // So that 5 icp will be made
-  this->MappingIcpFrequence = 5; // So that 5 icp will be made
-  this->EgoMotionIcpFrequence = 5; // So that 5 icp will be made
+  this->EgoMotionIcpFrequence = 5;
+  this->MappingIcpFrequence = 5;
+  this->EgoMotionMaxIter = 3 * EgoMotionIcpFrequence; // So that 3 icp will be made
+  this->MappingMaxIter = 3 * MappingIcpFrequence; // So that 3 icp will be made
   this->MinDistanceToSensor = 3.0;
   this->MaxEdgePerScanLine = 200;
   this->MaxPlanarsPerScanLine = 200;
-  this->EdgeSinAngleThreshold = 0.85; // 58 degrees
-  this->PlaneSinAngleThreshold = 0.5; // 30 degrees
+  this->EdgeSinAngleThreshold = 0.85; // 85 degrees
+  this->PlaneSinAngleThreshold = 0.5; // 50 degrees
   this->EdgeDepthGapThreshold = 0.02; // meters
 
   // Use dense planars point cloud for mapping
@@ -791,7 +803,7 @@ void vtkSlam::ResetAlgorithm()
   this->EgoMotionLineDistanceNbrNeighbors = 5;
   this->EgoMotionMinimumLineNeighborRejection = 2;
   this->EgoMotionLineDistancefactor = 5.0;
-  this->EgoMotionMaxLineDistance = 0.10; // 4 cm
+  this->EgoMotionMaxLineDistance = 0.10; // 10 cm
 
   // planes
   this->EgoMotionPlaneDistanceNbrNeighbors = 5;
@@ -803,9 +815,9 @@ void vtkSlam::ResetAlgorithm()
   // edges
   this->MappingLineDistanceNbrNeighbors = 15;
   this->MappingMinimumLineNeighborRejection = 5;
-  this->MappingLineMaxDistInlier = 0.3; // 20 cm
+  this->MappingLineMaxDistInlier = 0.3; // 30 cm
   this->MappingLineDistancefactor = 5.0;
-  this->MappingMaxLineDistance = 0.2; // 10 cm
+  this->MappingMaxLineDistance = 0.2; // 20 cm
 
   // planes
   this->MappingPlaneDistanceNbrNeighbors = 5;
@@ -820,7 +832,7 @@ void vtkSlam::ResetAlgorithm()
   this->MappingIterMade = 0;
   this->MappingIterMade = 0;
   this->NLasers = 0;
-  this->AngleResolution = 0.4 / 180.0 * vtkMath::Pi();  // azimutal resolution of the VLP-16. We add an extra 20 %
+  this->AngleResolution = Deg2Rad(0.4);  // azimutal resolution of the VLP-16. We add an extra 20 %
   this->LaserIdMapping.clear();
   this->LaserIdMapping.resize(0);
   this->FromVTKtoPCLMapping.clear();
@@ -837,22 +849,11 @@ void vtkSlam::ResetAlgorithm()
   this->Label.resize(this->NLasers);
   this->Tworld << 0, 0, 0, 0, 0, 0;
 
-  this->I3 << 1, 0, 0,
-              0, 1, 0,
-              0, 0, 1;
+  this->I3 = Eigen::Matrix3d::Identity();
+  this->I6 = Eigen::Matrix<double, 6, 6>::Identity();
 
-  this->I6 << 1, 0, 0, 0, 0, 0,
-              0, 1, 0, 0, 0, 0,
-              0, 0, 1, 0, 0, 0,
-              0, 0, 0, 1, 0, 0,
-              0, 0, 0, 0, 1, 0,
-              0, 0, 0, 0, 0, 1;
-
-//  delete EdgesPointsLocalMap;
-//  delete PlanarPointsLocalMap;
   EdgesPointsLocalMap = new RollingGrid();
   PlanarPointsLocalMap = new RollingGrid();
-
 
   EdgesPointsLocalMap->Set_VoxelSize(10);
   PlanarPointsLocalMap->Set_VoxelSize(10);
@@ -3115,6 +3116,7 @@ void vtkSlam::UpdateTworldUsingTrelative()
   return this->EdgesPointsLocalMap->Get_VoxelSize();
 }
 
+//-----------------------------------------------------------------------------
 void vtkSlam::Set_RollingGrid_VoxelSize(const unsigned int size)
 {
   this->EdgesPointsLocalMap->Set_VoxelSize(size);
@@ -3127,6 +3129,7 @@ void vtkSlam::Get_RollingGrid_Grid_NbVoxel(double nbVoxel[3]) const
   this->EdgesPointsLocalMap->Get_Grid_NbVoxel(nbVoxel);
 }
 
+//-----------------------------------------------------------------------------
 void vtkSlam::Set_RollingGrid_Grid_NbVoxel(const double nbVoxel[3])
 {
   this->EdgesPointsLocalMap->Set_Grid_NbVoxel(nbVoxel);
@@ -3139,6 +3142,7 @@ void vtkSlam::Get_RollingGrid_PointCloud_NbVoxel(double nbVoxel[3]) const
   this->EdgesPointsLocalMap->Get_PointCloud_NbVoxel(nbVoxel);
 }
 
+//-----------------------------------------------------------------------------
 void vtkSlam::Set_RollingGrid_PointCloud_NbVoxel(const double nbVoxel[3])
 {
   this->EdgesPointsLocalMap->Set_PointCloud_NbVoxel(nbVoxel);
