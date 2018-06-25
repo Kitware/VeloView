@@ -93,6 +93,7 @@ if(PARAVIEW_BUILD_QT_GUI)
     vtkLASFileWriter.cxx
     vtkPacketFileWriter.cxx
     vtkRollingDataAccumulator.cxx
+    vtkSphericalMap.cxx
     vvPacketSender.cxx
     )
 
@@ -128,6 +129,7 @@ endif()
 
 list(APPEND servermanager_sources
   vtkApplanixPositionReader.cxx
+  vtkMotionDetector.cxx
   vtkProcessingSample.cxx
   vtkVelodyneHDLGridSource.cxx
   vtkVelodyneHDLReader.cxx
@@ -137,6 +139,7 @@ list(APPEND servermanager_sources
 
 list(APPEND servermanager_xml
   xml/ApplanixPositionReader.xml
+  xml/MotionDetector.xml
   xml/ProcessingSample.xml
   xml/VelodyneHDLGridSource.xml
   xml/VelodyneHDLReader.xml
