@@ -199,7 +199,7 @@ void vtkVeloViewQuaternionInterpolator::InterpolateQuaternion(double t,
 
   else if ( t >= this->QuaternionList->back().Time )
     {
-    TimedQuaternion &Q = this->QuaternionList->front();
+    TimedQuaternion &Q = this->QuaternionList->back();
     q = Q.Q;
     return;
     }
