@@ -371,7 +371,8 @@ void vtkVelodyneTransformInterpolator::InitializeInterpolation()
       this->ScaleInterpolator->SetInterpolationTypeToLinear();
       this->RotationInterpolator->SetInterpolationTypeToLinear();
     }
-    else if (this->InterpolationType == INTERPOLATION_TYPE_NEAREST)
+    else if (this->InterpolationType == INTERPOLATION_TYPE_NEAREST
+             || this->InterpolationType == INTERPOLATION_TYPE_NEAREST_LOW_BOUNDED)
     {
       this->PositionInterpolator->SetInterpolationTypeToLinear();
       this->ScaleInterpolator->SetInterpolationTypeToLinear();
@@ -458,7 +459,8 @@ void vtkVelodyneTransformInterpolator::InterpolateTransform(double t, vtkTransfo
     return;
   }
 
-  if (this->InterpolationType == INTERPOLATION_TYPE_NEAREST)
+  if (this->InterpolationType == INTERPOLATION_TYPE_NEAREST
+      || this->InterpolationType == INTERPOLATION_TYPE_NEAREST_LOW_BOUNDED)
   {
     this->InterpolateTransformNearest(t, xform);
     return;
@@ -531,12 +533,29 @@ void vtkVelodyneTransformInterpolator::InterpolateTransformNearest(double t,
   std::vector<vtkQTransform>::iterator lowerBound;
   lowerBound = std::lower_bound(this->TransformVector.begin(), this->TransformVector.end(), transform, comparatorTimeTransform);
 
-  // Are we before the first node? If not take the
-  // previous transform to have a low bounded nearest
-  // interpolator
-  if (!(lowerBound == this->TransformVector.begin()))
+  if (this->InterpolationType == INTERPOLATION_TYPE_NEAREST_LOW_BOUNDED)
   {
-    lowerBound--;
+    // Are we before the first node? If not take the
+    // previous transform to have a low bounded nearest
+    // interpolator.
+    if (!(lowerBound == this->TransformVector.begin()))
+    {
+      lowerBound--;
+    }
+  }
+  else // i.e. this->InterpolationType == INTERPOLATION_TYPE_NEAREST
+  {
+    // Unless the lowerBound is the first one, we have to compare it with
+    // its predecessor to keep the closest in time to t.
+
+    // Because t has already been clamped,
+    // lowerBound->Time - t should be positive
+    // but adding std::abs makes the code more robust.
+    if (lowerBound != this->TransformVector.begin() &&
+        t - (lowerBound - 1)->Time <= std::abs(lowerBound->Time - t))
+    {
+      lowerBound--;
+    }
   }
 
   // Get the transform
@@ -565,9 +584,21 @@ void vtkVelodyneTransformInterpolator::PrintSelf(ostream& os, vtkIndent indent)
   {
     os << "Spline\n";
   }
-  else // if ( this->InterpolationType == INTERPOLATION_TYPE_MANUAL )
+  else if (this->InterpolationType == INTERPOLATION_TYPE_MANUAL)
   {
     os << "Manual\n";
+  }
+  else if (this->InterpolationType == INTERPOLATION_TYPE_NEAREST)
+  {
+    os << "Nearest\n";
+  }
+  else if (this->InterpolationType == INTERPOLATION_TYPE_NEAREST_LOW_BOUNDED)
+  {
+    os << "Nearest low bounded\n";
+  }
+  else
+  {
+    os << "Unknown\n";
   }
 
   os << indent << "Position Interpolator: ";

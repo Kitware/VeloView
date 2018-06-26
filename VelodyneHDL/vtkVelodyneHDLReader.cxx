@@ -787,7 +787,7 @@ void vtkVelodyneHDLReader::CreateNearestInterpolator()
 {
   // Initialize the interpolator
   this->Internal->Interp = vtkSmartPointer<vtkVelodyneTransformInterpolator>::New();
-  this->Internal->Interp->SetInterpolationTypeToNearest();
+  this->Internal->Interp->SetInterpolationTypeToNearestLowBounded();
   this->Internal->ApplyTransform = 0;
 }
 

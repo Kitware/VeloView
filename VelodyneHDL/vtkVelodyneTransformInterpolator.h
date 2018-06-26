@@ -117,7 +117,8 @@ public:
     INTERPOLATION_TYPE_LINEAR = 0,
     INTERPOLATION_TYPE_SPLINE = 1,
     INTERPOLATION_TYPE_MANUAL = 2,
-    INTERPOLATION_TYPE_NEAREST = 3
+    INTERPOLATION_TYPE_NEAREST = 3,
+    INTERPOLATION_TYPE_NEAREST_LOW_BOUNDED = 4
   };
   // ETX
 
@@ -135,6 +136,7 @@ public:
   void SetInterpolationTypeToSpline() { this->SetInterpolationType(INTERPOLATION_TYPE_SPLINE); }
   void SetInterpolationTypeToManual() { this->SetInterpolationType(INTERPOLATION_TYPE_MANUAL); }
   void SetInterpolationTypeToNearest(){ this->SetInterpolationType(INTERPOLATION_TYPE_NEAREST); }
+  void SetInterpolationTypeToNearestLowBounded(){ this->SetInterpolationType(INTERPOLATION_TYPE_NEAREST_LOW_BOUNDED); }
 
   // Description:
   // Set/Get the tuple interpolator used to interpolate the position portion
