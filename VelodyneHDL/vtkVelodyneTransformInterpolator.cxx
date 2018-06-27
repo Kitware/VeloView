@@ -511,18 +511,6 @@ void vtkVelodyneTransformInterpolator::InterpolateTransformNearest(double t,
     return;
   }
 
-  // Evaluate the interpolators
-  if (t < this->TransformList->front().Time)
-  {
-    t = this->TransformList->front().Time;
-  }
-
-  else if (t > this->TransformList->back().Time)
-  {
-    t = this->TransformList->back().Time;
-  }
-
-
   // vtkQTransform order relation based on the Time
   vtkQTransformComparator comparatorTimeTransform;
 
