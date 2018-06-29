@@ -14,14 +14,17 @@ from PythonQt.paraview import vvSlamConfigurationDialog
 slam = None
 currentFrame = None
 
-def configure(source):
+def configure():
     """Let the user configure a slam instance for a given source, which must already be open
      and return [start, stop] the intervall frames on which the slam should be launch
     """
+    # get data
+    source = applogic.getReader().GetClientSideObject()
+
     # execute the gui
     slamDialog = vvSlamConfigurationDialog(applogic.getMainWindow())
     if not slamDialog.exec_():
-        return
+        return -1, -1
 
     global slam
     # Instanciation of a new vtkSlamAlgorithm
@@ -43,14 +46,9 @@ def configure(source):
     # Set parameter selected by the user
 
     # mode
-    streamMode = False
     if slamDialog.frameMode == vvSlamConfigurationDialog.FRAME_RANGE:
         start = slamDialog.frameStart
         stop = slamDialog.frameStop
-    elif slamDialog.frameMode == vvSlamConfigurationDialog.CURRENT_FRAME:
-        start = applogic.app.scene.StartTime
-        stop = applogic.app.scene.EndTime
-        streamMode = True
     elif slamDialog.frameMode == vvSlamConfigurationDialog.ALL_FRAMES:
         start = applogic.app.scene.StartTime
         stop = applogic.app.scene.EndTime
@@ -98,9 +96,9 @@ def configure(source):
 
     return start, stop
 
-def DebugInitialize():
-    """ Debug function to run from the python shell and then run DebugNextFrame()
-    as many time as needed
+
+def stream():
+    """ launch the slam on the reader current output
     """
     # get data
     source = applogic.getReader().GetClientSideObject()
@@ -111,73 +109,30 @@ def DebugInitialize():
 
     source.Open()
 
-    # let the user configure a new slam instance
-    start, stop = configure(source)
-
-    smp.SetActiveSource(slam)
-
-
-    global currentFrame
-    currentFrame = start
-
-    # get the next current frame
-    polyData = source.GetFrame(currentFrame)
+    # get the current frame
+    polyData = source.GetOutput()#source.GetFrame(currentFrame)
     # compute the SLAM for the current frame
     slam.GetClientSideObject().AddFrame(polyData)
 
-    # close file
-    source.Close()
+    # get the transformation computed
+    Tworld = range(6)
+    slam.GetClientSideObject().GetWorldTransform(Tworld)
+    t = polyData.GetPointData().GetArray("adjustedtime").GetTuple1(0) * 1e-6
 
+    # convert in degree
+    rx = Tworld[0] * 180 / vtk.vtkMath.Pi()
+    ry = Tworld[1] * 180 / vtk.vtkMath.Pi()
+    rz = Tworld[2] * 180 / vtk.vtkMath.Pi()
+    tx = Tworld[3]
+    ty = Tworld[4]
+    tz = Tworld[5]
 
-def DebugNextFrame(numberOfFrames = 1):
-    """ Debug function to run from the python shell after DebugInitialize()
-    """
-    # get data
-    source = applogic.getReader().GetClientSideObject()
-
-    #If no data are available
-    if not source :
-        return
-
-    source.Open()
-
-    for i in range(numberOfFrames):
-        # increment currentFrame number
-        global currentFrame
-        currentFrame += 1
-        print currentFrame
-        # get the current frame
-        polyData = source.GetFrame(currentFrame)
-        # compute the SLAM for the current frame
-        slam.GetClientSideObject().AddFrame(polyData)
-
-        # get the transformation computed
-        Tworld = range(6)
-        slam.GetClientSideObject().GetWorldTransform(Tworld)
-        t = polyData.GetPointData().GetArray("adjustedtime").GetTuple1(0) * 1e-6
-
-        # convert in degree
-        rx = Tworld[0] * 180 / vtk.vtkMath.Pi()
-        ry = Tworld[1] * 180 / vtk.vtkMath.Pi()
-        rz = Tworld[2] * 180 / vtk.vtkMath.Pi()
-        # permute the axes
-        tx = Tworld[3]
-        ty = Tworld[4]
-        tz = Tworld[5]
-
-        # add the transform
-        source.AddTransform(rx, ry, rz, tx, ty, tz, t)
+    # add the transform
+    source.AddTransform(rx, ry, rz, tx, ty, tz, t)
 
     # update slam
     slam.GetClientSideObject().Update()
-    # TODO: find why the renderer doesn't take into account the new filter output!!!
-    smp.Hide(slam[0],applogic.app.mainView)
     smp.Show(slam[0],applogic.app.mainView)
-    smp.Hide(slam[1],applogic.app.mainView)
-    smp.Show(slam[1],applogic.app.mainView)
-    smp.Hide(slam[2],applogic.app.mainView)
-    smp.Show(slam[2],applogic.app.mainView)
-    smp.Hide(slam[3],applogic.app.mainView)
     smp.Render()
 
     # Enable to visualize the debug array
@@ -186,14 +141,15 @@ def DebugNextFrame(numberOfFrames = 1):
     # close file
     source.Close()
 
+    updateChartView()
+
 
 def launch():
     """ Launche the slam with a gui and save the result
     """
 
     # get data
-    source = applogic.getReader()
-    source = source.GetClientSideObject()
+    source = applogic.getReader().GetClientSideObject()
 
     #If no data are available
     if not source :
@@ -203,7 +159,11 @@ def launch():
     source.Open()
 
     # let the user configure a new slam instance
-    start, stop = configure(source)
+    start, stop = configure()
+
+    # check if the user press on cancel
+    if start ==-1:
+        return
 
     # instanciate the progress box
     progressDialog = QtGui.QProgressDialog("Computing slam algorithm...", "Abort Slam", start, start + (stop - start), None)
@@ -226,7 +186,6 @@ def launch():
         rx = Tworld[0] * 180 / vtk.vtkMath.Pi()
         ry = Tworld[1] * 180 / vtk.vtkMath.Pi()
         rz = Tworld[2] * 180 / vtk.vtkMath.Pi()
-        # permute the axes
         tx = Tworld[3]
         ty = Tworld[4]
         tz = Tworld[5]
@@ -280,16 +239,16 @@ def updateChartView():
     chartViews = applogic.getChartViewProxies()
 
     # Add Orientation from Slam
-    chartViews[0].LeftAxisTitle = "orientation (rad)"
-    chartViews[0].BottomAxisTitle = "GPS time (s)"
+    chartViews[1].LeftAxisTitle = "orientation (rad)"
+    chartViews[1].BottomAxisTitle = "GPS time (s)"
     mychart = smp.Show(source,chartViews[1])
     mychart.SeriesVisibility.SetData(['pitch', 'roll', 'yaw'])
     setDockTitle('dockSlam_PitchRollYaw', 'Sensor Angles')
     smp.Render()
 
     # Add Position from Slam
-    chartViews[1].LeftAxisTitle = "position (m)"
-    chartViews[1].BottomAxisTitle = "GPS time (s)"
+    chartViews[0].LeftAxisTitle = "position (m)"
+    chartViews[0].BottomAxisTitle = "GPS time (s)"
     mychart = smp.Show(source,chartViews[0])
     mychart.SeriesVisibility.SetData(['Points_X', 'Points_Y', 'Points_Z'])
     setDockTitle('dockSlam_XYZ', 'Sensor Position')

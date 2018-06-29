@@ -110,7 +110,6 @@ public:
   static vtkSlam *New();
   vtkTypeMacro(vtkSlam, vtkPolyDataAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent);
-  int CanReadFile(const char* fname);
 
   // Add a new frame to process to the slam algorithm
   // From this frame; keypoints will be computed and extracted
@@ -187,12 +186,6 @@ public:
 
   slamGetMacro(_Keypoint,MinDistanceToSensor, double)
   slamSetMacro(_Keypoint,MinDistanceToSensor, double)
-
-  slamGetMacro(_Keypoint,PlaneCurvatureThreshold, double)
-  slamSetMacro(_Keypoint,PlaneCurvatureThreshold, double)
-
-  slamGetMacro(_Keypoint,EdgeCurvatureThreshold, double)
-  slamSetMacro(_Keypoint,EdgeCurvatureThreshold, double)
 
   slamGetMacro(_Keypoint,EdgeSinAngleThreshold, double)
   slamSetMacro(_Keypoint,EdgeSinAngleThreshold, double)
@@ -314,11 +307,8 @@ private:
 
   // Curvature and over differntial operations
   // scan by scan; point by point
-  std::vector<std::vector<std::pair<double, int> > > Curvature;
-  std::vector<std::vector<double> > Gradient;
-  std::vector<std::vector<std::pair<double, int> > > SecondDiff;
-  std::vector<std::vector<std::pair<double, int> > > Angles;
-  std::vector<std::vector<std::pair<double, int> > > DepthGap;
+  std::vector<std::vector<double> > Angles;
+  std::vector<std::vector<double> > DepthGap;
   std::vector<std::vector<int> > IsPointValid;
   std::vector<std::vector<int> > Label;
 
@@ -344,8 +334,6 @@ private:
   unsigned int MaxPlanarsPerScanLine;
 
   // Sharpness threshold to select a point
-  double EdgeCurvatureThreshold;
-  double PlaneCurvatureThreshold;
   double EdgeSinAngleThreshold;
   double PlaneSinAngleThreshold;
   double EdgeDepthGapThreshold;
@@ -571,23 +559,16 @@ private:
 
 
   // Display infos
+  template<typename T, typename Tvtk>
+  void AddVectorToPolydataPoints(const std::vector<std::vector<T>>& vec, const char* name, vtkPolyData* pd);
   void DisplayLaserIdMapping(vtkSmartPointer<vtkPolyData> input);
   void DisplayRelAdv(vtkSmartPointer<vtkPolyData> input);
-  void DisplayKeypointsResults(vtkSmartPointer<vtkPolyData> input);
-  void DisplayCurvatureScores(vtkSmartPointer<vtkPolyData> input);
-  void DisplayRollingGrid(vtkSmartPointer<vtkPolyData> input);
-  void DisplayBadCriteriaIndex(vtkSmartPointer<vtkPolyData> input);
 
   // Indicate if we are in display mode or not
   // Display mode will add arrays showing some
   // results of the slam algorithm such as
   // the keypoints extracted, curvature etc
   bool DisplayMode;
-  
-  // Time processing information
-  void InitTime();
-  void StopTimeAndDisplay(std::string functionName);
-  std::clock_t Timer1, Timer2;
 
   // Identity matrix
   Eigen::Matrix<double, 3, 3> I3;

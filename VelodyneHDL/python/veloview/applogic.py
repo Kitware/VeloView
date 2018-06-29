@@ -80,9 +80,6 @@ class AppLogic(object):
         self.posreaderSave = None
 
         self.fps = [0,0]
-        
-        self.slam = None
-        self.slamStream = None
 
         self.text = None
 
@@ -647,6 +644,8 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
     app.actions['actionSelectDualReturn'].enabled = True
     app.actions['actionSelectDualReturn2'].enabled = True
     app.actions['actionLaunchSlam'].enabled = True
+    app.actions['actionStreamSlam'].setChecked(False)
+    app.actions['actionStreamSlam'].enabled = True
     app.actions['actionDualReturnModeDual'].enabled = True
     app.actions['actionDualReturnDistanceNear'].enabled = True
     app.actions['actionDualReturnDistanceFar'].enabled = True
@@ -1207,6 +1206,7 @@ def close():
     app.actions['actionSelectDualReturn'].enabled = False
     app.actions['actionSelectDualReturn2'].enabled = False
     app.actions['actionLaunchSlam'].enabled = False
+    app.actions['actionStreamSlam'].enabled = False
     app.actions['actionDualReturnModeDual'].enabled = False
     app.actions['actionDualReturnDistanceNear'].enabled = False
     app.actions['actionDualReturnDistanceFar'].enabled = False
@@ -1437,28 +1437,8 @@ def onPlayTimer():
         # using the rpm of the current frame
         if getReader():
             if app.actions['actionStreamSlam'].isChecked():
-                source = getReader()
                 setTransformMode(0)
-                polyData = source.GetClientSideObject().GetOutput()
-                # compute the SLAM for the current frame
-                app.slamStream.GetClientSideObject().AddFrame(polyData)
-
-                # get the transformation computed
-                Tworld = range(6)
-                app.slamStream.GetClientSideObject().GetWorldTransform(Tworld)
-                t = polyData.GetPointData().GetArray("adjustedtime").GetTuple1(0) * 1e-6
-
-                # convert in degree
-                rx = Tworld[0] * 180 / vtk.vtkMath.Pi()
-                ry = Tworld[1] * 180 / vtk.vtkMath.Pi()
-                rz = Tworld[2] * 180 / vtk.vtkMath.Pi()
-                # permute the axes
-                tx = Tworld[3]
-                ty = Tworld[4]
-                tz = Tworld[5]
-
-                # add the transform
-                source.GetClientSideObject().AddTransform(rx, ry, rz, tx, ty, tz, t)
+                slam.stream()
                 setTransformMode(1)
 
             # Get the computed rpm of the current frame
@@ -1898,6 +1878,7 @@ def start():
     disableSaveActions()
     app.actions['actionSelectDualReturn'].setEnabled(False)
     app.actions['actionLaunchSlam'].setEnabled(False)
+    app.actions['actionStreamSlam'].enabled = False
     app.actions['actionMeasure'].setEnabled(view.CameraParallelProjection)
     setupStatusBar()
     setupTimeSliderWidget()
@@ -2242,7 +2223,12 @@ def toggleLaunchSlam():
     slam.updateChartView()
 
 def toggleLaunchStreamSlam():
-    app.slamStream = slam.launchStreamSlam()
+    checked = app.actions['actionStreamSlam'].isChecked()
+    if checked:
+        slam.configure()
+        smp.Hide(getReader())
+    else:
+        smp.Show(getReader())
 
 def toggleLoadTransform():
     fileName = getOpenFileName('Load Transforms', 'csv')
