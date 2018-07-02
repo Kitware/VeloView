@@ -24,6 +24,7 @@
 #include <pqApplicationCore.h>
 #include <pqDataRepresentation.h>
 #include <pqPVApplicationCore.h>
+#include <pqPersistentMainWindowStateBehavior.h>
 #include <pqPipelineSource.h>
 #include <pqPythonDialog.h>
 #include <pqPythonManager.h>
@@ -48,6 +49,8 @@
 #include <QFileInfo>
 #include <QLabel>
 #include <QMainWindow>
+#include <QMessageBox>
+#include <QProcess>
 #include <QProgressDialog>
 #include <QTimer>
 
@@ -129,6 +132,36 @@ void pqVelodyneManager::pythonStartup()
   pqSettings* const settings = pqApplicationCore::instance()->settings();
   const QVariant& gridVisible =
     settings->value("VelodyneHDLPlugin/MeasurementGrid/Visibility", true);
+
+  // Save the current main window state as its original state. This happens in
+  // two cases: The first time launching VeloView or when launching VeloView
+  // with older/wrong settings which were cleared right before.
+  bool shouldSave = true;
+
+  QStringList keys = settings->allKeys();
+  for (int keyIndex = 0; keyIndex < keys.size(); ++keyIndex)
+  {
+    if (keys[keyIndex].contains("OriginalMainWindow"))
+    {
+      shouldSave = false;
+      break;
+    }
+  }
+
+  if (shouldSave)
+  {
+    std::cout << "First time launching VeloView, "
+                 "saving current state as original state..."
+              << std::endl;
+
+    QMainWindow* mainWindow = qobject_cast<QMainWindow*>(getMainWindow());
+
+    settings->saveState(*mainWindow, "OriginalMainWindow");
+
+    // Saving an OriginalMainWondow state means that  wasn't created beforehand.
+    new pqPersistentMainWindowStateBehavior(mainWindow);
+  }
+
   this->onMeasurementGrid(gridVisible.toBool());
 
   bool showDialogAtStartup = false;
@@ -161,8 +194,34 @@ void pqVelodyneManager::onEnableCrashAnalysis(bool crashAnalysisEnabled)
 //-----------------------------------------------------------------------------
 void pqVelodyneManager::onResetCalibrationFile()
 {
-  pqSettings* const Settings = pqApplicationCore::instance()->settings();
-  Settings->clear();
+  QMessageBox messageBox;
+  messageBox.setIcon(QMessageBox::Warning);
+  messageBox.setText(
+    "This action will reset VeloView settings. "
+    "Some settings will need VeloView to restart to be completly reset."
+    " Every unsaved change will be lost. Are you sure you want to reset VeloView settings?");
+  messageBox.setStandardButtons(QMessageBox::Cancel | QMessageBox::Ok);
+
+  if (messageBox.exec() == QMessageBox::Ok)
+  {
+    pqApplicationCore* const app = pqApplicationCore::instance();
+    pqSettings* const settings = app->settings();
+    QMainWindow* const mainWindow = qobject_cast<QMainWindow*>(getMainWindow());
+
+    // Restore the original main window state before clearing settings, as clearing
+    // settings doesn't update the UI.
+    settings->restoreState("OriginalMainWindow", *mainWindow);
+
+    settings->clear();
+
+    // Resave the current main window state as the original main window state in
+    // the settings
+    settings->saveState(*mainWindow, "OriginalMainWindow");
+
+    // Quit the current VeloView instance and restart a new one.
+    qApp->quit();
+    QProcess::startDetached(qApp->arguments()[0]);
+  }
 }
 
 //-----------------------------------------------------------------------------

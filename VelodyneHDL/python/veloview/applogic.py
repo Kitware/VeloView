@@ -2513,6 +2513,12 @@ def setupActions():
     displayWidget.connect('arraySelectionChanged ()',adjustScalarBarRangeLabelFormat)
     app.actions['actionScalarBarVisibility'].connect('triggered()',adjustScalarBarRangeLabelFormat)
 
+    app.MainToolbar = getMainWindow().findChild('QToolBar','toolBar')
+    app.ColorToolbar = getMainWindow().findChild('QToolBar','colorToolBar')
+    app.PlaybackToolbar = timeToolBar
+    app.ViewToolbar = getMainWindow().findChild('QToolBar','viewSettings')
+    app.GeolocationToolbar = getMainWindow().findChild('QToolBar','geolocationToolbar')
+
 
 def showRPM():
 

@@ -135,9 +135,20 @@
     <addaction name="actionVeloViewDeveloperGuide"/>
     <addaction name="actionResetConfigurationFile"/>
    </widget>
+   <widget class="QMenu" name="menuToolbar">
+    <property name="title">
+     <string>Toolbar</string>
+    </property>
+    <addaction name="actionBasic_Controls"/>
+    <addaction name="actionColor_Controls"/>
+    <addaction name="actionView_Controls"/>
+    <addaction name="actionPlayback_Controls"/>
+    <addaction name="actionGeolocation_Controls"/>
+   </widget>
    <addaction name="menu_File"/>
    <addaction name="menuTools"/>
    <addaction name="menuHelp"/>
+   <addaction name="menuToolbar"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <widget class="QToolBar" name="toolBar">
@@ -971,6 +982,61 @@
    </property>
    <property name="text">
     <string>Ignore empty frames</string>
+   </property>
+  </action>
+  <action name="actionBasic_Controls">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Basic Controls</string>
+   </property>
+  </action>
+  <action name="actionColor_Controls">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Color Controls</string>
+   </property>
+  </action>
+  <action name="actionView_Controls">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>View Controls</string>
+   </property>
+  </action>
+  <action name="actionPlayback_Controls">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Playback Controls</string>
+   </property>
+  </action>
+  <action name="actionGeolocation_Controls">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Geolocation Controls</string>
    </property>
   </action>
  </widget>
