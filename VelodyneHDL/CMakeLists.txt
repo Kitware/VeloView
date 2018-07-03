@@ -2,6 +2,8 @@ include(../branding.cmake)
 project(VelodyneHDLPlugin)
 cmake_minimum_required(VERSION 2.8)
 
+message("Until the 'Speedup interpolator' merge request is integrated to VTK, we provide the patch")
+
 if(ParaView_SOURCE_DIR)
 
   include_directories(${VTK_INCLUDE_DIRS})
@@ -97,6 +99,8 @@ if(PARAVIEW_BUILD_QT_GUI)
     vtkWrappedTupleInterpolator.cxx
     )
 
+  # Until the 'Speedup interpolator' merge request is
+  # integrated to VTK, we provide the patch
   set(non_vtk_sources
     vtkPCLRansacModel.cxx
     vtkLASFileWriter.cxx
@@ -105,9 +109,9 @@ if(PARAVIEW_BUILD_QT_GUI)
     vvPacketSender.cxx
     vtkSlam.cxx
     vtkSensorTransformFusion.cxx
-    ../vtkPatchVeloView/vtkVeloViewPiecewiseFunction.cxx
-    ../vtkPatchVeloView/vtkVeloViewQuaternionInterpolator.cxx
-    ../vtkPatchVeloView/vtkVeloViewTupleInterpolator.cxx
+    vtkPatchVeloView/vtkVeloViewPiecewiseFunction.cxx
+    vtkPatchVeloView/vtkVeloViewQuaternionInterpolator.cxx
+    vtkPatchVeloView/vtkVeloViewTupleInterpolator.cxx
     )
 
   QT4_WRAP_CPP(moc_srcs ${MOC_HEADERS})

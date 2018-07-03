@@ -31,6 +31,11 @@ private:
   class pqInternals;
   pqInternals* Internals;
   friend class pqInternals;
+private slots:
+  void switchToolBarVisibility();
+  void UpdateToolBarMenu();
+  void onSwitchPipelineBrowserVisibility();
+  void onSwitchPropertiesPanelVisibility();
 };
 
 #endif

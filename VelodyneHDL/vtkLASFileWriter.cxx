@@ -63,9 +63,9 @@ Eigen::Vector3d ConvertGcs(Eigen::Vector3d p, projPJ inProj, projPJ outProj)
   //std::cout << "position out : [" << p[0] << ";" << p[1] << ";" << p[2] << "]" << std::endl << std::endl;
 
   if (last_errno != 0)
-    {
-      vtkGenericWarningMacro("Error : CRS conversion failed with error: " << last_errno);
-    }
+  {
+    vtkGenericWarningMacro("Error : CRS conversion failed with error: " << last_errno);
+  }
 
   if (pj_is_latlong(outProj))
   {
@@ -189,144 +189,9 @@ vtkLASFileWriter::vtkLASFileWriter(const char* filename)
 
   this->Internal->Stream.open(filename, std::ios::out | std::ios::trunc | std::ios::binary);
 
-  this->Internal->header.SetSoftwareId("VeloView");
+  this->Internal->header.SetSoftwareId(SOFTWARE_NAME);
   this->Internal->header.SetDataFormatId(liblas::ePointFormat1);
   this->Internal->header.SetScale(1e-3, 1e-3, 1e-3);
-}
-
-//-----------------------------------------------------------------------------
-vtkLASFileWriter::vtkLASFileWriter(const char* filename, int gcsForHeaderIfNoConversions, double easting,
-                double northing, double height, int conversionIn,
-                int conversionOut, double neTol, double hTol,
-                int utmZone, bool isLatLon)
-  : Internal(new vtkInternal)
-{
-  this->Internal->MinTime = -std::numeric_limits<double>::infinity();
-  this->Internal->MaxTime = +std::numeric_limits<double>::infinity();
-
-#ifdef PJ_VERSION // 4.8 or later
-  this->Internal->InProj = NULL;
-  this->Internal->OutProj = NULL;
-#else
-  this->Internal->Proj = 0;
-#endif
-  this->Internal->OutGcs = -1;
-
-  this->Internal->npoints = 0;
-
-  for(int i = 0; i < 3; ++i)
-    {
-    this->Internal->MaxPt[i] = -std::numeric_limits<double>::max();
-    this->Internal->MinPt[i] = std::numeric_limits<double>::max();
-    }
-
-  this->Internal->Stream.open(
-    filename, std::ios::out | std::ios::trunc | std::ios::binary);
-
-  this->Internal->header.SetSoftwareId("VeloView");
-  this->Internal->header.SetDataFormatId(liblas::ePointFormat1);
-  this->Internal->header.SetScale(neTol, neTol, hTol);
-
-  //------------------GEO CONVERSION-----------------------
-#ifdef PJ_VERSION // 4.8 or later
-
-    // MasterMind
-    std::stringstream utmparamsIn;
-    utmparamsIn << "+proj=utm ";
-    std::stringstream zone;
-    zone << "+zone=" << utmZone;
-    std::string UTMString = zone.str();
-    utmparamsIn << UTMString << " ";
-    utmparamsIn << "+datum=WGS84 ";
-    utmparamsIn << "+units=m ";
-    utmparamsIn << "+no_defs ";
-    this->Internal->InProj = pj_init_plus(utmparamsIn.str().c_str());
-    std::cout << "init In : " << utmparamsIn.str() << std::endl;
-    if (isLatLon)
-    {
-      std::stringstream utmparamsOut;
-      utmparamsOut << "+proj=longlat ";
-      utmparamsOut << "+ellps=WGS84 ";
-      utmparamsOut << "+datum=WGS84 ";
-      utmparamsOut << "+no_defs ";
-      this->Internal->OutProj = pj_init_plus(utmparamsOut.str().c_str());
-      std::cout << "init Out : " << utmparamsOut.str() << std::endl;
-    }
-    else
-    {
-      std::stringstream utmparamsOut;
-      utmparamsOut << "+proj=utm ";
-      std::stringstream zone;
-      zone << "+zone=" << utmZone;
-      std::string UTMString = zone.str();
-      utmparamsOut << UTMString << " ";
-      utmparamsOut << "+ellps=WGS84 ";
-      utmparamsOut << "+datum=WGS84 ";
-      utmparamsOut << "+no_defs ";
-      this->Internal->OutProj = pj_init_plus(utmparamsOut.str().c_str());
-    }
-
-    std::cout << "InProj :  created : " << this->Internal->InProj << std::endl;
-    std::cout << "OutProj created : " << this->Internal->OutProj << std::endl;
-    if (this->Internal->InProj)
-      std::cout << "inProj datum_type : [" << this->Internal->InProj->datum_type << "]" << std::endl;
-    if (this->Internal->OutProj)
-      std::cout << "outProj datum_type : [" << this->Internal->OutProj->datum_type << "]" << std::endl;
-#else
-  // The PROJ 4.7 API makes it near impossible to do generic transforms, hence
-  // InvertProj (see also comments there) is full of assumptions. Assert some
-  // of those assumptions here.
-  assert((in > 32600 && in < 32661) || (in > 32700 && in < 32761));
-  assert(out == 4326);
-
-  proj_free(this->Internal->Proj);
-  this->Internal->Proj = CreateProj(in % 100, in > 32700);
-#endif
-
-  this->Internal->OutGcs = conversionOut;
-
-  // The header should not be changed once the writer
-  // is created. it is a bug of the liblas library
-  //------------------ORIGIN-----------------------
-  Eigen::Vector3d origin(northing, easting, height);
-  this->Internal->Origin = origin;
-
-  // Convert offset to output GCS, if a geoconversion is set up
-#ifdef PJ_VERSION // 4.8 or later
-  if (this->Internal->OutProj)
-    {
-    origin =
-      ConvertGcs(origin, this->Internal->InProj, this->Internal->OutProj);
-
-    gcsForHeaderIfNoConversions = this->Internal->OutGcs;
-    }
-#else
-  if (this->Internal->Proj)
-    {
-    origin = InvertProj(origin, this->Internal->Proj);
-    gcsForHeaderIfNoConversions = this->Internal->OutGcs;
-    }
-#endif
-
-  // Update header
-  this->Internal->header.SetOffset(origin[0], origin[1], origin[2]);
-  try
-    {
-    liblas::SpatialReference srs;
-    std::ostringstream ss;
-    ss << "EPSG:" << gcsForHeaderIfNoConversions;
-    srs.SetFromUserInput(ss.str());
-    std::cout << srs << std::endl;
-    this->Internal->header.SetSRS(srs);
-    }
-  catch (std::logic_error)
-    {
-    std::cerr << "failed to set SRS (logic)" << std::endl;
-    }
-  catch (std::runtime_error)
-    {
-    std::cerr << "failed to set SRS" << std::endl;
-    }
 }
 
 //-----------------------------------------------------------------------------
@@ -360,10 +225,11 @@ void vtkLASFileWriter::SetOrigin(int gcs, double easting, double northing, doubl
     return;
   }
   // Set internal UTM offset
-  Eigen::Vector3d origin(easting, northing, height);
+  Eigen::Vector3d origin(northing, easting, height);
+
   this->Internal->Origin = origin;
 
-// Convert offset to output GCS, if a geoconversion is set up
+  // Convert offset to output GCS, if a geoconversion is set up
 #ifdef PJ_VERSION // 4.8 or later
   if (this->Internal->OutProj)
   {
@@ -387,7 +253,6 @@ void vtkLASFileWriter::SetOrigin(int gcs, double easting, double northing, doubl
     std::ostringstream ss;
     ss << "EPSG:" << gcs;
     srs.SetFromUserInput(ss.str());
-
     this->Internal->header.SetSRS(srs);
   }
   catch (std::logic_error)
@@ -409,6 +274,67 @@ void vtkLASFileWriter::SetGeoConversion(int in, int out)
 
   this->Internal->InProj = CreateProj(in);
   this->Internal->OutProj = CreateProj(out);
+#else
+  // The PROJ 4.7 API makes it near impossible to do generic transforms, hence
+  // InvertProj (see also comments there) is full of assumptions. Assert some
+  // of those assumptions here.
+  assert((in > 32600 && in < 32661) || (in > 32700 && in < 32761));
+  assert(out == 4326);
+
+  proj_free(this->Internal->Proj);
+  this->Internal->Proj = CreateProj(in % 100, in > 32700);
+#endif
+
+  this->Internal->OutGcs = out;
+}
+
+//-----------------------------------------------------------------------------
+void vtkLASFileWriter::SetGeoConversion(int in, int out, int utmZone, bool isLatLon)
+{
+#ifdef PJ_VERSION // 4.8 or later
+
+  std::stringstream utmparamsIn;
+  utmparamsIn << "+proj=utm ";
+  std::stringstream zone;
+  zone << "+zone=" << utmZone;
+  std::string UTMString = zone.str();
+  utmparamsIn << UTMString << " ";
+  utmparamsIn << "+datum=WGS84 ";
+  utmparamsIn << "+units=m ";
+  utmparamsIn << "+no_defs ";
+  this->Internal->InProj = pj_init_plus(utmparamsIn.str().c_str());
+  std::cout << "init In : " << utmparamsIn.str() << std::endl;
+
+  if (isLatLon)
+  {
+    std::stringstream utmparamsOut;
+    utmparamsOut << "+proj=longlat ";
+    utmparamsOut << "+ellps=WGS84 ";
+    utmparamsOut << "+datum=WGS84 ";
+    utmparamsOut << "+no_defs ";
+    this->Internal->OutProj = pj_init_plus(utmparamsOut.str().c_str());
+    std::cout << "init Out : " << utmparamsOut.str() << std::endl;
+  }
+  else
+  {
+    std::stringstream utmparamsOut;
+    utmparamsOut << "+proj=utm ";
+    std::stringstream zone;
+    zone << "+zone=" << utmZone;
+    std::string UTMString = zone.str();
+    utmparamsOut << UTMString << " ";
+    utmparamsOut << "+ellps=WGS84 ";
+    utmparamsOut << "+datum=WGS84 ";
+    utmparamsOut << "+no_defs ";
+    this->Internal->OutProj = pj_init_plus(utmparamsOut.str().c_str());
+  }
+
+  std::cout << "InProj :  created : " << this->Internal->InProj << std::endl;
+  std::cout << "OutProj created : " << this->Internal->OutProj << std::endl;
+  if (this->Internal->InProj)
+    std::cout << "inProj datum_type : [" << this->Internal->InProj->datum_type << "]" << std::endl;
+  if (this->Internal->OutProj)
+    std::cout << "outProj datum_type : [" << this->Internal->OutProj->datum_type << "]" << std::endl;
 #else
   // The PROJ 4.7 API makes it near impossible to do generic transforms, hence
   // InvertProj (see also comments there) is full of assumptions. Assert some

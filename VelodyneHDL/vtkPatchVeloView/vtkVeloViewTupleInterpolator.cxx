@@ -182,11 +182,8 @@ void vtkVeloViewTupleInterpolator::InitializeInterpolation()
 //----------------------------------------------------------------------------
 void vtkVeloViewTupleInterpolator::SetInterpolationType(int type)
 {
-  if (type < 0 || type > 3)
-  {
-    type = 0;
-  }
-
+  type = (type < INTERPOLATION_TYPE_LINEAR ? INTERPOLATION_TYPE_LINEAR :
+         (type > INTERPOLATION_TYPE_SPLINE ? INTERPOLATION_TYPE_SPLINE : type));
   if ( type != this->InterpolationType )
     {
     this->Initialize(); //wipe out data
