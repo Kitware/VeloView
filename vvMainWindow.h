@@ -34,6 +34,8 @@ private:
 private slots:
   void switchToolBarVisibility();
   void UpdateToolBarMenu();
+  void onSwitchPipelineBrowserVisibility();
+  void onSwitchPropertiesPanelVisibility();
 };
 
 #endif

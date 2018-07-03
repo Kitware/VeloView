@@ -145,10 +145,18 @@
     <addaction name="actionPlayback_Controls"/>
     <addaction name="actionGeolocation_Controls"/>
    </widget>
+   <widget class="QMenu" name="menuview">
+    <property name="title">
+     <string>view</string>
+    </property>
+    <addaction name="actionShowPipelineBrowser"/>
+    <addaction name="actionShowPropertiesPanel"/>
+   </widget>
    <addaction name="menu_File"/>
    <addaction name="menuTools"/>
    <addaction name="menuHelp"/>
    <addaction name="menuToolbar"/>
+   <addaction name="menuview"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <widget class="QToolBar" name="toolBar">
@@ -243,6 +251,30 @@
     <number>2</number>
    </attribute>
    <widget class="pqColorMapEditor" name="colorMapEditorPanel"/>
+  </widget>
+  <widget class="QDockWidget" name="pipelineBrowserDock">
+   <property name="features">
+    <set>QDockWidget::DockWidgetFloatable|QDockWidget::DockWidgetMovable</set>
+   </property>
+   <property name="windowTitle">
+    <string>Pipilene Browser</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>2</number>
+   </attribute>
+   <widget class="pqPipelineBrowserWidget" name="dockWidgetContents"/>
+  </widget>
+  <widget class="QDockWidget" name="propertiesPanelDock">
+   <property name="features">
+    <set>QDockWidget::DockWidgetFloatable|QDockWidget::DockWidgetMovable</set>
+   </property>
+   <property name="windowTitle">
+    <string>Properties</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>2</number>
+   </attribute>
+   <widget class="pqPropertiesPanel" name="dockWidgetContents_2"/>
   </widget>
   <action name="actionE_xit">
    <property name="text">
@@ -1039,6 +1071,22 @@
     <string>Geolocation Controls</string>
    </property>
   </action>
+  <action name="actionShowPipelineBrowser">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Show Pipeline Browser</string>
+   </property>
+  </action>
+  <action name="actionShowPropertiesPanel">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Show Properties Panel</string>
+   </property>
+  </action>
  </widget>
  <customwidgets>
   <customwidget>
@@ -1050,6 +1098,18 @@
    <class>pqColorMapEditor</class>
    <extends>QWidget</extends>
    <header>pqColorMapEditor.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>pqPipelineBrowserWidget</class>
+   <extends>QWidget</extends>
+   <header>pqPipelineBrowserWidget.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>pqPropertiesPanel</class>
+   <extends>QWidget</extends>
+   <header>pqPropertiesPanel.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>
