@@ -63,6 +63,7 @@
 #include <QLabel>
 #include <QSplitter>
 #include <QToolBar>
+#include <qdockwidget.h>
 
 #include <cassert>
 #include <iostream>
@@ -269,6 +270,8 @@ private:
     connect(this->Ui.actionView_Controls, SIGNAL(triggered()), window, SLOT(switchToolBarVisibility()));
     connect(this->Ui.actionPlayback_Controls, SIGNAL(triggered()), window, SLOT(switchToolBarVisibility()));
     connect(this->Ui.actionGeolocation_Controls, SIGNAL(triggered()), window, SLOT(switchToolBarVisibility()));
+    connect(this->Ui.actionShowPipelineBrowser, SIGNAL(triggered()), window, SLOT(onSwitchPipelineBrowserVisibility()));
+    connect(this->Ui.actionShowPropertiesPanel, SIGNAL(triggered()), window, SLOT(onSwitchPropertiesPanelVisibility()));
   }
 };
 
@@ -368,4 +371,26 @@ void vvMainWindow::UpdateToolBarMenu()
   this->Internals->Ui.actionView_Controls->setChecked(this->Internals->Ui.viewSettings->isVisible());
   this->Internals->Ui.actionPlayback_Controls->setChecked(this->Internals->Ui.playbackToolbar->isVisible());
   this->Internals->Ui.actionGeolocation_Controls->setChecked(this->Internals->Ui.geolocationToolbar->isVisible());
+}
+
+//-----------------------------------------------------------------------------
+void vvMainWindow::onSwitchPipelineBrowserVisibility()
+{
+  // Change visibility
+  QDockWidget* dock = this->Internals->Ui.pipelineBrowserDock;
+  dock->setVisible(!dock->isVisible());
+
+  // Switch action isChecked status
+  this->Internals->Ui.actionShowPipelineBrowser->setChecked(dock->isVisible());
+}
+
+//-----------------------------------------------------------------------------
+void vvMainWindow::onSwitchPropertiesPanelVisibility()
+{
+  // Change visibility
+  QDockWidget* dock = this->Internals->Ui.propertiesPanelDock;
+  dock->setVisible(!dock->isVisible());
+
+  // Switch action isChecked status
+  this->Internals->Ui.actionShowPropertiesPanel->setChecked(dock->isVisible());
 }
