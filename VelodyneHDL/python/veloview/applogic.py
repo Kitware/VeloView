@@ -560,10 +560,10 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
 
     smp.Show(posreader)
 
-    # Create a sphere glyph
-    g = smp.Sphere()
-    g.Radius = 5.0
-    smp.Show(g)
+    # Create a tripod glyph
+    tripod = smp.Axes()
+    tripod.ScaleFactor = 10.0
+    smp.Show(tripod)
 
     if posreader.GetClientSideObject().GetOutput().GetNumberOfPoints():
         reader.GetClientSideObject().SetInterpolator(
@@ -589,7 +589,7 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
         sb.Position, sb.Position2 = [.1, .05], [.8, .02]
         app.overheadView.Representations.append(sb)
 
-        app.position = (posreader, None, g)
+        app.position = (posreader, None, tripod)
         smp.Render(app.overheadView)
     else:
         if positionFilename is not None:
@@ -1511,27 +1511,24 @@ def updatePosition():
         pointcloud = reader.GetClientSideObject().GetOutput()
 
         if pointcloud.GetNumberOfPoints():
-            # Update the overhead view
-            # TODO: Approximate time, just grabbing the last
-            t = pointcloud.GetPointData().GetScalars('adjustedtime')
-            #currentTime = t.GetTuple1(t.GetNumberOfTuples() - 1)
-            currentTime = t.GetTuple1(0) * 1e-6
+            # get the timestamp of the first point
+            # of the current point cloud (in seconds)
+            time = pointcloud.GetPointData().GetArray('adjustedtime').GetTuple1(0)
+            time = time * 1e-6
 
-            interp = getPosition().GetClientSideObject().GetInterpolator()
-            trange = [interp.GetMinimumT(), interp.GetMaximumT()]
-
-            # Clamp
-            currentTime = min(max(currentTime, trange[0]+1.0e-1), trange[1]-1.0e-1)
+            # Get the transform of the first point of the
+            # current point cloud by interpolating using
+            # the two nearest transform data available (slerp + linear)
+            currentTransform = vtk.vtkTransform()
+            getReader().GetClientSideObject().GetInterpolator().InterpolateTransform(time, currentTransform)
 
             position = [0.0] * 3
-            transform = vtk.vtkTransform()
-            interp.InterpolateTransform(currentTime, transform)
-            transform.TransformPoint(position, position)
+            currentTransform.TransformPoint(position, position)
 
             rep = cachedGetRepresentation(reader, view=app.mainView)
             if app.relativeTransform:
-                rep.Position = transform.GetInverse().GetPosition()
-                rep.Orientation = transform.GetInverse().GetOrientation()
+                rep.Position = currentTransform.GetInverse().GetPosition()
+                rep.Orientation = currentTransform.GetInverse().GetOrientation()
             else:
                 rep.Position = [0.0, 0.0, 0.0]
                 rep.Orientation = [0.0, 0.0, 0.0]
@@ -1539,6 +1536,7 @@ def updatePosition():
             g = getGlyph()
             rep = cachedGetRepresentation(g, view=app.overheadView)
             rep.Position = position[:3]
+            rep.Orientation = currentTransform.GetOrientation()
 
     showRPM()
 
