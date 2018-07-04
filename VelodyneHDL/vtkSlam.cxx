@@ -2356,6 +2356,12 @@ void vtkSlam::ComputePlaneDistanceParametersAccurate(pcl::KdTreeFLANN<Point>::Pt
   std::vector<float> nearestDist;
   kdtreePreviousPlanes->nearestKSearch(p, requiredNearest, nearestIndex, nearestDist);
 
+  // It means that there is not enought keypoints in the neighbohood
+  if (nearestIndex.size() < requiredNearest)
+  {
+    return;
+  }
+
   // if the nearest planars are too far from the
   // current planar keypoint we skip this point.
   if (nearestDist[requiredNearest - 1] > this->MaxDistanceForICPMatching)
@@ -2778,7 +2784,7 @@ void vtkSlam::ComputeEgoMotion()
       currentPoint = this->CurrentEdgesPoints->points[edgeIndex];
 
       // Find the closest correspondence edge line of the current edge point
-      if (iterCount % this->EgoMotionIcpFrequence == 0)
+      if ((iterCount % this->EgoMotionIcpFrequence == 0) && (this->PreviousEdgesPoints->size() > 1))
       {
         // Compute the parameters of the point - line distance
         // i.e A = (I - n*n.t)^2 with n being the director vector
@@ -2794,7 +2800,7 @@ void vtkSlam::ComputeEgoMotion()
       currentPoint = this->CurrentPlanarsPoints->points[planarIndex];
 
       // Find the closest correspondence plane of the current planar point
-      if (iterCount % this->EgoMotionIcpFrequence == 0)
+      if ((iterCount % this->EgoMotionIcpFrequence == 0) && (this->PreviousPlanarsPoints->size() > 2))
       {
         // Compute the parameters of the point - plane distance
         // i.e A = n * n.t with n being a normal of the plane
