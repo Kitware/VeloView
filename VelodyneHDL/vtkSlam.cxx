@@ -1498,7 +1498,7 @@ void vtkSlam::SetKeyPointsLabels(vtkSmartPointer<vtkPolyData> input)
 
     // Sort the curvature score in a decreasing order
     std::vector<size_t> sortedDepthGapIdx = sortIdx<double>(this->DepthGap[scanLine]);
-    std::vector<size_t> sortedAnglesIdx = sortIdx<double>(this->DepthGap[scanLine]);
+    std::vector<size_t> sortedAnglesIdx = sortIdx<double>(this->Angles[scanLine]);
 
     double depthGap = 0;
     double sinAngle = 0;
