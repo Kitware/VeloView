@@ -293,14 +293,18 @@ private:
   // keypoints extracted
   pcl::PointCloud<Point>::Ptr CurrentEdgesPoints;
   pcl::PointCloud<Point>::Ptr CurrentPlanarsPoints;
+  pcl::PointCloud<Point>::Ptr CurrentBlobsPoints;
   pcl::PointCloud<Point>::Ptr PreviousEdgesPoints;
   pcl::PointCloud<Point>::Ptr PreviousPlanarsPoints;
+  pcl::PointCloud<Point>::Ptr PreviousBlobsPoints;
   pcl::PointCloud<Point>::Ptr DensePlanarsPoints;
   pcl::PointCloud<Point>::Ptr MappingPlanarsPoints;
+  pcl::PointCloud<Point>::Ptr MappingBlobsPoints;
 
   // keypoints local map
   RollingGrid* EdgesPointsLocalMap;
   RollingGrid* PlanarPointsLocalMap;
+  RollingGrid* BlobsPointsLocalMap;
 
   // Mapping of the lasers id
   std::vector<int> LaserIdMapping;
@@ -309,6 +313,7 @@ private:
   // scan by scan; point by point
   std::vector<std::vector<double> > Angles;
   std::vector<std::vector<double> > DepthGap;
+  std::vector<std::vector<double> > BlobScore;
   std::vector<std::vector<int> > IsPointValid;
   std::vector<std::vector<int> > Label;
 
@@ -392,6 +397,17 @@ private:
 
   double EgoMotionMaxPlaneDistance;
   double EgoMotionMaxLineDistance;
+
+  // Use or not blobs
+  bool UseBlob;
+
+  // Threshold upon sphricity of a neighborhood
+  // to select a blob point
+  double SphericityThreshold;
+
+  // Coef to apply to the incertitude
+  // radius of the blob neighborhood
+  double IncertitudeCoef;
 
   // Levenberg-Marquardt initial value of lambda
   double Lambda0;
@@ -508,6 +524,8 @@ private:
                                              Eigen::Matrix<double, 3, 1>& dT, Point p, std::string step);
   void ComputePlaneDistanceParametersAccurate(pcl::KdTreeFLANN<Point>::Ptr kdtreePreviousPlanes, Eigen::Matrix<double, 3, 3>& R,
                                               Eigen::Matrix<double, 3, 1>& dT, Point p, std::string step);
+  void ComputeBlobsDistanceParametersAccurate(pcl::KdTreeFLANN<Point>::Ptr kdtreePreviousBlobs, Eigen::Matrix<double, 3, 3>& R,
+                                              Eigen::Matrix<double, 3, 1>& dT, Point p, std::string step);
 
   // we want to minimize F(R,T) = sum(fi(R,T)^2)
   // for a given i; fi is called a residual value and
@@ -553,6 +571,7 @@ private:
   std::vector<Eigen::Matrix<double, 3, 3> > Avalues;
   std::vector<Eigen::Matrix<double, 3, 1> > Pvalues;
   std::vector<Eigen::Matrix<double, 3, 1> > Xvalues;
+  std::vector<double> RadiusIncertitude;
   std::vector<double> OutlierDistScale;
   std::vector<double> TimeValues;
   void ResetDistanceParameters();

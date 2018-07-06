@@ -113,6 +113,101 @@ vtkStandardNewMacro(vtkSlam);
 
 
 namespace {
+class LineFitting
+{
+public:
+  LineFitting();
+
+  // Fitting using PCA
+  void FitPCA(std::vector<Eigen::Matrix<double, 3, 1> >& points);
+
+  // Poor but fast fitting using
+  // extremities of the distribution
+  void FitFast(std::vector<Eigen::Matrix<double, 3, 1> >& points);
+
+  // Direction and position
+  Eigen::Matrix<double, 3, 1> Direction;
+  Eigen::Matrix<double, 3, 1> Position;
+  Eigen::Matrix<double, 3, 3> SemiDist;
+  double MaxDistance;
+
+  Eigen::Matrix<double, 3, 3> I3;
+};
+
+//-----------------------------------------------------------------------------
+LineFitting::LineFitting()
+{
+  this->I3 << 1, 0, 0,
+              0, 1, 0,
+              0, 0, 1;
+}
+
+//-----------------------------------------------------------------------------
+void LineFitting::FitPCA(std::vector<Eigen::Matrix<double, 3, 1> >& points)
+{
+  Eigen::Matrix<double, 3, 3> I3;
+  I3 << 1, 0, 0,
+        0, 1, 0,
+        0, 0, 1;
+
+  // Compute PCA to determine best line approximation
+  // of the points distribution
+  Eigen::MatrixXd data(points.size(), 3);
+
+  for (unsigned int k = 0; k < points.size(); k++)
+  {
+    data.row(k) = points[k];
+  }
+
+  Eigen::Matrix<double, 3, 1> mean = data.colwise().mean();
+  Eigen::MatrixXd centered = data.rowwise() - mean.transpose();
+  Eigen::MatrixXd cov = centered.transpose() * centered;
+  Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eig(cov);
+
+  // Eigen values
+  Eigen::MatrixXd D(1,3);
+  // Eigen vectors
+  Eigen::MatrixXd V(3,3);
+
+  D = eig.eigenvalues();
+  V = eig.eigenvectors();
+
+  // Direction
+  this->Direction = V.col(2).normalized();
+
+  // Position
+  this->Position = mean;
+
+  // Semi distance matrix
+  // (polar form associated to
+  // a bilineare symmetric positive
+  // semi-definite matrix)
+  this->SemiDist = (this->I3 - this->Direction * this->Direction.transpose());
+  this->SemiDist = this->SemiDist.transpose() * this->SemiDist;
+}
+
+//-----------------------------------------------------------------------------
+void LineFitting::FitFast(std::vector<Eigen::Matrix<double, 3, 1> >& points)
+{
+  // Take the two extrems points of the neighborhood
+  // i.e the farest and the closest to the current point
+  Eigen::Matrix<double, 3, 1> U = points[0];
+  Eigen::Matrix<double, 3, 1> V = points[points.size() - 1];
+
+  // direction
+  this->Direction = (V - U).normalized();
+
+  // position
+  this->Position = U;
+
+  // Semi distance matrix
+  // (polar form associated to
+  // a bilineare symmetric positive
+  // semi-definite matrix)
+  this->SemiDist = (this->I3 - this->Direction * this->Direction.transpose());
+  this->SemiDist = this->SemiDist.transpose() * this->SemiDist;
+}
+
 //-----------------------------------------------------------------------------
 Eigen::Matrix3d GetRotationMatrix(Eigen::Matrix<double, 6, 1> T)
 {
@@ -555,6 +650,7 @@ vtkInformationVector **inputVector, vtkInformationVector *outputVector)
   vtkInformation *outInfo1 = outputVector->GetInformationObject(1);
   vtkInformation *outInfo2 = outputVector->GetInformationObject(2);
   vtkInformation *outInfo3 = outputVector->GetInformationObject(3);
+  vtkInformation *outInfo4 = outputVector->GetInformationObject(4);
 
   // get output
   vtkPolyData *output0 = vtkPolyData::SafeDownCast(
@@ -565,6 +661,8 @@ vtkInformationVector **inputVector, vtkInformationVector *outputVector)
     outInfo2->Get(vtkDataObject::DATA_OBJECT()));
   vtkPolyData *output3 = vtkPolyData::SafeDownCast(
     outInfo3->Get(vtkDataObject::DATA_OBJECT()));
+  vtkPolyData *output4 = vtkPolyData::SafeDownCast(
+    outInfo4->Get(vtkDataObject::DATA_OBJECT()));
 
   // output 0 - Current Frame
   // add all debug information if displayMode == True
@@ -574,6 +672,7 @@ vtkInformationVector **inputVector, vtkInformationVector *outputVector)
     this->DisplayRelAdv(this->vtkCurrentFrame);
     AddVectorToPolydataPoints<double, vtkDoubleArray>(this->Angles, "angles_line", this->vtkCurrentFrame);
     AddVectorToPolydataPoints<double, vtkDoubleArray>(this->DepthGap, "depth_gap", this->vtkCurrentFrame);
+    AddVectorToPolydataPoints<double, vtkDoubleArray>(this->BlobScore, "blob_score", this->vtkCurrentFrame);
     AddVectorToPolydataPoints<int, vtkIntArray>(this->IsPointValid, "is_point_valid", this->vtkCurrentFrame);
     AddVectorToPolydataPoints<int, vtkIntArray>(this->Label, "keypoint_label", this->vtkCurrentFrame);
   }
@@ -612,6 +711,10 @@ vtkInformationVector **inputVector, vtkInformationVector *outputVector)
   // output 3 - Planar Points Map
   vtkSmartPointer<vtkPolyData> PlanarMap = vtkPCLConversions::PolyDataFromPointCloud(this->PlanarPointsLocalMap->Get());
   output3->ShallowCopy(PlanarMap);
+
+  // output 3 - Planar Points Map
+  vtkSmartPointer<vtkPolyData> BlobMap = vtkPCLConversions::PolyDataFromPointCloud(this->BlobsPointsLocalMap->Get());
+  output4->ShallowCopy(BlobMap);
 
   return 1;
 }
@@ -712,15 +815,16 @@ void vtkSlam::PrintSelf(ostream& os, vtkIndent indent)
 vtkSlam::vtkSlam()
 {
   this->SetNumberOfInputPorts(0);
-  this->SetNumberOfOutputPorts(4);
+  this->SetNumberOfOutputPorts(5);
   this->ResetAlgorithm();
 }
 
 //-----------------------------------------------------------------------------
 vtkSlam::~vtkSlam()
 {
-  delete EdgesPointsLocalMap;
-  delete PlanarPointsLocalMap;
+  delete this->EdgesPointsLocalMap;
+  delete this->PlanarPointsLocalMap;
+  delete this->BlobsPointsLocalMap;
 }
 
 //-----------------------------------------------------------------------------
@@ -825,6 +929,11 @@ void vtkSlam::ResetAlgorithm()
   this->MappingPlaneDistancefactor2 = 5.0;
   this->MappingMaxPlaneDistance = 0.04; // 4 cm
 
+  // Blobs
+  this->SphericityThreshold = 0.35;
+  this->IncertitudeCoef = 3.0;
+  this->UseBlob = false;
+
   this->MaxDistanceForICPMatching = 20.0; // 20 meters
 
   this->NbrFrameProcessed = 0;
@@ -843,6 +952,8 @@ void vtkSlam::ResetAlgorithm()
   this->Angles.resize(this->NLasers);
   this->DepthGap.clear();
   this->DepthGap.resize(this->NLasers);
+  this->BlobScore.clear();
+  this->BlobScore.resize(this->NLasers);
   this->IsPointValid.clear();
   this->IsPointValid.resize(this->NLasers);
   this->Label.clear();
@@ -854,19 +965,23 @@ void vtkSlam::ResetAlgorithm()
 
   EdgesPointsLocalMap = new RollingGrid();
   PlanarPointsLocalMap = new RollingGrid();
+  BlobsPointsLocalMap = new RollingGrid();
 
   EdgesPointsLocalMap->Set_VoxelSize(10);
   PlanarPointsLocalMap->Set_VoxelSize(10);
+  BlobsPointsLocalMap->Set_VoxelSize(10);
 
   double nbVoxel[3] = {50,50,50};
   EdgesPointsLocalMap->Set_Grid_NbVoxel(nbVoxel);
   PlanarPointsLocalMap->Set_Grid_NbVoxel(nbVoxel);
+  BlobsPointsLocalMap->Set_Grid_NbVoxel(nbVoxel);
 
   nbVoxel[0] = nbVoxel[1] = nbVoxel[2] = 16;
   EdgesPointsLocalMap->Set_PointCloud_NbVoxel(nbVoxel);
   PlanarPointsLocalMap->Set_PointCloud_NbVoxel(nbVoxel);
+  BlobsPointsLocalMap->Set_PointCloud_NbVoxel(nbVoxel);
 
-  this->Set_RollingGrid_LeafVoxelFilterSize(0.2);
+  this->Set_RollingGrid_LeafVoxelFilterSize(0.4);
 
   // Represent the distance that the lidar has made during one sweep
   // if it is moving at a speed of 90 km/h and spinning at a rpm
@@ -897,6 +1012,7 @@ void vtkSlam::PrepareDataForNextFrame()
 
   this->CurrentEdgesPoints.reset(new pcl::PointCloud<Point>());
   this->CurrentPlanarsPoints.reset(new pcl::PointCloud<Point>());
+  this->CurrentBlobsPoints.reset(new pcl::PointCloud<Point>());
   this->DensePlanarsPoints.reset(new pcl::PointCloud<Point>());
   this->MappingPlanarsPoints.reset(new pcl::PointCloud<Point>());
 
@@ -909,6 +1025,8 @@ void vtkSlam::PrepareDataForNextFrame()
   this->Angles.resize(this->NLasers);
   this->DepthGap.clear();
   this->DepthGap.resize(this->NLasers);
+  this->BlobScore.clear();
+  this->BlobScore.resize(this->NLasers);
   this->IsPointValid.clear();
   this->IsPointValid.resize(this->NLasers);
   this->Label.clear();
@@ -1046,9 +1164,14 @@ void vtkSlam::AddFrame(vtkPolyData* newFrame)
     PlanarPointsLocalMap->Roll(this->Tworld);
     PlanarPointsLocalMap->Add(this->MappingPlanarsPoints);
 
+    // Blobs
+    BlobsPointsLocalMap->Roll(this->Tworld);
+    BlobsPointsLocalMap->Add(this->CurrentBlobsPoints);
+
     // Current keypoints become previous ones
     this->PreviousEdgesPoints = this->CurrentEdgesPoints;
     this->PreviousPlanarsPoints = this->CurrentPlanarsPoints;
+    this->PreviousBlobsPoints = this->CurrentBlobsPoints;
     this->NbrFrameProcessed++;
 
     return;
@@ -1085,6 +1208,7 @@ void vtkSlam::AddFrame(vtkPolyData* newFrame)
   // Current keypoints become previous ones
   this->PreviousEdgesPoints = this->CurrentEdgesPoints;
   this->PreviousPlanarsPoints = this->CurrentPlanarsPoints;
+  this->PreviousBlobsPoints = this->CurrentBlobsPoints;
   this->NbrFrameProcessed++;
 
   // Information
@@ -1166,6 +1290,7 @@ void vtkSlam::ComputeKeyPoints(vtkSmartPointer<vtkPolyData> input)
     this->Label[k].resize(this->pclCurrentFrameByScan[k]->size(), 0);
     this->Angles[k].resize(this->pclCurrentFrameByScan[k]->size(),0);
     this->DepthGap[k].resize(this->pclCurrentFrameByScan[k]->size(), 0);
+    this->BlobScore[k].resize(this->pclCurrentFrameByScan[k]->size(), 0);
   }
 
   // compute keypoints scores
@@ -1187,6 +1312,8 @@ void vtkSlam::ComputeCurvature(vtkSmartPointer<vtkPolyData> input)
   Eigen::Matrix<double, 3, 1> dirGapLeft, dirGapRight;
   Eigen::Matrix<double, 3, 3> Dleft, Dright;
   double distCandidate;
+  LineFitting leftLine;
+  LineFitting rightLine;
 
   // loop over scans lines
   for (unsigned int scanLine = 0; scanLine < this->NLasers; ++scanLine)
@@ -1211,40 +1338,32 @@ void vtkSlam::ComputeCurvature(vtkSmartPointer<vtkPolyData> input)
       // neighbors located after the current points. We will then
       // compute the angle between these two lines as an approximation
       // of the "sharpness" of the current point.
+      std::vector<Eigen::Matrix<double, 3, 1> > leftNeighbor;
+      std::vector<Eigen::Matrix<double, 3, 1> > rightNeighbor;
 
-      // left part
-      // Take the two extrems points of the neighborhood
-      // i.e the farest and the closest to the current point
-      currentPoint = this->pclCurrentFrameByScan[scanLine]->points[index - this->NeighborWidth];
-      U << currentPoint.x, currentPoint.y, currentPoint.z;
-      currentPoint = this->pclCurrentFrameByScan[scanLine]->points[index - 1];
-      V << currentPoint.x, currentPoint.y, currentPoint.z;
+      // Fill right and left neighborhood
+      for (int j = index - this->NeighborWidth; j <= index + this->NeighborWidth; ++j)
+      {
+        currentPoint = this->pclCurrentFrameByScan[scanLine]->points[j];
+        X << currentPoint.x, currentPoint.y, currentPoint.z;
+        if (j < index)
+          leftNeighbor.push_back(X);
+        if (j > index)
+          rightNeighbor.push_back(X);
+      }
 
-      // The fitting line is calculated using these
-      // two extrems points. We don't need a PCA
-      // fitting here
-      Pleft = U; // point onf the line
-      Nleft = V - U; // direction of the line
-      Nleft.normalize();
-      Dleft = (this->I3 - Nleft * Nleft.transpose());
-      Dleft = Dleft.transpose() * Dleft; // so that dist(P, line) = (X - P)'*D*(X - P)
+      // Fit line on the neighborhood
+      leftLine.FitFast(leftNeighbor);
+      rightLine.FitFast(rightNeighbor);
 
-      // right part
-      // Take the two extrems points of the neighborhood
-      // i.e the farest and the closest to the current point
-      currentPoint = this->pclCurrentFrameByScan[scanLine]->points[index + 1];
-      U << currentPoint.x, currentPoint.y, currentPoint.z;
-      currentPoint = this->pclCurrentFrameByScan[scanLine]->points[index + this->NeighborWidth];
-      V << currentPoint.x, currentPoint.y, currentPoint.z;
 
-      // The fitting line is calculated using these
-      // two extrems points. We don't need a PCA
-      // fitting here
-      Pright = U; // point on the line
-      Nright = V - U; // direction of the line
-      Nright.normalize();
-      Dright = (this->I3 - Nright * Nright.transpose());
-      Dright = Dright.transpose() * Dright; // so that dist(P, line) = (X - P)'*D*(X - P)
+      Pleft = leftLine.Position;
+      Nleft = leftLine.Direction;
+      Dleft = leftLine.SemiDist;
+
+      Pright = rightLine.Position;
+      Nright = rightLine.Direction;
+      Dright = rightLine.SemiDist;
 
       // Indicate if the left and right side
       // neighborhood of the current point is flat or not
@@ -1314,7 +1433,7 @@ void vtkSlam::ComputeCurvature(vtkSmartPointer<vtkPolyData> input)
         dist1 = std::abs(dirGapLeft.cross(Nleft).norm()) * minDistLeft;
         dist2 = std::abs(dirGapRight.cross(Nright).norm()) * minDistRight;
       }
-      // Here one side of the neighborhiood is non flat
+      // Here one side of the neighborhood is non flat
       // Hence it is not worth to estimate the sharpness.
       // Only the gap will be considered here.
       else if (rightFlat && !leftFlat)
@@ -1331,6 +1450,7 @@ void vtkSlam::ComputeCurvature(vtkSmartPointer<vtkPolyData> input)
       {
         dist1 = 0.5 * minDistLeft; // 0.5: minor trust
         dist2 = 0.5 * minDistRight;
+        this->BlobScore[scanLine][index] = 1;
       }
       this->DepthGap[scanLine][index] = std::max(dist1, dist2);
     }
@@ -1473,6 +1593,7 @@ void vtkSlam::SetKeyPointsLabels(vtkSmartPointer<vtkPolyData> input)
 {
   std::vector<std::pair<int, int> > edgesIndex;
   std::vector<std::pair<int, int> > planarIndex;
+  std::vector<std::pair<int, int> > blobIndex;
 
   std::cout << "extracting with: " << this->MaxEdgePerScanLine << " MaxEdgePerScanLine" << std::endl;
   std::cout << "extracting with: " << this->MaxPlanarsPerScanLine << " MaxPlanarsPerScanLine" << std::endl;
@@ -1499,9 +1620,11 @@ void vtkSlam::SetKeyPointsLabels(vtkSmartPointer<vtkPolyData> input)
     // Sort the curvature score in a decreasing order
     std::vector<size_t> sortedDepthGapIdx = sortIdx<double>(this->DepthGap[scanLine]);
     std::vector<size_t> sortedAnglesIdx = sortIdx<double>(this->Angles[scanLine]);
+    std::vector<size_t> sortedBlobScoreIdx = sortIdx<double>(this->BlobScore[scanLine]);
 
     double depthGap = 0;
     double sinAngle = 0;
+    double blobScore = 0;
     int index = 0;
 
     if (!this->FastSlam)
@@ -1600,6 +1723,17 @@ void vtkSlam::SetKeyPointsLabels(vtkSmartPointer<vtkPolyData> input)
       }
     }
 
+    // Blobs Points
+    for (int k = 0; k < Npts; k = k + 3)
+    {
+      // else indicate that the point is a blob
+      if (this->Label[scanLine][index] == 0)
+      {
+        this->Label[scanLine][k] = 3;
+      }
+      blobIndex.push_back(std::pair<int, int>(scanLine, k));
+    }
+
     // Planes
     for (int k = Npts - 1; k >= 0; --k)
     {
@@ -1625,7 +1759,7 @@ void vtkSlam::SetKeyPointsLabels(vtkSmartPointer<vtkPolyData> input)
       }
 
       // else indicate that the point is a planar one
-      if (this->Label[scanLine][index] != 4)
+      if ((this->Label[scanLine][index] != 4) && (this->Label[scanLine][index] != 3))
         this->Label[scanLine][index] = 2;
       planarIndex.push_back(std::pair<int, int>(scanLine, index));
       IsPointValidForPlanar[index] = 0;
@@ -1653,6 +1787,8 @@ void vtkSlam::SetKeyPointsLabels(vtkSmartPointer<vtkPolyData> input)
   // add keypoints in increasing scan id order
   std::sort(edgesIndex.begin(), edgesIndex.end());
   std::sort(planarIndex.begin(), planarIndex.end());
+  std::sort(blobIndex.begin(), blobIndex.end());
+
   for (unsigned int k = 0; k < edgesIndex.size(); ++k)
   {
     this->CurrentEdgesPoints->push_back(this->pclCurrentFrameByScan[edgesIndex[k].first]->points[edgesIndex[k].second]);
@@ -1660,6 +1796,10 @@ void vtkSlam::SetKeyPointsLabels(vtkSmartPointer<vtkPolyData> input)
   for (unsigned int k = 0; k < planarIndex.size(); ++k)
   {
     this->CurrentPlanarsPoints->push_back(this->pclCurrentFrameByScan[planarIndex[k].first]->points[planarIndex[k].second]);
+  }
+  for (unsigned int k = 0; k < blobIndex.size();  ++k)
+  {
+    this->CurrentBlobsPoints->push_back(this->pclCurrentFrameByScan[blobIndex[k].first]->points[blobIndex[k].second]);
   }
 
   if (this->FastSlam)
@@ -1680,6 +1820,7 @@ void vtkSlam::SetKeyPointsLabels(vtkSmartPointer<vtkPolyData> input)
 
   std::cout << "Extracted : " << this->CurrentEdgesPoints->size() << " : edges points" << std::endl;
   std::cout << "Extracted : " << this->CurrentPlanarsPoints->size() << " : planars points" << std::endl;
+  std::cout << "Extracted : " << this->CurrentBlobsPoints->size() << " : Blobs points" << std::endl;
   std::cout << "Extracted : " << this->MappingPlanarsPoints->size() << " : mapping planars points" << std::endl;
 }
 
@@ -2309,6 +2450,7 @@ void vtkSlam::ComputeLineDistanceParametersAccurate(pcl::KdTreeFLANN<Point>::Ptr
   this->Pvalues.push_back(mean);
   this->Xvalues.push_back(P0);
   this->OutlierDistScale.push_back(s);
+  this->RadiusIncertitude.push_back(0.0);
 }
 
 //-----------------------------------------------------------------------------
@@ -2452,6 +2594,123 @@ void vtkSlam::ComputePlaneDistanceParametersAccurate(pcl::KdTreeFLANN<Point>::Pt
   this->Pvalues.push_back(mean);
   this->Xvalues.push_back(P0);
   this->OutlierDistScale.push_back(s);
+  this->RadiusIncertitude.push_back(0.0);
+}
+
+//-----------------------------------------------------------------------------
+void vtkSlam::ComputeBlobsDistanceParametersAccurate(pcl::KdTreeFLANN<Point>::Ptr kdtreePreviousBlobs, Eigen::Matrix<double, 3, 3>& R,
+                                            Eigen::Matrix<double, 3, 1>& dT, Point p, std::string step)
+{
+  // number of neighbors blobs points required to approximate
+  // the corresponding ellipsoide
+  unsigned int requiredNearest;
+
+  // maximum distance between keypoints
+  // and its neighbor
+  double maxDist;
+
+  if (step == "egoMotion")
+  {
+    requiredNearest = 5;
+    maxDist = 4.5;
+  }
+  else if (step == "mapping")
+  {
+    requiredNearest = 7;
+    maxDist = 2.0;
+  }
+  else
+  {
+    throw "ComputeLineDistanceParametersAccurate function got invalide step parameter";
+  }
+
+  // Usefull variables
+  Eigen::Matrix<double, 3, 1> P0, P, n;
+  Eigen::Matrix<double, 3, 3> A;
+
+  // Transform the point using the current pose estimation
+  P << p.x, p.y, p.z;
+  P0 = P;
+  P = R * P + dT;
+  p.x = P(0); p.y = P(1); p.z = P(2);
+
+  std::vector<int> nearestIndex;
+  std::vector<float> nearestDist;
+  kdtreePreviousBlobs->nearestKSearch(p, requiredNearest, nearestIndex, nearestDist);
+
+  // It means that there is not enought keypoints in the neighbohood
+  if (nearestIndex.size() < requiredNearest)
+  {
+    return;
+  }
+
+  // if the nearest blobs is too far from the
+  // current blob keypoint we skip this point.
+  if (nearestDist[requiredNearest - 1] > maxDist)
+  {
+    return;
+  }
+
+  // Compute PCA to determine best ellipsoide approximation
+  // of the requiredNearest nearest blobs points extracted
+  // Thanks to the PCA we will check the shape of the neighborhood
+  // tune a distance function adapter to the distribution
+  // (Mahalanobis distance)
+  Eigen::MatrixXd data(requiredNearest, 3);
+
+  for (unsigned int k = 0; k < requiredNearest; k++)
+  {
+    Point pt = kdtreePreviousBlobs->getInputCloud()->points[nearestIndex[k]];
+    data.row(k) << pt.x, pt.y, pt.z;
+  }
+
+  Eigen::Matrix<double, 3, 1> mean = data.colwise().mean();
+  Eigen::MatrixXd centered = data.rowwise() - mean.transpose();
+  Eigen::MatrixXd cov = centered.transpose() * centered;
+  Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eig(cov);
+
+  // Eigen values
+  Eigen::MatrixXd D(1,3);
+  D = eig.eigenvalues();
+
+  // A is the inverse of the covariance
+  // Matrix, encode the mahalanobis distance
+  A = this->I3;
+
+  // Coefficient the distance
+  // using the distance between the point
+  // and its matching blob; The aim is to prevent
+  // wrong matching to pull the point cloud in the
+  // bad direction
+  double s = 1.0 - nearestDist[requiredNearest - 1] / maxDist;
+
+  if (step == "egoMotion")
+  {
+    double r = std::tan(2.0 / 180.0 * vtkMath::Pi()) * (P0.norm() + mean.norm()) / 2.0;
+    // store the distance parameters values
+    this->Avalues.push_back(A);
+    this->Pvalues.push_back(mean);
+    this->Xvalues.push_back(P0);
+    this->OutlierDistScale.push_back(s);
+    this->RadiusIncertitude.push_back(r);
+  }
+
+  // Check that the region is a blob
+  // i.e check the sphericity by computing
+  // the ratio between the smallest and biggest
+  // eigen value
+  double sphericity = D(0) / D(2);
+  if (sphericity < this->SphericityThreshold)
+  {
+    return;
+  }
+
+  // store the distance parameters values
+  this->Avalues.push_back(A);
+  this->Pvalues.push_back(mean);
+  this->Xvalues.push_back(P0);
+  this->OutlierDistScale.push_back(s);
+  this->RadiusIncertitude.push_back(1.0 / 10.0 * this->IncertitudeCoef * std::sqrt(D(2)));
 }
 
 //-----------------------------------------------------------------------------
@@ -2607,7 +2866,7 @@ void vtkSlam::ComputeResidualValues(std::vector<Eigen::Matrix<double, 3, 3> >& v
   {
     s = vS[k];
     Xp = R * vX[k] + dT;
-    residuals(k) = s * std::sqrt(std::abs((Xp - vP[k]).transpose() * vA[k] * (Xp - vP[k])));
+    residuals(k) = std::max(std::sqrt(std::abs((Xp - vP[k]).transpose() * vA[k] * (Xp - vP[k]))) - this->RadiusIncertitude[k], 0.0);
   }
 }
 
@@ -2618,6 +2877,7 @@ void vtkSlam::ComputeResidualJacobians(std::vector<Eigen::Matrix<double, 3, 3> >
 {
   residualsJacobians = Eigen::MatrixXd(vX.size(), 6);
 
+  double epsilon = 1e-5;
   double rx, ry, rz;
   rx = T(0); ry = T(1); rz = T(2);
   double X1, X2, X3;
@@ -2669,6 +2929,16 @@ void vtkSlam::ComputeResidualJacobians(std::vector<Eigen::Matrix<double, 3, 3> >
     Eigen::Matrix<double, 1, 3> JacobianG;
     JacobianG << 0, 0, 0;
     double dist = std::sqrt(h_R_t.transpose() * A * h_R_t);
+
+    if (dist - this->RadiusIncertitude[k] < 0)
+    {
+      for (unsigned int i = 0; i < 6; ++i)
+      {
+        residualsJacobians(k, i) = 0.0;
+      }
+      continue;
+    }
+
     if (dist > 1e-12)
     {
       JacobianG = s * s * h_R_t.transpose() * (A + A.transpose()) * 1.0 / (2.0 * dist);
@@ -2732,8 +3002,10 @@ void vtkSlam::ComputeEgoMotion()
   // among the keypoints of the previous pointcloud
   pcl::KdTreeFLANN<Point>::Ptr kdtreePreviousEdges(new pcl::KdTreeFLANN<Point>());
   pcl::KdTreeFLANN<Point>::Ptr kdtreePreviousPlanes(new pcl::KdTreeFLANN<Point>());
+  pcl::KdTreeFLANN<Point>::Ptr kdtreePreviousBlobs(new pcl::KdTreeFLANN<Point>());
   kdtreePreviousEdges->setInputCloud(this->PreviousEdgesPoints);
   kdtreePreviousPlanes->setInputCloud(this->PreviousPlanarsPoints);
+  kdtreePreviousBlobs->setInputCloud(this->PreviousBlobsPoints);
 
   std::cout << "Performing ego-motion using : " << std::endl;
   std::cout << "previous edges : " << this->PreviousEdgesPoints->size() << " current edges : " << this->CurrentEdgesPoints->size() << std::endl;
@@ -2761,6 +3033,7 @@ void vtkSlam::ComputeEgoMotion()
 
   unsigned int nbrEdgesUsed = 0;
   unsigned int nbrPlanesUsed = 0;
+  unsigned int nbrBlobused = 0;
   unsigned int nbrRejection = 0;
   // ICP - Levenberg-Marquardt loop
   for (unsigned int iterCount = 0; iterCount < this->EgoMotionMaxIter; ++iterCount)
@@ -2771,42 +3044,58 @@ void vtkSlam::ComputeEgoMotion()
     R = GetRotationMatrix(this->Trelative);
     dT << this->Trelative(3), this->Trelative(4), this->Trelative(5);
 
+    Point currentPoint, transformedPoint;
+
     if (iterCount % this->EgoMotionIcpFrequence == 0)
     {
       this->ResetDistanceParameters();
-    }
 
-    Point currentPoint, transformedPoint;
-
-    // loop over edges
-    for (unsigned int edgeIndex = 0; edgeIndex < this->CurrentEdgesPoints->size(); ++edgeIndex)
-    {
-      currentPoint = this->CurrentEdgesPoints->points[edgeIndex];
-
-      // Find the closest correspondence edge line of the current edge point
-      if ((iterCount % this->EgoMotionIcpFrequence == 0) && (this->PreviousEdgesPoints->size() > 1))
+      // loop over edges
+      for (unsigned int edgeIndex = 0; edgeIndex < this->CurrentEdgesPoints->size(); ++edgeIndex)
       {
-        // Compute the parameters of the point - line distance
-        // i.e A = (I - n*n.t)^2 with n being the director vector
-        // and P a point of the line
-        this->ComputeLineDistanceParametersAccurate(kdtreePreviousEdges, R, dT, currentPoint, "egoMotion");
-        nbrEdgesUsed = this->Xvalues.size();
+        currentPoint = this->CurrentEdgesPoints->points[edgeIndex];
+
+        // Find the closest correspondence edge line of the current edge point
+        if (this->PreviousEdgesPoints->size() > 1)
+        {
+          // Compute the parameters of the point - line distance
+          // i.e A = (I - n*n.t)^2 with n being the director vector
+          // and P a point of the line
+          this->ComputeLineDistanceParametersAccurate(kdtreePreviousEdges, R, dT, currentPoint, "egoMotion");
+          nbrEdgesUsed = this->Xvalues.size();
+        }
       }
-    }
 
-    // loop over surfaces
-    for (unsigned int planarIndex = 0; planarIndex < this->CurrentPlanarsPoints->size(); ++planarIndex)
-    {
-      currentPoint = this->CurrentPlanarsPoints->points[planarIndex];
-
-      // Find the closest correspondence plane of the current planar point
-      if ((iterCount % this->EgoMotionIcpFrequence == 0) && (this->PreviousPlanarsPoints->size() > 2))
+      // loop over surfaces
+      for (unsigned int planarIndex = 0; planarIndex < this->CurrentPlanarsPoints->size(); ++planarIndex)
       {
-        // Compute the parameters of the point - plane distance
-        // i.e A = n * n.t with n being a normal of the plane
-        // and is a point of the plane
-        this->ComputePlaneDistanceParametersAccurate(kdtreePreviousPlanes, R, dT, currentPoint, "egoMotion");
-        nbrPlanesUsed = this->Xvalues.size() - nbrEdgesUsed;
+        currentPoint = this->CurrentPlanarsPoints->points[planarIndex];
+
+        // Find the closest correspondence plane of the current planar point
+        if (this->PreviousPlanarsPoints->size() > 2)
+        {
+          // Compute the parameters of the point - plane distance
+          // i.e A = n * n.t with n being a normal of the plane
+          // and is a point of the plane
+          this->ComputePlaneDistanceParametersAccurate(kdtreePreviousPlanes, R, dT, currentPoint, "egoMotion");
+          nbrPlanesUsed = this->Xvalues.size() - nbrEdgesUsed;
+        }
+      }
+
+      // loop over blobs
+      if (this->UseBlob)
+      {
+        for (unsigned int blobIndex = 0; blobIndex < this->CurrentBlobsPoints->size(); ++blobIndex)
+        {
+          currentPoint = this->CurrentBlobsPoints->points[blobIndex];
+
+          // Find the closest correspondence blob of the current blob point
+          if (this->CurrentBlobsPoints->size() > 2)
+          {
+            this->ComputeBlobsDistanceParametersAccurate(kdtreePreviousBlobs, R, dT, currentPoint, "egoMotion");
+            nbrBlobused = this->Xvalues.size() - nbrPlanesUsed - nbrEdgesUsed;
+          }
+        }
       }
     }
 
@@ -2883,7 +3172,7 @@ void vtkSlam::ComputeEgoMotion()
 
   std::cout << "cost goes from : " << costFunction[0] << " to : " << costFunction[costFunction.size() - 1] << std::endl;
   std::cout << "used keypoints : " << this->Xvalues.size() << std::endl;
-  std::cout << "edges : " << nbrEdgesUsed << " planes : " << nbrPlanesUsed << std::endl;
+  std::cout << "edges : " << nbrEdgesUsed << " planes : " << nbrPlanesUsed << " blobs : " << nbrBlobused << std::endl;
   std::cout << "nbr rejection : " << nbrRejection << std::endl;
   std::cout << "final lambda value : " << lambda << std::endl;
 
@@ -2918,18 +3207,23 @@ void vtkSlam::Mapping()
   // contruct kd-tree for fast search
   pcl::KdTreeFLANN<Point>::Ptr kdtreeEdges(new pcl::KdTreeFLANN<Point>());
   pcl::KdTreeFLANN<Point>::Ptr kdtreePlanes(new pcl::KdTreeFLANN<Point>());
+  pcl::KdTreeFLANN<Point>::Ptr kdtreeBlobs(new pcl::KdTreeFLANN<Point>());
 
   pcl::PointCloud<Point>::Ptr subEdgesPointsLocalMap = this->EdgesPointsLocalMap->Get(this->Tworld);
   pcl::PointCloud<Point>::Ptr subPlanarPointsLocalMap = this->PlanarPointsLocalMap->Get(this->Tworld);
+  pcl::PointCloud<Point>::Ptr subBlobPointsLocalMap = this->BlobsPointsLocalMap->Get(this->Tworld);
 
   std::cout << "edges map : " << subEdgesPointsLocalMap->points.size() << std::endl;
   std::cout << "flat map : " << subPlanarPointsLocalMap->points.size() << std::endl;
+  std::cout << "blobs map : " << subBlobPointsLocalMap->points.size() << std::endl;
 
   kdtreeEdges->setInputCloud(subEdgesPointsLocalMap);
   kdtreePlanes->setInputCloud(subPlanarPointsLocalMap);
+  kdtreeBlobs->setInputCloud(subBlobPointsLocalMap);
 
   unsigned int usedEdges = 0;
   unsigned int usedPlanes = 0;
+  unsigned int usedBlobs = 0;
 
   // ICP - Levenberg-Marquardt loop
   for (int iterCount = 0; iterCount < this->MappingMaxIter; ++iterCount)
@@ -2967,6 +3261,19 @@ void vtkSlam::Mapping()
         // Find the closest correspondence plane of the current planar point
         this->ComputePlaneDistanceParametersAccurate(kdtreePlanes, R, dT, currentPoint, "mapping");
         usedPlanes = this->Xvalues.size() - usedEdges;
+      }
+
+      if (this->UseBlob)
+      {
+        // loop over blobs
+        for (unsigned int blobIndex = 0; blobIndex < this->CurrentBlobsPoints->size(); ++blobIndex)
+        {
+          currentPoint = this->CurrentBlobsPoints->points[blobIndex];
+
+          // Find the closest correspondence plane of the current planar point
+          this->ComputeBlobsDistanceParametersAccurate(kdtreeBlobs, R, dT, currentPoint, "mapping");
+          usedBlobs = this->Xvalues.size() - usedPlanes - usedEdges;
+        }
       }
     }
 
@@ -3042,7 +3349,7 @@ void vtkSlam::Mapping()
 
   std::cout << "cost goes from : " << costFunction[0] << " to : " << costFunction[costFunction.size() - 1] << std::endl;
   std::cout << "used keypoints : " << this->Xvalues.size() << std::endl;
-  std::cout << "edges : " << usedEdges << " planes : " << usedPlanes << std::endl;
+  std::cout << "edges : " << usedEdges << " planes : " << usedPlanes << " blobs : " << usedBlobs << std::endl;
   std::cout << "final lambda value : " << lambda << std::endl;
 
   // Update EdgeMap
@@ -3064,6 +3371,16 @@ void vtkSlam::Mapping()
   }
   PlanarPointsLocalMap->Roll(this->Tworld);
   PlanarPointsLocalMap->Add(MapPlanarsPoints);
+
+  // Update BlobsMap
+  pcl::PointCloud<Point>::Ptr MapBlobsPoints(new pcl::PointCloud<Point>());
+  for (unsigned int i = 0; i < this->CurrentBlobsPoints->size(); ++i)
+  {
+    MapBlobsPoints->push_back(this->CurrentBlobsPoints->at(i));
+    this->TransformToWorld(MapBlobsPoints->at(i), this->Tworld);
+  }
+  BlobsPointsLocalMap->Roll(this->Tworld);
+  BlobsPointsLocalMap->Add(MapBlobsPoints);
 }
 
 //-----------------------------------------------------------------------------
@@ -3078,7 +3395,9 @@ void vtkSlam::ResetDistanceParameters()
   this->TimeValues.clear();
   this->TimeValues.resize(0);
   this->OutlierDistScale.clear();
-  OutlierDistScale.resize(0);
+  this->OutlierDistScale.resize(0);
+  this->RadiusIncertitude.clear();
+  this->RadiusIncertitude.resize(0);
 }
 
 //-----------------------------------------------------------------------------
@@ -3164,7 +3483,8 @@ void vtkSlam::Set_RollingGrid_PointCloud_NbVoxel(const double nbVoxel[3])
 //-----------------------------------------------------------------------------
 void vtkSlam::Set_RollingGrid_LeafVoxelFilterSize(const double size)
 {
-  this->EdgesPointsLocalMap->Set_LeafVoxelFilterSize(size);
-  this->PlanarPointsLocalMap->Set_LeafVoxelFilterSize(2.0 * size);
+  this->EdgesPointsLocalMap->Set_LeafVoxelFilterSize(0.75 * size);
+  this->PlanarPointsLocalMap->Set_LeafVoxelFilterSize(size);
+  this->BlobsPointsLocalMap->Set_LeafVoxelFilterSize(size);
 }
 
