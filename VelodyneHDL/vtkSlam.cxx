@@ -651,6 +651,7 @@ vtkInformationVector **inputVector, vtkInformationVector *outputVector)
   vtkInformation *outInfo2 = outputVector->GetInformationObject(2);
   vtkInformation *outInfo3 = outputVector->GetInformationObject(3);
   vtkInformation *outInfo4 = outputVector->GetInformationObject(4);
+  vtkInformation *outInfo5 = outputVector->GetInformationObject(5);
 
   // get output
   vtkPolyData *output0 = vtkPolyData::SafeDownCast(
@@ -663,6 +664,8 @@ vtkInformationVector **inputVector, vtkInformationVector *outputVector)
     outInfo3->Get(vtkDataObject::DATA_OBJECT()));
   vtkPolyData *output4 = vtkPolyData::SafeDownCast(
     outInfo4->Get(vtkDataObject::DATA_OBJECT()));
+  vtkPolyData *output5 = vtkPolyData::SafeDownCast(
+    outInfo5->Get(vtkDataObject::DATA_OBJECT()));
 
   // output 0 - Current Frame
   // add all debug information if displayMode == True
@@ -712,9 +715,24 @@ vtkInformationVector **inputVector, vtkInformationVector *outputVector)
   vtkSmartPointer<vtkPolyData> PlanarMap = vtkPCLConversions::PolyDataFromPointCloud(this->PlanarPointsLocalMap->Get());
   output3->ShallowCopy(PlanarMap);
 
-  // output 3 - Planar Points Map
+  // output 4 - Planar Points Map
   vtkSmartPointer<vtkPolyData> BlobMap = vtkPCLConversions::PolyDataFromPointCloud(this->BlobsPointsLocalMap->Get());
   output4->ShallowCopy(BlobMap);
+
+  // output 5 - Orientation
+  // create polyLine
+  vtkSmartPointer<vtkPolyLine> polyLine2 = vtkSmartPointer<vtkPolyLine>::New();
+  int NbPosition2 = Orientation->GetNumberOfPoints();
+  polyLine2->GetPointIds()->SetNumberOfIds(NbPosition2);
+  for(unsigned int i = 0; i < NbPosition2; i++)
+  {
+    polyLine2->GetPointIds()->SetId(i,i);
+  }
+  // create cells for Trajectory
+  vtkSmartPointer<vtkCellArray> cells2 = vtkSmartPointer<vtkCellArray>::New();
+  cells2->InsertNextCell(polyLine2);
+  Orientation->SetLines(cells2);
+  output5->ShallowCopy(this->Orientation);
 
   return 1;
 }
@@ -815,7 +833,7 @@ void vtkSlam::PrintSelf(ostream& os, vtkIndent indent)
 vtkSlam::vtkSlam()
 {
   this->SetNumberOfInputPorts(0);
-  this->SetNumberOfOutputPorts(5);
+  this->SetNumberOfOutputPorts(6);
   this->ResetAlgorithm();
 }
 
@@ -959,6 +977,8 @@ void vtkSlam::ResetAlgorithm()
   this->Label.clear();
   this->Label.resize(this->NLasers);
   this->Tworld << 0, 0, 0, 0, 0, 0;
+  this->TworldList.clear();
+  this->TworldList.resize(0);
 
   this->I3 = Eigen::Matrix3d::Identity();
   this->I6 = Eigen::Matrix<double, 6, 6>::Identity();
@@ -971,7 +991,7 @@ void vtkSlam::ResetAlgorithm()
   PlanarPointsLocalMap->Set_VoxelSize(10);
   BlobsPointsLocalMap->Set_VoxelSize(10);
 
-  double nbVoxel[3] = {50,50,50};
+  double nbVoxel[3] = {50, 50, 50};
   EdgesPointsLocalMap->Set_Grid_NbVoxel(nbVoxel);
   PlanarPointsLocalMap->Set_Grid_NbVoxel(nbVoxel);
   BlobsPointsLocalMap->Set_Grid_NbVoxel(nbVoxel);
@@ -990,6 +1010,7 @@ void vtkSlam::ResetAlgorithm()
 
   // output of the vtk filter
   this->Trajectory = vtkSmartPointer<vtkPolyData>::New();
+  this->Orientation = vtkSmartPointer<vtkPolyData>::New();
 
   // add the required array in the trajectory
   vtkNew<vtkPoints> points;
@@ -998,6 +1019,14 @@ void vtkSlam::ResetAlgorithm()
   CreateDataArray<vtkDoubleArray>("pitch", 0, this->Trajectory);
   CreateDataArray<vtkDoubleArray>("yaw", 0, this->Trajectory);
   this->Trajectory->SetPoints(points.GetPointer());
+
+  // add the required array in the orientation
+  vtkNew<vtkPoints> points2;
+  CreateDataArray<vtkDoubleArray>("time", 0, this->Orientation);
+  CreateDataArray<vtkDoubleArray>("X", 0, this->Orientation);
+  CreateDataArray<vtkDoubleArray>("Y", 0, this->Orientation);
+  CreateDataArray<vtkDoubleArray>("Z", 0, this->Orientation);
+  this->Orientation->SetPoints(points2.GetPointer());
 }
 
 //-----------------------------------------------------------------------------
@@ -1235,6 +1264,13 @@ void vtkSlam::AddFrame(vtkPolyData* newFrame)
   static_cast<vtkDoubleArray*>(this->Trajectory->GetPointData()->GetArray("pitch"))->InsertNextValue(this->Tworld[0]);
   static_cast<vtkDoubleArray*>(this->Trajectory->GetPointData()->GetArray("roll"))->InsertNextValue(this->Tworld[1]);
   static_cast<vtkDoubleArray*>(this->Trajectory->GetPointData()->GetArray("yaw"))->InsertNextValue(this->Tworld[2]);
+
+  // Update orientation points, the cell are construct in the request data
+  this->Orientation->GetPoints()->InsertNextPoint(this->Tworld[0], this->Tworld[1], this->Tworld[2]);
+  static_cast<vtkDoubleArray*>(this->Orientation->GetPointData()->GetArray("time"))->InsertNextValue(newFrame->GetPointData()->GetArray("timestamp")->GetTuple1(0));
+  static_cast<vtkDoubleArray*>(this->Orientation->GetPointData()->GetArray("X"))->InsertNextValue(this->Tworld[3]);
+  static_cast<vtkDoubleArray*>(this->Orientation->GetPointData()->GetArray("Y"))->InsertNextValue(this->Tworld[4]);
+  static_cast<vtkDoubleArray*>(this->Orientation->GetPointData()->GetArray("Z"))->InsertNextValue(this->Tworld[5]);
 
   // Indicate the filter has been modify
   this->Modified();
@@ -2873,10 +2909,13 @@ void vtkSlam::ComputeResidualValues(std::vector<Eigen::Matrix<double, 3, 3> >& v
 //-----------------------------------------------------------------------------
 void vtkSlam::ComputeResidualJacobians(std::vector<Eigen::Matrix<double, 3, 3> >& vA, std::vector<Eigen::Matrix<double, 3, 1> >& vX,
                                        std::vector<Eigen::Matrix<double, 3, 1> >& vP, std::vector<double> vS,
-                                       Eigen::Matrix<double, 6, 1>& T, Eigen::MatrixXd& residualsJacobians)
+                                       Eigen::Matrix<double, 6, 1>& T, Eigen::MatrixXd& residualsJacobians, Eigen::MatrixXd& Jacobian)
 {
+  Jacobian = Eigen::MatrixXd(1, 6);
   residualsJacobians = Eigen::MatrixXd(vX.size(), 6);
+  Jacobian << 0, 0, 0, 0, 0, 0;
 
+  bool warned = false;
   double epsilon = 1e-5;
   double rx, ry, rz;
   rx = T(0); ry = T(1); rz = T(2);
@@ -2926,7 +2965,7 @@ void vtkSlam::ComputeResidualJacobians(std::vector<Eigen::Matrix<double, 3, 3> >
     // evaluated at the point h(R,T). Note that G is
     // the composition of the functions sqrt and X' * A * X
     // and is not differentiable when X'*A*X = 0
-    Eigen::Matrix<double, 1, 3> JacobianG;
+    Eigen::Matrix<double, 1, 3> JacobianG, JacobianGSquared;
     JacobianG << 0, 0, 0;
     double dist = std::sqrt(h_R_t.transpose() * A * h_R_t);
 
@@ -2941,7 +2980,8 @@ void vtkSlam::ComputeResidualJacobians(std::vector<Eigen::Matrix<double, 3, 3> >
 
     if (dist > 1e-12)
     {
-      JacobianG = s * s * h_R_t.transpose() * (A + A.transpose()) * 1.0 / (2.0 * dist);
+      JacobianGSquared = s * s * h_R_t.transpose() * (A + A.transpose());
+      JacobianG = 1.0 / (2.0 * dist) * JacobianGSquared;
     }
 
     // represent the jacobian of the H function
@@ -2984,10 +3024,12 @@ void vtkSlam::ComputeResidualJacobians(std::vector<Eigen::Matrix<double, 3, 3> >
     // dr / dtz
     JacobianH(2, 5) = 1;
 
-    Eigen::Matrix<double, 1, 6> jacobian = JacobianG * JacobianH;
+    Eigen::Matrix<double, 1, 6> jacobianTemp = JacobianG * JacobianH;
+    Jacobian += JacobianGSquared * JacobianH;
+
     for (unsigned int i = 0; i < 6; ++i)
     {
-      residualsJacobians(k, i) = jacobian(0, i);
+      residualsJacobians(k, i) = jacobianTemp(0, i);
     }
   }
 }
@@ -3103,9 +3145,9 @@ void vtkSlam::ComputeEgoMotion()
     // fi(R, T) = sqrt((R*X+T-P).t * A * (R*X+T-P)
     // J: residual jacobians, [dfi(R, T)/dR, dfi(R, T)/dT]
     // Y: residual values, fi(R, T)
-    Eigen::MatrixXd J, Y;
+    Eigen::MatrixXd J, Y, Jsum;
     this->ComputeResidualValues(this->Avalues, this->Xvalues, this->Pvalues, this->OutlierDistScale, R, dT, Y);
-    this->ComputeResidualJacobians(this->Avalues, this->Xvalues, this->Pvalues, this->OutlierDistScale, this->Trelative, J);
+    this->ComputeResidualJacobians(this->Avalues, this->Xvalues, this->Pvalues, this->OutlierDistScale, this->Trelative, J, Jsum);
 
     // RMSE
     costFunction.push_back(0);
@@ -3202,7 +3244,12 @@ void vtkSlam::Mapping()
   // a Gauss-Newton algortihm as we converge toward the minimum of the function
   double lambda = this->Lambda0;
 
+  // Get a prediction of Tworld using motion
+  // model of a constant acceleration
+  Eigen::Matrix<double, 6, 1> Tpredicted = this->PredictTWorld();
+
   std::vector<double> costFunction(0, 0);
+  std::vector<double> normJacobian(0, 0);
 
   // contruct kd-tree for fast search
   pcl::KdTreeFLANN<Point>::Ptr kdtreeEdges(new pcl::KdTreeFLANN<Point>());
@@ -3281,9 +3328,9 @@ void vtkSlam::Mapping()
     // fi(R, T) = sqrt((R*X+T-P).t * A * (R*X+T-P)
     // J: residual jacobians, [dfi(R, T)/dR, dfi(R, T)/dT]
     // Y: residual values, fi(R, T)
-    Eigen::MatrixXd J, Y;
+    Eigen::MatrixXd J, Y, Jsum;
     this->ComputeResidualValues(this->Avalues, this->Xvalues, this->Pvalues, this->OutlierDistScale, R, dT, Y);
-    this->ComputeResidualJacobians(this->Avalues, this->Xvalues, this->Pvalues, this->OutlierDistScale, this->Tworld, J);
+    this->ComputeResidualJacobians(this->Avalues, this->Xvalues, this->Pvalues, this->OutlierDistScale, this->Tworld, J, Jsum);
 
     // RMSE
     costFunction.push_back(0);
@@ -3292,6 +3339,7 @@ void vtkSlam::Mapping()
       costFunction[costFunction.size() - 1] += Y(kk);
     }
     costFunction[costFunction.size() - 1] /= static_cast<double>(this->Xvalues.size());
+    normJacobian.push_back(Jsum.norm());
 
     Eigen::MatrixXd Jt = J.transpose();
     Eigen::MatrixXd JtJ = Jt * J;
@@ -3310,11 +3358,17 @@ void vtkSlam::Mapping()
     // algorithm to solve the linear equation for this particular point
     Eigen::ColPivHouseholderQR<Eigen::MatrixXd> dec(JtJ + lambda * diagJtJ);
     Eigen::Matrix<double, 6, 1> X = dec.solve(JtY);
+
     if (!vtkMath::IsFinite(X(0)) || !vtkMath::IsFinite(X(3)))
     {
       vtkGenericWarningMacro("Estimated transform not finite, skip this frame");
       break;
     }
+
+    std::cout << "============= " << iterCount << " =============" << std::endl;
+    std::cout << "Jsum: " << Jsum << std::endl;
+    std::cout << "X: " << X.transpose() << std::endl;
+    std::cout << "Tworld: " << this->Tworld.transpose() << std::endl;
 
     // Check if the cost function has not increase
     // in the last iteration. If it does, we are too
@@ -3337,20 +3391,43 @@ void vtkSlam::Mapping()
     if (newCost > costFunction[costFunction.size() - 1])
     {
       lambda = this->LambdaRatio * lambda;
+      std::cout << "Rejected" << std::endl;
     }
     else
     {
       this->Tworld = Tcandidate;
       lambda = 1.0 / this->LambdaRatio * lambda;
+      std::cout << "Accepted" << std::endl;
     }
 
     this->MappingIterMade = iterCount + 1;
   }
 
+  Eigen::MatrixXd J, Jsum;
+  this->ComputeResidualJacobians(this->Avalues, this->Xvalues, this->Pvalues, this->OutlierDistScale, this->Tworld, J, Jsum);
+  Eigen::Matrix<double, 6, 6> JbtJ = Jsum.transpose() * Jsum;
+
+  Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eig(JbtJ);
+
+  // Eigen values
+  Eigen::MatrixXd D(1,3);
+  // Eigen vectors
+  Eigen::MatrixXd V(3,3);
+
+  D = eig.eigenvalues();
+  V = eig.eigenvectors();
+
   std::cout << "cost goes from : " << costFunction[0] << " to : " << costFunction[costFunction.size() - 1] << std::endl;
   std::cout << "used keypoints : " << this->Xvalues.size() << std::endl;
   std::cout << "edges : " << usedEdges << " planes : " << usedPlanes << " blobs : " << usedBlobs << std::endl;
   std::cout << "final lambda value : " << lambda << std::endl;
+  std::cout << "Jacobian : " << Jsum << std::endl;
+  std::cout << "Jacobian norm goes from: " << normJacobian[0] << " to : " << normJacobian[normJacobian.size() - 1] << std::endl;
+  std::cout << "Jacobian eigen values: " << std::endl << D << std::endl;
+  std::cout << "Jacobian eigen vectors: " << std::endl << V << std::endl;
+
+  // Add the current computed transform to the list
+  this->TworldList.push_back(this->Tworld);
 
   // Update EdgeMap
   pcl::PointCloud<Point>::Ptr MapEdgesPoints(new pcl::PointCloud<Point>());
@@ -3488,3 +3565,8 @@ void vtkSlam::Set_RollingGrid_LeafVoxelFilterSize(const double size)
   this->BlobsPointsLocalMap->Set_LeafVoxelFilterSize(size);
 }
 
+//-----------------------------------------------------------------------------
+Eigen::Matrix<double, 6, 1> vtkSlam::PredictTWorld()
+{
+  return Eigen::Matrix<double, 6, 1>();
+}

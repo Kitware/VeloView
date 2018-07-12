@@ -274,6 +274,7 @@ private:
   void operator = (const vtkSlam&);
   // Polydata which represents the trajectory computed
   vtkSmartPointer<vtkPolyData> Trajectory;
+  vtkSmartPointer<vtkPolyData> Orientation;
 
   // Current point cloud stored in two differents
   // formats: PCL-pointcloud and vtkPolyData
@@ -432,6 +433,10 @@ private:
   // in the world (i.e first frame) one
   Eigen::Matrix<double, 6, 1> Tworld;
 
+  // Computed trajectory of the sensor
+  // i.e the list of transforms computed
+  std::vector<Eigen::Matrix<double, 6, 1> > TworldList;
+
   // Convert the input vtk-format pointcloud
   // into a pcl-pointcloud format. scan lines
   // will also be sorted by their vertical angles
@@ -535,7 +540,7 @@ private:
                              Eigen::Matrix<double, 3, 3>& R, Eigen::Matrix<double, 3, 1>& dT, Eigen::MatrixXd& residuals);
   void ComputeResidualJacobians(std::vector<Eigen::Matrix<double, 3, 3> >& vA, std::vector<Eigen::Matrix<double, 3, 1> >& vX,
                                 std::vector<Eigen::Matrix<double, 3, 1> >& vP, std::vector<double> vS,
-                                Eigen::Matrix<double, 6, 1>& T, Eigen::MatrixXd& residualsJacobians);
+                                Eigen::Matrix<double, 6, 1>& T, Eigen::MatrixXd& residualsJacobians, Eigen::MatrixXd& Jacobian);
 
   // Instead of taking the k-nearest neigbirs in the odometry
   // step we will take specific neighbor using the particularities
@@ -555,6 +560,9 @@ private:
   // the relative motion recover and the previous
   // world transformation
   void UpdateTworldUsingTrelative();
+
+  // Predict Tworld using last points of the trajectory
+  Eigen::Matrix<double, 6, 1> PredictTWorld();
 
   // To recover the ego-motion we have to minimize the function
   // f(R, T) = sum(d(point, line)^2) + sum(d(point, plane)^2). In both
