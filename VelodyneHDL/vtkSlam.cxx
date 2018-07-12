@@ -1018,6 +1018,18 @@ void vtkSlam::ResetAlgorithm()
   CreateDataArray<vtkDoubleArray>("roll", 0, this->Trajectory);
   CreateDataArray<vtkDoubleArray>("pitch", 0, this->Trajectory);
   CreateDataArray<vtkDoubleArray>("yaw", 0, this->Trajectory);
+  CreateDataArray<vtkDoubleArray>("Mapping: intiale cost function", 0, this->Trajectory);
+  CreateDataArray<vtkDoubleArray>("Mapping: final cost function", 0, this->Trajectory);
+  CreateDataArray<vtkIntArray>("Mapping: edges used", 0, this->Trajectory);
+  CreateDataArray<vtkIntArray>("Mapping: planes used", 0, this->Trajectory);
+  CreateDataArray<vtkIntArray>("Mapping: blobs used", 0, this->Trajectory);
+  CreateDataArray<vtkIntArray>("Mapping: total keypoints used", 0, this->Trajectory);
+  CreateDataArray<vtkDoubleArray>("EgoMotion: intiale cost function", 0, this->Trajectory);
+  CreateDataArray<vtkDoubleArray>("EgoMotion: final cost function", 0, this->Trajectory);
+  CreateDataArray<vtkIntArray>("EgoMotion: edges used", 0, this->Trajectory);
+  CreateDataArray<vtkIntArray>("EgoMotion: planes used", 0, this->Trajectory);
+  CreateDataArray<vtkIntArray>("EgoMotion: blobs used", 0, this->Trajectory);
+  CreateDataArray<vtkIntArray>("EgoMotion: total keypoints used", 0, this->Trajectory);
   this->Trajectory->SetPoints(points.GetPointer());
 
   // add the required array in the orientation
@@ -3073,9 +3085,9 @@ void vtkSlam::ComputeEgoMotion()
   // a Gauss-Newton algortihm as we converge toward the minimum of the function
   double lambda = this->Lambda0;
 
-  unsigned int nbrEdgesUsed = 0;
-  unsigned int nbrPlanesUsed = 0;
-  unsigned int nbrBlobused = 0;
+  unsigned int usedEdges = 0;
+  unsigned int usedPlanes = 0;
+  unsigned int usedBlobs = 0;
   unsigned int nbrRejection = 0;
   // ICP - Levenberg-Marquardt loop
   for (unsigned int iterCount = 0; iterCount < this->EgoMotionMaxIter; ++iterCount)
@@ -3104,7 +3116,7 @@ void vtkSlam::ComputeEgoMotion()
           // i.e A = (I - n*n.t)^2 with n being the director vector
           // and P a point of the line
           this->ComputeLineDistanceParametersAccurate(kdtreePreviousEdges, R, dT, currentPoint, "egoMotion");
-          nbrEdgesUsed = this->Xvalues.size();
+          usedEdges = this->Xvalues.size();
         }
       }
 
@@ -3120,7 +3132,7 @@ void vtkSlam::ComputeEgoMotion()
           // i.e A = n * n.t with n being a normal of the plane
           // and is a point of the plane
           this->ComputePlaneDistanceParametersAccurate(kdtreePreviousPlanes, R, dT, currentPoint, "egoMotion");
-          nbrPlanesUsed = this->Xvalues.size() - nbrEdgesUsed;
+          usedPlanes = this->Xvalues.size() - usedEdges;
         }
       }
 
@@ -3135,7 +3147,7 @@ void vtkSlam::ComputeEgoMotion()
           if (this->CurrentBlobsPoints->size() > 2)
           {
             this->ComputeBlobsDistanceParametersAccurate(kdtreePreviousBlobs, R, dT, currentPoint, "egoMotion");
-            nbrBlobused = this->Xvalues.size() - nbrPlanesUsed - nbrEdgesUsed;
+            usedBlobs = this->Xvalues.size() - usedPlanes - usedEdges;
           }
         }
       }
@@ -3201,10 +3213,15 @@ void vtkSlam::ComputeEgoMotion()
     
     this->EgoMotionIterMade = iterCount + 1;
   }
-
+  static_cast<vtkDoubleArray*>(this->Trajectory->GetPointData()->GetArray("EgoMotion: intiale cost function"))->InsertNextValue(costFunction[0]);
+  static_cast<vtkDoubleArray*>(this->Trajectory->GetPointData()->GetArray("EgoMotion: final cost function"))->InsertNextValue(costFunction[costFunction.size() - 1]);
+  static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("EgoMotion: edges used"))->InsertNextValue(usedEdges);
+  static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("EgoMotion: planes used"))->InsertNextValue(usedPlanes);
+  static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("EgoMotion: blobs used"))->InsertNextValue(usedBlobs);
+  static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("EgoMotion: total keypoints used"))->InsertNextValue(this->Xvalues.size());
   std::cout << "cost goes from : " << costFunction[0] << " to : " << costFunction[costFunction.size() - 1] << std::endl;
   std::cout << "used keypoints : " << this->Xvalues.size() << std::endl;
-  std::cout << "edges : " << nbrEdgesUsed << " planes : " << nbrPlanesUsed << " blobs : " << nbrBlobused << std::endl;
+  std::cout << "edges : " << usedEdges << " planes : " << usedPlanes << " blobs : " << usedBlobs << std::endl;
   std::cout << "nbr rejection : " << nbrRejection << std::endl;
   std::cout << "final lambda value : " << lambda << std::endl;
 
@@ -3396,6 +3413,14 @@ void vtkSlam::Mapping()
 
   D = eig.eigenvalues();
   V = eig.eigenvectors();
+
+
+  static_cast<vtkDoubleArray*>(this->Trajectory->GetPointData()->GetArray("Mapping: intiale cost function"))->InsertNextValue(costFunction[0]);
+  static_cast<vtkDoubleArray*>(this->Trajectory->GetPointData()->GetArray("Mapping: final cost function"))->InsertNextValue(costFunction[costFunction.size() - 1]);
+  static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("Mapping: edges used"))->InsertNextValue(usedEdges);
+  static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("Mapping: planes used"))->InsertNextValue(usedPlanes);
+  static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("Mapping: blobs used"))->InsertNextValue(usedBlobs);
+  static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("Mapping: total keypoints used"))->InsertNextValue(this->Xvalues.size());
 
   std::cout << "cost goes from : " << costFunction[0] << " to : " << costFunction[costFunction.size() - 1] << std::endl;
   std::cout << "used keypoints : " << this->Xvalues.size() << std::endl;
