@@ -1020,6 +1020,7 @@ void vtkSlam::ResetAlgorithm()
   CreateDataArray<vtkDoubleArray>("yaw", 0, this->Trajectory);
   CreateDataArray<vtkDoubleArray>("Mapping: intiale cost function", 0, this->Trajectory);
   CreateDataArray<vtkDoubleArray>("Mapping: final cost function", 0, this->Trajectory);
+  CreateDataArray<vtkDoubleArray>("Variance Error", 0, this->Trajectory);
   CreateDataArray<vtkIntArray>("Mapping: edges used", 0, this->Trajectory);
   CreateDataArray<vtkIntArray>("Mapping: planes used", 0, this->Trajectory);
   CreateDataArray<vtkIntArray>("Mapping: blobs used", 0, this->Trajectory);
@@ -2921,11 +2922,9 @@ void vtkSlam::ComputeResidualValues(std::vector<Eigen::Matrix<double, 3, 3> >& v
 //-----------------------------------------------------------------------------
 void vtkSlam::ComputeResidualJacobians(std::vector<Eigen::Matrix<double, 3, 3> >& vA, std::vector<Eigen::Matrix<double, 3, 1> >& vX,
                                        std::vector<Eigen::Matrix<double, 3, 1> >& vP, std::vector<double> vS,
-                                       Eigen::Matrix<double, 6, 1>& T, Eigen::MatrixXd& residualsJacobians, Eigen::MatrixXd& Jacobian)
+                                       Eigen::Matrix<double, 6, 1>& T, Eigen::MatrixXd& residualsJacobians)
 {
-  Jacobian = Eigen::MatrixXd(1, 6);
   residualsJacobians = Eigen::MatrixXd(vX.size(), 6);
-  Jacobian << 0, 0, 0, 0, 0, 0;
 
   bool warned = false;
   double epsilon = 1e-5;
@@ -2977,8 +2976,7 @@ void vtkSlam::ComputeResidualJacobians(std::vector<Eigen::Matrix<double, 3, 3> >
     // evaluated at the point h(R,T). Note that G is
     // the composition of the functions sqrt and X' * A * X
     // and is not differentiable when X'*A*X = 0
-    Eigen::Matrix<double, 1, 3> JacobianG, JacobianGSquared;
-    JacobianG << 0, 0, 0;
+    Eigen::Matrix<double, 1, 3> JacobianG;
     double dist = std::sqrt(h_R_t.transpose() * A * h_R_t);
 
     if (dist - this->RadiusIncertitude[k] < 0)
@@ -2992,8 +2990,7 @@ void vtkSlam::ComputeResidualJacobians(std::vector<Eigen::Matrix<double, 3, 3> >
 
     if (dist > 1e-12)
     {
-      JacobianGSquared = s * s * h_R_t.transpose() * (A + A.transpose());
-      JacobianG = 1.0 / (2.0 * dist) * JacobianGSquared;
+      JacobianG = 1.0 / (2.0 * dist) * s * s * h_R_t.transpose() * (A + A.transpose());
     }
 
     // represent the jacobian of the H function
@@ -3036,12 +3033,11 @@ void vtkSlam::ComputeResidualJacobians(std::vector<Eigen::Matrix<double, 3, 3> >
     // dr / dtz
     JacobianH(2, 5) = 1;
 
-    Eigen::Matrix<double, 1, 6> jacobianTemp = JacobianG * JacobianH;
-    Jacobian += JacobianGSquared * JacobianH;
+    Eigen::Matrix<double, 1, 6> currentJacobian = JacobianG * JacobianH;
 
     for (unsigned int i = 0; i < 6; ++i)
     {
-      residualsJacobians(k, i) = jacobianTemp(0, i);
+      residualsJacobians(k, i) = currentJacobian(0, i);
     }
   }
 }
@@ -3157,12 +3153,12 @@ void vtkSlam::ComputeEgoMotion()
     // fi(R, T) = sqrt((R*X+T-P).t * A * (R*X+T-P)
     // J: residual jacobians, [dfi(R, T)/dR, dfi(R, T)/dT]
     // Y: residual values, fi(R, T)
-    Eigen::MatrixXd J, Y, Jsum;
+    Eigen::MatrixXd J, Y;
     this->ComputeResidualValues(this->Avalues, this->Xvalues, this->Pvalues, this->OutlierDistScale, R, dT, Y);
-    this->ComputeResidualJacobians(this->Avalues, this->Xvalues, this->Pvalues, this->OutlierDistScale, this->Trelative, J, Jsum);
+    this->ComputeResidualJacobians(this->Avalues, this->Xvalues, this->Pvalues, this->OutlierDistScale, this->Trelative, J);
 
     // RMSE
-    costFunction.push_back(1.0 / static_cast<double>(Y.rows()) * (Y.transpose() * Y)(0));
+    costFunction.push_back(std::sqrt(0.5 / static_cast<double>(Y.rows()) * (Y.transpose() * Y)(0)));
 
     Eigen::MatrixXd Jt = J.transpose();
     Eigen::MatrixXd JtJ = Jt * J;
@@ -3198,7 +3194,7 @@ void vtkSlam::ComputeEgoMotion()
     dTcandidate << Tcandidate(3), Tcandidate(4), Tcandidate(5);
     Eigen::MatrixXd Ycandidate;
     this->ComputeResidualValues(this->Avalues, this->Xvalues, this->Pvalues, this->OutlierDistScale, Rcandidate, dTcandidate, Ycandidate);
-    double newCost = 1.0 / static_cast<double>(Ycandidate.rows()) * (Ycandidate.transpose() * Ycandidate)(0);
+    double newCost = std::sqrt(0.5 / static_cast<double>(Ycandidate.rows()) * (Ycandidate.transpose() * Ycandidate)(0));
 
     if (newCost > costFunction[costFunction.size() - 1])
     {
@@ -3337,11 +3333,10 @@ void vtkSlam::Mapping()
     // Y: residual values, fi(R, T)
     Eigen::MatrixXd J, Y, Jsum;
     this->ComputeResidualValues(this->Avalues, this->Xvalues, this->Pvalues, this->OutlierDistScale, R, dT, Y);
-    this->ComputeResidualJacobians(this->Avalues, this->Xvalues, this->Pvalues, this->OutlierDistScale, this->Tworld, J, Jsum);
+    this->ComputeResidualJacobians(this->Avalues, this->Xvalues, this->Pvalues, this->OutlierDistScale, this->Tworld, J);
 
     // RMSE
-    costFunction.push_back(1.0 / static_cast<double>(Y.rows()) * (Y.transpose() * Y)(0));
-    normJacobian.push_back(Jsum.norm());
+    costFunction.push_back(std::sqrt(0.5 / static_cast<double>(Y.rows()) * (Y.transpose() * Y)(0)));
 
     Eigen::MatrixXd Jt = J.transpose();
     Eigen::MatrixXd JtJ = Jt * J;
@@ -3367,10 +3362,12 @@ void vtkSlam::Mapping()
       break;
     }
 
-    std::cout << "============= " << iterCount << " =============" << std::endl;
-    std::cout << "Jsum: " << Jsum << std::endl;
-    std::cout << "X: " << X.transpose() << std::endl;
-    std::cout << "Tworld: " << this->Tworld.transpose() << std::endl;
+    // Jacobian of the full sum function
+    // F(R, T) = sum fi(R, T)^2. Derivate
+    // upon R and T (=P) we found:
+    // dF / dP = 2 * sum(fi(P) * dfi(P) / dP)
+    Jsum = 2 * Y.transpose() * J;
+    normJacobian.push_back(Jsum.norm());
 
     // Check if the cost function has not increase
     // in the last iteration. If it does, we are too
@@ -3383,53 +3380,68 @@ void vtkSlam::Mapping()
     dTcandidate << Tcandidate(3), Tcandidate(4), Tcandidate(5);
     Eigen::MatrixXd Ycandidate;
     this->ComputeResidualValues(this->Avalues, this->Xvalues, this->Pvalues, this->OutlierDistScale, Rcandidate, dTcandidate, Ycandidate);
-    double newCost = 1.0 / static_cast<double>(Ycandidate.rows()) * (Ycandidate.transpose() * Ycandidate)(0);
+    double newCost = std::sqrt(0.5 / static_cast<double>(Ycandidate.rows()) * (Ycandidate.transpose() * Ycandidate)(0));
 
     if (newCost > costFunction[costFunction.size() - 1])
     {
       lambda = this->LambdaRatio * lambda;
-      std::cout << "Rejected" << std::endl;
     }
     else
     {
       this->Tworld = Tcandidate;
       lambda = 1.0 / this->LambdaRatio * lambda;
-      std::cout << "Accepted" << std::endl;
     }
 
     this->MappingIterMade = iterCount + 1;
   }
 
-  Eigen::MatrixXd J, Jsum;
-  this->ComputeResidualJacobians(this->Avalues, this->Xvalues, this->Pvalues, this->OutlierDistScale, this->Tworld, J, Jsum);
-  Eigen::Matrix<double, 6, 6> JbtJ = Jsum.transpose() * Jsum;
+  // Now evaluate the quality of the parameters
+  // prediction using an approxiamte computation
+  // of the variance covariance matrix
 
-  Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eig(JbtJ);
+  // Rotation and translation at the end of the mapping
+  Eigen::Matrix<double, 3, 3> R;
+  Eigen::Matrix<double, 3, 1> dT;
+  R = GetRotationMatrix(this->Tworld);
+  dT << this->Tworld(3), this->Tworld(4), this->Tworld(5);
 
-  // Eigen values
-  Eigen::MatrixXd D(1,3);
-  // Eigen vectors
-  Eigen::MatrixXd V(3,3);
+  // Compute residuals values mean and variance
+  Eigen::MatrixXd Y;
+  this->ComputeResidualValues(this->Avalues, this->Xvalues, this->Pvalues, this->OutlierDistScale, R, dT, Y);
+  double residualSum = std::sqrt(0.5 / static_cast<double>(Y.rows()) * (Y.transpose() * Y)(0));
+  double meanResidual = Y.sum();
+  double varResidual = 0;
+  for (unsigned int k = 0; k < Y.rows(); ++k)
+  {
+    varResidual = std::pow(Y(k) - meanResidual, 2);
+  }
+  varResidual /= static_cast<double>(Y.rows());
 
-  D = eig.eigenvalues();
-  V = eig.eigenvectors();
 
+  Eigen::MatrixXd J;
+  this->ComputeResidualJacobians(this->Avalues, this->Xvalues, this->Pvalues, this->OutlierDistScale, this->Tworld, J);
+
+  Eigen::MatrixXd JtJ = J.transpose() * J;
+  Eigen::MatrixXd Sigma = varResidual * JtJ.inverse();
+  Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eig(Sigma);
+  Eigen::MatrixXd D = eig.eigenvalues();
 
   static_cast<vtkDoubleArray*>(this->Trajectory->GetPointData()->GetArray("Mapping: intiale cost function"))->InsertNextValue(costFunction[0]);
   static_cast<vtkDoubleArray*>(this->Trajectory->GetPointData()->GetArray("Mapping: final cost function"))->InsertNextValue(costFunction[costFunction.size() - 1]);
+  static_cast<vtkDoubleArray*>(this->Trajectory->GetPointData()->GetArray("Variance Error"))->InsertNextValue(costFunction[D(5)]);
   static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("Mapping: edges used"))->InsertNextValue(usedEdges);
   static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("Mapping: planes used"))->InsertNextValue(usedPlanes);
   static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("Mapping: blobs used"))->InsertNextValue(usedBlobs);
   static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("Mapping: total keypoints used"))->InsertNextValue(this->Xvalues.size());
 
-  std::cout << "cost goes from : " << costFunction[0] << " to : " << costFunction[costFunction.size() - 1] << std::endl;
+  std::cout << "cost goes from : " << costFunction[0] << " to : " << costFunction[costFunction.size() - 1] << " is equal ? : " << residualSum << std::endl;
   std::cout << "used keypoints : " << this->Xvalues.size() << std::endl;
   std::cout << "edges : " << usedEdges << " planes : " << usedPlanes << " blobs : " << usedBlobs << std::endl;
   std::cout << "final lambda value : " << lambda << std::endl;
-  std::cout << "Jacobian : " << Jsum << std::endl;
   std::cout << "Jacobian norm goes from: " << normJacobian[0] << " to : " << normJacobian[normJacobian.size() - 1] << std::endl;
-  std::cout << "Jacobian eigen values: " << std::endl << D << std::endl;
-  std::cout << "Jacobian eigen vectors: " << std::endl << V << std::endl;
+  std::cout << "Covariance matrix: " << Sigma << std::endl;
+  std::cout << "Covariance Eigen values: " << D << std::endl;
+  std::cout << "Maximum variance: " << D(5) << std::endl;
 
   // Add the current computed transform to the list
   this->TworldList.push_back(this->Tworld);

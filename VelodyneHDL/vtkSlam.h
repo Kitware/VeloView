@@ -540,7 +540,7 @@ private:
                              Eigen::Matrix<double, 3, 3>& R, Eigen::Matrix<double, 3, 1>& dT, Eigen::MatrixXd& residuals);
   void ComputeResidualJacobians(std::vector<Eigen::Matrix<double, 3, 3> >& vA, std::vector<Eigen::Matrix<double, 3, 1> >& vX,
                                 std::vector<Eigen::Matrix<double, 3, 1> >& vP, std::vector<double> vS,
-                                Eigen::Matrix<double, 6, 1>& T, Eigen::MatrixXd& residualsJacobians, Eigen::MatrixXd& Jacobian);
+                                Eigen::Matrix<double, 6, 1>& T, Eigen::MatrixXd& residualsJacobians);
 
   // Instead of taking the k-nearest neigbirs in the odometry
   // step we will take specific neighbor using the particularities
