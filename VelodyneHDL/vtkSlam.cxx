@@ -3150,12 +3150,7 @@ void vtkSlam::ComputeEgoMotion()
     this->ComputeResidualJacobians(this->Avalues, this->Xvalues, this->Pvalues, this->OutlierDistScale, this->Trelative, J, Jsum);
 
     // RMSE
-    costFunction.push_back(0);
-    for (unsigned int kk = 0; kk < Y.rows(); ++kk)
-    {
-      costFunction[costFunction.size() - 1] += Y(kk);
-    }
-    costFunction[costFunction.size() - 1] /= static_cast<double>(this->Xvalues.size());
+    costFunction.push_back(1.0 / static_cast<double>(Y.rows()) * (Y.transpose() * Y)(0));
 
     Eigen::MatrixXd Jt = J.transpose();
     Eigen::MatrixXd JtJ = Jt * J;
@@ -3191,12 +3186,7 @@ void vtkSlam::ComputeEgoMotion()
     dTcandidate << Tcandidate(3), Tcandidate(4), Tcandidate(5);
     Eigen::MatrixXd Ycandidate;
     this->ComputeResidualValues(this->Avalues, this->Xvalues, this->Pvalues, this->OutlierDistScale, Rcandidate, dTcandidate, Ycandidate);
-    double newCost = 0;
-    for (unsigned int kk = 0; kk < Ycandidate.rows(); ++kk)
-    {
-      newCost += Ycandidate(kk);
-    }
-    newCost /= static_cast<double>(this->Xvalues.size());
+    double newCost = 1.0 / static_cast<double>(Ycandidate.rows()) * (Ycandidate.transpose() * Ycandidate)(0);
 
     if (newCost > costFunction[costFunction.size() - 1])
     {
@@ -3333,12 +3323,7 @@ void vtkSlam::Mapping()
     this->ComputeResidualJacobians(this->Avalues, this->Xvalues, this->Pvalues, this->OutlierDistScale, this->Tworld, J, Jsum);
 
     // RMSE
-    costFunction.push_back(0);
-    for (unsigned int kk = 0; kk < Y.rows(); ++kk)
-    {
-      costFunction[costFunction.size() - 1] += Y(kk);
-    }
-    costFunction[costFunction.size() - 1] /= static_cast<double>(this->Xvalues.size());
+    costFunction.push_back(1.0 / static_cast<double>(Y.rows()) * (Y.transpose() * Y)(0));
     normJacobian.push_back(Jsum.norm());
 
     Eigen::MatrixXd Jt = J.transpose();
@@ -3381,12 +3366,7 @@ void vtkSlam::Mapping()
     dTcandidate << Tcandidate(3), Tcandidate(4), Tcandidate(5);
     Eigen::MatrixXd Ycandidate;
     this->ComputeResidualValues(this->Avalues, this->Xvalues, this->Pvalues, this->OutlierDistScale, Rcandidate, dTcandidate, Ycandidate);
-    double newCost = 0;
-    for (unsigned int kk = 0; kk < Ycandidate.rows(); ++kk)
-    {
-      newCost += Ycandidate(kk);
-    }
-    newCost /= static_cast<double>(this->Xvalues.size());
+    double newCost = 1.0 / static_cast<double>(Ycandidate.rows()) * (Ycandidate.transpose() * Ycandidate)(0);
 
     if (newCost > costFunction[costFunction.size() - 1])
     {
