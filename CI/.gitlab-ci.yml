@@ -1,0 +1,105 @@
+variables:
+  ENABLE_veloview: "True"
+  USE_SYSTEM_python: "True"
+  CMAKE_BUILD_TYPE: "Release"
+
+stages:
+  - superbuild
+  - build
+  - test
+  - package
+  
+.default-cache: &default-cache
+  key: ${OS}-${CI_COMMIT_REF_NAME}
+  paths:
+    - Superbuild-build
+
+.push-cache: &push-cache
+  cache:
+    <<: *default-cache
+    policy: push
+
+.pull-cache: &pull-cache
+  cache:
+    <<: *default-cache
+    policy: pull
+    
+.get-superbuild:
+  script: &get-superbuild
+    - chmod +x CI/findRightSuperbuildCache.sh
+    - CI/findRightSuperbuildCache.sh ${OS} ${CI_COMMIT_REF_NAME} ${MINIO_CACHE_SERVER_ADDRESS} ${MINIO_CACHE_SERVER_ACCESS_KEY} ${MINIO_CACHE_SERVER_SECRET_KEY}
+
+################################################################################
+### linux_build
+################################################################################
+
+.linux_superbuild: &linux_superbuild
+  stage: superbuild
+  when: manual
+  script: 
+    # prepare directory
+    - mkdir Superbuild-build/
+    - cd Superbuild-build/
+    # configure & generate
+    - cmake -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
+      -DENABLE_veloview:BOOL=${ENABLE_veloview}
+      -DUSE_SYSTEM_python:BOOL=${USE_SYSTEM_python}
+      ${CI_PROJECT_DIR}/Superbuild
+    # compile
+    - make -j8
+    # remove Veloview
+    - rm -rf veloview/
+  <<: *push-cache
+
+.linux_build: &linux_build
+  stage: build
+  before_script: *get-superbuild
+  script: 
+    - cd Superbuild-build/
+    - make veloview -j8
+  artifacts:
+    paths:
+     - Superbuild-build/veloview
+    expire_in: 3 mins
+
+.linux_test: &linux_test
+  stage: test
+  before_script: *get-superbuild
+  script:
+    - echo "test"
+
+.linux_package: &linux_package
+  stage: package
+  before_script: *get-superbuild
+  script:
+    - cd Superbuild-build/veloview
+    - make install -j8
+  artifacts:
+    name: ${CI_JOB_NAME}
+    paths:
+     - build
+     
+#-------------------------------------------------------------------------------
+# ubunu 16.04
+#-------------------------------------------------------------------------------
+.ubuntu_16_04: &ubuntu_16_04
+  tags:
+    - ubuntu_16.04
+  variables:
+    OS: ubuntu_16.04
+
+superbuild_ubuntu16.04:
+  <<: *ubuntu_16_04
+  <<: *linux_superbuild
+
+build_ubuntu_16.04:
+  <<: *ubuntu_16_04
+  <<: *linux_build
+
+test_ubuntu_16.04:
+  <<: *ubuntu_16_04
+  <<: *linux_test
+
+package_ubuntu_16.04:
+  <<: *ubuntu_16_04
+  <<: *linux_package
