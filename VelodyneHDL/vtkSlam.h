@@ -103,6 +103,65 @@ class vtkVelodyneTransformInterpolator;
 class RollingGrid;
 typedef pcl::PointXYZINormal Point;
 
+class KalmanFilter
+{
+public:
+  // default constructor
+  KalmanFilter();
+
+  // Reset the class
+  void ResetKalmanFilter();
+
+  // Set current time of the algorithm
+  void SetCurrentTime(double time);
+
+  // Prediction of the next state vector
+  void Prediction();
+
+  // Correction of the prediction using
+  // the input measure
+  void Correction(Eigen::Matrix<double, 6, 1> Measure);
+
+  // Set the measures variance covariance matrix
+  void SetMeasureCovariance(Eigen::Matrix<double, 6, 6> argCov);
+
+  // return the state vector
+  Eigen::Matrix<double, 12, 1> GetStateVector();
+
+private:
+  // Motion model / Prediction Model
+  Eigen::Matrix<double, 12, 12> MotionModel;
+
+  // Link between the measures and the state vector
+  Eigen::Matrix<double, 6, 12> MeasureModel;
+
+  // Variance-Covariance of measures
+  Eigen::Matrix<double, 6, 6> MeasureCovariance;
+
+  // Variance-Covariance of model
+  Eigen::Matrix<double, 12, 12> ModelCovariance;
+
+  // State vector composed like this:
+  // -rx, ry, rz
+  // -tx, ty, tz
+  // -drx/dt, dry/dt, drz/dt
+  // -dtx/dt, dty/dt, dtz/dt
+  Eigen::Matrix<double, 12, 1> VectorState;
+  Eigen::Matrix<double, 12, 1> VectorStatePredicted;
+
+  // Estimator variance covariance
+  Eigen::Matrix<double, 12, 12> EstimatorCovariance;
+
+  // delta time for prediction
+  double PreviousTime;
+  double CurrentTime;
+  double DeltaTime;
+
+  // Maximale acceleration endorsed by the vehicule
+  double MaxAcceleration;
+  double MaxAngleAcceleration;
+};
+
 class VTK_EXPORT vtkSlam : public vtkPolyDataAlgorithm
 {
 public:
@@ -317,6 +376,11 @@ private:
   std::vector<std::vector<double> > BlobScore;
   std::vector<std::vector<int> > IsPointValid;
   std::vector<std::vector<int> > Label;
+
+  // Kalman estimator to predict motion
+  // using a motion model when the minimization
+  // algorithm have a poor parameter prediction
+  KalmanFilter KalmanEstimator;
 
   // with of the neighbor used to compute discrete
   // differential operators
