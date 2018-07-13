@@ -1,14 +1,19 @@
+# this cmake variable are exposed here so schedule jobs can modify them
 variables:
-  ENABLE_veloview: "True"
-  USE_SYSTEM_python: "True"
-  CMAKE_BUILD_TYPE: "Release"
+  # cmake superbuild option
+  cmake_option_ENABLE_veloview: "True"
+  cmake_option_USE_SYSTEM_python: "True"
+  cmake_option_CMAKE_BUILD_TYPE: "Release"
 
+# this are the 4 stage of the continuous integration, the stage are executed one after another
 stages:
   - superbuild
   - build
   - test
   - package
-  
+
+# jobs starting with "." are ignored, they are used as anchor, which enable
+# to reuse the same code inside multiple jobs
 .default-cache: &default-cache
   key: ${OS}-${CI_COMMIT_REF_NAME}
   paths:
@@ -23,27 +28,26 @@ stages:
   cache:
     <<: *default-cache
     policy: pull
-    
-.get-superbuild:
-  script: &get-superbuild
+
+################################################################################
+### anchor jobs for linux, they will be used accros multiple other jobs
+################################################################################
+
+.linux_get_superbuild:
+  script: &linux_get_superbuild
     - chmod +x CI/findRightSuperbuildCache.sh
     - CI/findRightSuperbuildCache.sh ${OS} ${CI_COMMIT_REF_NAME} ${MINIO_CACHE_SERVER_ADDRESS} ${MINIO_CACHE_SERVER_ACCESS_KEY} ${MINIO_CACHE_SERVER_SECRET_KEY}
 
-################################################################################
-### linux_build
-################################################################################
-
 .linux_superbuild: &linux_superbuild
   stage: superbuild
-  when: manual
-  script: 
+  script:
     # prepare directory
     - mkdir Superbuild-build/
     - cd Superbuild-build/
     # configure & generate
-    - cmake -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
-      -DENABLE_veloview:BOOL=${ENABLE_veloview}
-      -DUSE_SYSTEM_python:BOOL=${USE_SYSTEM_python}
+    - cmake -DCMAKE_BUILD_TYPE:STRING=${cmake_option_CMAKE_BUILD_TYPE}
+      -DENABLE_veloview:BOOL=${cmake_option_ENABLE_veloview}
+      -DUSE_SYSTEM_python:BOOL=${cmake_option_USE_SYSTEM_python}
       ${CI_PROJECT_DIR}/Superbuild
     # compile
     - make -j8
@@ -51,36 +55,60 @@ stages:
     - rm -rf veloview/
   <<: *push-cache
 
+.linux_superbuild_manual: &linux_superbuild_manual
+  when: manual
+  <<: *linux_superbuild
+
+.linux_superbuild_schedule: &linux_superbuild_schedule
+  <<: *linux_superbuild
+  only:
+    - schedules
+
 .linux_build: &linux_build
   stage: build
-  before_script: *get-superbuild
-  script: 
+  before_script: *linux_get_superbuild
+  script:
     - cd Superbuild-build/
     - make veloview -j8
   artifacts:
     paths:
      - Superbuild-build/veloview
-    expire_in: 3 mins
+    expire_in: 1 hr
 
 .linux_test: &linux_test
   stage: test
-  before_script: *get-superbuild
+  before_script: *linux_get_superbuild
   script:
     - echo "test"
 
 .linux_package: &linux_package
   stage: package
-  before_script: *get-superbuild
+  before_script: *linux_get_superbuild
   script:
-    - cd Superbuild-build/veloview
-    - make install -j8
+    - cd Superbuild-build
+    - make package -j8
+
+.linux_package_manual: &linux_package_manual
+  when: manual
+  <<: *linux_package
   artifacts:
     name: ${CI_JOB_NAME}
     paths:
-     - build
-     
+     - Superbuild-build/*.tar.gz
+    expire_in: 1 hr
+
+.linux_package_schedule: &linux_package_schedule
+  <<: *linux_package
+  artifacts:
+    name: ${CI_JOB_NAME}
+    paths:
+     - Superbuild-build/*.tar.gz
+    expire_in: 1 day
+  only:
+    - schedules
+
 #-------------------------------------------------------------------------------
-# ubunu 16.04
+# jobs for ubunu 16.04
 #-------------------------------------------------------------------------------
 .ubuntu_16_04: &ubuntu_16_04
   tags:
@@ -88,18 +116,53 @@ stages:
   variables:
     OS: ubuntu_16.04
 
-superbuild_ubuntu16.04:
+ubuntu16.04_superbuild_manual:
   <<: *ubuntu_16_04
-  <<: *linux_superbuild
+  <<: *linux_superbuild_manual
 
-build_ubuntu_16.04:
+ubuntu16.04_superbuild_schedule:
+  <<: *ubuntu_16_04
+  <<: *linux_superbuild_schedule
+
+ubuntu16.04_build:
   <<: *ubuntu_16_04
   <<: *linux_build
 
-test_ubuntu_16.04:
+ubuntu16.04_test:
   <<: *ubuntu_16_04
   <<: *linux_test
 
-package_ubuntu_16.04:
+ubuntu16.04_package_manual:
   <<: *ubuntu_16_04
-  <<: *linux_package
+  <<: *linux_package_manual
+
+ubuntu16.04_package_schedule:
+  <<: *ubuntu_16_04
+  <<: *linux_package_schedule
+
+#-------------------------------------------------------------------------------
+# jobs for ubunu 14.04.5
+#-------------------------------------------------------------------------------
+.ubuntu_14_04_5: &ubuntu_14_04_5
+  tags:
+    - ubuntu_14.04.5
+  variables:
+    OS: ubuntu_14.04.5
+  only:
+    - schedules
+
+ubuntu14.04.5_superbuild_schedule:
+  <<: *ubuntu_14_04_5
+  <<: *linux_superbuild_schedule
+
+ubuntu14.04.5_build:
+  <<: *ubuntu_14_04_5
+  <<: *linux_build
+
+ubuntu14.04.5_test:
+  <<: *ubuntu_14_04_5
+  <<: *linux_test
+
+ubuntu14.04.5_package_schedule:
+  <<: *ubuntu_14_04_5
+  <<: *linux_package_schedule
