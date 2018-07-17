@@ -125,6 +125,14 @@ public:
   // Set the measures variance covariance matrix
   void SetMeasureCovariance(Eigen::Matrix<double, 6, 6> argCov);
 
+  // Set the maximum angle acceleration
+  // use to compute variance covariance matrix
+  void SetMaxAngleAcceleration(double acc);
+
+  // Set the maximum velocity acceleration
+  // use to compute variance covariance matrix
+  void SetMaxVelocityAcceleration(double acc);
+
   // return the state vector
   Eigen::Matrix<double, 12, 1> GetStateVector();
 
@@ -222,6 +230,12 @@ public:
 
   slamGetMacro(,FastSlam, bool)
   slamSetMacro(,FastSlam, bool)
+
+  slamGetMacro(,MotionModel, bool)
+  slamSetMacro(,MotionModel, bool)
+
+  void SetMaxVelocityAcceleration(double acc);
+  void SetMaxAngleAcceleration(double acc);
 
   // Get/Set RollingGrid
   /*const*/ unsigned int Get_RollingGrid_VoxelSize() const;
@@ -349,6 +363,13 @@ private:
   // all points that are not set to invalid will be used
   // as mapping planars points.
   bool FastSlam;
+
+  // If set to true, the mapping will use a motion
+  // model. The motion model will be integrating to
+  // ICP estimator using a kalman filter. hence, when
+  // the estimation has a poor confidence the slam will
+  // use the motion model to improve accuracy
+  bool MotionModel;
 
   // keypoints extracted
   pcl::PointCloud<Point>::Ptr CurrentEdgesPoints;

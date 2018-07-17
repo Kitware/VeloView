@@ -104,6 +104,24 @@ bool vvSlamConfigurationDialog::FastSlam()
   return this->ui->FastSlam->isChecked();
 }
 
+//-----------------------------------------------------------------------------
+bool vvSlamConfigurationDialog::MotionModel()
+{
+  return this->ui->MotionModelCheckbox->isChecked();
+}
+
+//-----------------------------------------------------------------------------
+double vvSlamConfigurationDialog::MaxAngleAcc()
+{
+  return this->ui->AngleAccelerationSpinBox->value();
+}
+
+//-----------------------------------------------------------------------------
+double vvSlamConfigurationDialog::MaxVelocityAcc()
+{
+  return this->ui->VelocityAccelerationSpinBox->value();
+}
+
 //--------------------------------------------------------------//
 //                         Keypoint option
 //--------------------------------------------------------------//

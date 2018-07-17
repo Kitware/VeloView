@@ -22,6 +22,9 @@ class VelodyneHDLPlugin_EXPORT vvSlamConfigurationDialog : public QDialog
   Q_PROPERTY(double Lambda0 READ Lambda0)
   Q_PROPERTY(double LambdaRatio READ LambdaRatio)
   Q_PROPERTY(bool FastSlam READ FastSlam)
+  Q_PROPERTY(bool MotionModel READ MotionModel)
+  Q_PROPERTY(double MaxVelocityAcc READ MaxVelocityAcc)
+  Q_PROPERTY(double MaxAngleAcc READ MaxAngleAcc)
   //Keypoint
   Q_PROPERTY(int Keypoint_MaxEdgePerScanLine READ Keypoint_MaxEdgePerScanLine)
   Q_PROPERTY(int Keypoint_MaxPlanarsPerScanLine READ Keypoint_MaxPlanarsPerScanLine)
@@ -52,6 +55,7 @@ class VelodyneHDLPlugin_EXPORT vvSlamConfigurationDialog : public QDialog
   Q_PROPERTY(double Mapping_Plane_Max_Distance READ Mapping_Plane_Max_Distance)
   Q_PROPERTY(int MappingMinimalLineNeighborRejection READ MappingMinimalLineNeighborRejection)
   Q_PROPERTY(double MappingMaxDistanceInlierRejection READ MappingMaxDistanceInlierRejection)
+
   Q_ENUMS(FrameMode)
   
 public:
@@ -69,6 +73,9 @@ public:
   double Lambda0();
   double LambdaRatio();
   bool FastSlam();
+  bool MotionModel();
+  double MaxAngleAcc();
+  double MaxVelocityAcc();
 
   //Keypoint
   int Keypoint_MaxEdgePerScanLine();

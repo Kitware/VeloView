@@ -62,6 +62,9 @@ def configure():
     slam.GetClientSideObject().Set_Lambda0(slamDialog.Lambda0)
     slam.GetClientSideObject().Set_LambdaRatio(slamDialog.LambdaRatio)
     slam.GetClientSideObject().Set_FastSlam(slamDialog.FastSlam)
+    slam.GetClientSideObject().Set_MotionModel(slamDialog.MotionModel)
+    slam.GetClientSideObject().SetMaxVelocityAcceleration(slamDialog.MaxVelocityAcc)
+    slam.GetClientSideObject().SetMaxAngleAcceleration(slamDialog.MaxAngleAcc)
 
     # Keypoint
     slam.GetClientSideObject().Set_Keypoint_MaxEdgePerScanLine(slamDialog.Keypoint_MaxEdgePerScanLine)

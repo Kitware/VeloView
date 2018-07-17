@@ -916,9 +916,10 @@ void vtkSlam::ResetAlgorithm()
 
   // Use dense planars point cloud for mapping
   this->FastSlam = true;
-
+  this->MotionModel = true;
   this->Lambda0 = 0.1;
   this->LambdaRatio = 1.5;
+  this->KalmanEstimator.ResetKalmanFilter();
 
   // EgoMotion
   // edges
@@ -3402,7 +3403,6 @@ void vtkSlam::Mapping()
   // Now evaluate the quality of the parameters
   // prediction using an approxiamte computation
   // of the variance covariance matrix
-
   // Rotation and translation at the end of the mapping
   Eigen::Matrix<double, 3, 3> R;
   Eigen::Matrix<double, 3, 1> dT;
@@ -3446,16 +3446,19 @@ void vtkSlam::Mapping()
   std::cout << "Covariance Eigen values: " << D << std::endl;
   std::cout << "Maximum variance: " << D(5) << std::endl;
 
-  this->KalmanEstimator.Prediction();
-  this->KalmanEstimator.SetMeasureCovariance(Sigma);
-  this->KalmanEstimator.Correction(this->Tworld);
-  Eigen::Matrix<double, 12, 1> stateVector = this->KalmanEstimator.GetStateVector();
-
-  std::cout << "State vector: " << std::endl << stateVector << std::endl;
-
-  for (unsigned int i = 0; i < 6; ++i)
+  if (this->MotionModel)
   {
-    this->Tworld(i) = stateVector(i);
+    this->KalmanEstimator.Prediction();
+    this->KalmanEstimator.SetMeasureCovariance(Sigma);
+    this->KalmanEstimator.Correction(this->Tworld);
+    Eigen::Matrix<double, 12, 1> stateVector = this->KalmanEstimator.GetStateVector();
+
+    std::cout << "State vector: " << std::endl << stateVector << std::endl;
+
+    for (unsigned int i = 0; i < 6; ++i)
+    {
+      this->Tworld(i) = stateVector(i);
+    }
   }
 
   // Add the current computed transform to the list
@@ -3604,6 +3607,18 @@ Eigen::Matrix<double, 6, 1> vtkSlam::PredictTWorld()
 }
 
 //-----------------------------------------------------------------------------
+void vtkSlam::SetMaxVelocityAcceleration(double acc)
+{
+  this->KalmanEstimator.SetMaxVelocityAcceleration(acc);
+}
+
+//-----------------------------------------------------------------------------
+void vtkSlam::SetMaxAngleAcceleration(double acc)
+{
+  this->KalmanEstimator.SetMaxAngleAcceleration(acc);
+}
+
+//-----------------------------------------------------------------------------
 KalmanFilter::KalmanFilter()
 {
   this->ResetKalmanFilter();
@@ -3749,4 +3764,16 @@ void KalmanFilter::Correction(Eigen::Matrix<double, 6, 1> Measure)
 Eigen::Matrix<double, 12, 1> KalmanFilter::GetStateVector()
 {
   return this->VectorState;
+}
+
+//-----------------------------------------------------------------------------
+void KalmanFilter::SetMaxAngleAcceleration(double acc)
+{
+  this->MaxAngleAcceleration = acc / 180.0 * vtkMath::Pi();
+}
+
+//-----------------------------------------------------------------------------
+void KalmanFilter::SetMaxVelocityAcceleration(double acc)
+{
+  this->MaxAcceleration = acc;
 }

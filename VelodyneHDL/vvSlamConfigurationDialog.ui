@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>869</width>
-    <height>699</height>
+    <height>732</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -664,13 +664,6 @@
       <string>Slam</string>
      </property>
      <layout class="QGridLayout" name="gridLayout_2">
-      <item row="4" column="2">
-       <widget class="QLabel" name="label">
-        <property name="text">
-         <string>To</string>
-        </property>
-       </widget>
-      </item>
       <item row="4" column="3">
        <widget class="QSpinBox" name="End">
         <property name="maximum">
@@ -678,20 +671,27 @@
         </property>
        </widget>
       </item>
+      <item row="4" column="2">
+       <widget class="QLabel" name="label">
+        <property name="text">
+         <string>To</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0" colspan="2">
+       <widget class="QRadioButton" name="currentFrame">
+        <property name="text">
+         <string>Current frame</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
       <item row="4" column="1">
        <widget class="QSpinBox" name="Start">
         <property name="maximum">
          <number>500</number>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="0" colspan="2">
-       <widget class="QRadioButton" name="allFrames">
-        <property name="text">
-         <string>All frames</string>
-        </property>
-        <property name="checked">
-         <bool>false</bool>
         </property>
        </widget>
       </item>
@@ -715,13 +715,67 @@
         </property>
        </widget>
       </item>
-      <item row="1" column="0" colspan="2">
-       <widget class="QRadioButton" name="currentFrame">
+      <item row="0" column="0" colspan="2">
+       <widget class="QRadioButton" name="allFrames">
         <property name="text">
-         <string>Current frame</string>
+         <string>All frames</string>
         </property>
         <property name="checked">
-         <bool>true</bool>
+         <bool>false</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="6">
+       <widget class="QCheckBox" name="MotionModelCheckbox">
+        <property name="text">
+         <string>Motion Model</string>
+        </property>
+        <property name="checked">
+         <bool>false</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="5">
+       <widget class="QLabel" name="label_37">
+        <property name="text">
+         <string>Motion model</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="5">
+       <widget class="QLabel" name="label_38">
+        <property name="text">
+         <string>Max velocity acceleration (m.s-2) </string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="6">
+       <widget class="QDoubleSpinBox" name="VelocityAccelerationSpinBox">
+        <property name="maximum">
+         <double>500.000000000000000</double>
+        </property>
+        <property name="singleStep">
+         <double>0.100000000000000</double>
+        </property>
+        <property name="value">
+         <double>9.810000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="5">
+       <widget class="QLabel" name="label_39">
+        <property name="text">
+         <string>Max angle acceleration (degree.s-2)</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="6">
+       <widget class="QDoubleSpinBox" name="AngleAccelerationSpinBox">
+        <property name="maximum">
+         <double>10000.000000000000000</double>
+        </property>
+        <property name="value">
+         <double>540.000000000000000</double>
         </property>
        </widget>
       </item>
