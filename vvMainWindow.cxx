@@ -270,6 +270,8 @@ private:
     connect(this->Ui.actionView_Controls, SIGNAL(triggered()), window, SLOT(switchToolBarVisibility()));
     connect(this->Ui.actionPlayback_Controls, SIGNAL(triggered()), window, SLOT(switchToolBarVisibility()));
     connect(this->Ui.actionGeolocation_Controls, SIGNAL(triggered()), window, SLOT(switchToolBarVisibility()));
+    // handle connection for View Menu
+    connect(this->Ui.menuView, SIGNAL(aboutToShow()), window, SLOT(UpdateViewMenu()));
     connect(this->Ui.actionShowPipelineBrowser, SIGNAL(triggered()), window, SLOT(onSwitchPipelineBrowserVisibility()));
     connect(this->Ui.actionShowPropertiesPanel, SIGNAL(triggered()), window, SLOT(onSwitchPropertiesPanelVisibility()));
   }
@@ -393,4 +395,11 @@ void vvMainWindow::onSwitchPropertiesPanelVisibility()
 
   // Switch action isChecked status
   this->Internals->Ui.actionShowPropertiesPanel->setChecked(dock->isVisible());
+}
+
+//-----------------------------------------------------------------------------
+void vvMainWindow::UpdateViewMenu()
+{
+  this->Internals->Ui.actionShowPropertiesPanel->setChecked(this->Internals->Ui.propertiesPanelDock->isVisible());
+  this->Internals->Ui.actionShowPipelineBrowser->setChecked(this->Internals->Ui.pipelineBrowserDock->isVisible());
 }

@@ -36,6 +36,7 @@ private slots:
   void UpdateToolBarMenu();
   void onSwitchPipelineBrowserVisibility();
   void onSwitchPropertiesPanelVisibility();
+  void UpdateViewMenu();
 };
 
 #endif
