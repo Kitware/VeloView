@@ -135,8 +135,27 @@
     <addaction name="actionVeloViewDeveloperGuide"/>
     <addaction name="actionResetConfigurationFile"/>
    </widget>
+   <widget class="QMenu" name="menuToolbar">
+    <property name="title">
+     <string>Toolbars</string>
+    </property>
+    <addaction name="actionBasic_Controls"/>
+    <addaction name="actionColor_Controls"/>
+    <addaction name="actionView_Controls"/>
+    <addaction name="actionPlayback_Controls"/>
+    <addaction name="actionGeolocation_Controls"/>
+   </widget>
+   <widget class="QMenu" name="menuView">
+    <property name="title">
+     <string>View</string>
+    </property>
+    <addaction name="actionShowPipelineBrowser"/>
+    <addaction name="actionShowPropertiesPanel"/>
+   </widget>
    <addaction name="menu_File"/>
    <addaction name="menuTools"/>
+   <addaction name="menuToolbar"/>
+   <addaction name="menuView"/>
    <addaction name="menuHelp"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
@@ -232,6 +251,30 @@
     <number>2</number>
    </attribute>
    <widget class="pqColorMapEditor" name="colorMapEditorPanel"/>
+  </widget>
+  <widget class="QDockWidget" name="pipelineBrowserDock">
+   <property name="features">
+    <set>QDockWidget::AllDockWidgetFeatures</set>
+   </property>
+   <property name="windowTitle">
+    <string>Pipeline Browser</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>2</number>
+   </attribute>
+   <widget class="pqPipelineBrowserWidget" name="dockWidgetContents"/>
+  </widget>
+  <widget class="QDockWidget" name="propertiesPanelDock">
+   <property name="features">
+    <set>QDockWidget::AllDockWidgetFeatures</set>
+   </property>
+   <property name="windowTitle">
+    <string>Properties</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>2</number>
+   </attribute>
+   <widget class="pqPropertiesPanel" name="dockWidgetContents_2"/>
   </widget>
   <action name="actionE_xit">
    <property name="text">
@@ -336,6 +379,9 @@
    <property name="toolTip">
     <string>Seek Backward</string>
    </property>
+   <property name="shortcut">
+    <string>Left</string>
+   </property>
   </action>
   <action name="actionPlay">
    <property name="icon">
@@ -349,7 +395,7 @@
     <string>Play</string>
    </property>
    <property name="shortcut">
-    <string>Ctrl+P</string>
+    <string>Space</string>
    </property>
   </action>
   <action name="actionSeek_Forward">
@@ -363,6 +409,9 @@
    <property name="toolTip">
     <string>Seek Forward</string>
    </property>
+   <property name="shortcut">
+    <string>Right</string>
+   </property>
   </action>
   <action name="actionPause">
    <property name="icon">
@@ -371,6 +420,9 @@
    </property>
    <property name="text">
     <string>Pause</string>
+   </property>
+   <property name="shortcut">
+    <string>Space</string>
    </property>
   </action>
   <action name="actionRecord">
@@ -512,12 +564,12 @@
   </action>
   <action name="actionAbout_VeloView">
    <property name="text">
-    <string>About VeloView</string>
+    <string>About ...</string>
    </property>
   </action>
   <action name="actionVeloViewDeveloperGuide">
    <property name="text">
-    <string>VeloView Developer Guide</string>
+    <string>Developer's Guide</string>
    </property>
   </action>
   <action name="actionRecent_file1">
@@ -651,7 +703,7 @@
   </action>
   <action name="actionVeloViewUserGuide">
    <property name="text">
-    <string>VeloView User Guide</string>
+    <string>User's Guide</string>
    </property>
    <property name="shortcut">
     <string>F1</string>
@@ -973,6 +1025,83 @@
     <string>Ignore empty frames</string>
    </property>
   </action>
+  <action name="actionBasic_Controls">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Basic Controls</string>
+   </property>
+  </action>
+  <action name="actionColor_Controls">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Color Controls</string>
+   </property>
+  </action>
+  <action name="actionView_Controls">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Camera Controls</string>
+   </property>
+  </action>
+  <action name="actionPlayback_Controls">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Playback Controls</string>
+   </property>
+  </action>
+  <action name="actionGeolocation_Controls">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Geolocation Controls</string>
+   </property>
+  </action>
+  <action name="actionShowPipelineBrowser">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Pipeline Browser</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+P</string>
+   </property>
+  </action>
+  <action name="actionShowPropertiesPanel">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Properties Panel</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+P</string>
+   </property>
+  </action>
  </widget>
  <customwidgets>
   <customwidget>
@@ -984,6 +1113,18 @@
    <class>pqColorMapEditor</class>
    <extends>QWidget</extends>
    <header>pqColorMapEditor.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>pqPipelineBrowserWidget</class>
+   <extends>QWidget</extends>
+   <header>pqPipelineBrowserWidget.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>pqPropertiesPanel</class>
+   <extends>QWidget</extends>
+   <header>pqPropertiesPanel.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

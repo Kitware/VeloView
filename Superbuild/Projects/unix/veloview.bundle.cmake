@@ -56,7 +56,7 @@ if (qt_ENABLED AND NOT USE_SYSTEM_qt)
 endif()
 
 # install executables
-foreach(executable VeloView)
+foreach(executable ${SOFTWARE_NAME})
   install(PROGRAMS "${install_location}/bin/${executable}"
     DESTINATION "bin"
     COMPONENT superbuild)

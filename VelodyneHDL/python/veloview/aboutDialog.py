@@ -35,12 +35,17 @@ def showDialog(mainWindow):
     image.setPixmap(splash)
     image.adjustSize()
 
-    copyrightText = '''<h1>VeloView {0}</h1><br/>
-                       Copyright (c) 2017, Velodyne Lidar<br />
+    appName = mainWindow.windowTitle.split(" ")[0]
+    appVersionTag = mainWindow.windowTitle.split(" ")[1]
+    appBitTag = mainWindow.windowTitle.split(" ")[2]
+    dialog.windowTitle = "About " + appName + " ..."
+    copyrightText = '''<h1>{0} {1} {2}</h1><br/>
+                       Copyright (c) 2017, Velodyne Lidar,
+                       Copyright (c) 2017, Kitware<br />
                        Provided by <a href="http://velodynelidar.com/">Velodyne Lidar</a>, coded by <a href="https://www.kitware.com/">Kitware</a>.<br />
                        <br />
                        Sample Data Repository: <a href="http://midas3.kitware.com/midas/community/29">http://midas3.kitware.com/midas/community/29</a>
-                    '''.format(" ".join(mainWindow.windowTitle.split(" ")[1:]))
+                    '''.format(appName, appVersionTag, appBitTag)
     w('copyrightLabel').setText(copyrightText)
     
     textBoxContent = '''<h4>Want more ? Ask Kitware !</h4>

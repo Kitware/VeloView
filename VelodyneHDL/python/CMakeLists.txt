@@ -45,7 +45,7 @@ add_custom_target(python_byte_compile ALL DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/c
 # Install python module
 set(install_destination ${VV_INSTALL_LIBRARY_DIR}/site-packages)
 if (APPLE)
-  set(install_destination ${VV_INSTALL_RUNTIME_DIR}/VeloView.app/Contents/Python)
+  set(install_destination ${VV_INSTALL_RUNTIME_DIR}/${SOFTWARE_NAME}.app/Contents/Python)
 endif()
 
 install(DIRECTORY  ${python_module_dir}/veloview

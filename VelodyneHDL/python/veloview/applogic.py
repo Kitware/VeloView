@@ -560,10 +560,10 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
 
     smp.Show(posreader)
 
-    # Create a sphere glyph
-    g = smp.Sphere()
-    g.Radius = 5.0
-    smp.Show(g)
+    # Create a tripod glyph
+    tripod = smp.Axes()
+    tripod.ScaleFactor = 10.0
+    smp.Show(tripod)
 
     if posreader.GetClientSideObject().GetOutput().GetNumberOfPoints():
         reader.GetClientSideObject().SetInterpolator(
@@ -589,7 +589,7 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
         sb.Position, sb.Position2 = [.1, .05], [.8, .02]
         app.overheadView.Representations.append(sb)
 
-        app.position = (posreader, None, g)
+        app.position = (posreader, None, tripod)
         smp.Render(app.overheadView)
     else:
         if positionFilename is not None:
@@ -784,15 +784,38 @@ def saveCSVCurrentFrameSelection(filename):
     smp.Delete(w)
     rotateCSVFile(filename)
 
-def saveLASFrames(filename, first, last, transform):
+# transform parameter indicates the coordinates system and
+# the referential for the exported points clouds:
+# - 0 Sensor: sensor referential, cartesian coordinate system
+# - 1: Relative Geoposition: NED base centered at the first position
+#      of the sensor, cartesian coordinate system
+# - 2: Absolute Geoposition: NED base centered at the corresponding
+#      UTM zone, cartesian coordinate system
+# - 3: Absolute Geoposition Lat/Lon: Lat / Lon coordinate system
+def saveLASFrames(filename, first, last, transform = 0):
     reader = getReader().GetClientSideObject()
-    position = getPosition().GetClientSideObject().GetOutput()
 
-    PythonQt.paraview.pqVelodyneManager.saveFramesToLAS(
-        reader, position, first, last, filename, transform)
+    # Check that we have a position provider
+    if getPosition() is not None:
+        position = getPosition().GetClientSideObject().GetOutput()
+
+        PythonQt.paraview.pqVelodyneManager.saveFramesToLAS(
+            reader, position, first, last, filename, transform)
+
+    else:
+        PythonQt.paraview.pqVelodyneManager.saveFramesToLAS(
+            reader, None, first, last, filename, transform)
 
 
-def saveLASCurrentFrame(filename, transform):
+# transform parameter indicates the coordinates system and
+# the referential for the exported points clouds:
+# - 0 Sensor: sensor referential, cartesian coordinate system
+# - 1: Relative Geoposition: NED base centered at the first position
+#      of the sensor, cartesian coordinate system
+# - 2: Absolute Geoposition: NED base centered at the corresponding
+#      UTM zone, cartesian coordinate system
+# - 3: Absolute Geoposition Lat/Lon: Lat / Lon coordinate system
+def saveLASCurrentFrame(filename, transform = 0):
     t = app.scene.AnimationTime
     saveLASFrames(filename, t, t, transform)
 
@@ -829,8 +852,15 @@ def saveCSV(filename, timesteps):
     kiwiviewerExporter.zipDir(outDir, filename)
     kiwiviewerExporter.shutil.rmtree(tempDir)
 
-
-def saveLAS(filename, timesteps, transform):
+# transform parameter indicates the coordinates system and
+# the referential for the exported points clouds:
+# - 0 Sensor: sensor referential, cartesian coordinate system
+# - 1: Relative Geoposition: NED base centered at the first position
+#      of the sensor, cartesian coordinate system
+# - 2: Absolute Geoposition: NED base centered at the corresponding
+#      UTM zone, cartesian coordinate system
+# - 3: Absolute Geoposition Lat/Lon: Lat / Lon coordinate system
+def saveLAS(filename, timesteps, transform = 0):
 
     tempDir = kiwiviewerExporter.tempfile.mkdtemp()
     basenameWithoutExtension = os.path.splitext(os.path.basename(filename))[0]
@@ -1481,27 +1511,24 @@ def updatePosition():
         pointcloud = reader.GetClientSideObject().GetOutput()
 
         if pointcloud.GetNumberOfPoints():
-            # Update the overhead view
-            # TODO: Approximate time, just grabbing the last
-            t = pointcloud.GetPointData().GetScalars('adjustedtime')
-            #currentTime = t.GetTuple1(t.GetNumberOfTuples() - 1)
-            currentTime = t.GetTuple1(0) * 1e-6
+            # get the timestamp of the first point
+            # of the current point cloud (in seconds)
+            time = pointcloud.GetPointData().GetArray('adjustedtime').GetTuple1(0)
+            time = time * 1e-6
 
-            interp = getPosition().GetClientSideObject().GetInterpolator()
-            trange = [interp.GetMinimumT(), interp.GetMaximumT()]
-
-            # Clamp
-            currentTime = min(max(currentTime, trange[0]+1.0e-1), trange[1]-1.0e-1)
+            # Get the transform of the first point of the
+            # current point cloud by interpolating using
+            # the two nearest transform data available (slerp + linear)
+            currentTransform = vtk.vtkTransform()
+            getReader().GetClientSideObject().GetInterpolator().InterpolateTransform(time, currentTransform)
 
             position = [0.0] * 3
-            transform = vtk.vtkTransform()
-            interp.InterpolateTransform(currentTime, transform)
-            transform.TransformPoint(position, position)
+            currentTransform.TransformPoint(position, position)
 
             rep = cachedGetRepresentation(reader, view=app.mainView)
             if app.relativeTransform:
-                rep.Position = transform.GetInverse().GetPosition()
-                rep.Orientation = transform.GetInverse().GetOrientation()
+                rep.Position = currentTransform.GetInverse().GetPosition()
+                rep.Orientation = currentTransform.GetInverse().GetOrientation()
             else:
                 rep.Position = [0.0, 0.0, 0.0]
                 rep.Orientation = [0.0, 0.0, 0.0]
@@ -1509,6 +1536,7 @@ def updatePosition():
             g = getGlyph()
             rep = cachedGetRepresentation(g, view=app.overheadView)
             rep.Position = position[:3]
+            rep.Orientation = currentTransform.GetOrientation()
 
     showRPM()
 
@@ -2512,6 +2540,12 @@ def setupActions():
     displayWidget = getMainWindow().findChild('vvColorToolbar').findChild('pqDisplayColorWidget')
     displayWidget.connect('arraySelectionChanged ()',adjustScalarBarRangeLabelFormat)
     app.actions['actionScalarBarVisibility'].connect('triggered()',adjustScalarBarRangeLabelFormat)
+
+    app.MainToolbar = getMainWindow().findChild('QToolBar','toolBar')
+    app.ColorToolbar = getMainWindow().findChild('QToolBar','colorToolBar')
+    app.PlaybackToolbar = timeToolBar
+    app.ViewToolbar = getMainWindow().findChild('QToolBar','viewSettings')
+    app.GeolocationToolbar = getMainWindow().findChild('QToolBar','geolocationToolbar')
 
 
 def showRPM():

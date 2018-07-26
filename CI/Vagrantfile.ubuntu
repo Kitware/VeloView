@@ -1,0 +1,56 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+# Check for required plugins
+unless Vagrant.has_plugin?("vagrant-disksize")
+  raise 'required plugin "vagrant-disksize" is not installed; run vagrant plugin install vagrant-disksize'
+end
+
+Vagrant.configure("2") do |config|
+  config.vm.box = "ubuntu/xenial64" # change the box is you want to use another distribution
+
+  # Enable SSH agent forwarding
+  config.ssh.forward_agent = true
+
+  # VirtualBox configuration
+  config.vm.provider "virtualbox" do |vb|
+    # vb.gui = false
+    vb.memory = "8192"
+    vb.cpus = "8"
+    vb.name = "ubuntu16.04" # change the name here
+
+    # Set disk size using vagrant-disksize plugin
+    config.disksize.size = '15GB'
+  end
+
+  # Install required packages for CI
+  config.vm.provision "shell", name: "Install CI dependencies: openssh-server, gitlab-runner and mc, unzip", inline: <<-SHELL
+    apt-get update -q
+    curl -L https://packages.gitlab.com/install/repositories/runner/gitlab-runner/script.deb.sh | sudo bash
+    apt-get install -y -q \
+    openssh-server \
+    gitlab-runner \
+    unzip
+    wget https://dl.minio.io/client/mc/release/linux-amd64/mc
+    chmod +x mc
+    ./mc --help
+  SHELL
+
+  # Install packages
+  config.vm.provision "shell", name: "Install Veloview dependencies", inline: <<-SHELL
+    apt-get install -y -q \
+    git \
+    cmake-curses-gui \
+    build-essential \
+    libboost-all-dev \
+    libxt-dev \
+    libbz2-dev \
+    libqt4-dev \
+    qt4-default \
+    qt4-dev-tools \
+    zlib1g-dev \
+    flex \
+    byacc
+  SHELL
+
+end

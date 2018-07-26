@@ -52,8 +52,8 @@
 class vtkTransform;
 class vtkMatrix4x4;
 class vtkProp3D;
-class vtkTupleInterpolator;
-class vtkQuaternionInterpolator;
+class vtkVeloViewTupleInterpolator;
+class vtkVeloViewQuaternionInterpolator;
 class vtkTransformList;
 
 class VTK_EXPORT vtkVelodyneTransformInterpolator : public vtkObject
@@ -133,24 +133,24 @@ public:
   // of the transformation matrix. Note that you can modify the behavior of
   // the interpolator (linear vs spline interpolation; change spline basis)
   // by manipulating the interpolator instances.
-  virtual void SetPositionInterpolator(vtkTupleInterpolator*);
-  vtkGetObjectMacro(PositionInterpolator, vtkTupleInterpolator);
+  virtual void SetPositionInterpolator(vtkVeloViewTupleInterpolator*);
+  vtkGetObjectMacro(PositionInterpolator, vtkVeloViewTupleInterpolator);
 
   // Description:
   // Set/Get the tuple interpolator used to interpolate the scale portion
   // of the transformation matrix. Note that you can modify the behavior of
   // the interpolator (linear vs spline interpolation; change spline basis)
   // by manipulating the interpolator instances.
-  virtual void SetScaleInterpolator(vtkTupleInterpolator*);
-  vtkGetObjectMacro(ScaleInterpolator, vtkTupleInterpolator);
+  virtual void SetScaleInterpolator(vtkVeloViewTupleInterpolator*);
+  vtkGetObjectMacro(ScaleInterpolator, vtkVeloViewTupleInterpolator);
 
   // Description:
   // Set/Get the tuple interpolator used to interpolate the orientation portion
   // of the transformation matrix. Note that you can modify the behavior of
   // the interpolator (linear vs spline interpolation; change spline basis)
   // by manipulating the interpolator instances.
-  virtual void SetRotationInterpolator(vtkQuaternionInterpolator*);
-  vtkGetObjectMacro(RotationInterpolator, vtkQuaternionInterpolator);
+  virtual void SetRotationInterpolator(vtkVeloViewQuaternionInterpolator*);
+  vtkGetObjectMacro(RotationInterpolator, vtkVeloViewQuaternionInterpolator);
 
   // Description:
   // Override GetMTime() because we depend on the interpolators which may be
@@ -165,9 +165,9 @@ protected:
   int InterpolationType;
 
   // Interpolators
-  vtkTupleInterpolator* PositionInterpolator;
-  vtkTupleInterpolator* ScaleInterpolator;
-  vtkQuaternionInterpolator* RotationInterpolator;
+  vtkVeloViewTupleInterpolator* PositionInterpolator;
+  vtkVeloViewTupleInterpolator* ScaleInterpolator;
+  vtkVeloViewQuaternionInterpolator* RotationInterpolator;
 
   // Initialize the interpolating splines
   int Initialized;
