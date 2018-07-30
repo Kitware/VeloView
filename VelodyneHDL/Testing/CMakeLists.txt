@@ -1,161 +1,122 @@
-add_executable(TestReader TestReader.cxx)
-target_link_libraries(TestReader VelodyneHDLPlugin)
+add_executable(TestVelodyneHDLSource TestHelpers.cxx TestVelodyneHDLSource.cxx)
+target_link_libraries(TestVelodyneHDLSource VelodyneHDLPlugin)
 
-add_executable(TestPositionReader TestPositionReader.cxx)
-target_link_libraries(TestPositionReader VelodyneHDLPlugin)
+add_executable(TestVelodyneHDLReader TestVelodyneHDLReader.cxx TestHelpers.cxx)
+target_link_libraries(TestVelodyneHDLReader VelodyneHDLPlugin)
 
-add_executable(TestSensor TestSensor.cxx)
-target_link_libraries(TestSensor VelodyneHDLPlugin)
+# TODO add test to OSX and Windows plateform.
+# please do not duplicate code and use variable when there are difference between linux, windows, OSX!!!!
 
-add_executable(TestReaderVTP TestReaderVTP.cxx TestHelpers.cxx)
-target_link_libraries(TestReaderVTP VelodyneHDLPlugin)
-
-add_executable(TestLiveStream TestHelpers.cxx TestLiveStream.cxx)
-target_link_libraries(TestLiveStream VelodyneHDLPlugin)
+set(sensors "HDL-64"
+            "VLP-16"
+            "VLP-32c")
 
 # On windows, install the tests in the install/bin
 # folder. Otherwise, the .exe tests can't find the required
 # dll (Velodyne plugins and vtk)
 if (WIN32)
-    set(INSTALL_LOCAL_DIR "${CMAKE_BINARY_DIR}/../../../install/bin")
-    install(TARGETS TestReader
-          RUNTIME DESTINATION ${INSTALL_LOCAL_DIR}
-          LIBRARY DESTINATION ${VV_INSTALL_LIBRARY_DIR}
-          COMPONENT Runtime)
+#    set(INSTALL_LOCAL_DIR "${CMAKE_BINARY_DIR}/../../../install/bin")
 
-    install(TARGETS TestPositionReader
-          RUNTIME DESTINATION ${INSTALL_LOCAL_DIR}
-          LIBRARY DESTINATION ${VV_INSTALL_LIBRARY_DIR}
-          COMPONENT Runtime)
+#    install(TARGETS TestVelodyneHDLReader
+#          RUNTIME DESTINATION ${INSTALL_LOCAL_DIR}
+#          LIBRARY DESTINATION ${VV_INSTALL_LIBRARY_DIR}
+#          COMPONENT Runtime)
 
-    install(TARGETS TestSensor
-          RUNTIME DESTINATION ${INSTALL_LOCAL_DIR}
-          LIBRARY DESTINATION ${VV_INSTALL_LIBRARY_DIR}
-          COMPONENT Runtime)
+#    install(TARGETS TestReaderLiveStream
+#          RUNTIME DESTINATION ${INSTALL_LOCAL_DIR}
+#          LIBRARY DESTINATION ${VV_INSTALL_LIBRARY_DIR}
+#          COMPONENT Runtime)
 
-    install(TARGETS TestReaderVTP
-          RUNTIME DESTINATION ${INSTALL_LOCAL_DIR}
-          LIBRARY DESTINATION ${VV_INSTALL_LIBRARY_DIR}
-          COMPONENT Runtime)
+#    add_test(TestVelodyneHDLReader
+#      ${INSTALL_LOCAL_DIR}/TestReaderVTP
+#      ${CMAKE_SOURCE_DIR}/TestData/
+#      ${CMAKE_SOURCE_DIR}/share/
+#      WORKING_DIRECTORY ${INSTALL_LOCAL_DIR}
+#    )
 
-    install(TARGETS TestLiveStream
-          RUNTIME DESTINATION ${INSTALL_LOCAL_DIR}
-          LIBRARY DESTINATION ${VV_INSTALL_LIBRARY_DIR}
-          COMPONENT Runtime)
+#    add_test(TestReaderLiveStream
+#      ${INSTALL_LOCAL_DIR}/TestReaderLiveStream
+#      ${CMAKE_SOURCE_DIR}/TestData/
+#      ${CMAKE_SOURCE_DIR}/share/
+#      WORKING_DIRECTORY ${INSTALL_LOCAL_DIR}
+#    )
 
-    add_test(TestReader1
-             ${INSTALL_LOCAL_DIR}/TestPositionReader
-             ${CMAKE_SOURCE_DIR}/Testing/Data/monterey-first-100-packets.pcap 299
-             WORKING_DIRECTORY ${INSTALL_LOCAL_DIR})
-
-    add_test(TestReaderMonterey
-      ${INSTALL_LOCAL_DIR}/TestReader
-      ${CMAKE_SOURCE_DIR}/Testing/Data/monterey-first-100-packets.pcap
-      ${CMAKE_SOURCE_DIR}/share/HDL-32.xml
-      ${CMAKE_SOURCE_DIR}/Testing/monterey.test
-      WORKING_DIRECTORY ${INSTALL_LOCAL_DIR}
-    )
-
-    add_test(TestReaderMontereyWithCrop
-      ${INSTALL_LOCAL_DIR}/TestReader
-      ${CMAKE_SOURCE_DIR}/Testing/Data/monterey-first-100-packets.pcap
-      ${CMAKE_SOURCE_DIR}/share/HDL-32.xml
-      ${CMAKE_SOURCE_DIR}/Testing/monterey-with-crop.test
-      WORKING_DIRECTORY ${INSTALL_LOCAL_DIR}
-    )
-
-    add_test(TestReaderDualReturn
-      ${INSTALL_LOCAL_DIR}/TestReader
-      ${CMAKE_SOURCE_DIR}/Testing/Data/dual-return-frames-5-to-15.pcap
-      ${CMAKE_SOURCE_DIR}/share/HDL-32.xml
-      ${CMAKE_SOURCE_DIR}/Testing/dual.test
-      WORKING_DIRECTORY ${INSTALL_LOCAL_DIR}
-    )
-
-    add_test(TestReaderVLP16
-      ${INSTALL_LOCAL_DIR}/TestReader
-      ${CMAKE_SOURCE_DIR}/Testing/Data/vlp-16-test-90deg-1-50-frames.pcap
-      ${CMAKE_SOURCE_DIR}/share/VLP-16.xml
-      ${CMAKE_SOURCE_DIR}/Testing/vlp-16.test
-      WORKING_DIRECTORY ${INSTALL_LOCAL_DIR}
-    )
-
-    add_test(TestReaderVTP
-      ${INSTALL_LOCAL_DIR}/TestReaderVTP
-      ${CMAKE_SOURCE_DIR}/Testing/Data/
-      ${CMAKE_SOURCE_DIR}/share/
-      WORKING_DIRECTORY ${INSTALL_LOCAL_DIR}
-    )
-
-    add_test(TestLiveStream
-      ${INSTALL_LOCAL_DIR}/TestLiveStream
-      ${CMAKE_SOURCE_DIR}/Testing/Data/
-      ${CMAKE_SOURCE_DIR}/share/
-      WORKING_DIRECTORY ${INSTALL_LOCAL_DIR}
-    )
-
-    add_test(TestSensor
-      ${INSTALL_LOCAL_DIR}/TestSensor
-      ${CMAKE_SOURCE_DIR}/Testing/Data/monterey-first-100-packets.pcap
-      ${CMAKE_SOURCE_DIR}/share/HDL-32.xml
-      WORKING_DIRECTORY ${INSTALL_LOCAL_DIR}
-    )
-
+#configure_file(../python/generateTestData.py.in
+#  ${INSTALL_LOCAL_DIR}/generateTestData.py)
 else()
-    add_test(TestReader1 ${CMAKE_BINARY_DIR}/bin/TestPositionReader ${CMAKE_SOURCE_DIR}/Testing/Data/monterey-first-100-packets.pcap 299)
+    # generate script to generate new test baseline
+    configure_file(generateTestData.py.in
+      ${CMAKE_BINARY_DIR}/bin/generateTestData.py)
 
-    add_test(TestReaderMonterey
-      ${CMAKE_BINARY_DIR}/bin/TestReader
-      ${CMAKE_SOURCE_DIR}/Testing/Data/monterey-first-100-packets.pcap
-      ${CMAKE_SOURCE_DIR}/share/HDL-32.xml
-      ${CMAKE_SOURCE_DIR}/Testing/monterey.test
+    # add test
+    foreach(sensor ${sensors})
+
+        # VelodyneHDLSource test
+        add_test(TestVelodyneHDLSource_${sensor}_Single
+          ${CMAKE_BINARY_DIR}/bin/TestVelodyneHDLSource
+          ${CMAKE_SOURCE_DIR}/TestData/${sensor}_Single.pcap
+          ${CMAKE_SOURCE_DIR}/TestData/${sensor}_Single/files.txt
+          ${CMAKE_SOURCE_DIR}/share/${sensor}.xml
+        )
+        add_test(TestVelodyneHDLSource_${sensor}_Dual
+          ${CMAKE_BINARY_DIR}/bin/TestVelodyneHDLSource
+          ${CMAKE_SOURCE_DIR}/TestData/${sensor}_Dual.pcap
+          ${CMAKE_SOURCE_DIR}/TestData/${sensor}_Dual/files.txt
+          ${CMAKE_SOURCE_DIR}/share/${sensor}.xml
+        )
+
+        # VelodyneHDLSource test
+        add_test(TestVelodyneHDLReader_${sensor}_Single
+          ${CMAKE_BINARY_DIR}/bin/TestVelodyneHDLReader
+          ${CMAKE_SOURCE_DIR}/TestData/${sensor}_Single.pcap
+          ${CMAKE_SOURCE_DIR}/TestData/${sensor}_Single/files.txt
+          ${CMAKE_SOURCE_DIR}/share/${sensor}.xml
+        )
+        add_test(TestVelodyneHDLReader_${sensor}_Dual
+          ${CMAKE_BINARY_DIR}/bin/TestVelodyneHDLReader
+          ${CMAKE_SOURCE_DIR}/TestData/${sensor}_Dual.pcap
+          ${CMAKE_SOURCE_DIR}/TestData/${sensor}_Dual/files.txt
+          ${CMAKE_SOURCE_DIR}/share/${sensor}.xml
+        )
+
+    endforeach(sensor)
+
+    # add special test for HDL-64 in autocalibration mode
+
+    # VelodyneHDLSource test
+    add_test(TestVelodyneHDLSource_HDL-64_Single-autocalib
+      ${CMAKE_BINARY_DIR}/bin/TestVelodyneHDLSource
+      ${CMAKE_SOURCE_DIR}/TestData/HDL-64_Single-autocalib.pcap
+      ${CMAKE_SOURCE_DIR}/TestData/HDL-64_Single-autocalib/files.txt
+      ""
+    )
+    add_test(TestVelodyneHDLSource_HDL-64_Dual-autocalib
+      ${CMAKE_BINARY_DIR}/bin/TestVelodyneHDLSource
+      ${CMAKE_SOURCE_DIR}/TestData/HDL-64_Dual-autocalib.pcap
+      ${CMAKE_SOURCE_DIR}/TestData/HDL-64_Dual-autocalib/files.txt
+      ""
     )
 
-    add_test(TestReaderMontereyWithCrop
-      ${CMAKE_BINARY_DIR}/bin/TestReader
-      ${CMAKE_SOURCE_DIR}/Testing/Data/monterey-first-100-packets.pcap
-      ${CMAKE_SOURCE_DIR}/share/HDL-32.xml
-      ${CMAKE_SOURCE_DIR}/Testing/monterey-with-crop.test
+    # VelodyneHDLSource test
+    add_test(TestVelodyneHDLReader_HDL-64_Single-autocalib
+      ${CMAKE_BINARY_DIR}/bin/TestVelodyneHDLReader
+      ${CMAKE_SOURCE_DIR}/TestData/HDL-64_Single-autocalib.pcap
+      ${CMAKE_SOURCE_DIR}/TestData/HDL-64_Single-autocalib/files.txt
+      ""
+    )
+    add_test(TestVelodyneHDLReader_HDL-64_Dual-autocalib
+      ${CMAKE_BINARY_DIR}/bin/TestVelodyneHDLReader
+      ${CMAKE_SOURCE_DIR}/TestData/HDL-64_Dual-autocalib.pcap
+      ${CMAKE_SOURCE_DIR}/TestData/HDL-64_Dual-autocalib/files.txt
+      ""
     )
 
-    add_test(TestReaderDualReturn
-      ${CMAKE_BINARY_DIR}/bin/TestReader
-      ${CMAKE_SOURCE_DIR}/Testing/Data/dual-return-frames-5-to-15.pcap
-      ${CMAKE_SOURCE_DIR}/share/HDL-32.xml
-      ${CMAKE_SOURCE_DIR}/Testing/dual.test
-    )
+#    # Set the DYLD_LIBRARY_PATH used to find libraries for the tests on MacOS
+#    if(APPLE)
+#     set_property(TEST
+#       TestReaderVTP TestReaderLiveStream
+#       PROPERTY ENVIRONMENT
+#       "DYLD_LIBRARY_PATH=${CMAKE_BINARY_DIR}/../../../install/lib:$ENV{DYLD_LIBRARY_PATH}")
 
-    add_test(TestReaderVLP16
-      ${CMAKE_BINARY_DIR}/bin/TestReader
-      ${CMAKE_SOURCE_DIR}/Testing/Data/vlp-16-test-90deg-1-50-frames.pcap
-      ${CMAKE_SOURCE_DIR}/share/VLP-16.xml
-      ${CMAKE_SOURCE_DIR}/Testing/vlp-16.test
-    )
-
-    add_test(TestReaderVTP
-      ${CMAKE_BINARY_DIR}/bin/TestReaderVTP
-      ${CMAKE_SOURCE_DIR}/Testing/Data/
-      ${CMAKE_SOURCE_DIR}/share/
-    )
-
-    add_test(TestLiveStream
-      ${CMAKE_BINARY_DIR}/bin/TestLiveStream
-      ${CMAKE_SOURCE_DIR}/Testing/Data/
-      ${CMAKE_SOURCE_DIR}/share/
-    )
-
-    add_test(TestSensor
-      ${CMAKE_BINARY_DIR}/bin/TestSensor
-      ${CMAKE_SOURCE_DIR}/Testing/Data/monterey-first-100-packets.pcap
-      ${CMAKE_SOURCE_DIR}/share/HDL-32.xml
-    )
-
-    # Set the DYLD_LIBRARY_PATH used to find libraries for the tests on MacOS
-    if(APPLE)
-     set_property(TEST
-       TestReader1 TestReaderMonterey TestReaderMontereyWithCrop
-       TestReaderDualReturn TestReaderVLP16 TestReaderVTP TestLiveStream TestSensor
-       PROPERTY ENVIRONMENT
-       "DYLD_LIBRARY_PATH=${CMAKE_BINARY_DIR}/../../../install/lib:$ENV{DYLD_LIBRARY_PATH}")
-    endif()
+#    endif()
 endif()
