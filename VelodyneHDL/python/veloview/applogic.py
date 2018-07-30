@@ -38,6 +38,15 @@ _repCache = {}
 
 SAMPLE_PROCESSING_MODE = False
 
+def vtkGetFileNameFromPluginName(pluginName):
+  import os
+  if os.name == "nt":
+    return pluginName + ".dll";
+  elif os.name == "mac":
+    return "lib" + pluginName + ".dylib";
+  else:
+    return "lib" + pluginName + ".so";
+
 def cachedGetRepresentation(src, view):
     try:
         return _repCache[(src, view)]
@@ -82,6 +91,8 @@ class AppLogic(object):
         self.laserSelectionDialog = None
 
         self.gridProperties = None
+
+        smp.LoadPlugin(vtkGetFileNameFromPluginName('PointCloudPlugin'))
 
     def setupTimers(self):
         self.playTimer = QtCore.QTimer()
@@ -449,6 +460,8 @@ def openSensor():
 
     rep = smp.Show(sensor)
     rep.InterpolateScalarsBeforeMapping = 0
+    rep.Representation = 'Point Cloud'
+    rep.ColorArrayName = 'intensity'
 
     if SAMPLE_PROCESSING_MODE:
         prep = smp.Show(processor)
@@ -540,6 +553,9 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
     smp.GetActiveView().ViewTime = 0.0
 
     rep = smp.Show(reader)
+    rep.Representation = 'Point Cloud'
+    rep.ColorArrayName = 'intensity'
+
     if SAMPLE_PROCESSING_MODE:
         prep = smp.Show(processor)
     app.scene.UpdateAnimationUsingDataTimeSteps()
@@ -601,7 +617,10 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
     smp.SetActiveView(app.mainView)
 
     rep.InterpolateScalarsBeforeMapping = 0
-    setDefaultLookupTables(reader)
+
+    rep.Representation = 'Point Cloud'
+    rep.ColorArrayName = 'intensity'
+    #setDefaultLookupTables(reader)
     colorByIntensity(reader)
 
     initializeRPMText()
@@ -1554,6 +1573,10 @@ def playbackTick():
 
         if view.ViewTime == timesteps[-1]:
             return # Already on last frame, cannot go forward
+        elif view.ViewTime < timesteps[-2]:
+            #There is more than one new frame in the queue, goToLast
+            #print "Shown frame: " + str(view.ViewTime) + ", but lastest frame received is " + str(timesteps[-1]) + ". Skipping drawing of " +str(timesteps[-1]-view.ViewTime-1) + " intermediate frames to avoid lag"
+            pass
 
         if not app.colorByInitialized:
             sensor.UpdatePipeline()

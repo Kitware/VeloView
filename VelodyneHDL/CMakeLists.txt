@@ -172,6 +172,9 @@ add_paraview_plugin(${library_name} "1.0"
   REQUIRED_ON_SERVER)
 
 target_link_libraries(${library_name} LINK_PUBLIC ${deps})
+if(WIN32)
+  target_compile_definitions(${library_name} PRIVATE -DWIN32)
+endif(WIN32)
 
 add_executable(PacketFileSender PacketFileSender.cxx)
 target_link_libraries(PacketFileSender LINK_PUBLIC ${library_name})

@@ -14,7 +14,7 @@
 #ifndef __vvConfigure_h
 #define __vvConfigure_h
 
-#if defined(WIN32)
+#if defined(_WIN32)
 
 #if defined(VelodyneHDLPlugin_EXPORTS)
 #define VelodyneHDLPlugin_EXPORT __declspec(dllexport)

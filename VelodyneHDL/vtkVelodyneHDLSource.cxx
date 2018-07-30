@@ -75,6 +75,10 @@ public:
     {
       queue_.push(data);
       cond_.notify_one();
+      if ((queue_.size() % 50000 == 0) && (queue_.size() > 0))
+      {
+        std::cout << "Packet queue contains a lot of packets : " << queue_.size() << std::endl;
+      }
     }
   }
 
@@ -173,6 +177,11 @@ public:
         this->HDLReader->ProcessHDLPacket(const_cast<unsigned char*>(data), length);
         if (this->HDLReader->GetDatasets().size())
         {
+          if (this->HDLReader->GetDatasets().size() > 1)
+          {
+            std::cout << "Size of HDLReader Dataset : " << this->HDLReader->GetDatasets().size()
+                      << std::endl;
+          }
           this->HandleNewData(this->HDLReader->GetDatasets().back());
           this->HDLReader->GetDatasets().clear();
         }
@@ -346,6 +355,11 @@ protected:
     this->UpdateDequeSize();
     this->Timesteps.push_back(this->LastTime);
     this->Datasets.push_back(polyData);
+    if ((this->Datasets.size() % 20 == 0) && (this->Datasets.size() > 0))
+    {
+      std::cout << "Packet queue contains a lot of packets : " << this->Datasets.size()
+                << std::endl;
+    }
     this->NewData = true;
     this->LastTime += 1.0;
   }
