@@ -204,7 +204,10 @@ struct HDLDataPacket
       firingData[2].blockIdentifier == BLOCK_0_TO_31;
   }
 
-  inline bool isVLS128() const { return (factoryField2 == VLS128); }
+  inline bool isVLS128() const
+  {
+    return (factoryField2 == VLS128 && !isHDL64());
+  }
 
   inline bool isDualModeReturn() const
   {
