@@ -15,6 +15,9 @@
 cmake_minimum_required(VERSION 2.8.8 FATAL_ERROR)
 project(VeloView)
 
+# enable c++11
+set (CMAKE_CXX_STANDARD 11)
+
 # Disallow in-source build
 if ("${VeloView_SOURCE_DIR}"  STREQUAL "${VeloView_BINARY_DIR}")
   message(FATAL_ERROR
