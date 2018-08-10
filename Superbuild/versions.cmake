@@ -39,7 +39,7 @@ add_revision(pythonqt
 set(PARAVIEW_VERSION 5.1)
 add_revision(paraview
   GIT_REPOSITORY https://gitlab.kitware.com/bjacquet/paraview.git
-  GIT_TAG origin/veloview)
+  GIT_TAG origin/point-cloud-rep)
 
 add_revision(veloview
     SOURCE_DIR ${CMAKE_SOURCE_DIR}/..
