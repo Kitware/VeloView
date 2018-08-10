@@ -391,6 +391,12 @@ public:
     bool hasLastAzimuth = (LastAzimuthDir != -1);
     // bool azimuthFrameSplit = hasChangedWithValue(
     //  firingData.getRotationalPosition(), hasLastAzimuth, LastAzimuth, LastAzimuthSlope);
+    if (!firingData.isVelArrayFiring())
+    {
+      bool azimuthFrameSplit = hasChangedWithValue(
+        firingData.getRotationalPosition(), hasLastAzimuth, LastAzimuthDir, LastAzimuthSlope);
+        return azimuthFrameSplit;
+    }
     bool azimuthFrameSplit =
       hasLastAzimuth ? (firingData.getScanningHorizontalDir() != LastAzimuthDir) : false;
     LastAzimuthDir = firingData.getScanningHorizontalDir();
