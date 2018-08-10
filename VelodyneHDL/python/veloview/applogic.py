@@ -460,8 +460,9 @@ def openSensor():
 
     rep = smp.Show(sensor)
     rep.InterpolateScalarsBeforeMapping = 0
-    rep.Representation = 'Point Cloud'
-    rep.ColorArrayName = 'intensity'
+    if app.sensor.GetClientSideObject().GetNumberOfChannels() == 128:
+        rep.Representation = 'Point Cloud'
+        rep.ColorArrayName = 'intensity'
 
     if SAMPLE_PROCESSING_MODE:
         prep = smp.Show(processor)
@@ -552,10 +553,6 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
 
     smp.GetActiveView().ViewTime = 0.0
 
-    rep = smp.Show(reader)
-    rep.Representation = 'Point Cloud'
-    rep.ColorArrayName = 'intensity'
-
     if SAMPLE_PROCESSING_MODE:
         prep = smp.Show(processor)
     app.scene.UpdateAnimationUsingDataTimeSteps()
@@ -618,8 +615,10 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
 
     rep.InterpolateScalarsBeforeMapping = 0
 
-    rep.Representation = 'Point Cloud'
-    rep.ColorArrayName = 'intensity'
+    rep = smp.Show(reader)
+    if app.reader.GetClientSideObject().GetNumberOfChannels() == 128:
+        rep.Representation = 'Point Cloud'
+        rep.ColorArrayName = 'intensity'
     #setDefaultLookupTables(reader)
     colorByIntensity(reader)
 
