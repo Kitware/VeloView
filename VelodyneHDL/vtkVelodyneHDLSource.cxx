@@ -158,7 +158,7 @@ public:
   {
     boost::lock_guard<boost::mutex> lock(this->ReaderMutex);
     // Firing data packet
-    if (length == 1206)
+    if (DataPacketFixedLength::HDLDataPacket::isValidPacket(data, length))
     {
       this->HDLReader->updateReportedSensor(data, length);
       // Accumulate HDL64 Status byte data while correction are not initialized

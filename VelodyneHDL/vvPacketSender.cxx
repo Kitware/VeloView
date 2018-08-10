@@ -117,7 +117,19 @@ int vvPacketSender::pumpPacket()
     this->Internal->lastTimestamp = dataPacket->gpsTimestamp;
     ++this->Internal->PacketCount;
     HDLDataPacket* modifiableDataPacket = const_cast<HDLDataPacket*>(dataPacket);
-
+    if (0)
+    {
+      // Elevation is in 1000th of degrees
+      unsigned short elevation_min = 0, elevation_max = 1125, elevation_step = 1;
+      for (int i = 0; i < 12; ++i)
+      {
+        modifiableDataPacket->firingData[i].blockIdentifier =
+          ((i + this->Internal->PacketCount * 12) * elevation_step) %
+            (elevation_max - elevation_min) +
+          elevation_min;
+      }
+      modifiableDataPacket->factoryField2 = DataPacketFixedLength::VelArray;
+    }
     size_t bytesSent = this->Internal->LIDARSocket->send_to(
       boost::asio::buffer(data, dataLength), this->Internal->LIDAREndpoint);
   }

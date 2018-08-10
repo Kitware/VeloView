@@ -17,6 +17,7 @@
 
 #include <iomanip>
 #include <iostream>
+#include <sstream>
 #include <stdio.h>
 #include <unordered_map>
 #include <vector>
@@ -51,6 +52,7 @@ enum SensorType
   VLP32AB = 0x23,    // decimal: 35
   VLP16HiRes = 0x24, // decimal: 36
   VLP32C = 0x28,     // decimal: 40
+  VelArray = 0x31,   // decimal: 49
 
   // Work around : this is not defined by any specification
   // But it is usefull to define
@@ -72,6 +74,8 @@ static std::string SensorTypeToString(SensorType type)
       return "VLP-16 Hi-Res";
     case SensorType::VLP32C:
       return "VLP-32C";
+    case SensorType::VelArray:
+      return "Velarray";
     case SensorType::HDL64:
       return "HDL-64";
     case SensorType::VLS128:
@@ -86,6 +90,7 @@ static std::string SensorTypeToString(SensorType type)
   toStringMap[SensorType::VLP32AB] = "VLP-32AB";
   toStringMap[SensorType::VLP16HiRes] = "VLP-16 Hi-Res";
   toStringMap[SensorType::VLP32C] = "VLP-32C";
+  toStringMap[SensorType::VelArray] = "Velarray";
   toStringMap[SensorType::HDL64] = "HDL-64";
   toStringMap[SensorType::VLS128] = "VLS-128";
   return toStringMap[type];
@@ -101,6 +106,7 @@ static int num_laser(SensorType sensorType)
     case HDL32E:
     case VLP32AB:
     case VLP32C:
+    case VelArray:
       return 32;
     case VLP16:
     case VLP16HiRes:
@@ -168,6 +174,29 @@ struct HDLFiringData
   HDLLaserReturn laserReturns[HDL_LASER_PER_FIRING];
 
   inline bool isUpperBlock() const { return blockIdentifier == BLOCK_32_TO_63; }
+  inline bool isVelArrayFiring() const { return blockIdentifier < 0xaaff; }
+  inline uint16_t getElevation100th() const
+  {
+     if (isVelArrayFiring())
+    {
+    return blockIdentifier & 0x7FFF; // First bit is the scanning direction
+    // If the elevation is not NBO, then use the following
+    // uint8_t * bytes = reinterpret_cast<uint8_t *>(&blockIdentifier);
+    // return bytes[0] << 8 + bytes[1] << 0;
+    }
+    return 0;
+  }
+  inline int getScanningVerticalDir() const { return blockIdentifier >> 15; }
+  inline int getScanningHorizontalDir() const { return rotationalPosition >> 15; }
+
+  inline uint16_t getRotationalPosition() const
+  {
+    if (isVelArrayFiring())
+    {
+      return rotationalPosition & 0x7FFF;
+    }
+    return rotationalPosition;
+  }
 };
 
 struct HDLDataPacket
@@ -194,8 +223,9 @@ struct HDLDataPacket
     if (dataLength != getDataByteLength())
       return false;
     const HDLDataPacket* dataPacket = reinterpret_cast<const HDLDataPacket*>(data);
-    return (dataPacket->firingData[0].blockIdentifier == BLOCK_0_TO_31 ||
-      dataPacket->firingData[0].blockIdentifier == BLOCK_32_TO_63);
+    return ((dataPacket->factoryField2 == VelArray) ||
+      (dataPacket->firingData[0].blockIdentifier == BLOCK_0_TO_31) ||
+      (dataPacket->firingData[0].blockIdentifier == BLOCK_32_TO_63));
   }
 
   inline bool isHDL64() const
@@ -220,11 +250,11 @@ struct HDLDataPacket
   }
   inline bool isDualModeReturn16Or32() const
   {
-    return firingData[1].rotationalPosition == firingData[0].rotationalPosition;
+    return firingData[1].getRotationalPosition() == firingData[0].getRotationalPosition();
   }
   inline bool isDualModeReturnHDL64() const
   {
-    return firingData[2].rotationalPosition == firingData[0].rotationalPosition;
+    return firingData[2].getRotationalPosition() == firingData[0].getRotationalPosition();
   }
   inline bool isDualModeReturnVLS128() const { return factoryField1 == DUAL_RETURN; }
 
@@ -242,6 +272,7 @@ struct HDLDataPacket
   {
     return (firingBlock % 2 == 1);
   }
+
   inline static bool isDualBlockOfDualPacket64(const int firingBlock)
   {
     return (firingBlock % 4 >= 2);
@@ -269,6 +300,65 @@ struct HDLDataPacket
                                 firingData[firingBlock].rotationalPosition) %
         36000);
     }
+  }
+  inline int unsignedAngleDiffTo_m180_180deg(uint16_t end_100thDeg, uint16_t start_100thDeg)
+  {
+    return static_cast<int>(((36000 + 18000) + end_100thDeg - start_100thDeg) % 36000) - 18000;
+  }
+  inline int getRotationalDiffForVelarrayFiring(int firingBlock)
+  {
+    if (static_cast<DualReturnSensorMode>(factoryField1) == DUAL_RETURN)
+    {
+      if (firingBlock > 11 - 2) // no next firingBlock: compute diff from previous
+        firingBlock = 9;        // i.e. firingAzimuth[n] - firingAzimuth[n-2]
+      return unsignedAngleDiffTo_m180_180deg(firingData[firingBlock + 2].getRotationalPosition(),
+        firingData[firingBlock].getRotationalPosition());
+    }
+    else
+    {
+      if (firingBlock > 11 - 1) // no next firingBlock: compute diff from previous
+        firingBlock = 10;       // i.e. firingAzimuth[n] - firingAzimuth[n-1]
+      return unsignedAngleDiffTo_m180_180deg(firingData[firingBlock + 1].getRotationalPosition(),
+        firingData[firingBlock].getRotationalPosition());
+    }
+  }
+
+  std::string to_tsv_string() const
+  {
+    char sep = '\t';
+    std::stringstream ss;
+    for (int f = 0; f < HDL_FIRING_PER_PKT; f++)
+      ss << "blkIden:" << sep << std::hex << firingData[f].blockIdentifier << sep;
+    ss << std::endl;
+    for (int f = 0; f < HDL_FIRING_PER_PKT; f++)
+      ss << "blkAzm:" << sep << std::dec << firingData[f].rotationalPosition << sep;
+    ss << std::endl;
+    for (int f = 0; f < HDL_FIRING_PER_PKT; f++)
+      ss << "rawD" << sep << "intens" << sep;
+    ss << std::endl;
+    for (int dsr = 0; dsr < HDL_LASER_PER_FIRING; dsr++)
+    {
+      for (int f = 0; f < HDL_FIRING_PER_PKT; f++)
+      {
+        ss << (int)firingData[f].laserReturns[dsr].distance << sep
+           << (int)firingData[f].laserReturns[dsr].intensity << sep;
+      }
+      ss << std::endl;
+    }
+    for (int f = 0; f < HDL_FIRING_PER_PKT - 2; f++)
+      ss << sep << sep;
+    ss << "gpsTime:" << sep << (int)gpsTimestamp << sep;
+    ss << std::endl;
+    for (int f = 0; f < HDL_FIRING_PER_PKT - 2; f++)
+      ss << sep << sep;
+
+    ss << "factyField1:" << sep << "0x" << std::hex << (int)factoryField1 << sep;
+    ss << std::endl;
+    for (int f = 0; f < HDL_FIRING_PER_PKT - 2; f++)
+      ss << sep << sep;
+    ss << "factyField2:" << sep << "0x" << std::hex << (int)factoryField2 << sep;
+    ss << std::endl;
+    return ss.str();
   }
 };
 
