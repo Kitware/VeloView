@@ -91,6 +91,7 @@
       <string>Processing Options</string>
      </property>
      <addaction name="actionCorrectIntensityValues"/>
+     <addaction name="actionFastRenderer"/>
      <addaction name="actionIgnoreZeroDistances"/>
      <addaction name="actionIntraFiringAdjust"/>
      <addaction name="actionIgnoreEmptyFrames"/>
@@ -1100,6 +1101,17 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+Shift+P</string>
+   </property>
+  </action>
+  <action name="actionFastRenderer">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Apply VLS-128 Fast Renderering</string>
    </property>
   </action>
  </widget>
