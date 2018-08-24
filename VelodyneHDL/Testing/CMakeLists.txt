@@ -79,10 +79,34 @@ else()
           ${CMAKE_SOURCE_DIR}/share/${sensor}.xml
         )
 
+        # Set the DYLD_LIBRARY_PATH used to find libraries for the tests on MacOS
+        if(APPLE)
+         set_property(TEST
+           TestVelodyneHDLSource_${sensor}_Single
+           TestVelodyneHDLSource_${sensor}_Dual
+           TestVelodyneHDLReader_${sensor}_Single
+           TestVelodyneHDLReader_${sensor}_Dual
+           PROPERTY ENVIRONMENT
+           "DYLD_LIBRARY_PATH=${CMAKE_BINARY_DIR}/../../../install/lib:$ENV{DYLD_LIBRARY_PATH}")
+        endif()
     endforeach(sensor)
 
     # add special test for HDL-64 in autocalibration mode
 
+    # VelodyneHDLReader test
+    add_test(TestVelodyneHDLReader_HDL-64_Single-autocalib
+      ${CMAKE_BINARY_DIR}/bin/TestVelodyneHDLReader
+      ${CMAKE_SOURCE_DIR}/TestData/HDL-64_Single-autocalib.pcap
+      ${CMAKE_SOURCE_DIR}/TestData/HDL-64_Single-autocalib/files.txt
+      ""
+    )
+    add_test(TestVelodyneHDLReader_HDL-64_Dual-autocalib
+      ${CMAKE_BINARY_DIR}/bin/TestVelodyneHDLReader
+      ${CMAKE_SOURCE_DIR}/TestData/HDL-64_Dual-autocalib.pcap
+      ${CMAKE_SOURCE_DIR}/TestData/HDL-64_Dual-autocalib/files.txt
+      ""
+    )
+    
     # VelodyneHDLSource test
     add_test(TestVelodyneHDLSource_HDL-64_Single-autocalib
       ${CMAKE_BINARY_DIR}/bin/TestVelodyneHDLSource
@@ -97,26 +121,14 @@ else()
       ""
     )
 
-    # VelodyneHDLSource test
-    add_test(TestVelodyneHDLReader_HDL-64_Single-autocalib
-      ${CMAKE_BINARY_DIR}/bin/TestVelodyneHDLReader
-      ${CMAKE_SOURCE_DIR}/TestData/HDL-64_Single-autocalib.pcap
-      ${CMAKE_SOURCE_DIR}/TestData/HDL-64_Single-autocalib/files.txt
-      ""
-    )
-    add_test(TestVelodyneHDLReader_HDL-64_Dual-autocalib
-      ${CMAKE_BINARY_DIR}/bin/TestVelodyneHDLReader
-      ${CMAKE_SOURCE_DIR}/TestData/HDL-64_Dual-autocalib.pcap
-      ${CMAKE_SOURCE_DIR}/TestData/HDL-64_Dual-autocalib/files.txt
-      ""
-    )
-
-#    # Set the DYLD_LIBRARY_PATH used to find libraries for the tests on MacOS
-#    if(APPLE)
-#     set_property(TEST
-#       TestReaderVTP TestReaderLiveStream
-#       PROPERTY ENVIRONMENT
-#       "DYLD_LIBRARY_PATH=${CMAKE_BINARY_DIR}/../../../install/lib:$ENV{DYLD_LIBRARY_PATH}")
-
-#    endif()
+    # Set the DYLD_LIBRARY_PATH used to find libraries for the tests on MacOS
+    if(APPLE)
+     set_property(TEST
+       TestVelodyneHDLReader_HDL-64_Single-autocalib
+       TestVelodyneHDLReader_HDL-64_Dual-autocalib
+       TestVelodyneHDLSource_HDL-64_Single-autocalib
+       TestVelodyneHDLSource_HDL-64_Dual-autocalib
+       PROPERTY ENVIRONMENT
+       "DYLD_LIBRARY_PATH=${CMAKE_BINARY_DIR}/../../../install/lib:$ENV{DYLD_LIBRARY_PATH}")
+    endif()
 endif()
