@@ -33,6 +33,7 @@ import planefit
 
 from PythonQt.paraview import vvCalibrationDialog, vvCropReturnsDialog, vvSelectFramesDialog
 from VelodyneHDLPluginPython import vtkVelodyneHDLReader
+from VelodyneHDLPluginPython import vtkRansacPlaneModel
 
 _repCache = {}
 
@@ -2249,6 +2250,12 @@ def toggleCrashAnalysis():
 
     app.EnableCrashAnalysis = app.actions['actionEnableCrashAnalysis'].isChecked()
 
+def toggleRansacPlaneFitting():
+    reader = getReader()
+    ransacPlaneFitting = smp.RansacPlaneModel(reader)
+    ransacPlaneFitting.GetClientSideObject().SetMaximumIteration(250)
+    ransacPlaneFitting.GetClientSideObject().SetThreshold(0.10)
+    ransacPlaneFitting.GetClientSideObject().SetRatioInlierRequired(0.35)
 
 def setViewTo(axis,sign):
     view = smp.GetActiveView()
@@ -2441,6 +2448,7 @@ def setupActions():
     app.actions['actionCorrectIntensityValues'].connect('triggered()',intensitiesCorrectedChanged)
     app.actions['actionSelectDualReturn'].connect('triggered()',toggleSelectDualReturn)
     app.actions['actionSelectDualReturn2'].connect('triggered()',toggleSelectDualReturn)
+    app.actions['actionRansacPlaneFitting'].connect('triggered()', toggleRansacPlaneFitting)
     app.EnableCrashAnalysis = app.actions['actionEnableCrashAnalysis'].isChecked()
 
     # Restore action states from settings

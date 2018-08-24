@@ -96,6 +96,7 @@ if(PARAVIEW_BUILD_QT_GUI)
   set(non_vtk_sources
     vtkLASFileWriter.cxx
     vtkPacketFileWriter.cxx
+    vtkRansacPlaneModel.cxx
     vtkRollingDataAccumulator.cxx
     vvPacketSender.cxx
     vtkPatchVeloView/vtkVeloViewPiecewiseFunction.cxx
@@ -136,6 +137,7 @@ endif()
 list(APPEND servermanager_sources
   vtkApplanixPositionReader.cxx
   vtkProcessingSample.cxx
+  vtkRansacPlaneModel.cxx
   vtkVelodyneHDLGridSource.cxx
   vtkVelodyneHDLReader.cxx
   vtkVelodyneHDLPositionReader.cxx
@@ -145,6 +147,7 @@ list(APPEND servermanager_sources
 list(APPEND servermanager_xml
   xml/ApplanixPositionReader.xml
   xml/ProcessingSample.xml
+  xml/RansacPlaneModel.xml
   xml/VelodyneHDLGridSource.xml
   xml/VelodyneHDLReader.xml
   xml/VelodyneHDLPositionReader.xml
