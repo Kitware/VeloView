@@ -129,7 +129,7 @@ int TestProcessingOptions(vtkVelodyneHDLReader* HDLReader);
  * @param HDLSource Current source
  * @return 0 on success, 1 on failure
  */
-int TestProcessingOptions(vtkVelodyneHDLSource* HDLSource, std::__cxx11::string pcapFileName,
-  std::__cxx11::string destinationIp, int dataPort);
+int TestProcessingOptions(vtkVelodyneHDLSource* HDLSource, std::string pcapFileName,
+  std::string destinationIp, int dataPort);
 
 #endif
