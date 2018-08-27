@@ -95,6 +95,12 @@
      <addaction name="actionIntraFiringAdjust"/>
      <addaction name="actionIgnoreEmptyFrames"/>
     </widget>
+    <widget class="QMenu" name="menuothers">
+     <property name="title">
+      <string>others...</string>
+     </property>
+     <addaction name="actionRansacPlaneFitting"/>
+    </widget>
     <addaction name="actionSpreadsheet"/>
     <addaction name="actionMeasurement_Grid"/>
     <addaction name="actionShowRPM"/>
@@ -116,6 +122,8 @@
     <addaction name="separator"/>
     <addaction name="menuDebugging"/>
     <addaction name="actionEnableCrashAnalysis"/>
+    <addaction name="separator"/>
+    <addaction name="menuothers"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
@@ -1100,6 +1108,14 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+Shift+P</string>
+   </property>
+  </action>
+  <action name="actionRansacPlaneFitting">
+   <property name="text">
+    <string>Ransac Plane Fitting</string>
+   </property>
+   <property name="toolTip">
+    <string>Fit a plane to the data using ransac algorithm</string>
    </property>
   </action>
  </widget>
