@@ -40,9 +40,9 @@ The source code for VeloView is made available under the Apache 2.0
 license.
 
 Sample data for VeloView can be obtained from
-[MIDAS](http://www.midasplatform.org/) in the
+[Girder](https://girder.readthedocs.io) in the
 [Velodyne LiDAR
-collection](http://midas3.kitware.com/midas/community/29).
+collection](https://data.kitware.com/#collection/5b7f46f98d777f06857cb206).
 
 # How to use
 
