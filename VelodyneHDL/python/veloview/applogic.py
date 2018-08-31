@@ -363,15 +363,25 @@ def chooseCalibration(calibrationFilename=None):
             self.isForwarding = dialog.isForwarding()
             self.ipAddressForwarding = dialog.ipAddressForwarding()
             self.sensorTransform = vtk.vtkTransform()
+            self.gpsTransform = vtk.vtkTransform()
 
             qm = dialog.sensorTransform()
-            vm = vtk.vtkMatrix4x4()
+            vmLidar = vtk.vtkMatrix4x4()
             for row in xrange(4):
-                vm.SetElement(row, 0, qm.row(row).x())
-                vm.SetElement(row, 1, qm.row(row).y())
-                vm.SetElement(row, 2, qm.row(row).z())
-                vm.SetElement(row, 3, qm.row(row).w())
-            self.sensorTransform.SetMatrix(vm)
+                vmLidar.SetElement(row, 0, qm.row(row).x())
+                vmLidar.SetElement(row, 1, qm.row(row).y())
+                vmLidar.SetElement(row, 2, qm.row(row).z())
+                vmLidar.SetElement(row, 3, qm.row(row).w())
+            self.sensorTransform.SetMatrix(vmLidar)
+
+            qm = dialog.gpsTransform()
+            vmGps = vtk.vtkMatrix4x4()
+            for row in xrange(4):
+                vmGps.SetElement(row, 0, qm.row(row).x())
+                vmGps.SetElement(row, 1, qm.row(row).y())
+                vmGps.SetElement(row, 2, qm.row(row).z())
+                vmGps.SetElement(row, 3, qm.row(row).w())
+            self.gpsTransform.SetMatrix(vmGps)
 
 
     dialog = vvCalibrationDialog(getMainWindow())
@@ -556,9 +566,8 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
     else:
         posreader = smp.ApplanixPositionReader(guiName="Position",
                                                FileName=positionFilename)
-        posreader.BaseYaw = calibration.gpsYaw
-        posreader.BaseRoll = calibration.gpsRoll
-        posreader.BasePitch = calibration.gpsPitch
+
+    posreader.GetClientSideObject().SetCalibrationTransform(calibration.gpsTransform)
 
     smp.Show(posreader)
 
