@@ -583,7 +583,7 @@ public:
   static bool shouldSplitFrame(uint16_t, int, int&);
 
   double ComputeTimestamp(unsigned int tohTime);
-  void ComputeOrientation(double timestamp, vtkTransform* geotransform);
+  void ComputeOrientation(double timestamp, double adjustedTimestamp, vtkTransform* geotransform);
 
   // Process the laser return from the firing data
   // firingData - one of HDL_FIRING_PER_PKT from the packet
@@ -2013,13 +2013,23 @@ double vtkVelodyneHDLReader::vtkInternal::ComputeTimestamp(unsigned int tohTime)
 
 //-----------------------------------------------------------------------------
 void vtkVelodyneHDLReader::vtkInternal::ComputeOrientation(
-  double timestamp, vtkTransform* geotransform)
+  double timestamp, double adjustedTimestamp, vtkTransform* geotransform)
 {
   if (this->ApplyTransform && this->Interp && this->Interp->GetNumberOfTransforms())
   {
     // NOTE: We store time in milliseconds, but the interpolator uses seconds,
     //       so we need to adjust here
-    const double t = timestamp * 1e-6;
+    double t = adjustedTimestamp * 1e-6;
+
+    // Try to compute the orientation using the adjusted time of the lidar
+    // If the adjuested time is not on the bounds of the interpolator, use
+    // the raw timestamp instead. This is because, depending on if a GPS
+    // is connected to the lidar or not, the timestamp used change
+    if (t < this->Interp->GetMinimumT() || t > this->Interp->GetMaximumT())
+    {
+      t = timestamp * 1e-6;
+    }
+
     this->Interp->InterpolateTransform(t, geotransform);
   }
   else
@@ -2244,7 +2254,7 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(
   vtkNew<vtkTransform> geotransform;
   const unsigned int rawtime = dataPacket->gpsTimestamp;
   const double timestamp = this->ComputeTimestamp(dataPacket->gpsTimestamp);
-  this->ComputeOrientation(rawtime, geotransform.GetPointer());
+  this->ComputeOrientation(rawtime, timestamp, geotransform.GetPointer());
 
   // Update the rpm computation (by packets)
   this->RpmCalculator.AddData(dataPacket, rawtime);
