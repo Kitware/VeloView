@@ -1,0 +1,22 @@
+<ServerManagerConfiguration>
+  <!-- Begin vtkBirdEyeViewSnap -->
+  <ProxyGroup name="filters">
+    <SourceProxy name="BirdEyeViewSnap" class="vtkBirdEyeViewSnap" label="BirdEyeViewSnap">
+      <Documentation
+        short_help="Create a bird eye view snap of the current frame"
+        long_help="Create a bird eye view snap of the current frame">
+        Create a bird eye view snap of the current frame
+      </Documentation>
+
+    <InputProperty
+      name="Input"
+      command="SetInputConnection">
+      <DataTypeDomain name="input_type">
+        <DataType value="vtkPolyData"/>
+      </DataTypeDomain>
+    </InputProperty>
+
+    </SourceProxy>
+  </ProxyGroup>
+  <!-- End vtkBirdEyeViewSnap -->
+</ServerManagerConfiguration>

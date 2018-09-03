@@ -36,6 +36,7 @@
 #include <vtkPolyDataAlgorithm.h>
 #include <vtkSmartPointer.h>
 
+class vtkTransform;
 class vtkVelodyneTransformInterpolator;
 
 class VTK_EXPORT vtkVelodyneHDLPositionReader : public vtkPolyDataAlgorithm
@@ -50,7 +51,7 @@ public:
   const std::string& GetFileName();
   void SetFileName(const std::string& filename);
   void SetShouldWarnOnWeirdGPSData(bool ShouldWarnOnWeirdGPSData_);
-
+  void SetCalibrationTransform(vtkTransform* transform);
   // Description:
   //
   int CanReadFile(const char* fname);

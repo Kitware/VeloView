@@ -103,8 +103,10 @@ if(PARAVIEW_BUILD_QT_GUI)
   # integrated to VTK, we provide the patch
   set(non_vtk_sources
     vtkPCLRansacModel.cxx
+    vtkBirdEyeViewSnap.cxx
     vtkLASFileWriter.cxx
     vtkPacketFileWriter.cxx
+    vtkRansacPlaneModel.cxx
     vtkRollingDataAccumulator.cxx
     vvPacketSender.cxx
     vtkSlam.cxx
@@ -148,9 +150,11 @@ endif()
 list(APPEND servermanager_sources
   vtkPCLRansacModel.cxx
   vtkApplanixPositionReader.cxx
+  vtkBirdEyeViewSnap.cxx
   vtkProcessingSample.cxx
   vtkSlam.cxx
   vtkSensorTransformFusion.cxx
+  vtkRansacPlaneModel.cxx
   vtkVelodyneHDLGridSource.cxx
   vtkVelodyneHDLReader.cxx
   vtkVelodyneHDLPositionReader.cxx
@@ -160,9 +164,11 @@ list(APPEND servermanager_sources
 list(APPEND servermanager_xml
   xml/vtkPCLRansacModel.xml
   xml/ApplanixPositionReader.xml
+  xml/BirdEyeViewSnap.xml
   xml/ProcessingSample.xml
   xml/SLAM.xml
   xml/SensorTransformFusion.xml
+  xml/RansacPlaneModel.xml
   xml/VelodyneHDLGridSource.xml
   xml/VelodyneHDLReader.xml
   xml/VelodyneHDLPositionReader.xml

@@ -1,5 +1,5 @@
-find_package(PythonLibs)
-find_package(PythonInterp)
+find_package(PythonLibs 2 REQUIRED)
+find_package(PythonInterp 2 REQUIRED)
 
 set (pv_python_executable "${PYTHON_EXECUTABLE}" CACHE INTERNAL "" FORCE)
 # This will add PYTHON_LIBRARY, PYTHON_EXECUTABLE, PYTHON_INCLUDE_DIR

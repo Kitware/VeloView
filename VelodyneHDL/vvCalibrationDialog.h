@@ -31,7 +31,7 @@ public:
 
   Q_INVOKABLE QStringList calibrationFiles() const;
 
-  Q_INVOKABLE QMatrix4x4 lidarTransform() const;
+  Q_INVOKABLE QMatrix4x4 sensorTransform() const;
   Q_INVOKABLE QMatrix4x4 gpsTransform() const;
 
   Q_INVOKABLE double gpsYaw() const;

@@ -1,0 +1,22 @@
+<ServerManagerConfiguration>
+  <!-- Begin vtkRansacPlaneModel -->
+  <ProxyGroup name="filters">
+    <SourceProxy name="RansacPlaneModel" class="vtkRansacPlaneModel" label="RansacPlaneModel">
+      <Documentation
+        short_help="FIt a plane to the data using a Ransac algorithm to remove outliers"
+        long_help="FIt a plane to the data using a Ransac algorithm to remove outliers">
+        Fit a plane to the data using a Ransac algorithm to remove outliers
+      </Documentation>
+
+    <InputProperty
+      name="Input"
+      command="SetInputConnection">
+      <DataTypeDomain name="input_type">
+        <DataType value="vtkPolyData"/>
+      </DataTypeDomain>
+    </InputProperty>
+
+    </SourceProxy>
+  </ProxyGroup>
+  <!-- End vtkRansacPlaneModel -->
+</ServerManagerConfiguration>

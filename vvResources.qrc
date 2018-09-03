@@ -24,5 +24,6 @@
         <file>About.png</file>
         <file>vvAboutDialog.ui</file>
         <file>Icons/errorConsole.png</file>
+        <file>Icons/camera_logo.png</file>
     </qresource>
 </RCC>

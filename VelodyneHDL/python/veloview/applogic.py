@@ -35,6 +35,8 @@ import slam
 from PythonQt.paraview import vvCalibrationDialog, vvCropReturnsDialog, vvSelectFramesDialog
 from VelodyneHDLPluginPython import vtkVelodyneHDLReader
 from VelodyneHDLPluginPython import vtkSensorTransformFusion
+from VelodyneHDLPluginPython import vtkRansacPlaneModel
+from VelodyneHDLPluginPython import vtkBirdEyeViewSnap
 
 _repCache = {}
 
@@ -367,14 +369,14 @@ def chooseCalibration(calibrationFilename=None):
             self.sensorTransform = vtk.vtkTransform()
             self.gpsTransform = vtk.vtkTransform()
 
-            qm = dialog.lidarTransform()
-            vm = vtk.vtkMatrix4x4()
+            qm = dialog.sensorTransform()
+            vmLidar = vtk.vtkMatrix4x4()
             for row in xrange(4):
-                vm.SetElement(row, 0, qm.row(row).x())
-                vm.SetElement(row, 1, qm.row(row).y())
-                vm.SetElement(row, 2, qm.row(row).z())
-                vm.SetElement(row, 3, qm.row(row).w())
-            self.sensorTransform.SetMatrix(vm)
+                vmLidar.SetElement(row, 0, qm.row(row).x())
+                vmLidar.SetElement(row, 1, qm.row(row).y())
+                vmLidar.SetElement(row, 2, qm.row(row).z())
+                vmLidar.SetElement(row, 3, qm.row(row).w())
+            self.sensorTransform.SetMatrix(vmLidar)
 
             qmGps = dialog.gpsTransform()
             vmGps = vtk.vtkMatrix4x4()
@@ -574,9 +576,8 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
     else:
         posreader = smp.ApplanixPositionReader(guiName="Position",
                                                FileName=positionFilename)
-        posreader.BaseYaw = calibration.gpsYaw
-        posreader.BaseRoll = calibration.gpsRoll
-        posreader.BasePitch = calibration.gpsPitch
+
+    posreader.GetClientSideObject().SetCalibrationTransform(calibration.gpsTransform)
 
     smp.Show(posreader)
 
@@ -2349,6 +2350,38 @@ def toggleCrashAnalysis():
 def toggleShowChart():
     slam.updateChartView()
 
+def toggleRansacPlaneFitting():
+    reader = getReader()
+    ransacPlaneFitting = smp.RansacPlaneModel(reader)
+    ransacPlaneFitting.GetClientSideObject().SetMaximumIteration(250)
+    ransacPlaneFitting.GetClientSideObject().SetThreshold(0.10)
+    ransacPlaneFitting.GetClientSideObject().SetRatioInlierRequired(0.35)
+
+def toggleBirdEyeViewSnap():
+    # Get export images filename
+    fileName = getSaveFileName('Choose Output File', 'png', getDefaultSaveFileName('png'))
+    if not fileName:
+        QtGui.QMessageBox.warning(getMainWindow(), 'Invalid filename', 'Please, select a valid filename')
+        return
+
+    # Fit a plane using ransac algorithm
+    reader = getReader()
+    ransacPlaneFitting = smp.RansacPlaneModel(reader)
+    ransacPlaneFitting.GetClientSideObject().SetMaximumIteration(1000)
+    ransacPlaneFitting.GetClientSideObject().SetThreshold(0.35)
+    ransacPlaneFitting.GetClientSideObject().SetRatioInlierRequired(0.80)
+    ransacPlaneFitting.UpdatePipeline()
+    planeParams = range(4)
+    ransacPlaneFitting.GetClientSideObject().GetPlaneParam(planeParams)
+
+    # use the fitted plane to generate the bird eye view
+    # image (i.e: project the point cloud on the fitted plan
+    # and use the 2D projected point cloud to generate the image)
+    birdEyeViewGenerator = smp.BirdEyeViewSnap(reader)
+    birdEyeViewGenerator.GetClientSideObject().SetFolderName(fileName)
+    birdEyeViewGenerator.GetClientSideObject().SetPlaneParam(planeParams)
+    birdEyeViewGenerator.UpdatePipeline()
+
 def setViewTo(axis,sign):
     view = smp.GetActiveView()
     viewUp = view.CameraViewUp
@@ -2540,12 +2573,16 @@ def setupActions():
     app.actions['actionCorrectIntensityValues'].connect('triggered()',intensitiesCorrectedChanged)
     app.actions['actionSelectDualReturn'].connect('triggered()',toggleSelectDualReturn)
     app.actions['actionSelectDualReturn2'].connect('triggered()',toggleSelectDualReturn)
+
     app.actions['actionLaunchSlam'].connect('triggered()', toggleLaunchSlam)
     app.actions['actionStreamSlam'].connect('triggered()', toggleLaunchStreamSlam)
     app.actions['actionChartView'].connect('triggered()',toggleShowChart)
     app.actions['actionLoadTransform'].connect('triggered()', toggleLoadTransform)
     app.actions['actionExportTransform'].connect('triggered()', toggleExportTransform)
     app.actions['actionMergeTransforms'].connect('triggered()', toggleMergeTransforms)
+
+    app.actions['actionRansacPlaneFitting'].connect('triggered()', toggleRansacPlaneFitting)
+    app.actions['actionBirdEyeViewSnap'].connect('triggered()', toggleBirdEyeViewSnap)
     app.EnableCrashAnalysis = app.actions['actionEnableCrashAnalysis'].isChecked()
 
     # Restore action states from settings

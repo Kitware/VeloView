@@ -96,6 +96,13 @@
      <addaction name="actionIntraFiringAdjust"/>
      <addaction name="actionIgnoreEmptyFrames"/>
     </widget>
+    <widget class="QMenu" name="menuothers">
+     <property name="title">
+      <string>others...</string>
+     </property>
+     <addaction name="actionRansacPlaneFitting"/>
+     <addaction name="actionBirdEyeViewSnap"/>
+    </widget>
     <addaction name="actionSpreadsheet"/>
     <addaction name="actionMeasurement_Grid"/>
     <addaction name="actionShowRPM"/>
@@ -122,6 +129,8 @@
     <addaction name="separator"/>
     <addaction name="menuDebugging"/>
     <addaction name="actionEnableCrashAnalysis"/>
+    <addaction name="separator"/>
+    <addaction name="menuothers"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
@@ -143,7 +152,7 @@
    </widget>
    <widget class="QMenu" name="menuToolbar">
     <property name="title">
-     <string>Toolbar</string>
+     <string>Toolbars</string>
     </property>
     <addaction name="actionBasic_Controls"/>
     <addaction name="actionColor_Controls"/>
@@ -151,18 +160,18 @@
     <addaction name="actionPlayback_Controls"/>
     <addaction name="actionGeolocation_Controls"/>
    </widget>
-   <widget class="QMenu" name="menuview">
+   <widget class="QMenu" name="menuView">
     <property name="title">
-     <string>view</string>
+     <string>View</string>
     </property>
     <addaction name="actionShowPipelineBrowser"/>
     <addaction name="actionShowPropertiesPanel"/>
    </widget>
    <addaction name="menu_File"/>
    <addaction name="menuTools"/>
-   <addaction name="menuHelp"/>
    <addaction name="menuToolbar"/>
-   <addaction name="menuview"/>
+   <addaction name="menuView"/>
+   <addaction name="menuHelp"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <widget class="QToolBar" name="toolBar">
@@ -261,10 +270,10 @@
   </widget>
   <widget class="QDockWidget" name="pipelineBrowserDock">
    <property name="features">
-    <set>QDockWidget::DockWidgetFloatable|QDockWidget::DockWidgetMovable</set>
+    <set>QDockWidget::AllDockWidgetFeatures</set>
    </property>
    <property name="windowTitle">
-    <string>Pipilene Browser</string>
+    <string>Pipeline Browser</string>
    </property>
    <attribute name="dockWidgetArea">
     <number>2</number>
@@ -273,7 +282,7 @@
   </widget>
   <widget class="QDockWidget" name="propertiesPanelDock">
    <property name="features">
-    <set>QDockWidget::DockWidgetFloatable|QDockWidget::DockWidgetMovable</set>
+    <set>QDockWidget::AllDockWidgetFeatures</set>
    </property>
    <property name="windowTitle">
     <string>Properties</string>
@@ -386,6 +395,9 @@
    <property name="toolTip">
     <string>Seek Backward</string>
    </property>
+   <property name="shortcut">
+    <string>Left</string>
+   </property>
   </action>
   <action name="actionPlay">
    <property name="icon">
@@ -399,7 +411,7 @@
     <string>Play</string>
    </property>
    <property name="shortcut">
-    <string>Ctrl+P</string>
+    <string>Space</string>
    </property>
   </action>
   <action name="actionSeek_Forward">
@@ -413,6 +425,9 @@
    <property name="toolTip">
     <string>Seek Forward</string>
    </property>
+   <property name="shortcut">
+    <string>Right</string>
+   </property>
   </action>
   <action name="actionPause">
    <property name="icon">
@@ -421,6 +436,9 @@
    </property>
    <property name="text">
     <string>Pause</string>
+   </property>
+   <property name="shortcut">
+    <string>Space</string>
    </property>
   </action>
   <action name="actionRecord">
@@ -1136,7 +1154,7 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>View Controls</string>
+    <string>Camera Controls</string>
    </property>
   </action>
   <action name="actionPlayback_Controls">
@@ -1166,7 +1184,10 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Show Pipeline Browser</string>
+    <string>Pipeline Browser</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+P</string>
    </property>
   </action>
   <action name="actionShowPropertiesPanel">
@@ -1174,7 +1195,30 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Show Properties Panel</string>
+    <string>Properties Panel</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+P</string>
+   </property>
+  </action>
+  <action name="actionBirdEyeViewSnap">
+   <property name="icon">
+    <iconset resource="vvResources.qrc">
+     <normaloff>:/vvResources/Icons/camera_logo.png</normaloff>:/vvResources/Icons/camera_logo.png</iconset>
+   </property>
+   <property name="text">
+    <string>Bird Eye View Snap</string>
+   </property>
+   <property name="toolTip">
+    <string>Take a snapshot of the scene in a bird eye view</string>
+   </property>
+  </action>
+  <action name="actionRansacPlaneFitting">
+   <property name="text">
+    <string>Ransac Plane Fitting</string>
+   </property>
+   <property name="toolTip">
+    <string>Fit a plane to the data using ransac algorithm</string>
    </property>
   </action>
  </widget>

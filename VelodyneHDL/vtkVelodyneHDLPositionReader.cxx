@@ -97,6 +97,7 @@ public:
     this->Offset[0] = 0.0;
     this->Offset[1] = 0.0;
     this->Offset[2] = 0.0;
+    this->CalibrationTransform->Identity();
   }
 
   int ProcessHDLPacket(const unsigned char* data, unsigned int bytes, PositionPacket& position);
@@ -111,6 +112,7 @@ public:
   double Offset[3];
 
   vtkNew<vtkVelodyneTransformInterpolator> Interp;
+  vtkNew<vtkTransform> CalibrationTransform;
 };
 
 namespace
@@ -204,6 +206,20 @@ void vtkVelodyneHDLPositionReader::SetShouldWarnOnWeirdGPSData(bool ShouldWarnOn
 }
 
 //-----------------------------------------------------------------------------
+void vtkVelodyneHDLPositionReader::SetCalibrationTransform(vtkTransform* transform)
+{
+  if (transform)
+  {
+    this->Internal->CalibrationTransform->SetMatrix(transform->GetMatrix());
+  }
+  else
+  {
+    this->Internal->CalibrationTransform->Identity();
+  }
+  this->Modified();
+}
+
+//-----------------------------------------------------------------------------
 vtkVelodyneTransformInterpolator* vtkVelodyneHDLPositionReader::GetInterpolator()
 {
   return this->Internal->Interp.GetPointer();
@@ -257,20 +273,36 @@ void vtkVelodyneHDLPositionReader::vtkInternal::InterpolateGPS(
       bool isRotationFinite = vtkMath::IsFinite(heading);
 
       // Compute transform
-      vtkNew<vtkTransform> transform;
-      transform->PostMultiply();
+      // Here we want to compute the transform to go
+      // from the solid referential frame to the world
+      // georeferenced frame. Hence, given the position
+      // and orientation of the GPS in the solid frame we
+      // need to apply the transform from the solid frame
+      // to the GPS (backward gps pose) and then the transform
+      // from the GPS to the world georeferenced frame
+      vtkNew<vtkTransform> transformGpsWorld, transformVehiculeWorld;
+      transformGpsWorld->PostMultiply();
       if (isRotationFinite)
-        transform->RotateZ(-heading /* - this->BaseYaw*/);
+        transformGpsWorld->RotateZ(heading);
       else
         vtkGenericWarningMacro("Error in GPS rotation");
-      // transform->RotateY(-this->BaseRoll);
-      // transform->RotateX(-this->BasePitch);
       if (isTranslationFinite)
-        transform->Translate(pos);
+        transformGpsWorld->Translate(pos);
       else
         vtkGenericWarningMacro("Error in GPS position");
 
-      this->Interp->AddTransform(convertedtime, transform.GetPointer());
+      // Compute transform from vehicule to GPS
+      // and then compose with the transform GPS to world
+      vtkNew<vtkMatrix4x4> gpsToWorld, vehiculeToGps, vehiculeToWorld;
+      this->CalibrationTransform->GetMatrix(vehiculeToGps.Get());
+      transformGpsWorld->GetMatrix(gpsToWorld.Get());
+      vehiculeToGps->Invert();
+      vtkMatrix4x4::Multiply4x4(gpsToWorld.Get(), vehiculeToGps.Get(), vehiculeToWorld.Get());
+      transformVehiculeWorld->SetMatrix(vehiculeToWorld.Get());
+      transformVehiculeWorld->Modified();
+
+      // Add the transform to the interpolator
+      this->Interp->AddTransform(convertedtime, transformVehiculeWorld.GetPointer());
 
       // Compute heading vector for interpolation
       double ha = heading * DEG_TO_RAD;
