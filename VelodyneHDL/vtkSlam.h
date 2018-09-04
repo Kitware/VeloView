@@ -334,6 +334,14 @@ public:
   slamGetMacro(,MappingLineMaxDistInlier, double)
   slamSetMacro(,MappingLineMaxDistInlier, double)
 
+  // Set transforms information / interpolator from an
+  // external sensor (GPS, IMU, Camera SLAM, ...) to be
+  // use to aid the SLAM algorithm. Note that without any
+  // information about the variance / covariance of the measured
+  // the data will only be used to initialize the SLAM odometry
+  // and will not be merged with the slam data using a Kalman filter
+  void SetExternalSensorMeasures(vtkVelodyneTransformInterpolator* interpolator);
+
 protected:
   // vtkPolyDataAlgorithm functions
   vtkSlam();
@@ -522,6 +530,13 @@ private:
   // i.e the list of transforms computed
   std::vector<Eigen::Matrix<double, 6, 1> > TworldList;
 
+  // external sensor (GPS, IMU, Camera SLAM, ...) to be
+  // use to aid the SLAM algorithm. Note that without any
+  // information about the variance / covariance of the measured
+  // the data will only be used to initialize the SLAM odometry
+  // and will not be merged with the slam data using a Kalman filter
+  vtkSmartPointer<vtkVelodyneTransformInterpolator> ExternalMeasures;
+
   // Convert the input vtk-format pointcloud
   // into a pcl-pointcloud format. scan lines
   // will also be sorted by their vertical angles
@@ -645,6 +660,10 @@ private:
   // the relative motion recover and the previous
   // world transformation
   void UpdateTworldUsingTrelative();
+
+  // Initialize Tworld using external data provided
+  // by an external sensor (GPS / IMU, ...)
+  void InitTworldUsingExternalData(double adjustedTime0, double rawTime0);
 
   // Predict Tworld using last points of the trajectory
   Eigen::Matrix<double, 6, 1> PredictTWorld();

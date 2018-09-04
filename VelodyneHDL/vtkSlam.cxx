@@ -1160,6 +1160,12 @@ void vtkSlam::OnlyComputeKeypoints(vtkSmartPointer<vtkPolyData> newFrame)
 }
 
 //-----------------------------------------------------------------------------
+void vtkSlam::InitTworldUsingExternalData(double adjustedTime0, double rawTime0)
+{
+
+}
+
+//-----------------------------------------------------------------------------
 void vtkSlam::AddFrame(vtkPolyData* newFrame)
 {
   if (!newFrame)
@@ -1193,6 +1199,7 @@ void vtkSlam::AddFrame(vtkPolyData* newFrame)
   // odometry and mapping steps
   if (this->NbrFrameProcessed == 0)
   {
+    // print parameters to provide some information
     this->PrintParameters();
 
     // Convert the new frame into pcl format and sort
@@ -1201,6 +1208,16 @@ void vtkSlam::AddFrame(vtkPolyData* newFrame)
 
     // Compute the edges and planars keypoints
     this->ComputeKeyPoints(newFrame);
+
+    // Check if external measures have been
+    // provided to the slam algorithm
+    if (this->ExternalMeasures)
+    {
+      vtkGenericWarningMacro("External data provided to the SLAM");
+      double adjuestedTime0 = newFrame->GetPointData()->GetArray("adjustedtime")->GetTuple1(0) * 1e-6;
+      double rawTime0 = static_cast<double>(newFrame->GetPointData()->GetArray("timestamp")->GetTuple1(0)) * 1e-6;
+      this->InitTworldUsingExternalData(adjuestedTime0, rawTime0);
+    }
 
     // Populate keypoints maps
     // edges
@@ -3616,6 +3633,17 @@ void vtkSlam::SetMaxVelocityAcceleration(double acc)
 void vtkSlam::SetMaxAngleAcceleration(double acc)
 {
   this->KalmanEstimator.SetMaxAngleAcceleration(acc);
+}
+
+//-----------------------------------------------------------------------------
+void vtkSlam::SetExternalSensorMeasures(vtkVelodyneTransformInterpolator* interpolator)
+{
+  if (this->NbrFrameProcessed > 0)
+  {
+    vtkGenericWarningMacro("The external sensor measures should be provided"
+                           << "Before launching any odometry operation");
+  }
+  this->ExternalMeasures = interpolator;
 }
 
 //-----------------------------------------------------------------------------
