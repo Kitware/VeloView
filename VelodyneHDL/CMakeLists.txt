@@ -95,6 +95,7 @@ if(PARAVIEW_BUILD_QT_GUI)
   # integrated to VTK, we provide the patch
   set(non_vtk_sources
     vtkLidarSource.cxx
+    vtkLidarSourceInternal.cxx
     vtkBirdEyeViewSnap.cxx
     vtkLASFileWriter.cxx
     vtkPacketFileWriter.cxx

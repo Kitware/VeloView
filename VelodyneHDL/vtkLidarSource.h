@@ -25,12 +25,12 @@ public:
 //  void SetLaserSelection(int LaserSelection[HDL_MAX_NUM_LASERS]);
 //  void GetLaserSelection(int LaserSelection[HDL_MAX_NUM_LASERS]);
 
-//  // Croping
-//  void SetCropMode(int);
-//  void SetCropReturns(int);
-//  void SetCropOutside(int);
-//  void SetCropRegion(double[6]);
-//  void SetCropRegion(double, double, double, double, double, double);
+  // Croping
+  void SetCropMode(int);
+  void SetCropReturns(int);
+  void SetCropOutside(int);
+  void SetCropRegion(double[6]);
+  void SetCropRegion(double, double, double, double, double, double);
 
 
 //  void GetLaserCorrections(double verticalCorrection[HDL_MAX_NUM_LASERS],

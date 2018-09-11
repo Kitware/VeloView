@@ -1,17 +1,26 @@
 #ifndef VTKLIDARSOURCEINTERNAL_H
 #define VTKLIDARSOURCEINTERNAL_H
 
+#include "vtkLidarSource.h"
 //-----------------------------------------------------------------------------
 class vtkLidarSourceInternal
 {
 public:
+  enum CropModeEnum
+  {
+    None = 0,
+    Cartesian = 1,
+    Spherical = 2,
+    Cylindric = 3,
+  };
+
   vtkLidarSourceInternal()
   {
 //    this->RpmCalculator.Reset();
 //    this->AlreadyWarnAboutCalibration = false;
 //    this->IgnoreZeroDistances = true;
 //    this->UseIntraFiringAdjustment = true;
-//    this->CropMode = Cartesian;
+    this->CropMode = Cartesian;
 //    this->ShouldAddDualReturnArray = false;
 //    this->alreadyWarnedForIgnoredHDL64FiringPacket = false;
 //    this->OutputPacketProcessingDebugInfo = false;
@@ -25,11 +34,11 @@ public:
     this->NumberOfTrailingFrames = 0;
 //    this->ApplyTransform = 0;
 //    this->FiringsSkip = 0;
-//    this->CropReturns = false;
-//    this->CropOutside = false;
-//    this->CropRegion[0] = this->CropRegion[1] = 0.0;
-//    this->CropRegion[2] = this->CropRegion[3] = 0.0;
-//    this->CropRegion[4] = this->CropRegion[5] = 0.0;
+    this->CropReturns = false;
+    this->CropOutside = false;
+    this->CropRegion[0] = this->CropRegion[1] = 0.0;
+    this->CropRegion[2] = this->CropRegion[3] = 0.0;
+    this->CropRegion[4] = this->CropRegion[5] = 0.0;
 //    this->CorrectionsInitialized = false;
 //    this->currentRpm = 0;
 
@@ -123,7 +132,6 @@ public:
 //  vtkPacketFileReader* Reader;
 
 //  unsigned char SensorPowerMode;
-//  CropModeEnum CropMode;
 
 //  // Number of allowed split, for frame-range retrieval.
 //  int SplitCounter;
@@ -147,10 +155,12 @@ public:
 //  bool IgnoreZeroDistances;
 //  bool UseIntraFiringAdjustment;
 
-//  bool CropReturns;
-//  bool CropOutside;
-//  bool AlreadyWarnAboutCalibration;
-//  double CropRegion[6];
+  CropModeEnum CropMode;
+  bool CropReturns;
+  bool CropOutside;
+  double CropRegion[6];
+
+  //  bool AlreadyWarnAboutCalibration;
 //  double distanceResolutionM;
 
 //  std::vector<bool> LaserSelection;
@@ -165,7 +175,7 @@ public:
 //  void PrecomputeCorrectionCosSin();
 //  void LoadCorrectionsFile(const std::string& filename);
 //  bool HDL64LoadCorrectionsFromStreamData();
-//  bool shouldBeCroppedOut(double pos[3], double theta);
+  bool shouldBeCroppedOut(double pos[3], double theta);
 
 //  void ProcessHDLPacket(unsigned char* data, std::size_t bytesReceived);
 //  static bool shouldSplitFrame(uint16_t, int, int&);

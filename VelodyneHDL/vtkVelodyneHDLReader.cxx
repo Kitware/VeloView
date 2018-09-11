@@ -79,13 +79,6 @@ using namespace DataPacketFixedLength;
 
 namespace
 {
-enum CropModeEnum
-{
-  None = 0,
-  Cartesian = 1,
-  Spherical = 2,
-  Cylindric = 3,
-};
 
 // Structure to compute RPM and handle degenerated cases
 struct RPMCalculator
@@ -408,7 +401,6 @@ public:
     this->AlreadyWarnAboutCalibration = false;
     this->IgnoreZeroDistances = true;
     this->UseIntraFiringAdjustment = true;
-    this->CropMode = Cartesian;
     this->ShouldAddDualReturnArray = false;
     this->alreadyWarnedForIgnoredHDL64FiringPacket = false;
     this->OutputPacketProcessingDebugInfo = false;
@@ -421,11 +413,6 @@ public:
     this->SplitCounter = 0;
     this->ApplyTransform = 0;
     this->FiringsSkip = 0;
-    this->CropReturns = false;
-    this->CropOutside = false;
-    this->CropRegion[0] = this->CropRegion[1] = 0.0;
-    this->CropRegion[2] = this->CropRegion[3] = 0.0;
-    this->CropRegion[4] = this->CropRegion[5] = 0.0;
     this->CorrectionsInitialized = false;
     this->currentRpm = 0;
 
@@ -519,7 +506,6 @@ public:
   vtkPacketFileReader* Reader;
 
   unsigned char SensorPowerMode;
-  CropModeEnum CropMode;
 
   // Number of allowed split, for frame-range retrieval.
   int SplitCounter;
@@ -542,10 +528,7 @@ public:
   bool IgnoreZeroDistances;
   bool UseIntraFiringAdjustment;
 
-  bool CropReturns;
-  bool CropOutside;
   bool AlreadyWarnAboutCalibration;
-  double CropRegion[6];
   double distanceResolutionM;
 
   std::vector<bool> LaserSelection;
@@ -560,7 +543,6 @@ public:
   void PrecomputeCorrectionCosSin();
   void LoadCorrectionsFile(const std::string& filename);
   bool HDL64LoadCorrectionsFromStreamData();
-  bool shouldBeCroppedOut(double pos[3], double theta);
 
   void ProcessHDLPacket(unsigned char* data, std::size_t bytesReceived);
   static bool shouldSplitFrame(uint16_t, int, int&);
@@ -871,52 +853,6 @@ void vtkVelodyneHDLReader::SetDummyProperty(int vtkNotUsed(dummy))
 void vtkVelodyneHDLReader::SetFiringsSkip(int pr)
 {
   this->Internal->FiringsSkip = pr;
-  this->Modified();
-}
-
-//-----------------------------------------------------------------------------
-void vtkVelodyneHDLReader::SetCropReturns(int crop)
-{
-  if (!this->Internal->CropReturns == !!crop)
-  {
-    this->Internal->CropReturns = !!crop;
-    this->Modified();
-  }
-}
-
-//-----------------------------------------------------------------------------
-void vtkVelodyneHDLReader::SetCropOutside(int crop)
-{
-  if (!this->Internal->CropOutside == !!crop)
-  {
-    this->Internal->CropOutside = !!crop;
-    this->Modified();
-  }
-}
-
-//-----------------------------------------------------------------------------
-void vtkVelodyneHDLReader::SetCropRegion(double region[6])
-{
-  std::copy(region, region + 6, this->Internal->CropRegion);
-  this->Modified();
-}
-
-void vtkVelodyneHDLReader::SetCropMode(int cropMode)
-{
-  this->Internal->CropMode = static_cast<CropModeEnum>(cropMode);
-  this->Modified();
-}
-
-//-----------------------------------------------------------------------------
-void vtkVelodyneHDLReader::SetCropRegion(
-  double xl, double xu, double yl, double yu, double zl, double zu)
-{
-  this->Internal->CropRegion[0] = xl;
-  this->Internal->CropRegion[1] = xu;
-  this->Internal->CropRegion[2] = yl;
-  this->Internal->CropRegion[3] = yu;
-  this->Internal->CropRegion[4] = zl;
-  this->Internal->CropRegion[5] = zu;
   this->Modified();
 }
 
@@ -1414,53 +1350,6 @@ vtkSmartPointer<vtkCellArray> vtkVelodyneHDLReader::vtkInternal::NewVertexCells(
   return cellArray;
 }
 
-bool vtkVelodyneHDLReader::vtkInternal::shouldBeCroppedOut(double pos[3], double theta)
-{
-  // Test if point is cropped
-  if (!this->CropReturns)
-  {
-    return false;
-  }
-  switch (this->CropMode)
-  {
-    case Cartesian: // Cartesian cropping mode
-    {
-      bool pointOutsideOfBox = pos[0] >= this->CropRegion[0] && pos[0] <= this->CropRegion[1] &&
-        pos[1] >= this->CropRegion[2] && pos[1] <= this->CropRegion[3] &&
-        pos[2] >= this->CropRegion[4] && pos[2] <= this->CropRegion[5];
-      return (
-        (pointOutsideOfBox && this->CropOutside) || (!pointOutsideOfBox && !this->CropOutside));
-      break;
-    }
-    case Spherical:
-      // Spherical mode
-      {
-        double R = std::sqrt(pos[0] * pos[0] + pos[1] * pos[1] + pos[2] * pos[2]);
-        double vertAngle = std::atan2(pos[2], std::sqrt(pos[0] * pos[0] + pos[1] * pos[1]));
-        vertAngle *= 180.0 / vtkMath::Pi();
-        bool pointInsideOfBounds;
-        if (this->CropRegion[0] <= this->CropRegion[1]) // 0 is NOT in theta range
-        {
-          pointInsideOfBounds = theta >= this->CropRegion[0] && theta <= this->CropRegion[1] &&
-            R >= this->CropRegion[4] && R <= this->CropRegion[5];
-        }
-        else // theta range includes 0
-        {
-          pointInsideOfBounds = (theta >= this->CropRegion[0] || theta <= this->CropRegion[1]) &&
-            R >= this->CropRegion[4] && R <= this->CropRegion[5];
-        }
-        pointInsideOfBounds &= (vertAngle > this->CropRegion[2] && vertAngle < this->CropRegion[3]);
-        return ((pointInsideOfBounds && this->CropOutside) ||
-          (!pointInsideOfBounds && !this->CropOutside));
-        break;
-      }
-    case Cylindric:
-    {
-      // space holder for future implementation
-    }
-  }
-  return false;
-}
 //-----------------------------------------------------------------------------
 void vtkVelodyneHDLReader::vtkInternal::PushFiringData(const unsigned char laserId,
   const unsigned char rawLaserId, unsigned short azimuth, const double timestamp,
