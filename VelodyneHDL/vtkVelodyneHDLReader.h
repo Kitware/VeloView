@@ -32,9 +32,9 @@
 #ifndef _vtkVelodyneHDLReader_h
 #define _vtkVelodyneHDLReader_h
 
+#include "vtkLidarSource.h"
 #include "vtkDataPacket.h"
 #include <string>
-#include <vtkPolyDataAlgorithm.h>
 #include <vtkSmartPointer.h>
 
 class vtkTransform;
@@ -42,7 +42,7 @@ class vtkVelodyneTransformInterpolator;
 
 using DataPacketFixedLength::HDL_MAX_NUM_LASERS;
 
-class VTK_EXPORT vtkVelodyneHDLReader : public vtkPolyDataAlgorithm
+class VTK_EXPORT vtkVelodyneHDLReader : public vtkLidarSource
 {
 public:
   enum DualFlag
@@ -58,7 +58,7 @@ public:
 
 public:
   static vtkVelodyneHDLReader* New();
-  vtkTypeMacro(vtkVelodyneHDLReader, vtkPolyDataAlgorithm);
+  vtkTypeMacro(vtkVelodyneHDLReader, vtkLidarSource);
   void PrintSelf(ostream& os, vtkIndent indent);
 
   // Description:
@@ -82,11 +82,6 @@ public:
   int CanReadFile(const char* fname);
 
   // Property functions
-
-  // Description:
-  // Number of frames behind current frame to read.  Zero indicates only
-  // show the current frame.  Negative numbers are invalid.
-  void SetNumberOfTrailingFrames(int numberTrailing);
 
   // Description:
   // TODO: This is not friendly but I dont have a better way to pass 64 values to a filter in
@@ -183,7 +178,9 @@ public:
   std::string GetSensorInformation();
 
 protected:
+  class vtkInternal;
   vtkVelodyneHDLReader();
+  vtkVelodyneHDLReader(vtkInternal* pimpl);
   ~vtkVelodyneHDLReader();
 
   int RequestInformation(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
@@ -197,10 +194,9 @@ protected:
   std::string FileName;
   bool ShouldCheckSensor;
 
-  class vtkInternal;
-  vtkInternal* Internal;
 
 private:
+  vtkInternal* Internal;
   vtkVelodyneHDLReader(const vtkVelodyneHDLReader&);
   void operator=(const vtkVelodyneHDLReader&);
 };

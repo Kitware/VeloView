@@ -29,17 +29,18 @@
 // .SECTION Description
 //
 
+
 #ifndef __vtkVelodyneHDLSource_h
 #define __vtkVelodyneHDLSource_h
 
-#include <vtkPolyDataAlgorithm.h>
+#include "vtkLidarSource.h"
 
 #include "vtkDataPacket.h"
 using DataPacketFixedLength::HDL_MAX_NUM_LASERS;
 
 class vtkTransform;
 
-class VTK_EXPORT vtkVelodyneHDLSource : public vtkPolyDataAlgorithm
+class VTK_EXPORT vtkVelodyneHDLSource : public vtkLidarSource
 {
 public:
   vtkTypeMacro(vtkVelodyneHDLSource, vtkPolyDataAlgorithm);

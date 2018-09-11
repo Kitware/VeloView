@@ -27,6 +27,7 @@
 =========================================================================*/
 
 #include "vtkVelodyneHDLReader.h"
+#include "vtkLidarSourceInternal.h"
 
 #include "vtkPacketFileReader.h"
 #include "vtkPacketFileWriter.h"
@@ -398,7 +399,7 @@ public:
 };
 
 //-----------------------------------------------------------------------------
-class vtkVelodyneHDLReader::vtkInternal
+class vtkVelodyneHDLReader::vtkInternal : public vtkLidarSourceInternal
 {
 public:
   vtkInternal()
@@ -418,7 +419,6 @@ public:
     this->TimeAdjust = std::numeric_limits<double>::quiet_NaN();
     this->Reader = 0;
     this->SplitCounter = 0;
-    this->NumberOfTrailingFrames = 0;
     this->ApplyTransform = 0;
     this->FiringsSkip = 0;
     this->CropReturns = false;
@@ -537,7 +537,6 @@ public:
   vtkRollingDataAccumulator* rollingCalibrationData;
 
   // User configurable parameters
-  int NumberOfTrailingFrames;
   int ApplyTransform;
   int FiringsSkip;
   bool IgnoreZeroDistances;
@@ -610,9 +609,15 @@ std::string vtkVelodyneHDLReader::GetSensorInformation()
 vtkStandardNewMacro(vtkVelodyneHDLReader);
 
 //-----------------------------------------------------------------------------
-vtkVelodyneHDLReader::vtkVelodyneHDLReader()
+vtkVelodyneHDLReader::vtkVelodyneHDLReader() : vtkVelodyneHDLReader(new vtkInternal)
 {
-  this->Internal = new vtkInternal;
+  SetPimpInternal(this->Internal);
+}
+
+//-----------------------------------------------------------------------------
+vtkVelodyneHDLReader::vtkVelodyneHDLReader(vtkInternal* pimpl) : vtkLidarSource(new vtkInternal)
+{
+  this->Internal = pimpl;
   this->UnloadPerFrameData();
   this->SetNumberOfInputPorts(0);
   this->SetNumberOfOutputPorts(1);
@@ -866,14 +871,6 @@ void vtkVelodyneHDLReader::SetDummyProperty(int vtkNotUsed(dummy))
 void vtkVelodyneHDLReader::SetFiringsSkip(int pr)
 {
   this->Internal->FiringsSkip = pr;
-  this->Modified();
-}
-
-//-----------------------------------------------------------------------------
-void vtkVelodyneHDLReader::SetNumberOfTrailingFrames(int numTrailing)
-{
-  assert(numTrailing >= 0);
-  this->Internal->NumberOfTrailingFrames = numTrailing;
   this->Modified();
 }
 
