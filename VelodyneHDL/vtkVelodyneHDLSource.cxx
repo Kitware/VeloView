@@ -942,7 +942,7 @@ void vtkVelodyneHDLSource::SetForwardedIpAddress(const std::string& ipAddress)
 }
 
 //-----------------------------------------------------------------------------
-void vtkVelodyneHDLSource::SetLaserSelection(int LaserSelection[HDL_MAX_NUM_LASERS])
+void vtkVelodyneHDLSource::SetLaserSelection(bool LaserSelection[])
 {
   boost::lock_guard<boost::mutex> lock(this->Internal->Consumer->ReaderMutex);
 
@@ -951,7 +951,7 @@ void vtkVelodyneHDLSource::SetLaserSelection(int LaserSelection[HDL_MAX_NUM_LASE
 }
 
 //-----------------------------------------------------------------------------
-void vtkVelodyneHDLSource::GetLaserSelection(int LaserSelection[HDL_MAX_NUM_LASERS])
+void vtkVelodyneHDLSource::GetLaserSelection(bool LaserSelection[])
 {
   boost::lock_guard<boost::mutex> lock(this->Internal->Consumer->ReaderMutex);
 

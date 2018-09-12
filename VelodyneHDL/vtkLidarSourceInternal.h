@@ -49,7 +49,7 @@ public:
 //    this->IsHDL64Data = false;
 //    this->ReportedFactoryField1 = 0;
 //    this->ReportedFactoryField2 = 0;
-//    this->CalibrationReportedNumLasers = -1;
+    this->CalibrationReportedNumLasers = -1;
     this->IgnoreEmptyFrames = true;
 //    this->distanceResolutionM = 0.002;
 //    this->WantIntensityCorrection = false;
@@ -141,7 +141,7 @@ public:
 //  std::vector<double> sin_lookup_table_;
 //  HDLLaserCorrection laser_corrections_[HDL_MAX_NUM_LASERS];
 //  double XMLColorTable[HDL_MAX_NUM_LASERS][3];
-//  int CalibrationReportedNumLasers;
+  int CalibrationReportedNumLasers;
 //  bool CorrectionsInitialized;
 //  bool IsCorrectionFromLiveStream;
 
@@ -163,7 +163,7 @@ public:
   //  bool AlreadyWarnAboutCalibration;
 //  double distanceResolutionM;
 
-//  std::vector<bool> LaserSelection;
+  std::vector<bool> LaserSelection;
 //  unsigned int DualReturnFilter;
 
 //  void SplitFrame(bool force = false);

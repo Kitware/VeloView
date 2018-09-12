@@ -90,8 +90,8 @@ public:
 
   void SetFiringsSkip(int);
 
-  void SetLaserSelection(int LaserSelection[HDL_MAX_NUM_LASERS]);
-  void GetLaserSelection(int LaserSelection[HDL_MAX_NUM_LASERS]);
+  void SetLaserSelection(bool LaserSelection[]);
+  void GetLaserSelection(bool LaserSelection[]);
 
   double GetDistanceResolutionM();
 

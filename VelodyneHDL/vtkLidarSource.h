@@ -22,8 +22,11 @@ public:
   // show the current frame.  Negative numbers are invalid.
   virtual void SetNumberOfTrailingFrames(int numberTrailing);
 
-//  void SetLaserSelection(int LaserSelection[HDL_MAX_NUM_LASERS]);
-//  void GetLaserSelection(int LaserSelection[HDL_MAX_NUM_LASERS]);
+  // Laser
+  int GetNumberOfChannels();
+  void SetLaserSelection(bool LaserSelection[]);
+  void GetLaserSelection(bool LaserSelection[]);
+
 
   // Croping
   void SetCropMode(int);

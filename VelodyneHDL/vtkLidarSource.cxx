@@ -24,6 +24,38 @@ vtkLidarSource::~vtkLidarSource()
 }
 
 //-----------------------------------------------------------------------------
+int vtkLidarSource::GetNumberOfChannels()
+{
+  return this->Internal->CalibrationReportedNumLasers;
+}
+
+//-----------------------------------------------------------------------------
+void vtkLidarSource::SetLaserSelection(bool laserSelection[])
+{
+//  std::copy(this->Internal->LaserSelection.begin(),
+//            this->Internal->LaserSelection.end(),
+//            laserSelection);
+//  this->Internal->LaserSelection = std::vector<bool> tmp
+  for (int i = 0; i < this->Internal->CalibrationReportedNumLasers; ++i)
+  {
+    this->Internal->LaserSelection[i] = laserSelection[i];
+  }
+  this->Modified();
+}
+
+//-----------------------------------------------------------------------------
+void vtkLidarSource::GetLaserSelection(bool laserSelection[])
+{
+//  std::copy(laserSelection,
+//            laserSelection + this->Internal->CalibrationReportedNumLasers,
+//            this->Internal->LaserSelection);
+  for (int i = 0; i < this->Internal->CalibrationReportedNumLasers; ++i)
+  {
+    laserSelection[i] = this->Internal->LaserSelection[i];
+  }
+}
+
+//-----------------------------------------------------------------------------
 void vtkLidarSource::PrintSelf( ostream& os, vtkIndent indent )
 {
   this->Superclass::PrintSelf( os, indent );

@@ -81,19 +81,6 @@ public:
   //
   int CanReadFile(const char* fname);
 
-  // Property functions
-
-  // Description:
-  // TODO: This is not friendly but I dont have a better way to pass 64 values to a filter in
-  // paraview
-  void SetLaserSelection(int, int, int, int, int, int, int, int, int, int, int, int, int, int, int,
-    int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int,
-    int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int,
-    int, int, int, int, int, int, int, int, int, int, int);
-  void SetLaserSelection(int LaserSelection[HDL_MAX_NUM_LASERS]);
-
-  void GetLaserSelection(int LaserSelection[HDL_MAX_NUM_LASERS]);
-
   double GetCurrentRpm();
 
   double GetDistanceResolutionM();
@@ -121,8 +108,6 @@ public:
   void SetDummyProperty(int);
 
   void SetFiringsSkip(int);
-
-  int GetNumberOfChannels();
 
   // I/O and processing functions
   void Open();

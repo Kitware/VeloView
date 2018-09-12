@@ -422,7 +422,6 @@ public:
     this->IsHDL64Data = false;
     this->ReportedFactoryField1 = 0;
     this->ReportedFactoryField2 = 0;
-    this->CalibrationReportedNumLasers = -1;
     this->IgnoreEmptyFrames = true;
     this->distanceResolutionM = 0.002;
     this->WantIntensityCorrection = false;
@@ -514,7 +513,6 @@ public:
   std::vector<double> sin_lookup_table_;
   HDLLaserCorrection laser_corrections_[HDL_MAX_NUM_LASERS];
   double XMLColorTable[HDL_MAX_NUM_LASERS][3];
-  int CalibrationReportedNumLasers;
   bool CorrectionsInitialized;
   bool IsCorrectionFromLiveStream;
 
@@ -529,7 +527,6 @@ public:
   bool AlreadyWarnAboutCalibration;
   double distanceResolutionM;
 
-  std::vector<bool> LaserSelection;
   unsigned int DualReturnFilter;
 
   void SplitFrame(bool force = false);
@@ -709,43 +706,6 @@ void vtkVelodyneHDLReader::SetFileName(const std::string& filename)
 const std::string& vtkVelodyneHDLReader::GetCorrectionsFile()
 {
   return this->CorrectionsFile;
-}
-
-//-----------------------------------------------------------------------------
-
-#define PARAM(z, n, data) int x##n,
-#define VAL(z, n, data) x##n,
-#define B_HDL_MAX_NUM_LASERS 64
-void vtkVelodyneHDLReader::SetLaserSelection(BOOST_PP_REPEAT(
-  BOOST_PP_DEC(B_HDL_MAX_NUM_LASERS), PARAM, "") int BOOST_PP_CAT(x, B_HDL_MAX_NUM_LASERS))
-{
-  assert(HDL_MAX_NUM_LASERS == B_HDL_MAX_NUM_LASERS);
-  int mask[HDL_MAX_NUM_LASERS] = { BOOST_PP_REPEAT(BOOST_PP_DEC(B_HDL_MAX_NUM_LASERS), VAL, "")
-      BOOST_PP_CAT(x, B_HDL_MAX_NUM_LASERS) };
-  this->SetLaserSelection(mask);
-  this->Modified();
-}
-#undef B_HDL_MAX_NUM_LASERS
-#undef PARAM
-#undef VAL
-
-//-----------------------------------------------------------------------------
-void vtkVelodyneHDLReader::SetLaserSelection(int LaserSelection[HDL_MAX_NUM_LASERS])
-{
-  for (int i = 0; i < HDL_MAX_NUM_LASERS; ++i)
-  {
-    this->Internal->LaserSelection[i] = LaserSelection[i];
-  }
-  this->Modified();
-}
-
-//-----------------------------------------------------------------------------
-void vtkVelodyneHDLReader::GetLaserSelection(int LaserSelection[HDL_MAX_NUM_LASERS])
-{
-  for (int i = 0; i < HDL_MAX_NUM_LASERS; ++i)
-  {
-    LaserSelection[i] = this->Internal->LaserSelection[i];
-  }
 }
 
 //-----------------------------------------------------------------------------
@@ -1035,12 +995,6 @@ int vtkVelodyneHDLReader::GetNumberOfFrames()
 {
   return this->Internal->FilePositions.size();
   ;
-}
-
-//-----------------------------------------------------------------------------
-int vtkVelodyneHDLReader::GetNumberOfChannels()
-{
-  return this->Internal->CalibrationReportedNumLasers;
 }
 
 //-----------------------------------------------------------------------------
