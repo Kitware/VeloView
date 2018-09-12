@@ -14,49 +14,7 @@ public:
     Cylindric = 3,
   };
 
-  vtkLidarSourceInternal()
-  {
-//    this->RpmCalculator.Reset();
-//    this->AlreadyWarnAboutCalibration = false;
-    this->IgnoreZeroDistances = true;
-//    this->UseIntraFiringAdjustment = true;
-    this->CropMode = Cartesian;
-//    this->ShouldAddDualReturnArray = false;
-//    this->alreadyWarnedForIgnoredHDL64FiringPacket = false;
-//    this->OutputPacketProcessingDebugInfo = false;
-//    this->SensorPowerMode = 0;
-//    this->Skip = 0;
-//    this->CurrentFrameState = new FramingState;
-//    this->LastTimestamp = std::numeric_limits<unsigned int>::max();
-//    this->TimeAdjust = std::numeric_limits<double>::quiet_NaN();
-//    this->Reader = 0;
-//    this->SplitCounter = 0;
-    this->NumberOfTrailingFrames = 0;
-//    this->ApplyTransform = 0;
-//    this->FiringsSkip = 0;
-    this->CropReturns = false;
-    this->CropOutside = false;
-    this->CropRegion[0] = this->CropRegion[1] = 0.0;
-    this->CropRegion[2] = this->CropRegion[3] = 0.0;
-    this->CropRegion[4] = this->CropRegion[5] = 0.0;
-//    this->CorrectionsInitialized = false;
-//    this->currentRpm = 0;
-
-//    std::fill(this->LastPointId, this->LastPointId + HDL_MAX_NUM_LASERS, -1);
-
-//    this->LaserSelection.resize(HDL_MAX_NUM_LASERS, true);
-//    this->DualReturnFilter = 0;
-//    this->IsHDL64Data = false;
-//    this->ReportedFactoryField1 = 0;
-//    this->ReportedFactoryField2 = 0;
-    this->CalibrationReportedNumLasers = -1;
-    this->IgnoreEmptyFrames = true;
-//    this->distanceResolutionM = 0.002;
-//    this->WantIntensityCorrection = false;
-
-//    this->rollingCalibrationData = new vtkRollingDataAccumulator();
-//    this->Init();
-  }
+  vtkLidarSourceInternal();
 
   ~vtkLidarSourceInternal()
   {
