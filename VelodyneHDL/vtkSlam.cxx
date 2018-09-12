@@ -1162,7 +1162,10 @@ void vtkSlam::OnlyComputeKeypoints(vtkSmartPointer<vtkPolyData> newFrame)
 //-----------------------------------------------------------------------------
 void vtkSlam::InitTworldUsingExternalData(double adjustedTime0, double rawTime0)
 {
+  std::cout << "External data time range: [" << this->ExternalMeasures->GetMinimumT() << ", "
+            << this->ExternalMeasures->GetMaximumT() << "]" << std::endl;
 
+  std::cout << "proposed time: " << adjustedTime0 << " and rawtime: " << rawTime0 << std::endl;
 }
 
 //-----------------------------------------------------------------------------

@@ -32,9 +32,6 @@ def configure():
         smp.Delete(slam)
     slam = smp.Slam()
 
-    # create Linear Interpolator()
-    source.CreateNearestInterpolator()
-
     # initialize the nb of laser and their mapping
     NLaser = source.GetNumberOfChannels()
     laserIdMapping = range(NLaser * 2)
@@ -153,6 +150,7 @@ def launch():
 
     # get data
     source = applogic.getReader().GetClientSideObject()
+    positionSource = applogic.getPosition()
 
     #If no data are available
     if not source :
@@ -164,6 +162,11 @@ def launch():
     # let the user configure a new slam instance
     start, stop = configure()
 
+    # If a position source is available
+    # provide it to the slam algorithm
+    if positionSource is not None:
+        slam.GetClientSideObject().SetExternalSensorMeasures(positionSource.GetClientSideObject().GetInterpolator())
+
     # check if the user press on cancel
     if start ==-1:
         return
@@ -173,7 +176,17 @@ def launch():
     progressDialog.setModal(True)
     progressDialog.show()
 
+    # Estimated computed transforms parameters
+    time = range(int(start), int(stop)+1)
+    rx = range(int(start), int(stop)+1)
+    ry = range(int(start), int(stop)+1)
+    rz = range(int(start), int(stop)+1)
+    tx = range(int(start), int(stop)+1)
+    ty = range(int(start), int(stop)+1)
+    tz = range(int(start), int(stop)+1)
+
     # iteration
+    frameCount = 0
     for i in range(int(start), int(stop)+1):
         # get the current frame
         polyData = source.GetFrame(i)
@@ -183,18 +196,15 @@ def launch():
         # get the transformation computed
         Tworld = range(6)
         slam.GetClientSideObject().GetWorldTransform(Tworld)
-        t = polyData.GetPointData().GetArray("adjustedtime").GetTuple1(0) * 1e-6
+        time[frameCount] = polyData.GetPointData().GetArray("timestamp").GetTuple1(0) * 1e-6
 
         # convert in degree
-        rx = Tworld[0] * 180 / vtk.vtkMath.Pi()
-        ry = Tworld[1] * 180 / vtk.vtkMath.Pi()
-        rz = Tworld[2] * 180 / vtk.vtkMath.Pi()
-        tx = Tworld[3]
-        ty = Tworld[4]
-        tz = Tworld[5]
-
-        # add the transform
-        source.AddTransform(rx, ry, rz, tx, ty, tz, t)
+        rx[frameCount] = Tworld[0] * 180 / vtk.vtkMath.Pi()
+        ry[frameCount] = Tworld[1] * 180 / vtk.vtkMath.Pi()
+        rz[frameCount] = Tworld[2] * 180 / vtk.vtkMath.Pi()
+        tx[frameCount] = Tworld[3]
+        ty[frameCount] = Tworld[4]
+        tz[frameCount] = Tworld[5]
 
         # update the ui
         if (progressDialog.wasCanceled):
@@ -204,10 +214,19 @@ def launch():
 #            msg.setInformativeText("This is additional information")
 #            msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
             break
+        frameCount = frameCount + 1
         progressDialog.setValue(i)
 
     # close file
     source.Close()
+
+    # create Linear Interpolator()
+    # and fill it with the slam outputted
+    # transform parameters
+    source.CreateNearestInterpolator()
+    for i in range(frameCount):
+        # add the transform
+        source.AddTransform(rx[i], ry[i], rz[i], tx[i], ty[i], tz[i], time[i])
 
     slam.GetClientSideObject().Update()
 
