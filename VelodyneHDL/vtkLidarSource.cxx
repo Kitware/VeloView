@@ -101,6 +101,21 @@ void vtkLidarSource::SetIgnoreZeroDistances(int value)
 }
 
 //-----------------------------------------------------------------------------
+int vtkLidarSource::GetIgnoreEmptyFrames() const
+{
+  return this->Internal->IgnoreEmptyFrames;
+}
+
+//-----------------------------------------------------------------------------
+void vtkLidarSource::SetIgnoreEmptyFrames(int value)
+{
+  if (this->Internal->IgnoreEmptyFrames != value)
+  {
+    this->Internal->IgnoreEmptyFrames = value;
+    this->Modified();
+  }
+}
+//-----------------------------------------------------------------------------
 int vtkLidarSource::RequestData(vtkInformation *request, vtkInformationVector **inputVector, vtkInformationVector *outputVector)
 {
    return 1;

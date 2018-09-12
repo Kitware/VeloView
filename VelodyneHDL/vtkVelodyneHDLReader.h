@@ -111,9 +111,6 @@ public:
   int GetOutputPacketProcessingDebugInfo() const;
   void SetOutputPacketProcessingDebugInfo(int);
 
-  int GetIgnoreEmptyFrames() const;
-  void SetIgnoreEmptyFrames(int);
-
   int GetIntraFiringAdjust() const;
   void SetIntraFiringAdjust(int);
 

@@ -50,7 +50,7 @@ public:
 //    this->ReportedFactoryField1 = 0;
 //    this->ReportedFactoryField2 = 0;
 //    this->CalibrationReportedNumLasers = -1;
-//    this->IgnoreEmptyFrames = true;
+    this->IgnoreEmptyFrames = true;
 //    this->distanceResolutionM = 0.002;
 //    this->WantIntensityCorrection = false;
 
@@ -100,7 +100,7 @@ public:
 //  uint8_t ReportedFactoryField1;
 //  uint8_t ReportedFactoryField2;
 
-//  bool IgnoreEmptyFrames;
+  bool IgnoreEmptyFrames;
 //  bool alreadyWarnedForIgnoredHDL64FiringPacket;
 
 //  bool OutputPacketProcessingDebugInfo;

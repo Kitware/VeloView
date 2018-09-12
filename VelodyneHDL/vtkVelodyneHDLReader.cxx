@@ -632,22 +632,6 @@ void vtkVelodyneHDLReader::SetOutputPacketProcessingDebugInfo(int value)
 }
 
 //-----------------------------------------------------------------------------
-int vtkVelodyneHDLReader::GetIgnoreEmptyFrames() const
-{
-  return this->Internal->IgnoreEmptyFrames;
-}
-
-//-----------------------------------------------------------------------------
-void vtkVelodyneHDLReader::SetIgnoreEmptyFrames(int value)
-{
-  if (this->Internal->IgnoreEmptyFrames != value)
-  {
-    this->Internal->IgnoreEmptyFrames = value;
-    this->Modified();
-  }
-}
-
-//-----------------------------------------------------------------------------
 int vtkVelodyneHDLReader::GetIntraFiringAdjust() const
 {
   return this->Internal->UseIntraFiringAdjustment;
