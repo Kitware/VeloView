@@ -1095,11 +1095,6 @@ void vtkVelodyneHDLSource::Stop()
 }
 
 //----------------------------------------------------------------------------
-void vtkVelodyneHDLSource::ReadNextFrame()
-{
-}
-
-//----------------------------------------------------------------------------
 void vtkVelodyneHDLSource::Poll()
 {
   if (this->Internal->Consumer->CheckForNewData())

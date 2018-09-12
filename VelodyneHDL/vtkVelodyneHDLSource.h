@@ -56,8 +56,6 @@ public:
   int GetCacheSize();
   void SetCacheSize(int cacheSize);
 
-  void ReadNextFrame();
-
   const std::string& GetCorrectionsFile();
   void SetCorrectionsFile(const std::string& correctionsFile);
 

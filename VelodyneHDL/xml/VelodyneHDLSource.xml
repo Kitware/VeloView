@@ -113,10 +113,6 @@
         command="Poll" />
 
       <Property
-        name="ReadNextFrame"
-        command="ReadNextFrame" />
-
-      <Property
         name="Start"
         command="Start" />
 
