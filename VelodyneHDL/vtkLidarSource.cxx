@@ -85,6 +85,22 @@ void vtkLidarSource::SetCropRegion(
 }
 
 //-----------------------------------------------------------------------------
+int vtkLidarSource::GetIgnoreZeroDistances() const
+{
+  return this->Internal->IgnoreZeroDistances;
+}
+
+//-----------------------------------------------------------------------------
+void vtkLidarSource::SetIgnoreZeroDistances(int value)
+{
+  if (this->Internal->IgnoreZeroDistances != value)
+  {
+    this->Internal->IgnoreZeroDistances = value;
+    this->Modified();
+  }
+}
+
+//-----------------------------------------------------------------------------
 int vtkLidarSource::RequestData(vtkInformation *request, vtkInformationVector **inputVector, vtkInformationVector *outputVector)
 {
    return 1;

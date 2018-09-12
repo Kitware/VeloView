@@ -399,7 +399,6 @@ public:
   {
     this->RpmCalculator.Reset();
     this->AlreadyWarnAboutCalibration = false;
-    this->IgnoreZeroDistances = true;
     this->UseIntraFiringAdjustment = true;
     this->ShouldAddDualReturnArray = false;
     this->alreadyWarnedForIgnoredHDL64FiringPacket = false;
@@ -525,7 +524,6 @@ public:
   // User configurable parameters
   int ApplyTransform;
   int FiringsSkip;
-  bool IgnoreZeroDistances;
   bool UseIntraFiringAdjustment;
 
   bool AlreadyWarnAboutCalibration;
@@ -615,22 +613,6 @@ vtkVelodyneHDLReader::~vtkVelodyneHDLReader()
 const std::string& vtkVelodyneHDLReader::GetFileName()
 {
   return this->FileName;
-}
-
-//-----------------------------------------------------------------------------
-int vtkVelodyneHDLReader::GetIgnoreZeroDistances() const
-{
-  return this->Internal->IgnoreZeroDistances;
-}
-
-//-----------------------------------------------------------------------------
-void vtkVelodyneHDLReader::SetIgnoreZeroDistances(int value)
-{
-  if (this->Internal->IgnoreZeroDistances != value)
-  {
-    this->Internal->IgnoreZeroDistances = value;
-    this->Modified();
-  }
 }
 
 //-----------------------------------------------------------------------------

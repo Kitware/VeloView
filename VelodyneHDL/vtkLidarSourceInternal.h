@@ -18,7 +18,7 @@ public:
   {
 //    this->RpmCalculator.Reset();
 //    this->AlreadyWarnAboutCalibration = false;
-//    this->IgnoreZeroDistances = true;
+    this->IgnoreZeroDistances = true;
 //    this->UseIntraFiringAdjustment = true;
     this->CropMode = Cartesian;
 //    this->ShouldAddDualReturnArray = false;
@@ -152,7 +152,7 @@ public:
   int NumberOfTrailingFrames;
 //  int ApplyTransform;
 //  int FiringsSkip;
-//  bool IgnoreZeroDistances;
+  bool IgnoreZeroDistances;
 //  bool UseIntraFiringAdjustment;
 
   CropModeEnum CropMode;

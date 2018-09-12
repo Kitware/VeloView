@@ -111,9 +111,6 @@ public:
   int GetOutputPacketProcessingDebugInfo() const;
   void SetOutputPacketProcessingDebugInfo(int);
 
-  int GetIgnoreZeroDistances() const;
-  void SetIgnoreZeroDistances(int);
-
   int GetIgnoreEmptyFrames() const;
   void SetIgnoreEmptyFrames(int);
 
