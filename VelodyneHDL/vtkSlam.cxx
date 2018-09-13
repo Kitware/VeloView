@@ -1160,12 +1160,166 @@ void vtkSlam::OnlyComputeKeypoints(vtkSmartPointer<vtkPolyData> newFrame)
 }
 
 //-----------------------------------------------------------------------------
+Eigen::MatrixXd GetPolynomeApproxParam(std::vector<double>& x, std::vector<double>& y, int order)
+{
+  // order of the polynome
+  order = order + 1;
+  Eigen::MatrixXd M(x.size(), order);
+  Eigen::MatrixXd Y(x.size(), 1);
+
+  for (int sample = 0; sample < x.size(); ++sample)
+  {
+    for (int i = 0; i < order; ++i)
+    {
+      M(sample, i) = std::pow(x[sample], i);
+    }
+    Y(sample) = y[sample];
+  }
+
+  Eigen::MatrixXd param = (M.transpose() * M).inverse() * M.transpose() * Y;
+  return param;
+}
+//-----------------------------------------------------------------------------
 void vtkSlam::InitTworldUsingExternalData(double adjustedTime0, double rawTime0)
 {
   std::cout << "External data time range: [" << this->ExternalMeasures->GetMinimumT() << ", "
             << this->ExternalMeasures->GetMaximumT() << "]" << std::endl;
 
   std::cout << "proposed time: " << adjustedTime0 << " and rawtime: " << rawTime0 << std::endl;
+
+  // Get the transforms list
+  std::vector<std::vector<double> > transforms = this->ExternalMeasures->GetTransformList();
+  std::vector<std::vector<double> > transformsSmoothed;
+
+  // Get the average frequency (we are making the assumption that
+  // the temporal samples are uniformely spaced)
+  double dt = (transforms[transforms.size() - 1][0] - transforms[0][0]) / static_cast<double>(transforms.size());
+
+  // First, smooth the trajectory provided by the GPS using a
+  // degree d polynome approximation and smoothing using a
+  // neighborhood of T seconds
+  double tSmoothing = 3.0;
+  int sampleRequired = std::ceil(tSmoothing / dt);
+  int halfSize = sampleRequired / 2 + 1;
+
+  // adapt the order of the polynome fitted
+  // depending on the number of sample considered
+  int order = 1;
+  if (sampleRequired > 3)
+  {
+    order = 2;
+  }
+  if (sampleRequired > 6)
+  {
+    order = 3;
+  }
+
+  // loop other the time samples. For an entry sample,
+  // approximate its neighborhood using a degree d polynome
+  // and project the current sample on the fitted polynome
+  for (int sample = 0; sample < transforms.size(); ++sample)
+  {
+    // Clamp the neighborhood support if it is
+    // out of scope of the transforms support
+    int minNeighIndex = std::max(0, sample - halfSize);
+    int maxNeighIndex = std::min(static_cast<int>(transforms.size()) - 1, sample + halfSize);
+
+    // Compute the timeshift to recenter the time
+    double timeShift = (transforms[maxNeighIndex][0] + transforms[minNeighIndex][0]) / 2.0;
+    std::vector<double> times;
+    std::vector<double> valuesX, valuesY, valuesZ;
+
+    // fill the data
+    for (int neigh = minNeighIndex; neigh <= maxNeighIndex; ++neigh)
+    {
+      times.push_back(transforms[neigh][0] - timeShift);
+      valuesX.push_back(transforms[neigh][4]);
+      valuesY.push_back(transforms[neigh][5]);
+      valuesZ.push_back(transforms[neigh][6]);
+    }
+
+    Eigen::MatrixXd paramX = GetPolynomeApproxParam(times, valuesX, order);
+    Eigen::MatrixXd paramY = GetPolynomeApproxParam(times, valuesY, order);
+    Eigen::MatrixXd paramZ = GetPolynomeApproxParam(times, valuesZ, order);
+
+    std::vector<double> tempTransform = transforms[sample];
+    double time = transforms[sample][0] - timeShift;
+    tempTransform[4] = 0;
+    tempTransform[5] = 0;
+    tempTransform[6] = 0;
+    for (int i = 0; i < paramX.rows(); ++i)
+    {
+      tempTransform[4] += paramX(i) * std::pow(time, i);
+      tempTransform[5] += paramY(i) * std::pow(time, i);
+      tempTransform[6] += paramZ(i) * std::pow(time, i);
+    }
+    transformsSmoothed.push_back(tempTransform);
+  }
+
+  std::vector<double> Velocity, VelocityS;
+  for (int k = 0; k < transforms.size(); ++k)
+  {
+    int indexPrev = std::max(0, k - 1);
+    int indexNext = std::min(static_cast<int>(transforms.size()) - 1, k + 1);
+
+    Eigen::Matrix<double, 3, 1> Xp, Xn, V;
+    Eigen::Matrix<double, 3, 1> Xsp, Xsn, Vs;
+
+    Xp << transforms[indexPrev][4], transforms[indexPrev][5], transforms[indexPrev][6];
+    Xn << transforms[indexNext][4], transforms[indexNext][5], transforms[indexNext][6];
+    V = (Xn - Xp) / (transforms[indexNext][0] - transforms[indexPrev][0]);
+
+    Xsp << transformsSmoothed[indexPrev][4], transformsSmoothed[indexPrev][5], transformsSmoothed[indexPrev][6];
+    Xsn << transformsSmoothed[indexNext][4], transformsSmoothed[indexNext][5], transformsSmoothed[indexNext][6];
+    Vs = (Xsn - Xsp) / (transformsSmoothed[indexNext][0] - transformsSmoothed[indexPrev][0]);
+
+    Velocity.push_back(V.norm());
+    VelocityS.push_back(Vs.norm());
+  }
+
+  // Now, making the ergodic assumption of the signal
+  // we will estimate the mean and the standard deviation
+  // of the GPS signal by analyzing the difference between
+  // our regression and the raw data
+  Eigen::Matrix<double, 3, 1> NoiseMean = Eigen::Matrix<double, 3, 1>::Zero();
+  Eigen::Matrix<double, 3, 3> NoiseVar = Eigen::Matrix<double, 3, 3>::Zero();
+
+  // Compute the mean of the noise
+  for (int k = 0; k < transforms.size(); ++k)
+  {
+    Eigen::Matrix<double, 3, 1> X, Xs;
+    X << transforms[k][4], transforms[k][5], transforms[k][6];
+    Xs << transformsSmoothed[k][4], transformsSmoothed[k][5], transformsSmoothed[k][6];
+    NoiseMean += X - Xs;
+  }
+  NoiseMean /= static_cast<double>(transforms.size());
+
+  // compute the variance covariance of the noise
+  for (int k = 0; k < transforms.size(); ++k)
+  {
+    Eigen::Matrix<double, 3, 1> X, Xs;
+    X << transforms[k][4], transforms[k][5], transforms[k][6];
+    Xs << transformsSmoothed[k][4], transformsSmoothed[k][5], transformsSmoothed[k][6];
+    NoiseVar += ((X - Xs) - NoiseMean) * ((X - Xs) - NoiseMean).transpose();
+  }
+  NoiseVar /= static_cast<double>(transforms.size());
+
+  std::ofstream file;
+  file.open("D:/VelocitySmoothed.csv");
+  file << "X, Xs, Y, Ys, Z, Zs, V, Vs" << std::endl;
+  for (int k = 0; k < transforms.size(); ++k)
+  {
+    file << transforms[k][4] << "," << transformsSmoothed[k][4] << ","
+         << transforms[k][5] << "," << transformsSmoothed[k][5] << ","
+         << transforms[k][6] << "," << transformsSmoothed[k][6] << ","
+         << Velocity[k] << "," << VelocityS[k] << std::endl;
+  }
+  file.close();
+
+  std::cout << "order: " << order << std::endl;
+  std::cout << "sampleRequired: " << sampleRequired << std::endl;
+  std::cout << "Noise Mean: " << std::endl << NoiseMean << std::endl;
+  std::cout << "Noise Variance: " << std::endl << NoiseVar << std::endl;
 }
 
 //-----------------------------------------------------------------------------
