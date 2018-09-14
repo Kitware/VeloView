@@ -231,8 +231,8 @@ public:
   slamGetMacro(,FastSlam, bool)
   slamSetMacro(,FastSlam, bool)
 
-  slamGetMacro(,MotionModel, bool)
-  slamSetMacro(,MotionModel, bool)
+  slamGetMacro(,MotionModel, int)
+  slamSetMacro(,MotionModel, int)
 
   void SetMaxVelocityAcceleration(double acc);
   void SetMaxAngleAcceleration(double acc);
@@ -377,7 +377,7 @@ private:
   // ICP estimator using a kalman filter. hence, when
   // the estimation has a poor confidence the slam will
   // use the motion model to improve accuracy
-  bool MotionModel;
+  int MotionModel;
 
   // keypoints extracted
   pcl::PointCloud<Point>::Ptr CurrentEdgesPoints;

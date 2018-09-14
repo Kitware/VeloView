@@ -52,6 +52,12 @@ def configure():
 
     stop = min(stop, source.GetNumberOfFrames() - 1)
 
+    motionModel = 0
+    if slamDialog.MotionModel:
+        motionModel = 1
+    if slamDialog.MotionModelAndGPS:
+        motionModel = 2
+
     # General
     slam.GetClientSideObject().Set_RollingGrid_Grid_NbVoxel([slamDialog.NbVoxel,slamDialog.NbVoxel,slamDialog.NbVoxel])
     slam.GetClientSideObject().Set_AngleResolution(slamDialog.AngleResolution * vtk.vtkMath.Pi() / 180)
@@ -59,7 +65,7 @@ def configure():
     slam.GetClientSideObject().Set_Lambda0(slamDialog.Lambda0)
     slam.GetClientSideObject().Set_LambdaRatio(slamDialog.LambdaRatio)
     slam.GetClientSideObject().Set_FastSlam(slamDialog.FastSlam)
-    slam.GetClientSideObject().Set_MotionModel(slamDialog.MotionModel)
+    slam.GetClientSideObject().Set_MotionModel(motionModel)
     slam.GetClientSideObject().SetMaxVelocityAcceleration(slamDialog.MaxVelocityAcc)
     slam.GetClientSideObject().SetMaxAngleAcceleration(slamDialog.MaxAngleAcc)
 

@@ -896,6 +896,7 @@ void vtkSlam::PrintParameters()
   std::cout << "EgoMotionMinimumLineNeighborRejection: " << this->EgoMotionMinimumLineNeighborRejection << std::endl;
   std::cout << "MappingMinimumLineNeighborRejection: " << this->MappingMinimumLineNeighborRejection << std::endl;
   std::cout << "MappingLineMaxDistInlier: " << this->MappingLineMaxDistInlier << std::endl;
+  std::cout << "Motion Model: " << this->MotionModel << std::endl;
 }
 
 //-----------------------------------------------------------------------------
@@ -916,7 +917,7 @@ void vtkSlam::ResetAlgorithm()
 
   // Use dense planars point cloud for mapping
   this->FastSlam = true;
-  this->MotionModel = true;
+  this->MotionModel = 1;
   this->Lambda0 = 0.1;
   this->LambdaRatio = 1.5;
   this->KalmanEstimator.ResetKalmanFilter();
@@ -1190,6 +1191,12 @@ void vtkSlam::InitTworldUsingExternalData(double adjustedTime0, double rawTime0)
   // Get the transforms list
   std::vector<std::vector<double> > transforms = this->ExternalMeasures->GetTransformList();
   std::vector<std::vector<double> > transformsSmoothed;
+
+  if (transforms.size() < 10)
+  {
+    vtkGenericWarningMacro("Not enought external measures provided, ignore them");
+    return;
+  }
 
   // Get the average frequency (we are making the assumption that
   // the temporal samples are uniformely spaced)
@@ -3620,7 +3627,7 @@ void vtkSlam::Mapping()
   std::cout << "Covariance Eigen values: " << D << std::endl;
   std::cout << "Maximum variance: " << D(5) << std::endl;
 
-  if (this->MotionModel)
+  if (this->MotionModel > 0)
   {
     this->KalmanEstimator.Prediction();
     this->KalmanEstimator.SetMeasureCovariance(Sigma);

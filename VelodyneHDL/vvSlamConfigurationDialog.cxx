@@ -110,6 +110,11 @@ bool vvSlamConfigurationDialog::MotionModel()
   return this->ui->MotionModelCheckbox->isChecked();
 }
 
+bool vvSlamConfigurationDialog::MotionModelAndGPS()
+{
+  return this->ui->MotionModelAndGPSCheckbox->isChecked();
+}
+
 //-----------------------------------------------------------------------------
 double vvSlamConfigurationDialog::MaxAngleAcc()
 {
