@@ -96,6 +96,10 @@ if(PARAVIEW_BUILD_QT_GUI)
   set(non_vtk_sources
     vtkLidarSource.cxx
     vtkLidarSourceInternal.cxx
+    vtkLidarReader.cxx
+    #vtkLidarReaderInernal.cxx
+    vtkLidarStream.cxx
+#    vtkLidarStreamInternal.cxx
     vtkBirdEyeViewSnap.cxx
     vtkLASFileWriter.cxx
     vtkPacketFileWriter.cxx
