@@ -136,7 +136,15 @@ public:
   // return the state vector
   Eigen::Matrix<double, 12, 1> GetStateVector();
 
+  // set the kalman filter mode
+  void SetMode(int argMode);
+
 private:
+  // Kalman Filter mode:
+  // 0 : Motion Model
+  // 1 : Motion Model + GPS velocity
+  int mode;
+
   // Motion model / Prediction Model
   Eigen::Matrix<double, 12, 12> MotionModel;
 

@@ -1311,7 +1311,7 @@ void vtkSlam::InitTworldUsingExternalData(double adjustedTime0, double rawTime0)
   }
   NoiseVar /= static_cast<double>(transforms.size());
 
-  std::ofstream file;
+  /*std::ofstream file;
   file.open("D:/VelocitySmoothed.csv");
   file << "X, Xs, Y, Ys, Z, Zs, V, Vs" << std::endl;
   for (int k = 0; k < transforms.size(); ++k)
@@ -1321,7 +1321,7 @@ void vtkSlam::InitTworldUsingExternalData(double adjustedTime0, double rawTime0)
          << transforms[k][6] << "," << transformsSmoothed[k][6] << ","
          << Velocity[k] << "," << VelocityS[k] << std::endl;
   }
-  file.close();
+  file.close();*/
 
   std::cout << "order: " << order << std::endl;
   std::cout << "sampleRequired: " << sampleRequired << std::endl;
@@ -3968,4 +3968,10 @@ void KalmanFilter::SetMaxAngleAcceleration(double acc)
 void KalmanFilter::SetMaxVelocityAcceleration(double acc)
 {
   this->MaxAcceleration = acc;
+}
+
+//-----------------------------------------------------------------------------
+void KalmanFilter::SetMode(int argMode)
+{
+  this->mode = argMode;
 }
