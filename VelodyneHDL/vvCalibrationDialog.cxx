@@ -466,13 +466,28 @@ QString vvCalibrationDialog::selectedCalibrationFile() const
 //-----------------------------------------------------------------------------
 QMatrix4x4 vvCalibrationDialog::sensorTransform() const
 {
-  // The aim here is to compute the 4x4 matrix that represents
-  // the affine transform:
-  // Y = RX + T
   // QMatrix4x4 class uses openGL / renderer conventions which
   // is counterintuitive from a linear algebra point of view regarding
   // the sequence of operations (mathematically we first rotate
   // around X, Y, Z and then add T).
+
+  // Rotation computation done according to aerospacial
+  // and aeronautics conventions:
+  // We have the orientation of referential ref2 according
+  // to referential ref1:
+  // - Roll is the rotation according to the fixed ref1 X-axis
+  // - Pitch is the rotation according to the fixed ref1 Y-axis
+  // - Yaw is the rotation according to the fixed ref1 Z-axis
+  // - Tx, Ty and Tz are the coordinates of the ref2 position
+  // in ref1 referential
+  // In this conditions R = Ryaw * Rpitch * Rroll so that
+  // Xref1 = R * Xref2
+
+  // Transform the points from Lidar referential
+  // to the solid frame referential
+  // Perform RX + T
+  // QMatrix4x4 has its own convention, the following instructions
+  // performed Ryaw*Rpitch*Rroll + T
   QMatrix4x4 transform;
   transform.translate(this->Internal->LidarXSpinBox->value(),
     this->Internal->LidarYSpinBox->value(), this->Internal->LidarZSpinBox->value());
@@ -486,13 +501,28 @@ QMatrix4x4 vvCalibrationDialog::sensorTransform() const
 //-----------------------------------------------------------------------------
 QMatrix4x4 vvCalibrationDialog::gpsTransform() const
 {
-  // The aim here is to compute the 4x4 matrix that represents
-  // the affine transform:
-  // Y = RX + T
   // QMatrix4x4 class uses openGL / renderer conventions which
   // is counterintuitive from a linear algebra point of view regarding
   // the sequence of operations (mathematically we first rotate
   // around X, Y, Z and then add T).
+
+  // Rotation computation done according to aerospacial
+  // and aeronautics conventions:
+  // We have the orientation of referential ref2 according
+  // to referential ref1:
+  // - Roll is the rotation according to the fixed ref1 X-axis
+  // - Pitch is the rotation according to the fixed ref1 Y-axis
+  // - Yaw is the rotation according to the fixed ref1 Z-axis
+  // - Tx, Ty and Tz are the coordinates of the ref2 position
+  // in ref1 referential
+  // In this conditions R = Ryaw * Rpitch * Rroll so that
+  // Xref1 = R * Xref2
+
+  // Transform the points from Lidar referential
+  // to the solid frame referential
+  // Perform RX + T
+  // QMatrix4x4 has its own convention, the following instructions
+  // performed Ryaw*Rpitch*Rroll + T
   QMatrix4x4 transform;
   transform.translate(this->Internal->GpsXSpinBox->value(),
     this->Internal->GpsYSpinBox->value(), this->Internal->GpsZSpinBox->value());
