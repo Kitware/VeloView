@@ -81,8 +81,6 @@ public:
   //
   int CanReadFile(const char* fname);
 
-  double GetCurrentRpm();
-
   double GetDistanceResolutionM();
 
   void GetLaserCorrections(double verticalCorrection[HDL_MAX_NUM_LASERS],
@@ -114,12 +112,9 @@ public:
   void Close();
   int ReadFrameInformation();
   int GetNumberOfFrames();
-  vtkSmartPointer<vtkPolyData> GetFrame(int frameNumber);
-  vtkSmartPointer<vtkPolyData> GetFrameRange(int frameNumber, int numberOfFrames);
 
   void DumpFrames(int startFrame, int endFrame, const std::string& filename);
 
-  void ProcessHDLPacket(unsigned char* data, unsigned int bytesReceived);
   std::vector<vtkSmartPointer<vtkPolyData> >& GetDatasets();
 
   // Transform related functions
@@ -135,7 +130,6 @@ public:
   void appendRollingDataAndTryCorrection(const unsigned char* data);
 
   bool getIsHDL64Data();
-  bool getCorrectionsInitialized();
 
   bool isReportedSensorAndCalibrationFileConsistent(bool shouldWarn);
   bool updateReportedSensor(const unsigned char* data, unsigned int bytesReceived);
@@ -148,7 +142,7 @@ public:
   void SetShouldAddDualReturnArray(bool input);
 
   // Information about the sensor from dataPacket
-  std::string GetSensorInformation();
+  std::string GetSensorInformation() override;
 
 protected:
   class vtkInternal;
@@ -160,13 +154,10 @@ protected:
 
   int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
 
-  void UnloadPerFrameData();
   void SetTimestepInformation(vtkInformation* info);
 
   std::string CorrectionsFile;
   std::string FileName;
-  bool ShouldCheckSensor;
-
 
 private:
   vtkInternal* Internal;

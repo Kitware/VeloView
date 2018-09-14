@@ -404,16 +404,13 @@ public:
     this->alreadyWarnedForIgnoredHDL64FiringPacket = false;
     this->OutputPacketProcessingDebugInfo = false;
     this->SensorPowerMode = 0;
-    this->Skip = 0;
     this->CurrentFrameState = new FramingState;
     this->LastTimestamp = std::numeric_limits<unsigned int>::max();
     this->TimeAdjust = std::numeric_limits<double>::quiet_NaN();
     this->Reader = 0;
-    this->SplitCounter = 0;
     this->ApplyTransform = 0;
     this->FiringsSkip = 0;
-    this->CorrectionsInitialized = false;
-    this->currentRpm = 0;
+    this->ShouldCheckSensor = true;
 
     std::fill(this->LastPointId, this->LastPointId + HDL_MAX_NUM_LASERS, -1);
 
@@ -422,7 +419,6 @@ public:
     this->IsHDL64Data = false;
     this->ReportedFactoryField1 = 0;
     this->ReportedFactoryField2 = 0;
-    this->IgnoreEmptyFrames = true;
     this->distanceResolutionM = 0.002;
     this->WantIntensityCorrection = false;
 
@@ -439,7 +435,7 @@ public:
     delete this->CurrentFrameState;
   }
 
-  std::vector<vtkSmartPointer<vtkPolyData> > Datasets;
+//  std::vector<vtkSmartPointer<vtkPolyData> > Datasets;
   vtkSmartPointer<vtkPolyData> CurrentDataset;
 
   vtkNew<vtkTransform> SensorTransform;
@@ -472,7 +468,6 @@ public:
   uint8_t ReportedFactoryField1;
   uint8_t ReportedFactoryField2;
 
-  bool IgnoreEmptyFrames;
   bool alreadyWarnedForIgnoredHDL64FiringPacket;
 
   bool OutputPacketProcessingDebugInfo;
@@ -480,6 +475,7 @@ public:
   // Bolean to manage the correction of intensity which indicates if the user want to correct the
   // intensities
   bool WantIntensityCorrection;
+  bool ShouldCheckSensor;
 
   // WIP : We now have two method to compute the RPM :
   // - One method which computes the rpm using the point cloud
@@ -492,28 +488,21 @@ public:
 
   FramingState* CurrentFrameState;
   unsigned int LastTimestamp;
-  double currentRpm;
   std::vector<double> RpmByFrames;
   double TimeAdjust;
   vtkIdType LastPointId[HDL_MAX_NUM_LASERS];
   vtkIdType FirstPointIdOfDualReturnPair;
 
-  std::vector<fpos_t> FilePositions;
-  std::vector<int> Skips;
-  int Skip;
-  vtkPacketFileReader* Reader;
-
   unsigned char SensorPowerMode;
 
   // Number of allowed split, for frame-range retrieval.
-  int SplitCounter;
+//  int SplitCounter;
 
   // Parameters ready by calibration
   std::vector<double> cos_lookup_table_;
   std::vector<double> sin_lookup_table_;
   HDLLaserCorrection laser_corrections_[HDL_MAX_NUM_LASERS];
   double XMLColorTable[HDL_MAX_NUM_LASERS][3];
-  bool CorrectionsInitialized;
   bool IsCorrectionFromLiveStream;
 
   // Sensor parameters presented as rolling data, extracted from enough packets
@@ -539,7 +528,7 @@ public:
   void LoadCorrectionsFile(const std::string& filename);
   bool HDL64LoadCorrectionsFromStreamData();
 
-  void ProcessHDLPacket(unsigned char* data, std::size_t bytesReceived);
+  void ProcessPacket(unsigned char* data, std::size_t bytesReceived) override;
   static bool shouldSplitFrame(uint16_t, int, int&);
 
   double ComputeTimestamp(unsigned int tohTime);
@@ -563,6 +552,9 @@ public:
   void ComputeCorrectedValues(const unsigned short azimuth, const HDLLaserReturn* laserReturn,
     const HDLLaserCorrection* correction, double pos[3], double& distanceM, short& intensity,
     bool correctIntensity);
+
+  void UnloadPerFrameData() override;
+  vtkSmartPointer<vtkPolyData> GetFrame(int frameNumber, int wantedNumberOfTrailingFrames) override;
 };
 
 //-----------------------------------------------------------------------------
@@ -595,7 +587,7 @@ vtkVelodyneHDLReader::vtkVelodyneHDLReader() : vtkVelodyneHDLReader(new vtkInter
 vtkVelodyneHDLReader::vtkVelodyneHDLReader(vtkInternal* pimpl) : vtkLidarSource(new vtkInternal)
 {
   this->Internal = pimpl;
-  this->UnloadPerFrameData();
+//  this->UnloadPerFrameData();
   this->SetNumberOfInputPorts(0);
   this->SetNumberOfOutputPorts(1);
 }
@@ -698,7 +690,7 @@ void vtkVelodyneHDLReader::SetFileName(const std::string& filename)
   this->FileName = filename;
   this->Internal->FilePositions.clear();
   this->Internal->Skips.clear();
-  this->UnloadPerFrameData();
+  this->Internal->UnloadPerFrameData();
   this->Modified();
 }
 
@@ -706,12 +698,6 @@ void vtkVelodyneHDLReader::SetFileName(const std::string& filename)
 const std::string& vtkVelodyneHDLReader::GetCorrectionsFile()
 {
   return this->CorrectionsFile;
-}
-
-//-----------------------------------------------------------------------------
-double vtkVelodyneHDLReader::GetCurrentRpm()
-{
-  return this->Internal->currentRpm;
 }
 
 //-----------------------------------------------------------------------------
@@ -818,25 +804,33 @@ void vtkVelodyneHDLReader::SetCorrectionsFile(const std::string& correctionsFile
   }
 
   this->CorrectionsFile = correctionsFile;
-  this->UnloadPerFrameData();
+  this->Internal->UnloadPerFrameData();
   this->Modified();
 }
 
 //-----------------------------------------------------------------------------
-void vtkVelodyneHDLReader::UnloadPerFrameData()
+void vtkVelodyneHDLReader::vtkInternal::UnloadPerFrameData()
 {
-  std::fill(this->Internal->LastPointId, this->Internal->LastPointId + HDL_MAX_NUM_LASERS, -1);
-  this->Internal->CurrentFrameState->reset();
-  this->Internal->LastTimestamp = std::numeric_limits<unsigned int>::max();
-  this->Internal->TimeAdjust = std::numeric_limits<double>::quiet_NaN();
+  std::fill(this->LastPointId, this->LastPointId + HDL_MAX_NUM_LASERS, -1);
+  this->CurrentFrameState->reset();
+  this->LastTimestamp = std::numeric_limits<unsigned int>::max();
+  this->TimeAdjust = std::numeric_limits<double>::quiet_NaN();
 
-  this->Internal->rollingCalibrationData->clear();
-  this->Internal->HasDualReturn = false;
-  this->Internal->IsHDL64Data = false;
-  this->Internal->Datasets.clear();
-  this->Internal->CurrentDataset = this->Internal->CreateData(0);
+  this->rollingCalibrationData->clear();
+  this->HasDualReturn = false;
+  this->IsHDL64Data = false;
+  this->Datasets.clear();
+  this->CurrentDataset = this->CreateData(0);
 
   this->ShouldCheckSensor = true;
+}
+
+//-----------------------------------------------------------------------------
+vtkSmartPointer<vtkPolyData> vtkVelodyneHDLReader::vtkInternal::GetFrame(int frameNumber, int wantedNumberOfTrailingFrames)
+{
+  // Setup some variable needed by ProcessPacket
+  this->Skip = this->Skips[frameNumber];
+  return vtkLidarSourceInternal::GetFrame(frameNumber, wantedNumberOfTrailingFrames);
 }
 
 //-----------------------------------------------------------------------------
@@ -897,7 +891,7 @@ int vtkVelodyneHDLReader::RequestData(
   }
 
   // check if the reported sensor is consistent with the calibration sensor
-  if (this->ShouldCheckSensor)
+  if (this->Internal->ShouldCheckSensor)
   {
     const unsigned char* data;
     unsigned int dataLength;
@@ -915,7 +909,7 @@ int vtkVelodyneHDLReader::RequestData(
         // Compare the number of lasers from calibration and from sensor
         this->isReportedSensorAndCalibrationFileConsistent(true);
         // check is done
-        this->ShouldCheckSensor = false;
+        this->Internal->ShouldCheckSensor = false;
         break;
       }
     }
@@ -925,18 +919,11 @@ int vtkVelodyneHDLReader::RequestData(
 
   this->Open();
 
-  if (this->Internal->NumberOfTrailingFrames > 0)
+  output->ShallowCopy(this->GetFrame(
+    timestep - this->Internal->NumberOfTrailingFrames, this->Internal->NumberOfTrailingFrames));
+  if (this->Internal->ShouldAddDualReturnArray)
   {
-    output->ShallowCopy(this->GetFrameRange(
-      timestep - this->Internal->NumberOfTrailingFrames, this->Internal->NumberOfTrailingFrames));
-  }
-  else
-  {
-    output->ShallowCopy(this->GetFrame(timestep));
-    if (this->Internal->ShouldAddDualReturnArray)
-    {
-      output->GetPointData()->AddArray(this->Internal->SelectedDualReturn);
-    }
+    output->GetPointData()->AddArray(this->Internal->SelectedDualReturn);
   }
 
   this->Close();
@@ -979,12 +966,6 @@ void vtkVelodyneHDLReader::SetShouldAddDualReturnArray(bool input)
 }
 
 //-----------------------------------------------------------------------------
-void vtkVelodyneHDLReader::ProcessHDLPacket(unsigned char* data, unsigned int bytesReceived)
-{
-  this->Internal->ProcessHDLPacket(data, bytesReceived);
-}
-
-//-----------------------------------------------------------------------------
 std::vector<vtkSmartPointer<vtkPolyData> >& vtkVelodyneHDLReader::GetDatasets()
 {
   return this->Internal->Datasets;
@@ -994,7 +975,6 @@ std::vector<vtkSmartPointer<vtkPolyData> >& vtkVelodyneHDLReader::GetDatasets()
 int vtkVelodyneHDLReader::GetNumberOfFrames()
 {
   return this->Internal->FilePositions.size();
-  ;
 }
 
 //-----------------------------------------------------------------------------
@@ -1080,97 +1060,6 @@ void vtkVelodyneHDLReader::DumpFrames(int startFrame, int endFrame, const std::s
   }
 
   writer.Close();
-}
-
-//-----------------------------------------------------------------------------
-vtkSmartPointer<vtkPolyData> vtkVelodyneHDLReader::GetFrameRange(
-  int startFrame, int wantedNumberOfTrailingFrames)
-{
-  this->UnloadPerFrameData();
-  if (!this->Internal->Reader)
-  {
-    vtkErrorMacro("GetFrame() called but packet file reader is not open.");
-    return 0;
-  }
-  if (!this->Internal->CorrectionsInitialized)
-  {
-    vtkErrorMacro("Corrections have not been set");
-    return 0;
-  }
-
-  const unsigned char* data = 0;
-  unsigned int dataLength = 0;
-  double timeSinceStart = 0;
-
-  if (startFrame < 0)
-  {
-    wantedNumberOfTrailingFrames += startFrame;
-    startFrame = 0;
-  }
-  assert(wantedNumberOfTrailingFrames >= 0);
-
-  this->Internal->Reader->SetFilePosition(&this->Internal->FilePositions[startFrame]);
-  this->Internal->Skip = this->Internal->Skips[startFrame];
-
-  this->Internal->SplitCounter = wantedNumberOfTrailingFrames;
-
-  while (this->Internal->Reader->NextPacket(data, dataLength, timeSinceStart))
-  {
-    this->ProcessHDLPacket(const_cast<unsigned char*>(data), dataLength);
-
-    if (this->Internal->Datasets.size())
-    {
-      this->Internal->SplitCounter = 0;
-      return this->Internal->Datasets.back();
-    }
-  }
-
-  this->Internal->SplitFrame(true);
-  this->Internal->SplitCounter = 0;
-  return this->Internal->Datasets.back();
-}
-
-//-----------------------------------------------------------------------------
-vtkSmartPointer<vtkPolyData> vtkVelodyneHDLReader::GetFrame(int frameNumber)
-{
-  this->UnloadPerFrameData();
-  if (!this->Internal->Reader)
-  {
-    vtkErrorMacro("GetFrame() called but packet file reader is not open.");
-    return 0;
-  }
-  if (!this->Internal->CorrectionsInitialized)
-  {
-    vtkErrorMacro("Corrections have not been set");
-    return 0;
-  }
-
-  assert(this->Internal->FilePositions.size() == this->Internal->Skips.size());
-  if (frameNumber < 0 || frameNumber > this->Internal->FilePositions.size())
-  {
-    vtkErrorMacro("Invalid frame requested");
-    return 0;
-  }
-
-  const unsigned char* data = 0;
-  unsigned int dataLength = 0;
-  double timeSinceStart = 0;
-
-  this->Internal->Reader->SetFilePosition(&this->Internal->FilePositions[frameNumber]);
-  this->Internal->Skip = this->Internal->Skips[frameNumber];
-
-  while (this->Internal->Reader->NextPacket(data, dataLength, timeSinceStart))
-  {
-    this->ProcessHDLPacket(const_cast<unsigned char*>(data), dataLength);
-
-    if (this->Internal->Datasets.size())
-    {
-      return this->Internal->Datasets.back();
-    }
-  }
-
-  this->Internal->SplitFrame(true);
-  return this->Internal->Datasets.back();
 }
 
 namespace
@@ -1933,7 +1822,7 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessFiring(HDLFiringData* firingData,
 }
 
 //-----------------------------------------------------------------------------
-void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(
+void vtkVelodyneHDLReader::vtkInternal::ProcessPacket(
   unsigned char* data, std::size_t bytesReceived)
 {
   if (bytesReceived != 1206)
@@ -2450,12 +2339,6 @@ bool vtkVelodyneHDLReader::getIsHDL64Data()
 bool vtkVelodyneHDLReader::IsIntensityCorrectedBySensor()
 {
   return this->Internal->SensorPowerMode == CorrectionOn;
-}
-
-//-----------------------------------------------------------------------------
-bool vtkVelodyneHDLReader::getCorrectionsInitialized()
-{
-  return this->Internal->CorrectionsInitialized;
 }
 
 //-----------------------------------------------------------------------------

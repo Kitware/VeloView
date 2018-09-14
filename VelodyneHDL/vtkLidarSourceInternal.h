@@ -2,6 +2,8 @@
 #define VTKLIDARSOURCEINTERNAL_H
 
 #include "vtkLidarSource.h"
+
+#include "vtkPacketFileReader.h"
 //-----------------------------------------------------------------------------
 class vtkLidarSourceInternal
 {
@@ -18,14 +20,10 @@ public:
 
   ~vtkLidarSourceInternal()
   {
-//    if (this->rollingCalibrationData)
-//    {
-//      delete this->rollingCalibrationData;
-//    }
 //    delete this->CurrentFrameState;
   }
 
-//  std::vector<vtkSmartPointer<vtkPolyData> > Datasets;
+  std::vector<vtkSmartPointer<vtkPolyData> > Datasets;
 //  vtkSmartPointer<vtkPolyData> CurrentDataset;
 
 //  vtkNew<vtkTransform> SensorTransform;
@@ -54,12 +52,8 @@ public:
 //  bool HasDualReturn;
 //  SensorType ReportedSensor;
 //  DualReturnSensorMode ReportedSensorReturnMode;
-//  bool IsHDL64Data;
-//  uint8_t ReportedFactoryField1;
-//  uint8_t ReportedFactoryField2;
 
   bool IgnoreEmptyFrames;
-//  bool alreadyWarnedForIgnoredHDL64FiringPacket;
 
 //  bool OutputPacketProcessingDebugInfo;
 
@@ -67,40 +61,29 @@ public:
 //  // intensities
 //  bool WantIntensityCorrection;
 
-//  // WIP : We now have two method to compute the RPM :
-//  // - One method which computes the rpm using the point cloud
-//  // this method is not packets dependant but need a none empty
-//  // point cloud which can be tricky (hard cropping, none spinning sensor)
-//  // - One method which computes the rpm directly using the packets. the problem
-//  // is, if the packets format change, we will have to adapt the rpm computation
-//  // - For now, we will use the packet dependant method
-//  RPMCalculator RpmCalculator;
-
 //  FramingState* CurrentFrameState;
 //  unsigned int LastTimestamp;
-//  double currentRpm;
+  double currentRpm;
 //  std::vector<double> RpmByFrames;
 //  double TimeAdjust;
 //  vtkIdType LastPointId[HDL_MAX_NUM_LASERS];
 //  vtkIdType FirstPointIdOfDualReturnPair;
 
-//  std::vector<fpos_t> FilePositions;
-//  std::vector<int> Skips;
-//  int Skip;
-//  vtkPacketFileReader* Reader;
+  std::vector<fpos_t> FilePositions;
+  std::vector<int> Skips;
+  int Skip;
+  vtkPacketFileReader* Reader;
 
 //  unsigned char SensorPowerMode;
 
 //  // Number of allowed split, for frame-range retrieval.
-//  int SplitCounter;
+  int SplitCounter;
 
 //  // Parameters ready by calibration
-//  std::vector<double> cos_lookup_table_;
-//  std::vector<double> sin_lookup_table_;
 //  HDLLaserCorrection laser_corrections_[HDL_MAX_NUM_LASERS];
 //  double XMLColorTable[HDL_MAX_NUM_LASERS][3];
   int CalibrationReportedNumLasers;
-//  bool CorrectionsInitialized;
+  bool CorrectionsInitialized;
 //  bool IsCorrectionFromLiveStream;
 
 //  // Sensor parameters presented as rolling data, extracted from enough packets
@@ -140,6 +123,13 @@ public:
 
 //  double ComputeTimestamp(unsigned int tohTime);
 //  void ComputeOrientation(double timestamp, vtkTransform* geotransform);
+  virtual void UnloadPerFrameData() = 0;
+
+  virtual void SplitFrame(bool force) = 0;
+
+  virtual vtkSmartPointer<vtkPolyData> GetFrame(int frameNumber, int wantedNumberOfTrailingFrames);
+
+  virtual void ProcessPacket(unsigned char* data, std::size_t bytesReceived) = 0;
 };
 
 #endif // VTKLIDARSOURCEINTERNAL_H

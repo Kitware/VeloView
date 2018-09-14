@@ -6,7 +6,7 @@ vtkStandardNewMacro(vtkLidarSource);
 
 
 //-----------------------------------------------------------------------------
-vtkLidarSource::vtkLidarSource() : vtkLidarSource(new vtkLidarSourceInternal)
+vtkLidarSource::vtkLidarSource() /*: vtkLidarSource(new vtkLidarSourceInternal)*/
 {
 
 }
@@ -20,7 +20,8 @@ vtkLidarSource::vtkLidarSource(vtkLidarSourceInternal* internal)
 //-----------------------------------------------------------------------------
 vtkLidarSource::~vtkLidarSource()
 {
-  delete this->Internal;
+  // TODO handle the deletion of vtkIn
+  //delete this->Internal;
 }
 
 //-----------------------------------------------------------------------------
@@ -30,12 +31,14 @@ int vtkLidarSource::GetNumberOfChannels()
 }
 
 //-----------------------------------------------------------------------------
+vtkSmartPointer<vtkPolyData> vtkLidarSource::GetFrame(int frameNumber, int wantedNumberOfTrailingFrames)
+{
+  return this->Internal->GetFrame(frameNumber, wantedNumberOfTrailingFrames);
+}
+
+//-----------------------------------------------------------------------------
 void vtkLidarSource::SetLaserSelection(bool laserSelection[])
 {
-//  std::copy(this->Internal->LaserSelection.begin(),
-//            this->Internal->LaserSelection.end(),
-//            laserSelection);
-//  this->Internal->LaserSelection = std::vector<bool> tmp
   for (int i = 0; i < this->Internal->CalibrationReportedNumLasers; ++i)
   {
     this->Internal->LaserSelection[i] = laserSelection[i];
@@ -46,9 +49,6 @@ void vtkLidarSource::SetLaserSelection(bool laserSelection[])
 //-----------------------------------------------------------------------------
 void vtkLidarSource::GetLaserSelection(bool laserSelection[])
 {
-//  std::copy(laserSelection,
-//            laserSelection + this->Internal->CalibrationReportedNumLasers,
-//            this->Internal->LaserSelection);
   for (int i = 0; i < this->Internal->CalibrationReportedNumLasers; ++i)
   {
     laserSelection[i] = this->Internal->LaserSelection[i];
@@ -67,6 +67,18 @@ void vtkLidarSource::SetNumberOfTrailingFrames(int numTrailing)
   assert(numTrailing >= 0);
   this->Internal->NumberOfTrailingFrames = numTrailing;
   this->Modified();
+}
+
+//-----------------------------------------------------------------------------
+void vtkLidarSource::ProcessPacket(unsigned char *data, unsigned int bytesReceived)
+{
+  this->Internal->ProcessPacket(data, bytesReceived);
+}
+
+//-----------------------------------------------------------------------------
+double vtkLidarSource::GetCurrentRpm()
+{
+  return this->Internal->currentRpm;
 }
 
 //-----------------------------------------------------------------------------
@@ -147,6 +159,13 @@ void vtkLidarSource::SetIgnoreEmptyFrames(int value)
     this->Modified();
   }
 }
+
+//-----------------------------------------------------------------------------
+bool vtkLidarSource::getCorrectionsInitialized()
+{
+  return this->Internal->CorrectionsInitialized;
+}
+
 //-----------------------------------------------------------------------------
 int vtkLidarSource::RequestData(vtkInformation *request, vtkInformationVector **inputVector, vtkInformationVector *outputVector)
 {

@@ -170,7 +170,7 @@ public:
           this->HDLReader->isReportedSensorAndCalibrationFileConsistent(true);
           this->ShouldCheckSensor = false;
         }
-        this->HDLReader->ProcessHDLPacket(const_cast<unsigned char*>(data), length);
+        this->HDLReader->ProcessPacket(const_cast<unsigned char*>(data), length);
         if (this->HDLReader->GetDatasets().size())
         {
           this->HandleNewData(this->HDLReader->GetDatasets().back());

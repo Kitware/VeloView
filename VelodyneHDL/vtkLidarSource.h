@@ -20,7 +20,15 @@ public:
   // Description:
   // Number of frames behind current frame to read.  Zero indicates only
   // show the current frame.  Negative numbers are invalid.
-  virtual void SetNumberOfTrailingFrames(int numberTrailing);
+  void SetNumberOfTrailingFrames(int numberTrailing);
+
+  // vtk doesn't handle virtual pure function
+  void ProcessPacket(unsigned char* data, unsigned int bytesReceived);
+
+  virtual std::string GetSensorInformation() {};
+
+
+  double GetCurrentRpm();
 
   // Laser
   int GetNumberOfChannels();
@@ -35,14 +43,10 @@ public:
   void SetCropRegion(double[6]);
   void SetCropRegion(double, double, double, double, double, double);
 
+  vtkSmartPointer<vtkPolyData> GetFrame(int frameNumber, int wantedNumberOfTrailingFrame = 0);
 
-//  void GetLaserCorrections(double verticalCorrection[HDL_MAX_NUM_LASERS],
-//    double rotationalCorrection[HDL_MAX_NUM_LASERS], double distanceCorrection[HDL_MAX_NUM_LASERS],
-//    double distanceCorrectionX[HDL_MAX_NUM_LASERS], double distanceCorrectionY[HDL_MAX_NUM_LASERS],
-//    double verticalOffsetCorrection[HDL_MAX_NUM_LASERS],
-//    double horizontalOffsetCorrection[HDL_MAX_NUM_LASERS], double focalDistance[HDL_MAX_NUM_LASERS],
-//    double focalSlope[HDL_MAX_NUM_LASERS], double minIntensity[HDL_MAX_NUM_LASERS],
-//    double maxIntensity[HDL_MAX_NUM_LASERS]);
+  bool getCorrectionsInitialized();
+
 
 //  int GetOutputPacketProcessingDebugInfo() const;
 //  void SetOutputPacketProcessingDebugInfo(int);
@@ -53,11 +57,6 @@ public:
   int GetIgnoreEmptyFrames() const;
   void SetIgnoreEmptyFrames(int);
 
-//  int GetIntraFiringAdjust() const;
-//  void SetIntraFiringAdjust(int);
-
-//  unsigned int GetDualReturnFilter() const;
-//  void SetDualReturnFilter(unsigned int);
 protected:
   vtkLidarSource();
   vtkLidarSource(vtkLidarSourceInternal* internal);
