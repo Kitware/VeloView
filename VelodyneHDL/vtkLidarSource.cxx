@@ -167,6 +167,12 @@ bool vtkLidarSource::getCorrectionsInitialized()
 }
 
 //-----------------------------------------------------------------------------
+int vtkLidarSource::GetNumberOfFrames()
+{
+  return this->Internal->FilePositions.size();
+}
+
+//-----------------------------------------------------------------------------
 int vtkLidarSource::RequestData(vtkInformation *request, vtkInformationVector **inputVector, vtkInformationVector *outputVector)
 {
    return 1;

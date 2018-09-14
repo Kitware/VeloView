@@ -29,6 +29,7 @@ public:
 
 
   double GetCurrentRpm();
+  int GetNumberOfFrames();
 
   // Laser
   int GetNumberOfChannels();
