@@ -37,7 +37,6 @@
 #include <string>
 #include <vtkSmartPointer.h>
 
-class vtkTransform;
 class vtkVelodyneTransformInterpolator;
 
 using DataPacketFixedLength::HDL_MAX_NUM_LASERS;
@@ -121,11 +120,6 @@ public:
 
   vtkVelodyneTransformInterpolator* GetInterpolator() const;
   void SetInterpolator(vtkVelodyneTransformInterpolator* interpolator);
-
-  void SetSensorTransform(vtkTransform*);
-
-  int GetApplyTransform();
-  void SetApplyTransform(int apply);
 
   void appendRollingDataAndTryCorrection(const unsigned char* data);
 

@@ -2,6 +2,8 @@
 #define VTKLIDARSOURCEINTERNAL_H
 
 #include "vtkLidarSource.h"
+#include <vtkNew.h>
+#include <vtkTransform.h>
 
 #include "vtkPacketFileReader.h"
 //-----------------------------------------------------------------------------
@@ -25,8 +27,10 @@ public:
 
   std::vector<vtkSmartPointer<vtkPolyData> > Datasets;
 //  vtkSmartPointer<vtkPolyData> CurrentDataset;
-
-//  vtkNew<vtkTransform> SensorTransform;
+  bool ApplyTransform;
+  // this Transform is actually usless from my understanding and
+  // it should be remove or make functionnal
+  vtkNew<vtkTransform> SensorTransform;
 //  vtkSmartPointer<vtkVelodyneTransformInterpolator> Interp;
 
 //  vtkSmartPointer<vtkPoints> Points;
@@ -47,11 +51,6 @@ public:
 //  vtkSmartPointer<vtkIdTypeArray> DualReturnMatching;
 //  vtkSmartPointer<vtkDoubleArray> SelectedDualReturn;
 //  bool ShouldAddDualReturnArray;
-
-  // sensor information
-//  bool HasDualReturn;
-//  SensorType ReportedSensor;
-//  DualReturnSensorMode ReportedSensorReturnMode;
 
   bool IgnoreEmptyFrames;
 
@@ -112,13 +111,9 @@ public:
 //  vtkSmartPointer<vtkCellArray> NewVertexCells(vtkIdType numberOfVerts);
 
 //  void Init();
-//  void InitTrigonometricTables();
-//  void PrecomputeCorrectionCosSin();
 //  void LoadCorrectionsFile(const std::string& filename);
-//  bool HDL64LoadCorrectionsFromStreamData();
   bool shouldBeCroppedOut(double pos[3], double theta);
 
-//  void ProcessHDLPacket(unsigned char* data, std::size_t bytesReceived);
 //  static bool shouldSplitFrame(uint16_t, int, int&);
 
 //  double ComputeTimestamp(unsigned int tohTime);

@@ -6,10 +6,7 @@ vtkLidarSourceInternal::vtkLidarSourceInternal()
 //    this->RpmCalculator.Reset();
 //    this->AlreadyWarnAboutCalibration = false;
   this->IgnoreZeroDistances = true;
-//    this->UseIntraFiringAdjustment = true;
   this->CropMode = Cartesian;
-//    this->ShouldAddDualReturnArray = false;
-//    this->alreadyWarnedForIgnoredHDL64FiringPacket = false;
 //    this->OutputPacketProcessingDebugInfo = false;
 //    this->SensorPowerMode = 0;
     this->Skip = 0;
@@ -19,8 +16,7 @@ vtkLidarSourceInternal::vtkLidarSourceInternal()
 //    this->Reader = 0;
   this->SplitCounter = 0;
   this->NumberOfTrailingFrames = 0;
-//    this->ApplyTransform = 0;
-//    this->FiringsSkip = 0;
+  this->ApplyTransform = false;
   this->CropReturns = false;
   this->CropOutside = false;
   this->CropRegion[0] = this->CropRegion[1] = 0.0;
@@ -35,9 +31,6 @@ vtkLidarSourceInternal::vtkLidarSourceInternal()
   this->IgnoreEmptyFrames = true;
 //    this->distanceResolutionM = 0.002;
 //    this->WantIntensityCorrection = false;
-
-//    this->rollingCalibrationData = new vtkRollingDataAccumulator();
-//    this->Init();
 }
 
 //-----------------------------------------------------------------------------

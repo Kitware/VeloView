@@ -408,7 +408,6 @@ public:
     this->LastTimestamp = std::numeric_limits<unsigned int>::max();
     this->TimeAdjust = std::numeric_limits<double>::quiet_NaN();
     this->Reader = 0;
-    this->ApplyTransform = 0;
     this->FiringsSkip = 0;
     this->ShouldCheckSensor = true;
 
@@ -435,10 +434,8 @@ public:
     delete this->CurrentFrameState;
   }
 
-//  std::vector<vtkSmartPointer<vtkPolyData> > Datasets;
   vtkSmartPointer<vtkPolyData> CurrentDataset;
 
-  vtkNew<vtkTransform> SensorTransform;
   vtkSmartPointer<vtkVelodyneTransformInterpolator> Interp;
 
   vtkSmartPointer<vtkPoints> Points;
@@ -509,7 +506,6 @@ public:
   vtkRollingDataAccumulator* rollingCalibrationData;
 
   // User configurable parameters
-  int ApplyTransform;
   int FiringsSkip;
   bool UseIntraFiringAdjustment;
 
@@ -634,36 +630,6 @@ void vtkVelodyneHDLReader::SetIntraFiringAdjust(int value)
     this->Internal->UseIntraFiringAdjustment = value;
     this->Modified();
   }
-}
-
-//-----------------------------------------------------------------------------
-void vtkVelodyneHDLReader::SetApplyTransform(int apply)
-{
-  if (apply != this->Internal->ApplyTransform)
-  {
-    this->Modified();
-  }
-  this->Internal->ApplyTransform = apply;
-}
-
-//-----------------------------------------------------------------------------
-int vtkVelodyneHDLReader::GetApplyTransform()
-{
-  return this->Internal->ApplyTransform;
-}
-
-//-----------------------------------------------------------------------------
-void vtkVelodyneHDLReader::SetSensorTransform(vtkTransform* transform)
-{
-  if (transform)
-  {
-    this->Internal->SensorTransform->SetMatrix(transform->GetMatrix());
-  }
-  else
-  {
-    this->Internal->SensorTransform->Identity();
-  }
-  this->Modified();
 }
 
 //-----------------------------------------------------------------------------

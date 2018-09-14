@@ -5,6 +5,7 @@
 #include <vtkSmartPointer.h>
 
 class vtkLidarSourceInternal;
+class vtkTransform;
 
 class vtkLidarSource : public vtkPolyDataAlgorithm
 {
@@ -47,6 +48,10 @@ public:
   vtkSmartPointer<vtkPolyData> GetFrame(int frameNumber, int wantedNumberOfTrailingFrame = 0);
 
   bool getCorrectionsInitialized();
+
+  void SetSensorTransform(vtkTransform*);
+  int GetApplyTransform();
+  void SetApplyTransform(int apply);
 
 
 //  int GetOutputPacketProcessingDebugInfo() const;

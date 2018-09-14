@@ -1,6 +1,7 @@
 #include "vtkLidarSource.h"
 
 #include "vtkLidarSourceInternal.h"
+#include <vtkTransform.h>
 
 vtkStandardNewMacro(vtkLidarSource);
 
@@ -164,6 +165,36 @@ void vtkLidarSource::SetIgnoreEmptyFrames(int value)
 bool vtkLidarSource::getCorrectionsInitialized()
 {
   return this->Internal->CorrectionsInitialized;
+}
+
+//-----------------------------------------------------------------------------
+void vtkLidarSource::SetSensorTransform(vtkTransform * transform)
+{
+  if (transform)
+  {
+    this->Internal->SensorTransform->SetMatrix(transform->GetMatrix());
+  }
+  else
+  {
+    this->Internal->SensorTransform->Identity();
+  }
+  this->Modified();
+}
+
+//-----------------------------------------------------------------------------
+int vtkLidarSource::GetApplyTransform()
+{
+  return this->Internal->ApplyTransform;
+}
+
+//-----------------------------------------------------------------------------
+void vtkLidarSource::SetApplyTransform(int apply)
+{
+  if (apply != this->Internal->ApplyTransform)
+  {
+    this->Modified();
+  }
+  this->Internal->ApplyTransform = apply;
 }
 
 //-----------------------------------------------------------------------------
