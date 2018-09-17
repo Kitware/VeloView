@@ -118,6 +118,8 @@ void vvCalibrationDialog::pqInternal::saveSensorTransform()
     "VelodyneHDLPlugin/CalibrationFileDialog/LidarPitch", this->LidarPitchSpinBox->value());
   this->Settings->setValue(
     "VelodyneHDLPlugin/CalibrationFileDialog/LidarRoll", this->LidarRollSpinBox->value());
+  this->Settings->setValue(
+    "VelodyneHDLPlugin/CalibrationFileDialog/LidarTimeOffset", this->lidarTimeOffsetSpinBox->value());
 }
 
 //-----------------------------------------------------------------------------
@@ -135,6 +137,14 @@ void vvCalibrationDialog::pqInternal::saveGpsTransform()
     "VelodyneHDLPlugin/CalibrationFileDialog/GpsRoll", this->GpsRollSpinBox->value());
   this->Settings->setValue(
     "VelodyneHDLPlugin/CalibrationFileDialog/GpsPitch", this->GpsPitchSpinBox->value());
+  this->Settings->setValue(
+    "VelodyneHDLPlugin/CalibrationFileDialog/GpsX", this->GpsXSpinBox->value());
+  this->Settings->setValue(
+    "VelodyneHDLPlugin/CalibrationFileDialog/GpsY", this->GpsYSpinBox->value());
+  this->Settings->setValue(
+    "VelodyneHDLPlugin/CalibrationFileDialog/GpsZ", this->GpsZSpinBox->value());
+  this->Settings->setValue(
+    "VelodyneHDLPlugin/CalibrationFileDialog/GpsTimeOffset", this->gpsTimeOffsetSpinBox->value());
 }
 
 //-----------------------------------------------------------------------------
@@ -213,6 +223,11 @@ void vvCalibrationDialog::pqInternal::restoreSensorTransform()
     this->Settings
       ->value("VelodyneHDLPlugin/CalibrationFileDialog/LidarRoll", this->LidarRollSpinBox->value())
       .toDouble());
+
+  this->lidarTimeOffsetSpinBox->setValue(
+    this->Settings
+      ->value("VelodyneHDLPlugin/CalibrationFileDialog/LidarTimeOffset", this->lidarTimeOffsetSpinBox->value())
+      .toDouble());
 }
 
 //-----------------------------------------------------------------------------
@@ -242,6 +257,11 @@ void vvCalibrationDialog::pqInternal::restoreGpsTransform()
   this->GpsPitchSpinBox->setValue(
     this->Settings
       ->value("VelodyneHDLPlugin/CalibrationFileDialog/GpsPitch", this->GpsPitchSpinBox->value())
+      .toDouble());
+
+  this->gpsTimeOffsetSpinBox->setValue(
+    this->Settings
+      ->value("VelodyneHDLPlugin/CalibrationFileDialog/GpsTimeOffset", this->gpsTimeOffsetSpinBox->value())
       .toDouble());
 }
 
@@ -549,6 +569,72 @@ double vvCalibrationDialog::gpsRoll() const
 double vvCalibrationDialog::gpsPitch() const
 {
   return this->Internal->GpsPitchSpinBox->value();
+}
+
+//-----------------------------------------------------------------------------
+double vvCalibrationDialog::gpsX() const
+{
+  return this->Internal->GpsXSpinBox->value();
+}
+
+//-----------------------------------------------------------------------------
+double vvCalibrationDialog::gpsY() const
+{
+  return this->Internal->GpsYSpinBox->value();
+}
+
+//-----------------------------------------------------------------------------
+double vvCalibrationDialog::gpsZ() const
+{
+  return this->Internal->GpsZSpinBox->value();
+}
+
+//-----------------------------------------------------------------------------
+double vvCalibrationDialog::gpsTimeOffset() const
+{
+  return this->Internal->gpsTimeOffsetSpinBox->value();
+}
+
+//-----------------------------------------------------------------------------
+double vvCalibrationDialog::lidarYaw() const
+{
+  return this->Internal->LidarYawSpinBox->value();
+}
+
+//-----------------------------------------------------------------------------
+double vvCalibrationDialog::lidarRoll() const
+{
+  return this->Internal->LidarRollSpinBox->value();
+}
+
+//-----------------------------------------------------------------------------
+double vvCalibrationDialog::lidarPitch() const
+{
+  return this->Internal->LidarPitchSpinBox->value();
+}
+
+//-----------------------------------------------------------------------------
+double vvCalibrationDialog::lidarX() const
+{
+  return this->Internal->LidarXSpinBox->value();
+}
+
+//-----------------------------------------------------------------------------
+double vvCalibrationDialog::lidarY() const
+{
+  return this->Internal->LidarYSpinBox->value();
+}
+
+//-----------------------------------------------------------------------------
+double vvCalibrationDialog::lidarZ() const
+{
+  return this->Internal->LidarZSpinBox->value();
+}
+
+//-----------------------------------------------------------------------------
+double vvCalibrationDialog::lidarTimeOffset() const
+{
+  return this->Internal->lidarTimeOffsetSpinBox->value();
 }
 
 //-----------------------------------------------------------------------------
