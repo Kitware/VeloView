@@ -32,7 +32,7 @@
 #ifndef _vtkVelodyneHDLReader_h
 #define _vtkVelodyneHDLReader_h
 
-#include "vtkLidarSource.h"
+#include "vtkLidarReader.h"
 #include "vtkDataPacket.h"
 #include <string>
 #include <vtkSmartPointer.h>
@@ -41,7 +41,7 @@ class vtkVelodyneTransformInterpolator;
 
 using DataPacketFixedLength::HDL_MAX_NUM_LASERS;
 
-class VTK_EXPORT vtkVelodyneHDLReader : public vtkLidarSource
+class VTK_EXPORT vtkVelodyneHDLReader : public vtkLidarReader
 {
 public:
   enum DualFlag
@@ -57,30 +57,14 @@ public:
 
 public:
   static vtkVelodyneHDLReader* New();
-  vtkTypeMacro(vtkVelodyneHDLReader, vtkLidarSource);
+  vtkTypeMacro(vtkVelodyneHDLReader, vtkLidarReader);
   void PrintSelf(ostream& os, vtkIndent indent);
-
-  // Description:
-  //
-  const std::string& GetFileName();
-  void SetFileName(const std::string& filename);
-
-  // Description:
-  //
-  const std::string& GetCorrectionsFile();
-  void SetCorrectionsFile(const std::string& correctionsFile);
 
   // Description:
   //
   bool IsIntensityCorrectedBySensor();
   const bool& GetWantIntensityCorrection();
   void SetIntensitiesCorrected(const bool& state);
-
-  // Description:
-  //
-  int CanReadFile(const char* fname);
-
-  double GetDistanceResolutionM();
 
   void GetLaserCorrections(double verticalCorrection[HDL_MAX_NUM_LASERS],
     double rotationalCorrection[HDL_MAX_NUM_LASERS], double distanceCorrection[HDL_MAX_NUM_LASERS],
@@ -101,25 +85,15 @@ public:
   unsigned int GetDualReturnFilter() const;
   void SetDualReturnFilter(unsigned int);
 
-  // A trick to workaround failure to wrap LaserSelection
-  void SetDummyProperty(int);
-
   void SetFiringsSkip(int);
 
   // I/O and processing functions
-  void Open();
-  void Close();
   int ReadFrameInformation();
-  int GetNumberOfFrames();
+  int GetNumberOfFrames() override;
 
   void DumpFrames(int startFrame, int endFrame, const std::string& filename);
 
   std::vector<vtkSmartPointer<vtkPolyData> >& GetDatasets();
-
-  // Transform related functions
-
-  vtkVelodyneTransformInterpolator* GetInterpolator() const;
-  void SetInterpolator(vtkVelodyneTransformInterpolator* interpolator);
 
   void appendRollingDataAndTryCorrection(const unsigned char* data);
 
@@ -136,7 +110,7 @@ public:
   void SetShouldAddDualReturnArray(bool input);
 
   // Information about the sensor from dataPacket
-  std::string GetSensorInformation() override;
+//  std::string GetSensorInformation() override;
 
 protected:
   class vtkInternal;
@@ -150,12 +124,9 @@ protected:
 
   void SetTimestepInformation(vtkInformation* info);
 
-  std::string CorrectionsFile;
-  std::string FileName;
-
 private:
   vtkInternal* Internal;
-  vtkVelodyneHDLReader(const vtkVelodyneHDLReader&);
-  void operator=(const vtkVelodyneHDLReader&);
+  vtkVelodyneHDLReader(const vtkVelodyneHDLReader&) = delete;
+  void operator=(const vtkVelodyneHDLReader&) = delete;
 };
 #endif

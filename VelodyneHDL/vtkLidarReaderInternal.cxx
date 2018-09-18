@@ -1,40 +1,58 @@
-#include "vtkLidarSourceInternal.h"
+#include "vtkLidarReaderInternal.h"
+
+#include "vtkLidarReader.h"
 
 //-----------------------------------------------------------------------------
-vtkLidarSourceInternal::vtkLidarSourceInternal()
+vtkLidarReaderInternal::vtkLidarReaderInternal(vtkLidarReader* obj)
+  : vtkLidarProviderInternal(obj)
 {
-//    this->RpmCalculator.Reset();
-//    this->AlreadyWarnAboutCalibration = false;
-  this->IgnoreZeroDistances = true;
-  this->CropMode = Cartesian;
-//    this->OutputPacketProcessingDebugInfo = false;
-//    this->SensorPowerMode = 0;
-    this->Skip = 0;
-//    this->CurrentFrameState = new FramingState;
-//    this->LastTimestamp = std::numeric_limits<unsigned int>::max();
-//    this->TimeAdjust = std::numeric_limits<double>::quiet_NaN();
-//    this->Reader = 0;
+  this->Reader = nullptr;
+  this->FileName = "";
   this->SplitCounter = 0;
-  this->NumberOfTrailingFrames = 0;
-  this->ApplyTransform = false;
-  this->CropReturns = false;
-  this->CropOutside = false;
-  this->CropRegion[0] = this->CropRegion[1] = 0.0;
-  this->CropRegion[2] = this->CropRegion[3] = 0.0;
-  this->CropRegion[4] = this->CropRegion[5] = 0.0;
-  this->CorrectionsInitialized = false;
-  this->currentRpm = 0;
-
-//    std::fill(this->LastPointId, this->LastPointId + HDL_MAX_NUM_LASERS, -1);
-
-  this->CalibrationReportedNumLasers = -1;
-  this->IgnoreEmptyFrames = true;
-//    this->distanceResolutionM = 0.002;
-//    this->WantIntensityCorrection = false;
 }
 
 //-----------------------------------------------------------------------------
-bool vtkLidarSourceInternal::shouldBeCroppedOut(double pos[3], double theta)
+std::string vtkLidarReaderInternal::GetFileName()
+{
+  return this->FileName;
+}
+
+//-----------------------------------------------------------------------------
+void vtkLidarReaderInternal::SetFileName(const std::string &filename)
+{
+  if (filename == this->FileName)
+  {
+    return;
+  }
+
+  this->FileName = filename;
+  this->FilePositions.clear();
+  this->UnloadPerFrameData();
+  this->Lidar->Modified();
+}
+
+//-----------------------------------------------------------------------------
+void vtkLidarReaderInternal::Open()
+{
+  this->Close();
+  this->Reader = new vtkPacketFileReader;
+  if (!this->Reader->Open(this->FileName))
+  {
+//    vtkErrorMacro("Failed to open packet file: " << this->FileName << endl
+//                                                 << this->Reader->GetLastError());
+    this->Close();
+  }
+}
+
+//-----------------------------------------------------------------------------
+void vtkLidarReaderInternal::Close()
+{
+  delete this->Reader;
+  this->Reader = 0;
+}
+
+//-----------------------------------------------------------------------------
+bool vtkLidarReaderInternal::shouldBeCroppedOut(double pos[3], double theta)
 {
   // Test if point is cropped
   if (!this->CropReturns)
@@ -83,7 +101,7 @@ bool vtkLidarSourceInternal::shouldBeCroppedOut(double pos[3], double theta)
 }
 
 //-----------------------------------------------------------------------------
-vtkSmartPointer<vtkPolyData> vtkLidarSourceInternal::GetFrame(int frameNumber, int wantedNumberOfTrailingFrames)
+vtkSmartPointer<vtkPolyData> vtkLidarReaderInternal::GetFrame(int frameNumber, int wantedNumberOfTrailingFrames)
 {
   this->UnloadPerFrameData();
   if (!this->Reader)
@@ -91,7 +109,7 @@ vtkSmartPointer<vtkPolyData> vtkLidarSourceInternal::GetFrame(int frameNumber, i
 //    vtkErrorMacro("GetFrame() called but packet file reader is not open.");
     return 0;
   }
-  if (!this->CorrectionsInitialized)
+  if (!this->IsCalibrated)
   {
 //    vtkErrorMacro("Corrections have not been set");
     return 0;
@@ -118,4 +136,10 @@ vtkSmartPointer<vtkPolyData> vtkLidarSourceInternal::GetFrame(int frameNumber, i
   this->SplitFrame(true);
   this->SplitCounter = 0;
   return this->Datasets.back();
+}
+
+//-----------------------------------------------------------------------------
+int vtkLidarReaderInternal::GetNumberOfFrames()
+{
+  return this->FilePositions.size();
 }

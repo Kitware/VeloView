@@ -94,11 +94,11 @@ if(PARAVIEW_BUILD_QT_GUI)
   # Until the 'Speedup interpolator' merge request is
   # integrated to VTK, we provide the patch
   set(non_vtk_sources
-    vtkLidarSource.cxx
-    vtkLidarSourceInternal.cxx
+    vtkLidarProvider.cxx
+    vtkLidarProviderInternal.cxx
     vtkLidarReader.cxx
-    #vtkLidarReaderInernal.cxx
-    vtkLidarStream.cxx
+    vtkLidarReaderInternal.cxx
+#    vtkLidarStream.cxx
 #    vtkLidarStreamInternal.cxx
     vtkBirdEyeViewSnap.cxx
     vtkLASFileWriter.cxx
@@ -147,7 +147,8 @@ list(APPEND servermanager_sources
   vtkProcessingSample.cxx
   vtkRansacPlaneModel.cxx
   vtkVelodyneHDLGridSource.cxx
-  vtkLidarSource.cxx
+  vtkLidarProvider.cxx
+  vtkLidarReader.cxx
   vtkVelodyneHDLReader.cxx
   vtkVelodyneHDLPositionReader.cxx
   vtkVelodyneHDLSource.cxx)

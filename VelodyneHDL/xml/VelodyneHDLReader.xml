@@ -108,10 +108,10 @@
       </IntVectorProperty>
 
       <StringVectorProperty
-          name="CorrectionsFile"
+          name="CalibratoinFileName"
           label="Calibration File"
           animateable="0"
-          command="SetCorrectionsFile"
+          command="SetCalibrationFileName"
           number_of_elements="1">
           <FileListDomain name="files"/>
           <Documentation>

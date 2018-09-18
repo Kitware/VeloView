@@ -158,7 +158,7 @@ public:
     {
       this->HDLReader->updateReportedSensor(data, length);
       // Accumulate HDL64 Status byte data while correction are not initialized
-      if (this->HDLReader->getIsHDL64Data() && !this->HDLReader->getCorrectionsInitialized())
+      if (this->HDLReader->getIsHDL64Data() && !this->HDLReader->GetIsCalibrated())
       {
         this->HDLReader->appendRollingDataAndTryCorrection(data);
       }
@@ -823,9 +823,9 @@ bool vtkVelodyneHDLSource::GetHasDualReturn()
 }
 
 //-----------------------------------------------------------------------------
-bool vtkVelodyneHDLSource::GetCorrectionsInitialized()
+bool vtkVelodyneHDLSource::GetIsCalibrated()
 {
-  return this->Internal->Consumer->GetReader()->getCorrectionsInitialized();
+  return this->Internal->Consumer->GetReader()->GetIsCalibrated();
 }
 
 //-----------------------------------------------------------------------------
@@ -908,7 +908,7 @@ const std::string& vtkVelodyneHDLSource::GetCorrectionsFile()
 {
   boost::lock_guard<boost::mutex> lock(this->Internal->Consumer->ReaderMutex);
 
-  return this->Internal->Consumer->GetReader()->GetCorrectionsFile();
+  return this->Internal->Consumer->GetReader()->GetCalibrationFileName();
 }
 
 //-----------------------------------------------------------------------------
@@ -921,7 +921,7 @@ void vtkVelodyneHDLSource::SetCorrectionsFile(const std::string& filename)
 
   boost::lock_guard<boost::mutex> lock(this->Internal->Consumer->ReaderMutex);
 
-  this->Internal->Consumer->GetReader()->SetCorrectionsFile(filename);
+  this->Internal->Consumer->GetReader()->SetCalibrationFileName(filename);
   this->Modified();
 }
 
