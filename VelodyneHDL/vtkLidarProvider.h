@@ -25,10 +25,10 @@ public:
 
   std::string GetCalibrationFileName();
   void SetCalibrationFileName(const std::string& filename);
+  bool GetIsCalibrated();
 
   // Sensor related
   std::string GetSensorInformation();
-  bool GetIsCalibrated();
   double GetCurrentRpm();
   double GetDistanceResolutionM();
 

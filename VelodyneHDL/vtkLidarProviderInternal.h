@@ -35,18 +35,17 @@ public:
   std::string GetCalibrationFileName();
   virtual void SetCalibrationFileName(const std::string& filename);
   virtual void LoadCalibration(const std::string& filename) = 0;
+  bool GetIsCalibrated();
 
   int GetNumberOfChannels();
   double GetDistanceResolutionM();
   double GetCurrentRpm();
-  bool GetIsCalibrated();
 
   int GetIgnoreZeroDistances() const;
   void SetIgnoreZeroDistances(const bool value);
 
   int GetIgnoreEmptyFrames() const;
   void SetIgnoreEmptyFrames(const bool  value);
-
 
   void SetLaserSelection(bool laserSelection[]);
   void GetLaserSelection(bool laserSelection[]);
@@ -73,7 +72,6 @@ public:
   vtkLidarProvider* Lidar;
   std::string CalibrationFileName;
 
-  std::vector<vtkSmartPointer<vtkPolyData> > Datasets;
 //  vtkSmartPointer<vtkPolyData> CurrentDataset;
 
 

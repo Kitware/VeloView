@@ -523,7 +523,6 @@ public:
   bool HDL64LoadCorrectionsFromStreamData();
 
   void ProcessPacket(unsigned char* data, std::size_t bytesReceived) override;
-  static bool shouldSplitFrame(uint16_t, int, int&);
 
   double ComputeTimestamp(unsigned int tohTime);
   void ComputeOrientation(double timestamp, vtkTransform* geotransform);
@@ -745,29 +744,6 @@ vtkSmartPointer<vtkPolyData> vtkVelodyneHDLReader::vtkInternal::GetFrame(int fra
 }
 
 //-----------------------------------------------------------------------------
-void vtkVelodyneHDLReader::SetTimestepInformation(vtkInformation* info)
-{
-  const size_t numberOfTimesteps = this->Internal->FilePositions.size();
-  std::vector<double> timesteps;
-  for (size_t i = 0; i < numberOfTimesteps; ++i)
-  {
-    timesteps.push_back(i);
-  }
-
-  if (numberOfTimesteps)
-  {
-    double timeRange[2] = { timesteps.front(), timesteps.back() };
-    info->Set(vtkStreamingDemandDrivenPipeline::TIME_STEPS(), &timesteps.front(), timesteps.size());
-    info->Set(vtkStreamingDemandDrivenPipeline::TIME_RANGE(), timeRange, 2);
-  }
-  else
-  {
-    info->Remove(vtkStreamingDemandDrivenPipeline::TIME_STEPS());
-    info->Remove(vtkStreamingDemandDrivenPipeline::TIME_RANGE());
-  }
-}
-
-//-----------------------------------------------------------------------------
 int vtkVelodyneHDLReader::RequestData(
   vtkInformation* request, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -850,10 +826,7 @@ int vtkVelodyneHDLReader::RequestInformation(
   {
     this->ReadFrameInformation();
   }
-
-  vtkInformation* info = outputVector->GetInformationObject(0);
-  this->SetTimestepInformation(info);
-  return 1;
+  return this->vtkLidarReader::RequestInformation(request, inputVector, outputVector);
 }
 
 //-----------------------------------------------------------------------------
@@ -909,7 +882,6 @@ void vtkVelodyneHDLReader::DumpFrames(int startFrame, int endFrame, const std::s
 
   this->Internal->Reader->SetFilePosition(&this->Internal->FilePositions[startFrame]);
   int skip = this->Internal->Skips[startFrame];
-  const unsigned int ethernetUDPHeaderLength = 42;
   while (this->Internal->Reader->NextPacket(
            data, dataLength, timeSinceStart, &header, &dataHeaderLength) &&
     currentFrame <= endFrame)
@@ -1391,6 +1363,8 @@ void vtkVelodyneHDLReader::vtkInternal::LoadCalibration(const std::string& filen
   PrecomputeCorrectionCosSin();
   this->IsCalibrated = true;
 }
+
+//-----------------------------------------------------------------------------
 void vtkVelodyneHDLReader::vtkInternal::PrecomputeCorrectionCosSin()
 {
 
@@ -1798,19 +1772,6 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessPacket(
     }
   }
 }
-
-/*
-//-----------------------------------------------------------------------------
-bool vtkVelodyneHDLReader::vtkInternal::shouldSplitFrame(
-  uint16_t curRotationalPosition, int prevRotationalPosition, int& LastAzimuthSlope)
-{
-    bool hasPrevAzimuth = (prevRotationalPosition!=-1);
-    bool azimuthFrameSplit = FramingState::hasChangedWithValue(curRotationalPosition,
-hasPrevAzimuth,
-                        prevRotationalPosition, LastAzimuthSlope);
-    return azimuthFrameSplit;
-  }
-*/
 
 //-----------------------------------------------------------------------------
 int vtkVelodyneHDLReader::ReadFrameInformation()

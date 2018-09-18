@@ -25,7 +25,6 @@ public:
 protected:
   vtkLidarReader();
   vtkLidarReader(vtkLidarReaderInternal* internal);
-  ~vtkLidarReader() override;
 
   void SetPimpInternal(vtkLidarReaderInternal* internal);
 
@@ -36,10 +35,14 @@ protected:
                           vtkInformationVector** inputVector,
                           vtkInformationVector* outputVector);
 
+  int RequestInformation(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
+
 
 private:
   vtkLidarReader(const vtkLidarReader&);
   void operator=(const vtkLidarReader&);
+
+  void SetTimestepInformation(vtkInformation* info);
 
   vtkLidarReaderInternal* Internal;
 };
