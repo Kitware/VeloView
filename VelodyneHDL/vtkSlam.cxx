@@ -1188,6 +1188,34 @@ void vtkSlam::InitTworldUsingExternalData(double adjustedTime0, double rawTime0)
 
   std::cout << "proposed time: " << adjustedTime0 << " and rawtime: " << rawTime0 << std::endl;
 
+  double t = adjustedTime0;
+
+  // Try to compute the orientation using the adjusted time of the lidar
+  // If the adjuested time is not on the bounds of the interpolator, use
+  // the raw timestamp instead. This is because, depending on if a GPS
+  // is connected to the lidar or not, the timestamp used change
+  if (t < this->ExternalMeasures->GetMinimumT() || t > this->ExternalMeasures->GetMaximumT())
+  {
+    t = rawTime0;
+  }
+
+  vtkNew<vtkTransform> initialTransform;
+  this->ExternalMeasures->InterpolateTransform(t, initialTransform.Get());
+  vtkNew<vtkMatrix4x4> M;
+  initialTransform->GetMatrix(M.Get());
+  Eigen::Matrix<double, 3, 3> R;
+  Eigen::Matrix<double, 3, 1> T0, theta0;
+  R << M->Element[0][0], M->Element[0][1], M->Element[0][2],
+       M->Element[1][0], M->Element[1][1], M->Element[1][2],
+       M->Element[2][0], M->Element[2][1], M->Element[2][2];
+  T0 << M->Element[0][3], M->Element[1][3], M->Element[2][3];
+  theta0(0) = std::atan2(R(2, 1), R(2, 2));
+  theta0(1) = -std::asin(R(2, 0));
+  theta0(2) = std::atan2(R(1, 0), R(0, 0));
+  this->Tworld << theta0(0), theta0(1), theta0(2), T0(0), T0(1), T0(2);
+
+  return;
+
   // Get the transforms list
   std::vector<std::vector<double> > transforms = this->ExternalMeasures->GetTransformList();
   std::vector<std::vector<double> > transformsSmoothed;
@@ -1350,6 +1378,16 @@ void vtkSlam::AddFrame(vtkPolyData* newFrame)
             << "#########################################################" << std::endl
             << std::endl;
 
+  // Check if external measures have been
+  // provided to the slam algorithm
+  if (this->ExternalMeasures && (this->NbrFrameProcessed == 0))
+  {
+    vtkGenericWarningMacro("External data provided to the SLAM");
+    double adjuestedTime0 = newFrame->GetPointData()->GetArray("adjustedtime")->GetTuple1(0) * 1e-6;
+    double rawTime0 = static_cast<double>(newFrame->GetPointData()->GetArray("timestamp")->GetTuple1(0)) * 1e-6;
+    this->InitTworldUsingExternalData(adjuestedTime0, rawTime0);
+  }
+
   // Reset the members variables used during the last
   // processed frame so that they can be used again
   PrepareDataForNextFrame();
@@ -1373,16 +1411,6 @@ void vtkSlam::AddFrame(vtkPolyData* newFrame)
     // Compute the edges and planars keypoints
     this->ComputeKeyPoints(newFrame);
 
-    // Check if external measures have been
-    // provided to the slam algorithm
-    if (this->ExternalMeasures)
-    {
-      vtkGenericWarningMacro("External data provided to the SLAM");
-      double adjuestedTime0 = newFrame->GetPointData()->GetArray("adjustedtime")->GetTuple1(0) * 1e-6;
-      double rawTime0 = static_cast<double>(newFrame->GetPointData()->GetArray("timestamp")->GetTuple1(0)) * 1e-6;
-      this->InitTworldUsingExternalData(adjuestedTime0, rawTime0);
-    }
-
     // Populate keypoints maps
     // edges
     EdgesPointsLocalMap->Roll(this->Tworld);
@@ -1395,6 +1423,9 @@ void vtkSlam::AddFrame(vtkPolyData* newFrame)
     // Blobs
     BlobsPointsLocalMap->Roll(this->Tworld);
     BlobsPointsLocalMap->Add(this->CurrentBlobsPoints);
+
+    // update map using tworld
+    this->UpdateMapsUsingTworld();
 
     // Current keypoints become previous ones
     this->PreviousEdgesPoints = this->CurrentEdgesPoints;
@@ -3645,6 +3676,13 @@ void vtkSlam::Mapping()
   // Add the current computed transform to the list
   this->TworldList.push_back(this->Tworld);
 
+  // update maps
+  this->UpdateMapsUsingTworld();
+}
+
+//-----------------------------------------------------------------------------
+void vtkSlam::UpdateMapsUsingTworld()
+{
   // Update EdgeMap
   pcl::PointCloud<Point>::Ptr MapEdgesPoints(new pcl::PointCloud<Point>());
   for (unsigned int i = 0; i < this->CurrentEdgesPoints->size(); ++i)

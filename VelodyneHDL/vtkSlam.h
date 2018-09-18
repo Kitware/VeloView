@@ -676,6 +676,11 @@ private:
   // Predict Tworld using last points of the trajectory
   Eigen::Matrix<double, 6, 1> PredictTWorld();
 
+  // Update the maps by populate the rolling grids
+  // using the current keypoints expressed in the
+  // world reference frame coordinate system
+  void UpdateMapsUsingTworld();
+
   // To recover the ego-motion we have to minimize the function
   // f(R, T) = sum(d(point, line)^2) + sum(d(point, plane)^2). In both
   // case the distance between the point and the line / plane can be
