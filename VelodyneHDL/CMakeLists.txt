@@ -2,6 +2,8 @@ include(../branding.cmake)
 project(VelodyneHDLPlugin)
 cmake_minimum_required(VERSION 2.8)
 
+message("Until the 'Speedup interpolator' merge request is integrated to VTK, we provide the patch")
+
 if(ParaView_SOURCE_DIR)
 
   include_directories(${VTK_INCLUDE_DIRS})
@@ -89,12 +91,19 @@ if(PARAVIEW_BUILD_QT_GUI)
     vtkWrappedTupleInterpolator.cxx
     )
 
+  # Until the 'Speedup interpolator' merge request is
+  # integrated to VTK, we provide the patch
   set(non_vtk_sources
+    vtkBirdEyeViewSnap.cxx
     vtkLASFileWriter.cxx
     vtkPacketFileWriter.cxx
+    vtkRansacPlaneModel.cxx
     vtkRollingDataAccumulator.cxx
     vtkSphericalMap.cxx
     vvPacketSender.cxx
+    vtkPatchVeloView/vtkVeloViewPiecewiseFunction.cxx
+    vtkPatchVeloView/vtkVeloViewQuaternionInterpolator.cxx
+    vtkPatchVeloView/vtkVeloViewTupleInterpolator.cxx
     )
 
   QT4_WRAP_CPP(moc_srcs ${MOC_HEADERS})
@@ -130,7 +139,9 @@ endif()
 list(APPEND servermanager_sources
   vtkApplanixPositionReader.cxx
   vtkMotionDetector.cxx
+  vtkBirdEyeViewSnap.cxx
   vtkProcessingSample.cxx
+  vtkRansacPlaneModel.cxx
   vtkVelodyneHDLGridSource.cxx
   vtkVelodyneHDLReader.cxx
   vtkVelodyneHDLPositionReader.cxx
@@ -140,7 +151,9 @@ list(APPEND servermanager_sources
 list(APPEND servermanager_xml
   xml/ApplanixPositionReader.xml
   xml/MotionDetector.xml
+  xml/BirdEyeViewSnap.xml
   xml/ProcessingSample.xml
+  xml/RansacPlaneModel.xml
   xml/VelodyneHDLGridSource.xml
   xml/VelodyneHDLReader.xml
   xml/VelodyneHDLPositionReader.xml

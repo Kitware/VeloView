@@ -33,6 +33,8 @@ import planefit
 
 from PythonQt.paraview import vvCalibrationDialog, vvCropReturnsDialog, vvSelectFramesDialog
 from VelodyneHDLPluginPython import vtkVelodyneHDLReader
+from VelodyneHDLPluginPython import vtkRansacPlaneModel
+from VelodyneHDLPluginPython import vtkBirdEyeViewSnap
 
 _repCache = {}
 
@@ -361,15 +363,25 @@ def chooseCalibration(calibrationFilename=None):
             self.isForwarding = dialog.isForwarding()
             self.ipAddressForwarding = dialog.ipAddressForwarding()
             self.sensorTransform = vtk.vtkTransform()
+            self.gpsTransform = vtk.vtkTransform()
 
             qm = dialog.sensorTransform()
-            vm = vtk.vtkMatrix4x4()
+            vmLidar = vtk.vtkMatrix4x4()
             for row in xrange(4):
-                vm.SetElement(row, 0, qm.row(row).x())
-                vm.SetElement(row, 1, qm.row(row).y())
-                vm.SetElement(row, 2, qm.row(row).z())
-                vm.SetElement(row, 3, qm.row(row).w())
-            self.sensorTransform.SetMatrix(vm)
+                vmLidar.SetElement(row, 0, qm.row(row).x())
+                vmLidar.SetElement(row, 1, qm.row(row).y())
+                vmLidar.SetElement(row, 2, qm.row(row).z())
+                vmLidar.SetElement(row, 3, qm.row(row).w())
+            self.sensorTransform.SetMatrix(vmLidar)
+
+            qm = dialog.gpsTransform()
+            vmGps = vtk.vtkMatrix4x4()
+            for row in xrange(4):
+                vmGps.SetElement(row, 0, qm.row(row).x())
+                vmGps.SetElement(row, 1, qm.row(row).y())
+                vmGps.SetElement(row, 2, qm.row(row).z())
+                vmGps.SetElement(row, 3, qm.row(row).w())
+            self.gpsTransform.SetMatrix(vmGps)
 
 
     dialog = vvCalibrationDialog(getMainWindow())
@@ -554,16 +566,15 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
     else:
         posreader = smp.ApplanixPositionReader(guiName="Position",
                                                FileName=positionFilename)
-        posreader.BaseYaw = calibration.gpsYaw
-        posreader.BaseRoll = calibration.gpsRoll
-        posreader.BasePitch = calibration.gpsPitch
+
+    posreader.GetClientSideObject().SetCalibrationTransform(calibration.gpsTransform)
 
     smp.Show(posreader)
 
-    # Create a sphere glyph
-    g = smp.Sphere()
-    g.Radius = 5.0
-    smp.Show(g)
+    # Create a tripod glyph
+    tripod = smp.Axes()
+    tripod.ScaleFactor = 10.0
+    smp.Show(tripod)
 
     if posreader.GetClientSideObject().GetOutput().GetNumberOfPoints():
         reader.GetClientSideObject().SetInterpolator(
@@ -589,7 +600,7 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
         sb.Position, sb.Position2 = [.1, .05], [.8, .02]
         app.overheadView.Representations.append(sb)
 
-        app.position = (posreader, None, g)
+        app.position = (posreader, None, tripod)
         smp.Render(app.overheadView)
     else:
         if positionFilename is not None:
@@ -784,15 +795,38 @@ def saveCSVCurrentFrameSelection(filename):
     smp.Delete(w)
     rotateCSVFile(filename)
 
-def saveLASFrames(filename, first, last, transform):
+# transform parameter indicates the coordinates system and
+# the referential for the exported points clouds:
+# - 0 Sensor: sensor referential, cartesian coordinate system
+# - 1: Relative Geoposition: NED base centered at the first position
+#      of the sensor, cartesian coordinate system
+# - 2: Absolute Geoposition: NED base centered at the corresponding
+#      UTM zone, cartesian coordinate system
+# - 3: Absolute Geoposition Lat/Lon: Lat / Lon coordinate system
+def saveLASFrames(filename, first, last, transform = 0):
     reader = getReader().GetClientSideObject()
-    position = getPosition().GetClientSideObject().GetOutput()
 
-    PythonQt.paraview.pqVelodyneManager.saveFramesToLAS(
-        reader, position, first, last, filename, transform)
+    # Check that we have a position provider
+    if getPosition() is not None:
+        position = getPosition().GetClientSideObject().GetOutput()
+
+        PythonQt.paraview.pqVelodyneManager.saveFramesToLAS(
+            reader, position, first, last, filename, transform)
+
+    else:
+        PythonQt.paraview.pqVelodyneManager.saveFramesToLAS(
+            reader, None, first, last, filename, transform)
 
 
-def saveLASCurrentFrame(filename, transform):
+# transform parameter indicates the coordinates system and
+# the referential for the exported points clouds:
+# - 0 Sensor: sensor referential, cartesian coordinate system
+# - 1: Relative Geoposition: NED base centered at the first position
+#      of the sensor, cartesian coordinate system
+# - 2: Absolute Geoposition: NED base centered at the corresponding
+#      UTM zone, cartesian coordinate system
+# - 3: Absolute Geoposition Lat/Lon: Lat / Lon coordinate system
+def saveLASCurrentFrame(filename, transform = 0):
     t = app.scene.AnimationTime
     saveLASFrames(filename, t, t, transform)
 
@@ -829,8 +863,15 @@ def saveCSV(filename, timesteps):
     kiwiviewerExporter.zipDir(outDir, filename)
     kiwiviewerExporter.shutil.rmtree(tempDir)
 
-
-def saveLAS(filename, timesteps, transform):
+# transform parameter indicates the coordinates system and
+# the referential for the exported points clouds:
+# - 0 Sensor: sensor referential, cartesian coordinate system
+# - 1: Relative Geoposition: NED base centered at the first position
+#      of the sensor, cartesian coordinate system
+# - 2: Absolute Geoposition: NED base centered at the corresponding
+#      UTM zone, cartesian coordinate system
+# - 3: Absolute Geoposition Lat/Lon: Lat / Lon coordinate system
+def saveLAS(filename, timesteps, transform = 0):
 
     tempDir = kiwiviewerExporter.tempfile.mkdtemp()
     basenameWithoutExtension = os.path.splitext(os.path.basename(filename))[0]
@@ -1481,27 +1522,24 @@ def updatePosition():
         pointcloud = reader.GetClientSideObject().GetOutput()
 
         if pointcloud.GetNumberOfPoints():
-            # Update the overhead view
-            # TODO: Approximate time, just grabbing the last
-            t = pointcloud.GetPointData().GetScalars('adjustedtime')
-            #currentTime = t.GetTuple1(t.GetNumberOfTuples() - 1)
-            currentTime = t.GetTuple1(0) * 1e-6
+            # get the timestamp of the first point
+            # of the current point cloud (in seconds)
+            time = pointcloud.GetPointData().GetArray('adjustedtime').GetTuple1(0)
+            time = time * 1e-6
 
-            interp = getPosition().GetClientSideObject().GetInterpolator()
-            trange = [interp.GetMinimumT(), interp.GetMaximumT()]
-
-            # Clamp
-            currentTime = min(max(currentTime, trange[0]+1.0e-1), trange[1]-1.0e-1)
+            # Get the transform of the first point of the
+            # current point cloud by interpolating using
+            # the two nearest transform data available (slerp + linear)
+            currentTransform = vtk.vtkTransform()
+            getReader().GetClientSideObject().GetInterpolator().InterpolateTransform(time, currentTransform)
 
             position = [0.0] * 3
-            transform = vtk.vtkTransform()
-            interp.InterpolateTransform(currentTime, transform)
-            transform.TransformPoint(position, position)
+            currentTransform.TransformPoint(position, position)
 
             rep = cachedGetRepresentation(reader, view=app.mainView)
             if app.relativeTransform:
-                rep.Position = transform.GetInverse().GetPosition()
-                rep.Orientation = transform.GetInverse().GetOrientation()
+                rep.Position = currentTransform.GetInverse().GetPosition()
+                rep.Orientation = currentTransform.GetInverse().GetOrientation()
             else:
                 rep.Position = [0.0, 0.0, 0.0]
                 rep.Orientation = [0.0, 0.0, 0.0]
@@ -1509,6 +1547,7 @@ def updatePosition():
             g = getGlyph()
             rep = cachedGetRepresentation(g, view=app.overheadView)
             rep.Position = position[:3]
+            rep.Orientation = currentTransform.GetOrientation()
 
     showRPM()
 
@@ -2221,6 +2260,37 @@ def toggleCrashAnalysis():
 
     app.EnableCrashAnalysis = app.actions['actionEnableCrashAnalysis'].isChecked()
 
+def toggleRansacPlaneFitting():
+    reader = getReader()
+    ransacPlaneFitting = smp.RansacPlaneModel(reader)
+    ransacPlaneFitting.GetClientSideObject().SetMaximumIteration(250)
+    ransacPlaneFitting.GetClientSideObject().SetThreshold(0.10)
+    ransacPlaneFitting.GetClientSideObject().SetRatioInlierRequired(0.35)
+
+def toggleBirdEyeViewSnap():
+    # Get export images filename
+    fileName = getSaveFileName('Choose Output File', 'png', getDefaultSaveFileName('png'))
+    if not fileName:
+        QtGui.QMessageBox.warning(getMainWindow(), 'Invalid filename', 'Please, select a valid filename')
+        return
+
+    # Fit a plane using ransac algorithm
+    reader = getReader()
+    ransacPlaneFitting = smp.RansacPlaneModel(reader)
+    ransacPlaneFitting.GetClientSideObject().SetMaximumIteration(1000)
+    ransacPlaneFitting.GetClientSideObject().SetThreshold(0.35)
+    ransacPlaneFitting.GetClientSideObject().SetRatioInlierRequired(0.80)
+    ransacPlaneFitting.UpdatePipeline()
+    planeParams = range(4)
+    ransacPlaneFitting.GetClientSideObject().GetPlaneParam(planeParams)
+
+    # use the fitted plane to generate the bird eye view
+    # image (i.e: project the point cloud on the fitted plan
+    # and use the 2D projected point cloud to generate the image)
+    birdEyeViewGenerator = smp.BirdEyeViewSnap(reader)
+    birdEyeViewGenerator.GetClientSideObject().SetFolderName(fileName)
+    birdEyeViewGenerator.GetClientSideObject().SetPlaneParam(planeParams)
+    birdEyeViewGenerator.UpdatePipeline()
 
 def setViewTo(axis,sign):
     view = smp.GetActiveView()
@@ -2413,6 +2483,8 @@ def setupActions():
     app.actions['actionCorrectIntensityValues'].connect('triggered()',intensitiesCorrectedChanged)
     app.actions['actionSelectDualReturn'].connect('triggered()',toggleSelectDualReturn)
     app.actions['actionSelectDualReturn2'].connect('triggered()',toggleSelectDualReturn)
+    app.actions['actionRansacPlaneFitting'].connect('triggered()', toggleRansacPlaneFitting)
+    app.actions['actionBirdEyeViewSnap'].connect('triggered()', toggleBirdEyeViewSnap)
     app.EnableCrashAnalysis = app.actions['actionEnableCrashAnalysis'].isChecked()
 
     # Restore action states from settings
@@ -2512,6 +2584,12 @@ def setupActions():
     displayWidget = getMainWindow().findChild('vvColorToolbar').findChild('pqDisplayColorWidget')
     displayWidget.connect('arraySelectionChanged ()',adjustScalarBarRangeLabelFormat)
     app.actions['actionScalarBarVisibility'].connect('triggered()',adjustScalarBarRangeLabelFormat)
+
+    app.MainToolbar = getMainWindow().findChild('QToolBar','toolBar')
+    app.ColorToolbar = getMainWindow().findChild('QToolBar','colorToolBar')
+    app.PlaybackToolbar = timeToolBar
+    app.ViewToolbar = getMainWindow().findChild('QToolBar','viewSettings')
+    app.GeolocationToolbar = getMainWindow().findChild('QToolBar','geolocationToolbar')
 
 
 def showRPM():

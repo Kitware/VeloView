@@ -34,6 +34,7 @@
 
 #include <vtkPolyDataAlgorithm.h>
 
+class vtkTransform;
 class vtkVelodyneTransformInterpolator;
 
 class VTK_EXPORT vtkApplanixPositionReader : public vtkPolyDataAlgorithm
@@ -71,6 +72,8 @@ public:
   // sensor) and UTC time (as used by the Velodyne sensor).
   vtkSetMacro(TimeOffset, double);
   vtkGetMacro(TimeOffset, double);
+
+  void SetCalibrationTransform(vtkTransform* transform);
 
   // Description:
   int CanReadFile(const char* fname) { return 1; }

@@ -36,7 +36,15 @@ namespace
 projPJ CreateProj(int epsg)
 {
   std::ostringstream ss;
-  ss << "+init=epsg:" << epsg;
+  ss << "+init=epsg:" << epsg << " ";
+  return pj_init_plus(ss.str().c_str());
+}
+
+//-----------------------------------------------------------------------------
+projPJ CreateProj(int epsg, int epsgVerticalDatum)
+{
+  std::ostringstream ss;
+  ss << "+init=epsg:" << epsg << "+" << epsgVerticalDatum << " ";
   return pj_init_plus(ss.str().c_str());
 }
 
@@ -50,7 +58,14 @@ Eigen::Vector3d ConvertGcs(Eigen::Vector3d p, projPJ inProj, projPJ outProj)
   }
 
   double* const data = p.data();
-  pj_transform(inProj, outProj, 1, 1, data + 0, data + 1, data + 2);
+  //std::cout << "position in : [" << p[0] << ";" << p[1] << ";" << p[2] << "]" << std::endl;
+  int last_errno = pj_transform(inProj, outProj, 1, 1, data + 0, data + 1, data + 2);
+  //std::cout << "position out : [" << p[0] << ";" << p[1] << ";" << p[2] << "]" << std::endl << std::endl;
+
+  if (last_errno != 0)
+  {
+    vtkGenericWarningMacro("Error : CRS conversion failed with error: " << last_errno);
+  }
 
   if (pj_is_latlong(outProj))
   {
@@ -111,6 +126,11 @@ Eigen::Vector3d InvertProj(Eigen::Vector3d in, PROJ* proj)
 class vtkLASFileWriter::vtkInternal
 {
 public:
+  vtkInternal()
+  {
+    this->IsWriterInstanciated = false;
+  }
+
   void Close();
 
   std::ofstream Stream;
@@ -123,6 +143,9 @@ public:
   size_t npoints;
   double MinPt[3];
   double MaxPt[3];
+
+  liblas::Header header;
+  bool IsWriterInstanciated;
 
 #ifdef PJ_VERSION // 4.8 or later
   projPJ InProj;
@@ -166,11 +189,9 @@ vtkLASFileWriter::vtkLASFileWriter(const char* filename)
 
   this->Internal->Stream.open(filename, std::ios::out | std::ios::trunc | std::ios::binary);
 
-  liblas::Header header;
-  header.SetSoftwareId(SOFTWARE_NAME);
-  header.SetDataFormatId(liblas::ePointFormat1);
-  header.SetScale(1e-3, 1e-3, 1e-3);
-  this->Internal->Writer = new liblas::Writer(this->Internal->Stream, header);
+  this->Internal->header.SetSoftwareId(SOFTWARE_NAME);
+  this->Internal->header.SetDataFormatId(liblas::ePointFormat1);
+  this->Internal->header.SetScale(1e-3, 1e-3, 1e-3);
 }
 
 //-----------------------------------------------------------------------------
@@ -198,11 +219,16 @@ void vtkLASFileWriter::SetTimeRange(double min, double max)
 //-----------------------------------------------------------------------------
 void vtkLASFileWriter::SetOrigin(int gcs, double easting, double northing, double height)
 {
-  // Set internal UTM offset
-  Eigen::Vector3d origin(easting, northing, height);
+  if (this->Internal->IsWriterInstanciated)
+  {
+    vtkGenericWarningMacro("Header can't be changed once the writer is instanciated");
+    return;
+  }
+
+  Eigen::Vector3d origin(northing, easting, height);
   this->Internal->Origin = origin;
 
-// Convert offset to output GCS, if a geoconversion is set up
+  // Convert offset to output GCS, if a geoconversion is set up
 #ifdef PJ_VERSION // 4.8 or later
   if (this->Internal->OutProj)
   {
@@ -218,18 +244,15 @@ void vtkLASFileWriter::SetOrigin(int gcs, double easting, double northing, doubl
 #endif
 
   // Update header
-  liblas::Header header = this->Internal->Writer->GetHeader();
-
-  header.SetOffset(origin[0], origin[1], origin[2]);
-
+  this->Internal->header.SetOffset(origin[0], origin[1], origin[2]);
   try
   {
     liblas::SpatialReference srs;
     std::ostringstream ss;
     ss << "EPSG:" << gcs;
     srs.SetFromUserInput(ss.str());
-
-    header.SetSRS(srs);
+    std::cout << srs << std::endl;
+    this->Internal->header.SetSRS(srs);
   }
   catch (std::logic_error)
   {
@@ -239,9 +262,6 @@ void vtkLASFileWriter::SetOrigin(int gcs, double easting, double northing, doubl
   {
     std::cerr << "failed to set SRS" << std::endl;
   }
-
-  this->Internal->Writer->SetHeader(header);
-  this->Internal->Writer->WriteHeader();
 }
 
 //-----------------------------------------------------------------------------
@@ -268,17 +288,87 @@ void vtkLASFileWriter::SetGeoConversion(int in, int out)
 }
 
 //-----------------------------------------------------------------------------
+void vtkLASFileWriter::SetGeoConversion(int in, int out, int utmZone, bool isLatLon)
+{
+#ifdef PJ_VERSION // 4.8 or later
+
+  std::stringstream utmparamsIn;
+  utmparamsIn << "+proj=utm ";
+  std::stringstream zone;
+  zone << "+zone=" << utmZone;
+  std::string UTMString = zone.str();
+  utmparamsIn << UTMString << " ";
+  utmparamsIn << "+datum=WGS84 ";
+  utmparamsIn << "+units=m ";
+  utmparamsIn << "+no_defs ";
+  this->Internal->InProj = pj_init_plus(utmparamsIn.str().c_str());
+  std::cout << "init In : " << utmparamsIn.str() << std::endl;
+
+  if (isLatLon)
+  {
+    std::stringstream utmparamsOut;
+    utmparamsOut << "+proj=longlat ";
+    utmparamsOut << "+ellps=WGS84 ";
+    utmparamsOut << "+datum=WGS84 ";
+    utmparamsOut << "+no_defs ";
+    this->Internal->OutProj = pj_init_plus(utmparamsOut.str().c_str());
+    std::cout << "init Out : " << utmparamsOut.str() << std::endl;
+  }
+  else
+  {
+    std::stringstream utmparamsOut;
+    utmparamsOut << "+proj=utm ";
+    std::stringstream zone;
+    zone << "+zone=" << utmZone;
+    std::string UTMString = zone.str();
+    utmparamsOut << UTMString << " ";
+    utmparamsOut << "+ellps=WGS84 ";
+    utmparamsOut << "+datum=WGS84 ";
+    utmparamsOut << "+no_defs ";
+    this->Internal->OutProj = pj_init_plus(utmparamsOut.str().c_str());
+  }
+
+  std::cout << "InProj :  created : " << this->Internal->InProj << std::endl;
+  std::cout << "OutProj created : " << this->Internal->OutProj << std::endl;
+  if (this->Internal->InProj)
+    std::cout << "inProj datum_type : [" << this->Internal->InProj->datum_type << "]" << std::endl;
+  if (this->Internal->OutProj)
+    std::cout << "outProj datum_type : [" << this->Internal->OutProj->datum_type << "]" << std::endl;
+#else
+  // The PROJ 4.7 API makes it near impossible to do generic transforms, hence
+  // InvertProj (see also comments there) is full of assumptions. Assert some
+  // of those assumptions here.
+  assert((in > 32600 && in < 32661) || (in > 32700 && in < 32761));
+  assert(out == 4326);
+
+  proj_free(this->Internal->Proj);
+  this->Internal->Proj = CreateProj(in % 100, in > 32700);
+#endif
+
+  this->Internal->OutGcs = out;
+}
+
+//-----------------------------------------------------------------------------
 void vtkLASFileWriter::SetPrecision(double neTol, double hTol)
 {
-  liblas::Header header = this->Internal->Writer->GetHeader();
-  header.SetScale(neTol, neTol, hTol);
-  this->Internal->Writer->SetHeader(header);
-  this->Internal->Writer->WriteHeader();
+  if (this->Internal->IsWriterInstanciated)
+  {
+    vtkGenericWarningMacro("Header can't be changed once writer is instanciated");
+    return;
+  }
+
+  this->Internal->header.SetScale(neTol, neTol, hTol);
 }
 
 //-----------------------------------------------------------------------------
 void vtkLASFileWriter::WriteFrame(vtkPolyData* data)
 {
+  if (!this->Internal->IsWriterInstanciated)
+  {
+    this->Internal->Writer = new liblas::Writer(this->Internal->Stream, this->Internal->header);
+    this->Internal->IsWriterInstanciated = true;
+  }
+
   vtkPoints* const points = data->GetPoints();
   vtkDataArray* const intensityData = data->GetPointData()->GetArray("intensity");
   vtkDataArray* const laserIdData = data->GetPointData()->GetArray("laser_id");
@@ -322,14 +412,9 @@ void vtkLASFileWriter::WriteFrame(vtkPolyData* data)
 //-----------------------------------------------------------------------------
 void vtkLASFileWriter::FlushMetaData()
 {
-  liblas::Header header = this->Internal->Writer->GetHeader();
-
-  header.SetPointRecordsByReturnCount(0, this->Internal->npoints);
-  header.SetMin(this->Internal->MinPt[0], this->Internal->MinPt[1], this->Internal->MinPt[2]);
-  header.SetMax(this->Internal->MaxPt[0], this->Internal->MaxPt[1], this->Internal->MaxPt[2]);
-
-  this->Internal->Writer->SetHeader(header);
-  this->Internal->Writer->WriteHeader();
+  this->Internal->header.SetPointRecordsByReturnCount(0, this->Internal->npoints);
+  this->Internal->header.SetMin(this->Internal->MinPt[0], this->Internal->MinPt[1], this->Internal->MinPt[2]);
+  this->Internal->header.SetMax(this->Internal->MaxPt[0], this->Internal->MaxPt[1], this->Internal->MaxPt[2]);
 }
 
 //-----------------------------------------------------------------------------

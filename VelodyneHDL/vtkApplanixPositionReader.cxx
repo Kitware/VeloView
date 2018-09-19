@@ -62,6 +62,7 @@ public:
   void SetMapping(const std::string& fieldName, vtkNew<vtkDoubleArray>& array);
 
   vtkNew<vtkVelodyneTransformInterpolator> Interpolator;
+  vtkNew<vtkTransform> CalibrationTransform;
 
   FieldIndexMap Fields;
   FieldDataMap FieldMapping;
@@ -90,6 +91,7 @@ vtkApplanixPositionReader::vtkApplanixPositionReader()
   this->BaseRoll = 0.0;
   this->BasePitch = 0.0;
   this->TimeOffset = 16.0; // correct for at least 2012-Jul - 2015-May
+  this->Internal->CalibrationTransform->Identity();
 
   this->SetNumberOfInputPorts(0);
   this->SetNumberOfOutputPorts(1);
@@ -274,15 +276,34 @@ int vtkApplanixPositionReader::RequestData(
     points->InsertNextPoint(pos);
     polyIds->InsertNextId(n);
 
-    vtkNew<vtkTransform> transform;
-    transform->PostMultiply();
-    transform->RotateZ(-headingData->GetValue(n) - this->BaseYaw);
-    transform->RotateY(rollData->GetValue(n) - this->BaseRoll);
-    transform->RotateX(pitchData->GetValue(n) - this->BasePitch);
-    transform->Translate(pos);
+    // Compute transform
+    // Here we want to compute the transform to go
+    // from the solid referential frame to the world
+    // georeferenced frame. Hence, given the position
+    // and orientation of the GPS in the solid frame we
+    // need to apply the transform from the solid frame
+    // to the GPS (backward gps pose) and then the transform
+    // from the GPS to the world georeferenced frame
+    vtkNew<vtkTransform> transformGpsWorld, transformVehiculeWorld;
+    transformGpsWorld->PostMultiply();
+    transformGpsWorld->RotateX(rollData->GetValue(n));
+    transformGpsWorld->RotateY(pitchData->GetValue(n));
+    transformGpsWorld->RotateZ(headingData->GetValue(n));
+    transformGpsWorld->Translate(pos);
 
+    // Compute transform from vehicule to GPS
+    // and then compose with the transform GPS to world
+    vtkNew<vtkMatrix4x4> gpsToWorld, vehiculeToGps, vehiculeToWorld;
+    this->Internal->CalibrationTransform->GetMatrix(vehiculeToGps.Get());
+    transformGpsWorld->GetMatrix(gpsToWorld.Get());
+    vehiculeToGps->Invert();
+    vtkMatrix4x4::Multiply4x4(gpsToWorld.Get(), vehiculeToGps.Get(), vehiculeToWorld.Get());
+    transformVehiculeWorld->SetMatrix(vehiculeToWorld.Get());
+    transformVehiculeWorld->Modified();
+
+    // Add the transform to the interpolator
     const double timestamp = timeData->GetValue(n) - this->TimeOffset;
-    this->Internal->Interpolator->AddTransform(timestamp, transform.GetPointer());
+    this->Internal->Interpolator->AddTransform(timestamp, transformVehiculeWorld.GetPointer());
   }
 
   cells->InsertNextCell(polyLine.GetPointer());
@@ -299,6 +320,20 @@ int vtkApplanixPositionReader::RequestData(
   }
 
   return VTK_OK;
+}
+
+//-----------------------------------------------------------------------------
+void vtkApplanixPositionReader::SetCalibrationTransform(vtkTransform* transform)
+{
+  if (transform)
+  {
+    this->Internal->CalibrationTransform->SetMatrix(transform->GetMatrix());
+  }
+  else
+  {
+    this->Internal->CalibrationTransform->Identity();
+  }
+  this->Modified();
 }
 
 //-----------------------------------------------------------------------------

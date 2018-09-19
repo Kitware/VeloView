@@ -107,28 +107,44 @@ void vvCalibrationDialog::pqInternal::restoreSelectedRow()
 void vvCalibrationDialog::pqInternal::saveSensorTransform()
 {
   this->Settings->setValue(
-    "VelodyneHDLPlugin/CalibrationFileDialog/SensorOriginX", this->OriginXSpinBox->value());
+    "VelodyneHDLPlugin/CalibrationFileDialog/LidarOriginX", this->LidarXSpinBox->value());
   this->Settings->setValue(
-    "VelodyneHDLPlugin/CalibrationFileDialog/SensorOriginY", this->OriginYSpinBox->value());
+    "VelodyneHDLPlugin/CalibrationFileDialog/lidarOriginY", this->LidarYSpinBox->value());
   this->Settings->setValue(
-    "VelodyneHDLPlugin/CalibrationFileDialog/SensorOriginZ", this->OriginZSpinBox->value());
+    "VelodyneHDLPlugin/CalibrationFileDialog/LidarOriginZ", this->LidarZSpinBox->value());
   this->Settings->setValue(
-    "VelodyneHDLPlugin/CalibrationFileDialog/SensorYaw", this->YawSpinBox->value());
+    "VelodyneHDLPlugin/CalibrationFileDialog/LidarYaw", this->LidarYawSpinBox->value());
   this->Settings->setValue(
-    "VelodyneHDLPlugin/CalibrationFileDialog/SensorPitch", this->PitchSpinBox->value());
+    "VelodyneHDLPlugin/CalibrationFileDialog/LidarPitch", this->LidarPitchSpinBox->value());
   this->Settings->setValue(
-    "VelodyneHDLPlugin/CalibrationFileDialog/SensorRoll", this->RollSpinBox->value());
+    "VelodyneHDLPlugin/CalibrationFileDialog/LidarRoll", this->LidarRollSpinBox->value());
+  this->Settings->setValue(
+    "VelodyneHDLPlugin/CalibrationFileDialog/LidarTimeOffset", this->lidarTimeOffsetSpinBox->value());
 }
 
 //-----------------------------------------------------------------------------
 void vvCalibrationDialog::pqInternal::saveGpsTransform()
 {
   this->Settings->setValue(
+    "VelodyneHDLPlugin/CalibrationFileDialog/GpsOriginX", this->GpsXSpinBox->value());
+  this->Settings->setValue(
+    "VelodyneHDLPlugin/CalibrationFileDialog/GpsOriginY", this->GpsYSpinBox->value());
+  this->Settings->setValue(
+    "VelodyneHDLPlugin/CalibrationFileDialog/GpsOriginZ", this->GpsZSpinBox->value());
+  this->Settings->setValue(
     "VelodyneHDLPlugin/CalibrationFileDialog/GpsYaw", this->GpsYawSpinBox->value());
   this->Settings->setValue(
     "VelodyneHDLPlugin/CalibrationFileDialog/GpsRoll", this->GpsRollSpinBox->value());
   this->Settings->setValue(
     "VelodyneHDLPlugin/CalibrationFileDialog/GpsPitch", this->GpsPitchSpinBox->value());
+  this->Settings->setValue(
+    "VelodyneHDLPlugin/CalibrationFileDialog/GpsX", this->GpsXSpinBox->value());
+  this->Settings->setValue(
+    "VelodyneHDLPlugin/CalibrationFileDialog/GpsY", this->GpsYSpinBox->value());
+  this->Settings->setValue(
+    "VelodyneHDLPlugin/CalibrationFileDialog/GpsZ", this->GpsZSpinBox->value());
+  this->Settings->setValue(
+    "VelodyneHDLPlugin/CalibrationFileDialog/GpsTimeOffset", this->gpsTimeOffsetSpinBox->value());
 }
 
 //-----------------------------------------------------------------------------
@@ -183,35 +199,53 @@ void vvCalibrationDialog::pqInternal::saveForwardIpAddress()
 //-----------------------------------------------------------------------------
 void vvCalibrationDialog::pqInternal::restoreSensorTransform()
 {
-  this->OriginXSpinBox->setValue(this->Settings
-                                   ->value("VelodyneHDLPlugin/CalibrationFileDialog/SensorOriginX",
-                                     this->OriginXSpinBox->value())
+  this->LidarXSpinBox->setValue(this->Settings
+                                   ->value("VelodyneHDLPlugin/CalibrationFileDialog/LidarOriginX",
+                                     this->LidarXSpinBox->value())
                                    .toDouble());
-  this->OriginYSpinBox->setValue(this->Settings
-                                   ->value("VelodyneHDLPlugin/CalibrationFileDialog/SensorOriginY",
-                                     this->OriginYSpinBox->value())
+  this->LidarYSpinBox->setValue(this->Settings
+                                   ->value("VelodyneHDLPlugin/CalibrationFileDialog/LidarOriginY",
+                                     this->LidarYSpinBox->value())
                                    .toDouble());
-  this->OriginZSpinBox->setValue(this->Settings
-                                   ->value("VelodyneHDLPlugin/CalibrationFileDialog/SensorOriginZ",
-                                     this->OriginZSpinBox->value())
+  this->LidarZSpinBox->setValue(this->Settings
+                                   ->value("VelodyneHDLPlugin/CalibrationFileDialog/LidarOriginZ",
+                                     this->LidarZSpinBox->value())
                                    .toDouble());
-  this->YawSpinBox->setValue(
+  this->LidarYawSpinBox->setValue(
     this->Settings
-      ->value("VelodyneHDLPlugin/CalibrationFileDialog/SensorYaw", this->YawSpinBox->value())
+      ->value("VelodyneHDLPlugin/CalibrationFileDialog/LidarYaw", this->LidarYawSpinBox->value())
       .toDouble());
-  this->PitchSpinBox->setValue(
+  this->LidarPitchSpinBox->setValue(
     this->Settings
-      ->value("VelodyneHDLPlugin/CalibrationFileDialog/SensorPitch", this->PitchSpinBox->value())
+      ->value("VelodyneHDLPlugin/CalibrationFileDialog/LidarPitch", this->LidarPitchSpinBox->value())
       .toDouble());
-  this->RollSpinBox->setValue(
+  this->LidarRollSpinBox->setValue(
     this->Settings
-      ->value("VelodyneHDLPlugin/CalibrationFileDialog/SensorRoll", this->RollSpinBox->value())
+      ->value("VelodyneHDLPlugin/CalibrationFileDialog/LidarRoll", this->LidarRollSpinBox->value())
+      .toDouble());
+
+  this->lidarTimeOffsetSpinBox->setValue(
+    this->Settings
+      ->value("VelodyneHDLPlugin/CalibrationFileDialog/LidarTimeOffset", this->lidarTimeOffsetSpinBox->value())
       .toDouble());
 }
 
 //-----------------------------------------------------------------------------
 void vvCalibrationDialog::pqInternal::restoreGpsTransform()
 {
+  this->GpsXSpinBox->setValue(this->Settings
+                                   ->value("VelodyneHDLPlugin/CalibrationFileDialog/GpsOriginX",
+                                     this->GpsXSpinBox->value())
+                                   .toDouble());
+  this->GpsYSpinBox->setValue(this->Settings
+                                   ->value("VelodyneHDLPlugin/CalibrationFileDialog/GpsOriginY",
+                                     this->GpsYSpinBox->value())
+                                   .toDouble());
+  this->GpsZSpinBox->setValue(this->Settings
+                                   ->value("VelodyneHDLPlugin/CalibrationFileDialog/GpsOriginZ",
+                                     this->GpsZSpinBox->value())
+                                   .toDouble());
+
   this->GpsYawSpinBox->setValue(
     this->Settings
       ->value("VelodyneHDLPlugin/CalibrationFileDialog/GpsYaw", this->GpsYawSpinBox->value())
@@ -223,6 +257,11 @@ void vvCalibrationDialog::pqInternal::restoreGpsTransform()
   this->GpsPitchSpinBox->setValue(
     this->Settings
       ->value("VelodyneHDLPlugin/CalibrationFileDialog/GpsPitch", this->GpsPitchSpinBox->value())
+      .toDouble());
+
+  this->gpsTimeOffsetSpinBox->setValue(
+    this->Settings
+      ->value("VelodyneHDLPlugin/CalibrationFileDialog/GpsTimeOffset", this->gpsTimeOffsetSpinBox->value())
       .toDouble());
 }
 
@@ -344,9 +383,9 @@ vvCalibrationDialog::vvCalibrationDialog(QWidget* p)
   connect(this->Internal->RemoveButton, SIGNAL(clicked()), this, SLOT(removeSelectedFile()));
   // The advancedConfiguration checkbox hides the three followings groupbox
   connect(this->Internal->AdvancedConfiguration, SIGNAL(toggled(bool)),
-    this->Internal->PositionGroup, SLOT(setVisible(bool)));
+    this->Internal->LidarPositionOrientationGroup, SLOT(setVisible(bool)));
   connect(this->Internal->AdvancedConfiguration, SIGNAL(toggled(bool)),
-    this->Internal->OrientationGroup, SLOT(setVisible(bool)));
+    this->Internal->GPSPositionOrientationGroup, SLOT(setVisible(bool)));
   connect(this->Internal->AdvancedConfiguration, SIGNAL(toggled(bool)),
     this->Internal->NetworkGroup, SLOT(setVisible(bool)));
   connect(this->Internal->AdvancedConfiguration, SIGNAL(toggled(bool)),
@@ -393,8 +432,8 @@ void vvCalibrationDialog::setDefaultConfiguration()
   const QString defaultIpAddress = "127.0.0.1"; // Local host
 
   // Set the visibility
-  this->Internal->PositionGroup->setVisible(false);
-  this->Internal->OrientationGroup->setVisible(false);
+  this->Internal->LidarPositionOrientationGroup->setVisible(false);
+  this->Internal->GPSPositionOrientationGroup->setVisible(false);
   this->Internal->NetworkGroup->setVisible(false);
   this->Internal->NetworkForwardingGroup->setVisible(false);
 
@@ -413,17 +452,21 @@ void vvCalibrationDialog::setDefaultConfiguration()
   this->Internal->AdvancedConfiguration->setChecked(false);
   this->Internal->EnableForwardingCheckBox->setChecked(false);
   // lidar orientation values
-  this->Internal->PitchSpinBox->setValue(defaultSensorValue);
-  this->Internal->YawSpinBox->setValue(defaultSensorValue);
-  this->Internal->RollSpinBox->setValue(defaultSensorValue);
+  this->Internal->LidarPitchSpinBox->setValue(defaultSensorValue);
+  this->Internal->LidarYawSpinBox->setValue(defaultSensorValue);
+  this->Internal->LidarRollSpinBox->setValue(defaultSensorValue);
   // Lidar origin values
-  this->Internal->OriginXSpinBox->setValue(defaultSensorValue);
-  this->Internal->OriginYSpinBox->setValue(defaultSensorValue);
-  this->Internal->OriginZSpinBox->setValue(defaultSensorValue);
+  this->Internal->LidarXSpinBox->setValue(defaultSensorValue);
+  this->Internal->LidarYSpinBox->setValue(defaultSensorValue);
+  this->Internal->LidarZSpinBox->setValue(defaultSensorValue);
   // GPS orientation values
   this->Internal->GpsYawSpinBox->setValue(defaultSensorValue);
   this->Internal->GpsRollSpinBox->setValue(defaultSensorValue);
   this->Internal->GpsPitchSpinBox->setValue(defaultSensorValue);
+  // GPS origin values
+  this->Internal->GpsXSpinBox->setValue(defaultSensorValue);
+  this->Internal->GpsYSpinBox->setValue(defaultSensorValue);
+  this->Internal->GpsZSpinBox->setValue(defaultSensorValue);
 }
 
 //-----------------------------------------------------------------------------
@@ -443,12 +486,69 @@ QString vvCalibrationDialog::selectedCalibrationFile() const
 //-----------------------------------------------------------------------------
 QMatrix4x4 vvCalibrationDialog::sensorTransform() const
 {
+  // QMatrix4x4 class uses openGL / renderer conventions which
+  // is counterintuitive from a linear algebra point of view regarding
+  // the sequence of operations (mathematically we first rotate
+  // around X, Y, Z and then add T).
+
+  // Rotation computation done according to aerospacial
+  // and aeronautics conventions:
+  // We have the orientation of referential ref2 according
+  // to referential ref1:
+  // - Roll is the rotation according to the fixed ref1 X-axis
+  // - Pitch is the rotation according to the fixed ref1 Y-axis
+  // - Yaw is the rotation according to the fixed ref1 Z-axis
+  // - Tx, Ty and Tz are the coordinates of the ref2 position
+  // in ref1 referential
+  // In this conditions R = Ryaw * Rpitch * Rroll so that
+  // Xref1 = R * Xref2
+
+  // Transform the points from Lidar referential
+  // to the solid frame referential
+  // Perform RX + T
+  // QMatrix4x4 has its own convention, the following instructions
+  // performed Ryaw*Rpitch*Rroll + T
   QMatrix4x4 transform;
-  transform.rotate(this->Internal->YawSpinBox->value(), 0.0, 0.0, 1.0);
-  transform.rotate(this->Internal->PitchSpinBox->value(), 1.0, 0.0, 0.0);
-  transform.rotate(this->Internal->RollSpinBox->value(), 0.0, 1.0, 0.0);
-  transform.translate(this->Internal->OriginXSpinBox->value(),
-    this->Internal->OriginYSpinBox->value(), this->Internal->OriginZSpinBox->value());
+  transform.translate(this->Internal->LidarXSpinBox->value(),
+    this->Internal->LidarYSpinBox->value(), this->Internal->LidarZSpinBox->value());
+  transform.rotate(this->Internal->LidarYawSpinBox->value(), 0.0, 0.0, 1.0);
+  transform.rotate(this->Internal->LidarPitchSpinBox->value(), 0.0, 1.0, 0.0);
+  transform.rotate(this->Internal->LidarRollSpinBox->value(), 1.0, 0.0, 0.0);
+
+  return transform;
+}
+
+//-----------------------------------------------------------------------------
+QMatrix4x4 vvCalibrationDialog::gpsTransform() const
+{
+  // QMatrix4x4 class uses openGL / renderer conventions which
+  // is counterintuitive from a linear algebra point of view regarding
+  // the sequence of operations (mathematically we first rotate
+  // around X, Y, Z and then add T).
+
+  // Rotation computation done according to aerospacial
+  // and aeronautics conventions:
+  // We have the orientation of referential ref2 according
+  // to referential ref1:
+  // - Roll is the rotation according to the fixed ref1 X-axis
+  // - Pitch is the rotation according to the fixed ref1 Y-axis
+  // - Yaw is the rotation according to the fixed ref1 Z-axis
+  // - Tx, Ty and Tz are the coordinates of the ref2 position
+  // in ref1 referential
+  // In this conditions R = Ryaw * Rpitch * Rroll so that
+  // Xref1 = R * Xref2
+
+  // Transform the points from Lidar referential
+  // to the solid frame referential
+  // Perform RX + T
+  // QMatrix4x4 has its own convention, the following instructions
+  // performed Ryaw*Rpitch*Rroll + T
+  QMatrix4x4 transform;
+  transform.translate(this->Internal->GpsXSpinBox->value(),
+    this->Internal->GpsYSpinBox->value(), this->Internal->GpsZSpinBox->value());
+  transform.rotate(this->Internal->GpsYawSpinBox->value(), 0.0, 0.0, 1.0);
+  transform.rotate(this->Internal->GpsPitchSpinBox->value(), 0.0, 1.0, 0.0);
+  transform.rotate(this->Internal->GpsRollSpinBox->value(), 1.0, 0.0, 0.0);
 
   return transform;
 }
@@ -469,6 +569,72 @@ double vvCalibrationDialog::gpsRoll() const
 double vvCalibrationDialog::gpsPitch() const
 {
   return this->Internal->GpsPitchSpinBox->value();
+}
+
+//-----------------------------------------------------------------------------
+double vvCalibrationDialog::gpsX() const
+{
+  return this->Internal->GpsXSpinBox->value();
+}
+
+//-----------------------------------------------------------------------------
+double vvCalibrationDialog::gpsY() const
+{
+  return this->Internal->GpsYSpinBox->value();
+}
+
+//-----------------------------------------------------------------------------
+double vvCalibrationDialog::gpsZ() const
+{
+  return this->Internal->GpsZSpinBox->value();
+}
+
+//-----------------------------------------------------------------------------
+double vvCalibrationDialog::gpsTimeOffset() const
+{
+  return this->Internal->gpsTimeOffsetSpinBox->value();
+}
+
+//-----------------------------------------------------------------------------
+double vvCalibrationDialog::lidarYaw() const
+{
+  return this->Internal->LidarYawSpinBox->value();
+}
+
+//-----------------------------------------------------------------------------
+double vvCalibrationDialog::lidarRoll() const
+{
+  return this->Internal->LidarRollSpinBox->value();
+}
+
+//-----------------------------------------------------------------------------
+double vvCalibrationDialog::lidarPitch() const
+{
+  return this->Internal->LidarPitchSpinBox->value();
+}
+
+//-----------------------------------------------------------------------------
+double vvCalibrationDialog::lidarX() const
+{
+  return this->Internal->LidarXSpinBox->value();
+}
+
+//-----------------------------------------------------------------------------
+double vvCalibrationDialog::lidarY() const
+{
+  return this->Internal->LidarYSpinBox->value();
+}
+
+//-----------------------------------------------------------------------------
+double vvCalibrationDialog::lidarZ() const
+{
+  return this->Internal->LidarZSpinBox->value();
+}
+
+//-----------------------------------------------------------------------------
+double vvCalibrationDialog::lidarTimeOffset() const
+{
+  return this->Internal->lidarTimeOffsetSpinBox->value();
 }
 
 //-----------------------------------------------------------------------------
