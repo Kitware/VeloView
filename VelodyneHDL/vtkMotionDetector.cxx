@@ -112,10 +112,14 @@ int vtkMotionDetector::RequestData(vtkInformation *vtkNotUsed(request),
 {
   std::cout << "Motion Detector asked" << std::endl;
   // Get input data
-
+  vtkPolyData* input = vtkPolyData::GetData(inputVector[0]->GetInformationObject(0));
 
   // Get the output
-  vtkPolyData * output = vtkPolyData::GetData(outputVector->GetInformationObject(0));
+  vtkPolyData* output = vtkPolyData::GetData(outputVector->GetInformationObject(0));
+  output->ShallowCopy(input);
+
+  // Add the new points into the Gaussian Map
+  this->GaussianMap.AddFrame(output);
 
   return 1;
 }

@@ -136,7 +136,7 @@ public:
 
   // Add a frame to map in the spherical map and
   // update the map using the new input data
-  void AddFrame(vtkSmartPointer<vtkPolyData>& polydata);
+  void AddFrame(vtkSmartPointer<vtkPolyData> polydata);
 
   // Add a point to the corresponding pixel
   void AddPoint(unsigned int idxTheta, unsigned int idxPhi, double valueDepth);
@@ -200,6 +200,10 @@ private:
   // Convert cartesian coordinates of X point in its
   // spherical coordinates
   Eigen::Matrix<double, 3, 1> GetSphericalCoordinates(Eigen::Matrix<double, 3, 1>& const X);
+
+  // export as images parameters
+  bool ShouldExportAsImage;
+  std::string filenameBase;
 };
 
 #endif // VTK_SPHERICAL_MAP_H

@@ -4,6 +4,21 @@
 #include <vtkDataArray.h>
 #include <vtkDoubleArray.h>
 #include <vtkPointData.h>
+#include <vtkCellArray.h>
+#include <vtkCellData.h>
+#include <vtkDataArray.h>
+#include <vtkDoubleArray.h>
+#include <vtkFloatArray.h>
+#include <vtkImageData.h>
+#include <vtkMath.h>
+#include <vtkPointData.h>
+#include <vtkPoints.h>
+#include <vtkPolyData.h>
+#include <vtkSmartPointer.h>
+#include <vtkUnsignedCharArray.h>
+#include <vtkUnsignedIntArray.h>
+#include <vtkUnsignedShortArray.h>
+#include <vtkPNGWriter.h>
 
 //----------------------------------------------------------------------------
 Gaussian::Gaussian()
@@ -169,12 +184,12 @@ vtkSphericalMap::vtkSphericalMap()
   this->NTheta = static_cast<int>(std::floor(60.0 / (this->SensorRPM * 55.296 * 1e-6))); // around 904
 
   // Base of R3
-  ez << 0, 0, 1;
-  ey << 0, 1, 0;
-  ex << 1, 0, 0;
+  this->ez << 0, 0, 1;
+  this->ey << 0, 1, 0;
+  this->ex << 1, 0, 0;
 
   // center
-  C << 0, 0, 0;
+  this->C << 0, 0, 0;
 
   // reset internal parameters
   this->ResetMap();
@@ -229,12 +244,25 @@ void vtkSphericalMap::ResetMap()
 
   // reset internal parameters
   this->AddedFrames = 0;
+
+  // reset export parameters
+  this->ShouldExportAsImage = false;
+  this->filenameBase = "noFilename";
 }
 
 //----------------------------------------------------------------------------
 Eigen::Matrix<double, 3, 1> vtkSphericalMap::GetSphericalCoordinates(Eigen::Matrix<double, 3, 1>& const X)
 {
-  Eigen::Matrix<double, 3, 1> CX = X - C;
+  // Express the current point in the local
+  // reference frame designed by the internal
+  // base and origin
+  Eigen::Matrix<double, 3, 3> R;
+  R << this->ex(0), this->ey(0), this->ez(0),
+       this->ex(1), this->ey(1), this->ez(1),
+       this->ex(2), this->ey(2), this->ez(2);
+  Eigen::Matrix<double, 3, 1> CX = R.transpose() * (X - C);
+
+  // compute the vetor length
   double r = CX.norm();
 
   // If the vector is not null
@@ -290,7 +318,7 @@ void vtkSphericalMap::AddPoint(unsigned int idxTheta, unsigned int idxPhi, doubl
 }
 
 //----------------------------------------------------------------------------
- void vtkSphericalMap::AddFrame(vtkSmartPointer<vtkPolyData>& polydata)
+ void vtkSphericalMap::AddFrame(vtkSmartPointer<vtkPolyData> polydata)
  {
    vtkSmartPointer<vtkDoubleArray> Phi = vtkSmartPointer<vtkDoubleArray>::New();
    vtkSmartPointer<vtkDoubleArray> Theta = vtkSmartPointer<vtkDoubleArray>::New();
@@ -316,15 +344,12 @@ void vtkSphericalMap::AddPoint(unsigned int idxTheta, unsigned int idxPhi, doubl
      unsigned int idxTheta = static_cast<int>(std::floor((sphericalPoint(1) - this->ThetaBounds[0]) / this->dTheta));
 
      // Evaluate the mixture model on the current data
-     // it return the probability of the point to be
+     // it return the "probability" of the point to be
      // a point in motion
      double proba = this->Map[idxTheta + this->NTheta * idxPhi].Evaluate(sphericalPoint(0));
 
      // Add the depth to the correct "pixel"
      this->AddPoint(idxTheta, idxPhi, sphericalPoint(0));
-
-     // Update time to live of the gaussians
-     this->Map[idxTheta + this->NTheta * idxPhi].UpdateTTL();
 
      double theta = this->ThetaBounds[0] + idxTheta * this->dTheta;
      double phi = this->PhiBounds[0] + idxPhi * this->dPhi;
@@ -348,8 +373,6 @@ void vtkSphericalMap::AddPoint(unsigned int idxTheta, unsigned int idxPhi, doubl
    polydata->GetPointData()->AddArray(Motion);
 
    this->AddedFrames += 1;
-   std::cout << "Frames processed: " << this->AddedFrames << std::endl;
-   std::cout << "Points stored: " << this->GetNumberOfPoints() << std::endl;
  }
 
  //----------------------------------------------------------------------------

@@ -25,5 +25,6 @@
         <file>vvAboutDialog.ui</file>
         <file>Icons/errorConsole.png</file>
         <file>Icons/camera_logo.png</file>
+        <file>Icons/icon_motion.png</file>
     </qresource>
 </RCC>
