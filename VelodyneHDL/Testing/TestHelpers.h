@@ -18,12 +18,21 @@
 #include <sstream>
 #include <vector>
 
+class vtkErrorObserver;
 class vtkVelodyneHDLReader;
 class vtkVelodyneHDLSource;
 class vtkPolyData;
 
+// Represent every processing options as a bit. Options are in the following order:
+// IntensityCorrected (bit 0), IgnoreZeroDistances (bit 1),
+// IntraFiringAdjust (bit 2), IgnoreEmptyFrames (bit 3)
+// This allows to easily test and add options if necessary in the future.
+typedef int vvProcessingOptionsType;
+
 // Helper functions
 bool compare(const double* const a, const double* const b, const size_t N, double epsilon);
+
+std::vector<int> parseOptions(vvProcessingOptionsType currentOptions, int numProcessingOptions);
 
 template <size_t N>
 bool compare(double const (&a)[N], double const (&b)[N], double epsilon)
@@ -48,6 +57,12 @@ int GetNumberOfTimesteps(vtkVelodyneHDLSource* HDLSource);
 std::vector<std::string> GenerateFileList(const std::string& metaFileName);
 
 vtkPolyData* GetCurrentReference(const std::vector<std::string>& referenceFilesList, int index);
+
+void SetProcessingOptions(vtkVelodyneHDLReader* HDLReader, vvProcessingOptionsType currentOptions,
+  int numProcessingOptions);
+
+void SetProcessingOptions(vtkVelodyneHDLSource* HDLSource, vvProcessingOptionsType currentOptions,
+  int numProcessingOptions, std::string pcapFileName, std::string destinationIp, int dataPort);
 
 // Test functions
 /**
@@ -101,5 +116,20 @@ int TestPointPositions(vtkPolyData* currentFrame, vtkPolyData* currentReference)
  * @return 0 on success, 1 on failure
  */
 int TestRPMValues(vtkPolyData* currentFrame, vtkPolyData* currentReference);
+
+/**
+ * @brief TestProcessingOptions
+ * @param HDLReader Current reader
+ * @return 0 on success, 1 on failure
+ */
+int TestProcessingOptions(vtkVelodyneHDLReader* HDLReader);
+
+/**
+ * @brief TestProcessingOptions
+ * @param HDLSource Current source
+ * @return 0 on success, 1 on failure
+ */
+int TestProcessingOptions(vtkVelodyneHDLSource* HDLSource, std::string pcapFileName,
+  std::string destinationIp, int dataPort);
 
 #endif
