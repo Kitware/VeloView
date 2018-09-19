@@ -23,51 +23,6 @@ if (WIN32)
                 RUNTIME DESTINATION ${INSTALL_LOCAL_DIR}
                 LIBRARY DESTINATION ${VV_INSTALL_LIBRARY_DIR}
                 COMPONENT Runtime)
-    # # Install tests
-    # foreach(sensor ${sensors})
-        # # VelodyneHDLSource test
-        # install(TARGETS TestVelodyneHDLSource_${sensor}_Single
-                # RUNTIME DESTINATION ${INSTALL_LOCAL_DIR}
-                # LIBRARY DESTINATION ${VV_INSTALL_LIBRARY_DIR}
-                # COMPONENT Runtime)
-
-        # install(TARGETS TestVelodyneHDLSource_${sensor}_Dual
-                # RUNTIME DESTINATION ${INSTALL_LOCAL_DIR}
-                # LIBRARY DESTINATION ${VV_INSTALL_LIBRARY_DIR}
-                # COMPONENT Runtime)
-
-        # # VelodyneHDLReader test
-        # install(TARGETS TestVelodyneHDLReader_${sensor}_Single
-                # RUNTIME DESTINATION ${INSTALL_LOCAL_DIR}
-                # LIBRARY DESTINATION ${VV_INSTALL_LIBRARY_DIR}
-                # COMPONENT Runtime)
-
-        # install(TARGETS TestVelodyneHDLReader_${sensor}_Dual
-                # RUNTIME DESTINATION ${INSTALL_LOCAL_DIR}
-                # LIBRARY DESTINATION ${VV_INSTALL_LIBRARY_DIR}
-                # COMPONENT Runtime)
-    # endforeach(sensor)
-
-    # install(TARGETS TestVelodyneHDLSource_HDL-64_Single-autocalib
-                # RUNTIME DESTINATION ${INSTALL_LOCAL_DIR}
-                # LIBRARY DESTINATION ${VV_INSTALL_LIBRARY_DIR}
-                # COMPONENT Runtime)
-
-    # install(TARGETS TestVelodyneHDLSource_HDL-64_Dual-autocalib
-                # RUNTIME DESTINATION ${INSTALL_LOCAL_DIR}
-                # LIBRARY DESTINATION ${VV_INSTALL_LIBRARY_DIR}
-                # COMPONENT Runtime)
-
-    # install(TARGETS TestVelodyneHDLReader_HDL-64_Single-autocalib
-                # RUNTIME DESTINATION ${INSTALL_LOCAL_DIR}
-                # LIBRARY DESTINATION ${VV_INSTALL_LIBRARY_DIR}
-                # COMPONENT Runtime)
-
-    # install(TARGETS TestVelodyneHDLReader_HDL-64_Dual-autocalib
-                # RUNTIME DESTINATION ${INSTALL_LOCAL_DIR}
-                # LIBRARY DESTINATION ${VV_INSTALL_LIBRARY_DIR}
-                # COMPONENT Runtime)
-
 else()
     set(INSTALL_LOCAL_DIR "${CMAKE_BINARY_DIR}/bin")
 endif()
@@ -136,3 +91,7 @@ add_test(TestVelodyneHDLReader_HDL-64_Dual-autocalib
   ${CMAKE_SOURCE_DIR}/TestData/HDL-64_Dual-autocalib/files.txt
   ""
 )
+
+message (tests folder:)
+message(INSTALL_LOCAL_DIR: ${INSTALL_LOCAL_DIR})
+message(CMAKE_SOURCE_DIR: ${CMAKE_SOURCE_DIR})
