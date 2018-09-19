@@ -4,9 +4,6 @@ target_link_libraries(TestVelodyneHDLSource VelodyneHDLPlugin)
 add_executable(TestVelodyneHDLReader TestVelodyneHDLReader.cxx TestHelpers.cxx)
 target_link_libraries(TestVelodyneHDLReader VelodyneHDLPlugin)
 
-# TODO add test to OSX and Windows plateform.
-# please do not duplicate code and use variable when there are difference between linux, windows, OSX!!!!
-
 set(sensors "HDL-64"
             "VLP-16"
             "VLP-32c")
@@ -47,7 +44,7 @@ foreach(sensor ${sensors})
       ${CMAKE_SOURCE_DIR}/share/${sensor}.xml
     )
 
-    # VelodyneHDLSource test
+    # VelodyneHDLReader test
     add_test(TestVelodyneHDLReader_${sensor}_Single
       ${INSTALL_LOCAL_DIR}/TestVelodyneHDLReader
       ${CMAKE_SOURCE_DIR}/TestData/${sensor}_Single.pcap
@@ -78,7 +75,7 @@ add_test(TestVelodyneHDLSource_HDL-64_Dual-autocalib
   ""
 )
 
-# VelodyneHDLSource test
+# VelodyneHDLReader test
 add_test(TestVelodyneHDLReader_HDL-64_Single-autocalib
   ${INSTALL_LOCAL_DIR}/TestVelodyneHDLReader
   ${CMAKE_SOURCE_DIR}/TestData/HDL-64_Single-autocalib.pcap
@@ -91,7 +88,3 @@ add_test(TestVelodyneHDLReader_HDL-64_Dual-autocalib
   ${CMAKE_SOURCE_DIR}/TestData/HDL-64_Dual-autocalib/files.txt
   ""
 )
-
-message (tests folder:)
-message(INSTALL_LOCAL_DIR: ${INSTALL_LOCAL_DIR})
-message(CMAKE_SOURCE_DIR: ${CMAKE_SOURCE_DIR})
