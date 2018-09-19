@@ -99,6 +99,7 @@ if(PARAVIEW_BUILD_QT_GUI)
     vtkPacketFileWriter.cxx
     vtkRansacPlaneModel.cxx
     vtkRollingDataAccumulator.cxx
+    vtkSphericalMap.cxx
     vvPacketSender.cxx
     vtkPatchVeloView/vtkVeloViewPiecewiseFunction.cxx
     vtkPatchVeloView/vtkVeloViewQuaternionInterpolator.cxx
@@ -137,6 +138,7 @@ endif()
 
 list(APPEND servermanager_sources
   vtkApplanixPositionReader.cxx
+  vtkMotionDetector.cxx
   vtkBirdEyeViewSnap.cxx
   vtkProcessingSample.cxx
   vtkRansacPlaneModel.cxx
@@ -148,6 +150,7 @@ list(APPEND servermanager_sources
 
 list(APPEND servermanager_xml
   xml/ApplanixPositionReader.xml
+  xml/MotionDetector.xml
   xml/BirdEyeViewSnap.xml
   xml/ProcessingSample.xml
   xml/RansacPlaneModel.xml
