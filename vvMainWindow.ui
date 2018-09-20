@@ -102,6 +102,7 @@
      </property>
      <addaction name="actionRansacPlaneFitting"/>
      <addaction name="actionBirdEyeViewSnap"/>
+     <addaction name="actionMotionDetection"/>
     </widget>
     <addaction name="actionSpreadsheet"/>
     <addaction name="actionMeasurement_Grid"/>
@@ -1219,6 +1220,15 @@
    </property>
    <property name="toolTip">
     <string>Fit a plane to the data using ransac algorithm</string>
+   </property>
+  </action>
+  <action name="actionMotionDetection">
+   <property name="icon">
+    <iconset resource="vvResources.qrc">
+     <normaloff>:/vvResources/Icons/icon_motion.png</normaloff>:/vvResources/Icons/icon_motion.png</iconset>
+   </property>
+   <property name="text">
+    <string>Motion Detection</string>
    </property>
   </action>
  </widget>

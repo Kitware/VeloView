@@ -12,8 +12,9 @@ stages:
   - test
   - package
 
-# jobs starting with "." are ignored, they are used as anchor, which enable
-# to reuse the same code inside multiple jobs
+# jobs starting with "." are ignored by gitlab-ci, they are used as anchor, which 
+# enable to reuse the same code inside multiple jobs. Please see YAML specification
+# for more information
 .default-cache: &default-cache
   key: ${OS}-${CI_COMMIT_REF_NAME}
   paths:
@@ -31,6 +32,7 @@ stages:
 
 ################################################################################
 ### anchor jobs for linux, they will be used accros multiple other jobs
+### WARNING do not declare variable as they will overwrite all other variable!!!
 ################################################################################
 
 .linux_get_superbuild:
@@ -74,13 +76,21 @@ stages:
   artifacts:
     paths:
      - Superbuild-build/veloview
-    expire_in: 1 hr
+    expire_in: 24 hr
 
 .linux_test: &linux_test
   stage: test
   before_script: *linux_get_superbuild
   script:
-    - echo "test"
+    # get test data and baseline
+    # DO NOT use gilab-ci variable GIT_SUBMODULE_STRATEGY !!!
+    - git submodule update --init --recursive
+    - cd Superbuild-build/veloview/src/veloview-build
+    - cmake -DBUILD_TESTING:BOLL=True
+      ${CI_PROJECT_DIR}
+    - make -j8
+    # TODO current Source test failed, this need to be fixed !!!
+    - ctest -R TestVelodyneHDLReader -j16
 
 .linux_package: &linux_package
   stage: package

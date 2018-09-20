@@ -37,6 +37,7 @@ from VelodyneHDLPluginPython import vtkVelodyneHDLReader
 from VelodyneHDLPluginPython import vtkSensorTransformFusion
 from VelodyneHDLPluginPython import vtkRansacPlaneModel
 from VelodyneHDLPluginPython import vtkBirdEyeViewSnap
+from VelodyneHDLPluginPython import vtkMotionDetector
 
 _repCache = {}
 
@@ -2382,6 +2383,16 @@ def toggleBirdEyeViewSnap():
     birdEyeViewGenerator.GetClientSideObject().SetPlaneParam(planeParams)
     birdEyeViewGenerator.UpdatePipeline()
 
+def toggleMotionDetection():
+    reader = getReader()
+
+    # check that a reader is available
+    if reader is None:
+        return
+
+    motionDetector = smp.MotionDetector(reader)
+    motionDetector.UpdatePipeline()
+
 def setViewTo(axis,sign):
     view = smp.GetActiveView()
     viewUp = view.CameraViewUp
@@ -2583,6 +2594,7 @@ def setupActions():
 
     app.actions['actionRansacPlaneFitting'].connect('triggered()', toggleRansacPlaneFitting)
     app.actions['actionBirdEyeViewSnap'].connect('triggered()', toggleBirdEyeViewSnap)
+    app.actions['actionMotionDetection'].connect('triggered()', toggleMotionDetection)
     app.EnableCrashAnalysis = app.actions['actionEnableCrashAnalysis'].isChecked()
 
     # Restore action states from settings

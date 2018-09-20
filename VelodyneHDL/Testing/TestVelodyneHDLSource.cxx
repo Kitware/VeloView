@@ -1,3 +1,4 @@
+
 // Copyright 2013 Velodyne Acoustics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,11 +18,10 @@
 #include "vvPacketSender.h"
 
 #include <vtkNew.h>
+#include <vtkTimerLog.h>
 
 #include <boost/thread/thread.hpp>
 
-// Multitest functions
-//-----------------------------------------------------------------------------
 /**
  * @brief TestFile Runs all the tests on a given pcap and its corresponding VTP files
  * @param correctionFileName The corrections to use
@@ -29,19 +29,38 @@
  * @param vtpFileName meta-file containing the list of files to test against each frames
  * @return 0 on success, 1 on failure
  */
-int TestFile(const std::string& correctionFileName, const std::string& pcapFileName,
-  const std::vector<std::string>& referenceFilesList)
+int main(int argc, char* argv[])
 {
+  if (argc < 4)
+  {
+    std::cerr << "Wrong number of arguments. Usage: TestVelodyneHDLSource <pcapFileName> <referenceFileName> <correctionFileName>" << std::endl;
+
+    return 1;
+  }
+
+  // return value indicate if the test passed
   int retVal = 0;
 
-  std::cout << "---------------------------------------------------" << std::endl;
-  std::cout << "Testing " << pcapFileName << std::endl;
-  std::cout << "Corrections file: " << correctionFileName << std::endl;
+  // get command line parameter
+  std::string pcapFileName = argv[1];
+  std::string referenceFileName = argv[2];
+  std::string correctionFileName = argv[3];
+
+  std::cout << "-------------------------------------------------------------------------" << std::endl
+            << "Pcap :\t" << pcapFileName << std::endl
+            << "Baseline:\t" << referenceFileName << std::endl
+            << "Corrections :\t" << correctionFileName << std::endl
+            << "-------------------------------------------------------------------------" << std::endl;
+
+  // get VTP file name from the reference file
+  std::vector<std::string> referenceFilesList;
+  referenceFilesList = GenerateFileList(referenceFileName);
+
+  //
+  const std::string destinationIp = "127.0.0.1";
+  const int dataPort = 2368;
 
   // Generate a Velodyne HDL source
-  static const std::string destinationIp = "127.0.0.1";
-  static const int dataPort = 2368;
-
   vtkNew<vtkVelodyneHDLSource> HDLsource;
   HDLsource->SetCorrectionsFile(correctionFileName);
   HDLsource->SetCacheSize(100);
@@ -52,6 +71,7 @@ int TestFile(const std::string& correctionFileName, const std::string& pcapFileN
   HDLsource->Start();
 
   std::cout << "Sending data... " << std::endl;
+  const double startTime = vtkTimerLog::GetUniversalTime();
   try
   {
     vvPacketSender sender(pcapFileName, destinationIp, dataPort);
@@ -72,11 +92,15 @@ int TestFile(const std::string& correctionFileName, const std::string& pcapFileN
 
   std::cout << "Done." << std::endl;
 
+  double elapsedTime = vtkTimerLog::GetUniversalTime() - startTime;
+  std::cout << "Data sent in " << elapsedTime << "s" << std::endl;
+
   if (correctionFileName == "" && HDLsource->GetCorrectionsInitialized())
   {
     HDLsource->UnloadDatasets();
 
     std::cout << "Live Correction initialized, resend data..." << std::endl;
+    const double resendingDataStartTime = vtkTimerLog::GetUniversalTime();
     try
     {
       HDLsource->Start();
@@ -93,6 +117,9 @@ int TestFile(const std::string& correctionFileName, const std::string& pcapFileN
 
       HDLsource->Stop();
       std::cout << "Done." << std::endl;
+
+      elapsedTime = vtkTimerLog::GetUniversalTime() - resendingDataStartTime;
+      std::cout << "Data sent after live calibration in " << elapsedTime << "s" << std::endl;
     }
     catch (std::exception& e)
     {
@@ -101,7 +128,10 @@ int TestFile(const std::string& correctionFileName, const std::string& pcapFileN
     }
   }
 
-  std::cout << "Testing..." << std::endl;
+  std::cout << "Integrity tests..." << std::endl;
+
+  // Integrity tests.
+  // Checks in the default VeloView environment that everything can be read correctly.
 
   retVal += TestFrameCount(GetNumberOfTimesteps(HDLsource.Get()), referenceFilesList.size());
 
@@ -115,6 +145,10 @@ int TestFile(const std::string& correctionFileName, const std::string& pcapFileN
 
   for (int idFrame = 0; idFrame < nbReferences - 1; ++idFrame)
   {
+    std::cout << "---------------------" << std::endl
+              << "FRAME " << idFrame << " ..." << std::endl
+              << "---------------------" << std::endl;
+
     vtkPolyData* currentFrame = GetCurrentFrame(HDLsource.Get(), idFrame + 1);
     vtkPolyData* currentReference = GetCurrentReference(referenceFilesList, idFrame);
 
@@ -133,109 +167,6 @@ int TestFile(const std::string& correctionFileName, const std::string& pcapFileN
     // RPM values
     retVal += TestRPMValues(currentFrame, currentReference);
   }
-
-  if (retVal == 0)
-  {
-    std::cout << "Every tests passed" << std::endl;
-  }
-  else
-  {
-    std::cout << retVal << " tests failed for this dataset" << std::endl;
-  }
-
-  return retVal;
-}
-
-//-----------------------------------------------------------------------------
-int main(int argc, char* argv[])
-{
-  if (argc < 3)
-  {
-    std::cerr << "Wrong number of arguments. Usage: TestLiveStream TEST_DIR SHARE_DIR" << std::endl;
-
-    return 1;
-  }
-
-  int retVal = 0;
-
-  std::string testFolder = argv[1];
-  std::string shareFolder = argv[2];
-
-  std::vector<std::string> referenceFilesList;
-
-  std::string correctionsFileName;
-  std::string pcapFileName;
-  std::string referenceFileName;
-
-  // VLP-16 Single
-  correctionsFileName = shareFolder;
-  correctionsFileName += "VLP-16.xml";
-  pcapFileName = testFolder;
-  pcapFileName += "VLP-16_Single_10to20.pcap";
-  referenceFileName = testFolder;
-  referenceFileName += "VLP-16_Single_10to20/VLP-16_Single_10to20.txt";
-
-  referenceFilesList = GenerateFileList(referenceFileName);
-
-  retVal += TestFile(correctionsFileName, pcapFileName, referenceFilesList);
-
-  // VLP-16 Dual
-  pcapFileName = testFolder;
-  pcapFileName += "VLP-16_Dual_10to20.pcap";
-  referenceFileName = testFolder;
-  referenceFileName += "VLP-16_Dual_10to20/VLP-16_Dual_10to20.txt";
-
-  referenceFilesList = GenerateFileList(referenceFileName);
-
-  retVal += TestFile(correctionsFileName, pcapFileName, referenceFilesList);
-
-  // VLP-32c Single
-  correctionsFileName = shareFolder;
-  correctionsFileName += "VLP-32c.xml";
-  pcapFileName = testFolder;
-  pcapFileName += "VLP-32c_Single_10to20.pcap";
-  referenceFileName = testFolder;
-  referenceFileName += "VLP-32c_Single_10to20/VLP-32c_Single_10to20.txt";
-
-  referenceFilesList = GenerateFileList(referenceFileName);
-
-  retVal += TestFile(correctionsFileName, pcapFileName, referenceFilesList);
-
-  // VLP-32c Dual
-  pcapFileName = testFolder;
-  pcapFileName += "VLP-32c_Dual_10to20.pcap";
-  referenceFileName = testFolder;
-  referenceFileName += "VLP-32c_Dual_10to20/VLP-32c_Dual_10to20.txt";
-
-  referenceFilesList = GenerateFileList(referenceFileName);
-
-  retVal += TestFile(correctionsFileName, pcapFileName, referenceFilesList);
-  ;
-
-  // HDL-64 Single
-  // Note: Live calibration passes an empty string as correction file
-  correctionsFileName = "";
-  pcapFileName = testFolder;
-  pcapFileName += "HDL-64_Single_10to70.pcap";
-  referenceFileName = testFolder;
-  referenceFileName += "HDL-64_Single_10to70/HDL-64_Single_10to70.txt";
-
-  referenceFilesList = GenerateFileList(referenceFileName);
-
-  retVal += TestFile(correctionsFileName, pcapFileName, referenceFilesList);
-
-  // HDL-64 Dual
-  correctionsFileName = "";
-  pcapFileName = testFolder;
-  pcapFileName += "HDL-64_Dual_10to20.pcap";
-  referenceFileName = testFolder;
-  referenceFileName += "HDL-64_Dual_10to20/HDL-64_Dual_10to20.txt";
-
-  referenceFilesList = GenerateFileList(referenceFileName);
-
-  retVal += TestFile(correctionsFileName, pcapFileName, referenceFilesList);
-
-  std::cout << std::endl << "Total tests failed: " << retVal << std::endl;
 
   return retVal;
 }

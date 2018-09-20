@@ -108,6 +108,7 @@ if(PARAVIEW_BUILD_QT_GUI)
     vtkPacketFileWriter.cxx
     vtkRansacPlaneModel.cxx
     vtkRollingDataAccumulator.cxx
+    vtkSphericalMap.cxx
     vvPacketSender.cxx
     vtkSlam.cxx
     vtkSensorTransformFusion.cxx
@@ -150,6 +151,7 @@ endif()
 list(APPEND servermanager_sources
   vtkPCLRansacModel.cxx
   vtkApplanixPositionReader.cxx
+  vtkMotionDetector.cxx
   vtkBirdEyeViewSnap.cxx
   vtkProcessingSample.cxx
   vtkSlam.cxx
@@ -164,6 +166,7 @@ list(APPEND servermanager_sources
 list(APPEND servermanager_xml
   xml/vtkPCLRansacModel.xml
   xml/ApplanixPositionReader.xml
+  xml/MotionDetector.xml
   xml/BirdEyeViewSnap.xml
   xml/ProcessingSample.xml
   xml/SLAM.xml
