@@ -29,7 +29,7 @@ public:
 
   // Sensor related
   std::string GetSensorInformation();
-  double GetCurrentRpm();
+  double GetFrequency();
   double GetDistanceResolutionM();
 
 

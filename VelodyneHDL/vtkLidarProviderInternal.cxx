@@ -27,7 +27,7 @@ vtkLidarProviderInternal::vtkLidarProviderInternal(vtkLidarProvider* obj)
   this->CropRegion[2] = this->CropRegion[3] = 0.0;
   this->CropRegion[4] = this->CropRegion[5] = 0.0;
 
-  this->currentRpm;
+  this->Frequency = 0;
 
   this->IgnoreZeroDistances = true;
   this->IgnoreEmptyFrames = true;
@@ -78,9 +78,9 @@ void vtkLidarProviderInternal::SetCalibrationFileName(const std::string &filenam
 }
 
 //-----------------------------------------------------------------------------
-double vtkLidarProviderInternal::GetCurrentRpm()
+double vtkLidarProviderInternal::GetFrequency()
 {
-  return this->currentRpm;
+  return this->Frequency;
 }
 
 //-----------------------------------------------------------------------------

@@ -958,7 +958,7 @@ vtkSmartPointer<vtkPolyData> vtkVelodyneHDLReader::vtkInternal::CreateData(vtkId
   rpmData->SetNumberOfTuples(1);     // One tuple
   rpmData->SetNumberOfComponents(1); // One value per tuple, the scalar
   rpmData->SetName("RotationPerMinute");
-  rpmData->SetTuple1(0, this->currentRpm);
+  rpmData->SetTuple1(0, this->Frequency);
   polyData->GetFieldData()->AddArray(rpmData);
 
   if (this->HasDualReturn)
@@ -1408,12 +1408,12 @@ void vtkVelodyneHDLReader::vtkInternal::SplitFrame(bool force)
   */
 
   // Compute the rpm and reset
-  this->currentRpm = this->RpmCalculator.GetRPM();
+  this->Frequency = this->RpmCalculator.GetRPM();
   this->RpmCalculator.Reset();
 
   this->CurrentDataset->GetFieldData()
     ->GetArray("RotationPerMinute")
-    ->SetTuple1(0, this->currentRpm);
+    ->SetTuple1(0, this->Frequency);
   this->Datasets.push_back(this->CurrentDataset);
   this->CurrentDataset = this->CreateData(0);
 }

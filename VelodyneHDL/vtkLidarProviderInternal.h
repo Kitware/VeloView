@@ -39,8 +39,8 @@ public:
 
   int GetNumberOfChannels();
   double GetDistanceResolutionM();
-  double GetCurrentRpm();
 
+  double GetFrequency();
   int GetIgnoreZeroDistances() const;
   void SetIgnoreZeroDistances(const bool value);
 
@@ -83,7 +83,7 @@ public:
 
   std::vector<bool> LaserSelection;
   double distanceResolutionM;
-  double currentRpm;
+  double Frequency;
 
   int CalibrationReportedNumLasers;
   bool IsCalibrated;

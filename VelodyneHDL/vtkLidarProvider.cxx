@@ -20,9 +20,9 @@ bool vtkLidarProvider::GetIsCalibrated()
 }
 
 //-----------------------------------------------------------------------------
-double vtkLidarProvider::GetCurrentRpm()
+double vtkLidarProvider::GetFrequency()
 {
-  return this->Internal->GetCurrentRpm();
+  return this->Internal->GetFrequency();
 }
 
 //-----------------------------------------------------------------------------
