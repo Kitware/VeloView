@@ -550,6 +550,8 @@ public:
   vtkSmartPointer<vtkPolyData> GetFrame(int frameNumber, int wantedNumberOfTrailingFrames) override;
   std::string GetSensorInformation() override;
   void SetFileName(const std::string& filename) override;
+  bool IsLidarPacket(const unsigned char *&data, unsigned int &dataLength, pcap_pkthdr **headerReference, unsigned int *dataHeaderLength) override;
+  int CountNewFrameInPacket(const unsigned char *&data, unsigned int &dataLength, pcap_pkthdr **headerReference, unsigned int *dataHeaderLength) override;
 };
 
 //-----------------------------------------------------------------------------
@@ -582,6 +584,41 @@ void vtkVelodyneHDLReader::vtkInternal::SetFileName(const std::string &filename)
   this->Skips.clear();
   this->UnloadPerFrameData();
   this->Lidar->Modified();
+}
+
+//-----------------------------------------------------------------------------
+bool vtkVelodyneHDLReader::vtkInternal::IsLidarPacket(const unsigned char *&data, unsigned int &dataLength, pcap_pkthdr **headerReference, unsigned int *dataHeaderLength)
+{
+  if (dataLength == HDLDataPacket::getDataByteLength() || dataLength == 512)
+  {
+    return true;
+  }
+  return false;
+}
+
+//-----------------------------------------------------------------------------
+int vtkVelodyneHDLReader::vtkInternal::CountNewFrameInPacket(const unsigned char *&data, unsigned int &dataLength, pcap_pkthdr **headerReference, unsigned int *dataHeaderLength)
+{
+  // dont check for frame counts if it was not a firing packet
+  if (dataLength != HDLDataPacket::getDataByteLength())
+  {
+    return 0;
+  }
+  FramingState currentFrameState;
+  int count = 0;
+  // Check if we cycled a frame and decrement
+  const HDLDataPacket* dataPacket = reinterpret_cast<const HDLDataPacket*>(data);
+
+  for (int i = this->Skip; i < HDL_FIRING_PER_PKT; ++i)
+  {
+    const HDLFiringData& firingData = dataPacket->firingData[i];
+
+    if (currentFrameState.hasChangedWithValue(firingData))
+    {
+      count++;
+    }
+  }
+  return count;
 }
 
 //-----------------------------------------------------------------------------
@@ -853,70 +890,6 @@ std::vector<vtkSmartPointer<vtkPolyData> >& vtkVelodyneHDLReader::GetDatasets()
 int vtkVelodyneHDLReader::GetNumberOfFrames()
 {
   return this->Internal->FilePositions.size();
-}
-
-//-----------------------------------------------------------------------------
-void vtkVelodyneHDLReader::DumpFrames(int startFrame, int endFrame, const std::string& filename)
-{
-  if (!this->Internal->Reader)
-  {
-    vtkErrorMacro("DumpFrames() called but packet file reader is not open.");
-    return;
-  }
-
-  vtkPacketFileWriter writer;
-  if (!writer.Open(filename))
-  {
-    vtkErrorMacro("Failed to open packet file for writing: " << filename);
-    return;
-  }
-
-  pcap_pkthdr* header = 0;
-  const unsigned char* data = 0;
-  unsigned int dataLength = 0;
-  unsigned int dataHeaderLength = 0;
-  double timeSinceStart = 0;
-
-  FramingState currentFrameState;
-  int currentFrame = startFrame;
-
-  this->Internal->Reader->SetFilePosition(&this->Internal->FilePositions[startFrame]);
-  int skip = this->Internal->Skips[startFrame];
-  while (this->Internal->Reader->NextPacket(
-           data, dataLength, timeSinceStart, &header, &dataHeaderLength) &&
-    currentFrame <= endFrame)
-  {
-    if (dataLength == HDLDataPacket::getDataByteLength() || dataLength == 512)
-    {
-      writer.WritePacket(header, const_cast<unsigned char*>(data) - dataHeaderLength);
-    }
-
-    // dont check for frame counts if it was not a firing packet
-    if (dataLength != HDLDataPacket::getDataByteLength())
-    {
-      continue;
-    }
-
-    // Check if we cycled a frame and decrement
-    const HDLDataPacket* dataPacket = reinterpret_cast<const HDLDataPacket*>(data);
-
-    for (int i = skip; i < HDL_FIRING_PER_PKT; ++i)
-    {
-      const HDLFiringData& firingData = dataPacket->firingData[i];
-
-      if (currentFrameState.hasChangedWithValue(firingData))
-      {
-        currentFrame++;
-        if (currentFrame > endFrame)
-        {
-          break;
-        }
-      }
-    }
-    skip = 0;
-  }
-
-  writer.Close();
 }
 
 namespace

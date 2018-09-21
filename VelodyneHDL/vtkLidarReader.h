@@ -22,6 +22,8 @@ public:
 
   void ProcessPacket(unsigned char* data, unsigned int bytesReceived);
 
+  void SaveFrame(int startFrame, int endFrame, const std::string& filename);
+
 protected:
   vtkLidarReader();
   vtkLidarReader(vtkLidarReaderInternal* internal);

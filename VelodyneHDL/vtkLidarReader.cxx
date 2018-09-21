@@ -62,6 +62,12 @@ void vtkLidarReader::ProcessPacket(unsigned char *data, unsigned int bytesReceiv
 }
 
 //-----------------------------------------------------------------------------
+void vtkLidarReader::SaveFrame(int startFrame, int endFrame, const std::string &filename)
+{
+  return this->Internal->SaveFrame(startFrame, endFrame, filename);
+}
+
+//-----------------------------------------------------------------------------
 int vtkLidarReader::RequestData(vtkInformation *request, vtkInformationVector **inputVector, vtkInformationVector *outputVector)
 {
   return 1;

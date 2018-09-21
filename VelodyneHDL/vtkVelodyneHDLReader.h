@@ -91,8 +91,6 @@ public:
   int ReadFrameInformation();
   int GetNumberOfFrames() override;
 
-  void DumpFrames(int startFrame, int endFrame, const std::string& filename);
-
   std::vector<vtkSmartPointer<vtkPolyData> >& GetDatasets();
 
   void appendRollingDataAndTryCorrection(const unsigned char* data);

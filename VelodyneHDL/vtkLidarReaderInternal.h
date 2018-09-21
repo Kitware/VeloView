@@ -36,6 +36,13 @@ public:
 
   virtual void ProcessPacket(unsigned char* data, std::size_t bytesReceived) = 0;
 
+  virtual void SaveFrame(int startFrame, int endFrame, const std::string& filename);
+
+  virtual bool IsLidarPacket(const unsigned char*& data, unsigned int& dataLength,
+                        pcap_pkthdr** headerReference, unsigned int* dataHeaderLength) = 0;
+
+  virtual int CountNewFrameInPacket(const unsigned char*& data, unsigned int& dataLength,
+                                    pcap_pkthdr** headerReference, unsigned int* dataHeaderLength) = 0;
 public:
   std::string FileName;
   std::vector<fpos_t> FilePositions;

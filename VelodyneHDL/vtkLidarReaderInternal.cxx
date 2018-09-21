@@ -1,6 +1,7 @@
 #include "vtkLidarReaderInternal.h"
 
 #include "vtkLidarReader.h"
+#include "vtkPacketFileWriter.h"
 
 //-----------------------------------------------------------------------------
 vtkLidarReaderInternal::vtkLidarReaderInternal(vtkLidarReader* obj)
@@ -136,6 +137,45 @@ vtkSmartPointer<vtkPolyData> vtkLidarReaderInternal::GetFrame(int frameNumber, i
   this->SplitFrame(true);
   this->SplitCounter = 0;
   return this->Datasets.back();
+}
+
+//-----------------------------------------------------------------------------
+void vtkLidarReaderInternal::SaveFrame(int startFrame, int endFrame, const std::string &filename)
+{
+  if (!this->Reader)
+  {
+//    vtkErrorMacro("DumpFrames() called but packet file reader is not open.");
+    return;
+  }
+
+  vtkPacketFileWriter writer;
+  if (!writer.Open(filename))
+  {
+//    vtkErrorMacro("Failed to open packet file for writing: " << filename);
+    return;
+  }
+
+  pcap_pkthdr* header = 0;
+  const unsigned char* data = 0;
+  unsigned int dataLength = 0;
+  unsigned int dataHeaderLength = 0;
+  double timeSinceStart = 0;
+
+  int currentFrame = startFrame;
+
+  this->Reader->SetFilePosition(&this->FilePositions[startFrame]);
+  while (this->Reader->NextPacket(
+           data, dataLength, timeSinceStart, &header, &dataHeaderLength) &&
+    currentFrame <= endFrame)
+  {
+    if (this->IsLidarPacket(data, dataLength, &header, &dataHeaderLength))
+    {
+      writer.WritePacket(header, const_cast<unsigned char*>(data) - dataHeaderLength);
+
+      currentFrame += this->CountNewFrameInPacket(data, dataLength, &header, &dataHeaderLength);
+    }
+  }
+  writer.Close();
 }
 
 //-----------------------------------------------------------------------------
