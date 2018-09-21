@@ -39,8 +39,8 @@ void vtkLidarReaderInternal::Open()
   this->Reader = new vtkPacketFileReader;
   if (!this->Reader->Open(this->FileName))
   {
-//    vtkErrorMacro("Failed to open packet file: " << this->FileName << endl
-//                                                 << this->Reader->GetLastError());
+    vtkErrorWithObjectMacro(this->Lidar, "Failed to open packet file: " << this->FileName << endl
+                                                 << this->Reader->GetLastError());
     this->Close();
   }
 }
@@ -107,12 +107,12 @@ vtkSmartPointer<vtkPolyData> vtkLidarReaderInternal::GetFrame(int frameNumber, i
   this->UnloadPerFrameData();
   if (!this->Reader)
   {
-//    vtkErrorMacro("GetFrame() called but packet file reader is not open.");
+    vtkErrorWithObjectMacro(this->Lidar, "GetFrame() called but packet file reader is not open.");
     return 0;
   }
   if (!this->IsCalibrated)
   {
-//    vtkErrorMacro("Corrections have not been set");
+    vtkErrorWithObjectMacro(this->Lidar, "Corrections have not been set");
     return 0;
   }
 
@@ -144,14 +144,14 @@ void vtkLidarReaderInternal::SaveFrame(int startFrame, int endFrame, const std::
 {
   if (!this->Reader)
   {
-//    vtkErrorMacro("DumpFrames() called but packet file reader is not open.");
+    vtkErrorWithObjectMacro(this->Lidar, "SaveFrame() called but packet file reader is not open.");
     return;
   }
 
   vtkPacketFileWriter writer;
   if (!writer.Open(filename))
   {
-//    vtkErrorMacro("Failed to open packet file for writing: " << filename);
+    vtkErrorWithObjectMacro(this->Lidar, "Failed to open packet file for writing: " << filename);
     return;
   }
 

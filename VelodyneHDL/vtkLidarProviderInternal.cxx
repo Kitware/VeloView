@@ -68,7 +68,7 @@ void vtkLidarProviderInternal::SetCalibrationFileName(const std::string &filenam
     {
       errorMessage << "It is a directory!";
     }
-//    vtkErrorMacro(<< errorMessage.str());
+    vtkErrorWithObjectMacro(this->Lidar, << errorMessage.str());
     return;
   }
 
