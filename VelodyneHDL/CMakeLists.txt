@@ -98,8 +98,6 @@ if(PARAVIEW_BUILD_QT_GUI)
     vtkLidarProviderInternal.cxx
     vtkLidarReader.cxx
     vtkLidarReaderInternal.cxx
-#    vtkLidarStream.cxx
-#    vtkLidarStreamInternal.cxx
     vtkBirdEyeViewSnap.cxx
     vtkLASFileWriter.cxx
     vtkPacketFileWriter.cxx
