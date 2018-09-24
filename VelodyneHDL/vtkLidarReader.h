@@ -10,18 +10,29 @@ class vtkTransform;
 class vtkLidarReader : public vtkLidarProvider
 {
 public:
-//  static vtkLidarReader* New();
   vtkTypeMacro(vtkLidarReader, vtkLidarProvider);
   void PrintSelf(ostream& os, vtkIndent indent);
 
   std::string GetFileName();
-  void SetFileName(const std::string& filename);
+  virtual void SetFileName(const std::string& filename);
 
+  int GetNumberOfFrames() override;
+
+  vtkSmartPointer<vtkPolyData> GetFrame(int frameNumber, int wantedNumberOfTrailingFrames) override;
+
+  // TODO Should be private!!
   void Open();
   void Close();
 
   void ProcessPacket(unsigned char* data, unsigned int bytesReceived);
 
+  ///
+  /// \brief SaveFrame save the packet corresponding to the desired frame in a pcap file.
+  /// Because we are saving network packet, part of previous and/or next frames could be included in generated the pcap
+  /// \param startFrame
+  /// \param endFrame
+  /// \param filename including the file extension
+  ///
   void SaveFrame(int startFrame, int endFrame, const std::string& filename);
 
 protected:

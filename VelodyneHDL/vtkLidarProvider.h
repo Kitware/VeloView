@@ -5,30 +5,38 @@
 #include <vtkTransform.h>
 
 class vtkVelodyneTransformInterpolator;
-
 class vtkLidarProviderInternal;
 
 class vtkLidarProvider : public vtkPolyDataAlgorithm
 {
 public:
+
+  enum CropModeEnum
+  {
+    None = 0,
+    Cartesian = 1,
+    Spherical = 2,
+    Cylindric = 3,
+  };
+
   vtkTypeMacro(vtkLidarProvider, vtkPolyDataAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) {};
 
-  virtual vtkSmartPointer<vtkPolyData> GetFrame(int frameNumber, int wantedNumberOfTrailingFrame = 0);
+  virtual vtkSmartPointer<vtkPolyData> GetFrame(int frameNumber, int wantedNumberOfTrailingFrame = 0) = 0;
 
   // Description:
   // Number of frames behind current frame to read.  Zero indicates only
   // show the current frame.  Negative numbers are invalid.
   void SetNumberOfTrailingFrames(const int numberTrailing);
 
-  virtual int GetNumberOfFrames();
+  virtual int GetNumberOfFrames() = 0;
 
   std::string GetCalibrationFileName();
-  void SetCalibrationFileName(const std::string& filename);
+  virtual void SetCalibrationFileName(const std::string& filename);
   bool GetIsCalibrated();
 
   // Sensor related
-  std::string GetSensorInformation();
+  virtual std::string GetSensorInformation() = 0;
   double GetFrequency();
   double GetDistanceResolutionM();
 

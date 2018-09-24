@@ -1,136 +1,188 @@
 #include "vtkLidarProvider.h"
 #include "vtkLidarProviderInternal.h"
+#include "vtkVelodyneTransformInterpolator.h"
+
+#include <boost/filesystem.hpp>
+#include <sstream>
 
 //-----------------------------------------------------------------------------
 void vtkLidarProvider::SetNumberOfTrailingFrames(const int numberTrailing)
 {
-  return this->Internal->SetNumberOfTrailingFrames(numberTrailing);
-}
-
-//-----------------------------------------------------------------------------
-std::string vtkLidarProvider::GetSensorInformation()
-{
-  return this->Internal->GetSensorInformation();
+  assert(numberTrailing >= 0);
+  if (this->Internal->NumberOfTrailingFrames == numberTrailing)
+  {
+    return;
+  }
+  this->Internal->NumberOfTrailingFrames = numberTrailing;
+  this->Modified();
 }
 
 //-----------------------------------------------------------------------------
 bool vtkLidarProvider::GetIsCalibrated()
 {
-  return this->Internal->GetIsCalibrated();
+  return this->Internal->IsCalibrated;
 }
 
 //-----------------------------------------------------------------------------
 double vtkLidarProvider::GetFrequency()
 {
-  return this->Internal->GetFrequency();
+  return this->Internal->Frequency;
 }
 
 //-----------------------------------------------------------------------------
 double vtkLidarProvider::GetDistanceResolutionM()
 {
-  return this->Internal->GetDistanceResolutionM();
-}
-
-//-----------------------------------------------------------------------------
-int vtkLidarProvider::GetNumberOfFrames()
-{
-  return this->Internal->GetNumberOfFrames();
+  return this->Internal->distanceResolutionM;
 }
 
 //-----------------------------------------------------------------------------
 std::string vtkLidarProvider::GetCalibrationFileName()
 {
-  return this->Internal->GetCalibrationFileName();
+  return this->Internal->CalibrationFileName;
 }
 
 //-----------------------------------------------------------------------------
 void vtkLidarProvider::SetCalibrationFileName(const std::string &filename)
 {
-  return this->Internal->SetCalibrationFileName(filename);
+  if (filename == this->Internal->CalibrationFileName)
+  {
+    return;
+  }
+
+  if (!boost::filesystem::exists(filename) ||
+    boost::filesystem::is_directory(filename))
+  {
+    std::ostringstream errorMessage("Invalid sensor configuration file ");
+    errorMessage << filename << ": ";
+    if (!boost::filesystem::exists(filename))
+    {
+      errorMessage << "File not found!";
+    }
+    else
+    {
+      errorMessage << "It is a directory!";
+    }
+    vtkErrorMacro(<< errorMessage.str());
+    return;
+  }
+
+  this->Internal->LoadCalibration(filename);
+  this->Modified();
 }
 
 //-----------------------------------------------------------------------------
 int vtkLidarProvider::GetNumberOfChannels()
 {
-  return this->Internal->GetNumberOfChannels();
+  return this->Internal->CalibrationReportedNumLasers;
 }
 
 //-----------------------------------------------------------------------------
 void vtkLidarProvider::SetLaserSelection(bool laserSelection[])
 {
-  return this->Internal->SetLaserSelection(laserSelection);
+  for (int i = 0; i < this->Internal->CalibrationReportedNumLasers; ++i)
+  {
+    this->Internal->LaserSelection[i] = laserSelection[i];
+  }
+  this->Modified();
 }
 
 //-----------------------------------------------------------------------------
 void vtkLidarProvider::GetLaserSelection(bool laserSelection[])
 {
-  return this->Internal->GetLaserSelection(laserSelection);
+  for (int i = 0; i < this->Internal->CalibrationReportedNumLasers; ++i)
+  {
+    laserSelection[i] = this->Internal->LaserSelection[i];
+  }
 }
 
 //-----------------------------------------------------------------------------
 void vtkLidarProvider::SetCropMode(const int mode)
 {
-  return this->Internal->SetCropMode(mode);
+  this->Internal->CropMode = static_cast<CropModeEnum>(mode);
+  this->Modified();
 }
 
 //-----------------------------------------------------------------------------
 void vtkLidarProvider::SetCropReturns(const bool value)
 {
-  return this->Internal->SetCropReturns(value);
+  if (!this->Internal->CropReturns == value)
+  {
+    this->Internal->CropReturns = value;
+    this->Modified();
+  }
 }
 
 //-----------------------------------------------------------------------------
 void vtkLidarProvider::SetCropOutside(const bool value)
 {
-  return this->Internal->SetCropOutside(value);
+  if (!this->Internal->CropOutside == value)
+  {
+    this->Internal->CropOutside = value;
+    this->Modified();
+  }
 }
 
 //-----------------------------------------------------------------------------
 void vtkLidarProvider::SetCropRegion(double region[6])
 {
-  return this->Internal->SetCropRegion(region);
+  std::copy(region, region + 6, this->Internal->CropRegion);
+  this->Modified();
 }
 
 //-----------------------------------------------------------------------------
 void vtkLidarProvider::SetCropRegion(const double v0, const double v1, const double v2, const double v3, const double v4, const double v5)
 {
-  return this->Internal->SetCropRegion(v0, v1, v2, v3, v4, v5);
-}
-
-//-----------------------------------------------------------------------------
-vtkSmartPointer<vtkPolyData> vtkLidarProvider::GetFrame(int frameNumber, int wantedNumberOfTrailingFrame)
-{
-  return this->Internal->GetFrame(frameNumber, wantedNumberOfTrailingFrame);
+  this->Internal->CropRegion[0] = v0;
+  this->Internal->CropRegion[1] = v1;
+  this->Internal->CropRegion[2] = v2;
+  this->Internal->CropRegion[3] = v3;
+  this->Internal->CropRegion[4] = v4;
+  this->Internal->CropRegion[5] = v5;
+  this->Modified();
 }
 
 //-----------------------------------------------------------------------------
 void vtkLidarProvider::SetSensorTransform(vtkTransform * t)
 {
-  return this->Internal->SetSensorTransform(t);
+  if (t)
+  {
+    this->Internal->SensorTransform->SetMatrix(t->GetMatrix());
+  }
+  else
+  {
+    this->Internal->SensorTransform->Identity();
+  }
+  this->Modified();
 }
 
 //-----------------------------------------------------------------------------
 bool vtkLidarProvider::GetApplyTransform()
 {
-  return this->Internal->GetApplyTransform();
+  return this->Internal->ApplyTransform;
 }
 
 //-----------------------------------------------------------------------------
 void vtkLidarProvider::SetApplyTransform(const bool apply)
 {
-  return this->Internal->SetApplyTransform(apply);
+  if (apply != this->Internal->ApplyTransform)
+  {
+    return;
+  }
+  this->Internal->ApplyTransform = apply;
+  this->Modified();
 }
 
 //-----------------------------------------------------------------------------
 vtkVelodyneTransformInterpolator *vtkLidarProvider::GetInterpolator() const
 {
-  return this->Internal->GetInterpolator();
+  return this->Internal->Interp;
 }
 
 //-----------------------------------------------------------------------------
 void vtkLidarProvider::SetInterpolator(vtkVelodyneTransformInterpolator *interpolator)
 {
-  return this->Internal->SetInterpolator(interpolator);
+  this->Internal->Interp = interpolator;
+  this->Modified();
 }
 
 //-----------------------------------------------------------------------------
@@ -142,25 +194,33 @@ void vtkLidarProvider::SetDummyProperty(int)
 //-----------------------------------------------------------------------------
 int vtkLidarProvider::GetIgnoreZeroDistances() const
 {
-  return this->Internal->GetIgnoreZeroDistances();
+  return this->Internal->IgnoreZeroDistances;
 }
 
 //-----------------------------------------------------------------------------
 void vtkLidarProvider::SetIgnoreZeroDistances(const bool value)
 {
-  return this->Internal->SetIgnoreZeroDistances(value);
+  if (this->Internal->IgnoreZeroDistances != value)
+  {
+    this->Internal->IgnoreZeroDistances = value;
+    this->Modified();
+  }
 }
 
 //-----------------------------------------------------------------------------
 int vtkLidarProvider::GetIgnoreEmptyFrames() const
 {
-  return this->Internal->GetIgnoreEmptyFrames();
+  return this->Internal->IgnoreEmptyFrames;
 }
 
 //-----------------------------------------------------------------------------
 void vtkLidarProvider::SetIgnoreEmptyFrames(const bool value)
 {
-  return this->Internal->SetIgnoreEmptyFrames(value);
+  if (this->Internal->IgnoreEmptyFrames != value)
+  {
+    this->Internal->IgnoreEmptyFrames = value;
+    this->Modified();
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -172,5 +232,5 @@ vtkLidarProvider::vtkLidarProvider()
 //-----------------------------------------------------------------------------
 vtkLidarProvider::~vtkLidarProvider()
 {
-
+  delete this->Internal;
 }

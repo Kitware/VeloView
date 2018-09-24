@@ -1,35 +1,16 @@
 #include "vtkLidarReaderInternal.h"
 
 #include "vtkLidarReader.h"
-#include "vtkPacketFileWriter.h"
+#include "vtkPacketFileReader.h"
 
 //-----------------------------------------------------------------------------
 vtkLidarReaderInternal::vtkLidarReaderInternal(vtkLidarReader* obj)
   : vtkLidarProviderInternal(obj)
 {
+  this->Lidar = obj;
   this->Reader = nullptr;
   this->FileName = "";
   this->SplitCounter = 0;
-}
-
-//-----------------------------------------------------------------------------
-std::string vtkLidarReaderInternal::GetFileName()
-{
-  return this->FileName;
-}
-
-//-----------------------------------------------------------------------------
-void vtkLidarReaderInternal::SetFileName(const std::string &filename)
-{
-  if (filename == this->FileName)
-  {
-    return;
-  }
-
-  this->FileName = filename;
-  this->FilePositions.clear();
-  this->UnloadPerFrameData();
-  this->Lidar->Modified();
 }
 
 //-----------------------------------------------------------------------------
@@ -62,7 +43,7 @@ bool vtkLidarReaderInternal::shouldBeCroppedOut(double pos[3], double theta)
   }
   switch (this->CropMode)
   {
-    case Cartesian: // Cartesian cropping mode
+    case vtkLidarProvider::Cartesian: // Cartesian cropping mode
     {
       bool pointOutsideOfBox = pos[0] >= this->CropRegion[0] && pos[0] <= this->CropRegion[1] &&
         pos[1] >= this->CropRegion[2] && pos[1] <= this->CropRegion[3] &&
@@ -71,7 +52,7 @@ bool vtkLidarReaderInternal::shouldBeCroppedOut(double pos[3], double theta)
         (pointOutsideOfBox && this->CropOutside) || (!pointOutsideOfBox && !this->CropOutside));
       break;
     }
-    case Spherical:
+    case vtkLidarProvider::Spherical:
       // Spherical mode
       {
         double R = std::sqrt(pos[0] * pos[0] + pos[1] * pos[1] + pos[2] * pos[2]);
@@ -93,93 +74,10 @@ bool vtkLidarReaderInternal::shouldBeCroppedOut(double pos[3], double theta)
           (!pointInsideOfBounds && !this->CropOutside));
         break;
       }
-    case Cylindric:
+    case vtkLidarProvider::Cylindric:
     {
       // space holder for future implementation
     }
   }
   return false;
-}
-
-//-----------------------------------------------------------------------------
-vtkSmartPointer<vtkPolyData> vtkLidarReaderInternal::GetFrame(int frameNumber, int wantedNumberOfTrailingFrames)
-{
-  this->UnloadPerFrameData();
-  if (!this->Reader)
-  {
-    vtkErrorWithObjectMacro(this->Lidar, "GetFrame() called but packet file reader is not open.");
-    return 0;
-  }
-  if (!this->IsCalibrated)
-  {
-    vtkErrorWithObjectMacro(this->Lidar, "Corrections have not been set");
-    return 0;
-  }
-
-  const unsigned char* data = 0;
-  unsigned int dataLength = 0;
-  double timeSinceStart = 0;
-
-  this->Reader->SetFilePosition(&this->FilePositions[frameNumber]);
-  this->SplitCounter = wantedNumberOfTrailingFrames;
-
-  while (this->Reader->NextPacket(data, dataLength, timeSinceStart))
-  {
-    this->ProcessPacket(const_cast<unsigned char*>(data), dataLength);
-
-    if (this->Datasets.size())
-    {
-      this->SplitCounter = 0;
-      return this->Datasets.back();
-    }
-  }
-
-  this->SplitFrame(true);
-  this->SplitCounter = 0;
-  return this->Datasets.back();
-}
-
-//-----------------------------------------------------------------------------
-void vtkLidarReaderInternal::SaveFrame(int startFrame, int endFrame, const std::string &filename)
-{
-  if (!this->Reader)
-  {
-    vtkErrorWithObjectMacro(this->Lidar, "SaveFrame() called but packet file reader is not open.");
-    return;
-  }
-
-  vtkPacketFileWriter writer;
-  if (!writer.Open(filename))
-  {
-    vtkErrorWithObjectMacro(this->Lidar, "Failed to open packet file for writing: " << filename);
-    return;
-  }
-
-  pcap_pkthdr* header = 0;
-  const unsigned char* data = 0;
-  unsigned int dataLength = 0;
-  unsigned int dataHeaderLength = 0;
-  double timeSinceStart = 0;
-
-  int currentFrame = startFrame;
-
-  this->Reader->SetFilePosition(&this->FilePositions[startFrame]);
-  while (this->Reader->NextPacket(
-           data, dataLength, timeSinceStart, &header, &dataHeaderLength) &&
-    currentFrame <= endFrame)
-  {
-    if (this->IsLidarPacket(data, dataLength, &header, &dataHeaderLength))
-    {
-      writer.WritePacket(header, const_cast<unsigned char*>(data) - dataHeaderLength);
-
-      currentFrame += this->CountNewFrameInPacket(data, dataLength, &header, &dataHeaderLength);
-    }
-  }
-  writer.Close();
-}
-
-//-----------------------------------------------------------------------------
-int vtkLidarReaderInternal::GetNumberOfFrames()
-{
-  return this->FilePositions.size();
 }

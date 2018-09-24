@@ -60,6 +60,12 @@ public:
   vtkTypeMacro(vtkVelodyneHDLReader, vtkLidarReader);
   void PrintSelf(ostream& os, vtkIndent indent);
 
+  // Information about the sensor from dataPacket
+  std::string GetSensorInformation() override;
+  void SetFileName(const std::string& filename) override;
+  void SetCalibrationFileName(const std::string& filename) override;
+  vtkSmartPointer<vtkPolyData> GetFrame(int frameNumber, int wantedNumberOfTrailingFrames = 0) override;
+
   // Description:
   //
   bool IsIntensityCorrectedBySensor();
@@ -88,8 +94,8 @@ public:
   void SetFiringsSkip(int);
 
   // I/O and processing functions
+  // TODO
   int ReadFrameInformation();
-  int GetNumberOfFrames() override;
 
   std::vector<vtkSmartPointer<vtkPolyData> >& GetDatasets();
 
@@ -98,6 +104,7 @@ public:
   bool getIsHDL64Data();
 
   bool isReportedSensorAndCalibrationFileConsistent(bool shouldWarn);
+  // move
   bool updateReportedSensor(const unsigned char* data, unsigned int bytesReceived);
 
   bool GetHasDualReturn();
@@ -107,23 +114,19 @@ public:
   void SetSelectedPointsWithDualReturn(double* data, int Npoints);
   void SetShouldAddDualReturnArray(bool input);
 
-  // Information about the sensor from dataPacket
-//  std::string GetSensorInformation() override;
-
 protected:
-  class vtkInternal;
-  vtkVelodyneHDLReader();
-  vtkVelodyneHDLReader(vtkInternal* pimpl);
-  ~vtkVelodyneHDLReader();
 
+  // TODO
   int RequestInformation(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
 
-  int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
-
-  void SetTimestepInformation(vtkInformation* info);
-
 private:
+
+  class vtkInternal;
   vtkInternal* Internal;
+
+  vtkVelodyneHDLReader();
+  vtkVelodyneHDLReader(vtkInternal* pimpl);
+  ~vtkVelodyneHDLReader() = default;
   vtkVelodyneHDLReader(const vtkVelodyneHDLReader&) = delete;
   void operator=(const vtkVelodyneHDLReader&) = delete;
 };
