@@ -569,8 +569,15 @@ void vtkVelodyneHDLReader::vtkInternal::CheckSensorCalibrationConsistency()
 vtkStandardNewMacro(vtkVelodyneHDLReader);
 
 //-----------------------------------------------------------------------------
-vtkVelodyneHDLReader::vtkVelodyneHDLReader() : vtkVelodyneHDLReader(new vtkInternal(this))
+vtkVelodyneHDLReader::vtkVelodyneHDLReader()
 {
+  // TODO: when migrating to c++11, remove the
+  // code duplication by calling the none default
+  // constructor in the initialization of the
+  // default constructor
+  this->Internal = new vtkInternal(this);
+  this->SetNumberOfInputPorts(0);
+  this->SetNumberOfOutputPorts(1);
   SetPimpInternal(this->Internal);
 }
 
@@ -581,6 +588,11 @@ vtkVelodyneHDLReader::vtkVelodyneHDLReader(vtkInternal* pimpl) : vtkLidarReader(
 //  this->UnloadPerFrameData();
   this->SetNumberOfInputPorts(0);
   this->SetNumberOfOutputPorts(1);
+}
+
+//-----------------------------------------------------------------------------
+vtkVelodyneHDLReader::~vtkVelodyneHDLReader()
+{
 }
 
 //-----------------------------------------------------------------------------

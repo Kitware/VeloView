@@ -7,7 +7,7 @@
 class vtkVelodyneTransformInterpolator;
 class vtkLidarProviderInternal;
 
-class vtkLidarProvider : public vtkPolyDataAlgorithm
+class VTK_EXPORT vtkLidarProvider : public vtkPolyDataAlgorithm
 {
 public:
 
@@ -80,8 +80,8 @@ protected:
   void SetPimpInternal(vtkLidarProviderInternal* internal) {this->Internal = internal;};
 
 private:
-  vtkLidarProvider(const vtkLidarProvider&) = delete;
-  void operator=(const vtkLidarProvider&) = delete;
+  vtkLidarProvider(const vtkLidarProvider&); // not implemented
+  void operator=(const vtkLidarProvider&); // not implemented
 
   vtkLidarProviderInternal* Internal;
 };

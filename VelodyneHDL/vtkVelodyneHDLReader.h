@@ -126,8 +126,8 @@ private:
 
   vtkVelodyneHDLReader();
   vtkVelodyneHDLReader(vtkInternal* pimpl);
-  ~vtkVelodyneHDLReader() = default;
-  vtkVelodyneHDLReader(const vtkVelodyneHDLReader&) = delete;
-  void operator=(const vtkVelodyneHDLReader&) = delete;
+  ~vtkVelodyneHDLReader();
+  vtkVelodyneHDLReader(const vtkVelodyneHDLReader&); // not implemented
+  void operator=(const vtkVelodyneHDLReader&); // not implemented
 };
 #endif

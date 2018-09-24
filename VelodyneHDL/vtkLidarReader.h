@@ -7,7 +7,7 @@
 class vtkLidarReaderInternal;
 class vtkTransform;
 
-class vtkLidarReader : public vtkLidarProvider
+class VTK_EXPORT vtkLidarReader : public vtkLidarProvider
 {
 public:
   vtkTypeMacro(vtkLidarReader, vtkLidarProvider);
