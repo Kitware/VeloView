@@ -95,7 +95,7 @@ int main(int argc, char* argv[])
   double elapsedTime = vtkTimerLog::GetUniversalTime() - startTime;
   std::cout << "Data sent in " << elapsedTime << "s" << std::endl;
 
-  if (correctionFileName == "" && HDLsource->GetCorrectionsInitialized())
+  if (correctionFileName == "" && HDLsource->GetIsCalibrated())
   {
     HDLsource->UnloadDatasets();
 
