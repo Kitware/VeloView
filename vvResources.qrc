@@ -20,8 +20,8 @@
         <file>Icons/ViewOrtho.png</file>
         <file>Icons/ViewPerspective.png</file>
         <file>Icons/Measurements.png</file>
-        <file>Splash.jpg</file>
-        <file>About.png</file>
+        <file>SoftwareInformation/About.png</file>
+        <file>SoftwareInformation/bottom_logo.png</file>
         <file>vvAboutDialog.ui</file>
         <file>Icons/errorConsole.png</file>
         <file>Icons/camera_logo.png</file>

@@ -1,4 +1,4 @@
-include(../branding.cmake)
+include(../SoftwareInformation/branding.cmake)
 project(VelodyneHDLPlugin)
 cmake_minimum_required(VERSION 2.8)
 

@@ -25,7 +25,7 @@ GET_DATE()
 set(PACKAGE_TIMESTAMP "${GD_YEAR}${GD_MONTH}${GD_DAY}")
 
 # Enable CPack packaging.
-include(${VeloViewSuperBuild_SOURCE_DIR}/../branding.cmake)
+include(${VeloViewSuperBuild_SOURCE_DIR}/../SoftwareInformation/branding.cmake)
 
 set(CPACK_COMPONENT_VELOVIEW_DISPLAY_NAME ${SOFTWARE_NAME})
 set(CPACK_PACKAGE_VERSION_MAJOR ${VV_VERSION_MAJOR})
