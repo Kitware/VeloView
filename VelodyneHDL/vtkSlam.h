@@ -350,6 +350,11 @@ public:
   // and will not be merged with the slam data using a Kalman filter
   void SetExternalSensorMeasures(vtkVelodyneTransformInterpolator* interpolator);
 
+  // Load slam transforms in order to add them in
+  // the trajectory polydata. This won't affect the
+  // slam algorithm state
+  void LoadTransforms(const std::string& filename);
+
 protected:
   // vtkPolyDataAlgorithm functions
   vtkSlam();

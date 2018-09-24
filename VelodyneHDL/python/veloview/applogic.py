@@ -2255,9 +2255,18 @@ def toggleLaunchStreamSlam():
         smp.Show(getReader())
 
 def toggleLoadTransform():
+    # load the transforms in the reader
+    # interpolator
     fileName = getOpenFileName('Load Transforms', 'csv')
     reader = getReader()
     reader.GetClientSideObject().LoadTransforms(fileName)
+
+    # load the transform in a slam algorithm
+    # and display the trajectory output in the
+    # overhead view
+    tempSlam = smp.Slam()
+    tempSlam.GetClientSideObject().LoadTransforms(fileName)
+    smp.Show(tempSlam[1], app.overheadView)
 
 def toggleExportTransform():
     fileName = getSaveFileName('Save Transforms', 'csv')

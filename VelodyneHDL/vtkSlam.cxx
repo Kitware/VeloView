@@ -108,6 +108,13 @@
 // PCL
 #include <pcl/point_types.h>
 #include <pcl/filters/voxel_grid.h>
+// BOOST
+#include <boost/filesystem.hpp>
+#include <boost/foreach.hpp>
+#include <boost/preprocessor.hpp>
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/xml_parser.hpp>
+#include <boost/algorithm/string.hpp>
 
 vtkStandardNewMacro(vtkSlam);
 
@@ -669,7 +676,7 @@ vtkInformationVector **inputVector, vtkInformationVector *outputVector)
 
   // output 0 - Current Frame
   // add all debug information if displayMode == True
-  if (DisplayMode = true)
+  if (DisplayMode = true && this->NbrFrameProcessed > 0)
   {
     this->DisplayLaserIdMapping(this->vtkCurrentFrame);
     this->DisplayRelAdv(this->vtkCurrentFrame);
@@ -1505,6 +1512,62 @@ void vtkSlam::AddFrame(vtkPolyData* newFrame)
   // Indicate the filter has been modify
   this->Modified();
   return;
+}
+
+//-----------------------------------------------------------------------------
+void vtkSlam::LoadTransforms(const std::string& filename)
+{
+  std::ifstream file;
+  file.open(filename);
+
+  if (!file.is_open())
+  {
+    vtkGenericWarningMacro("Can't load the specified file");
+  }
+
+  std::string line;
+  std::string expectedLine = "Time,Rx(Roll),Ry(Pitch),Rz(Yaw),X,Y,Z";
+  std::getline(file, line);
+  if (line != expectedLine)
+  {
+    vtkGenericWarningMacro("Header file not expected. Version incompability");
+  }
+
+  while (std::getline(file, line))
+  {
+    std::vector<std::string> values;
+    boost::split(values, line, boost::is_any_of(","));
+
+    // time
+    double t = std::atof(values[0].c_str());
+    // rotation
+    double rx = std::atof(values[1].c_str()) * 180.0 / vtkMath::Pi();
+    double ry = std::atof(values[2].c_str()) * 180.0 / vtkMath::Pi();
+    double rz = std::atof(values[3].c_str()) * 180.0 / vtkMath::Pi();
+    // position
+    double x = std::atof(values[4].c_str());
+    double y = std::atof(values[5].c_str());
+    double z = std::atof(values[6].c_str());
+
+    this->Trajectory->GetPoints()->InsertNextPoint(x, y, z);
+    static_cast<vtkDoubleArray*>(this->Trajectory->GetPointData()->GetArray("time"))->InsertNextValue(t);
+    static_cast<vtkDoubleArray*>(this->Trajectory->GetPointData()->GetArray("roll"))->InsertNextValue(rx);
+    static_cast<vtkDoubleArray*>(this->Trajectory->GetPointData()->GetArray("pitch"))->InsertNextValue(ry);
+    static_cast<vtkDoubleArray*>(this->Trajectory->GetPointData()->GetArray("yaw"))->InsertNextValue(rz);
+    static_cast<vtkDoubleArray*>(this->Trajectory->GetPointData()->GetArray("Mapping: intiale cost function"))->InsertNextValue(0);
+    static_cast<vtkDoubleArray*>(this->Trajectory->GetPointData()->GetArray("Mapping: final cost function"))->InsertNextValue(0);
+    static_cast<vtkDoubleArray*>(this->Trajectory->GetPointData()->GetArray("Variance Error"))->InsertNextValue(0);
+    static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("Mapping: edges used"))->InsertNextValue(0);
+    static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("Mapping: planes used"))->InsertNextValue(0);
+    static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("Mapping: blobs used"))->InsertNextValue(0);
+    static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("Mapping: total keypoints used"))->InsertNextValue(0);
+    static_cast<vtkDoubleArray*>(this->Trajectory->GetPointData()->GetArray("EgoMotion: intiale cost function"))->InsertNextValue(0);
+    static_cast<vtkDoubleArray*>(this->Trajectory->GetPointData()->GetArray("EgoMotion: final cost function"))->InsertNextValue(0);
+    static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("EgoMotion: edges used"))->InsertNextValue(0);
+    static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("EgoMotion: planes used"))->InsertNextValue(0);
+    static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("EgoMotion: blobs used"))->InsertNextValue(0);
+    static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("EgoMotion: total keypoints used"))->InsertNextValue(0);
+  }
 }
 
 //-----------------------------------------------------------------------------
