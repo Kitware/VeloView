@@ -13,7 +13,7 @@ vtkLidarProviderInternal::vtkLidarProviderInternal(vtkLidarProvider* obj)
   this->IsCalibrated = false;
 
   this->Frequency = 0;
-  this->distanceResolutionM = 0;
+  this->DistanceResolutionM = 0;
 
   this->IgnoreZeroDistances = true;
   this->IgnoreEmptyFrames = true;

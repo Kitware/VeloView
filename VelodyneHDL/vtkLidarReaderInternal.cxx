@@ -1,5 +1,8 @@
 #include "vtkLidarReaderInternal.h"
 
+#include <vtkInformation.h>
+#include <vtkStreamingDemandDrivenPipeline.h>
+
 #include "vtkLidarReader.h"
 #include "vtkPacketFileReader.h"
 
@@ -80,4 +83,27 @@ bool vtkLidarReaderInternal::shouldBeCroppedOut(double pos[3], double theta)
     }
   }
   return false;
+}
+
+//-----------------------------------------------------------------------------
+void vtkLidarReaderInternal::SetTimestepInformation(vtkInformation *info)
+{
+  const size_t numberOfTimesteps = this->FilePositions.size();
+  std::vector<double> timesteps;
+  for (size_t i = 0; i < numberOfTimesteps; ++i)
+  {
+    timesteps.push_back(i);
+  }
+
+  if (numberOfTimesteps)
+  {
+    double timeRange[2] = { timesteps.front(), timesteps.back() };
+    info->Set(vtkStreamingDemandDrivenPipeline::TIME_STEPS(), &timesteps.front(), timesteps.size());
+    info->Set(vtkStreamingDemandDrivenPipeline::TIME_RANGE(), timeRange, 2);
+  }
+  else
+  {
+    info->Remove(vtkStreamingDemandDrivenPipeline::TIME_STEPS());
+    info->Remove(vtkStreamingDemandDrivenPipeline::TIME_RANGE());
+  }
 }

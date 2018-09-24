@@ -32,7 +32,7 @@ double vtkLidarProvider::GetFrequency()
 //-----------------------------------------------------------------------------
 double vtkLidarProvider::GetDistanceResolutionM()
 {
-  return this->Internal->distanceResolutionM;
+  return this->Internal->DistanceResolutionM;
 }
 
 //-----------------------------------------------------------------------------

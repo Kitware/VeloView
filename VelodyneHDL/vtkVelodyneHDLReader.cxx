@@ -335,7 +335,7 @@ public:
     this->IsHDL64Data = false;
     this->ReportedFactoryField1 = 0;
     this->ReportedFactoryField2 = 0;
-    this->distanceResolutionM = 0.002;
+    this->DistanceResolutionM = 0.002;
     this->WantIntensityCorrection = false;
 
     this->rollingCalibrationData = new vtkRollingDataAccumulator();
@@ -1037,7 +1037,7 @@ void vtkVelodyneHDLReader::vtkInternal::LoadCalibration(const std::string& filen
   {
     if (v.first == "distLSB_")
     { // Stored in cm in xml
-      distanceResolutionM = atof(v.second.data().c_str()) / 100.0;
+      DistanceResolutionM = atof(v.second.data().c_str()) / 100.0;
     }
   }
 
@@ -1349,7 +1349,7 @@ void vtkVelodyneHDLReader::vtkInternal::ComputeCorrectedValues(const unsigned sh
    * was added to the expression due to the mathemathical
    * model we used.
    */
-  double distanceMRaw = laserReturn->distance * this->distanceResolutionM;
+  double distanceMRaw = laserReturn->distance * this->DistanceResolutionM;
   distanceM = distanceMRaw + correction->distanceCorrection;
   double xyDistance =
     distanceM * correction->cosVertCorrection - correction->sinVertOffsetCorrection;

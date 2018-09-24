@@ -13,6 +13,9 @@ public:
   vtkTypeMacro(vtkLidarReader, vtkLidarProvider);
   void PrintSelf(ostream& os, vtkIndent indent);
 
+  /**
+   * @copydoc vtkLidarReaderInternal::FileName
+   */
   std::string GetFileName();
   virtual void SetFileName(const std::string& filename);
 
@@ -20,25 +23,39 @@ public:
 
   vtkSmartPointer<vtkPolyData> GetFrame(int frameNumber, int wantedNumberOfTrailingFrames) override;
 
-  // TODO Should be private!!
+  /**
+   * @copydoc vtkLidarReaderInternal::Open()
+   * @todo should be move to Internal eventually
+   */
   void Open();
+
+  /**
+   * @copydoc vtkLidarReaderInternal::Close()
+   * @todo should be move to Internal eventually
+   */
   void Close();
 
+  /**
+   * @copydoc vtkLidarReaderInternal::ProcessPacket()
+   */
   void ProcessPacket(unsigned char* data, unsigned int bytesReceived);
 
-  ///
-  /// \brief SaveFrame save the packet corresponding to the desired frame in a pcap file.
-  /// Because we are saving network packet, part of previous and/or next frames could be included in generated the pcap
-  /// \param startFrame
-  /// \param endFrame
-  /// \param filename including the file extension
-  ///
+  /**
+   * @brief SaveFrame save the packet corresponding to the desired frames in a pcap file.
+   * Because we are saving network packet, part of previous and/or next frames could be included in generated the pcap
+   * @param startFrame first frame to record
+   * @param endFrame last frame to record, this frame is included
+   * @param filename where to save the generate pcap file
+   */
   void SaveFrame(int startFrame, int endFrame, const std::string& filename);
 
 protected:
   vtkLidarReader();
   vtkLidarReader(vtkLidarReaderInternal* internal);
 
+  /**
+   * @brief SetPimpInternal method used to switch the opaque pointer
+   */
   void SetPimpInternal(vtkLidarReaderInternal* internal);
 
   // Description:
@@ -52,10 +69,8 @@ protected:
 
 
 private:
-  vtkLidarReader(const vtkLidarReader&);
-  void operator=(const vtkLidarReader&);
-
-  void SetTimestepInformation(vtkInformation* info);
+  vtkLidarReader(const vtkLidarReader&); // not implemented
+  void operator=(const vtkLidarReader&); // not implemented
 
   vtkLidarReaderInternal* Internal;
 };

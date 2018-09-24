@@ -474,7 +474,7 @@ def openSensor():
     app.actions['actionCorrectIntensityValues'].enabled = True
 
     #Auto adjustment of the grid size with the distance resolution
-    app.distanceResolutionM = sensor.GetClientSideObject().GetDistanceResolutionM()
+    app.DistanceResolutionM = sensor.GetClientSideObject().GetDistanceResolutionM()
     app.actions['actionMeasurement_Grid'].setChecked(True)
     showMeasurementGrid()
 
@@ -640,7 +640,7 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
     app.actions['actionCorrectIntensityValues'].enabled = True
 
     #Auto adjustment of the grid size with the distance resolution
-    app.distanceResolutionM = reader.GetClientSideObject().GetDistanceResolutionM()
+    app.DistanceResolutionM = reader.GetClientSideObject().GetDistanceResolutionM()
     app.grid = createGrid()
     app.actions['actionMeasurement_Grid'].setChecked(True)
     showMeasurementGrid()
@@ -1802,7 +1802,7 @@ def createGrid(view=None):
     grid = smp.VelodyneHDLGridSource(guiName='Measurement Grid')
 
     if app.gridProperties.Persist == False:
-        grid.GridNbTicks = (int(math.ceil(50000 * app.distanceResolutionM/ grid.GetClientSideObject().GetScale()) ))
+        grid.GridNbTicks = (int(math.ceil(50000 * app.DistanceResolutionM/ grid.GetClientSideObject().GetScale()) ))
     else:
         # Restore grid properties
         grid.Normal = app.gridProperties.Normal
@@ -1850,7 +1850,7 @@ def start():
     view.UseGradientBackground = True
     smp._DisableFirstRenderCameraReset()
     smp.GetActiveView().LODThreshold = 1e100
-    app.distanceResolutionM = 0.002
+    app.DistanceResolutionM = 0.002
     app.grid = createGrid()
     app.ruler = createRuler()
 
