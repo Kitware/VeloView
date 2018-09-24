@@ -251,7 +251,7 @@ void vtkSphericalMap::ResetMap()
 }
 
 //----------------------------------------------------------------------------
-Eigen::Matrix<double, 3, 1> vtkSphericalMap::GetSphericalCoordinates(Eigen::Matrix<double, 3, 1>& const X)
+Eigen::Matrix<double, 3, 1> vtkSphericalMap::GetSphericalCoordinates(const Eigen::Matrix<double, 3, 1>& X)
 {
   // Express the current point in the local
   // reference frame designed by the internal
