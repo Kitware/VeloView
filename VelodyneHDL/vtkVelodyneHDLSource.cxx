@@ -158,7 +158,7 @@ public:
     {
       this->HDLReader->updateReportedSensor(data, length);
       // Accumulate HDL64 Status byte data while correction are not initialized
-      if (this->HDLReader->getIsHDL64Data() && !this->HDLReader->getCorrectionsInitialized())
+      if (this->HDLReader->getIsHDL64Data() && !this->HDLReader->GetIsCalibrated())
       {
         this->HDLReader->appendRollingDataAndTryCorrection(data);
       }
@@ -170,7 +170,7 @@ public:
           this->HDLReader->isReportedSensorAndCalibrationFileConsistent(true);
           this->ShouldCheckSensor = false;
         }
-        this->HDLReader->ProcessHDLPacket(const_cast<unsigned char*>(data), length);
+        this->HDLReader->ProcessPacket(const_cast<unsigned char*>(data), length);
         if (this->HDLReader->GetDatasets().size())
         {
           this->HandleNewData(this->HDLReader->GetDatasets().back());
@@ -823,9 +823,9 @@ bool vtkVelodyneHDLSource::GetHasDualReturn()
 }
 
 //-----------------------------------------------------------------------------
-bool vtkVelodyneHDLSource::GetCorrectionsInitialized()
+bool vtkVelodyneHDLSource::GetIsCalibrated()
 {
-  return this->Internal->Consumer->GetReader()->getCorrectionsInitialized();
+  return this->Internal->Consumer->GetReader()->GetIsCalibrated();
 }
 
 //-----------------------------------------------------------------------------
@@ -908,7 +908,7 @@ const std::string& vtkVelodyneHDLSource::GetCorrectionsFile()
 {
   boost::lock_guard<boost::mutex> lock(this->Internal->Consumer->ReaderMutex);
 
-  return this->Internal->Consumer->GetReader()->GetCorrectionsFile();
+  return this->Internal->Consumer->GetReader()->GetCalibrationFileName();
 }
 
 //-----------------------------------------------------------------------------
@@ -921,7 +921,7 @@ void vtkVelodyneHDLSource::SetCorrectionsFile(const std::string& filename)
 
   boost::lock_guard<boost::mutex> lock(this->Internal->Consumer->ReaderMutex);
 
-  this->Internal->Consumer->GetReader()->SetCorrectionsFile(filename);
+  this->Internal->Consumer->GetReader()->SetCalibrationFileName(filename);
   this->Modified();
 }
 
@@ -942,7 +942,7 @@ void vtkVelodyneHDLSource::SetForwardedIpAddress(const std::string& ipAddress)
 }
 
 //-----------------------------------------------------------------------------
-void vtkVelodyneHDLSource::SetLaserSelection(int LaserSelection[HDL_MAX_NUM_LASERS])
+void vtkVelodyneHDLSource::SetLaserSelection(bool LaserSelection[])
 {
   boost::lock_guard<boost::mutex> lock(this->Internal->Consumer->ReaderMutex);
 
@@ -951,7 +951,7 @@ void vtkVelodyneHDLSource::SetLaserSelection(int LaserSelection[HDL_MAX_NUM_LASE
 }
 
 //-----------------------------------------------------------------------------
-void vtkVelodyneHDLSource::GetLaserSelection(int LaserSelection[HDL_MAX_NUM_LASERS])
+void vtkVelodyneHDLSource::GetLaserSelection(bool LaserSelection[])
 {
   boost::lock_guard<boost::mutex> lock(this->Internal->Consumer->ReaderMutex);
 
@@ -1101,11 +1101,6 @@ void vtkVelodyneHDLSource::Stop()
   this->Internal->NetworkSource.Stop();
   this->Internal->Consumer->Stop();
   this->Internal->Writer->Stop();
-}
-
-//----------------------------------------------------------------------------
-void vtkVelodyneHDLSource::ReadNextFrame()
-{
 }
 
 //----------------------------------------------------------------------------

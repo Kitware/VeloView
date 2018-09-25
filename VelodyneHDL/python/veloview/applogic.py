@@ -106,7 +106,7 @@ class AppLogic(object):
     def createStatusBarWidgets(self):
 
         self.logoLabel = QtGui.QLabel()
-        self.logoLabel.setPixmap(QtGui.QPixmap(":/VelodyneHDLPlugin/bottom_logo.png"))
+        self.logoLabel.setPixmap(QtGui.QPixmap(":/vvResources/SoftwareInformation/bottom_logo.png"))
         self.logoLabel.setScaledContents(True)
 
         self.filenameLabel = QtGui.QLabel()

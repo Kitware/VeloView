@@ -32,18 +32,16 @@
 #ifndef _vtkVelodyneHDLReader_h
 #define _vtkVelodyneHDLReader_h
 
+#include "vtkLidarReader.h"
 #include "vtkDataPacket.h"
-//#include "vtkSlam.h"
 #include <string>
-#include <vtkPolyDataAlgorithm.h>
 #include <vtkSmartPointer.h>
 
-class vtkTransform;
 class vtkVelodyneTransformInterpolator;
 
 using DataPacketFixedLength::HDL_MAX_NUM_LASERS;
 
-class VTK_EXPORT vtkVelodyneHDLReader : public vtkPolyDataAlgorithm
+class VTK_EXPORT vtkVelodyneHDLReader : public vtkLidarReader
 {
 public:
   enum DualFlag
@@ -59,50 +57,21 @@ public:
 
 public:
   static vtkVelodyneHDLReader* New();
-  vtkTypeMacro(vtkVelodyneHDLReader, vtkPolyDataAlgorithm);
+  vtkTypeMacro(vtkVelodyneHDLReader, vtkLidarReader);
   void PrintSelf(ostream& os, vtkIndent indent);
 
-  // Description:
-  //
-  const std::string& GetFileName();
-  void SetFileName(const std::string& filename);
-
-  // Description:
-  //
-  const std::string& GetCorrectionsFile();
-  void SetCorrectionsFile(const std::string& correctionsFile);
+  // Information about the sensor from dataPacket
+  std::string GetSensorInformation() override;
+  void SetFileName(const std::string& filename) override;
+  void SetCalibrationFileName(const std::string& filename) override;
+  vtkSmartPointer<vtkPolyData> GetFrame(int frameNumber, int wantedNumberOfTrailingFrames = 0) override;
+  vtkPolyData* GetFramePointer(int frameNumber, int wantedNumberOfTrailingFrames = 0) override;
 
   // Description:
   //
   bool IsIntensityCorrectedBySensor();
   const bool& GetWantIntensityCorrection();
   void SetIntensitiesCorrected(const bool& state);
-
-  // Description:
-  //
-  int CanReadFile(const char* fname);
-
-  // Property functions
-
-  // Description:
-  // Number of frames behind current frame to read.  Zero indicates only
-  // show the current frame.  Negative numbers are invalid.
-  void SetNumberOfTrailingFrames(int numberTrailing);
-
-  // Description:
-  // TODO: This is not friendly but I dont have a better way to pass 64 values to a filter in
-  // paraview
-  void SetLaserSelection(int, int, int, int, int, int, int, int, int, int, int, int, int, int, int,
-    int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int,
-    int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int,
-    int, int, int, int, int, int, int, int, int, int, int);
-  void SetLaserSelection(int LaserSelection[HDL_MAX_NUM_LASERS]);
-
-  void GetLaserSelection(int LaserSelection[HDL_MAX_NUM_LASERS]);
-
-  double GetCurrentRpm();
-
-  double GetDistanceResolutionM();
 
   void GetLaserCorrections(double verticalCorrection[HDL_MAX_NUM_LASERS],
     double rotationalCorrection[HDL_MAX_NUM_LASERS], double distanceCorrection[HDL_MAX_NUM_LASERS],
@@ -117,100 +86,51 @@ public:
   int GetOutputPacketProcessingDebugInfo() const;
   void SetOutputPacketProcessingDebugInfo(int);
 
-  int GetIgnoreZeroDistances() const;
-  void SetIgnoreZeroDistances(int);
-
-  int GetIgnoreEmptyFrames() const;
-  void SetIgnoreEmptyFrames(int);
-
   int GetIntraFiringAdjust() const;
   void SetIntraFiringAdjust(int);
 
   unsigned int GetDualReturnFilter() const;
   void SetDualReturnFilter(unsigned int);
 
-  // A trick to workaround failure to wrap LaserSelection
-  void SetDummyProperty(int);
-
   void SetFiringsSkip(int);
 
-  void SetCropReturns(int);
-  void SetCropOutside(int);
-  void SetCropRegion(double[6]);
-  void SetCropRegion(double, double, double, double, double, double);
-  void SetCropMode(int cropMode);
-
-  int GetNumberOfChannels();
-
-  void AddTransform(double rx, double ry, double rz, double tx, double ty, double tz, double time);
-  void LoadTransforms(const std::string& filename);
-  void ExportTransforms(const std::string& filename);
-
   // I/O and processing functions
-  void Open();
-  void Close();
+  // TODO
   int ReadFrameInformation();
-  int GetNumberOfFrames();
-  vtkPolyData* GetFrame(int frameNumber);
-  vtkSmartPointer<vtkPolyData> GetFrameRange(int frameNumber, int numberOfFrames);
-
-  void DumpFrames(int startFrame, int endFrame, const std::string& filename);
-
-  void ProcessHDLPacket(unsigned char* data, unsigned int bytesReceived);
   std::vector<vtkSmartPointer<vtkPolyData> >& GetDatasets();
-
-  // Transform related functions
-  void CreateLinearInterpolator();
-  void CreateNearestInterpolator();
-  vtkVelodyneTransformInterpolator* GetInterpolator() const;
-  void SetInterpolator(vtkVelodyneTransformInterpolator* interpolator);
-
-  void GetLaserIdMapping(int* output) const;
-
-  void SetSensorTransform(vtkTransform*);
-  void SetGpsTransform(vtkTransform*);
-
-  int GetApplyTransform();
-  void SetApplyTransform(int apply);
 
   void appendRollingDataAndTryCorrection(const unsigned char* data);
 
   bool getIsHDL64Data();
-  bool getCorrectionsInitialized();
 
   bool isReportedSensorAndCalibrationFileConsistent(bool shouldWarn);
+  // move
   bool updateReportedSensor(const unsigned char* data, unsigned int bytesReceived);
 
   bool GetHasDualReturn();
+
+  // Return the laser id mapping
+  void GetLaserIdMapping(int* output) const;
 
   // This function permits to know which are the points selected
   // with a corresponding dual return
   void SetSelectedPointsWithDualReturn(double* data, int Npoints);
   void SetShouldAddDualReturnArray(bool input);
 
-  // Information about the sensor from dataPacket
-  std::string GetSensorInformation();
-
 protected:
-  vtkVelodyneHDLReader();
-  ~vtkVelodyneHDLReader();
 
+  // TODO
   int RequestInformation(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
 
-  int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
-
-  void UnloadPerFrameData();
-  void SetTimestepInformation(vtkInformation* info);
-
-  std::string CorrectionsFile;
-  std::string FileName;
-  bool ShouldCheckSensor;
+private:
 
   class vtkInternal;
   vtkInternal* Internal;
 
-private:
-  vtkVelodyneHDLReader(const vtkVelodyneHDLReader&);
-  void operator=(const vtkVelodyneHDLReader&);
+  vtkVelodyneHDLReader();
+  vtkVelodyneHDLReader(vtkInternal* pimpl);
+  ~vtkVelodyneHDLReader();
+  vtkVelodyneHDLReader(const vtkVelodyneHDLReader&); // not implemented
+  void operator=(const vtkVelodyneHDLReader&); // not implemented
 };
 #endif

@@ -195,7 +195,7 @@ def launch():
     frameCount = 0
     for i in range(int(start), int(stop)+1):
         # get the current frame
-        polyData = source.GetFrame(i)
+        polyData = source.GetFramePointer(i, 0)
         # compute the SLAM for the current frame
         slam.GetClientSideObject().AddFrame(polyData)
 

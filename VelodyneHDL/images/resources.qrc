@@ -27,7 +27,6 @@
         <file>kiwi_200.png</file>
         <file>preferences-system-64.png</file>
         <file>calibrate.png</file>
-        <file>bottom_logo.png</file>
         <file>csv.png</file>
         <file>vvGridAdjustmentDialog.ui</file>
     </qresource>

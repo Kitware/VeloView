@@ -1,5 +1,5 @@
 include(veloview.bundle.common)
-include(${VeloViewSuperBuild_SOURCE_DIR}/../branding.cmake)
+include(${VeloViewSuperBuild_SOURCE_DIR}/../SoftwareInformation/branding.cmake)
 
 #------------------------------------------------------------------------------
 # set NSIS install specific stuff.

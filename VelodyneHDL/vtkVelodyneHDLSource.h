@@ -29,11 +29,11 @@
 // .SECTION Description
 //
 
+
 #ifndef __vtkVelodyneHDLSource_h
 #define __vtkVelodyneHDLSource_h
 
 #include <vtkPolyDataAlgorithm.h>
-
 #include "vtkDataPacket.h"
 using DataPacketFixedLength::HDL_MAX_NUM_LASERS;
 
@@ -54,8 +54,6 @@ public:
 
   int GetCacheSize();
   void SetCacheSize(int cacheSize);
-
-  void ReadNextFrame();
 
   const std::string& GetCorrectionsFile();
   void SetCorrectionsFile(const std::string& correctionsFile);
@@ -91,8 +89,8 @@ public:
 
   void SetFiringsSkip(int);
 
-  void SetLaserSelection(int LaserSelection[HDL_MAX_NUM_LASERS]);
-  void GetLaserSelection(int LaserSelection[HDL_MAX_NUM_LASERS]);
+  void SetLaserSelection(bool LaserSelection[]);
+  void GetLaserSelection(bool LaserSelection[]);
 
   double GetDistanceResolutionM();
 
@@ -134,7 +132,7 @@ public:
   int GetIntraFiringAdjust() const;
   void SetIntraFiringAdjust(int);
 
-  bool GetCorrectionsInitialized();
+  bool GetIsCalibrated();
   void UnloadDatasets();
 
   std::string GetSensorInformation();

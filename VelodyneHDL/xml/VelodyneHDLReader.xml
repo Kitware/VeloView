@@ -31,30 +31,6 @@
       </IntVectorProperty>
 
       <IntVectorProperty
-          name="ApplyTransform"
-          animateable="0"
-          command="SetApplyTransform"
-          default_values="0"
-          number_of_elements="1">
-        <Documentation>
-          Apply or not the transform
-        </Documentation>
-      </IntVectorProperty>
-      
-<!--
-     <IntVectorProperty
-          name="LaserSelection"
-          animateable="0"
-          command="SetLaserSelection"
-          default_values="1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1"
-          number_of_elements="64">
-        <Documentation>
-          Number of frames behind the current frame to show
-        </Documentation>
-      </IntVectorProperty>
--->
-
-      <IntVectorProperty
           name="DummyProperty"
           animateable="0"
           command="SetDummyProperty"
@@ -132,10 +108,10 @@
       </IntVectorProperty>
 
       <StringVectorProperty
-          name="CorrectionsFile"
+          name="CalibratoinFileName"
           label="Calibration File"
           animateable="0"
-          command="SetCorrectionsFile"
+          command="SetCalibrationFileName"
           number_of_elements="1">
           <FileListDomain name="files"/>
           <Documentation>

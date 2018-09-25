@@ -1,4 +1,4 @@
-include(../branding.cmake)
+include(../SoftwareInformation/branding.cmake)
 project(VelodyneHDLPlugin)
 cmake_minimum_required(VERSION 2.8)
 
@@ -103,6 +103,10 @@ if(PARAVIEW_BUILD_QT_GUI)
   # integrated to VTK, we provide the patch
   set(non_vtk_sources
     vtkPCLRansacModel.cxx
+    vtkLidarProvider.cxx
+    vtkLidarProviderInternal.cxx
+    vtkLidarReader.cxx
+    vtkLidarReaderInternal.cxx
     vtkBirdEyeViewSnap.cxx
     vtkLASFileWriter.cxx
     vtkPacketFileWriter.cxx
@@ -158,6 +162,8 @@ list(APPEND servermanager_sources
   vtkSensorTransformFusion.cxx
   vtkRansacPlaneModel.cxx
   vtkVelodyneHDLGridSource.cxx
+  vtkLidarProvider.cxx
+  vtkLidarReader.cxx
   vtkVelodyneHDLReader.cxx
   vtkVelodyneHDLPositionReader.cxx
   vtkVelodyneHDLSource.cxx)

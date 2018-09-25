@@ -240,7 +240,7 @@ void pqVelodyneManager::saveFramesToPCAP(
   }
 
   reader->Open();
-  reader->DumpFrames(startFrame, endFrame, filename.toAscii().data());
+  reader->SaveFrame(startFrame, endFrame, filename.toAscii().data());
   reader->Close();
 }
 

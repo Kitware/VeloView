@@ -55,7 +55,7 @@ int main(int argc, char* argv[])
   // Generate a Velodyne HDL reader
   vtkNew<vtkVelodyneHDLReader> HDLReader;
   HDLReader->SetFileName(pcapFileName);
-  HDLReader->SetCorrectionsFile(correctionFileName);
+  HDLReader->SetCalibrationFileName(correctionFileName);
   HDLReader->ReadFrameInformation();
   HDLReader->Update();
 

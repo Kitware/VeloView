@@ -27,9 +27,8 @@
 =========================================================================*/
 
 #include "vtkVelodyneHDLReader.h"
-#include "vtkSlam.h"
+#include "vtkLidarReaderInternal.h"
 
-// #include "vtkSlam.h"
 #include "vtkPacketFileReader.h"
 #include "vtkPacketFileWriter.h"
 #include "vtkRollingDataAccumulator.h"
@@ -86,13 +85,6 @@ using namespace DataPacketFixedLength;
 
 namespace
 {
-enum CropModeEnum
-{
-  None = 0,
-  Cartesian = 1,
-  Spherical = 2,
-  Cylindric = 3,
-};
 
 // Structure to compute RPM and handle degenerated cases
 struct RPMCalculator
@@ -261,91 +253,6 @@ double HDL64EAdjustTimeStamp(int firingblock, int dsr, const bool isDualReturnMo
 } // End namespace
 
 //-----------------------------------------------------------------------------
-double ComputeAverageRPM(vtkPolyData* cloud, int chunkSize)
-{
-  int NPoints = cloud->GetNumberOfPoints();
-  double meanRPM = 0;
-  unsigned int numChunks = 0;
-  double phiLeftSide, phiRightSide;
-  double timeLeftSide, timeRightSide;
-
-  vtkDataArray* azimuthArray = cloud->GetPointData()->GetArray("azimuth");
-  vtkDataArray* timeArray = cloud->GetPointData()->GetArray("timestamp");
-
-  for (int leftSide = 0; leftSide < NPoints; leftSide = leftSide + chunkSize)
-  {
-    // get the right bound of the current chunk
-    int rightSide = std::min(leftSide + chunkSize, NPoints - 1);
-
-    // rightSide can be equal to leftSide if the number of points
-    // is a multiple of chunkSize
-    if (rightSide != leftSide)
-    {
-      // get the left and right bound angles
-      phiLeftSide = azimuthArray->GetTuple1(leftSide);
-      phiRightSide = azimuthArray->GetTuple1(rightSide);
-      // get the left and right bound times
-      timeLeftSide = timeArray->GetTuple1(leftSide);
-      timeRightSide = timeArray->GetTuple1(rightSide);
-      // if the right bound time is lower than the left bound,
-      // the chunk goes across a frame boundary, skip this chunk
-      if (phiRightSide < phiLeftSide)
-      {
-        continue;
-      }
-
-      // delta angle in number of full rotations
-      double dAngle = static_cast<double>(phiRightSide - phiLeftSide) / (36000.0);
-      // delta time in minutes
-      double dt = static_cast<double>(timeRightSide - timeLeftSide) / (60e6);
-
-      meanRPM += dAngle / dt;
-      numChunks++;
-    }
-  }
-
-  if (numChunks > 0)
-  {
-    meanRPM /= static_cast<double>(numChunks);
-  }
-  else
-  {
-    meanRPM = -1;
-  }
-
-  return meanRPM;
-}
-//-----------------------------------------------------------------------------
-void GetSphericalCoordinates(double p_in[3], double p_out[3])
-{
-  // We will compute R, theta and phi
-  double R, theta, phi, rho;
-  Eigen::Vector3f P(p_in[0], p_in[1], p_in[2]);
-  Eigen::Vector3f projP(p_in[0], p_in[1], 0); // Projection on the (X,Y) plane
-  Eigen::Vector3f ez(0, 0, 1);
-  Eigen::Vector3f ex(1, 0, 0);
-  Eigen::Vector3f u_r = P.normalized();         // u_r vector in spherical coordinates
-  Eigen::Vector3f u_theta = projP.normalized(); // u_theta in polar/cylindric coordinates
-  R = P.norm();
-  rho = projP.norm();
-
-  // Phi is the angle between OP and ez :
-  double cosPhi = u_r.dot(ez);
-  double sinPhi = u_r.dot(u_theta);
-
-  phi = std::abs(std::atan2(sinPhi, cosPhi)) / vtkMath::Pi() * 180;
-
-  // Theta is the angle between u_theta and ex :
-  // Since u_theta is normalized cos(theta) = u_theta[0]
-  // and sin(theta) = u_theta[1]
-  theta = (std::atan2(u_theta[1], u_theta[0]) + vtkMath::Pi()) / vtkMath::Pi() * 180;
-
-  p_out[0] = theta;
-  p_out[1] = phi;
-  p_out[2] = R;
-}
-
-//-----------------------------------------------------------------------------
 class FramingState
 {
   int LastAzimuth;
@@ -406,37 +313,26 @@ public:
 };
 
 //-----------------------------------------------------------------------------
-class vtkVelodyneHDLReader::vtkInternal
+class vtkVelodyneHDLReader::vtkInternal : public vtkLidarReaderInternal
 {
 public:
-  vtkInternal()
+  vtkInternal(vtkVelodyneHDLReader* obj)
+    : vtkLidarReaderInternal(obj)
   {
-    this->Slam = vtkSmartPointer<vtkSlam>::New();
+    this->Lidar = obj;
     this->RpmCalculator.Reset();
     this->AlreadyWarnAboutCalibration = false;
-    this->IgnoreZeroDistances = true;
     this->UseIntraFiringAdjustment = true;
-    this->CropMode = Cartesian;
     this->ShouldAddDualReturnArray = false;
     this->alreadyWarnedForIgnoredHDL64FiringPacket = false;
     this->OutputPacketProcessingDebugInfo = false;
     this->SensorPowerMode = 0;
-    this->Skip = 0;
     this->CurrentFrameState = new FramingState;
     this->LastTimestamp = std::numeric_limits<unsigned int>::max();
     this->TimeAdjust = std::numeric_limits<double>::quiet_NaN();
-    this->Reader = 0;
-    this->SplitCounter = 0;
-    this->NumberOfTrailingFrames = 0;
-    this->ApplyTransform = 0;
+    this->Skip = 0;
     this->FiringsSkip = 0;
-    this->CropReturns = false;
-    this->CropOutside = false;
-    this->CropRegion[0] = this->CropRegion[1] = 0.0;
-    this->CropRegion[2] = this->CropRegion[3] = 0.0;
-    this->CropRegion[4] = this->CropRegion[5] = 0.0;
-    this->CorrectionsInitialized = false;
-    this->currentRpm = 0;
+    this->ShouldCheckSensor = true;
 
     std::fill(this->LastPointId, this->LastPointId + HDL_MAX_NUM_LASERS, -1);
 
@@ -445,8 +341,6 @@ public:
     this->IsHDL64Data = false;
     this->ReportedFactoryField1 = 0;
     this->ReportedFactoryField2 = 0;
-    this->CalibrationReportedNumLasers = -1;
-    this->IgnoreEmptyFrames = true;
     this->distanceResolutionM = 0.002;
     this->WantIntensityCorrection = false;
 
@@ -463,15 +357,8 @@ public:
     delete this->CurrentFrameState;
   }
 
-  std::vector<std::pair<int, int> > laserIdMapping;
-  bool shouldInitializeMapping;
-
-  std::vector<vtkSmartPointer<vtkPolyData> > Datasets;
+  vtkVelodyneHDLReader* Lidar;
   vtkSmartPointer<vtkPolyData> CurrentDataset;
-
-  vtkNew<vtkTransform> SensorTransform;
-  vtkNew<vtkTransform> GpsTransform;
-  vtkSmartPointer<vtkVelodyneTransformInterpolator> Interp;
 
   vtkSmartPointer<vtkPoints> Points;
   vtkSmartPointer<vtkDoubleArray> PointsX;
@@ -500,7 +387,6 @@ public:
   uint8_t ReportedFactoryField1;
   uint8_t ReportedFactoryField2;
 
-  bool IgnoreEmptyFrames;
   bool alreadyWarnedForIgnoredHDL64FiringPacket;
 
   bool OutputPacketProcessingDebugInfo;
@@ -508,9 +394,10 @@ public:
   // Bolean to manage the correction of intensity which indicates if the user want to correct the
   // intensities
   bool WantIntensityCorrection;
+  bool ShouldCheckSensor;
 
-  // SLAM algorithm
-  vtkSmartPointer<vtkSlam> Slam;
+  // Mapping laser id
+  std::vector<std::pair<int, int> > laserIdMapping;
 
   // WIP : We now have two method to compute the RPM :
   // - One method which computes the rpm using the point cloud
@@ -523,49 +410,31 @@ public:
 
   FramingState* CurrentFrameState;
   unsigned int LastTimestamp;
-  double currentRpm;
   std::vector<double> RpmByFrames;
   double TimeAdjust;
   vtkIdType LastPointId[HDL_MAX_NUM_LASERS];
   vtkIdType FirstPointIdOfDualReturnPair;
 
-  std::vector<fpos_t> FilePositions;
-  std::vector<int> Skips;
-  int Skip;
-  vtkPacketFileReader* Reader;
-
   unsigned char SensorPowerMode;
-  CropModeEnum CropMode;
-
-  // Number of allowed split, for frame-range retrieval.
-  int SplitCounter;
 
   // Parameters ready by calibration
   std::vector<double> cos_lookup_table_;
   std::vector<double> sin_lookup_table_;
   HDLLaserCorrection laser_corrections_[HDL_MAX_NUM_LASERS];
   double XMLColorTable[HDL_MAX_NUM_LASERS][3];
-  int CalibrationReportedNumLasers;
-  bool CorrectionsInitialized;
   bool IsCorrectionFromLiveStream;
 
   // Sensor parameters presented as rolling data, extracted from enough packets
   vtkRollingDataAccumulator* rollingCalibrationData;
 
   // User configurable parameters
-  int NumberOfTrailingFrames;
-  int ApplyTransform;
+  std::vector<int> Skips;
+  int Skip;
   int FiringsSkip;
-  bool IgnoreZeroDistances;
   bool UseIntraFiringAdjustment;
 
-  bool CropReturns;
-  bool CropOutside;
   bool AlreadyWarnAboutCalibration;
-  double CropRegion[6];
-  double distanceResolutionM;
 
-  std::vector<bool> LaserSelection;
   unsigned int DualReturnFilter;
 
   void SplitFrame(bool force = false);
@@ -575,12 +444,10 @@ public:
   void Init();
   void InitTrigonometricTables();
   void PrecomputeCorrectionCosSin();
-  void LoadCorrectionsFile(const std::string& filename);
+  void LoadCalibration(const std::string& filename) override;
   bool HDL64LoadCorrectionsFromStreamData();
-  bool shouldBeCroppedOut(double pos[3], double theta);
 
-  void ProcessHDLPacket(unsigned char* data, std::size_t bytesReceived);
-  static bool shouldSplitFrame(uint16_t, int, int&);
+  void ProcessPacket(unsigned char* data, std::size_t bytesReceived) override;
 
   double ComputeTimestamp(unsigned int tohTime);
   void ComputeOrientation(double timestamp, double adjustedTimestamp, vtkTransform* geotransform);
@@ -603,6 +470,12 @@ public:
   void ComputeCorrectedValues(const unsigned short azimuth, const HDLLaserReturn* laserReturn,
     const HDLLaserCorrection* correction, double pos[3], double& distanceM, short& intensity,
     bool correctIntensity);
+
+  void UnloadPerFrameData() override;
+
+  bool IsLidarPacket(const unsigned char *&data, unsigned int &dataLength, pcap_pkthdr **headerReference, unsigned int *dataHeaderLength) override;
+  int CountNewFrameInPacket(const unsigned char *&data, unsigned int &dataLength, pcap_pkthdr **headerReference, unsigned int *dataHeaderLength) override;
+  void CheckSensorCalibrationConsistency() override;
 };
 
 //-----------------------------------------------------------------------------
@@ -623,13 +496,125 @@ std::string vtkVelodyneHDLReader::GetSensorInformation()
 }
 
 //-----------------------------------------------------------------------------
+void vtkVelodyneHDLReader::SetFileName(const std::string &filename)
+{
+  if (filename == this->Internal->FileName)
+  {
+    return;
+  }
+
+  this->Internal->FileName = filename;
+  this->Internal->FilePositions.clear();
+  this->Internal->Skips.clear();
+  this->Internal->UnloadPerFrameData();
+  this->Modified();
+}
+
+//-----------------------------------------------------------------------------
+bool vtkVelodyneHDLReader::vtkInternal::IsLidarPacket(const unsigned char *&data, unsigned int &dataLength, pcap_pkthdr **headerReference, unsigned int *dataHeaderLength)
+{
+  if (dataLength == HDLDataPacket::getDataByteLength() || dataLength == 512)
+  {
+    return true;
+  }
+  return false;
+}
+
+//-----------------------------------------------------------------------------
+int vtkVelodyneHDLReader::vtkInternal::CountNewFrameInPacket(const unsigned char *&data, unsigned int &dataLength, pcap_pkthdr **headerReference, unsigned int *dataHeaderLength)
+{
+  // dont check for frame counts if it was not a firing packet
+  if (dataLength != HDLDataPacket::getDataByteLength())
+  {
+    return 0;
+  }
+  FramingState currentFrameState;
+  int count = 0;
+  // Check if we cycled a frame and decrement
+  const HDLDataPacket* dataPacket = reinterpret_cast<const HDLDataPacket*>(data);
+
+  for (int i = this->Skip; i < HDL_FIRING_PER_PKT; ++i)
+  {
+    const HDLFiringData& firingData = dataPacket->firingData[i];
+
+    if (currentFrameState.hasChangedWithValue(firingData))
+    {
+      count++;
+    }
+  }
+  return count;
+}
+
+//-----------------------------------------------------------------------------
+void vtkVelodyneHDLReader::vtkInternal::CheckSensorCalibrationConsistency()
+{
+  // check if the reported sensor is consistent with the calibration sensor
+  if (this->ShouldCheckSensor)
+  {
+    const unsigned char* data;
+    unsigned int dataLength;
+    double timeSinceStart;
+    // Open the .pcap
+    this->Open();
+    // set the position to the first full frame
+    this->Reader->SetFilePosition(&this->FilePositions[0]);
+    // Read the data of a packet
+    while (this->Reader->NextPacket(data, dataLength, timeSinceStart))
+    {
+      // Update the sensor type if appropriate packet
+      if (this->Lidar->updateReportedSensor(data, dataLength))
+      {
+        // Compare the number of lasers from calibration and from sensor
+        this->Lidar->isReportedSensorAndCalibrationFileConsistent(true);
+        // check is done
+        this->ShouldCheckSensor = false;
+        break;
+      }
+    }
+    // close the .pcap file
+    this->Close();
+  }
+}
+
+//-----------------------------------------------------------------------------
+void vtkVelodyneHDLReader::GetLaserIdMapping(int* output) const
+{
+  this->Internal->laserIdMapping.resize(this->Internal->CalibrationReportedNumLasers);
+  for (int i = 0; i < this->Internal->CalibrationReportedNumLasers; ++i)
+  {
+    this->Internal->laserIdMapping[i].second = static_cast<int>(i);
+    this->Internal->laserIdMapping[i].first = this->Internal->laser_corrections_[i].verticalCorrection;
+  }
+  std::sort(this->Internal->laserIdMapping.begin(), this->Internal->laserIdMapping.end());
+
+  for (int i = 0; i < this->Internal->CalibrationReportedNumLasers; i++)
+  {
+    output[2 * i] = this->Internal->laserIdMapping[i].first;
+    output[2 * i + 1] = this->Internal->laserIdMapping[i].second;
+  }
+}
+
+//-----------------------------------------------------------------------------
 vtkStandardNewMacro(vtkVelodyneHDLReader);
 
 //-----------------------------------------------------------------------------
 vtkVelodyneHDLReader::vtkVelodyneHDLReader()
 {
-  this->Internal = new vtkInternal;
-  this->UnloadPerFrameData();
+  // TODO: when migrating to c++11, remove the
+  // code duplication by calling the none default
+  // constructor in the initialization of the
+  // default constructor
+  this->Internal = new vtkInternal(this);
+  this->SetNumberOfInputPorts(0);
+  this->SetNumberOfOutputPorts(1);
+  SetPimpInternal(this->Internal);
+}
+
+//-----------------------------------------------------------------------------
+vtkVelodyneHDLReader::vtkVelodyneHDLReader(vtkInternal* pimpl) : vtkLidarReader(new vtkInternal(this))
+{
+  this->Internal = pimpl;
+//  this->UnloadPerFrameData();
   this->SetNumberOfInputPorts(0);
   this->SetNumberOfOutputPorts(1);
 }
@@ -637,29 +622,6 @@ vtkVelodyneHDLReader::vtkVelodyneHDLReader()
 //-----------------------------------------------------------------------------
 vtkVelodyneHDLReader::~vtkVelodyneHDLReader()
 {
-  delete this->Internal;
-}
-
-//-----------------------------------------------------------------------------
-const std::string& vtkVelodyneHDLReader::GetFileName()
-{
-  return this->FileName;
-}
-
-//-----------------------------------------------------------------------------
-int vtkVelodyneHDLReader::GetIgnoreZeroDistances() const
-{
-  return this->Internal->IgnoreZeroDistances;
-}
-
-//-----------------------------------------------------------------------------
-void vtkVelodyneHDLReader::SetIgnoreZeroDistances(int value)
-{
-  if (this->Internal->IgnoreZeroDistances != value)
-  {
-    this->Internal->IgnoreZeroDistances = value;
-    this->Modified();
-  }
 }
 
 //-----------------------------------------------------------------------------
@@ -674,22 +636,6 @@ void vtkVelodyneHDLReader::SetOutputPacketProcessingDebugInfo(int value)
   if (this->Internal->OutputPacketProcessingDebugInfo != value)
   {
     this->Internal->OutputPacketProcessingDebugInfo = value;
-    this->Modified();
-  }
-}
-
-//-----------------------------------------------------------------------------
-int vtkVelodyneHDLReader::GetIgnoreEmptyFrames() const
-{
-  return this->Internal->IgnoreEmptyFrames;
-}
-
-//-----------------------------------------------------------------------------
-void vtkVelodyneHDLReader::SetIgnoreEmptyFrames(int value)
-{
-  if (this->Internal->IgnoreEmptyFrames != value)
-  {
-    this->Internal->IgnoreEmptyFrames = value;
     this->Modified();
   }
 }
@@ -711,164 +657,6 @@ void vtkVelodyneHDLReader::SetIntraFiringAdjust(int value)
 }
 
 //-----------------------------------------------------------------------------
-void vtkVelodyneHDLReader::SetApplyTransform(int apply)
-{
-  if (apply != this->Internal->ApplyTransform)
-  {
-    this->Modified();
-  }
-  this->Internal->ApplyTransform = apply;
-}
-
-//-----------------------------------------------------------------------------
-int vtkVelodyneHDLReader::GetApplyTransform()
-{
-  return this->Internal->ApplyTransform;
-}
-
-//-----------------------------------------------------------------------------
-void vtkVelodyneHDLReader::GetLaserIdMapping(int* output) const
-{
-  this->Internal->laserIdMapping.resize(this->Internal->CalibrationReportedNumLasers);
-  for (int i = 0; i < this->Internal->CalibrationReportedNumLasers; ++i)
-  {
-    this->Internal->laserIdMapping[i].second = static_cast<int>(i);
-    this->Internal->laserIdMapping[i].first = this->Internal->laser_corrections_[i].verticalCorrection;
-  }
-  std::sort(this->Internal->laserIdMapping.begin(), this->Internal->laserIdMapping.end());
-
-  for (int i = 0; i < this->Internal->CalibrationReportedNumLasers; i++)
-  {
-    output[2 * i] = this->Internal->laserIdMapping[i].first;
-    output[2 * i + 1] = this->Internal->laserIdMapping[i].second;
-  }
-  cout << "LaserIdMapping done" << endl;
-}
-
-//-----------------------------------------------------------------------------
-void vtkVelodyneHDLReader::SetSensorTransform(vtkTransform* transform)
-{
-  if (transform)
-  {
-    this->Internal->SensorTransform->SetMatrix(transform->GetMatrix());
-  }
-  else
-  {
-    this->Internal->SensorTransform->Identity();
-  }
-  this->Modified();
-}
-
-//-----------------------------------------------------------------------------
-void vtkVelodyneHDLReader::SetGpsTransform(vtkTransform* transform)
-{
-  if (transform)
-  {
-    this->Internal->GpsTransform->SetMatrix(transform->GetMatrix());
-  }
-  else
-  {
-    this->Internal->GpsTransform->Identity();
-  }
-  this->Modified();
-}
-
-//-----------------------------------------------------------------------------
-void vtkVelodyneHDLReader::CreateLinearInterpolator()
-{
-  // Initialize the interpolator
-  this->Internal->Interp = vtkSmartPointer<vtkVelodyneTransformInterpolator>::New();
-  this->Internal->Interp->SetInterpolationTypeToLinear();
-  this->Internal->ApplyTransform = 0;
-}
-
-//-----------------------------------------------------------------------------
-void vtkVelodyneHDLReader::CreateNearestInterpolator()
-{
-  // Initialize the interpolator
-  this->Internal->Interp = vtkSmartPointer<vtkVelodyneTransformInterpolator>::New();
-  this->Internal->Interp->SetInterpolationTypeToNearestLowBounded();
-  this->Internal->ApplyTransform = 0;
-}
-
-//-----------------------------------------------------------------------------
-vtkVelodyneTransformInterpolator* vtkVelodyneHDLReader::GetInterpolator() const
-{
-  return this->Internal->Interp;
-}
-
-//-----------------------------------------------------------------------------
-void vtkVelodyneHDLReader::SetInterpolator(vtkVelodyneTransformInterpolator* interpolator)
-{
-  this->Internal->Interp = interpolator;
-  this->Modified();
-}
-
-//-----------------------------------------------------------------------------
-void vtkVelodyneHDLReader::SetFileName(const std::string& filename)
-{
-  if (filename == this->FileName)
-  {
-    return;
-  }
-
-  this->FileName = filename;
-  this->Internal->FilePositions.clear();
-  this->Internal->Skips.clear();
-  this->UnloadPerFrameData();
-  this->Modified();
-}
-
-//-----------------------------------------------------------------------------
-const std::string& vtkVelodyneHDLReader::GetCorrectionsFile()
-{
-  return this->CorrectionsFile;
-}
-
-//-----------------------------------------------------------------------------
-
-#define PARAM(z, n, data) int x##n,
-#define VAL(z, n, data) x##n,
-#define B_HDL_MAX_NUM_LASERS 64
-void vtkVelodyneHDLReader::SetLaserSelection(BOOST_PP_REPEAT(
-  BOOST_PP_DEC(B_HDL_MAX_NUM_LASERS), PARAM, "") int BOOST_PP_CAT(x, B_HDL_MAX_NUM_LASERS))
-{
-  assert(HDL_MAX_NUM_LASERS == B_HDL_MAX_NUM_LASERS);
-  int mask[HDL_MAX_NUM_LASERS] = { BOOST_PP_REPEAT(BOOST_PP_DEC(B_HDL_MAX_NUM_LASERS), VAL, "")
-      BOOST_PP_CAT(x, B_HDL_MAX_NUM_LASERS) };
-  this->SetLaserSelection(mask);
-  this->Modified();
-}
-#undef B_HDL_MAX_NUM_LASERS
-#undef PARAM
-#undef VAL
-
-//-----------------------------------------------------------------------------
-void vtkVelodyneHDLReader::SetLaserSelection(int LaserSelection[HDL_MAX_NUM_LASERS])
-{
-  for (int i = 0; i < HDL_MAX_NUM_LASERS; ++i)
-  {
-    this->Internal->LaserSelection[i] = LaserSelection[i];
-  }
-  this->Modified();
-}
-
-//-----------------------------------------------------------------------------
-void vtkVelodyneHDLReader::GetLaserSelection(int LaserSelection[HDL_MAX_NUM_LASERS])
-{
-  for (int i = 0; i < HDL_MAX_NUM_LASERS; ++i)
-  {
-    LaserSelection[i] = this->Internal->LaserSelection[i];
-  }
-}
-
-//-----------------------------------------------------------------------------
-double vtkVelodyneHDLReader::GetCurrentRpm()
-{
-  return this->Internal->currentRpm;
-}
-
-//-----------------------------------------------------------------------------
 unsigned int vtkVelodyneHDLReader::GetDualReturnFilter() const
 {
   return this->Internal->DualReturnFilter;
@@ -882,25 +670,6 @@ void vtkVelodyneHDLReader::SetDualReturnFilter(unsigned int filter)
     this->Internal->DualReturnFilter = filter;
     this->Modified();
   }
-}
-
-//-----------------------------------------------------------------------------
-void vtkVelodyneHDLReader::AddTransform(double rx, double ry, double rz, double tx, double ty, double tz, double time)
-{
-  // All the result obtained was with ZXY but it should be ZYX
-  // at the end, let's try with ZYX and make some test
-  vtkNew<vtkTransform> mappingTransform;
-  mappingTransform->PostMultiply();
-
-  // Passage from L(t_current) to L(t_begin) first frame
-  // Application of the SLAM result
-  mappingTransform->RotateX(rx);
-  mappingTransform->RotateY(ry);
-  mappingTransform->RotateZ(rz);
-  double pos[3] = {tx,ty,tz};
-  mappingTransform->Translate(pos);
-  this->Internal->Interp->AddTransform(time, mappingTransform.GetPointer());
-  this->Internal->Interp->Modified();
 }
 
 //-----------------------------------------------------------------------------
@@ -943,12 +712,6 @@ void vtkVelodyneHDLReader::GetXMLColorTable(double XMLColorTable[4 * HDL_MAX_NUM
 }
 
 //-----------------------------------------------------------------------------
-void vtkVelodyneHDLReader::SetDummyProperty(int vtkNotUsed(dummy))
-{
-  this->Modified();
-}
-
-//-----------------------------------------------------------------------------
 void vtkVelodyneHDLReader::SetFiringsSkip(int pr)
 {
   this->Internal->FiringsSkip = pr;
@@ -956,247 +719,75 @@ void vtkVelodyneHDLReader::SetFiringsSkip(int pr)
 }
 
 //-----------------------------------------------------------------------------
-void vtkVelodyneHDLReader::SetNumberOfTrailingFrames(int numTrailing)
+void vtkVelodyneHDLReader::SetCalibrationFileName(const std::string& filename)
 {
-  assert(numTrailing >= 0);
-  this->Internal->NumberOfTrailingFrames = numTrailing;
-  this->Modified();
-}
-
-//-----------------------------------------------------------------------------
-void vtkVelodyneHDLReader::SetCropReturns(int crop)
-{
-  if (!this->Internal->CropReturns == !!crop)
+  if (filename.empty())
   {
-    this->Internal->CropReturns = !!crop;
-    this->Modified();
-  }
-}
-
-//-----------------------------------------------------------------------------
-void vtkVelodyneHDLReader::SetCropOutside(int crop)
-{
-  if (!this->Internal->CropOutside == !!crop)
-  {
-    this->Internal->CropOutside = !!crop;
-    this->Modified();
-  }
-}
-
-//-----------------------------------------------------------------------------
-void vtkVelodyneHDLReader::SetCropRegion(double region[6])
-{
-  std::copy(region, region + 6, this->Internal->CropRegion);
-  this->Modified();
-}
-
-void vtkVelodyneHDLReader::SetCropMode(int cropMode)
-{
-  this->Internal->CropMode = static_cast<CropModeEnum>(cropMode);
-  this->Modified();
-}
-
-//-----------------------------------------------------------------------------
-void vtkVelodyneHDLReader::SetCropRegion(
-  double xl, double xu, double yl, double yu, double zl, double zu)
-{
-  this->Internal->CropRegion[0] = xl;
-  this->Internal->CropRegion[1] = xu;
-  this->Internal->CropRegion[2] = yl;
-  this->Internal->CropRegion[3] = yu;
-  this->Internal->CropRegion[4] = zl;
-  this->Internal->CropRegion[5] = zu;
-  this->Modified();
-}
-
-//-----------------------------------------------------------------------------
-void vtkVelodyneHDLReader::SetCorrectionsFile(const std::string& correctionsFile)
-{
-  // Live calibration choice passes an empty string as correctionsFile
-  if (correctionsFile != "")
-  {
-    if (correctionsFile == this->CorrectionsFile)
-    {
-      return;
-    }
-    if (!boost::filesystem::exists(correctionsFile) ||
-      boost::filesystem::is_directory(correctionsFile))
-    {
-      std::ostringstream errorMessage("Invalid sensor configuration file ");
-      errorMessage << correctionsFile << ": ";
-      if (!boost::filesystem::exists(correctionsFile))
-      {
-        errorMessage << "File not found!";
-      }
-      else
-      {
-        errorMessage << "It is a directory!";
-      }
-      vtkErrorMacro(<< errorMessage.str());
-      return;
-    }
-    this->Internal->LoadCorrectionsFile(correctionsFile);
-    this->Internal->IsCorrectionFromLiveStream = false;
+    // no calibration file: HDL64 with autocalibration
+    this->Internal->IsCalibrated = false;
+    this->Internal->IsCorrectionFromLiveStream = true;
   }
   else
   {
-    this->Internal->CorrectionsInitialized = false;
-    this->Internal->IsCorrectionFromLiveStream = true;
+    vtkLidarProvider::SetCalibrationFileName(filename);
+    this->Internal->IsCorrectionFromLiveStream = false;
   }
-
-  this->CorrectionsFile = correctionsFile;
-  this->UnloadPerFrameData();
-  this->Modified();
 }
 
 //-----------------------------------------------------------------------------
-void vtkVelodyneHDLReader::UnloadPerFrameData()
+void vtkVelodyneHDLReader::vtkInternal::UnloadPerFrameData()
 {
-  std::fill(this->Internal->LastPointId, this->Internal->LastPointId + HDL_MAX_NUM_LASERS, -1);
-  this->Internal->CurrentFrameState->reset();
-  this->Internal->LastTimestamp = std::numeric_limits<unsigned int>::max();
-  this->Internal->TimeAdjust = std::numeric_limits<double>::quiet_NaN();
+  std::fill(this->LastPointId, this->LastPointId + HDL_MAX_NUM_LASERS, -1);
+  this->CurrentFrameState->reset();
+  this->LastTimestamp = std::numeric_limits<unsigned int>::max();
+  this->TimeAdjust = std::numeric_limits<double>::quiet_NaN();
 
-  this->Internal->rollingCalibrationData->clear();
-  this->Internal->HasDualReturn = false;
-  this->Internal->IsHDL64Data = false;
-  this->Internal->Datasets.clear();
-  this->Internal->CurrentDataset = this->Internal->CreateData(0);
+  this->rollingCalibrationData->clear();
+  this->HasDualReturn = false;
+  this->IsHDL64Data = false;
+  this->Datasets.clear();
+  this->CurrentDataset = this->CreateData(0);
 
   this->ShouldCheckSensor = true;
 }
 
 //-----------------------------------------------------------------------------
-void vtkVelodyneHDLReader::SetTimestepInformation(vtkInformation* info)
+vtkSmartPointer<vtkPolyData> vtkVelodyneHDLReader::GetFrame(int frameNumber, int wantedNumberOfTrailingFrames)
 {
-  const size_t numberOfTimesteps = this->Internal->FilePositions.size();
-  std::vector<double> timesteps;
-  for (size_t i = 0; i < numberOfTimesteps; ++i)
+  // Setup some variable needed by ProcessPacket
+  this->Internal->Skip = this->Internal->Skips[frameNumber];
+  vtkSmartPointer<vtkPolyData> output = vtkLidarReader::GetFrame(frameNumber, wantedNumberOfTrailingFrames);
+  if (this->Internal->ShouldAddDualReturnArray)
   {
-    timesteps.push_back(i);
+    output->GetPointData()->AddArray(this->Internal->SelectedDualReturn);
   }
-
-  if (numberOfTimesteps)
-  {
-    double timeRange[2] = { timesteps.front(), timesteps.back() };
-    info->Set(vtkStreamingDemandDrivenPipeline::TIME_STEPS(), &timesteps.front(), timesteps.size());
-    info->Set(vtkStreamingDemandDrivenPipeline::TIME_RANGE(), timeRange, 2);
-  }
-  else
-  {
-    info->Remove(vtkStreamingDemandDrivenPipeline::TIME_STEPS());
-    info->Remove(vtkStreamingDemandDrivenPipeline::TIME_RANGE());
-  }
+  return output;
 }
 
 //-----------------------------------------------------------------------------
-int vtkVelodyneHDLReader::RequestData(
-  vtkInformation* request, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
+vtkPolyData* vtkVelodyneHDLReader::GetFramePointer(int frameNumber, int wantedNumberOfTrailingFrames)
 {
-  vtkPolyData* output = vtkPolyData::GetData(outputVector);
-  vtkInformation* info = outputVector->GetInformationObject(0);
-
-  if (!this->FileName.length())
-  {
-    vtkErrorMacro("FileName has not been set.");
-    return 0;
-  }
-
-  if (!this->Internal->CorrectionsInitialized)
-  {
-    vtkErrorMacro("Corrections have not been set");
-    return 0;
-  }
-
-  int timestep = 0;
-  if (info->Has(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP()))
-  {
-    double timeRequest = info->Get(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP());
-    timestep = static_cast<int>(floor(timeRequest + 0.5));
-  }
-
-  if (timestep < 0 || timestep >= this->GetNumberOfFrames())
-  {
-    vtkErrorMacro("Cannot meet timestep request: " << timestep << ".  Have "
-                                                   << this->GetNumberOfFrames() << " datasets.");
-    output->ShallowCopy(this->Internal->CreateData(0));
-    return 0;
-  }
-
-  // check if the reported sensor is consistent with the calibration sensor
-  if (this->ShouldCheckSensor)
-  {
-    const unsigned char* data;
-    unsigned int dataLength;
-    double timeSinceStart;
-    // Open the .pcap
-    this->Open();
-    // set the position to the first full frame
-    this->Internal->Reader->SetFilePosition(&this->Internal->FilePositions[0]);
-    // Read the data of a packet
-    while (this->Internal->Reader->NextPacket(data, dataLength, timeSinceStart))
-    {
-      // Update the sensor type if appropriate packet
-      if (this->updateReportedSensor(data, dataLength))
-      {
-        // Compare the number of lasers from calibration and from sensor
-        this->isReportedSensorAndCalibrationFileConsistent(true);
-        // check is done
-        this->ShouldCheckSensor = false;
-        break;
-      }
-    }
-    // close the .pcap file
-    this->Close();
-  }
-
-  this->Open();
-
-  if (this->Internal->NumberOfTrailingFrames > 0)
-  {
-    output->ShallowCopy(this->GetFrameRange(
-      timestep - this->Internal->NumberOfTrailingFrames, this->Internal->NumberOfTrailingFrames));
-  }
-  else
-  {
-    output->ShallowCopy(this->GetFrame(timestep));
-    if (this->Internal->ShouldAddDualReturnArray)
-    {
-      output->GetPointData()->AddArray(this->Internal->SelectedDualReturn);
-    }
-  }
-
-  this->Close();
-  return 1;
+  return this->GetFrame(frameNumber, wantedNumberOfTrailingFrames).Get();
 }
 
 //-----------------------------------------------------------------------------
 int vtkVelodyneHDLReader::RequestInformation(
   vtkInformation* request, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
-  if (this->FileName.length() &&
+  if (this->Internal->FileName.length() &&
     (!this->Internal->FilePositions.size() || this->Internal->IsCorrectionFromLiveStream))
   {
     this->ReadFrameInformation();
   }
-
-  vtkInformation* info = outputVector->GetInformationObject(0);
-  this->SetTimestepInformation(info);
-  return 1;
+  return this->vtkLidarReader::RequestInformation(request, inputVector, outputVector);
 }
 
 //-----------------------------------------------------------------------------
 void vtkVelodyneHDLReader::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
-  os << indent << "FileName: " << this->FileName << endl;
-  os << indent << "CorrectionsFile: " << this->CorrectionsFile << endl;
-}
-
-//-----------------------------------------------------------------------------
-int vtkVelodyneHDLReader::CanReadFile(const char* fname)
-{
-  return 1;
+  os << indent << "FileName: " << this->Internal->FileName << endl;
+  os << indent << "CalibrationFile: " << this->Internal->CalibrationFileName << endl;
 }
 
 //-----------------------------------------------------------------------------
@@ -1206,204 +797,9 @@ void vtkVelodyneHDLReader::SetShouldAddDualReturnArray(bool input)
 }
 
 //-----------------------------------------------------------------------------
-void vtkVelodyneHDLReader::ProcessHDLPacket(unsigned char* data, unsigned int bytesReceived)
-{
-  this->Internal->ProcessHDLPacket(data, bytesReceived);
-}
-
-//-----------------------------------------------------------------------------
 std::vector<vtkSmartPointer<vtkPolyData> >& vtkVelodyneHDLReader::GetDatasets()
 {
   return this->Internal->Datasets;
-}
-
-//-----------------------------------------------------------------------------
-int vtkVelodyneHDLReader::GetNumberOfFrames()
-{
-  return this->Internal->FilePositions.size();
-  ;
-}
-
-//-----------------------------------------------------------------------------
-int vtkVelodyneHDLReader::GetNumberOfChannels()
-{
-  return this->Internal->CalibrationReportedNumLasers;
-}
-
-//-----------------------------------------------------------------------------
-void vtkVelodyneHDLReader::Open()
-{
-  this->Close();
-  this->Internal->Reader = new vtkPacketFileReader;
-  if (!this->Internal->Reader->Open(this->FileName))
-  {
-    vtkErrorMacro("Failed to open packet file: " << this->FileName << endl
-                                                 << this->Internal->Reader->GetLastError());
-    this->Close();
-  }
-}
-
-//-----------------------------------------------------------------------------
-void vtkVelodyneHDLReader::Close()
-{
-  delete this->Internal->Reader;
-  this->Internal->Reader = 0;
-}
-
-//-----------------------------------------------------------------------------
-void vtkVelodyneHDLReader::DumpFrames(int startFrame, int endFrame, const std::string& filename)
-{
-  if (!this->Internal->Reader)
-  {
-    vtkErrorMacro("DumpFrames() called but packet file reader is not open.");
-    return;
-  }
-
-  vtkPacketFileWriter writer;
-  if (!writer.Open(filename))
-  {
-    vtkErrorMacro("Failed to open packet file for writing: " << filename);
-    return;
-  }
-
-  pcap_pkthdr* header = 0;
-  const unsigned char* data = 0;
-  unsigned int dataLength = 0;
-  unsigned int dataHeaderLength = 0;
-  double timeSinceStart = 0;
-
-  FramingState currentFrameState;
-  int currentFrame = startFrame;
-
-  this->Internal->Reader->SetFilePosition(&this->Internal->FilePositions[startFrame]);
-  int skip = this->Internal->Skips[startFrame];
-  const unsigned int ethernetUDPHeaderLength = 42;
-  while (this->Internal->Reader->NextPacket(
-           data, dataLength, timeSinceStart, &header, &dataHeaderLength) &&
-    currentFrame <= endFrame)
-  {
-    if (dataLength == HDLDataPacket::getDataByteLength() || dataLength == 512)
-    {
-      writer.WritePacket(header, const_cast<unsigned char*>(data) - dataHeaderLength);
-    }
-
-    // dont check for frame counts if it was not a firing packet
-    if (dataLength != HDLDataPacket::getDataByteLength())
-    {
-      continue;
-    }
-
-    // Check if we cycled a frame and decrement
-    const HDLDataPacket* dataPacket = reinterpret_cast<const HDLDataPacket*>(data);
-
-    for (int i = skip; i < HDL_FIRING_PER_PKT; ++i)
-    {
-      const HDLFiringData& firingData = dataPacket->firingData[i];
-
-      if (currentFrameState.hasChangedWithValue(firingData))
-      {
-        currentFrame++;
-        if (currentFrame > endFrame)
-        {
-          break;
-        }
-      }
-    }
-    skip = 0;
-  }
-
-  writer.Close();
-}
-
-//-----------------------------------------------------------------------------
-vtkSmartPointer<vtkPolyData> vtkVelodyneHDLReader::GetFrameRange(
-  int startFrame, int wantedNumberOfTrailingFrames)
-{
-  this->UnloadPerFrameData();
-  if (!this->Internal->Reader)
-  {
-    vtkErrorMacro("GetFrame() called but packet file reader is not open.");
-    return 0;
-  }
-  if (!this->Internal->CorrectionsInitialized)
-  {
-    vtkErrorMacro("Corrections have not been set");
-    return 0;
-  }
-
-  const unsigned char* data = 0;
-  unsigned int dataLength = 0;
-  double timeSinceStart = 0;
-
-  if (startFrame < 0)
-  {
-    wantedNumberOfTrailingFrames -= startFrame;
-    startFrame = 0;
-  }
-  assert(wantedNumberOfTrailingFrames >= 0);
-
-  this->Internal->Reader->SetFilePosition(&this->Internal->FilePositions[startFrame]);
-  this->Internal->Skip = this->Internal->Skips[startFrame];
-
-  this->Internal->SplitCounter = wantedNumberOfTrailingFrames;
-
-  while (this->Internal->Reader->NextPacket(data, dataLength, timeSinceStart))
-  {
-    this->ProcessHDLPacket(const_cast<unsigned char*>(data), dataLength);
-
-    if (this->Internal->Datasets.size())
-    {
-      this->Internal->SplitCounter = 0;
-      return this->Internal->Datasets.back();
-    }
-  }
-
-  this->Internal->SplitFrame(true);
-  this->Internal->SplitCounter = 0;
-  return this->Internal->Datasets.back();
-}
-
-//-----------------------------------------------------------------------------
-vtkPolyData* vtkVelodyneHDLReader::GetFrame(int frameNumber)
-{
-  this->UnloadPerFrameData();
-  if (!this->Internal->Reader)
-  {
-    vtkErrorMacro("GetFrame() called but packet file reader is not open.");
-    return 0;
-  }
-  if (!this->Internal->CorrectionsInitialized)
-  {
-    vtkErrorMacro("Corrections have not been set");
-    return 0;
-  }
-
-  assert(this->Internal->FilePositions.size() == this->Internal->Skips.size());
-  if (frameNumber < 0 || frameNumber > this->Internal->FilePositions.size())
-  {
-    vtkErrorMacro("Invalid frame requested");
-    return 0;
-  }
-
-  const unsigned char* data = 0;
-  unsigned int dataLength = 0;
-  double timeSinceStart = 0;
-
-  this->Internal->Reader->SetFilePosition(&this->Internal->FilePositions[frameNumber]);
-  this->Internal->Skip = this->Internal->Skips[frameNumber];
-
-  while (this->Internal->Reader->NextPacket(data, dataLength, timeSinceStart))
-  {
-    this->ProcessHDLPacket(const_cast<unsigned char*>(data), dataLength);
-
-    if (this->Internal->Datasets.size())
-    {
-      return this->Internal->Datasets.back();
-    }
-  }
-
-  this->Internal->SplitFrame(true);
-  return this->Internal->Datasets.back();
 }
 
 namespace
@@ -1472,7 +868,7 @@ vtkSmartPointer<vtkPolyData> vtkVelodyneHDLReader::vtkInternal::CreateData(vtkId
   rpmData->SetNumberOfTuples(1);     // One tuple
   rpmData->SetNumberOfComponents(1); // One value per tuple, the scalar
   rpmData->SetName("RotationPerMinute");
-  rpmData->SetTuple1(0, this->currentRpm);
+  rpmData->SetTuple1(0, this->Frequency);
   polyData->GetFieldData()->AddArray(rpmData);
 
   if (this->HasDualReturn)
@@ -1503,53 +899,6 @@ vtkSmartPointer<vtkCellArray> vtkVelodyneHDLReader::vtkInternal::NewVertexCells(
   return cellArray;
 }
 
-bool vtkVelodyneHDLReader::vtkInternal::shouldBeCroppedOut(double pos[3], double theta)
-{
-  // Test if point is cropped
-  if (!this->CropReturns)
-  {
-    return false;
-  }
-  switch (this->CropMode)
-  {
-    case Cartesian: // Cartesian cropping mode
-    {
-      bool pointOutsideOfBox = pos[0] >= this->CropRegion[0] && pos[0] <= this->CropRegion[1] &&
-        pos[1] >= this->CropRegion[2] && pos[1] <= this->CropRegion[3] &&
-        pos[2] >= this->CropRegion[4] && pos[2] <= this->CropRegion[5];
-      return (
-        (pointOutsideOfBox && this->CropOutside) || (!pointOutsideOfBox && !this->CropOutside));
-      break;
-    }
-    case Spherical:
-      // Spherical mode
-      {
-        double R = std::sqrt(pos[0] * pos[0] + pos[1] * pos[1] + pos[2] * pos[2]);
-        double vertAngle = std::atan2(pos[2], std::sqrt(pos[0] * pos[0] + pos[1] * pos[1]));
-        vertAngle *= 180.0 / vtkMath::Pi();
-        bool pointInsideOfBounds;
-        if (this->CropRegion[0] <= this->CropRegion[1]) // 0 is NOT in theta range
-        {
-          pointInsideOfBounds = theta >= this->CropRegion[0] && theta <= this->CropRegion[1] &&
-            R >= this->CropRegion[4] && R <= this->CropRegion[5];
-        }
-        else // theta range includes 0
-        {
-          pointInsideOfBounds = (theta >= this->CropRegion[0] || theta <= this->CropRegion[1]) &&
-            R >= this->CropRegion[4] && R <= this->CropRegion[5];
-        }
-        pointInsideOfBounds &= (vertAngle > this->CropRegion[2] && vertAngle < this->CropRegion[3]);
-        return ((pointInsideOfBounds && this->CropOutside) ||
-          (!pointInsideOfBounds && !this->CropOutside));
-        break;
-      }
-    case Cylindric:
-    {
-      // space holder for future implementation
-    }
-  }
-  return false;
-}
 //-----------------------------------------------------------------------------
 void vtkVelodyneHDLReader::vtkInternal::PushFiringData(const unsigned char laserId,
   const unsigned char rawLaserId, unsigned short azimuth, const double timestamp,
@@ -1705,17 +1054,17 @@ void vtkVelodyneHDLReader::vtkInternal::InitTrigonometricTables()
 }
 
 //-----------------------------------------------------------------------------
-void vtkVelodyneHDLReader::vtkInternal::LoadCorrectionsFile(const std::string& correctionsFile)
+void vtkVelodyneHDLReader::vtkInternal::LoadCalibration(const std::string& filename)
 {
   boost::property_tree::ptree pt;
   try
   {
-    read_xml(correctionsFile, pt, boost::property_tree::xml_parser::trim_whitespace);
+    read_xml(filename, pt, boost::property_tree::xml_parser::trim_whitespace);
   }
   catch (boost::exception const&)
   {
     vtkGenericWarningMacro(
-      "LoadCorrectionsFile: error reading calibration file: " << correctionsFile);
+      "LoadCalibration: error reading calibration file: " << filename);
     return;
   }
   // Read distLSB if provided
@@ -1895,8 +1244,10 @@ void vtkVelodyneHDLReader::vtkInternal::LoadCorrectionsFile(const std::string& c
   }
 
   PrecomputeCorrectionCosSin();
-  this->CorrectionsInitialized = true;
+  this->IsCalibrated = true;
 }
+
+//-----------------------------------------------------------------------------
 void vtkVelodyneHDLReader::vtkInternal::PrecomputeCorrectionCosSin()
 {
 
@@ -1944,35 +1295,13 @@ void vtkVelodyneHDLReader::vtkInternal::SplitFrame(bool force)
 
   this->CurrentDataset->SetVerts(this->NewVertexCells(this->CurrentDataset->GetNumberOfPoints()));
 
-  /* Commented to remove the point-cloud based method computation from SplitFrame
-  // The strategy is to compute an average RPM. The RPM is
-  // computed using chunks of size 1000. If the dataset doesn't
-  // have enought points, we reduce the size of the chunk.
-  double RPMValue = -1;
-  int chunkSize = 1000;
-  int nbrTry = 1;
-
-  // Minimum chunk size of 32
-  while( (RPMValue == -1) && nbrTry <= 5)
-  {
-    RPMValue = ComputeAverageRPM(this->CurrentDataset, chunkSize / nbrTry);
-    nbrTry++;
-  }
-
-  // if the number of points is under 32
-  if (RPMValue == -1)
-  {
-    vtkGenericWarningMacro("Not enough points in the dataset, RPM couldn't be computed");
-  }
-  */
-
   // Compute the rpm and reset
-  this->currentRpm = this->RpmCalculator.GetRPM();
+  this->Frequency = this->RpmCalculator.GetRPM();
   this->RpmCalculator.Reset();
 
   this->CurrentDataset->GetFieldData()
     ->GetArray("RotationPerMinute")
-    ->SetTuple1(0, this->currentRpm);
+    ->SetTuple1(0, this->Frequency);
   this->Datasets.push_back(this->CurrentDataset);
   this->CurrentDataset = this->CreateData(0);
 }
@@ -2129,21 +1458,6 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessFiring(HDLFiringData* firingData,
     this->FirstPointIdOfDualReturnPair = this->Points->GetNumberOfPoints();
   }
 
-
-  if (this->shouldInitializeMapping)
-  {
-    this->laserIdMapping.resize(this->CalibrationReportedNumLasers);
-
-    for (int i = 0; i < this->CalibrationReportedNumLasers; ++i)
-    {
-      this->laserIdMapping[i].second = static_cast<int>(i);
-      this->laserIdMapping[i].first = this->laser_corrections_[i].verticalCorrection;
-    }
-    std::sort(this->laserIdMapping.begin(), this->laserIdMapping.end());
-    this->shouldInitializeMapping = false;
-  }
-
-
   for (int dsr = 0; dsr < HDL_LASER_PER_FIRING; dsr++)
   {
     const unsigned char rawLaserId = static_cast<unsigned char>(dsr + firingBlockLaserOffset);
@@ -2238,7 +1552,7 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessFiring(HDLFiringData* firingData,
 }
 
 //-----------------------------------------------------------------------------
-void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(
+void vtkVelodyneHDLReader::vtkInternal::ProcessPacket(
   unsigned char* data, std::size_t bytesReceived)
 {
   if (bytesReceived != 1206)
@@ -2330,32 +1644,13 @@ void vtkVelodyneHDLReader::vtkInternal::ProcessHDLPacket(
   }
 }
 
-/*
-//-----------------------------------------------------------------------------
-bool vtkVelodyneHDLReader::vtkInternal::shouldSplitFrame(
-  uint16_t curRotationalPosition, int prevRotationalPosition, int& LastAzimuthSlope)
-{
-    bool hasPrevAzimuth = (prevRotationalPosition!=-1);
-    bool azimuthFrameSplit = FramingState::hasChangedWithValue(curRotationalPosition,
-hasPrevAzimuth,
-                        prevRotationalPosition, LastAzimuthSlope);
-    return azimuthFrameSplit;
-  }
-*/
-
-//-----------------------------------------------------------------------------
-double vtkVelodyneHDLReader::GetDistanceResolutionM()
-{
-  return this->Internal->distanceResolutionM;
-}
-
 //-----------------------------------------------------------------------------
 int vtkVelodyneHDLReader::ReadFrameInformation()
 {
   vtkPacketFileReader reader;
-  if (!reader.Open(this->FileName))
+  if (!reader.Open(this->Internal->FileName))
   {
-    vtkErrorMacro("Failed to open packet file: " << this->FileName << endl
+    vtkErrorMacro("Failed to open packet file: " << this->Internal->FileName << endl
                                                  << reader.GetLastError());
     return 0;
   }
@@ -2437,7 +1732,7 @@ int vtkVelodyneHDLReader::ReadFrameInformation()
 
     // Accumulate HDL64 Status byte data
     if (IsHDL64Data && this->Internal->IsCorrectionFromLiveStream &&
-      !this->Internal->CorrectionsInitialized)
+      !this->Internal->IsCalibrated)
     {
       this->appendRollingDataAndTryCorrection(data);
     }
@@ -2446,7 +1741,7 @@ int vtkVelodyneHDLReader::ReadFrameInformation()
   }
 
   if (IsHDL64Data && this->Internal->IsCorrectionFromLiveStream &&
-    !this->Internal->CorrectionsInitialized)
+    !this->Internal->IsCalibrated)
   {
     vtkGenericWarningMacro("Unable to load live calibration from pcap")
   }
@@ -2732,7 +2027,7 @@ bool vtkVelodyneHDLReader::vtkInternal::HDL64LoadCorrectionsFromStreamData()
 
   this->CalibrationReportedNumLasers = HDL64_RollingData_NumLaser;
   PrecomputeCorrectionCosSin();
-  this->CorrectionsInitialized = true;
+  this->IsCalibrated = true;
   return true;
 }
 
@@ -2758,12 +2053,6 @@ bool vtkVelodyneHDLReader::IsIntensityCorrectedBySensor()
 }
 
 //-----------------------------------------------------------------------------
-bool vtkVelodyneHDLReader::getCorrectionsInitialized()
-{
-  return this->Internal->CorrectionsInitialized;
-}
-
-//-----------------------------------------------------------------------------
 const bool& vtkVelodyneHDLReader::GetWantIntensityCorrection()
 {
   return this->Internal->WantIntensityCorrection;
@@ -2777,72 +2066,4 @@ void vtkVelodyneHDLReader::SetIntensitiesCorrected(const bool& state)
     this->Internal->WantIntensityCorrection = state;
     this->Modified();
   }
-}
-
-//-----------------------------------------------------------------------------
-void vtkVelodyneHDLReader::LoadTransforms(const std::string& filename)
-{
-  std::ifstream file;
-  file.open(filename);
-
-  if (!file.is_open())
-  {
-    vtkGenericWarningMacro("Can't load the specified file");
-  }
-
-  // Create a new interpolator
-  this->CreateNearestInterpolator();
-
-  std::string line;
-  std::string expectedLine = "Time,Rx(Roll),Ry(Pitch),Rz(Yaw),X,Y,Z";
-  std::getline(file, line);
-  if (line != expectedLine)
-  {
-    vtkGenericWarningMacro("Header file not expected. Version incompability");
-  }
-
-  while (std::getline(file, line))
-  {
-    std::vector<std::string> values;
-    boost::split(values, line, boost::is_any_of(","));
-
-    // time
-    double t = std::atof(values[0].c_str());
-    // rotation
-    double rx = std::atof(values[1].c_str()) * 180.0 / vtkMath::Pi();
-    double ry = std::atof(values[2].c_str()) * 180.0 / vtkMath::Pi();
-    double rz = std::atof(values[3].c_str()) * 180.0 / vtkMath::Pi();
-    // position
-    double x = std::atof(values[4].c_str());
-    double y = std::atof(values[5].c_str());
-    double z = std::atof(values[6].c_str());
-    // add the transform
-    this->AddTransform(rx, ry, rz, x, y, z, t);
-  }
-}
-
-//-----------------------------------------------------------------------------
-void vtkVelodyneHDLReader::ExportTransforms(const std::string& filename)
-{
-  std::ofstream file;
-  file.open(filename);
-
-  if (!file.is_open())
-  {
-    vtkGenericWarningMacro("Can't write the specified file");
-  }
-
-  std::vector<std::vector<double> > transforms = this->Internal->Interp->GetTransformList();
-  std::vector<double> T;
-
-  file.precision(12);
-  file << "Time,Rx(Roll),Ry(Pitch),Rz(Yaw),X,Y,Z" << std::endl;
-  for (unsigned int k = 0; k < transforms.size(); ++k)
-  {
-    T = transforms[k];
-    file << T[0] << "," << T[1] << "," << T[2] << "," << T[3] << ","
-         << T[4] << "," << T[5] << "," << T[6] << std::endl;
-  }
-  file.close();
-  return;
 }

@@ -199,7 +199,7 @@ private:
 
   // Convert cartesian coordinates of X point in its
   // spherical coordinates
-  Eigen::Matrix<double, 3, 1> GetSphericalCoordinates(Eigen::Matrix<double, 3, 1>& const X);
+  Eigen::Matrix<double, 3, 1> GetSphericalCoordinates(const Eigen::Matrix<double, 3, 1>& X);
 
   // export as images parameters
   bool ShouldExportAsImage;

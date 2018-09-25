@@ -13,7 +13,7 @@
 # limitations under the License.
 
 cmake_minimum_required(VERSION 2.8.8 FATAL_ERROR)
-include("branding.cmake")
+include("SoftwareInformation/branding.cmake")
 project(VeloView)
 
 if (UNIX)
@@ -182,9 +182,9 @@ build_paraview_client(${SOFTWARE_NAME}
   VERSION_PATCH ${VV_VERSION_PATCH}
   PVMAIN_WINDOW vvMainWindow
   PVMAIN_WINDOW_INCLUDE vvMainWindow.h
-  SPLASH_IMAGE "${CMAKE_CURRENT_SOURCE_DIR}/Splash.jpg"
-  BUNDLE_ICON "${CMAKE_CURRENT_SOURCE_DIR}/logo.icns"
-  APPLICATION_ICON "${CMAKE_CURRENT_SOURCE_DIR}/logo.ico"
+  SPLASH_IMAGE "${CMAKE_CURRENT_SOURCE_DIR}/SoftwareInformation/${PARAVIEW_SPLASH_IMAGE}"
+  BUNDLE_ICON "${CMAKE_CURRENT_SOURCE_DIR}/SoftwareInformation/${PARAVIEW_BUNDLE_ICON}"
+  APPLICATION_ICON "${CMAKE_CURRENT_SOURCE_DIR}/SoftwareInformation/${PARAVIEW_APPLICATION_ICON}"
   SOURCES
     ${source_files}
     ${moc_source_files}
