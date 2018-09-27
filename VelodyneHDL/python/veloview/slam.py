@@ -168,6 +168,10 @@ def launch():
     # let the user configure a new slam instance
     start, stop = configure()
 
+    # Clam the end frame if user settled it over
+    # the maximum of frames contained in the data
+    stop = min(stop, source.GetNumberOfFrames() - 1)
+
     # If a position source is available
     # provide it to the slam algorithm
     if positionSource is not None:
