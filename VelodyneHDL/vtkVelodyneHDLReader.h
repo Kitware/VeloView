@@ -38,22 +38,14 @@
 #include <vtkSmartPointer.h>
 
 class vtkVelodyneTransformInterpolator;
+class VelodynePacketInterpretor;
+class vtkInternal;
 
 using DataPacketFixedLength::HDL_MAX_NUM_LASERS;
 
 class VTK_EXPORT vtkVelodyneHDLReader : public vtkLidarReader
 {
 public:
-  enum DualFlag
-  {
-    DUAL_DISTANCE_NEAR = 0x1,  // point with lesser distance
-    DUAL_DISTANCE_FAR = 0x2,   // point with greater distance
-    DUAL_INTENSITY_HIGH = 0x4, // point with lesser intensity
-    DUAL_INTENSITY_LOW = 0x8,  // point with greater intensity
-    DUAL_DOUBLED = 0xf,        // point is single return
-    DUAL_DISTANCE_MASK = 0x3,
-    DUAL_INTENSITY_MASK = 0xc,
-  };
 
 public:
   static vtkVelodyneHDLReader* New();
@@ -62,7 +54,6 @@ public:
 
   // Information about the sensor from dataPacket
   std::string GetSensorInformation() override;
-  void SetFileName(const std::string& filename) override;
   void SetCalibrationFileName(const std::string& filename) override;
   vtkSmartPointer<vtkPolyData> GetFrame(int frameNumber, int wantedNumberOfTrailingFrames = 0) override;
 
@@ -93,19 +84,7 @@ public:
 
   void SetFiringsSkip(int);
 
-  // I/O and processing functions
-  // TODO
-  int ReadFrameInformation();
-
-  std::vector<vtkSmartPointer<vtkPolyData> >& GetDatasets();
-
-  void appendRollingDataAndTryCorrection(const unsigned char* data);
-
   bool getIsHDL64Data();
-
-  bool isReportedSensorAndCalibrationFileConsistent(bool shouldWarn);
-  // move
-  bool updateReportedSensor(const unsigned char* data, unsigned int bytesReceived);
 
   bool GetHasDualReturn();
 
@@ -114,18 +93,11 @@ public:
   void SetSelectedPointsWithDualReturn(double* data, int Npoints);
   void SetShouldAddDualReturnArray(bool input);
 
-protected:
-
-  // TODO
-  int RequestInformation(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
-
 private:
-
-  class vtkInternal;
   vtkInternal* Internal;
+  VelodynePacketInterpretor* Interpretor;
 
   vtkVelodyneHDLReader();
-  vtkVelodyneHDLReader(vtkInternal* pimpl);
   ~vtkVelodyneHDLReader();
   vtkVelodyneHDLReader(const vtkVelodyneHDLReader&); // not implemented
   void operator=(const vtkVelodyneHDLReader&); // not implemented

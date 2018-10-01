@@ -10,7 +10,7 @@
           name="CorrectionsFile"
           animateable="0"
           label="Calibration File"
-          command="SetCorrectionsFile"
+          command="SetCalibrationFileName"
           number_of_elements="1">
           <FileListDomain name="files"/>
           <Documentation>

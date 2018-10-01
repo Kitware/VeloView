@@ -1,7 +1,7 @@
 #include "vtkLidarReader.h"
 
 #include "vtkLidarReaderInternal.h"
-#include "vtkLidarProviderInternal.h"
+#include "LidarPacketInterpretor.h"
 #include "vtkPacketFileReader.h"
 #include "vtkPacketFileWriter.h"
 
@@ -10,25 +10,6 @@
 #include <vtkInformation.h>
 #include <vtkStreamingDemandDrivenPipeline.h>
 
-//-----------------------------------------------------------------------------
-vtkLidarReader::vtkLidarReader()
-{
-
-}
-
-//-----------------------------------------------------------------------------
-vtkLidarReader::vtkLidarReader(vtkLidarReaderInternal* internal)
-{
-  this->Internal = internal;
-  this->SetPimpInternal(internal);
-}
-
-//-----------------------------------------------------------------------------
-void vtkLidarReader::SetPimpInternal(vtkLidarReaderInternal *internal)
-{
-  vtkLidarProvider::SetPimpInternal(internal);
-  this->Internal = internal;
-}
 
 //-----------------------------------------------------------------------------
 void vtkLidarReader::PrintSelf( ostream& os, vtkIndent indent )
@@ -52,7 +33,8 @@ void vtkLidarReader::SetFileName(const std::string &filename)
 
   this->Internal->FileName = filename;
   this->Internal->FilePositions.clear();
-  this->Internal->UnloadPerFrameData();
+  this->Internal->FilePositionsSkip.clear();
+  this->Interpretor->ResetDataForNewFrame();
   this->Modified();
 }
 
@@ -65,13 +47,13 @@ int vtkLidarReader::GetNumberOfFrames()
 //-----------------------------------------------------------------------------
 vtkSmartPointer<vtkPolyData> vtkLidarReader::GetFrame(int frameNumber, int wantedNumberOfTrailingFrames)
 {
-  this->Internal->UnloadPerFrameData();
+  this->Interpretor->ResetDataForNewFrame();
   if (!this->Internal->Reader)
   {
     vtkErrorMacro("GetFrame() called but packet file reader is not open.");
     return 0;
   }
-  if (!this->Internal->IsCalibrated)
+  if (!this->Interpretor->GetIsCalibrated())
   {
     vtkErrorMacro("Corrections have not been set");
     return 0;
@@ -79,25 +61,35 @@ vtkSmartPointer<vtkPolyData> vtkLidarReader::GetFrame(int frameNumber, int wante
 
   const unsigned char* data = 0;
   unsigned int dataLength = 0;
-  double timeSinceStart = 0;
+  double timeSinceStart;
+  int startFrameToProcess = std::max(frameNumber - wantedNumberOfTrailingFrames, 0);
+  int firstFramePositionInPacket = this->Internal->FilePositionsSkip[startFrameToProcess];
 
-  this->Internal->Reader->SetFilePosition(&this->Internal->FilePositions[frameNumber]);
-  this->Internal->SplitCounter = wantedNumberOfTrailingFrames;
-
+  // indicate how many frame should be process as one frame
+  this->Interpretor->SetSplitCounter(frameNumber - startFrameToProcess);
+  this->Internal->Reader->SetFilePosition(&this->Internal->FilePositions[startFrameToProcess]);
   while (this->Internal->Reader->NextPacket(data, dataLength, timeSinceStart))
   {
-    this->Internal->ProcessPacket(const_cast<unsigned char*>(data), dataLength);
 
-    if (this->Internal->Datasets.size())
+    if (!this->Interpretor->IsLidarPacket(const_cast<unsigned char*>(data), dataLength))
     {
-      this->Internal->SplitCounter = 0;
-      return this->Internal->Datasets.back();
+      continue;
     }
+
+    this->Interpretor->ProcessPacket(const_cast<unsigned char*>(data), dataLength, firstFramePositionInPacket);
+
+    // check if the required frames are ready
+    if (this->Interpretor->IsNewFrameReady())
+    {
+      this->Interpretor->SetSplitCounter(0);
+      return this->Interpretor->GetLastFrameAvailable();
+    }
+    firstFramePositionInPacket = 0;
   }
 
-  this->Internal->SplitFrame(true);
-  this->Internal->SplitCounter = 0;
-  return this->Internal->Datasets.back();
+  this->Interpretor->SplitFrame(true);
+  this->Interpretor->SetSplitCounter(0);
+  return this->Interpretor->GetLastFrameAvailable();
 }
 
 //-----------------------------------------------------------------------------
@@ -110,12 +102,6 @@ void vtkLidarReader::Open()
 void vtkLidarReader::Close()
 {
   return this->Internal->Close();
-}
-
-//-----------------------------------------------------------------------------
-void vtkLidarReader::ProcessPacket(unsigned char *data, unsigned int bytesReceived)
-{
-  return this->Internal->ProcessPacket(data, bytesReceived);
 }
 
 //-----------------------------------------------------------------------------
@@ -134,27 +120,39 @@ void vtkLidarReader::SaveFrame(int startFrame, int endFrame, const std::string &
     return;
   }
 
+  // because fpos_t is plateform specific and should not be used for comparaison
+  // it's not possible to simply interate from FiePositions[start] to FilePositions[end]
+  // we need to detect new frame in the pcap directly once again
   pcap_pkthdr* header = 0;
   const unsigned char* data = 0;
   unsigned int dataLength = 0;
   unsigned int dataHeaderLength = 0;
   double timeSinceStart = 0;
-
   int currentFrame = startFrame;
+  bool isNewFrame;
+  int notUsed;
 
   this->Internal->Reader->SetFilePosition(&this->Internal->FilePositions[startFrame]);
   while (this->Internal->Reader->NextPacket(
            data, dataLength, timeSinceStart, &header, &dataHeaderLength) &&
     currentFrame <= endFrame)
   {
-    if (this->Internal->IsLidarPacket(data, dataLength, &header, &dataHeaderLength))
+    if (this->Interpretor->IsLidarPacket(const_cast<unsigned char*>(data), dataLength))
     {
       writer.WritePacket(header, const_cast<unsigned char*>(data) - dataHeaderLength);
 
-      currentFrame += this->Internal->CountNewFrameInPacket(data, dataLength, &header, &dataHeaderLength);
+      this->Interpretor->PreProcessPacket(const_cast<unsigned char*>(data),dataLength, isNewFrame, notUsed);
+      currentFrame += static_cast<int> (isNewFrame);
+      this->UpdateProgress(0.0);
     }
   }
-  writer.Close();
+    writer.Close();
+}
+
+//-----------------------------------------------------------------------------
+vtkLidarReader::vtkLidarReader()
+{
+
 }
 
 //-----------------------------------------------------------------------------
@@ -169,7 +167,7 @@ int vtkLidarReader::RequestData(vtkInformation *request, vtkInformationVector **
     return 0;
   }
 
-  if (!this->Internal->IsCalibrated)
+  if (!this->Interpretor->GetIsCalibrated())
   {
     vtkErrorMacro("Corrections have not been set");
     return 0;
@@ -189,13 +187,9 @@ int vtkLidarReader::RequestData(vtkInformation *request, vtkInformationVector **
     return 0;
   }
 
-  // check if the reported sensor is consistent with the calibration sensor
-  this->Internal->CheckSensorCalibrationConsistency();
-
-  // TODO we should no open the pcap file everytime a frame is requested !!!
+  //! @todo we should no open the pcap file everytime a frame is requested !!!
   this->Internal->Open();
-  output->ShallowCopy(this->GetFrame(
-    timestep - this->Internal->NumberOfTrailingFrames, this->Internal->NumberOfTrailingFrames));
+  output->ShallowCopy(this->GetFrame(timestep, this->Interpretor->GetNumberOfTrailingFrames()));
   this->Internal->Close();
   return 1;
 }
@@ -203,7 +197,18 @@ int vtkLidarReader::RequestData(vtkInformation *request, vtkInformationVector **
 //-----------------------------------------------------------------------------
 int vtkLidarReader::RequestInformation(vtkInformation* request, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
+  if (!this->Internal->FileName.empty() && this->Internal->FilePositions.empty())
+  {
+    this->Internal->ReadFrameInformation();
+  }
   vtkInformation* info = outputVector->GetInformationObject(0);
   this->Internal->SetTimestepInformation(info);
   return 1;
+}
+
+//-----------------------------------------------------------------------------
+void vtkLidarReader::SetPimpInternal(vtkLidarReaderInternal *internal, LidarPacketInterpretor *interpretor)
+{
+  vtkLidarProvider::SetPimpInternal(interpretor);
+  this->Internal = internal;
 }

@@ -61,8 +61,8 @@ vtkPolyData* GetCurrentReference(const std::vector<std::string>& referenceFilesL
 void SetProcessingOptions(vtkVelodyneHDLReader* HDLReader, vvProcessingOptionsType currentOptions,
   int numProcessingOptions);
 
-void SetProcessingOptions(vtkVelodyneHDLSource* HDLSource, vvProcessingOptionsType currentOptions,
-  int numProcessingOptions, std::string pcapFileName, std::string destinationIp, int dataPort);
+//void SetProcessingOptions(vtkVelodyneHDLSource* HDLSource, vvProcessingOptionsType currentOptions,
+//  int numProcessingOptions, std::string pcapFileName, std::string destinationIp, int dataPort);
 
 // Test functions
 /**

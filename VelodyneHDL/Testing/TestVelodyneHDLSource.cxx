@@ -62,12 +62,11 @@ int main(int argc, char* argv[])
 
   // Generate a Velodyne HDL source
   vtkNew<vtkVelodyneHDLSource> HDLsource;
-  HDLsource->SetCorrectionsFile(correctionFileName);
+  HDLsource->SetCalibrationFileName(correctionFileName);
   HDLsource->SetCacheSize(100);
   HDLsource->SetLIDARPort(dataPort);
-  HDLsource->SetGPSPort(8308);
-  HDLsource->SetisForwarding(false);
-  HDLsource->SetisCrashAnalysing(true);
+  HDLsource->SetIsForwarding(false);
+  HDLsource->SetIsCrashAnalysing(true);
   HDLsource->Start();
 
   std::cout << "Sending data... " << std::endl;

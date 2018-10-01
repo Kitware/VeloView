@@ -33,17 +33,23 @@
 #ifndef __vtkVelodyneHDLSource_h
 #define __vtkVelodyneHDLSource_h
 
-#include <vtkPolyDataAlgorithm.h>
+#include "vtkLidarStream.h"
 #include "vtkDataPacket.h"
+#include "VelodynePacketInterpretor.h"
+
 using DataPacketFixedLength::HDL_MAX_NUM_LASERS;
 
-class vtkTransform;
+class vtkInternal;
 
-class VTK_EXPORT vtkVelodyneHDLSource : public vtkPolyDataAlgorithm
+class VTK_EXPORT vtkVelodyneHDLSource : public vtkLidarStream
 {
 public:
-  vtkTypeMacro(vtkVelodyneHDLSource, vtkPolyDataAlgorithm);
+  vtkTypeMacro(vtkVelodyneHDLSource, vtkLidarStream);
   void PrintSelf(ostream& os, vtkIndent indent);
+
+  std::string GetSensorInformation() override;
+
+  void SetCalibrationFileName(const std::string& filename) override;
 
   static vtkVelodyneHDLSource* New();
 
@@ -55,50 +61,7 @@ public:
   int GetCacheSize();
   void SetCacheSize(int cacheSize);
 
-  const std::string& GetCorrectionsFile();
-  void SetCorrectionsFile(const std::string& correctionsFile);
-
-  const std::string& GetOutputFile();
-  void SetOutputFile(const std::string& filename);
-
-  const std::string& GetForwardedIpAddress();
-  void SetForwardedIpAddress(const std::string& ipAddress);
-
-  vtkSetMacro(LIDARPort, int);
-  vtkGetMacro(LIDARPort, int);
-
-  vtkSetMacro(GPSPort, int);
-  vtkGetMacro(GPSPort, int);
-
-  vtkSetMacro(ForwardedLIDARPort, int);
-  vtkGetMacro(ForwardedLIDARPort, int);
-
-  vtkSetMacro(ForwardedGPSPort, int);
-  vtkGetMacro(ForwardedGPSPort, int);
-
-  vtkSetMacro(isForwarding, bool);
-  vtkGetMacro(isForwarding, bool);
-
-  vtkSetMacro(isCrashAnalysing, bool);
-  vtkGetMacro(isCrashAnalysing, bool);
-
-  // Description:
-  // Number of frames behind current frame to read.  Zero indicates only
-  // show the current frame.  Negative numbers are invalid.
-  void SetNumberOfTrailingFrames(int numberTrailing);
-
   void SetFiringsSkip(int);
-
-  void SetLaserSelection(bool LaserSelection[]);
-  void GetLaserSelection(bool LaserSelection[]);
-
-  double GetDistanceResolutionM();
-
-  void SetCropMode(int);
-  void SetCropReturns(int);
-  void SetCropOutside(int);
-  void SetCropRegion(double[6]);
-  void SetCropRegion(double, double, double, double, double, double);
 
   void GetLaserCorrections(double verticalCorrection[HDL_MAX_NUM_LASERS],
     double rotationalCorrection[HDL_MAX_NUM_LASERS], double distanceCorrection[HDL_MAX_NUM_LASERS],
@@ -111,58 +74,24 @@ public:
   unsigned int GetDualReturnFilter() const;
   void SetDualReturnFilter(unsigned int);
 
-  void SetSensorTransform(vtkTransform*);
-
-  // A trick to workaround failure to wrap LaserSelection
-  void SetDummyProperty(int);
-
-  int GetNumberOfChannels();
-
   void SetIntensitiesCorrected(const bool& state);
 
   bool GetHasDualReturn();
 
-  int GetIgnoreZeroDistances() const;
-  void SetIgnoreZeroDistances(int);
-
-  int GetIgnoreEmptyFrames() const;
-  void SetIgnoreEmptyFrames(int);
-
   int GetIntraFiringAdjust() const;
   void SetIntraFiringAdjust(int);
 
-  bool GetIsCalibrated();
   void UnloadDatasets();
 
-  std::string GetSensorInformation();
-
-protected:
-  virtual int RequestInformation(vtkInformation* request, vtkInformationVector** inputVector,
-    vtkInformationVector* outputVector);
-
-  virtual int RequestData(vtkInformation* request, vtkInformationVector** inputVector,
-    vtkInformationVector* outputVector);
+private:
+  vtkInternal* Internal;
+  VelodynePacketInterpretor* Interpretor;
 
   vtkVelodyneHDLSource();
   virtual ~vtkVelodyneHDLSource();
 
-  int LIDARPort;                  /*!< The port to receive LIDAR information. Default is 2368 */
-  int GPSPort;                    /*!< The port to receive GPS information. Default is 8308 */
-  int ForwardedLIDARPort;         /*!< The port to send LIDAR forwarded packets*/
-  int ForwardedGPSPort;           /*!< The port to send GPS forwarded packets*/
-  std::string ForwardedIpAddress; /*!< The ip to send forwarded packets*/
-  bool isForwarding;              /*!< Allowing the forwarding of the packets*/
-  bool isCrashAnalysing;
-  std::string PacketFile;
-  std::string OutputFile;
-  std::string CorrectionsFile;
-
-private:
   vtkVelodyneHDLSource(const vtkVelodyneHDLSource&); // Not implemented.
   void operator=(const vtkVelodyneHDLSource&);       // Not implemented.
-
-  class vtkInternal;
-  vtkInternal* Internal;
 };
 
 #endif

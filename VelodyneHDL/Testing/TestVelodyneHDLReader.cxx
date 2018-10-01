@@ -56,7 +56,6 @@ int main(int argc, char* argv[])
   vtkNew<vtkVelodyneHDLReader> HDLReader;
   HDLReader->SetFileName(pcapFileName);
   HDLReader->SetCalibrationFileName(correctionFileName);
-  HDLReader->ReadFrameInformation();
   HDLReader->Update();
 
   // Check if we can read the PCAP file
