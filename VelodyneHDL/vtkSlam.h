@@ -136,6 +136,10 @@ public:
   // return the state vector
   Eigen::Matrix<double, 12, 1> GetStateVector();
 
+  // Initialize the state vector and the covariance-variance
+  // estimation
+  void SetInitialStatevector(Eigen::Matrix<double, 12, 1> iniVector, Eigen::Matrix<double, 12, 12> iniCov);
+
   // set the kalman filter mode
   void SetMode(int argMode);
 

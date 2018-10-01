@@ -1189,6 +1189,28 @@ Eigen::MatrixXd GetPolynomeApproxParam(std::vector<double>& x, std::vector<doubl
   Eigen::MatrixXd param = (M.transpose() * M).inverse() * M.transpose() * Y;
   return param;
 }
+
+//-----------------------------------------------------------------------------
+Eigen::Matrix<double, 6, 1> GetTransformsParametersForTime(double t, vtkSmartPointer<vtkVelodyneTransformInterpolator> interp)
+{
+  Eigen::Matrix<double, 6, 1> T;
+  vtkNew<vtkTransform> corrTransform;
+  interp->InterpolateTransform(t, corrTransform.Get());
+  vtkNew<vtkMatrix4x4> M;
+  corrTransform->GetMatrix(M.Get());
+  Eigen::Matrix<double, 3, 3> R;
+  Eigen::Matrix<double, 3, 1> T0, theta0;
+  R << M->Element[0][0], M->Element[0][1], M->Element[0][2],
+       M->Element[1][0], M->Element[1][1], M->Element[1][2],
+       M->Element[2][0], M->Element[2][1], M->Element[2][2];
+  T0 << M->Element[0][3], M->Element[1][3], M->Element[2][3];
+  theta0(0) = std::atan2(R(2, 1), R(2, 2));
+  theta0(1) = -std::asin(R(2, 0));
+  theta0(2) = std::atan2(R(1, 0), R(0, 0));
+  T << theta0(0), theta0(1), theta0(2), T0(0), T0(1), T0(2);
+  return T;
+}
+
 //-----------------------------------------------------------------------------
 void vtkSlam::InitTworldUsingExternalData(double adjustedTime0, double rawTime0)
 {
@@ -1208,22 +1230,9 @@ void vtkSlam::InitTworldUsingExternalData(double adjustedTime0, double rawTime0)
     t = rawTime0;
   }
 
-  vtkNew<vtkTransform> initialTransform;
-  this->ExternalMeasures->InterpolateTransform(t, initialTransform.Get());
-  vtkNew<vtkMatrix4x4> M;
-  initialTransform->GetMatrix(M.Get());
-  Eigen::Matrix<double, 3, 3> R;
-  Eigen::Matrix<double, 3, 1> T0, theta0;
-  R << M->Element[0][0], M->Element[0][1], M->Element[0][2],
-       M->Element[1][0], M->Element[1][1], M->Element[1][2],
-       M->Element[2][0], M->Element[2][1], M->Element[2][2];
-  T0 << M->Element[0][3], M->Element[1][3], M->Element[2][3];
-  theta0(0) = std::atan2(R(2, 1), R(2, 2));
-  theta0(1) = -std::asin(R(2, 0));
-  theta0(2) = std::atan2(R(1, 0), R(0, 0));
-  this->Tworld << theta0(0), theta0(1), theta0(2), T0(0), T0(1), T0(2);
-
-  return;
+  // Initialize the slam using the GPS / IMU transform
+  // that is closest (temporally) with the first lidar frame
+  this->Tworld = GetTransformsParametersForTime(t, this->ExternalMeasures);
 
   // Initialize the slam using the GPS / IMU transform
   // that is closest (temporally) with the first lidar frame
@@ -1327,7 +1336,7 @@ void vtkSlam::InitTworldUsingExternalData(double adjustedTime0, double rawTime0)
     VelocityS.push_back(Vs.norm());
   }
 
-  // Now, making the ergodic assumption of the signal
+  // Now, making the ergodic assumption of the signal's noise
   // we will estimate the mean and the standard deviation
   // of the GPS signal by analyzing the difference between
   // our regression and the raw data
@@ -1365,6 +1374,11 @@ void vtkSlam::InitTworldUsingExternalData(double adjustedTime0, double rawTime0)
          << Velocity[k] << "," << VelocityS[k] << std::endl;
   }
   file.close();*/
+
+  // Now, initialize the Kalman Filter Covariance
+  // and initial vector state regarding the date
+  // provided by the GPS / IMU sensor.
+  Eigen::Matrix<double, 12, 12> Cov = Eigen::Matrix<double, 12, 12>::Zero();
 
   std::cout << "order: " << order << std::endl;
   std::cout << "sampleRequired: " << sampleRequired << std::endl;
@@ -3755,10 +3769,12 @@ void vtkSlam::Mapping()
 
     std::cout << "State vector: " << std::endl << stateVector << std::endl;
 
+    std::cout << "Before motion model: " << this->Tworld.transpose() << std::endl;
     for (unsigned int i = 0; i < 6; ++i)
     {
       this->Tworld(i) = stateVector(i);
     }
+    std::cout << "After motion model: " << this->Tworld.transpose() << std::endl;
   }
 
   // Add the current computed transform to the list
@@ -4134,36 +4150,19 @@ KalmanFilter::KalmanFilter()
 void KalmanFilter::ResetKalmanFilter()
 {
   // Fill motion Model diagonal
+  this->MotionModel = Eigen::Matrix<double, 12, 12>::Zero();
   for (unsigned int i = 0; i < 12; ++i)
   {
-    for (unsigned int j = 0; j < 12; ++j)
-    {
-      this->MotionModel(i, j) = 0;
-      if (i == j)
-        this->MotionModel(i, j) = 1.0;
-    }
+      this->MotionModel(i, i) = 1.0;
   }
 
   // Fill Estimator covariance
-  // Set to zero because we know for
-  // sure that we are at position (0, 0, 0)
-  // and velocity (0, 0, 0)
-  for (unsigned int i = 0; i < 12; ++i)
-  {
-    for (unsigned int j = 0; j < 12; ++j)
-    {
-      this->EstimatorCovariance(i, j) = 0.0;
-    }
-  }
+  // Set to zero because without
+  // any other information.
+  this->EstimatorCovariance = Eigen::Matrix<double, 12, 12>::Zero();
 
   // Fill measure model
-  for (unsigned int i = 0; i < 12; ++i)
-  {
-    for (unsigned int j = 0; j < 12; ++j)
-    {
-      this->MeasureModel(i, j) = 0;
-    }
-  }
+  this->MeasureModel = Eigen::Matrix<double, 6, 12>::Zero();
   for (unsigned int i = 0; i < 6; ++i)
   {
     this->MeasureModel(i, i) = 1.0;
@@ -4188,11 +4187,24 @@ void KalmanFilter::ResetKalmanFilter()
   // of a falling drone. Seems a good limit
   // Reducing the maximal acceleration will
   // reduce the motion model covariance matrix
-  this->MaxAcceleration = 10.0;
+  // We can take an additional 20% error
+  this->MaxAcceleration = 1.2 * 10.0;
 
   // Maximal acceleration settled to
-  // 540 degrees / s-2
-  this->MaxAngleAcceleration = 540.0 / 180.0 * vtkMath::Pi();
+  // 1080 degrees / s-2. To have an image
+  // the maximale acceleration corresponds
+  // to an none-mobile object than can goes
+  // up to 3 rotation per secondes (180 per min)
+  // in one second. This seems reasonable
+  // We can take an additional 20% error
+  this->MaxAngleAcceleration = 1.2 * 1080.0 / 180.0 * vtkMath::Pi();
+}
+
+//-----------------------------------------------------------------------------
+void KalmanFilter::SetInitialStatevector(Eigen::Matrix<double, 12, 1> iniVector, Eigen::Matrix<double, 12, 12> iniCov)
+{
+  this->VectorState = iniVector;
+  this->EstimatorCovariance = iniCov;
 }
 
 //-----------------------------------------------------------------------------
