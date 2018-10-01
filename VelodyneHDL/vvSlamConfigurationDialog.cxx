@@ -110,9 +110,16 @@ bool vvSlamConfigurationDialog::MotionModel()
   return this->ui->MotionModelCheckbox->isChecked();
 }
 
+//-----------------------------------------------------------------------------
 bool vvSlamConfigurationDialog::MotionModelAndGPS()
 {
   return this->ui->MotionModelAndGPSCheckbox->isChecked();
+}
+
+//-----------------------------------------------------------------------------
+bool vvSlamConfigurationDialog::Undistortion()
+{
+  return this->ui->UndistortionCheckBox->isChecked();
 }
 
 //-----------------------------------------------------------------------------

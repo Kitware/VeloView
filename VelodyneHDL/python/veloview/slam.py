@@ -66,6 +66,7 @@ def configure():
     slam.GetClientSideObject().Set_LambdaRatio(slamDialog.LambdaRatio)
     slam.GetClientSideObject().Set_FastSlam(slamDialog.FastSlam)
     slam.GetClientSideObject().Set_MotionModel(motionModel)
+    slam.GetClientSideObject().Set_Undistortion(slamDialog.Undistortion)
     slam.GetClientSideObject().SetMaxVelocityAcceleration(slamDialog.MaxVelocityAcc)
     slam.GetClientSideObject().SetMaxAngleAcceleration(slamDialog.MaxAngleAcc)
 

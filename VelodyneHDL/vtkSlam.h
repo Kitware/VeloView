@@ -242,6 +242,9 @@ public:
   slamGetMacro(,MotionModel, int)
   slamSetMacro(,MotionModel, int)
 
+  slamGetMacro(,Undistortion, bool)
+  slamSetMacro(,Undistortion, bool)
+
   void SetMaxVelocityAcceleration(double acc);
   void SetMaxAngleAcceleration(double acc);
 
@@ -392,6 +395,11 @@ private:
   // use the motion model to improve accuracy
   int MotionModel;
 
+  // Should the algorithm undistord the frame or not
+  // The undistortion will improve the accuracy but
+  // the computation speed will decrease
+  bool Undistortion;
+
   // keypoints extracted
   pcl::PointCloud<Point>::Ptr CurrentEdgesPoints;
   pcl::PointCloud<Point>::Ptr CurrentPlanarsPoints;
@@ -538,6 +546,7 @@ private:
   // Transformation to map the current pointcloud
   // in the world (i.e first frame) one
   Eigen::Matrix<double, 6, 1> Tworld;
+  Eigen::Matrix<double, 6, 1> PreviousTworld;
 
   // Computed trajectory of the sensor
   // i.e the list of transforms computed
@@ -668,6 +677,22 @@ private:
   void GetMappingLineSpecificNeigbbor(std::vector<int>& nearestValid, std::vector<float>& nearestValidDist, double maxDistInlier,
                                         unsigned int nearestSearch, pcl::KdTreeFLANN<Point>::Ptr kdtreePreviousEdges, Point p);
   void GetMappingPlaneSpecificNeigbbor();
+
+  // Express the provided point into the referential of the sensor
+  // at time t0. The referential at time of acquisition t is estimated
+  // using the constant velocity hypothesis and the provided sensor
+  // position estimation
+  void ExpressPointInStartReferencial(Point& p, vtkSmartPointer<vtkVelodyneTransformInterpolator> undistortionInterp);
+
+  // Express the keypoints into the referential of the sensor
+  // at time t1. The referential at time of acquisition t is estimated
+  // using the constant velocity hypothesis and the provided sensor
+  // position estimation
+  void ExpressKeypointsInEndFrameRef();
+  void ExpressPointInEndReferencial(Point& p, vtkSmartPointer<vtkVelodyneTransformInterpolator> undistortionInterp);
+
+  // Initialize the undistortion interpolator
+  vtkSmartPointer<vtkVelodyneTransformInterpolator> InitUndistortionInterpolator();
 
   // Update the world transformation by integrating
   // the relative motion recover and the previous

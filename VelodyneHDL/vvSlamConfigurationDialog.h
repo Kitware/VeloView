@@ -24,6 +24,7 @@ class VelodyneHDLPlugin_EXPORT vvSlamConfigurationDialog : public QDialog
   Q_PROPERTY(bool FastSlam READ FastSlam)
   Q_PROPERTY(bool MotionModel READ MotionModel)
   Q_PROPERTY(bool MotionModelAndGPS READ MotionModelAndGPS)
+  Q_PROPERTY(bool Undistortion READ Undistortion)
   Q_PROPERTY(double MaxVelocityAcc READ MaxVelocityAcc)
   Q_PROPERTY(double MaxAngleAcc READ MaxAngleAcc)
   //Keypoint
@@ -76,6 +77,7 @@ public:
   bool FastSlam();
   bool MotionModel();
   bool MotionModelAndGPS();
+  bool Undistortion();
   double MaxAngleAcc();
   double MaxVelocityAcc();
 

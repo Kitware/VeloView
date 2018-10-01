@@ -921,6 +921,7 @@ void vtkSlam::ResetAlgorithm()
   this->EdgeSinAngleThreshold = 0.85; // 85 degrees
   this->PlaneSinAngleThreshold = 0.5; // 50 degrees
   this->EdgeDepthGapThreshold = 0.02; // meters
+  this->Undistortion = false; // should not undistord frame by default
 
   // Use dense planars point cloud for mapping
   this->FastSlam = true;
@@ -986,6 +987,7 @@ void vtkSlam::ResetAlgorithm()
   this->Label.clear();
   this->Label.resize(this->NLasers);
   this->Tworld << 0, 0, 0, 0, 0, 0;
+  this->PreviousTworld = this->Tworld;
   this->TworldList.clear();
   this->TworldList.resize(0);
 
@@ -1222,6 +1224,12 @@ void vtkSlam::InitTworldUsingExternalData(double adjustedTime0, double rawTime0)
   this->Tworld << theta0(0), theta0(1), theta0(2), T0(0), T0(1), T0(2);
 
   return;
+
+  // Initialize the slam using the GPS / IMU transform
+  // that is closest (temporally) with the first lidar frame
+  this->Tworld = GetTransformsParametersForTime(t, this->ExternalMeasures);
+  this->PreviousTworld = Tworld;
+
 
   // Get the transforms list
   std::vector<std::vector<double> > transforms = this->ExternalMeasures->GetTransformList();
@@ -3555,15 +3563,17 @@ void vtkSlam::Mapping()
   unsigned int usedPlanes = 0;
   unsigned int usedBlobs = 0;
 
+  // Interpolator used to undistord the frames
+  vtkSmartPointer<vtkVelodyneTransformInterpolator> undistortionInterp;
+
   // ICP - Levenberg-Marquardt loop
   for (int iterCount = 0; iterCount < this->MappingMaxIter; ++iterCount)
   {
-    // Rotation and translation at this step      
-    Eigen::Matrix<double, 3, 3> R;
-    Eigen::Matrix<double, 3, 1> dT;
-
-    R = GetRotationMatrix(this->Tworld);
-    dT << this->Tworld(3), this->Tworld(4), this->Tworld(5);
+    // Rotation and position at this step
+    Eigen::Matrix<double, 3, 3> R1;
+    Eigen::Matrix<double, 3, 1> T1;
+    R1 = GetRotationMatrix(this->Tworld);
+    T1 << this->Tworld(3), this->Tworld(4), this->Tworld(5);
 
     Point currentPoint;
 
@@ -3573,13 +3583,28 @@ void vtkSlam::Mapping()
       // clear all data
       this->ResetDistanceParameters();
 
+      // Init the undistortion interpolator
+      // if required
+      if (this->Undistortion)
+      {
+        undistortionInterp = this->InitUndistortionInterpolator();
+      }
+
       // loop over edges
       for (unsigned int edgeIndex = 0; edgeIndex < this->CurrentEdgesPoints->size(); ++edgeIndex)
       {
         currentPoint = this->CurrentEdgesPoints->points[edgeIndex];
 
+        // If the undistortion
+        if (this->Undistortion)
+        {
+          //std::cout << "pt before: " << currentPoint.x << ", " << currentPoint.y << ", " << currentPoint.z << std::endl;
+          this->ExpressPointInStartReferencial(currentPoint, undistortionInterp);
+          //std::cout << "pt after: " << currentPoint.x << ", " << currentPoint.y << ", " << currentPoint.z << std::endl;
+        }
+
         // Find the closest correspondence edge line of the current edge point
-        this->ComputeLineDistanceParametersAccurate(kdtreeEdges, R, dT, currentPoint, "mapping");
+        this->ComputeLineDistanceParametersAccurate(kdtreeEdges, R1, T1, currentPoint, "mapping");
         usedEdges = this->Xvalues.size();
       }
 
@@ -3589,7 +3614,7 @@ void vtkSlam::Mapping()
         currentPoint = this->MappingPlanarsPoints->points[planarIndex];
 
         // Find the closest correspondence plane of the current planar point
-        this->ComputePlaneDistanceParametersAccurate(kdtreePlanes, R, dT, currentPoint, "mapping");
+        this->ComputePlaneDistanceParametersAccurate(kdtreePlanes, R1, T1, currentPoint, "mapping");
         usedPlanes = this->Xvalues.size() - usedEdges;
       }
 
@@ -3601,7 +3626,7 @@ void vtkSlam::Mapping()
           currentPoint = this->CurrentBlobsPoints->points[blobIndex];
 
           // Find the closest correspondence plane of the current planar point
-          this->ComputeBlobsDistanceParametersAccurate(kdtreeBlobs, R, dT, currentPoint, "mapping");
+          this->ComputeBlobsDistanceParametersAccurate(kdtreeBlobs, R1, T1, currentPoint, "mapping");
           usedBlobs = this->Xvalues.size() - usedPlanes - usedEdges;
         }
       }
@@ -3612,7 +3637,7 @@ void vtkSlam::Mapping()
     // J: residual jacobians, [dfi(R, T)/dR, dfi(R, T)/dT]
     // Y: residual values, fi(R, T)
     Eigen::MatrixXd J, Y, Jsum;
-    this->ComputeResidualValues(this->Avalues, this->Xvalues, this->Pvalues, this->OutlierDistScale, R, dT, Y);
+    this->ComputeResidualValues(this->Avalues, this->Xvalues, this->Pvalues, this->OutlierDistScale, R1, T1, Y);
     this->ComputeResidualJacobians(this->Avalues, this->Xvalues, this->Pvalues, this->OutlierDistScale, this->Tworld, J);
 
     // RMSE
@@ -3739,6 +3764,18 @@ void vtkSlam::Mapping()
   // Add the current computed transform to the list
   this->TworldList.push_back(this->Tworld);
 
+  // Express all the acquired keypoints
+  // in the refenrtial corresponding of
+  // the sensor's referential at the time
+  // t1 of the end of the current frame
+  if (this->Undistortion)
+  {
+    this->ExpressKeypointsInEndFrameRef();
+  }
+
+  // Update the PreviousTworld data
+  this->PreviousTworld = this->Tworld;
+
   // update maps
   this->UpdateMapsUsingTworld();
 }
@@ -3775,6 +3812,178 @@ void vtkSlam::UpdateMapsUsingTworld()
   }
   BlobsPointsLocalMap->Roll(this->Tworld);
   BlobsPointsLocalMap->Add(MapBlobsPoints);
+}
+
+//-----------------------------------------------------------------------------
+void vtkSlam::ExpressKeypointsInEndFrameRef()
+{
+  vtkSmartPointer<vtkVelodyneTransformInterpolator> undistordInterp = vtkSmartPointer<vtkVelodyneTransformInterpolator>::New();
+  undistordInterp->SetInterpolationTypeToLinear();
+
+  // Transforms representing the passage from the
+  // referential of the sensor at time t0 resp t1
+  // to the referential of the sensor at the time 0
+  vtkNew<vtkTransform> transform0, transform1;
+
+  // transform 0 is identity
+  transform0->Identity();
+  transform0->Modified();
+  transform0->Update();
+
+  // transform 1 is the delta transform
+  // between T1 and T0
+  Eigen::Matrix<double, 3, 3> R0, R1, dR;
+  R0 = GetRotationMatrix(this->PreviousTworld);
+  R1 = GetRotationMatrix(this->Tworld);
+  dR = R1.transpose() * R0;
+
+  Eigen::Matrix<double, 3, 1> dT;
+  dT << -this->Tworld(3) + this->PreviousTworld(3),
+        -this->Tworld(4) + this->PreviousTworld(4),
+        -this->Tworld(5) + this->PreviousTworld(5);
+  dT = R1.transpose() * dT;
+
+  vtkNew<vtkMatrix4x4> M;
+  for (unsigned int i = 0; i < 3; ++i)
+  {
+    for (unsigned int j = 0; j < 3; ++j)
+    {
+      M->Element[i][j] = dR(i, j);
+    }
+    M->Element[i][3] = dT(i);
+    M->Element[3][i] = 0;
+  }
+  M->Element[3][3] = 1.0;
+  transform1->SetMatrix(M.Get());
+  transform1->Modified();
+  transform1->Update();
+
+  // Add the transforms and update
+  undistordInterp->AddTransform(1.0, transform0.GetPointer());
+  undistordInterp->AddTransform(0.0, transform1.GetPointer());
+  undistordInterp->Modified();
+
+  Point currentPoint;
+  // transform points
+  // Edges
+  for (unsigned int k = 0; k < this->CurrentEdgesPoints->size(); ++k)
+  {
+    currentPoint = this->CurrentEdgesPoints->points[k];
+    this->ExpressPointInEndReferencial(currentPoint, undistordInterp);
+    this->CurrentEdgesPoints->points[k] = currentPoint;
+  }
+
+  // Planes
+  for (unsigned int k = 0; k < this->CurrentPlanarsPoints->size(); ++k)
+  {
+    currentPoint = this->CurrentPlanarsPoints->points[k];
+    this->ExpressPointInEndReferencial(currentPoint, undistordInterp);
+    this->CurrentPlanarsPoints->points[k] = currentPoint;
+  }
+
+  // Blobs
+  for (unsigned int k = 0; k < this->CurrentBlobsPoints->size(); ++k)
+  {
+    currentPoint = this->CurrentBlobsPoints->points[k];
+    this->ExpressPointInEndReferencial(currentPoint, undistordInterp);
+    this->CurrentBlobsPoints->points[k] = currentPoint;
+  }
+}
+
+//-----------------------------------------------------------------------------
+vtkSmartPointer<vtkVelodyneTransformInterpolator> vtkSlam::InitUndistortionInterpolator()
+{
+  vtkSmartPointer<vtkVelodyneTransformInterpolator> resultInterp = vtkSmartPointer<vtkVelodyneTransformInterpolator>::New();
+  resultInterp->SetInterpolationTypeToLinear();
+
+  // Transforms representing the passage from the
+  // referential of the sensor at time t0 resp t1
+  // to the referential of the sensor at the time 0
+  vtkNew<vtkTransform> transform0, transform1;
+
+  // transform 0 is identity
+  transform0->Identity();
+  transform0->Modified();
+  transform0->Update();
+
+  // transform 1 is the delta transform
+  // between T0 and T1
+  Eigen::Matrix<double, 3, 3> R0, R1, dR;
+  R0 = GetRotationMatrix(this->PreviousTworld);
+  R1 = GetRotationMatrix(this->Tworld);
+  dR = R1.transpose() * R0;
+
+  Eigen::Matrix<double, 3, 1> dT;
+  dT << -this->Tworld(3) + this->PreviousTworld(3),
+        -this->Tworld(4) + this->PreviousTworld(4),
+        -this->Tworld(5) + this->PreviousTworld(5);
+  dT = R1.transpose() * dT;
+
+  vtkNew<vtkMatrix4x4> M;
+  for (unsigned int i = 0; i < 3; ++i)
+  {
+    for (unsigned int j = 0; j < 3; ++j)
+    {
+      M->Element[i][j] = dR(i, j);
+    }
+    M->Element[i][3] = dT(i);
+    M->Element[3][i] = 0;
+  }
+  M->Element[3][3] = 1.0;
+
+  std::cout << "Delta M: " << std::endl;
+  for (unsigned int i = 0; i < 4; ++i)
+  {
+    for (unsigned int j = 0; j < 4; ++j)
+    {
+      std::cout << M->Element[i][j] << ", ";
+    }
+    std::cout << std::endl;
+  }
+  std::cout << std::endl;
+
+  transform1->SetMatrix(M.Get());
+  transform1->Modified();
+  transform1->Update();
+
+  // Add the transforms and update
+  resultInterp->AddTransform(1.0, transform0.GetPointer());
+  resultInterp->AddTransform(0.0, transform1.GetPointer());
+  resultInterp->Modified();
+
+  return resultInterp;
+}
+
+//-----------------------------------------------------------------------------
+void vtkSlam::ExpressPointInStartReferencial(Point& p, vtkSmartPointer<vtkVelodyneTransformInterpolator> undistortionInterp)
+{
+  // interpolate the transform
+  vtkNew<vtkTransform> currTransform;
+  undistortionInterp->InterpolateTransform(p.intensity, currTransform.GetPointer());
+  currTransform->Modified();
+  currTransform->Update();
+
+  double pos[3] = {p.x, p.y, p.z};
+  currTransform->InternalTransformPoint(pos, pos);
+  p.x = pos[0];
+  p.y = pos[1];
+  p.z = pos[2];
+}
+
+//-----------------------------------------------------------------------------
+void vtkSlam::ExpressPointInEndReferencial(Point& p, vtkSmartPointer<vtkVelodyneTransformInterpolator> undistortionInterp)
+{
+  // interpolate the transform
+  vtkNew<vtkTransform> currTransform;
+  undistortionInterp->InterpolateTransform(p.intensity, currTransform.GetPointer());
+  currTransform->Modified();
+  currTransform->Update();
+
+  double pos[3] = {p.x, p.y, p.z};
+  currTransform->InternalTransformPoint(pos, pos);
+  p.x = pos[0];
+  p.y = pos[1];
+  p.z = pos[2];
 }
 
 //-----------------------------------------------------------------------------
@@ -3821,6 +4030,10 @@ void vtkSlam::UpdateTworldUsingTrelative()
   double ry = -std::asin(newRw(2, 0));
   double rz = std::atan2(newRw(1, 0), newRw(0, 0));
 
+  // Next estimation of Tworld using
+  // the odometry result. This estimation
+  // will be used to undistorded the frame
+  // if required and to initialize the
   this->Tworld(0) = rx;
   this->Tworld(1) = ry;
   this->Tworld(2) = rz;
