@@ -1,43 +1,88 @@
-#include "vtkLidarReaderInternal.h"
+#include "LidarPacketInterpretor.h"
+#include "vtkLidarProvider.h"
 
-#include <vtkInformation.h>
-#include <vtkStreamingDemandDrivenPipeline.h>
-
-#include "vtkLidarReader.h"
-#include "vtkPacketFileReader.h"
-
+namespace {
 //-----------------------------------------------------------------------------
-vtkLidarReaderInternal::vtkLidarReaderInternal(vtkLidarReader* obj)
-  : vtkLidarProviderInternal(obj)
+vtkSmartPointer<vtkCellArray> NewVertexCells(vtkIdType numberOfVerts)
 {
-  this->Lidar = obj;
-  this->Reader = nullptr;
-  this->FileName = "";
-  this->SplitCounter = 0;
+  vtkNew<vtkIdTypeArray> cells;
+  cells->SetNumberOfValues(numberOfVerts * 2);
+  vtkIdType* ids = cells->GetPointer(0);
+  for (vtkIdType i = 0; i < numberOfVerts; ++i)
+  {
+    ids[i * 2] = 1;
+    ids[i * 2 + 1] = i;
+  }
+
+  vtkSmartPointer<vtkCellArray> cellArray = vtkSmartPointer<vtkCellArray>::New();
+  cellArray->SetCells(numberOfVerts, cells.GetPointer());
+  return cellArray;
+}
+
+}
+//-----------------------------------------------------------------------------
+LidarPacketInterpretor::LidarPacketInterpretor()
+{
+  this->NumberOfTrailingFrames = 0;
+
+  this->CalibrationFileName = "";
+  this->CalibrationReportedNumLasers = -1;
+  this->IsCalibrated = false;
+
+  this->Frequency = 0;
+  this->DistanceResolutionM = 0;
+
+  this->IgnoreZeroDistances = true;
+  this->IgnoreEmptyFrames = true;
+
+  this->ApplyTransform = false;
+
+  // Cropping
+  this->CropMode = 1/*vtkLidarProvider::Cartesian*/;
+  this->CropReturns = false;
+  this->CropOutside = false;
+  this->CropRegion[0] = 0;
+  this->CropRegion[1] = 0;
+  this->CropRegion[2] = 0;
+  this->CropRegion[3] = 0;
+  this->CropRegion[4] = 0;
+  this->CropRegion[5] = 0;
 }
 
 //-----------------------------------------------------------------------------
-void vtkLidarReaderInternal::Open()
+bool LidarPacketInterpretor::SplitFrame(bool force)
 {
-  this->Close();
-  this->Reader = new vtkPacketFileReader;
-  if (!this->Reader->Open(this->FileName))
+  if (this->IgnoreEmptyFrames && this->CurrentDataset->GetNumberOfPoints() == 0 && !force)
   {
-    vtkErrorWithObjectMacro(this->Lidar, "Failed to open packet file: " << this->FileName << endl
-                                                 << this->Reader->GetLastError());
-    this->Close();
+    return false;
+  }
+
+  if (this->SplitCounter > 0 && !force)
+  {
+    this->SplitCounter--;
+    return false;
+  }
+  // add vertex to the polydata
+  this->CurrentDataset->SetVerts(NewVertexCells(this->CurrentDataset->GetNumberOfPoints()));
+  // split the frame
+  this->Datasets.push_back(this->CurrentDataset);
+  // create a new frame
+  this->CurrentDataset = this->CreateData(0);
+
+  return true;
+}
+
+//-----------------------------------------------------------------------------
+void LidarPacketInterpretor::SetCropRegion(double region[])
+{
+  for (int i = 0; i < 6; i++)
+  {
+    this->CropRegion[i] = region[i];
   }
 }
 
 //-----------------------------------------------------------------------------
-void vtkLidarReaderInternal::Close()
-{
-  delete this->Reader;
-  this->Reader = 0;
-}
-
-//-----------------------------------------------------------------------------
-bool vtkLidarReaderInternal::shouldBeCroppedOut(double pos[3], double theta)
+bool LidarPacketInterpretor::shouldBeCroppedOut(double pos[3], double theta)
 {
   // Test if point is cropped
   if (!this->CropReturns)
@@ -83,27 +128,4 @@ bool vtkLidarReaderInternal::shouldBeCroppedOut(double pos[3], double theta)
     }
   }
   return false;
-}
-
-//-----------------------------------------------------------------------------
-void vtkLidarReaderInternal::SetTimestepInformation(vtkInformation *info)
-{
-  const size_t numberOfTimesteps = this->FilePositions.size();
-  std::vector<double> timesteps;
-  for (size_t i = 0; i < numberOfTimesteps; ++i)
-  {
-    timesteps.push_back(i);
-  }
-
-  if (numberOfTimesteps)
-  {
-    double timeRange[2] = { timesteps.front(), timesteps.back() };
-    info->Set(vtkStreamingDemandDrivenPipeline::TIME_STEPS(), &timesteps.front(), timesteps.size());
-    info->Set(vtkStreamingDemandDrivenPipeline::TIME_RANGE(), timeRange, 2);
-  }
-  else
-  {
-    info->Remove(vtkStreamingDemandDrivenPipeline::TIME_STEPS());
-    info->Remove(vtkStreamingDemandDrivenPipeline::TIME_RANGE());
-  }
 }

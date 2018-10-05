@@ -1,11 +1,12 @@
 #ifndef VTKLIDARREADER_H
 #define VTKLIDARREADER_H
 
-//#include "vtkLidarSource.h"
 #include "vtkLidarProvider.h"
 
+//! @todo a decition should be made if the opening/closing of the pcap should be handle by
+//! the class itself of the class user. Currently this is not clear
+
 class vtkLidarReaderInternal;
-class vtkTransform;
 
 class VTK_EXPORT vtkLidarReader : public vtkLidarProvider
 {
@@ -25,20 +26,17 @@ public:
 
   /**
    * @copydoc vtkLidarReaderInternal::Open()
-   * @todo should be move to Internal eventually
+   * @todo a decition should be made if the opening/closing of the pcap should be handle by
+   * the class itself of the class user. Currently this is not clear
    */
   void Open();
 
   /**
    * @copydoc vtkLidarReaderInternal::Close()
-   * @todo should be move to Internal eventually
+   * @todo a decition should be made if the opening/closing of the pcap should be handle by
+   * the class itself of the class user. Currently this is not clear
    */
   void Close();
-
-  /**
-   * @copydoc vtkLidarReaderInternal::ProcessPacket()
-   */
-  void ProcessPacket(unsigned char* data, unsigned int bytesReceived);
 
   /**
    * @brief SaveFrame save the packet corresponding to the desired frames in a pcap file.
@@ -51,16 +49,8 @@ public:
 
 protected:
   vtkLidarReader();
-  vtkLidarReader(vtkLidarReaderInternal* internal);
+  ~vtkLidarReader();
 
-  /**
-   * @brief SetPimpInternal method used to switch the opaque pointer
-   */
-  void SetPimpInternal(vtkLidarReaderInternal* internal);
-
-  // Description:
-  // This is called by the superclass.
-  // This is the method you should override.
   int RequestData(vtkInformation* request,
                           vtkInformationVector** inputVector,
                           vtkInformationVector* outputVector);
@@ -69,10 +59,9 @@ protected:
 
 
 private:
+  vtkLidarReaderInternal* Internal;
   vtkLidarReader(const vtkLidarReader&); // not implemented
   void operator=(const vtkLidarReader&); // not implemented
-
-  vtkLidarReaderInternal* Internal;
 };
 
 #endif // VTKLIDARREADER_H

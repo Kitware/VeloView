@@ -95,9 +95,14 @@ if(PARAVIEW_BUILD_QT_GUI)
   # integrated to VTK, we provide the patch
   set(non_vtk_sources
     vtkLidarProvider.cxx
-    vtkLidarProviderInternal.cxx
+    LidarPacketInterpretor.cxx
+    VelodynePacketInterpretor.cxx
     vtkLidarReader.cxx
-    vtkLidarReaderInternal.cxx
+    vtkLidarStream.cxx
+    NetworkSource.cxx
+    PacketReceiver.cxx
+    PacketConsumer.cxx
+    PacketFileWriter.cxx
     vtkBirdEyeViewSnap.cxx
     vtkLASFileWriter.cxx
     vtkPacketFileWriter.cxx
@@ -149,9 +154,11 @@ list(APPEND servermanager_sources
   vtkVelodyneHDLGridSource.cxx
   vtkLidarProvider.cxx
   vtkLidarReader.cxx
+  vtkLidarStream.cxx
   vtkVelodyneHDLReader.cxx
   vtkVelodyneHDLPositionReader.cxx
-  vtkVelodyneHDLSource.cxx)
+  vtkVelodyneHDLSource.cxx
+)
 
 
 list(APPEND servermanager_xml
