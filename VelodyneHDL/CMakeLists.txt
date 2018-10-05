@@ -98,9 +98,7 @@ if(PARAVIEW_BUILD_QT_GUI)
     LidarPacketInterpretor.cxx
     VelodynePacketInterpretor.cxx
     vtkLidarReader.cxx
-    vtkLidarReaderInternal.cxx
     vtkLidarStream.cxx
-    vtkLidarStreamInternal.cxx
     NetworkSource.cxx
     PacketReceiver.cxx
     PacketConsumer.cxx

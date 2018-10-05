@@ -2,7 +2,8 @@
 #define VTKLIDARSTREAM_H
 
 #include "vtkLidarProvider.h"
-#include "vtkLidarStreamInternal.h"
+
+class vtkLidarStreamInternal;
 
 class VTK_EXPORT vtkLidarStream : public vtkLidarProvider
 {
@@ -13,6 +14,16 @@ public:
   int GetNumberOfFrames() override;
 
   vtkSmartPointer<vtkPolyData> GetFrame(int frameNumber, int wantedNumberOfTrailingFrames = 0) override;
+
+  void Poll();
+
+  void Start();
+  void Stop();
+
+  void UnloadDatasets();
+
+  int GetCacheSize();
+  void SetCacheSize(int cacheSize);
 
   /**
    * @copydoc vtkLidarStreamInternal::OutputFileName
@@ -50,9 +61,9 @@ public:
   bool GetIsCrashAnalysing();
   void SetIsCrashAnalysing(const bool);
 
-  friend class vtkLidarStreamInternal;
 protected:
   vtkLidarStream();
+  ~vtkLidarStream();
 
   virtual int RequestData(vtkInformation* request,
                           vtkInformationVector** inputVector,
@@ -60,13 +71,9 @@ protected:
 
   virtual int RequestInformation(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
 
-  /**
-   * @brief SetPimpInternal method used to switch the opaque pointers
-   */
-  void SetPimpInternal(vtkLidarStreamInternal* internal, LidarPacketInterpretor* interpretor);
-  vtkLidarStreamInternal* Internal;
-
+  void SetInterpretor(LidarPacketInterpretor *interpretor);
 private:
+  vtkLidarStreamInternal* Internal;
   vtkLidarStream(const vtkLidarStream&); // not implemented
   void operator=(const vtkLidarStream&); // not implemented
 

@@ -36,10 +36,6 @@
 #include "vtkSmartPointer.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
 #include "vtkTransform.h"
-#include "vtkVelodyneHDLReader.h"
-#include "NetworkSource.h"
-#include "PacketConsumer.h"
-#include "PacketFileWriter.h"
 #include "VelodynePacketInterpretor.h"
 
 
@@ -51,27 +47,6 @@
 #include <stdlib.h>
 
 using DataPacketFixedLength::HDL_MAX_NUM_LASERS;
-
-//----------------------------------------------------------------------------
-/**
-* \class vtkVelodyneHDLSource::vtkInternal
-* \brief This class is responsible for Consumer, the Writer and the NetWorkSource classes
-*/
-class vtkInternal : public vtkLidarStreamInternal
-{
-public:
-  /**
-* \function vtkVelodyneHDLSource::vtkInternal
-* \brief Constructor allowing customizable listening port
-* @param argLIDARPort The used port to receive the lidar data
-*/
-  vtkInternal()
-    : vtkLidarStreamInternal(2368, 5555, "0.0.0.0", true, false)
-  {
-  }
-
-  ~vtkInternal() {}
-};
 
 //----------------------------------------------------------------------------
 vtkStandardNewMacro(vtkVelodyneHDLSource);
@@ -115,9 +90,7 @@ void vtkVelodyneHDLSource::SetCalibrationFileName(const std::string &filename)
 vtkVelodyneHDLSource::vtkVelodyneHDLSource()
 {
   this->Interpretor = new VelodynePacketInterpretor;
-  this->Internal = new vtkInternal;
-  this->Internal->Consumer->SetInterpretor(this->Interpretor);
-  vtkLidarStream::SetPimpInternal(this->Internal, this->Interpretor);
+  vtkLidarStream::SetInterpretor(this->Interpretor);
   this->SetNumberOfInputPorts(0);
   this->SetNumberOfOutputPorts(1);
 }
@@ -126,19 +99,12 @@ vtkVelodyneHDLSource::vtkVelodyneHDLSource()
 vtkVelodyneHDLSource::~vtkVelodyneHDLSource()
 {
   this->Stop();
-  delete this->Internal;
 }
 
 //-----------------------------------------------------------------------------
 bool vtkVelodyneHDLSource::GetHasDualReturn()
 {
   return this->Interpretor->HasDualReturn;
-}
-
-//-----------------------------------------------------------------------------
-void vtkVelodyneHDLSource::UnloadDatasets()
-{
-  this->Internal->Consumer->UnloadData();
 }
 
 //-----------------------------------------------------------------------------
@@ -163,7 +129,7 @@ void vtkVelodyneHDLSource::GetLaserCorrections(double verticalCorrection[HDL_MAX
   double focalSlope[HDL_MAX_NUM_LASERS], double minIntensity[HDL_MAX_NUM_LASERS],
   double maxIntensity[HDL_MAX_NUM_LASERS])
 {
-  boost::lock_guard<boost::mutex> lock(this->Internal->Consumer->ReaderMutex);
+//  boost::lock_guard<boost::mutex> lock(this->Internal->Consumer->ReaderMutex);
 
 //  this->Internal->Consumer->GetReader()->GetLaserCorrections(verticalCorrection,
 //    rotationalCorrection, distanceCorrection, distanceCorrectionX, distanceCorrectionY,
@@ -182,76 +148,6 @@ unsigned int vtkVelodyneHDLSource::GetDualReturnFilter() const
 void vtkVelodyneHDLSource::SetDualReturnFilter(unsigned int filter)
 {
 //  this->Internal->Consumer->GetReader()->SetDualReturnFilter(filter);
-  this->Modified();
-}
-
-//----------------------------------------------------------------------------
-void vtkVelodyneHDLSource::Start()
-{
-  if (this->Internal->OutputFileName.length())
-  {
-    this->Internal->Writer->Start(this->Internal->OutputFileName);
-  }
-
-  this->Internal->Network->Writer.reset();
-
-  if (this->Internal->Writer->IsOpen())
-  {
-    this->Internal->Network->Writer = this->Internal->Writer;
-  }
-
-  // Check if the IP address is valid
-//  {
-//    boost::system::error_code ec;
-//    boost::asio::ip::address::from_string(this->ForwardedIpAddress, ec);
-//    if (ec)
-//    {
-//      this->ForwardedIpAddress = "0.0.0.0";
-//      this->isForwarding = false;
-//    }
-//  }
-
-  this->Internal->Consumer->Start();
-//  this->Internal->Network->LIDARPort = this->LIDARPort;
-//  this->Internal->Network->ForwardedLIDARPort = this->ForwardedLIDARPort;
-//  this->Internal->Network->ForwardedIpAddress = this->ForwardedIpAddress;
-//  this->Internal->Network->isForwarding = this->isForwarding;
-//  this->Internal->Network->isCrashAnalysing = this->isCrashAnalysing;
-  this->Internal->Network->Start();
-}
-
-//----------------------------------------------------------------------------
-void vtkVelodyneHDLSource::Stop()
-{
-  this->Internal->Network->Stop();
-  this->Internal->Consumer->Stop();
-  this->Internal->Writer->Stop();
-}
-
-//----------------------------------------------------------------------------
-void vtkVelodyneHDLSource::Poll()
-{
-  if (this->Internal->Consumer->CheckForNewData())
-  {
-    this->Modified();
-  }
-}
-
-//----------------------------------------------------------------------------
-int vtkVelodyneHDLSource::GetCacheSize()
-{
-  return this->Internal->Consumer->GetMaxNumberOfDatasets();
-}
-
-//----------------------------------------------------------------------------
-void vtkVelodyneHDLSource::SetCacheSize(int cacheSize)
-{
-  if (cacheSize == this->GetCacheSize())
-  {
-    return;
-  }
-
-  this->Internal->Consumer->SetMaxNumberOfDatasets(cacheSize);
   this->Modified();
 }
 

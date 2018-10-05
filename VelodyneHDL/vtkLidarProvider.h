@@ -199,14 +199,16 @@ public:
    */
   void SetDummyProperty(int);
 
+  friend class vtkLidarReaderInternal;
+  friend class vtkLidarStreamInternal;
 protected:
   vtkLidarProvider();
   ~vtkLidarProvider();
 
   /**
-   * @brief SetPimpInternal method used to switch the opaque pointer
+   * @brief SetInterpretor method used to switch the opaque pointer
    */
-  void SetPimpInternal(LidarPacketInterpretor* interpretor) {this->Interpretor = interpretor;}
+  void SetInterpretor(LidarPacketInterpretor* interpretor) {this->Interpretor = interpretor;}
   LidarPacketInterpretor* Interpretor;
 private:
   vtkLidarProvider(const vtkLidarProvider&); // not implemented

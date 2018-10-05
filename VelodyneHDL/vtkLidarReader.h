@@ -7,7 +7,6 @@
 //! the class itself of the class user. Currently this is not clear
 
 class vtkLidarReaderInternal;
-class LidarPacketInterpretor;
 
 class VTK_EXPORT vtkLidarReader : public vtkLidarProvider
 {
@@ -48,9 +47,9 @@ public:
    */
   void SaveFrame(int startFrame, int endFrame, const std::string& filename);
 
-  friend class vtkLidarReaderInternal;
 protected:
   vtkLidarReader();
+  ~vtkLidarReader();
 
   int RequestData(vtkInformation* request,
                           vtkInformationVector** inputVector,
@@ -58,13 +57,9 @@ protected:
 
   int RequestInformation(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
 
-  /**
-   * @brief SetPimpInternal method used to switch the opaque pointers
-   */
-  void SetPimpInternal(vtkLidarReaderInternal* internal, LidarPacketInterpretor* interpretor);
-  vtkLidarReaderInternal* Internal;
 
 private:
+  vtkLidarReaderInternal* Internal;
   vtkLidarReader(const vtkLidarReader&); // not implemented
   void operator=(const vtkLidarReader&); // not implemented
 };

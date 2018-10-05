@@ -1,29 +1,51 @@
 #include "PacketReceiver.h"
 #include "NetworkSource.h"
 
+#include <vtkMath.h>
+
 
 //-----------------------------------------------------------------------------
 PacketReceiver::PacketReceiver(boost::asio::io_service &io, int port, int forwardport, std::string forwarddestinationIp, bool isforwarding, NetworkSource *parent)
   : Port(port)
   , PacketCounter(0)
   , isForwarding(isforwarding)
-  , ForwardEndpoint(boost::asio::ip::address_v4::from_string(forwarddestinationIp), forwardport)
   , Socket(io)
   , ForwardedSocket(io)
   , Parent(parent)
   , IsReceiving(true)
   , ShouldStop(false)
 {
-  Socket.open(boost::asio::ip::udp::v4()); // Opening the socket with an UDP v4 protocol
-  Socket.set_option(boost::asio::ip::udp::socket::reuse_address(
+  this->Socket.open(boost::asio::ip::udp::v4()); // Opening the socket with an UDP v4 protocol
+  this->Socket.set_option(boost::asio::ip::udp::socket::reuse_address(
                       true)); // Tell the OS we accept to re-use the port address for an other app
-  Socket.bind(boost::asio::ip::udp::endpoint(
+  this->Socket.bind(boost::asio::ip::udp::endpoint(
                 boost::asio::ip::udp::v4(), port)); // Bind the socket to the right address
 
-  ForwardedSocket.open(ForwardEndpoint.protocol()); // Opening the socket with an UDP v4 protocol
+  // Check that the provided ipadress is valid
+  boost::system::error_code errCode;
+  boost::asio::ip::address ipAddressForwarding = boost::asio::ip::address_v4::from_string(forwarddestinationIp, errCode);
+
+  // If the ip address is not valid we replace it by a generic
+  // 0.0.0.0 ip address. This is due to the application
+  // crashes on windows if a not valid ip address is provided
+  // with error message:
+  // Qt has caught an exception from an event handler. This
+  // is not supported in Qt.
+  if (errCode)
+  {
+    ipAddressForwarding = boost::asio::ip::address_v4::from_string("0.0.0.0");
+    if (this->isForwarding)
+    {
+      vtkGenericWarningMacro("Forward ip address not valid, packets won't be forwarded");
+      this->isForwarding = false;
+    }
+  }
+
+  this->ForwardEndpoint = boost::asio::ip::udp::endpoint(ipAddressForwarding, forwardport);
+  this->ForwardedSocket.open(ForwardEndpoint.protocol()); // Opening the socket with an UDP v4 protocol
   // toward the forwarded ip address and port
-  ForwardedSocket.set_option(boost::asio::ip::multicast::enable_loopback(
-                               true)); // Allow to send the packet on the same machine
+  this->ForwardedSocket.set_option(boost::asio::ip::multicast::enable_loopback(
+                                true)); // Allow to send the packet on the same machine
 }
 
 //-----------------------------------------------------------------------------
@@ -91,7 +113,7 @@ void PacketReceiver::SocketCallback(
   }
   std::string* packet = new std::string(this->RXBuffer, numberOfBytes);
 
-  if (isForwarding)
+  if (this->isForwarding)
   {
     size_t bytesSent =
       ForwardedSocket.send_to(boost::asio::buffer(packet->c_str(), numberOfBytes), ForwardEndpoint);

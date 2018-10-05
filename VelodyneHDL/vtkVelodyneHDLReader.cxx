@@ -28,7 +28,6 @@
 
 
 #include "vtkVelodyneHDLReader.h"
-#include "vtkLidarReaderInternal.h"
 #include "VelodynePacketInterpretor.h"
 
 #include "vtkPacketFileReader.h"
@@ -60,25 +59,7 @@
 
 #include <Eigen/Dense>
 
-#include "LidarPacketInterpretor.h"
 #include "vtkDataPacket.h"
-
-
-//-----------------------------------------------------------------------------
-class vtkInternal : public vtkLidarReaderInternal
-{
-public:
-  vtkInternal(vtkVelodyneHDLReader* obj)
-    : vtkLidarReaderInternal(obj)
-  {
-
-  }
-
-  ~vtkInternal()
-  {
-
-  }
-};
 
 //-----------------------------------------------------------------------------
 std::string vtkVelodyneHDLReader::GetSensorInformation()
@@ -108,9 +89,8 @@ vtkVelodyneHDLReader::vtkVelodyneHDLReader()
   // code duplication by calling the none default
   // constructor in the initialization of the
   // default constructor
-  this->Internal = new vtkInternal(this);
   this->Interpretor = new VelodynePacketInterpretor;
-  vtkLidarReader::SetPimpInternal(this->Internal, this->Interpretor);
+  vtkLidarProvider::SetInterpretor(this->Interpretor);
   this->SetNumberOfInputPorts(0);
   this->SetNumberOfOutputPorts(1);
 }
@@ -245,7 +225,7 @@ vtkSmartPointer<vtkPolyData> vtkVelodyneHDLReader::GetFrame(int frameNumber, int
 void vtkVelodyneHDLReader::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
-  os << indent << "FileName: " << this->Internal->FileName << endl;
+  os << indent << "FileName: " << this->GetFileName() << endl;
   os << indent << "CalibrationFile: " << this->Interpretor->GetCalibrationFileName() << endl;
 }
 

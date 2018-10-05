@@ -53,14 +53,6 @@ public:
 
   static vtkVelodyneHDLSource* New();
 
-  void Poll();
-
-  void Start();
-  void Stop();
-
-  int GetCacheSize();
-  void SetCacheSize(int cacheSize);
-
   void SetFiringsSkip(int);
 
   void GetLaserCorrections(double verticalCorrection[HDL_MAX_NUM_LASERS],
@@ -81,7 +73,6 @@ public:
   int GetIntraFiringAdjust() const;
   void SetIntraFiringAdjust(int);
 
-  void UnloadDatasets();
 
 private:
   vtkInternal* Internal;
