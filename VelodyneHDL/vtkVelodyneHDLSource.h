@@ -44,16 +44,18 @@ class vtkInternal;
 class VTK_EXPORT vtkVelodyneHDLSource : public vtkLidarStream
 {
 public:
+  static vtkVelodyneHDLSource* New();
   vtkTypeMacro(vtkVelodyneHDLSource, vtkLidarStream);
   void PrintSelf(ostream& os, vtkIndent indent);
 
   std::string GetSensorInformation() override;
-
   void SetCalibrationFileName(const std::string& filename) override;
 
-  static vtkVelodyneHDLSource* New();
-
-  void SetFiringsSkip(int);
+  // Description:
+  //
+  bool IsIntensityCorrectedBySensor();
+  const bool& GetWantIntensityCorrection();
+  void SetIntensitiesCorrected(const bool& state);
 
   void GetLaserCorrections(double verticalCorrection[HDL_MAX_NUM_LASERS],
     double rotationalCorrection[HDL_MAX_NUM_LASERS], double distanceCorrection[HDL_MAX_NUM_LASERS],
@@ -63,15 +65,27 @@ public:
     double focalSlope[HDL_MAX_NUM_LASERS], double minIntensity[HDL_MAX_NUM_LASERS],
     double maxIntensity[HDL_MAX_NUM_LASERS]);
 
-  unsigned int GetDualReturnFilter() const;
-  void SetDualReturnFilter(unsigned int);
+  void GetXMLColorTable(double XMLColorTable[]);
 
-  void SetIntensitiesCorrected(const bool& state);
-
-  bool GetHasDualReturn();
+  int GetOutputPacketProcessingDebugInfo() const;
+  void SetOutputPacketProcessingDebugInfo(int);
 
   int GetIntraFiringAdjust() const;
   void SetIntraFiringAdjust(int);
+
+  unsigned int GetDualReturnFilter() const;
+  void SetDualReturnFilter(unsigned int);
+
+  void SetFiringsSkip(int);
+
+  bool getIsHDL64Data();
+
+  bool GetHasDualReturn();
+
+  // This function permits to know which are the points selected
+  // with a corresponding dual return
+  void SetSelectedPointsWithDualReturn(double* data, int Npoints);
+  void SetShouldAddDualReturnArray(bool input);
 
 
 private:

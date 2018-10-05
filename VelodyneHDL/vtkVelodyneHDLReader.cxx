@@ -30,36 +30,49 @@
 #include "vtkVelodyneHDLReader.h"
 #include "VelodynePacketInterpretor.h"
 
-#include "vtkPacketFileReader.h"
-#include "vtkPacketFileWriter.h"
-#include "vtkRollingDataAccumulator.h"
-#include "vtkVelodyneTransformInterpolator.h"
-
-#include <vtkCellArray.h>
-#include <vtkCellData.h>
-#include <vtkDataArray.h>
 #include <vtkDoubleArray.h>
-#include <vtkFloatArray.h>
-#include <vtkInformation.h>
-#include <vtkInformationVector.h>
-#include <vtkMath.h>
-#include <vtkNew.h>
-#include <vtkObjectFactory.h>
 #include <vtkPointData.h>
-#include <vtkPoints.h>
 #include <vtkPolyData.h>
 #include <vtkSmartPointer.h>
-#include <vtkStreamingDemandDrivenPipeline.h>
 
-#include <vtkTransform.h>
-
-#include <algorithm>
-#include <cmath>
 #include <sstream>
 
-#include <Eigen/Dense>
+//-----------------------------------------------------------------------------
+vtkStandardNewMacro(vtkVelodyneHDLReader);
 
-#include "vtkDataPacket.h"
+//-----------------------------------------------------------------------------
+vtkVelodyneHDLReader::vtkVelodyneHDLReader()
+  : vtkLidarReader()
+{
+  this->Interpretor = new VelodynePacketInterpretor;
+  vtkLidarProvider::SetInterpretor(this->Interpretor);
+  this->SetNumberOfInputPorts(0);
+  this->SetNumberOfOutputPorts(1);
+}
+
+//-----------------------------------------------------------------------------
+vtkSmartPointer<vtkPolyData> vtkVelodyneHDLReader::GetFrame(int frameNumber, int wantedNumberOfTrailingFrames)
+{
+  vtkSmartPointer<vtkPolyData> output = vtkLidarReader::GetFrame(frameNumber, wantedNumberOfTrailingFrames);
+  if (this->Interpretor->ShouldAddDualReturnArray)
+  {
+    output->GetPointData()->AddArray(this->Interpretor->SelectedDualReturn);
+  }
+  return output;
+}
+
+//-----------------------------------------------------------------------------
+void vtkVelodyneHDLReader::PrintSelf(ostream& os, vtkIndent indent)
+{
+  this->Superclass::PrintSelf(os, indent);
+  os << indent << "FileName: " << this->GetFileName() << endl;
+  os << indent << "CalibrationFile: " << this->Interpretor->GetCalibrationFileName() << endl;
+}
+
+//-----------------------------------------------------------------------------
+vtkVelodyneHDLReader::~vtkVelodyneHDLReader()
+{
+}
 
 //-----------------------------------------------------------------------------
 std::string vtkVelodyneHDLReader::GetSensorInformation()
@@ -76,28 +89,6 @@ std::string vtkVelodyneHDLReader::GetSensorInformation()
                   static_cast<SensorType>(this->Interpretor->ReportedFactoryField2));
 
   return std::string(streamInfo.str());
-}
-
-//-----------------------------------------------------------------------------
-vtkStandardNewMacro(vtkVelodyneHDLReader);
-
-//-----------------------------------------------------------------------------
-vtkVelodyneHDLReader::vtkVelodyneHDLReader()
-  : vtkLidarReader()
-{
-  // TODO: when migrating to c++11, remove the
-  // code duplication by calling the none default
-  // constructor in the initialization of the
-  // default constructor
-  this->Interpretor = new VelodynePacketInterpretor;
-  vtkLidarProvider::SetInterpretor(this->Interpretor);
-  this->SetNumberOfInputPorts(0);
-  this->SetNumberOfOutputPorts(1);
-}
-
-//-----------------------------------------------------------------------------
-vtkVelodyneHDLReader::~vtkVelodyneHDLReader()
-{
 }
 
 //-----------------------------------------------------------------------------
@@ -208,25 +199,6 @@ void vtkVelodyneHDLReader::SetCalibrationFileName(const std::string& filename)
     vtkLidarProvider::SetCalibrationFileName(filename);
     this->Interpretor->IsCorrectionFromLiveStream = false;
   }
-}
-
-//-----------------------------------------------------------------------------
-vtkSmartPointer<vtkPolyData> vtkVelodyneHDLReader::GetFrame(int frameNumber, int wantedNumberOfTrailingFrames)
-{
-  vtkSmartPointer<vtkPolyData> output = vtkLidarReader::GetFrame(frameNumber, wantedNumberOfTrailingFrames);
-  if (this->Interpretor->ShouldAddDualReturnArray)
-  {
-    output->GetPointData()->AddArray(this->Interpretor->SelectedDualReturn);
-  }
-  return output;
-}
-
-//-----------------------------------------------------------------------------
-void vtkVelodyneHDLReader::PrintSelf(ostream& os, vtkIndent indent)
-{
-  this->Superclass::PrintSelf(os, indent);
-  os << indent << "FileName: " << this->GetFileName() << endl;
-  os << indent << "CalibrationFile: " << this->Interpretor->GetCalibrationFileName() << endl;
 }
 
 //-----------------------------------------------------------------------------
