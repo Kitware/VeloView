@@ -1,0 +1,7 @@
+#ifndef VVCONFIG_H_IN
+#define VVCONFIG_H_IN
+
+#cmakedefine ENABLE_DEV_MODE_UI
+#define ENABLE_DEV_MODE_UI_VAR @ENABLE_DEV_MODE_UI_VAR@
+
+#endif // CVVONFIG_H_IN

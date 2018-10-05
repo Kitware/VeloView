@@ -47,5 +47,5 @@ vvToggleSpreadSheetReaction::~vvToggleSpreadSheetReaction()
 //-----------------------------------------------------------------------------
 void vvToggleSpreadSheetReaction::onToggleSpreadsheet()
 {
-  this->View->widget()->setVisible(this->Action->isChecked());
+  this->View->widget()->parentWidget()->setVisible(this->Action->isChecked());
 }

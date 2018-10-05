@@ -25,18 +25,15 @@ public:
   vvMainWindow();
   virtual ~vvMainWindow();
 
+protected slots:
+  void showHelpForProxy(const QString& proxyname, const QString& groupname);
+
 private:
   Q_DISABLE_COPY(vvMainWindow);
 
   class pqInternals;
   pqInternals* Internals;
   friend class pqInternals;
-private slots:
-  void switchToolBarVisibility();
-  void UpdateToolBarMenu();
-  void onSwitchPipelineBrowserVisibility();
-  void onSwitchPropertiesPanelVisibility();
-  void UpdateViewMenu();
 };
 
 #endif
