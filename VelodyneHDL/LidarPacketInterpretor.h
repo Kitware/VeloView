@@ -154,7 +154,7 @@ public:
   GetMacro(CropOutside, bool)
   SetMacro(CropOutside, bool)
 
-  double SetCropRegion(double region[6]);
+  void SetCropRegion(double region[6]);
 
 protected:
   /**

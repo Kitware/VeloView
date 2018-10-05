@@ -73,7 +73,7 @@ bool LidarPacketInterpretor::SplitFrame(bool force)
 }
 
 //-----------------------------------------------------------------------------
-double LidarPacketInterpretor::SetCropRegion(double region[])
+void LidarPacketInterpretor::SetCropRegion(double region[])
 {
   for (int i = 0; i < 6; i++)
   {

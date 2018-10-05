@@ -4,7 +4,7 @@
 #include "vtkLidarProvider.h"
 #include "vtkLidarStreamInternal.h"
 
-class vtkLidarStream : public vtkLidarProvider
+class VTK_EXPORT vtkLidarStream : public vtkLidarProvider
 {
 public:
   vtkTypeMacro(vtkLidarStream, vtkLidarProvider);

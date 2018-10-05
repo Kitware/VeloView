@@ -9,11 +9,10 @@
 class NetworkSource;
 
 /*!< Size of the buffer used to store the data received */
-constexpr int BUFFER_SIZE = 1500;
-
+#define BUFFER_SIZE 1500
 
 /*!< Number of packed save when the option CrashAnalysing is set */
-constexpr int NBR_PACKETS_SAVED = 1500;
+#define NBR_PACKETS_SAVED  1500
 
 /**
  * \class PacketReceiver
@@ -78,7 +77,7 @@ private:
 
   /*!< Buffer which will saved the data. Expecting exactly 1206 bytes, using a larger buffer
    *  so that if a larger packet arrives unexpectedly we'll notice it. */
-  char RXBuffer [BUFFER_SIZE];
+  char RXBuffer[BUFFER_SIZE];
 
   bool IsReceiving; /*!< Flag indicating if the socket is receiving packets */
   bool ShouldStop;  /*!< Flag indicating if we should stop the listening */

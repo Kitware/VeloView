@@ -1,7 +1,7 @@
 #include "PacketFileWriter.h"
 
 //! @todo this include is only for vtkGenericWarningMacro which is strange
-#include <vtkPoints.h>
+#include <vtkMath.h>
 
 //-----------------------------------------------------------------------------
 void PacketFileWriter::ThreadLoop()

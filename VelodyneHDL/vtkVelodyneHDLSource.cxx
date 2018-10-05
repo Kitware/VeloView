@@ -145,6 +145,7 @@ void vtkVelodyneHDLSource::UnloadDatasets()
 int vtkVelodyneHDLSource::GetIntraFiringAdjust() const
 {
 //  return this->Internal->Consumer->GetReader()->GetIntraFiringAdjust();
+  return 0;
 }
 
 //-----------------------------------------------------------------------------
@@ -174,6 +175,7 @@ void vtkVelodyneHDLSource::GetLaserCorrections(double verticalCorrection[HDL_MAX
 unsigned int vtkVelodyneHDLSource::GetDualReturnFilter() const
 {
 //  return this->Internal->Consumer->GetReader()->GetDualReturnFilter();
+  return 0;
 }
 
 //-----------------------------------------------------------------------------

@@ -51,7 +51,9 @@ void vtkLidarProvider::SetLaserSelection(bool laserSelection[])
 //-----------------------------------------------------------------------------
 void vtkLidarProvider::GetLaserSelection(bool laserSelection[])
 {
-  this->Interpretor->GetLaserSelection().data();
+  // Bool vector is a particular data structure
+  // you can't access to the data
+  //this->Interpretor->GetLaserSelection().data();
 }
 
 //-----------------------------------------------------------------------------
