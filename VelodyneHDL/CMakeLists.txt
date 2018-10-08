@@ -75,7 +75,6 @@ if(PARAVIEW_BUILD_QT_GUI)
     )
 
   set(MOC_HEADERS
-    pqVelodyneHDLSource.h
     vvCalibrationDialog.h
     vvCropReturnsDialog.h
     vvLaserSelectionDialog.h
@@ -119,12 +118,6 @@ if(PARAVIEW_BUILD_QT_GUI)
   QT4_WRAP_UI(ui_srcs ${UI_FILES})
   QT4_ADD_RESOURCES(resource_srcs ${resources})
 
-  ADD_PARAVIEW_OBJECT_PANEL(
-    ifaces iface_srcs
-    CLASS_NAME pqVelodyneHDLSource
-    XML_NAME VelodyneHDLSource
-    XML_GROUP sources)
-
   list(APPEND gui_interfaces ${ifaces})
   list(APPEND gui_sources
     ${iface_srcs}
@@ -157,7 +150,7 @@ list(APPEND servermanager_sources
   vtkLidarStream.cxx
   vtkVelodyneHDLReader.cxx
   vtkVelodyneHDLPositionReader.cxx
-  vtkVelodyneHDLSource.cxx
+  vtkVelodyneHDLStream.cxx
 )
 
 
@@ -170,7 +163,7 @@ list(APPEND servermanager_xml
   xml/VelodyneHDLGridSource.xml
   xml/VelodyneHDLReader.xml
   xml/VelodyneHDLPositionReader.xml
-  xml/VelodyneHDLSource.xml)
+  xml/VelodyneHDLStream.xml)
 
 list(APPEND gui_xml
   xml/VelodyneHDLSourcesGUI.xml)

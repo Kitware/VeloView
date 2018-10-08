@@ -431,7 +431,7 @@ def openSensor():
 
     initializeRPMText()
 
-    sensor = smp.VelodyneHDLSource(guiName='Data', CalibrationFile=calibrationFile, CacheSize=100)
+    sensor = smp.VelodyneHDLStream(guiName='Data', CalibrationFile=calibrationFile, CacheSize=100)
     sensor.GetClientSideObject().SetLIDARPort(LIDARPort)
 #    sensor.GetClientSideObject().SetGPSPort(GPSPort)
 #    sensor.GetClientSideObject().SetForwardedGPSPort(GPSForwardingPort)

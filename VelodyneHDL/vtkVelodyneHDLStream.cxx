@@ -14,7 +14,7 @@
 /*=========================================================================
 
   Program:   Visualization Toolkit
-  Module:    vtkVelodyneHDLSource.cxx
+  Module:    vtkVelodyneHDLStream.cxx
 
   Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
   All rights reserved.
@@ -25,7 +25,7 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-#include "vtkVelodyneHDLSource.h"
+#include "vtkVelodyneHDLStream.h"
 #include "VelodynePacketInterpretor.h"
 
 #include <vtkDoubleArray.h>
@@ -37,10 +37,10 @@
 using DataPacketFixedLength::HDL_MAX_NUM_LASERS;
 
 //----------------------------------------------------------------------------
-vtkStandardNewMacro(vtkVelodyneHDLSource);
+vtkStandardNewMacro(vtkVelodyneHDLStream);
 
 //----------------------------------------------------------------------------
-vtkVelodyneHDLSource::vtkVelodyneHDLSource()
+vtkVelodyneHDLStream::vtkVelodyneHDLStream()
 {
   this->Interpretor = new VelodynePacketInterpretor;
   vtkLidarStream::SetInterpretor(this->Interpretor);
@@ -49,19 +49,19 @@ vtkVelodyneHDLSource::vtkVelodyneHDLSource()
 }
 
 //----------------------------------------------------------------------------
-vtkVelodyneHDLSource::~vtkVelodyneHDLSource()
+vtkVelodyneHDLStream::~vtkVelodyneHDLStream()
 {
   this->Stop();
 }
 
 //----------------------------------------------------------------------------
-void vtkVelodyneHDLSource::PrintSelf(ostream& os, vtkIndent indent)
+void vtkVelodyneHDLStream::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
 
 //-----------------------------------------------------------------------------
-std::string vtkVelodyneHDLSource::GetSensorInformation()
+std::string vtkVelodyneHDLStream::GetSensorInformation()
 {
   std::stringstream streamInfo;
   streamInfo << "Factory Field 1: " << (int)this->Interpretor->ReportedFactoryField1 << " (hex: 0x"
@@ -78,13 +78,13 @@ std::string vtkVelodyneHDLSource::GetSensorInformation()
 }
 
 //-----------------------------------------------------------------------------
-int vtkVelodyneHDLSource::GetOutputPacketProcessingDebugInfo() const
+int vtkVelodyneHDLStream::GetOutputPacketProcessingDebugInfo() const
 {
   return this->Interpretor->OutputPacketProcessingDebugInfo;
 }
 
 //-----------------------------------------------------------------------------
-void vtkVelodyneHDLSource::SetOutputPacketProcessingDebugInfo(int value)
+void vtkVelodyneHDLStream::SetOutputPacketProcessingDebugInfo(int value)
 {
   if (this->Interpretor->OutputPacketProcessingDebugInfo != value)
   {
@@ -94,13 +94,13 @@ void vtkVelodyneHDLSource::SetOutputPacketProcessingDebugInfo(int value)
 }
 
 //-----------------------------------------------------------------------------
-int vtkVelodyneHDLSource::GetIntraFiringAdjust() const
+int vtkVelodyneHDLStream::GetIntraFiringAdjust() const
 {
   return this->Interpretor->UseIntraFiringAdjustment;
 }
 
 //-----------------------------------------------------------------------------
-void vtkVelodyneHDLSource::SetIntraFiringAdjust(int value)
+void vtkVelodyneHDLStream::SetIntraFiringAdjust(int value)
 {
   if (this->Interpretor->UseIntraFiringAdjustment != value)
   {
@@ -110,13 +110,13 @@ void vtkVelodyneHDLSource::SetIntraFiringAdjust(int value)
 }
 
 //-----------------------------------------------------------------------------
-unsigned int vtkVelodyneHDLSource::GetDualReturnFilter() const
+unsigned int vtkVelodyneHDLStream::GetDualReturnFilter() const
 {
   return this->Interpretor->DualReturnFilter;
 }
 
 //-----------------------------------------------------------------------------
-void vtkVelodyneHDLSource::SetDualReturnFilter(unsigned int filter)
+void vtkVelodyneHDLStream::SetDualReturnFilter(unsigned int filter)
 {
   if (this->Interpretor->DualReturnFilter != filter)
   {
@@ -126,7 +126,7 @@ void vtkVelodyneHDLSource::SetDualReturnFilter(unsigned int filter)
 }
 
 //-----------------------------------------------------------------------------
-void vtkVelodyneHDLSource::GetLaserCorrections(double verticalCorrection[HDL_MAX_NUM_LASERS],
+void vtkVelodyneHDLStream::GetLaserCorrections(double verticalCorrection[HDL_MAX_NUM_LASERS],
   double rotationalCorrection[HDL_MAX_NUM_LASERS], double distanceCorrection[HDL_MAX_NUM_LASERS],
   double distanceCorrectionX[HDL_MAX_NUM_LASERS], double distanceCorrectionY[HDL_MAX_NUM_LASERS],
   double verticalOffsetCorrection[HDL_MAX_NUM_LASERS],
@@ -152,7 +152,7 @@ void vtkVelodyneHDLSource::GetLaserCorrections(double verticalCorrection[HDL_MAX
 }
 
 //-----------------------------------------------------------------------------
-void vtkVelodyneHDLSource::GetXMLColorTable(double XMLColorTable[4 * HDL_MAX_NUM_LASERS])
+void vtkVelodyneHDLStream::GetXMLColorTable(double XMLColorTable[4 * HDL_MAX_NUM_LASERS])
 {
   for (int i = 0; i < HDL_MAX_NUM_LASERS; ++i)
   {
@@ -165,14 +165,14 @@ void vtkVelodyneHDLSource::GetXMLColorTable(double XMLColorTable[4 * HDL_MAX_NUM
 }
 
 //-----------------------------------------------------------------------------
-void vtkVelodyneHDLSource::SetFiringsSkip(int pr)
+void vtkVelodyneHDLStream::SetFiringsSkip(int pr)
 {
   this->Interpretor->FiringsSkip = pr;
   this->Modified();
 }
 
 //-----------------------------------------------------------------------------
-void vtkVelodyneHDLSource::SetCalibrationFileName(const std::string& filename)
+void vtkVelodyneHDLStream::SetCalibrationFileName(const std::string& filename)
 {
   if (filename.empty())
   {
@@ -188,13 +188,13 @@ void vtkVelodyneHDLSource::SetCalibrationFileName(const std::string& filename)
 }
 
 //-----------------------------------------------------------------------------
-void vtkVelodyneHDLSource::SetShouldAddDualReturnArray(bool input)
+void vtkVelodyneHDLStream::SetShouldAddDualReturnArray(bool input)
 {
   this->Interpretor->ShouldAddDualReturnArray = input;
 }
 
 //-----------------------------------------------------------------------------
-void vtkVelodyneHDLSource::SetSelectedPointsWithDualReturn(double* data, int Npoints)
+void vtkVelodyneHDLStream::SetSelectedPointsWithDualReturn(double* data, int Npoints)
 {
   this->Interpretor->SelectedDualReturn = vtkSmartPointer<vtkDoubleArray>::New();
   this->Interpretor->SelectedDualReturn->Allocate(60000);
@@ -207,31 +207,31 @@ void vtkVelodyneHDLSource::SetSelectedPointsWithDualReturn(double* data, int Npo
 }
 
 //-----------------------------------------------------------------------------
-bool vtkVelodyneHDLSource::GetHasDualReturn()
+bool vtkVelodyneHDLStream::GetHasDualReturn()
 {
   return this->Interpretor->HasDualReturn;
 }
 
 //-----------------------------------------------------------------------------
-bool vtkVelodyneHDLSource::getIsHDL64Data()
+bool vtkVelodyneHDLStream::getIsHDL64Data()
 {
   return this->Interpretor->IsHDL64Data;
 }
 
 //-----------------------------------------------------------------------------
-bool vtkVelodyneHDLSource::IsIntensityCorrectedBySensor()
+bool vtkVelodyneHDLStream::IsIntensityCorrectedBySensor()
 {
   return this->Interpretor->SensorPowerMode == CorrectionOn;
 }
 
 //-----------------------------------------------------------------------------
-const bool& vtkVelodyneHDLSource::GetWantIntensityCorrection()
+const bool& vtkVelodyneHDLStream::GetWantIntensityCorrection()
 {
   return this->Interpretor->WantIntensityCorrection;
 }
 
 //-----------------------------------------------------------------------------
-void vtkVelodyneHDLSource::SetIntensitiesCorrected(const bool& state)
+void vtkVelodyneHDLStream::SetIntensitiesCorrected(const bool& state)
 {
 
   if (state != this->Interpretor->WantIntensityCorrection)

@@ -14,7 +14,7 @@
 /*=========================================================================
 
   Program:   Visualization Toolkit
-  Module:    vtkVelodyneHDLSource.h
+  Module:    vtkVelodyneHDLStream.h
 
   Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
   All rights reserved.
@@ -25,13 +25,13 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkVelodyneHDLSource -
+// .NAME vtkVelodyneHDLStream -
 // .SECTION Description
 //
 
 
-#ifndef __vtkVelodyneHDLSource_h
-#define __vtkVelodyneHDLSource_h
+#ifndef __vtkVelodyneHDLStream_h
+#define __vtkVelodyneHDLStream_h
 
 #include "vtkLidarStream.h"
 #include "vtkDataPacket.h"
@@ -41,11 +41,11 @@ using DataPacketFixedLength::HDL_MAX_NUM_LASERS;
 
 class vtkInternal;
 
-class VTK_EXPORT vtkVelodyneHDLSource : public vtkLidarStream
+class VTK_EXPORT vtkVelodyneHDLStream : public vtkLidarStream
 {
 public:
-  static vtkVelodyneHDLSource* New();
-  vtkTypeMacro(vtkVelodyneHDLSource, vtkLidarStream);
+  static vtkVelodyneHDLStream* New();
+  vtkTypeMacro(vtkVelodyneHDLStream, vtkLidarStream);
   void PrintSelf(ostream& os, vtkIndent indent);
 
   std::string GetSensorInformation() override;
@@ -92,11 +92,11 @@ private:
   vtkInternal* Internal;
   VelodynePacketInterpretor* Interpretor;
 
-  vtkVelodyneHDLSource();
-  virtual ~vtkVelodyneHDLSource();
+  vtkVelodyneHDLStream();
+  virtual ~vtkVelodyneHDLStream();
 
-  vtkVelodyneHDLSource(const vtkVelodyneHDLSource&); // Not implemented.
-  void operator=(const vtkVelodyneHDLSource&);       // Not implemented.
+  vtkVelodyneHDLStream(const vtkVelodyneHDLStream&); // Not implemented.
+  void operator=(const vtkVelodyneHDLStream&);       // Not implemented.
 };
 
 #endif

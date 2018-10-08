@@ -14,7 +14,7 @@
 // limitations under the License.
 
 #include "TestHelpers.h"
-#include "vtkVelodyneHDLSource.h"
+#include "vtkVelodyneHDLStream.h"
 #include "vvPacketSender.h"
 
 #include <vtkNew.h>
@@ -61,7 +61,7 @@ int main(int argc, char* argv[])
   const int dataPort = 2368;
 
   // Generate a Velodyne HDL source
-  vtkNew<vtkVelodyneHDLSource> HDLsource;
+  vtkNew<vtkVelodyneHDLStream> HDLsource;
   HDLsource->SetCalibrationFileName(correctionFileName);
   HDLsource->SetCacheSize(100);
   HDLsource->SetLIDARPort(dataPort);

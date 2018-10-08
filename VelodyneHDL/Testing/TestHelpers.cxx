@@ -15,7 +15,7 @@
 #include "TestHelpers.h"
 
 #include "vtkVelodyneHDLReader.h"
-#include "vtkVelodyneHDLSource.h"
+#include "vtkVelodyneHDLStream.h"
 
 #include <vtkCommand.h>
 #include <vtkExecutive.h>
@@ -134,7 +134,7 @@ void SetProcessingOptions(
 }
 
 ////-----------------------------------------------------------------------------
-//void SetProcessingOptions(vtkVelodyneHDLSource* HDLSource, vvProcessingOptionsType currentOptions,
+//void SetProcessingOptions(vtkVelodyneHDLStream* HDLSource, vvProcessingOptionsType currentOptions,
 //  int numProcessingOptions, std::string pcapFileName, std::string destinationIp, int dataPort)
 //{
 //  vtkNew<vtkErrorObserver> errorObserver;
@@ -233,7 +233,7 @@ int TestProcessingOptions(vtkVelodyneHDLReader* HDLReader)
 }
 
 ////-----------------------------------------------------------------------------
-//int TestProcessingOptions(vtkVelodyneHDLSource* HDLSource, std::string pcapFileName,
+//int TestProcessingOptions(vtkVelodyneHDLStream* HDLSource, std::string pcapFileName,
 //  std::string destinationIp, int dataPort)
 //{
 //  // Total number of processing options
@@ -303,7 +303,7 @@ std::string toString(const double* const d, const size_t N)
 }
 
 //-----------------------------------------------------------------------------
-int GetNumberOfTimesteps(vtkVelodyneHDLSource* HDLSource)
+int GetNumberOfTimesteps(vtkVelodyneHDLStream* HDLSource)
 {
   HDLSource->UpdateInformation();
 
@@ -323,7 +323,7 @@ vtkPolyData* GetCurrentFrame(vtkVelodyneHDLReader* HDLreader, int index)
 }
 
 //-----------------------------------------------------------------------------
-vtkPolyData* GetCurrentFrame(vtkVelodyneHDLSource* HDLsource, int index)
+vtkPolyData* GetCurrentFrame(vtkVelodyneHDLStream* HDLsource, int index)
 {
   HDLsource->UpdateInformation();
 

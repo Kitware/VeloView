@@ -1,9 +1,9 @@
 <ServerManagerConfiguration>
   <ProxyGroup name="sources">
-    <SourceProxy name="VelodyneHDLSource" class="vtkVelodyneHDLSource" label="Velodyne HDL Source">
+    <SourceProxy name="VelodyneHDLStream" class="vtkVelodyneHDLStream" label="Velodyne HDL Stream">
       <Documentation
-         short_help="Velodyne HDL Source"
-         long_help="Velodyne HDL Source">
+         short_help="Velodyne HDL Stream"
+         long_help="Velodyne HDL Stream">
       </Documentation>
 
       <StringVectorProperty
