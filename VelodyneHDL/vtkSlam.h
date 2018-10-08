@@ -707,6 +707,11 @@ private:
   // by an external sensor (GPS / IMU, ...)
   void InitTworldUsingExternalData(double adjustedTime0, double rawTime0);
 
+  // Fill the information array with default value
+  // it is used if a mapping step is skipped for example
+  void FillMappingInfoArrayWithDefaultValues();
+  void FillEgoMotionInfoArrayWithDefaultValues();
+
   // Predict Tworld using last points of the trajectory
   Eigen::Matrix<double, 6, 1> PredictTWorld();
 

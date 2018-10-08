@@ -490,6 +490,11 @@ public:
   // add some points to the grid
   void Add(pcl::PointCloud<Point>::Ptr pointcloud)
   {
+    if (pointcloud->size() == 0)
+    {
+      vtkGenericWarningMacro("Pointcloud empty, voxel grid not updated");
+      return;
+    }
     this->vizualisation.clear();
 
     // Voxel to filte because new points were add
@@ -3347,6 +3352,15 @@ void vtkSlam::ComputeResidualJacobians(std::vector<Eigen::Matrix<double, 3, 3> >
 //-----------------------------------------------------------------------------
 void vtkSlam::ComputeEgoMotion()
 {
+  // Check that there is enought points to compute the EgoMotion
+  if (this->CurrentEdgesPoints->size() == 0 || this->CurrentPlanarsPoints->size() == 0 ||
+      this->PreviousEdgesPoints->size() == 0 || this->PreviousPlanarsPoints->size() == 0)
+  {
+    this->FillEgoMotionInfoArrayWithDefaultValues();
+    vtkGenericWarningMacro("Not enought keypoints, EgoMotion skipped for this frame");
+    return;
+  }
+
   // reset the relative transform
   this->Trelative << 0, 0, 0, 0, 0, 0;
 
@@ -3451,6 +3465,14 @@ void vtkSlam::ComputeEgoMotion()
       }
     }
 
+    // Skip this frame if there is too few geometric
+    // keypoints matched
+    if (usedPlanes < 10 || usedEdges < 10)
+    {
+      vtkGenericWarningMacro("Too few geometric features, frame skipped");
+      break;
+    }
+
     // f(R, T) = sum(fi(R, T))
     // fi(R, T) = sqrt((R*X+T-P).t * A * (R*X+T-P)
     // J: residual jacobians, [dfi(R, T)/dR, dfi(R, T)/dT]
@@ -3549,6 +3571,14 @@ void vtkSlam::Mapping()
   // a Gauss-Newton algortihm as we converge toward the minimum of the function
   double lambda = this->Lambda0;
 
+  // Check that there is enought points to compute the EgoMotion
+  if (this->CurrentEdgesPoints->size() == 0 || this->CurrentPlanarsPoints->size() == 0)
+  {
+    this->FillMappingInfoArrayWithDefaultValues();
+    vtkGenericWarningMacro("Not enought keypoints, Mapping skipped for this frame");
+    return;
+  }
+
   // Get a prediction of Tworld using motion
   // model of a constant acceleration
   Eigen::Matrix<double, 6, 1> Tpredicted = this->PredictTWorld();
@@ -3644,6 +3674,14 @@ void vtkSlam::Mapping()
           usedBlobs = this->Xvalues.size() - usedPlanes - usedEdges;
         }
       }
+    }
+
+    // Skip this frame if there is too few geometric
+    // keypoints matched
+    if (usedPlanes < 10 || usedEdges < 10)
+    {
+      vtkGenericWarningMacro("Too few geometric features, frame skipped");
+      break;
     }
 
     // f(R, T) = sum(fi(R, T))
@@ -3828,6 +3866,29 @@ void vtkSlam::UpdateMapsUsingTworld()
   }
   BlobsPointsLocalMap->Roll(this->Tworld);
   BlobsPointsLocalMap->Add(MapBlobsPoints);
+}
+
+//-----------------------------------------------------------------------------
+void vtkSlam::FillMappingInfoArrayWithDefaultValues()
+{
+  static_cast<vtkDoubleArray*>(this->Trajectory->GetPointData()->GetArray("Mapping: intiale cost function"))->InsertNextValue(0.0);
+  static_cast<vtkDoubleArray*>(this->Trajectory->GetPointData()->GetArray("Mapping: final cost function"))->InsertNextValue(10.0);
+  static_cast<vtkDoubleArray*>(this->Trajectory->GetPointData()->GetArray("Variance Error"))->InsertNextValue(10.0);
+  static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("Mapping: edges used"))->InsertNextValue(0);
+  static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("Mapping: planes used"))->InsertNextValue(0);
+  static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("Mapping: blobs used"))->InsertNextValue(0);
+  static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("Mapping: total keypoints used"))->InsertNextValue(0);
+}
+
+//-----------------------------------------------------------------------------
+void vtkSlam::FillEgoMotionInfoArrayWithDefaultValues()
+{
+  static_cast<vtkDoubleArray*>(this->Trajectory->GetPointData()->GetArray("EgoMotion: intiale cost function"))->InsertNextValue(10.0);
+  static_cast<vtkDoubleArray*>(this->Trajectory->GetPointData()->GetArray("EgoMotion: final cost function"))->InsertNextValue(10.0);
+  static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("EgoMotion: edges used"))->InsertNextValue(0);
+  static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("EgoMotion: planes used"))->InsertNextValue(0);
+  static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("EgoMotion: blobs used"))->InsertNextValue(0);
+  static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("EgoMotion: total keypoints used"))->InsertNextValue(0);
 }
 
 //-----------------------------------------------------------------------------
