@@ -19,7 +19,7 @@ PacketConsumer::PacketConsumer()
 void PacketConsumer::HandleSensorData(const unsigned char *data, unsigned int length)
 {
   boost::lock_guard<boost::mutex> lock(this->ReaderMutex);
-  this->Interpreter->ProcessPacket(const_cast<unsigned char*>(data), length);
+  this->Interpreter->ProcessPacket(data, length);
   if (this->Interpreter->IsNewFrameReady())
   {
     this->HandleNewData(this->Interpreter->GetLastFrameAvailable());

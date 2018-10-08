@@ -34,17 +34,17 @@ public:
 
   void LoadCalibration(const std::string& filename) override;
 
-  void ProcessPacket(unsigned char* data, unsigned int& dataLength, int startPosition = 0) override;
+  void ProcessPacket(unsigned char const * data, unsigned int dataLength, int startPosition = 0) override;
 
   bool SplitFrame(bool force = false) override;
 
-  bool IsLidarPacket(unsigned char *data, unsigned int& dataLength) override;
+  bool IsLidarPacket(unsigned char const * data, unsigned int dataLength) override;
 
   vtkSmartPointer<vtkPolyData> CreateNewEmptyFrame(vtkIdType numberOfPoints) override;
 
   void ResetCurrentFrame() override;
 
-  void PreProcessPacket(unsigned char *data, unsigned int &dataLength, bool &isNewFrame, int &framePositionInPacket) override;
+  void PreProcessPacket(unsigned char const * data, unsigned int dataLength, bool &isNewFrame, int &framePositionInPacket) override;
 
 private:
   // Process the laser return from the firing data
@@ -54,7 +54,7 @@ private:
   // azimuthDiff - average azimuth change between firings
   // timestamp - the timestamp of the packet
   // geotransform - georeferencing transform
-  void ProcessFiring(HDLFiringData* firingData,
+  void ProcessFiring(const HDLFiringData* firingData,
     int firingBlockLaserOffset, int firingBlock, int azimuthDiff, double timestamp,
     unsigned int rawtime, bool isThisFiringDualReturnData, bool isDualReturnPacket,
     vtkTransform* geotransform);

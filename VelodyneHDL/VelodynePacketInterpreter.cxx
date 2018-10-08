@@ -94,7 +94,7 @@ struct RPMCalculator
     return dAngle / dTime;
   }
 
-  void AddData(HDLDataPacket* HDLPacket, unsigned int rawtime)
+  void AddData(const HDLDataPacket* HDLPacket, unsigned int rawtime)
   {
     if (HDLPacket->firingData[0].rotationalPosition < this->MinAngle)
     {
@@ -655,14 +655,14 @@ void VelodynePacketInterpreter::LoadCalibration(const std::string& filename)
 }
 
 //-----------------------------------------------------------------------------
-void VelodynePacketInterpreter::ProcessPacket(unsigned char *data, unsigned int& dataLength, int startPosition)
+void VelodynePacketInterpreter::ProcessPacket(unsigned char const * data, unsigned int dataLength, int startPosition)
 {
   if (!this->IsLidarPacket(data, dataLength))
   {
     return;
   }
 
-  HDLDataPacket* dataPacket = reinterpret_cast<HDLDataPacket*>(data);
+  const HDLDataPacket* dataPacket = reinterpret_cast<const HDLDataPacket*>(data);
 
   this->IsHDL64Data |= dataPacket->isHDL64();
 
@@ -733,7 +733,7 @@ void VelodynePacketInterpreter::ProcessPacket(unsigned char *data, unsigned int&
 
   for (; firingBlock < HDL_FIRING_PER_PKT; ++firingBlock)
   {
-    HDLFiringData* firingData = &(dataPacket->firingData[firingBlock]);
+    const HDLFiringData* firingData = &(dataPacket->firingData[firingBlock]);
     // clang-format off
     int multiBlockLaserIdOffset =
         (firingData->blockIdentifier == BLOCK_0_TO_31)  ?  0 :(
@@ -760,7 +760,7 @@ void VelodynePacketInterpreter::ProcessPacket(unsigned char *data, unsigned int&
 
 
 //-----------------------------------------------------------------------------
-bool VelodynePacketInterpreter::IsLidarPacket(unsigned char *data, unsigned int& dataLength)
+bool VelodynePacketInterpreter::IsLidarPacket(unsigned char const * data, unsigned int dataLength)
 {
   if (dataLength == HDLDataPacket::getDataByteLength())
   {
@@ -773,7 +773,7 @@ bool VelodynePacketInterpreter::IsLidarPacket(unsigned char *data, unsigned int&
 }
 
 //-----------------------------------------------------------------------------
-void VelodynePacketInterpreter::ProcessFiring(HDLFiringData *firingData, int firingBlockLaserOffset, int firingBlock, int azimuthDiff, double timestamp, unsigned int rawtime, bool isThisFiringDualReturnData, bool isDualReturnPacket, vtkTransform *geotransform)
+void VelodynePacketInterpreter::ProcessFiring(const HDLFiringData *firingData, int firingBlockLaserOffset, int firingBlock, int azimuthDiff, double timestamp, unsigned int rawtime, bool isThisFiringDualReturnData, bool isDualReturnPacket, vtkTransform *geotransform)
 {
   // Non dual return piece of a dual return packet: init last point of laser
   if (!isThisFiringDualReturnData &&
@@ -1329,7 +1329,7 @@ void VelodynePacketInterpreter::ResetCurrentFrame()
 }
 
 //-----------------------------------------------------------------------------
-void VelodynePacketInterpreter::PreProcessPacket(unsigned char *data, unsigned int &dataLength, bool &isNewFrame, int &framePositionInPacket)
+void VelodynePacketInterpreter::PreProcessPacket(unsigned char const * data, unsigned int dataLength, bool &isNewFrame, int &framePositionInPacket)
 {
   const HDLDataPacket* dataPacket = reinterpret_cast<const HDLDataPacket*>(data);
   //! @todo don't use static value here this is ugly...
