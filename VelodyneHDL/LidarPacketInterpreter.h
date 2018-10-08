@@ -88,7 +88,7 @@ public:
    * @brief ResetDataForNewFrame reset all information to handle some new frame. This reset the
    * frame container, some information about the current frame, guesses about the sensor type, etc
    */
-  virtual void ResetDataForNewFrame() = 0;
+  virtual void ResetDataForNewFrame() { this->CurrentFrame = this->CreateNewEmptyFrame(0); }
 
   /**
    * @brief isNewFrameReady check if a new frame is ready
