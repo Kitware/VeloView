@@ -56,7 +56,7 @@ public:
    * @brief SplitFrame take the current frame under construction and place it in another buffer
    * @param force force the split even if the frame is empty
    */
-  virtual bool SplitFrame(bool force);
+  virtual bool SplitFrame(bool force = false);
 
   /**
    * @brief CreateData construct a empty polyData with the right DataArray and allocate some
