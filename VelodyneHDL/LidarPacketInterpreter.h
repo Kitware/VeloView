@@ -85,10 +85,10 @@ public:
   virtual bool IsLidarPacket(unsigned char* data, unsigned int& dataLength) = 0;
 
   /**
-   * @brief ResetDataForNewFrame reset all information to handle some new frame. This reset the
+   * @brief ResetCurrentFrame reset all information to handle some new frame. This reset the
    * frame container, some information about the current frame, guesses about the sensor type, etc
    */
-  virtual void ResetDataForNewFrame() { this->CurrentFrame = this->CreateNewEmptyFrame(0); }
+  virtual void ResetCurrentFrame() { this->CurrentFrame = this->CreateNewEmptyFrame(0); }
 
   /**
    * @brief isNewFrameReady check if a new frame is ready

@@ -172,7 +172,7 @@ void vtkLidarReader::SetFileName(const std::string &filename)
   this->Internal->FileName = filename;
   this->Internal->FilePositions.clear();
   this->Internal->FilePositionsSkip.clear();
-  this->Interpreter->ResetDataForNewFrame();
+  this->Interpreter->ResetCurrentFrame();
   this->Modified();
 }
 
@@ -185,7 +185,7 @@ int vtkLidarReader::GetNumberOfFrames()
 //-----------------------------------------------------------------------------
 vtkSmartPointer<vtkPolyData> vtkLidarReader::GetFrame(int frameNumber, int wantedNumberOfTrailingFrames)
 {
-  this->Interpreter->ResetDataForNewFrame();
+  this->Interpreter->ResetCurrentFrame();
   if (!this->Internal->Reader)
   {
     vtkErrorMacro("GetFrame() called but packet file reader is not open.");

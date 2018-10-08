@@ -42,7 +42,7 @@ public:
 
   vtkSmartPointer<vtkPolyData> CreateNewEmptyFrame(vtkIdType numberOfPoints) override;
 
-  void ResetDataForNewFrame() override;
+  void ResetCurrentFrame() override;
 
   void PreProcessPacket(unsigned char *data, unsigned int &dataLength, bool &isNewFrame, int &framePositionInPacket) override;
 

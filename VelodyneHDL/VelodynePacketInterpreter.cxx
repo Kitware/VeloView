@@ -1050,7 +1050,7 @@ void VelodynePacketInterpreter::Init()
 {
   this->InitTrigonometricTables();
   this->SensorTransform->Identity();
-  this->ResetDataForNewFrame();
+  this->ResetCurrentFrame();
 }
 
 //-----------------------------------------------------------------------------
@@ -1312,7 +1312,7 @@ bool VelodynePacketInterpreter::SplitFrame(bool force)
 }
 
 //-----------------------------------------------------------------------------
-void VelodynePacketInterpreter::ResetDataForNewFrame()
+void VelodynePacketInterpreter::ResetCurrentFrame()
 {
   std::fill(this->LastPointId, this->LastPointId + HDL_MAX_NUM_LASERS, -1);
   this->CurrentFrameState->reset();

@@ -91,7 +91,7 @@ bool PacketConsumer::CheckForNewData()
 void PacketConsumer::ThreadLoop()
 {
   std::string* packet = 0;
-  this->Interpreter->ResetDataForNewFrame();
+  this->Interpreter->ResetCurrentFrame();
   while (this->Packets->dequeue(packet))
   {
     this->HandleSensorData(
