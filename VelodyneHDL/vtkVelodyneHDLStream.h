@@ -35,7 +35,7 @@
 
 #include "vtkLidarStream.h"
 #include "vtkDataPacket.h"
-#include "VelodynePacketInterpretor.h"
+#include "VelodynePacketInterpreter.h"
 
 using DataPacketFixedLength::HDL_MAX_NUM_LASERS;
 
@@ -90,7 +90,7 @@ public:
 
 private:
   vtkInternal* Internal;
-  VelodynePacketInterpretor* Interpretor;
+  VelodynePacketInterpreter* Interpreter;
 
   vtkVelodyneHDLStream();
   virtual ~vtkVelodyneHDLStream();

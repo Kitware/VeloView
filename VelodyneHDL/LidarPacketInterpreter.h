@@ -26,11 +26,11 @@ type Get##name () { \
 class vtkVelodyneTransformInterpolator;
 class pcap_pkthdr;
 
-class LidarPacketInterpretor
+class LidarPacketInterpreter
 {
 public:
 
-  LidarPacketInterpretor();
+  LidarPacketInterpreter();
 
   /**
    * @brief LoadCalibration read a provided calibration file to initialize the sensor's

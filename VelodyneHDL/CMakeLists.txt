@@ -94,8 +94,8 @@ if(PARAVIEW_BUILD_QT_GUI)
   # integrated to VTK, we provide the patch
   set(non_vtk_sources
     vtkLidarProvider.cxx
-    LidarPacketInterpretor.cxx
-    VelodynePacketInterpretor.cxx
+    LidarPacketInterpreter.cxx
+    VelodynePacketInterpreter.cxx
     vtkLidarReader.cxx
     vtkLidarStream.cxx
     NetworkSource.cxx

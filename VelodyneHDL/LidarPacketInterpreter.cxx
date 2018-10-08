@@ -1,4 +1,4 @@
-#include "LidarPacketInterpretor.h"
+#include "LidarPacketInterpreter.h"
 #include "vtkLidarProvider.h"
 
 namespace {
@@ -21,7 +21,7 @@ vtkSmartPointer<vtkCellArray> NewVertexCells(vtkIdType numberOfVerts)
 
 }
 //-----------------------------------------------------------------------------
-LidarPacketInterpretor::LidarPacketInterpretor()
+LidarPacketInterpreter::LidarPacketInterpreter()
 {
   this->NumberOfTrailingFrames = 0;
 
@@ -50,7 +50,7 @@ LidarPacketInterpretor::LidarPacketInterpretor()
 }
 
 //-----------------------------------------------------------------------------
-bool LidarPacketInterpretor::SplitFrame(bool force)
+bool LidarPacketInterpreter::SplitFrame(bool force)
 {
   if (this->IgnoreEmptyFrames && this->CurrentDataset->GetNumberOfPoints() == 0 && !force)
   {
@@ -73,7 +73,7 @@ bool LidarPacketInterpretor::SplitFrame(bool force)
 }
 
 //-----------------------------------------------------------------------------
-void LidarPacketInterpretor::SetCropRegion(double region[])
+void LidarPacketInterpreter::SetCropRegion(double region[])
 {
   for (int i = 0; i < 6; i++)
   {
@@ -82,7 +82,7 @@ void LidarPacketInterpretor::SetCropRegion(double region[])
 }
 
 //-----------------------------------------------------------------------------
-bool LidarPacketInterpretor::shouldBeCroppedOut(double pos[3], double theta)
+bool LidarPacketInterpreter::shouldBeCroppedOut(double pos[3], double theta)
 {
   // Test if point is cropped
   if (!this->CropReturns)

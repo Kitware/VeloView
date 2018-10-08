@@ -4,7 +4,7 @@
 #include <vtkPolyDataAlgorithm.h>
 #include <vtkTransform.h>
 
-#include <LidarPacketInterpretor.h>
+#include <LidarPacketInterpreter.h>
 
 //
 // Set built-in type.  Creates member Set"name"() (e.g., SetVisibility());
@@ -13,9 +13,9 @@
 virtual void Set##name (type _arg) \
   { \
   vtkDebugMacro(<< this->GetClassName() << " (" << this << "): setting " #name " to " << _arg); \
-  if (this->Interpretor->Get##name() != _arg) \
+  if (this->Interpreter->Get##name() != _arg) \
     { \
-    this->Interpretor->Set##name(_arg); \
+    this->Interpreter->Set##name(_arg); \
     this->Modified(); \
     } \
   }
@@ -26,8 +26,8 @@ virtual void Set##name (type _arg) \
 #define vtkCustomGetMacro(name,type) \
 virtual type Get##name () \
   { \
-  vtkDebugMacro(<< this->GetClassName() << " (" << this << "): returning " << #name " of " << this->Interpretor->Get##name() ); \
-  return this->Interpretor->Get##name(); \
+  vtkDebugMacro(<< this->GetClassName() << " (" << this << "): returning " << #name " of " << this->Interpreter->Get##name() ); \
+  return this->Interpreter->Get##name(); \
   }
 /**
 
@@ -99,76 +99,76 @@ public:
   virtual std::string GetSensorInformation() = 0;
 
   /**
-   * @copydoc LidarPacketInterpretor::NumberOfTrailingFrames
+   * @copydoc LidarPacketInterpreter::NumberOfTrailingFrames
    */
   vtkCustomGetMacro(NumberOfTrailingFrames, int)
   vtkCustomSetMacro(NumberOfTrailingFrames, int)
 
   /**
-   * @copydoc LidarPacketInterpretor::CalibrationFileName
+   * @copydoc LidarPacketInterpreter::CalibrationFileName
    */
   vtkCustomGetMacro(CalibrationFileName, std::string)
   virtual void SetCalibrationFileName(const std::string& filename);
 
   /**
-   * @copydoc LidarPacketInterpretor::IsCalibrated
+   * @copydoc LidarPacketInterpreter::IsCalibrated
    */
   vtkCustomGetMacro(IsCalibrated, bool)
 
   /**
-   * @copydoc LidarPacketInterpretor::CalibrationReportedNumLasers
+   * @copydoc LidarPacketInterpreter::CalibrationReportedNumLasers
    */
   int GetNumberOfChannels();
 
   /**
-   * \copydoc LidarPacketInterpretor::Frequency
+   * \copydoc LidarPacketInterpreter::Frequency
    */
   vtkCustomGetMacro(Frequency, double)
 
   /**
-   * @copydoc LidarPacketInterpretor::DistanceResolutionM
+   * @copydoc LidarPacketInterpreter::DistanceResolutionM
    */
   vtkCustomGetMacro(DistanceResolutionM, double)
 
   /**
-   * @copydoc LidarPacketInterpretor::IgnoreZeroDistances
+   * @copydoc LidarPacketInterpreter::IgnoreZeroDistances
    */
   vtkCustomGetMacro(IgnoreZeroDistances, bool)
   vtkCustomSetMacro(IgnoreZeroDistances, bool)
 
   /**
-   * @copydoc LidarPacketInterpretor::IgnoreEmptyFrames
+   * @copydoc LidarPacketInterpreter::IgnoreEmptyFrames
    */
   vtkCustomGetMacro(IgnoreEmptyFrames, bool)
   vtkCustomSetMacro(IgnoreEmptyFrames, bool)
 
   /**
-   * @copydoc LidarPacketInterpretor::LaserSelection
+   * @copydoc LidarPacketInterpreter::LaserSelection
    */
   void SetLaserSelection(bool laserSelection[]);
   void GetLaserSelection(bool laserSelection[]);
 
   /**
-   * @copydoc LidarPacketInterpretor::CropMode
+   * @copydoc LidarPacketInterpreter::CropMode
    * Due to the restrictions of the Python wrappings, an int is required instead of an enum.
    * vtkLidarProvider::CropModeEnum
    */
   void SetCropMode(const int mode);
 
   /**
-   * @copydoc LidarPacketInterpretor::CropReturns
+   * @copydoc LidarPacketInterpreter::CropReturns
    */
   vtkCustomGetMacro(CropReturns, bool)
   vtkCustomSetMacro(CropReturns, bool)
 
   /**
-   * @copydoc LidarPacketInterpretor::CropOutside
+   * @copydoc LidarPacketInterpreter::CropOutside
    */
   vtkCustomGetMacro(CropOutside, bool)
   vtkCustomSetMacro(CropOutside, bool)
 
   /**
-   * @copydoc LidarPacketInterpretor::CropRegion
+   * @copydoc LidarPacketInterpreter::CropRegion
    */
   void SetCropRegion(double region[6]);
   void SetCropRegion(const double v0, const double v1,
@@ -176,18 +176,18 @@ public:
                      const double v4, const double v5);
 
   /**
-   * @copydoc LidarPacketInterpretor::SensorTransform
+   * @copydoc LidarPacketInterpreter::SensorTransform
    */
   void SetSensorTransform(vtkTransform* t);
 
   /**
-   * @copydoc LidarPacketInterpretor::ApplyTransform
+   * @copydoc LidarPacketInterpreter::ApplyTransform
    */
   vtkCustomGetMacro(ApplyTransform, bool)
   vtkCustomSetMacro(ApplyTransform, bool)
 
   /**
-   * @copydoc LidarPacketInterpretor::Interp
+   * @copydoc LidarPacketInterpreter::Interp
    */
   vtkVelodyneTransformInterpolator* GetInterpolator() const;
   void SetInterpolator(vtkVelodyneTransformInterpolator* interpolator);
@@ -206,10 +206,10 @@ protected:
   ~vtkLidarProvider();
 
   /**
-   * @brief SetInterpretor method used to switch the opaque pointer
+   * @brief SetInterpreter method used to switch the opaque pointer
    */
-  void SetInterpretor(LidarPacketInterpretor* interpretor) {this->Interpretor = interpretor;}
-  LidarPacketInterpretor* Interpretor;
+  void SetInterpreter(LidarPacketInterpreter* interpreter) {this->Interpreter = interpreter;}
+  LidarPacketInterpreter* Interpreter;
 private:
   vtkLidarProvider(const vtkLidarProvider&); // not implemented
   void operator=(const vtkLidarProvider&); // not implemented

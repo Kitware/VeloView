@@ -38,7 +38,7 @@
 #include <vtkSmartPointer.h>
 
 class vtkVelodyneTransformInterpolator;
-class VelodynePacketInterpretor;
+class VelodynePacketInterpreter;
 class vtkInternal;
 
 using DataPacketFixedLength::HDL_MAX_NUM_LASERS;
@@ -95,7 +95,7 @@ public:
 
 private:
   vtkInternal* Internal;
-  VelodynePacketInterpretor* Interpretor;
+  VelodynePacketInterpreter* Interpreter;
 
   vtkVelodyneHDLReader();
   ~vtkVelodyneHDLReader();

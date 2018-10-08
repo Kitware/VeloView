@@ -235,10 +235,10 @@ int vtkLidarStream::RequestInformation(
 }
 
 //----------------------------------------------------------------------------
-void vtkLidarStream::SetInterpretor(LidarPacketInterpretor *interpretor)
+void vtkLidarStream::SetInterpreter(LidarPacketInterpreter *interpreter)
 {
-  vtkLidarProvider::SetInterpretor(interpretor);
-  this->Internal->Consumer->SetInterpretor(interpretor);
+  vtkLidarProvider::SetInterpreter(interpreter);
+  this->Internal->Consumer->SetInterpreter(interpreter);
 }
 
 //----------------------------------------------------------------------------

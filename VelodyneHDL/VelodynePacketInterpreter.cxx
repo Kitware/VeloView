@@ -1,4 +1,4 @@
-#include "VelodynePacketInterpretor.h"
+#include "VelodynePacketInterpreter.h"
 
 #include <vtkPoints.h>
 #include <vtkPointData.h>
@@ -24,7 +24,7 @@ using namespace DataPacketFixedLength;
 
 //namespace
 //{
-//! @todo this method are actually usefull for every Interpretor and should go to the top
+//! @todo this method are actually usefull for every Interpreter and should go to the top
 template<typename T>
 vtkSmartPointer<T> CreateDataArray(const char* name, vtkIdType np, vtkPolyData* pd)
 {
@@ -136,15 +136,15 @@ int MapFlags(unsigned int flags, unsigned int low, unsigned int high)
 //-----------------------------------------------------------------------------
 int MapDistanceFlag(unsigned int flags)
 {
-  return MapFlags(flags & VelodynePacketInterpretor::DUAL_DISTANCE_MASK,
-    VelodynePacketInterpretor::DUAL_DISTANCE_NEAR, VelodynePacketInterpretor::DUAL_DISTANCE_FAR);
+  return MapFlags(flags & VelodynePacketInterpreter::DUAL_DISTANCE_MASK,
+    VelodynePacketInterpreter::DUAL_DISTANCE_NEAR, VelodynePacketInterpreter::DUAL_DISTANCE_FAR);
 }
 
 //-----------------------------------------------------------------------------
 int MapIntensityFlag(unsigned int flags)
 {
-  return MapFlags(flags & VelodynePacketInterpretor::DUAL_INTENSITY_MASK,
-    VelodynePacketInterpretor::DUAL_INTENSITY_LOW, VelodynePacketInterpretor::DUAL_INTENSITY_HIGH);
+  return MapFlags(flags & VelodynePacketInterpreter::DUAL_INTENSITY_MASK,
+    VelodynePacketInterpreter::DUAL_INTENSITY_LOW, VelodynePacketInterpreter::DUAL_INTENSITY_HIGH);
 }
 
 //-----------------------------------------------------------------------------
@@ -423,7 +423,7 @@ struct last4cyclesByte
 //} // End namespace
 
 //-----------------------------------------------------------------------------
-VelodynePacketInterpretor::VelodynePacketInterpretor()
+VelodynePacketInterpreter::VelodynePacketInterpreter()
 {
   this->RpmCalculator_ = new RPMCalculator();
   this->UseIntraFiringAdjustment = true;
@@ -451,7 +451,7 @@ VelodynePacketInterpretor::VelodynePacketInterpretor()
   this->Init();
 }
 
-VelodynePacketInterpretor::~VelodynePacketInterpretor()
+VelodynePacketInterpreter::~VelodynePacketInterpreter()
 {
   if (this->rollingCalibrationData)
   {
@@ -461,7 +461,7 @@ VelodynePacketInterpretor::~VelodynePacketInterpretor()
 }
 
 //-----------------------------------------------------------------------------
-void VelodynePacketInterpretor::LoadCalibration(const std::string& filename)
+void VelodynePacketInterpreter::LoadCalibration(const std::string& filename)
 {
   boost::property_tree::ptree pt;
   try
@@ -655,7 +655,7 @@ void VelodynePacketInterpretor::LoadCalibration(const std::string& filename)
 }
 
 //-----------------------------------------------------------------------------
-void VelodynePacketInterpretor::ProcessPacket(unsigned char *data, unsigned int& dataLength, int startPosition)
+void VelodynePacketInterpreter::ProcessPacket(unsigned char *data, unsigned int& dataLength, int startPosition)
 {
   if (!this->IsLidarPacket(data, dataLength))
   {
@@ -760,7 +760,7 @@ void VelodynePacketInterpretor::ProcessPacket(unsigned char *data, unsigned int&
 
 
 //-----------------------------------------------------------------------------
-bool VelodynePacketInterpretor::IsLidarPacket(unsigned char *data, unsigned int& dataLength)
+bool VelodynePacketInterpreter::IsLidarPacket(unsigned char *data, unsigned int& dataLength)
 {
   if (dataLength == HDLDataPacket::getDataByteLength())
   {
@@ -773,7 +773,7 @@ bool VelodynePacketInterpretor::IsLidarPacket(unsigned char *data, unsigned int&
 }
 
 //-----------------------------------------------------------------------------
-void VelodynePacketInterpretor::ProcessFiring(HDLFiringData *firingData, int firingBlockLaserOffset, int firingBlock, int azimuthDiff, double timestamp, unsigned int rawtime, bool isThisFiringDualReturnData, bool isDualReturnPacket, vtkTransform *geotransform)
+void VelodynePacketInterpreter::ProcessFiring(HDLFiringData *firingData, int firingBlockLaserOffset, int firingBlock, int azimuthDiff, double timestamp, unsigned int rawtime, bool isThisFiringDualReturnData, bool isDualReturnPacket, vtkTransform *geotransform)
 {
   // Non dual return piece of a dual return packet: init last point of laser
   if (!isThisFiringDualReturnData &&
@@ -876,7 +876,7 @@ void VelodynePacketInterpretor::ProcessFiring(HDLFiringData *firingData, int fir
 }
 
 //-----------------------------------------------------------------------------
-void VelodynePacketInterpretor::PushFiringData(const unsigned char laserId, const unsigned char rawLaserId, unsigned short azimuth, const double timestamp, const unsigned int rawtime, const HDLLaserReturn *laserReturn, const HDLLaserCorrection *correction, vtkTransform *geotransform, const bool isFiringDualReturnData)
+void VelodynePacketInterpreter::PushFiringData(const unsigned char laserId, const unsigned char rawLaserId, unsigned short azimuth, const double timestamp, const unsigned int rawtime, const HDLLaserReturn *laserReturn, const HDLLaserCorrection *correction, vtkTransform *geotransform, const bool isFiringDualReturnData)
 {
   azimuth %= 36000;
   const vtkIdType thisPointId = this->Points->GetNumberOfPoints();
@@ -1010,7 +1010,7 @@ void VelodynePacketInterpretor::PushFiringData(const unsigned char laserId, cons
 }
 
 //-----------------------------------------------------------------------------
-void VelodynePacketInterpretor::InitTrigonometricTables()
+void VelodynePacketInterpreter::InitTrigonometricTables()
 {
   if (cos_lookup_table_.size() == 0 || sin_lookup_table_.size() == 0)
   {
@@ -1026,7 +1026,7 @@ void VelodynePacketInterpretor::InitTrigonometricTables()
 }
 
 //-----------------------------------------------------------------------------
-void VelodynePacketInterpretor::PrecomputeCorrectionCosSin()
+void VelodynePacketInterpreter::PrecomputeCorrectionCosSin()
 {
 
   for (int i = 0; i < HDL_MAX_NUM_LASERS; i++)
@@ -1046,7 +1046,7 @@ void VelodynePacketInterpretor::PrecomputeCorrectionCosSin()
 }
 
 //-----------------------------------------------------------------------------
-void VelodynePacketInterpretor::Init()
+void VelodynePacketInterpreter::Init()
 {
   this->InitTrigonometricTables();
   this->SensorTransform->Identity();
@@ -1054,7 +1054,7 @@ void VelodynePacketInterpretor::Init()
 }
 
 //-----------------------------------------------------------------------------
-double VelodynePacketInterpretor::ComputeTimestamp(unsigned int tohTime)
+double VelodynePacketInterpreter::ComputeTimestamp(unsigned int tohTime)
 {
   static const double hourInMilliseconds = 3600.0 * 1e6;
 
@@ -1088,7 +1088,7 @@ double VelodynePacketInterpretor::ComputeTimestamp(unsigned int tohTime)
 }
 
 //-----------------------------------------------------------------------------
-void VelodynePacketInterpretor::ComputeOrientation(double timestamp, vtkTransform *geotransform)
+void VelodynePacketInterpreter::ComputeOrientation(double timestamp, vtkTransform *geotransform)
 {
   if (this->ApplyTransform && this->Interp && this->Interp->GetNumberOfTransforms())
   {
@@ -1104,7 +1104,7 @@ void VelodynePacketInterpretor::ComputeOrientation(double timestamp, vtkTransfor
 }
 
 //-----------------------------------------------------------------------------
-void VelodynePacketInterpretor::ComputeCorrectedValues(const unsigned short azimuth, const HDLLaserReturn *laserReturn, const HDLLaserCorrection *correction, double pos[], double &distanceM, short &intensity, bool correctIntensity)
+void VelodynePacketInterpreter::ComputeCorrectedValues(const unsigned short azimuth, const HDLLaserReturn *laserReturn, const HDLLaserCorrection *correction, double pos[], double &distanceM, short &intensity, bool correctIntensity)
 {
   intensity = laserReturn->intensity;
 
@@ -1181,7 +1181,7 @@ void VelodynePacketInterpretor::ComputeCorrectedValues(const unsigned short azim
 }
 
 //-----------------------------------------------------------------------------
-bool VelodynePacketInterpretor::HDL64LoadCorrectionsFromStreamData()
+bool VelodynePacketInterpreter::HDL64LoadCorrectionsFromStreamData()
 {
   std::vector<unsigned char> data;
   if (!this->rollingCalibrationData->getAlignedRollingData(data))
@@ -1238,7 +1238,7 @@ bool VelodynePacketInterpretor::HDL64LoadCorrectionsFromStreamData()
 }
 
 //-----------------------------------------------------------------------------
-vtkSmartPointer<vtkPolyData> VelodynePacketInterpretor::CreateData(vtkIdType numberOfPoints)
+vtkSmartPointer<vtkPolyData> VelodynePacketInterpreter::CreateData(vtkIdType numberOfPoints)
 {
   vtkSmartPointer<vtkPolyData> polyData = vtkSmartPointer<vtkPolyData>::New();
 
@@ -1290,9 +1290,9 @@ vtkSmartPointer<vtkPolyData> VelodynePacketInterpretor::CreateData(vtkIdType num
 }
 
 //-----------------------------------------------------------------------------
-bool VelodynePacketInterpretor::SplitFrame(bool force)
+bool VelodynePacketInterpreter::SplitFrame(bool force)
 {
-  if (this->LidarPacketInterpretor::SplitFrame(force))
+  if (this->LidarPacketInterpreter::SplitFrame(force))
   {
     for (size_t n = 0; n < HDL_MAX_NUM_LASERS; ++n)
     {
@@ -1312,7 +1312,7 @@ bool VelodynePacketInterpretor::SplitFrame(bool force)
 }
 
 //-----------------------------------------------------------------------------
-void VelodynePacketInterpretor::ResetDataForNewFrame()
+void VelodynePacketInterpreter::ResetDataForNewFrame()
 {
   std::fill(this->LastPointId, this->LastPointId + HDL_MAX_NUM_LASERS, -1);
   this->CurrentFrameState->reset();
@@ -1329,7 +1329,7 @@ void VelodynePacketInterpretor::ResetDataForNewFrame()
 }
 
 //-----------------------------------------------------------------------------
-void VelodynePacketInterpretor::PreProcessPacket(unsigned char *data, unsigned int &dataLength, bool &isNewFrame, int &framePositionInPacket)
+void VelodynePacketInterpreter::PreProcessPacket(unsigned char *data, unsigned int &dataLength, bool &isNewFrame, int &framePositionInPacket)
 {
   const HDLDataPacket* dataPacket = reinterpret_cast<const HDLDataPacket*>(data);
   //! @todo don't use static value here this is ugly...
@@ -1411,7 +1411,7 @@ void VelodynePacketInterpretor::PreProcessPacket(unsigned char *data, unsigned i
 }
 
 //-----------------------------------------------------------------------------
-bool VelodynePacketInterpretor::CheckReportedSensorAndCalibrationFileConsistent(const HDLDataPacket* dataPacket)
+bool VelodynePacketInterpreter::CheckReportedSensorAndCalibrationFileConsistent(const HDLDataPacket* dataPacket)
 {
   // Get the number of laser from sensor type
   int reportedSensorNumberLaser = num_laser(dataPacket->getSensorType());

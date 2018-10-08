@@ -71,7 +71,7 @@ protected:
 
   virtual int RequestInformation(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
 
-  void SetInterpretor(LidarPacketInterpretor *interpretor);
+  void SetInterpreter(LidarPacketInterpreter *interpreter);
 private:
   vtkLidarStreamInternal* Internal;
   vtkLidarStream(const vtkLidarStream&); // not implemented

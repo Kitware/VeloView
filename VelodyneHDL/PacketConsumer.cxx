@@ -19,11 +19,11 @@ PacketConsumer::PacketConsumer()
 void PacketConsumer::HandleSensorData(const unsigned char *data, unsigned int length)
 {
   boost::lock_guard<boost::mutex> lock(this->ReaderMutex);
-  this->Interpretor->ProcessPacket(const_cast<unsigned char*>(data), length);
-  if (this->Interpretor->IsNewFrameReady())
+  this->Interpreter->ProcessPacket(const_cast<unsigned char*>(data), length);
+  if (this->Interpreter->IsNewFrameReady())
   {
-    this->HandleNewData(this->Interpretor->GetLastFrameAvailable());
-    this->Interpretor->ClearAllFramesAvailable();
+    this->HandleNewData(this->Interpreter->GetLastFrameAvailable());
+    this->Interpreter->ClearAllFramesAvailable();
   }
 }
 
@@ -91,7 +91,7 @@ bool PacketConsumer::CheckForNewData()
 void PacketConsumer::ThreadLoop()
 {
   std::string* packet = 0;
-  this->Interpretor->ResetDataForNewFrame();
+  this->Interpreter->ResetDataForNewFrame();
   while (this->Packets->dequeue(packet))
   {
     this->HandleSensorData(

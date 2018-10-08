@@ -1,5 +1,5 @@
 #include "vtkLidarProvider.h"
-#include "LidarPacketInterpretor.h"
+#include "LidarPacketInterpreter.h"
 #include "vtkVelodyneTransformInterpolator.h"
 
 #include <boost/filesystem.hpp>
@@ -8,7 +8,7 @@
 //-----------------------------------------------------------------------------
 void vtkLidarProvider::SetCalibrationFileName(const std::string &filename)
 {
-  if (filename == this->Interpretor->GetCalibrationFileName())
+  if (filename == this->Interpreter->GetCalibrationFileName())
   {
     return;
   }
@@ -30,21 +30,21 @@ void vtkLidarProvider::SetCalibrationFileName(const std::string &filename)
     return;
   }
 
-  this->Interpretor->LoadCalibration(filename);
+  this->Interpreter->LoadCalibration(filename);
   this->Modified();
 }
 
 //-----------------------------------------------------------------------------
 int vtkLidarProvider::GetNumberOfChannels()
 {
-  return this->Interpretor->GetCalibrationReportedNumLasers();
+  return this->Interpreter->GetCalibrationReportedNumLasers();
 }
 
 //-----------------------------------------------------------------------------
 void vtkLidarProvider::SetLaserSelection(bool laserSelection[])
 {
-  this->Interpretor->SetLaserSelection(
-        std::vector<bool>(laserSelection, laserSelection + this->Interpretor->GetCalibrationReportedNumLasers()));
+  this->Interpreter->SetLaserSelection(
+        std::vector<bool>(laserSelection, laserSelection + this->Interpreter->GetCalibrationReportedNumLasers()));
   this->Modified();
 }
 
@@ -53,20 +53,20 @@ void vtkLidarProvider::GetLaserSelection(bool laserSelection[])
 {
   // Bool vector is a particular data structure
   // you can't access to the data
-  //this->Interpretor->GetLaserSelection().data();
+  //this->Interpreter->GetLaserSelection().data();
 }
 
 //-----------------------------------------------------------------------------
 void vtkLidarProvider::SetCropMode(const int mode)
 {
-  this->Interpretor->SetCropMode(/*static_cast<CropModeEnum>(*/mode/*)*/);
+  this->Interpreter->SetCropMode(/*static_cast<CropModeEnum>(*/mode/*)*/);
   this->Modified();
 }
 
 //-----------------------------------------------------------------------------
 void vtkLidarProvider::SetCropRegion(double region[6])
 {
-  this->Interpretor->SetCropRegion(region);
+  this->Interpreter->SetCropRegion(region);
   this->Modified();
 }
 
@@ -89,11 +89,11 @@ void vtkLidarProvider::SetSensorTransform(vtkTransform * t)
 {
   if (t)
   {
-    this->Interpretor->SensorTransform->SetMatrix(t->GetMatrix());
+    this->Interpreter->SensorTransform->SetMatrix(t->GetMatrix());
   }
   else
   {
-    this->Interpretor->SensorTransform->Identity();
+    this->Interpreter->SensorTransform->Identity();
   }
   this->Modified();
 }
@@ -101,13 +101,13 @@ void vtkLidarProvider::SetSensorTransform(vtkTransform * t)
 //-----------------------------------------------------------------------------
 vtkVelodyneTransformInterpolator *vtkLidarProvider::GetInterpolator() const
 {
-  return this->Interpretor->Interp;
+  return this->Interpreter->Interp;
 }
 
 //-----------------------------------------------------------------------------
 void vtkLidarProvider::SetInterpolator(vtkVelodyneTransformInterpolator *interpolator)
 {
-  this->Interpretor->Interp = interpolator;
+  this->Interpreter->Interp = interpolator;
   this->Modified();
 }
 
@@ -126,5 +126,5 @@ vtkLidarProvider::vtkLidarProvider()
 //-----------------------------------------------------------------------------
 vtkLidarProvider::~vtkLidarProvider()
 {
-  delete this->Interpretor;
+  delete this->Interpreter;
 }

@@ -1,7 +1,7 @@
 #ifndef VELODYNEPACKETINTERPRETOR_H
 #define VELODYNEPACKETINTERPRETOR_H
 
-#include "LidarPacketInterpretor.h"
+#include "LidarPacketInterpreter.h"
 #include "vtkDataPacket.h"
 #include <vtkUnsignedCharArray.h>
 #include <vtkUnsignedIntArray.h>
@@ -15,7 +15,7 @@ class FramingState;
 class vtkRollingDataAccumulator;
 
 
-class VelodynePacketInterpretor : public LidarPacketInterpretor
+class VelodynePacketInterpreter : public LidarPacketInterpreter
 {
 public:
   enum DualFlag
@@ -29,8 +29,8 @@ public:
     DUAL_INTENSITY_MASK = 0xc,
   };
 
-  VelodynePacketInterpretor();
-  ~VelodynePacketInterpretor();
+  VelodynePacketInterpreter();
+  ~VelodynePacketInterpreter();
 
   void LoadCalibration(const std::string& filename) override;
 
