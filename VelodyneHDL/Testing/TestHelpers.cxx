@@ -156,7 +156,7 @@ void SetProcessingOptions(
 ////    HDLSource->SetIntensitiesCorrected(parsedOptions[3]);
 ////  }
 
-//  HDLSource->UnloadDatasets();
+//  HDLSource->UnloadFrames();
 
 //  try
 //  {

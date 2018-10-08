@@ -59,11 +59,11 @@ public:
   virtual bool SplitFrame(bool force = false);
 
   /**
-   * @brief CreateData construct a empty polyData with the right DataArray and allocate some
+   * @brief CreateNewEmptyFrame construct a empty polyData with the right DataArray and allocate some
    * space. No CellArray should be created as it can be create once the frame is ready.
    * @param numberOfPoints indicate the space to allocate @todo change the meaning
    */
-  virtual vtkSmartPointer<vtkPolyData> CreateData(vtkIdType numberOfPoints) = 0;
+  virtual vtkSmartPointer<vtkPolyData> CreateNewEmptyFrame(vtkIdType numberOfPoints) = 0;
 
   /**
    * @brief PreProcessPacket is use to construct the frame index and get some corretion
@@ -93,18 +93,18 @@ public:
   /**
    * @brief isNewFrameReady check if a new frame is ready
    */
-  bool IsNewFrameReady() { return this->Datasets.size(); }
+  bool IsNewFrameReady() { return this->Frames.size(); }
 
   /**
    * @brief GetLastFrameAvailable return the last frame that have been process completely
    * @return
    */
-  vtkSmartPointer<vtkPolyData> GetLastFrameAvailable() { return this->Datasets.back(); }
+  vtkSmartPointer<vtkPolyData> GetLastFrameAvailable() { return this->Frames.back(); }
 
   /**
    * @brief ClearAllFramesAvailable delete all frames that have been process
    */
-  void ClearAllFramesAvailable() { this->Datasets.clear(); }
+  void ClearAllFramesAvailable() { this->Frames.clear(); }
 
   GetMacro(NumberOfTrailingFrames, int)
   SetMacro(NumberOfTrailingFrames, int)
@@ -166,10 +166,10 @@ protected:
   bool shouldBeCroppedOut(double pos[3], double theta);
 
   //! Buffer to store the frame once they are ready
-  std::vector<vtkSmartPointer<vtkPolyData> > Datasets;
+  std::vector<vtkSmartPointer<vtkPolyData> > Frames;
 
   //! Frame under construction
-  vtkSmartPointer<vtkPolyData> CurrentDataset;
+  vtkSmartPointer<vtkPolyData> CurrentFrame;
 
   //! Number of previous frames to display with the current frame (concatenation of frames)
   int NumberOfTrailingFrames;

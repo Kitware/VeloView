@@ -20,7 +20,7 @@ public:
   void Start();
   void Stop();
 
-  void UnloadDatasets();
+  void UnloadFrames();
 
   int GetCacheSize();
   void SetCacheSize(int cacheSize);

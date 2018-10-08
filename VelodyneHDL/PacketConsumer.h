@@ -20,13 +20,13 @@ public:
 
   void HandleSensorData(const unsigned char* data, unsigned int length);
 
-  vtkSmartPointer<vtkPolyData> GetDatasetForTime(double timeRequest, double& actualTime, int numberOfTrailingFrame = 0);
+  vtkSmartPointer<vtkPolyData> GetFrameForTime(double timeRequest, double& actualTime, int numberOfTrailingFrame = 0);
 
   std::vector<double> GetTimesteps();
 
-  int GetMaxNumberOfDatasets() { return this->MaxNumberOfDatasets; }
+  int GetMaxNumberOfFrames() { return this->MaxNumberOfFrames; }
 
-  void SetMaxNumberOfDatasets(int nDatasets);
+  void SetMaxNumberOfFrames(int nFrames);
 
   bool CheckForNewData();
 
@@ -54,13 +54,13 @@ protected:
 
   bool ShouldCheckSensor;
   bool NewData;
-  int MaxNumberOfDatasets;
+  int MaxNumberOfFrames;
   double LastTime;
 
   // Hold this when modifying internals of reader
   boost::mutex ConsumerMutex;
 
-  std::deque<vtkSmartPointer<vtkPolyData> > Datasets;
+  std::deque<vtkSmartPointer<vtkPolyData> > Frames;
   std::deque<double> Timesteps;
   LidarPacketInterpreter* Interpreter;
 

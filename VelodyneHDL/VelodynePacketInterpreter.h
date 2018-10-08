@@ -40,7 +40,7 @@ public:
 
   bool IsLidarPacket(unsigned char *data, unsigned int& dataLength) override;
 
-  vtkSmartPointer<vtkPolyData> CreateData(vtkIdType numberOfPoints) override;
+  vtkSmartPointer<vtkPolyData> CreateNewEmptyFrame(vtkIdType numberOfPoints) override;
 
   void ResetDataForNewFrame() override;
 

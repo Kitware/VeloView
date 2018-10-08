@@ -96,7 +96,7 @@ int main(int argc, char* argv[])
 
   if (correctionFileName == "" && HDLsource->GetIsCalibrated())
   {
-    HDLsource->UnloadDatasets();
+    HDLsource->UnloadFrames();
 
     std::cout << "Live Correction initialized, resend data..." << std::endl;
     const double resendingDataStartTime = vtkTimerLog::GetUniversalTime();

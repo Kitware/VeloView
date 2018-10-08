@@ -726,9 +726,9 @@ void VelodynePacketInterpreter::ProcessPacket(unsigned char *data, unsigned int&
   if (dataPacket->isDualModeReturn(this->IsHDL64Data) && !this->HasDualReturn)
   {
     this->HasDualReturn = true;
-    this->CurrentDataset->GetPointData()->AddArray(this->DistanceFlag.GetPointer());
-    this->CurrentDataset->GetPointData()->AddArray(this->IntensityFlag.GetPointer());
-    this->CurrentDataset->GetPointData()->AddArray(this->DualReturnMatching.GetPointer());
+    this->CurrentFrame->GetPointData()->AddArray(this->DistanceFlag.GetPointer());
+    this->CurrentFrame->GetPointData()->AddArray(this->IntensityFlag.GetPointer());
+    this->CurrentFrame->GetPointData()->AddArray(this->DualReturnMatching.GetPointer());
   }
 
   for (; firingBlock < HDL_FIRING_PER_PKT; ++firingBlock)
@@ -1238,7 +1238,7 @@ bool VelodynePacketInterpreter::HDL64LoadCorrectionsFromStreamData()
 }
 
 //-----------------------------------------------------------------------------
-vtkSmartPointer<vtkPolyData> VelodynePacketInterpreter::CreateData(vtkIdType numberOfPoints)
+vtkSmartPointer<vtkPolyData> VelodynePacketInterpreter::CreateNewEmptyFrame(vtkIdType numberOfPoints)
 {
   vtkSmartPointer<vtkPolyData> polyData = vtkSmartPointer<vtkPolyData>::New();
 
@@ -1301,7 +1301,7 @@ bool VelodynePacketInterpreter::SplitFrame(bool force)
     // compute th rpm and add it to the splited frame
     this->Frequency = this->RpmCalculator_->GetRPM();
     this->RpmCalculator_->Reset();
-    this->Datasets.back()->GetFieldData()
+    this->Frames.back()->GetFieldData()
       ->GetArray("RotationPerMinute")
       ->SetTuple1(0, this->Frequency);
 
@@ -1322,8 +1322,8 @@ void VelodynePacketInterpreter::ResetDataForNewFrame()
   this->rollingCalibrationData->clear();
   this->HasDualReturn = false;
   this->IsHDL64Data = false;
-  this->Datasets.clear();
-  this->CurrentDataset = this->CreateData(0);
+  this->Frames.clear();
+  this->CurrentFrame = this->CreateNewEmptyFrame(0);
 
   this->ShouldCheckSensor = true;
 }

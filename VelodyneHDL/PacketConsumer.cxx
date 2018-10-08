@@ -8,10 +8,10 @@ PacketConsumer::PacketConsumer()
 {
   this->NewData = false;
   this->ShouldCheckSensor = true;
-  this->MaxNumberOfDatasets = 1000;
+  this->MaxNumberOfFrames = 1000;
   this->LastTime = 0.0;
   this->Timesteps.clear();
-  this->Datasets.clear();
+  this->Frames.clear();
   this->Packets.reset(new SynchronizedQueue<std::string*>);
 }
 
@@ -28,7 +28,7 @@ void PacketConsumer::HandleSensorData(const unsigned char *data, unsigned int le
 }
 
 //----------------------------------------------------------------------------
-vtkSmartPointer<vtkPolyData> PacketConsumer::GetDatasetForTime(double timeRequest, double &actualTime, int numberOfTrailingFrames)
+vtkSmartPointer<vtkPolyData> PacketConsumer::GetFrameForTime(double timeRequest, double &actualTime, int numberOfTrailingFrames)
 {
   boost::lock_guard<boost::mutex> lock(this->ConsumerMutex);
 
@@ -38,7 +38,7 @@ vtkSmartPointer<vtkPolyData> PacketConsumer::GetDatasetForTime(double timeReques
     actualTime = this->Timesteps[stepIndex];
     if(numberOfTrailingFrames == 0)
     {
-      return this->Datasets[stepIndex];
+      return this->Frames[stepIndex];
     }
     else
     {
@@ -46,7 +46,7 @@ vtkSmartPointer<vtkPolyData> PacketConsumer::GetDatasetForTime(double timeReques
       for (int i = stepIndex - std::min(stepIndex, static_cast<size_t>(numberOfTrailingFrames));
            i < stepIndex; ++i)
       {
-        appendFilter->AddInputData(this->Datasets[i]);
+        appendFilter->AddInputData(this->Frames[i]);
       }
 
       appendFilter->Update();
@@ -71,10 +71,10 @@ std::vector<double> PacketConsumer::GetTimesteps()
 }
 
 //----------------------------------------------------------------------------
-void PacketConsumer::SetMaxNumberOfDatasets(int nDatasets)
+void PacketConsumer::SetMaxNumberOfFrames(int nFrames)
 {
   boost::lock_guard<boost::mutex> lock(this->ConsumerMutex);
-  this->MaxNumberOfDatasets = nDatasets;
+  this->MaxNumberOfFrames = nFrames;
   this->UpdateDequeSize();
 }
 
@@ -131,20 +131,20 @@ void PacketConsumer::Enqueue(std::string *packet) { this->Packets->enqueue(packe
 //----------------------------------------------------------------------------
 void PacketConsumer::UnloadData()
 {
-  this->Datasets.clear();
+  this->Frames.clear();
   this->Timesteps.clear();
 }
 
 //----------------------------------------------------------------------------
 void PacketConsumer::UpdateDequeSize()
 {
-  if (this->MaxNumberOfDatasets <= 0)
+  if (this->MaxNumberOfFrames <= 0)
   {
     return;
   }
-  while (this->Datasets.size() >= this->MaxNumberOfDatasets)
+  while (this->Frames.size() >= this->MaxNumberOfFrames)
   {
-    this->Datasets.pop_front();
+    this->Frames.pop_front();
     this->Timesteps.pop_front();
   }
 }
@@ -174,7 +174,7 @@ void PacketConsumer::HandleNewData(vtkSmartPointer<vtkPolyData> polyData)
 
   this->UpdateDequeSize();
   this->Timesteps.push_back(this->LastTime);
-  this->Datasets.push_back(polyData);
+  this->Frames.push_back(polyData);
   this->NewData = true;
   this->LastTime += 1.0;
 }

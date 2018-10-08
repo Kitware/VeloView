@@ -188,7 +188,7 @@ void vtkLidarStream::Poll()
 //----------------------------------------------------------------------------
 int vtkLidarStream::GetCacheSize()
 {
-  return this->Internal->Consumer->GetMaxNumberOfDatasets();
+  return this->Internal->Consumer->GetMaxNumberOfFrames();
 }
 
 //----------------------------------------------------------------------------
@@ -199,12 +199,12 @@ void vtkLidarStream::SetCacheSize(int cacheSize)
     return;
   }
 
-  this->Internal->Consumer->SetMaxNumberOfDatasets(cacheSize);
+  this->Internal->Consumer->SetMaxNumberOfFrames(cacheSize);
   this->Modified();
 }
 
 //-----------------------------------------------------------------------------
-void vtkLidarStream::UnloadDatasets()
+void vtkLidarStream::UnloadFrames()
 {
   this->Internal->Consumer->UnloadData();
 }
@@ -258,12 +258,12 @@ int vtkLidarStream::RequestData(vtkInformation* vtkNotUsed(request),
   vtkSmartPointer<vtkPolyData> polyData(NULL);
 //  if (this->Internal->Consumer->GetNumberOfTrailingFrames() > 0)
 //  {
-//    polyData = this->Internal->Consumer->GetDatasetsForTime(
+//    polyData = this->Internal->Consumer->GetFramesForTime(
 //      timeRequest, actualTime, this->Internal->Consumer->GetNumberOfTrailingFrames());
 //  }
 //  else
 //  {
-    polyData = this->Internal->Consumer->GetDatasetForTime(timeRequest, actualTime);
+    polyData = this->Internal->Consumer->GetFrameForTime(timeRequest, actualTime);
 //  }
 
   if (polyData)

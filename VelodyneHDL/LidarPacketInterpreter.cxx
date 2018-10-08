@@ -52,7 +52,7 @@ LidarPacketInterpreter::LidarPacketInterpreter()
 //-----------------------------------------------------------------------------
 bool LidarPacketInterpreter::SplitFrame(bool force)
 {
-  if (this->IgnoreEmptyFrames && this->CurrentDataset->GetNumberOfPoints() == 0 && !force)
+  if (this->IgnoreEmptyFrames && this->CurrentFrame->GetNumberOfPoints() == 0 && !force)
   {
     return false;
   }
@@ -63,11 +63,11 @@ bool LidarPacketInterpreter::SplitFrame(bool force)
     return false;
   }
   // add vertex to the polydata
-  this->CurrentDataset->SetVerts(NewVertexCells(this->CurrentDataset->GetNumberOfPoints()));
+  this->CurrentFrame->SetVerts(NewVertexCells(this->CurrentFrame->GetNumberOfPoints()));
   // split the frame
-  this->Datasets.push_back(this->CurrentDataset);
+  this->Frames.push_back(this->CurrentFrame);
   // create a new frame
-  this->CurrentDataset = this->CreateData(0);
+  this->CurrentFrame = this->CreateNewEmptyFrame(0);
 
   return true;
 }
