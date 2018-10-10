@@ -120,10 +120,10 @@ public:
 
   // Correction of the prediction using
   // the input measure
-  void Correction(Eigen::Matrix<double, 6, 1> Measure);
+  void Correction(Eigen::MatrixXd Measure);
 
   // Set the measures variance covariance matrix
-  void SetMeasureCovariance(Eigen::Matrix<double, 6, 6> argCov);
+  void SetMeasureCovariance(Eigen::MatrixXd argCov);
 
   // Set the maximum angle acceleration
   // use to compute variance covariance matrix
@@ -142,6 +142,10 @@ public:
 
   // set the kalman filter mode
   void SetMode(int argMode);
+  int GetMode();
+
+  // return the number of observed measures
+  int GetNbrMeasure();
 
 private:
   // Kalman Filter mode:
@@ -153,10 +157,10 @@ private:
   Eigen::Matrix<double, 12, 12> MotionModel;
 
   // Link between the measures and the state vector
-  Eigen::Matrix<double, 6, 12> MeasureModel;
+  Eigen::MatrixXd MeasureModel;
 
   // Variance-Covariance of measures
-  Eigen::Matrix<double, 6, 6> MeasureCovariance;
+  Eigen::MatrixXd MeasureCovariance;
 
   // Variance-Covariance of model
   Eigen::Matrix<double, 12, 12> ModelCovariance;
@@ -180,6 +184,9 @@ private:
   // Maximale acceleration endorsed by the vehicule
   double MaxAcceleration;
   double MaxAngleAcceleration;
+
+  // indicate the number of observed measures
+  unsigned int NbrMeasures;
 };
 
 class VTK_EXPORT vtkSlam : public vtkPolyDataAlgorithm
@@ -243,11 +250,11 @@ public:
   slamGetMacro(,FastSlam, bool)
   slamSetMacro(,FastSlam, bool)
 
-  slamGetMacro(,MotionModel, int)
-  slamSetMacro(,MotionModel, int)
-
   slamGetMacro(,Undistortion, bool)
   slamSetMacro(,Undistortion, bool)
+
+  // set the motion model
+  void SetMotionModel(int input);
 
   void SetMaxVelocityAcceleration(double acc);
   void SetMaxAngleAcceleration(double acc);
@@ -562,6 +569,9 @@ private:
   // the data will only be used to initialize the SLAM odometry
   // and will not be merged with the slam data using a Kalman filter
   vtkSmartPointer<vtkVelodyneTransformInterpolator> ExternalMeasures;
+  double VelocityNormCov;
+  bool shouldBeRawTime;
+  double CurrentTime;
 
   // Convert the input vtk-format pointcloud
   // into a pcl-pointcloud format. scan lines

@@ -1217,6 +1217,17 @@ Eigen::Matrix<double, 6, 1> GetTransformsParametersForTime(double t, vtkSmartPoi
 }
 
 //-----------------------------------------------------------------------------
+Eigen::Matrix<double, 3, 1> GetVelocityForTime(double t, double dt, vtkSmartPointer<vtkVelodyneTransformInterpolator> interp)
+{
+  Eigen::Matrix<double, 6, 1> Tp = GetTransformsParametersForTime(t - dt, interp);
+  Eigen::Matrix<double, 6, 1> Tn = GetTransformsParametersForTime(t + dt, interp);
+  Eigen::Matrix<double, 6, 1> deltaT = (Tn - Tp) / (2 * dt);
+  Eigen::Matrix<double, 3, 1> V;
+  V << deltaT(3), deltaT(4), deltaT(5);
+  return V;
+}
+
+//-----------------------------------------------------------------------------
 void vtkSlam::InitTworldUsingExternalData(double adjustedTime0, double rawTime0)
 {
   std::cout << "External data time range: [" << this->ExternalMeasures->GetMinimumT() << ", "
@@ -1224,6 +1235,7 @@ void vtkSlam::InitTworldUsingExternalData(double adjustedTime0, double rawTime0)
 
   std::cout << "proposed time: " << adjustedTime0 << " and rawtime: " << rawTime0 << std::endl;
 
+  this->shouldBeRawTime = false;
   double t = adjustedTime0;
 
   // Try to compute the orientation using the adjusted time of the lidar
@@ -1233,6 +1245,7 @@ void vtkSlam::InitTworldUsingExternalData(double adjustedTime0, double rawTime0)
   if (t < this->ExternalMeasures->GetMinimumT() || t > this->ExternalMeasures->GetMaximumT())
   {
     t = rawTime0;
+    this->shouldBeRawTime = true;
   }
 
   // Initialize the slam using the GPS / IMU transform
@@ -1244,11 +1257,9 @@ void vtkSlam::InitTworldUsingExternalData(double adjustedTime0, double rawTime0)
   this->Tworld = GetTransformsParametersForTime(t, this->ExternalMeasures);
   this->PreviousTworld = Tworld;
 
-
   // Get the transforms list
   std::vector<std::vector<double> > transforms = this->ExternalMeasures->GetTransformList();
   std::vector<std::vector<double> > transformsSmoothed;
-
   if (transforms.size() < 10)
   {
     vtkGenericWarningMacro("Not enought external measures provided, ignore them");
@@ -1320,6 +1331,11 @@ void vtkSlam::InitTworldUsingExternalData(double adjustedTime0, double rawTime0)
     transformsSmoothed.push_back(tempTransform);
   }
 
+  Eigen::Matrix<double, 3, 1> NoiseVelocityMean = Eigen::Matrix<double, 3, 1>::Zero();
+  Eigen::Matrix<double, 3, 3> NoiseVelocityVar = Eigen::Matrix<double, 3, 3>::Zero();
+  this->VelocityNormCov = 0.0;
+  double VelocityNormMean = 0.0;
+
   std::vector<double> Velocity, VelocityS;
   for (int k = 0; k < transforms.size(); ++k)
   {
@@ -1337,9 +1353,35 @@ void vtkSlam::InitTworldUsingExternalData(double adjustedTime0, double rawTime0)
     Xsn << transformsSmoothed[indexNext][4], transformsSmoothed[indexNext][5], transformsSmoothed[indexNext][6];
     Vs = (Xsn - Xsp) / (transformsSmoothed[indexNext][0] - transformsSmoothed[indexPrev][0]);
 
+    NoiseVelocityMean += V - Vs;
+    VelocityNormMean += V.norm() - Vs.norm();
     Velocity.push_back(V.norm());
     VelocityS.push_back(Vs.norm());
   }
+
+  VelocityNormMean /= static_cast<double>(transforms.size());
+  NoiseVelocityMean /= static_cast<double>(transforms.size());
+  for (int k = 0; k < transforms.size(); ++k)
+  {
+    int indexPrev = std::max(0, k - 1);
+    int indexNext = std::min(static_cast<int>(transforms.size()) - 1, k + 1);
+
+    Eigen::Matrix<double, 3, 1> Xp, Xn, V;
+    Eigen::Matrix<double, 3, 1> Xsp, Xsn, Vs;
+
+    Xp << transforms[indexPrev][4], transforms[indexPrev][5], transforms[indexPrev][6];
+    Xn << transforms[indexNext][4], transforms[indexNext][5], transforms[indexNext][6];
+    V = (Xn - Xp) / (transforms[indexNext][0] - transforms[indexPrev][0]);
+
+    Xsp << transformsSmoothed[indexPrev][4], transformsSmoothed[indexPrev][5], transformsSmoothed[indexPrev][6];
+    Xsn << transformsSmoothed[indexNext][4], transformsSmoothed[indexNext][5], transformsSmoothed[indexNext][6];
+    Vs = (Xsn - Xsp) / (transformsSmoothed[indexNext][0] - transformsSmoothed[indexPrev][0]);
+
+    this->VelocityNormCov += std::pow(V.norm() - Vs.norm() - VelocityNormMean, 2);
+    NoiseVelocityVar += ((V - Vs) - NoiseVelocityMean) * ((V - Vs) - NoiseVelocityMean).transpose();
+  }
+  this->VelocityNormCov /= static_cast<double>(transforms.size());
+  NoiseVelocityVar /= static_cast<double>(transforms.size());
 
   // Now, making the ergodic assumption of the signal's noise
   // we will estimate the mean and the standard deviation
@@ -1368,27 +1410,43 @@ void vtkSlam::InitTworldUsingExternalData(double adjustedTime0, double rawTime0)
   }
   NoiseVar /= static_cast<double>(transforms.size());
 
-  /*std::ofstream file;
-  file.open("D:/VelocitySmoothed.csv");
-  file << "X, Xs, Y, Ys, Z, Zs, V, Vs" << std::endl;
-  for (int k = 0; k < transforms.size(); ++k)
-  {
-    file << transforms[k][4] << "," << transformsSmoothed[k][4] << ","
-         << transforms[k][5] << "," << transformsSmoothed[k][5] << ","
-         << transforms[k][6] << "," << transformsSmoothed[k][6] << ","
-         << Velocity[k] << "," << VelocityS[k] << std::endl;
-  }
-  file.close();*/
-
   // Now, initialize the Kalman Filter Covariance
   // and initial vector state regarding the date
   // provided by the GPS / IMU sensor.
-  Eigen::Matrix<double, 12, 12> Cov = Eigen::Matrix<double, 12, 12>::Zero();
+  Eigen::Matrix<double, 12, 12> Cov = Eigen::Matrix<double, 12, 12>::Ones();
+  Eigen::Matrix<double, 12, 1> StateVector = Eigen::Matrix<double, 12, 1>::Zero();
 
+  // We have an idea of the position covariance due to
+  // the previous noise estimation step
+  for (unsigned int i = 0; i < 3; ++i)
+  {
+    for (unsigned int j = 0; j < 3; ++j)
+    {
+      Cov(i + 3, j + 3) = 10.0 * NoiseVar(i, j);
+      Cov(i + 9, j + 9) = 10.0 * NoiseVelocityVar(i, j);
+    }
+  }
+
+  // Fill state vector using the initial position
+  for (unsigned int k = 0; k < 6; ++k)
+  {
+    StateVector(k) = this->Tworld(k);
+  }
+  Eigen::Matrix<double, 3, 1> V = GetVelocityForTime(t, 1.5, this->ExternalMeasures);
+  StateVector(9) = V(0);
+  StateVector(10) = V(1);
+  StateVector(11) = V(2);
+
+  this->KalmanEstimator.SetInitialStatevector(StateVector, Cov);
   std::cout << "order: " << order << std::endl;
   std::cout << "sampleRequired: " << sampleRequired << std::endl;
   std::cout << "Noise Mean: " << std::endl << NoiseMean << std::endl;
   std::cout << "Noise Variance: " << std::endl << NoiseVar << std::endl;
+  std::cout << "Noise Velocity Mean: " << std::endl << NoiseVelocityMean << std::endl;
+  std::cout << "Noise Velocity Variance: " << std::endl << NoiseVelocityVar << std::endl;
+  std::cout << "State Vector covariance: " << std::endl << Cov << std::endl;
+  std::cout << "Velocity norm mean: " << std::endl << VelocityNormMean << std::endl;
+  std::cout << "Velocity norm cov: " << std::endl << this->VelocityNormCov << std::endl;
 }
 
 //-----------------------------------------------------------------------------
@@ -1414,13 +1472,18 @@ void vtkSlam::AddFrame(vtkPolyData* newFrame)
 
   // Check if external measures have been
   // provided to the slam algorithm
+  double adjuestedTime0 = newFrame->GetPointData()->GetArray("adjustedtime")->GetTuple1(0) * 1e-6;
+  double rawTime0 = static_cast<double>(newFrame->GetPointData()->GetArray("timestamp")->GetTuple1(0)) * 1e-6;
   if (this->ExternalMeasures && (this->NbrFrameProcessed == 0))
   {
     vtkGenericWarningMacro("External data provided to the SLAM");
-    double adjuestedTime0 = newFrame->GetPointData()->GetArray("adjustedtime")->GetTuple1(0) * 1e-6;
-    double rawTime0 = static_cast<double>(newFrame->GetPointData()->GetArray("timestamp")->GetTuple1(0)) * 1e-6;
     this->InitTworldUsingExternalData(adjuestedTime0, rawTime0);
   }
+
+  if (this->shouldBeRawTime)
+    this->CurrentTime = rawTime0;
+  else
+    this->CurrentTime = adjuestedTime0;
 
   // Reset the members variables used during the last
   // processed frame so that they can be used again
@@ -1521,7 +1584,6 @@ void vtkSlam::AddFrame(vtkPolyData* newFrame)
 
 
   // Update Filter output
-
   // Update trajectory points, the cells are construct in the request Data
   this->Trajectory->GetPoints()->InsertNextPoint(this->Tworld[3], this->Tworld[4], this->Tworld[5]);
   static_cast<vtkDoubleArray*>(this->Trajectory->GetPointData()->GetArray("time"))->InsertNextValue(newFrame->GetPointData()->GetArray("timestamp")->GetTuple1(0));
@@ -3800,12 +3862,41 @@ void vtkSlam::Mapping()
 
   if (this->MotionModel > 0)
   {
+    Eigen::MatrixXd SigmaMeas(this->KalmanEstimator.GetNbrMeasure(), this->KalmanEstimator.GetNbrMeasure());
+    Eigen::MatrixXd Measure(this->KalmanEstimator.GetNbrMeasure(), 1);
+    // with speed measure
+    if (this->KalmanEstimator.GetMode() > 0)
+    {
+      // Fill the matrix
+      for (unsigned int i = 0; i < this->KalmanEstimator.GetNbrMeasure(); ++i)
+      {
+        Measure(i, 0) = 0.0;
+        for (unsigned int j = 0; j < this->KalmanEstimator.GetNbrMeasure(); ++j)
+        {
+          SigmaMeas(i, j) = 0.0;
+        }
+      }
+      Eigen::Matrix<double, 3, 1> V = GetVelocityForTime(this->CurrentTime, 1.5, this->ExternalMeasures);
+      for (unsigned int i = 0; i < 6; ++i)
+      {
+        Measure(i) = this->Tworld(i);
+        for (unsigned int j = 0; j < 6; ++j)
+        {
+          SigmaMeas(i, j) = Sigma(i, j);
+        }
+      }
+      Measure(6) = V.norm();
+      SigmaMeas(6, 6) = this->VelocityNormCov;
+    }
+    else
+    {
+      SigmaMeas = Sigma;
+      Measure = this->Tworld;
+    }
     this->KalmanEstimator.Prediction();
-    this->KalmanEstimator.SetMeasureCovariance(Sigma);
-    this->KalmanEstimator.Correction(this->Tworld);
+    this->KalmanEstimator.SetMeasureCovariance(SigmaMeas);
+    this->KalmanEstimator.Correction(Measure);
     Eigen::Matrix<double, 12, 1> stateVector = this->KalmanEstimator.GetStateVector();
-
-    std::cout << "State vector: " << std::endl << stateVector << std::endl;
 
     std::cout << "Before motion model: " << this->Tworld.transpose() << std::endl;
     for (unsigned int i = 0; i < 6; ++i)
@@ -4202,6 +4293,14 @@ void vtkSlam::SetExternalSensorMeasures(vtkVelodyneTransformInterpolator* interp
 }
 
 //-----------------------------------------------------------------------------
+void vtkSlam::SetMotionModel(int input)
+{
+  this->MotionModel = input;
+  if (input > 0)
+    this->KalmanEstimator.SetMode(input - 1);
+}
+
+//-----------------------------------------------------------------------------
 KalmanFilter::KalmanFilter()
 {
   this->ResetKalmanFilter();
@@ -4210,6 +4309,13 @@ KalmanFilter::KalmanFilter()
 //-----------------------------------------------------------------------------
 void KalmanFilter::ResetKalmanFilter()
 {
+  // set the number of measures observed
+  this->NbrMeasures = 6;
+  if (this->mode > 0)
+  {
+    this->NbrMeasures = 7;
+  }
+
   // Fill motion Model diagonal
   this->MotionModel = Eigen::Matrix<double, 12, 12>::Zero();
   for (unsigned int i = 0; i < 12; ++i)
@@ -4219,24 +4325,25 @@ void KalmanFilter::ResetKalmanFilter()
 
   // Fill Estimator covariance
   // Set to zero because without
-  // any other information.
+  // any other information
   this->EstimatorCovariance = Eigen::Matrix<double, 12, 12>::Zero();
 
   // Fill measure model
-  this->MeasureModel = Eigen::Matrix<double, 6, 12>::Zero();
+  this->MeasureModel = Eigen::MatrixXd(this->NbrMeasures, 12);// ::Matrix<double, 6, 12>::Zero();
+  for (unsigned int j = 0; j < 12; ++j)
+  {
+    for (unsigned int i = 0; i < this->NbrMeasures; ++i)
+    {
+      this->MeasureModel(i, j) = 0.0;
+    }
+  }
   for (unsigned int i = 0; i < 6; ++i)
   {
     this->MeasureModel(i, i) = 1.0;
   }
 
   // Fill Motion model covariance
-  for (unsigned int i = 0; i < 12; ++i)
-  {
-    for (unsigned int j = 0; j < 12; ++j)
-    {
-      this->ModelCovariance(i, j) = 0;
-    }
-  }
+  this->ModelCovariance = Eigen::Matrix<double, 12, 12>::Zero();
 
   // Fill vector state
   this->VectorState << 0,0,0,0,0,0,0,0,0,0,0,0;
@@ -4303,14 +4410,10 @@ void KalmanFilter::SetCurrentTime(double time)
   {
     this->ModelCovariance(i, i) = std::pow(this->MaxAcceleration * this->DeltaTime, 2);
   }
-
-  /*std::cout << "Motion Model: " << std::endl << this->MotionModel << std::endl;
-  std::cout << "Measure Model: " << std::endl << this->MeasureModel << std::endl;
-  std::cout << "Model Covariance: " << std::endl << this->ModelCovariance << std::endl;*/
 }
 
 //-----------------------------------------------------------------------------
-void KalmanFilter::SetMeasureCovariance(Eigen::Matrix<double, 6, 6> argCov)
+void KalmanFilter::SetMeasureCovariance(Eigen::MatrixXd argCov)
 {
   this->MeasureCovariance = argCov;
 }
@@ -4326,14 +4429,45 @@ void KalmanFilter::Prediction()
 }
 
 //-----------------------------------------------------------------------------
-void KalmanFilter::Correction(Eigen::Matrix<double, 6, 1> Measure)
+void KalmanFilter::Correction(Eigen::MatrixXd Measure)
 {
+  // Update the measure model, since we have a non
+  // linear link between the state vector and the measure
+  // (norm of the velocity) we need to compute the jacobian
+  // of the measure function at the current point in the
+  // state vector space
+  double normV = std::sqrt(std::pow(this->VectorStatePredicted(9), 2) + std::pow(this->VectorStatePredicted(10), 2)+ std::pow(this->VectorStatePredicted(11), 2));
+  if (this->mode > 0)
+  {
+    this->MeasureModel(6, 9) = this->VectorStatePredicted(9) / normV;
+    this->MeasureModel(6, 10) = this->VectorStatePredicted(10) / normV;
+    this->MeasureModel(6, 11) = this->VectorStatePredicted(11) / normV;
+    std::cout << "Vector State: " << std::endl << this->VectorStatePredicted << std::endl;
+    std::cout << "Measure: " << std::endl << Measure << std::endl;
+    std::cout << "Measure model: " << std::endl << this->MeasureModel << std::endl;
+  }
+
   // Update using the measure and its covariance
   Eigen::MatrixXd novelty = (this->MeasureModel * this->EstimatorCovariance * this->MeasureModel.transpose() + this->MeasureCovariance);
   Eigen::MatrixXd gain = this->EstimatorCovariance * this->MeasureModel.transpose() * novelty.inverse();
 
   // Update the vector state estimation
-  this->VectorState = this->VectorStatePredicted + gain * (Measure - this->MeasureModel * this->VectorStatePredicted);
+  Eigen::MatrixXd errVector(this->NbrMeasures, 1);
+  if (this->mode > 0)
+  {
+    for (unsigned int k = 0; k < 6; ++k)
+    {
+      errVector(k) = this->VectorStatePredicted(k);
+    }
+    errVector(7) = normV;
+    errVector = Measure - errVector;
+  }
+  else
+  {
+    errVector = Measure - this->MeasureModel * this->VectorStatePredicted;
+  }
+
+  this->VectorState = this->VectorStatePredicted + gain * errVector;
 
   // Update Estimator covariance
   this->EstimatorCovariance = this->EstimatorCovariance - gain * this->MeasureModel * this->EstimatorCovariance;
@@ -4361,4 +4495,17 @@ void KalmanFilter::SetMaxVelocityAcceleration(double acc)
 void KalmanFilter::SetMode(int argMode)
 {
   this->mode = argMode;
+  this->ResetKalmanFilter();
+}
+
+//-----------------------------------------------------------------------------
+int KalmanFilter::GetMode()
+{
+  return this->mode;
+}
+
+//-----------------------------------------------------------------------------
+int KalmanFilter::GetNbrMeasure()
+{
+  return this->NbrMeasures;
 }
