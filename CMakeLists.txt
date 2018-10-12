@@ -138,17 +138,16 @@ endif()
 
 set (source_files
   vvMainWindow.cxx
-  vvMainWindow.h
   vvColorToolbar.cxx
-  vvColorToolbar.h
   vvToggleSpreadSheetReaction.cxx
-  vvToggleSpreadSheetReaction.h
+  vvLoadDataReaction.cxx
   )
 
 qt4_wrap_cpp(moc_source_files
   vvColorToolbar.h
   vvMainWindow.h
   vvToggleSpreadSheetReaction.h
+  vvLoadDataReaction.h
   )
 
 qt4_wrap_ui(ui_source_files
@@ -173,6 +172,8 @@ if (APPLE)
 endif()
 
 # Add the reader plugin and any other plugins.
+set(VV_PLUGIN_LIBRARY VelodyneHDLPlugin) # veloview plugin
+set(VV_NONE_PLUGIN_LIBRARY VelodyneHDLPythonQT) # code needed by veloview but that is not part of the plugin
 add_subdirectory(VelodyneHDL)
 include_directories(VelodyneHDL)
 
@@ -222,4 +223,4 @@ build_paraview_client(${SOFTWARE_NAME}
 )
 
 # We directly link against the plugin and import them statically.
-target_link_libraries(${SOFTWARE_NAME} LINK_PUBLIC VelodyneHDLPlugin VelodyneHDLPythonQT ${PYTHONQTPLUGIN_LIBRARY} ${PYTHONQT_LIBRARIES})
+target_link_libraries(${SOFTWARE_NAME} LINK_PUBLIC ${VV_PLUGIN_LIBRARY} ${VV_NONE_PLUGIN_LIBRARY} ${PYTHONQTPLUGIN_LIBRARY} ${PYTHONQT_LIBRARIES})

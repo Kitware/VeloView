@@ -6,10 +6,10 @@
 #include <QObject>
 
 #include "pqVelodyneManager.h"
-#include "vvCalibrationDialog.h"
-#include "vvCropReturnsDialog.h"
-#include "vvLaserSelectionDialog.h"
-#include "vvSelectFramesDialog.h"
+#include "Ui/vvCalibrationDialog.h"
+#include "Ui/vvCropReturnsDialog.h"
+#include "Ui/vvLaserSelectionDialog.h"
+#include "Ui/vvSelectFramesDialog.h"
 
 class vvPythonQtDecorators : public QObject
 {

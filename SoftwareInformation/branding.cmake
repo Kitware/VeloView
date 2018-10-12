@@ -7,7 +7,7 @@ set(CPACK_PACKAGE_NAME "${SOFTWARE_NAME}")
 set(CPACK_PACKAGE_VENDOR "${VENDOR}")
 
 set(PARAVIEW_SPLASH_IMAGE Splash.jpg)	# (image display when the software is loading)
-set(PARAVIEW_BUNDLE_ICON logo.icsn)	# (bunbled app icon)
+set(PARAVIEW_BUNDLE_ICON logo.icns)	# (bunbled app icon)
 set(PARAVIEW_APPLICATION_ICON logo.ico)	# (app icon)
 
 # Please make sure to adapt the AboutDialog text in the followin file
