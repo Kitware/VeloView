@@ -1043,6 +1043,10 @@
    </property>
   </action>
   <action name="actionLaunchSlam">
+   <property name="icon">
+    <iconset resource="vvResources.qrc">
+     <normaloff>:/vvResources/Icons/slam.png</normaloff>:/vvResources/Icons/slam.png</iconset>
+   </property>
    <property name="text">
     <string>Launch Slam</string>
    </property>
