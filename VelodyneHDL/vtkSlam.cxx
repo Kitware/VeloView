@@ -4686,7 +4686,7 @@ void KalmanFilter::Correction(Eigen::MatrixXd Measure)
     {
       errVector(k) = this->VectorStatePredicted(k);
     }
-    errVector(7) = normV;
+    errVector(6) = normV;
     errVector = Measure - errVector;
   }
   else
