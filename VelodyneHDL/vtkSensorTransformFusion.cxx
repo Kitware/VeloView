@@ -421,3 +421,332 @@ vtkVelodyneTransformInterpolator* vtkSensorTransformFusion::GetInterpolator() co
 {
   return this->MergedInterp;
 }
+
+//-----------------------------------------------------------------------------
+Eigen::MatrixXd ComputeResidualValues(std::vector<Eigen::Matrix<double, 3, 1> > X, std::vector<Eigen::Matrix<double, 3, 1> > Y,
+                                      Eigen::Matrix<double, 3, 3> R, Eigen::Matrix<double, 3, 1> T)
+{
+  Eigen::MatrixXd residuals(X.size(), 1);
+  Eigen::Matrix<double, 3, 1> Xp;
+  for (unsigned int k = 0; k < X.size(); ++k)
+  {
+    Xp = R * X[k] + T;
+    residuals(k) = std::sqrt(((Xp - Y[k]).transpose() * (Xp - Y[k]))(0));
+  }
+  return residuals;
+}
+
+//-----------------------------------------------------------------------------
+Eigen::MatrixXd ComputeResidualJacobians(std::vector<Eigen::Matrix<double, 3, 1> > X, std::vector<Eigen::Matrix<double, 3, 1> > Y,
+                                         Eigen::Matrix<double, 3, 1> angles, Eigen::Matrix<double, 3, 1> T)
+{
+  // get current parameters
+  Eigen::MatrixXd residualsJacobians(X.size(), 6);
+  double epsilon = 1e-5;
+  double rx, ry, rz;
+  rx = angles(0); ry = angles(1); rz = angles(2);
+  double X1, X2, X3;
+  double Y1, Y2, Y3;
+  Eigen::Matrix<double, 3, 3> R = GetRotationMatrix(angles);
+  Eigen::Matrix<double, 3, 3> Id = Eigen::Matrix<double, 3, 3>::Identity();
+
+  // cosinus and sinus of the current
+  // estimated angles for the ego-motion
+  // This is done in order to speed the algortihm
+  // full rotation
+  double crx, srx;
+  double cry, sry;
+  double crz, srz;
+  crx = std::cos(rx); srx = std::sin(rx);
+  cry = std::cos(ry); sry = std::sin(ry);
+  crz = std::cos(rz); srz = std::sin(rz);
+
+  for (unsigned int k = 0; k < X.size(); ++k)
+  {
+    X1 = X[k](0); X2 = X[k](1); X3 = X[k](2);
+    Y1 = Y[k](0); Y2 = Y[k](1); Y3 = Y[k](2);
+
+    // represents h(R,T)
+    Eigen::Matrix<double, 3, 1> h_R_t = R * X[k] + T - Y[k];
+
+    // represent the jacobian of the G function
+    // evaluated at the point h(R,T). Note that G is
+    // the composition of the functions sqrt and X' * A * X
+    // and is not differentiable when X'*A*X = 0
+    Eigen::Matrix<double, 1, 3> JacobianG;
+    double dist = std::sqrt((h_R_t.transpose() * h_R_t)(0));
+    if (dist > 1e-12)
+    {
+      JacobianG = 1.0 / (2.0 * dist) * h_R_t.transpose() * (Id + Id.transpose());
+    }
+
+    // represent the jacobian of the H function
+    // evaluated at the point R, T
+    Eigen::Matrix<double, 3, 6> JacobianH;
+    // dx / drx
+    JacobianH(0, 0) = (srz * srx + crz * sry * crx) * X2 + (srz * crx - crz * sry * srx) * X3;
+    // dx / dry
+    JacobianH(0, 1) = -crz * sry * X1 + crz * cry * srx * X2 + crz * cry * crx * X3;
+    // dx / drz
+    JacobianH(0, 2) = -srz * cry * X1 + (-crz * crx - srz * sry * srx) * X2+ (crz * srx - srz * sry * crx) * X3;
+    // dx / dtx
+    JacobianH(0, 3) = 1;
+    // dx / dty
+    JacobianH(0, 4) = 0;
+    // dx / dtz
+    JacobianH(0, 5) = 0;
+    // dy / drx
+    JacobianH(1, 0) = (-crz * srx + srz * sry * crx) * X2 + (-crz * crx - srz * sry * srx) * X3;
+    // dy / dry
+    JacobianH(1, 1) = -srz * sry * X1 + srz * cry * srx * X2 + srz * cry * crx * X3;
+    // dy / drz
+    JacobianH(1, 2) = crz * cry * X1 + (-srz * crx + crz * sry * srx) * X2 + (srz * srx + crz * sry * crx) * X3;
+    // dy / dtx
+    JacobianH(1, 3) = 0;
+    // dy / dty
+    JacobianH(1, 4) = 1;
+    // dy / dtz
+    JacobianH(1, 5) = 0;
+    // dz / drx
+    JacobianH(2, 0) = cry * crx * X2 - cry * srx * X3;
+    // dz / dry
+    JacobianH(2, 1) = -cry * X1 - sry * srx * X2 - sry * crx * X3;
+    // dz / drz
+    JacobianH(2, 2) = 0;
+    // dz / dtx
+    JacobianH(2, 3) = 0;
+    // dz / dty
+    JacobianH(2, 4) = 0;
+    // dr / dtz
+    JacobianH(2, 5) = 1;
+
+    Eigen::Matrix<double, 1, 6> currentJacobian = JacobianG * JacobianH;
+
+    for (unsigned int i = 0; i < 6; ++i)
+    {
+      residualsJacobians(k, i) = currentJacobian(0, i);
+    }
+  }
+
+  return residualsJacobians;
+}
+
+//-----------------------------------------------------------------------------
+void GetPairMatchedPoints(vtkVelodyneTransformInterpolator* slam, vtkVelodyneTransformInterpolator* gps,
+                          std::vector<Eigen::Matrix<double, 3, 1> >& slamT, std::vector<Eigen::Matrix<double, 3, 1> >& gpsT)
+{
+  // clear and resize vectors
+  slamT.clear(); slamT.resize(0);
+  gpsT.clear(); gpsT.resize(0);
+
+  // loop over slam transforms and match with gps
+  std::vector<std::vector<double> > slamTransforms = slam->GetTransformList();
+  for (unsigned int k = 0; k < slamTransforms.size(); ++k)
+  {
+    double time = slamTransforms[k][0];
+
+    if (time < gps->GetMinimumT())
+    {
+      vtkGenericWarningMacro("Time requested too low");
+      continue;
+    }
+    if (time > gps->GetMaximumT())
+    {
+      vtkGenericWarningMacro("Time requested too high");
+      continue;
+    }
+
+    vtkNew<vtkTransform> gpsCurrTrans;
+    gps->InterpolateTransform(time, gpsCurrTrans.Get());
+    gpsCurrTrans->Modified();
+    gpsCurrTrans->Update();
+
+    vtkNew<vtkMatrix4x4> M;
+    gpsCurrTrans->GetMatrix(M.Get());
+    M->Modified();
+
+    Eigen::Matrix<double, 3, 1> Xs, Xg;
+    Xs << slamTransforms[k][4], slamTransforms[k][5], slamTransforms[k][6];
+    Xg << M->GetElement(0, 3), M->GetElement(1, 3), M->GetElement(2, 3);
+
+    slamT.push_back(Xs);
+    gpsT.push_back(Xg);
+  }
+}
+
+//-----------------------------------------------------------------------------
+void ApplyTransform(Eigen::Matrix<double, 3, 1> angles, Eigen::Matrix<double, 3, 1> T, vtkVelodyneTransformInterpolator* slam)
+{
+  std::vector<std::vector<double> > slamTransforms = slam->GetTransformList();
+  Eigen::Matrix<double, 3, 3> Rcorr = GetRotationMatrix(angles);
+
+  for (unsigned int k = 0; k < slamTransforms.size(); ++k)
+  {
+    Eigen::Matrix<double, 3, 1> anglesSlam, Tslam;
+
+    // Get Slam transforms values
+    double tSlam = slamTransforms[k][0];
+    Tslam << slamTransforms[k][4], slamTransforms[k][5], slamTransforms[k][6];
+    anglesSlam << slamTransforms[k][1], slamTransforms[k][2], slamTransforms[k][3];
+    Eigen::Matrix<double, 3, 3> Rslam = GetRotationMatrix(anglesSlam);
+
+    Tslam = Rcorr * Tslam + T;
+    Rslam = Rcorr * Rslam;
+
+    Eigen::Matrix<double, 3, 1> newAngles = GetEulerAngles(Rslam);
+    newAngles = newAngles / vtkMath::Pi() * 180.0;
+
+    vtkNew<vtkTransform> trans;
+    trans->PostMultiply();
+
+    // Passage from L(t_current) to L(t_begin) first frame
+    // Application of the SLAM result
+    trans->RotateX(newAngles(0));
+    trans->RotateY(newAngles(1));
+    trans->RotateZ(newAngles(2));
+    double pos[3] = {Tslam(0), Tslam(1), Tslam(2)};
+    trans->Translate(pos);
+    //this->InternalInterp->AddTransform(t, mappingTransform.GetPointer());
+    //this->InternalInterp->Modified();
+  }
+}
+
+//-----------------------------------------------------------------------------
+void vtkSensorTransformFusion::RegisterSlamOnGps(vtkVelodyneTransformInterpolator* slam, vtkVelodyneTransformInterpolator* gps)
+{
+  // check that the interp are provided
+  if (!slam || !gps)
+  {
+    vtkGenericWarningMacro("Slam or Gps not provided, return");
+    return;
+  }
+
+  // check that the time interval are consistent
+  if ((slam->GetMinimumT() > gps->GetMaximumT()) || (gps->GetMinimumT() > slam->GetMaximumT()))
+  {
+    vtkGenericWarningMacro("Time intervals not consistent, please sync your devices");
+    return;
+  }
+
+  // L-M algorithm hyper-parameters
+  double lambda = 1.0;
+  double ratioLambda = 1.10;
+
+  // Sample Data
+  /*int Nsample = 500;
+  double dt = 1.0 / static_cast<double>(Nsample);
+  std::vector<Eigen::Matrix<double, 3, 1> > slamT, gpsT;
+
+  Eigen::Matrix<double, 3, 1> angles, trans;
+  angles << 12.78, -45.65, 78.487;
+  angles = angles / 180.0 * vtkMath::Pi();
+  trans << 10.056, -12.11, 11.25;
+
+  Eigen::Matrix<double, 3, 3> R = GetRotationMatrix(angles);
+
+  for (unsigned int k = 0; k < Nsample; ++k)
+  {
+    double time = static_cast<double>(k) * dt;
+    Eigen::Matrix<double, 3, 1> X;
+    X << std::cos(time * vtkMath::Pi()), std::sin(time * vtkMath::Pi()), std::sin(time * vtkMath::Pi() * 10);
+
+    slamT.push_back(X);
+    X = R * X + trans;
+    gpsT.push_back(X);
+  }*/
+
+  std::vector<Eigen::Matrix<double, 3, 1> > slamT, gpsT;
+  GetPairMatchedPoints(slam, gps, slamT, gpsT);
+
+  // Find the rotation and translation that
+  // minimize the least square error using
+  // a levenberg marquardt algorithm (because
+  // the least square is not linear due to
+  // the rotational matrix parametrized using
+  // Euler angles
+  unsigned int maxStep = 1050;
+  Eigen::Matrix<double, 6, 1> W = Eigen::Matrix<double, 6, 1>::Zero();
+  std::vector<double> errors;
+  for (unsigned int lmStep = 0; lmStep < maxStep; ++lmStep)
+  {
+    // Get current parameters
+    Eigen::Matrix<double, 3, 1> currAngles, currT;
+    currAngles << W(0), W(1), W(2);
+    currT << W(3), W(4), W(5);
+    Eigen::Matrix<double, 3, 3> currR = GetRotationMatrix(currAngles);
+
+    // Compute residuals errors and jacobians
+    Eigen::MatrixXd residualErrors = ComputeResidualValues(slamT, gpsT, currR, currT);
+    Eigen::MatrixXd residualJacobians = ComputeResidualJacobians(slamT, gpsT, currAngles, currT);
+
+    // RMSE
+    double currErr = std::sqrt(1.0 / static_cast<double>(residualErrors.rows()) * (residualErrors.transpose() * residualErrors)(0));
+
+    Eigen::MatrixXd Jt = residualJacobians.transpose();
+    Eigen::MatrixXd JtJ = Jt * residualJacobians;
+    Eigen::MatrixXd JtY = Jt * residualErrors;
+    Eigen::Matrix<double, 6, 6> diagJtJ;
+    diagJtJ << JtJ(0, 0), 0, 0, 0, 0, 0,
+               0, JtJ(1, 1), 0, 0, 0, 0,
+               0, 0, JtJ(2, 2), 0, 0, 0,
+               0, 0, 0, JtJ(3, 3), 0, 0,
+               0, 0, 0, 0, JtJ(4, 4), 0,
+               0, 0, 0, 0, 0, JtJ(5, 5);
+
+    // The next step of the L-M algorithm is computed by solving
+    // (JtJ + lambda * diagJtJ) = Jt * Y. To avoid the computation
+    // of the inverse of (JtJ + lambda * diagJtJ) we use a gauss-pivot
+    // algorithm to solve the linear equation for this particular point
+    Eigen::ColPivHouseholderQR<Eigen::MatrixXd> dec(JtJ + lambda * diagJtJ);
+    Eigen::Matrix<double, 6, 1> X = dec.solve(JtY);
+    if (!vtkMath::IsFinite(X(0)) || !vtkMath::IsFinite(X(3)))
+    {
+      vtkGenericWarningMacro("Estimated transform not finite, skip this frame");
+      break;
+    }
+
+    // Check that the cost function has decreased
+    Eigen::MatrixXd Wcandidate = W - 0.1 * X;
+    currAngles << Wcandidate(0), Wcandidate(1), Wcandidate(2);
+    currT << Wcandidate(3), Wcandidate(4), Wcandidate(5);
+    currR = GetRotationMatrix(currAngles);
+
+    // Compute residuals errors and jacobians
+    residualErrors = ComputeResidualValues(slamT, gpsT, currR, currT);
+    double nextErr = std::sqrt(1.0 / static_cast<double>(residualErrors.rows()) * (residualErrors.transpose() * residualErrors)(0));
+    if (nextErr > currErr)
+    {
+      lambda = ratioLambda * lambda;
+    }
+    else
+    {
+      lambda = 1.0 / ratioLambda * lambda;
+      W = Wcandidate;
+      errors.push_back(currErr);
+    }
+  }
+
+  std::cout << "Errors: " << std::endl;
+  for (unsigned int k = 0; k < errors.size(); ++k)
+  {
+    std::cout << "step: " << k << " error: " << errors[k] << std::endl;
+  }
+  std::cout << "total step validated: " << errors.size() << std::endl;
+  std::cout << "Computed on: " << slamT.size() << " samples data" << std::endl;
+  std::cout << std::endl;
+
+  Eigen::Matrix<double, 3, 1> finalAngles, finalT;
+  finalAngles << W(0), W(1), W(2);
+  Eigen::Matrix<double, 3, 3> finalRot = GetRotationMatrix(finalAngles);
+  finalAngles = GetEulerAngles(finalRot);
+
+  finalT << W(3), W(4), W(5);
+  finalAngles = finalAngles * 180.0 / vtkMath::Pi();
+
+  std::cout << "Final parameters: " << std::endl;
+  std::cout << "angles: " << finalAngles.transpose() << std::endl;
+  std::cout << "Positi: " << finalT.transpose() << std::endl;
+
+  // now Apply the founded rigid transform to the slam
+  ApplyTransform(finalAngles, finalT, slam);
+}

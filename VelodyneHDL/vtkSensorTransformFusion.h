@@ -68,6 +68,8 @@ public:
 
   void MergeTransforms();
 
+  void RegisterSlamOnGps(vtkVelodyneTransformInterpolator* slam, vtkVelodyneTransformInterpolator* gps);
+
   vtkVelodyneTransformInterpolator* GetInterpolator() const;
 
 protected:

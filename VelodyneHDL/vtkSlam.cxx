@@ -1056,6 +1056,9 @@ void vtkSlam::ResetAlgorithm()
   CreateDataArray<vtkDoubleArray>("Y", 0, this->Orientation);
   CreateDataArray<vtkDoubleArray>("Z", 0, this->Orientation);
   this->Orientation->SetPoints(points2.GetPointer());
+
+  this->InternalInterp = vtkSmartPointer<vtkVelodyneTransformInterpolator>::New();
+  this->InternalInterp->SetInterpolationTypeToNearestLowBounded();
 }
 
 //-----------------------------------------------------------------------------
@@ -1164,6 +1167,40 @@ void vtkSlam::DisplayRelAdv(vtkSmartPointer<vtkPolyData> input)
     relAdvArray->InsertNextTuple1(this->pclCurrentFrameByScan[scan]->points[index].intensity);
   }
   input->GetPointData()->AddArray(relAdvArray);
+}
+
+//-----------------------------------------------------------------------------
+void vtkSlam::AddTransform(double time)
+{
+  double tw[6];
+  this->GetWorldTransform(tw);
+  this->AddTransform(tw[0] * 180.0 / vtkMath::Pi(), tw[1] * 180.0 / vtkMath::Pi(),
+                     tw[2] * 180.0 / vtkMath::Pi(), tw[3], tw[4], tw[5], time);
+}
+
+//-----------------------------------------------------------------------------
+void vtkSlam::AddTransform(double rx, double ry, double rz, double tx, double ty, double tz, double t)
+{
+  // All the result obtained was with ZXY but it should be ZYX
+  // at the end, let's try with ZYX and make some test
+  vtkNew<vtkTransform> mappingTransform;
+  mappingTransform->PostMultiply();
+
+  // Passage from L(t_current) to L(t_begin) first frame
+  // Application of the SLAM result
+  mappingTransform->RotateX(rx);
+  mappingTransform->RotateY(ry);
+  mappingTransform->RotateZ(rz);
+  double pos[3] = {tx, ty, tz};
+  mappingTransform->Translate(pos);
+  this->InternalInterp->AddTransform(t, mappingTransform.GetPointer());
+  this->InternalInterp->Modified();
+}
+
+//-----------------------------------------------------------------------------
+vtkVelodyneTransformInterpolator* vtkSlam::GetInterpolator() const
+{
+  return this->InternalInterp;
 }
 
 //-----------------------------------------------------------------------------
@@ -1530,6 +1567,7 @@ void vtkSlam::AddFrame(vtkPolyData* newFrame)
     this->PreviousBlobsPoints = this->CurrentBlobsPoints;
     this->NbrFrameProcessed++;
 
+    this->AddTransform(adjuestedTime0);
     return;
   }
 
@@ -1600,12 +1638,16 @@ void vtkSlam::AddFrame(vtkPolyData* newFrame)
 
   // Indicate the filter has been modify
   this->Modified();
+  this->AddTransform(adjuestedTime0);
   return;
 }
 
 //-----------------------------------------------------------------------------
 void vtkSlam::LoadTransforms(const std::string& filename)
 {
+  // Reset the algorithm
+  this->ResetAlgorithm();
+
   std::ifstream file;
   file.open(filename);
 
@@ -1637,6 +1679,9 @@ void vtkSlam::LoadTransforms(const std::string& filename)
     double x = std::atof(values[4].c_str());
     double y = std::atof(values[5].c_str());
     double z = std::atof(values[6].c_str());
+
+    // fill interpolator
+    this->AddTransform(rx, ry, rz, x, y, z, t);
 
     this->Trajectory->GetPoints()->InsertNextPoint(x, y, z);
     static_cast<vtkDoubleArray*>(this->Trajectory->GetPointData()->GetArray("time"))->InsertNextValue(t);

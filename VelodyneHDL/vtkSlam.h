@@ -369,6 +369,9 @@ public:
   // slam algorithm state
   void LoadTransforms(const std::string& filename);
 
+  // return the internal interpolator
+  vtkVelodyneTransformInterpolator* GetInterpolator() const;
+
 protected:
   // vtkPolyDataAlgorithm functions
   vtkSlam();
@@ -383,6 +386,7 @@ private:
   // Polydata which represents the trajectory computed
   vtkSmartPointer<vtkPolyData> Trajectory;
   vtkSmartPointer<vtkPolyData> Orientation;
+  vtkSmartPointer<vtkVelodyneTransformInterpolator> InternalInterp;
 
   // Current point cloud stored in two differents
   // formats: PCL-pointcloud and vtkPolyData
@@ -599,6 +603,10 @@ private:
 
   // Labelizes point to be a keypoints or not
   void SetKeyPointsLabels(vtkSmartPointer<vtkPolyData> input);
+
+  // Add Transform to the interpolator
+  void AddTransform(double time);
+  void AddTransform(double rx, double ry, double rz, double tx, double ty, double tz, double t);
 
   // Reset all mumbers variables that are
   // used during the process of a frame.

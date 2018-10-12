@@ -239,6 +239,7 @@ def launch():
         # add the transform
         source.AddTransform(rx[i], ry[i], rz[i], tx[i], ty[i], tz[i], time[i])
 
+    #source.SetInterpolator(slam.GetClientSideObject().GetInterpolator())
     slam.GetClientSideObject().Update()
 
     # Reset reader as active source so we can use the paraview toolbox to visualize the different array: density, ...
@@ -246,6 +247,9 @@ def launch():
 
     # Display Slam output in the overhead viewer
     smp.Show(slam[1], applogic.app.overheadView)
+
+    # get the slam
+    applogic.app.slamSave = slam
 
 def updateChartView():
     """ Update the chartView with the slam output:

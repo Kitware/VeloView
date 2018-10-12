@@ -27,5 +27,6 @@
         <file>Icons/camera_logo.png</file>
         <file>Icons/icon_motion.png</file>
         <file>Icons/slam.png</file>
+        <file>Icons/MergeGpsAndSlam.png</file>
     </qresource>
 </RCC>

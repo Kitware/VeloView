@@ -119,6 +119,7 @@
     <addaction name="actionStreamSlam"/>
     <addaction name="actionLoadTransform"/>
     <addaction name="actionExportTransform"/>
+    <addaction name="actionRegisterSlamOnGPS"/>
     <addaction name="actionMergeTransforms"/>
     <addaction name="menuProcessing_Options"/>
     <addaction name="separator"/>
@@ -1233,6 +1234,18 @@
    </property>
    <property name="text">
     <string>Motion Detection</string>
+   </property>
+  </action>
+  <action name="actionRegisterSlamOnGPS">
+   <property name="icon">
+    <iconset resource="vvResources.qrc">
+     <normaloff>:/vvResources/Icons/MergeGpsAndSlam.png</normaloff>:/vvResources/Icons/MergeGpsAndSlam.png</iconset>
+   </property>
+   <property name="text">
+    <string>Register Slam on GPS</string>
+   </property>
+   <property name="toolTip">
+    <string>Apply a isometric transformation to register the SLAM trajectory on the GPS trajectory</string>
    </property>
   </action>
  </widget>

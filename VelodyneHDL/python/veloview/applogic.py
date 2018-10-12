@@ -82,6 +82,9 @@ class AppLogic(object):
 
         self.posreaderSave = None
 
+        self.slamSave = None
+        self.PositionDataType = 0
+
         self.fps = [0,0]
 
         self.text = None
@@ -2267,6 +2270,7 @@ def toggleLoadTransform():
     tempSlam = smp.Slam()
     tempSlam.GetClientSideObject().LoadTransforms(fileName)
     smp.Show(tempSlam[1], app.overheadView)
+    app.slamSave = tempSlam
 
 def toggleExportTransform():
     fileName = getSaveFileName('Save Transforms', 'csv')
@@ -2288,6 +2292,21 @@ def toggleMergeTransforms():
     sensorFusion.MergeTransforms()
     source = getReader();
     source.GetClientSideObject().SetInterpolator(sensorFusion.GetInterpolator())
+
+def toggleRegisterSlamOnGps():
+    gps = app.posreaderSave
+    slamT = app.slamSave
+
+    if slamT is None:
+        QtGui.QMessageBox.warning(getMainWindow(), 'Trajectory registration', 'SLAM data not provided')
+        return
+
+    if gps is None:
+        QtGui.QMessageBox.warning(getMainWindow(), 'Trajectory registration', 'Gps data not provided')
+        return
+
+    sensorFusion = vtkSensorTransformFusion()
+    sensorFusion.RegisterSlamOnGps(slamT.GetClientSideObject().GetInterpolator(), gps.GetClientSideObject().GetInterpolator())
 
 def toggleSelectDualReturn():
     # test if we are on osx os
@@ -2600,6 +2619,7 @@ def setupActions():
     app.actions['actionLoadTransform'].connect('triggered()', toggleLoadTransform)
     app.actions['actionExportTransform'].connect('triggered()', toggleExportTransform)
     app.actions['actionMergeTransforms'].connect('triggered()', toggleMergeTransforms)
+    app.actions['actionRegisterSlamOnGPS'].connect('triggered()', toggleRegisterSlamOnGps)
 
     app.actions['actionRansacPlaneFitting'].connect('triggered()', toggleRansacPlaneFitting)
     app.actions['actionBirdEyeViewSnap'].connect('triggered()', toggleBirdEyeViewSnap)
