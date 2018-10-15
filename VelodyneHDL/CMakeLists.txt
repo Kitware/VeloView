@@ -13,6 +13,16 @@ set(interpolator_pach_until_vtk_update
 )
 
 #-----------------------------------------------------------------------------
+# Option to hide/show external warning library
+#-----------------------------------------------------------------------------
+
+set(SYSTEM_OPTION)
+option(BUILD_HIDE_WARNING_FROM_EXTERNAL_DEPENDENCIES "hide external libraries warning, by handling them as system libraries" ON)
+if(BUILD_HIDE_WARNING_FROM_EXTERNAL_DEPENDENCIES)
+  set(SYSTEM_OPTION SYSTEM)
+endif()
+
+#-----------------------------------------------------------------------------
 # Handle plugin library dependencies
 #-----------------------------------------------------------------------------
 
@@ -21,10 +31,10 @@ set(interpolator_pach_until_vtk_update
 #--------------------------------------
 if(ParaView_SOURCE_DIR)
 
-  include_directories(${VTK_INCLUDE_DIRS})
+  include_directories(${SYSTEM_OPTION} ${VTK_INCLUDE_DIRS})
   if(PARAVIEW_BUILD_QT_GUI)
     include(${QT_USE_FILE})
-    include_directories(${PARAVIEW_GUI_INCLUDE_DIRS})
+    include_directories(${SYSTEM_OPTION} ${PARAVIEW_GUI_INCLUDE_DIRS})
   endif(PARAVIEW_BUILD_QT_GUI)
 
 else(ParaView_SOURCE_DIR)
@@ -34,8 +44,8 @@ else(ParaView_SOURCE_DIR)
 endif(ParaView_SOURCE_DIR)
 
 vtk_module_load(vtklibproj4)
-include_directories(${vtklibproj4_INCLUDE_DIRS})
-include_directories(${PYTHONQT_INCLUDE_DIRS})
+include_directories(${SYSTEM_OPTION} ${vtklibproj4_INCLUDE_DIRS})
+include_directories(${SYSTEM_OPTION} ${PYTHONQT_INCLUDE_DIRS})
 
 #--------------------------------------
 # pcap dependency
@@ -43,7 +53,7 @@ include_directories(${PYTHONQT_INCLUDE_DIRS})
 find_library(PCAP_LIBRARY pcap DOC "pcap library")
 find_path(PCAP_INCLUDE_DIR pcap.h DOC "pcap include directory")
 mark_as_advanced(PCAP_LIBRARY PCAP_INCLUDE_DIR)
-include_directories(${PCAP_INCLUDE_DIR})
+include_directories(${SYSTEM_OPTION} ${PCAP_INCLUDE_DIR})
 
 #--------------------------------------
 # liblas dependency
@@ -56,13 +66,13 @@ endif()
 find_library(liblas_LIBRARY ${LASNAME} DOC "liblas library")
 find_path(liblas_INCLUDE_DIR liblas/version.hpp DOC "liblas include directory")
 mark_as_advanced(liblas_LIBRARY liblas_INCLUDE_DIR)
-include_directories(${liblas_INCLUDE_DIR})
+include_directories(${SYSTEM_OPTION} ${liblas_INCLUDE_DIR})
 
 #--------------------------------------
 # Eigen dependency
 #--------------------------------------
 find_package(Eigen REQUIRED)
-include_directories(${EIGEN_INCLUDE_DIR})
+include_directories(${SYSTEM_OPTION} ${EIGEN_INCLUDE_DIR})
 
 #--------------------------------------
 # Boost dependency
@@ -74,10 +84,10 @@ set(Boost_USE_MULTITHREADED ON)
 # the expected behavior of find_package when  used wiht REQUIRED and OPTIONAL_COMPONENTS
 # it not the one expected, as it also required the optional component...
 find_package(Boost REQUIRED COMPONENTS system thread chrono regex date_time filesystem)
-include_directories(${Boost_INCLUDE_DIRS})
+include_directories(${SYSTEM_OPTION} ${Boost_INCLUDE_DIRS})
 set(ALL_BOOST_LIBRARIES ${Boost_LIBRARIES})
 find_package(Boost OPTIONAL_COMPONENTS atomic timer)
-include_directories(${Boost_INCLUDE_DIRS})
+include_directories(${SYSTEM_OPTION} ${Boost_INCLUDE_DIRS})
 list(APPEND ALL_BOOST_LIBRARIES ${Boost_LIBRARIES})
 
 #-----------------------------------------------------------------------------
