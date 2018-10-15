@@ -54,17 +54,17 @@ public:
   NetworkSource(std::shared_ptr<PacketConsumer> _consumer, int argLIDARPort,
     int ForwardedLIDARPort_, std::string ForwardedIpAddress_,
     bool isForwarding_, bool isCrashAnalysing_)
-    : IOService()
+    : IsCrashAnalysing(isCrashAnalysing_)
+    , IsForwarding(isForwarding_)
+    , ForwardedIpAddress(ForwardedIpAddress_)
+    , ForwardedLIDARPort(ForwardedLIDARPort_)
+    , LIDARPort(argLIDARPort)
+    , IOService()
     , Thread()
     , LIDARPortReceiver()
     , Consumer(_consumer)
     , Writer()
     , DummyWork(new boost::asio::io_service::work(this->IOService))
-    , LIDARPort(argLIDARPort)
-    , ForwardedLIDARPort(ForwardedLIDARPort_)
-    , ForwardedIpAddress(ForwardedIpAddress_)
-    , IsForwarding(isForwarding_)
-    , IsCrashAnalysing(isCrashAnalysing_)
   {
   }
 

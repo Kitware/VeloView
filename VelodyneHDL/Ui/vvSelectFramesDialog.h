@@ -26,12 +26,12 @@ class VelodyneHDLPlugin_EXPORT vvSelectFramesDialog : public QDialog
   Q_PROPERTY(int frameStop READ frameStop WRITE setFrameStop)
   Q_PROPERTY(int frameStride READ frameStride WRITE setFrameStride)
   Q_PROPERTY(int framePack READ framePack WRITE setFramePack)
-  Q_PROPERTY(int frameMinimum WRITE setFrameMinimum)
-  Q_PROPERTY(int frameMaximum WRITE setFrameMaximum)
+  Q_PROPERTY(int frameMinimum READ frameMinimun WRITE setFrameMinimum)
+  Q_PROPERTY(int frameMaximum READ frameMaximun WRITE setFrameMaximum)
   Q_PROPERTY(int frameTransform READ frameTransform WRITE setFrameTransform)
-  Q_PROPERTY(bool frameStrideVisibility WRITE setFrameStrideVisibility)
-  Q_PROPERTY(bool framePackVisibility WRITE setFramePackVisibility)
-  Q_PROPERTY(bool frameTransformVisibility WRITE setFrameTransformVisibility)
+  Q_PROPERTY(bool frameStrideVisibility READ frameStrideVisibility WRITE setFrameStrideVisibility)
+  Q_PROPERTY(bool framePackVisibility READ framePackVisibility WRITE setFramePackVisibility)
+  Q_PROPERTY(bool frameTransformVisibility READ frameTransformVisibility WRITE setFrameTransformVisibility)
   Q_ENUMS(FrameMode FramePack FrameTransform)
 
 public:
@@ -63,6 +63,13 @@ public:
   int frameStride() const;
   int framePack() const;
   int frameTransform() const;
+
+  int frameMaximun() const;
+  int frameMinimun() const;
+
+  bool frameStrideVisibility() const;
+  bool framePackVisibility() const;
+  bool frameTransformVisibility() const;
 
 public slots:
   virtual void accept();

@@ -334,7 +334,7 @@ void vvMainWindow::switchToolBarVisibility()
 {
   // check how send the signal
   QObject* obj = QObject::sender();
-  QToolBar* tb;
+  QToolBar* tb = nullptr;
   if (obj == this->Internals->Ui.actionBasic_Controls)
   {
     tb = this->Internals->Ui.toolBar;

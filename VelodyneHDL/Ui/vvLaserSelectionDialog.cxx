@@ -116,7 +116,6 @@ void vvLaserSelectionDialog::pqInternal::restoreSettings()
 void vvLaserSelectionDialog::pqInternal::setup()
 {
   QTableWidget* table = this->LaserTable;
-  QAbstractItemModel* model = table->model();
 
   table->setColumnWidth(0, 32);
   table->setColumnWidth(1, 64);

@@ -354,9 +354,6 @@ int LatLongToZone(double lat, double lon)
 {
   double longTemp = (lon + 180) - static_cast<int>((lon + 180) / 360) * 360 - 180;
 
-  double latRad = lat * DEG_TO_RAD;
-  double lonRad = lon * DEG_TO_RAD;
-
   int zone = static_cast<int>((longTemp + 180) / 6) + 1;
   if (lat >= 56.0 && lat < 64.0 && longTemp >= 3.0 && longTemp < 12.0)
   {
@@ -392,7 +389,6 @@ int vtkVelodyneHDLPositionReader::RequestData(
   vtkInformation* request, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
   vtkPolyData* output = vtkPolyData::GetData(outputVector);
-  vtkInformation* info = outputVector->GetInformationObject(0);
 
   if (!this->FileName.length())
   {

@@ -115,7 +115,6 @@ int vtkApplanixPositionReader::RequestData(
   vtkInformation* request, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
   vtkPolyData* output = vtkPolyData::GetData(outputVector);
-  vtkInformation* info = outputVector->GetInformationObject(0);
 
   if (!this->FileName || !*this->FileName)
   {

@@ -94,8 +94,8 @@ int main(int argc, char* argv[])
 
   // Measurement of the sleep
   clock_t T1, T2;
+  T1 = std::clock();
   double elapsedTimeMeasured;
-  double timeMicroSecond = 0;
   double elapsedTimeBetweenPackets = 0;
 
   std::cout << "Start sending" << std::endl;

@@ -46,6 +46,7 @@ class LidarPacketInterpreter
 public:
 
   LidarPacketInterpreter();
+  virtual ~LidarPacketInterpreter();
 
   /**
    * @brief LoadCalibration read a provided calibration file to initialize the sensor's
