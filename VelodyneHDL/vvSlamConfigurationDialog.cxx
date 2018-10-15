@@ -11,8 +11,8 @@ vvSlamConfigurationDialog::vvSlamConfigurationDialog(QWidget *parent) :
   ui->setupUi(this);
   this->ui->Start->setMinimum(0);
   this->ui->End->setMinimum(0);
-  this->ui->Start->setMaximum(50000);
-  this->ui->End->setMaximum(50000);
+  this->ui->Start->setMaximum(200000);
+  this->ui->End->setMaximum(200000);
   this->ui->currentFrame->hide();
   this->ui->allFrames->setChecked(true);
 }
