@@ -1660,7 +1660,7 @@ void vtkSlam::AddFrame(vtkPolyData* newFrame)
     this->PreviousBlobsPoints = this->CurrentBlobsPoints;
     this->NbrFrameProcessed++;
 
-    this->AddTransform(adjuestedTime0);
+    this->AddTransform(rawTime0);
     return;
   }
 
@@ -1731,7 +1731,7 @@ void vtkSlam::AddFrame(vtkPolyData* newFrame)
 
   // Indicate the filter has been modify
   this->Modified();
-  this->AddTransform(adjuestedTime0);
+  this->AddTransform(rawTime0);
   return;
 }
 
@@ -4658,14 +4658,19 @@ void KalmanFilter::Correction(Eigen::MatrixXd Measure)
   // (norm of the velocity) we need to compute the jacobian
   // of the measure function at the current point in the
   // state vector space
-  double normV = std::sqrt(std::pow(this->VectorStatePredicted(9), 2) + std::pow(this->VectorStatePredicted(10), 2)+ std::pow(this->VectorStatePredicted(11), 2));
+  double normV = std::sqrt(std::pow(this->VectorStatePredicted(9), 2) + std::pow(this->VectorStatePredicted(10), 2) + std::pow(this->VectorStatePredicted(11), 2));
   if (this->mode > 0)
   {
-    this->MeasureModel(6, 9) = this->VectorStatePredicted(9) / normV;
-    this->MeasureModel(6, 10) = this->VectorStatePredicted(10) / normV;
-    this->MeasureModel(6, 11) = this->VectorStatePredicted(11) / normV;
-    std::cout << "Vector State: " << std::endl << this->VectorStatePredicted << std::endl;
-    std::cout << "Measure: " << std::endl << Measure << std::endl;
+    // check that the norm is not null
+    double nv = normV;
+    if (nv < 1e-6)
+      nv = 1.0;
+
+    this->MeasureModel(6, 9) = this->VectorStatePredicted(9) / nv;
+    this->MeasureModel(6, 10) = this->VectorStatePredicted(10) / nv;
+    this->MeasureModel(6, 11) = this->VectorStatePredicted(11) / nv;
+    std::cout << "Vector State: " << std::endl << this->VectorStatePredicted.transpose() << std::endl;
+    std::cout << "Measure: " << std::endl << Measure.transpose() << std::endl;
     std::cout << "Measure model: " << std::endl << this->MeasureModel << std::endl;
   }
 
