@@ -1389,6 +1389,12 @@ void vtkSlam::InitTworldUsingExternalData(double adjustedTime0, double rawTime0)
   {
     t = rawTime0;
     this->shouldBeRawTime = true;
+    if (t < this->ExternalMeasures->GetMinimumT() || t > this->ExternalMeasures->GetMaximumT())
+    {
+      vtkGenericWarningMacro("GPS and Lidar data time interval are not consistent. Please, be sure to synchronize your devices. Slam will be computed without kalman filter");
+      this->MotionModel = 0;
+      return;
+    }
   }
 
   // Initialize the slam using the GPS / IMU transform
