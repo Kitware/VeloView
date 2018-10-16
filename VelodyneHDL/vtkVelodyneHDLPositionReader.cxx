@@ -419,6 +419,9 @@ int vtkVelodyneHDLPositionReader::RequestData(
   vtkSmartPointer<vtkDoubleArray> gpsTime = vtkSmartPointer<vtkDoubleArray>::New();
   gpsTime->SetName("gpstime");
 
+  vtkNew<vtkIntArray> zoneData;
+  zoneData->SetName("zone");
+
   typedef std::map<std::string, vtkSmartPointer<vtkDoubleArray> > VecMap;
   VecMap dataVectors;
   dataVectors.insert(std::make_pair("gyro1", vtkSmartPointer<vtkDoubleArray>::New()));
@@ -572,6 +575,8 @@ int vtkVelodyneHDLPositionReader::RequestData(
 
       times->InsertNextValue(position.gpsTimestamp);
 
+      zoneData->InsertNextValue(this->Internal->UTMZone);
+
       dataVectors["gyro1"]->InsertNextValue(position.gyro[0] * GYRO_SCALE);
       dataVectors["gyro2"]->InsertNextValue(position.gyro[1] * GYRO_SCALE);
       dataVectors["gyro3"]->InsertNextValue(position.gyro[2] * GYRO_SCALE);
@@ -608,6 +613,7 @@ int vtkVelodyneHDLPositionReader::RequestData(
   output->GetPointData()->AddArray(lons);
   output->GetPointData()->AddArray(gpsTime);
   output->GetPointData()->AddArray(times);
+  output->GetFieldData()->AddArray(zoneData.GetPointer());
   for (VecMap::iterator it = dataVectors.begin(); it != dataVectors.end(); ++it)
   {
     output->GetPointData()->AddArray(it->second);

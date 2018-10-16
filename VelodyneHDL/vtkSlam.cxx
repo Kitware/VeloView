@@ -1204,6 +1204,106 @@ vtkVelodyneTransformInterpolator* vtkSlam::GetInterpolator() const
 }
 
 //-----------------------------------------------------------------------------
+void vtkSlam::AddGeoreferencingFieldInformation(double easting0, double northing0, double height0, int utm)
+{
+  // add Field data to provide origin points and UTM zone
+  vtkSmartPointer<vtkDoubleArray> easting = vtkSmartPointer<vtkDoubleArray>::New();
+  vtkSmartPointer<vtkDoubleArray> northing = vtkSmartPointer<vtkDoubleArray>::New();
+  vtkSmartPointer<vtkDoubleArray> height = vtkSmartPointer<vtkDoubleArray>::New();
+  vtkSmartPointer<vtkIntArray> zone = vtkSmartPointer<vtkIntArray>::New();
+
+  // easting
+  easting->SetNumberOfTuples(1);
+  easting->SetNumberOfComponents(1);
+  easting->SetName("easting");
+  easting->SetTuple1(0, easting0);
+  this->Trajectory->GetFieldData()->AddArray(easting);
+
+  // northing
+  northing->SetNumberOfTuples(1);
+  northing->SetNumberOfComponents(1);
+  northing->SetName("northing");
+  northing->SetTuple1(0, northing0);
+  this->Trajectory->GetFieldData()->AddArray(northing);
+
+  // easting
+  height->SetNumberOfTuples(1);
+  height->SetNumberOfComponents(1);
+  height->SetName("height");
+  height->SetTuple1(0, height0);
+  this->Trajectory->GetFieldData()->AddArray(height);
+
+  // easting
+  zone->SetNumberOfTuples(1);
+  zone->SetNumberOfComponents(1);
+  zone->SetName("zone");
+  zone->SetTuple1(0, utm);
+  this->Trajectory->GetFieldData()->AddArray(zone);
+}
+
+//-----------------------------------------------------------------------------
+void vtkSlam::SetInterpolator(vtkVelodyneTransformInterpolator* interpolator, double easting0, double northing0, double height0, int utm)
+{
+  this->SetInterpolator(interpolator);
+  this->AddGeoreferencingFieldInformation(easting0, northing0, height0, utm);
+}
+
+//-----------------------------------------------------------------------------
+void vtkSlam::SetInterpolator(vtkVelodyneTransformInterpolator* interpolator)
+{
+  // Reset the algorithm
+  this->ResetAlgorithm();
+
+  // fill the internal interpolator and
+  std::vector<std::vector<double> > transforms = interpolator->GetTransformList();
+  for (unsigned int k = 0; k < transforms.size(); ++k)
+  {
+    // time
+    double t = transforms[k][0];
+    // rotation
+    double rx = transforms[k][1] * 180.0 / vtkMath::Pi();
+    double ry = transforms[k][2] * 180.0 / vtkMath::Pi();
+    double rz = transforms[k][3] * 180.0 / vtkMath::Pi();
+    // position
+    double x = transforms[k][4];
+    double y = transforms[k][5];
+    double z = transforms[k][6];
+
+    // fill interpolator
+    this->AddTransform(rx, ry, rz, x, y, z, t);
+
+    // Add the point to the traj polyline
+    this->AddDefaultPoint(x, y, z, rx, ry, rz, t);
+  }
+
+  this->Modified();
+  this->Update();
+}
+
+//-----------------------------------------------------------------------------
+void vtkSlam::AddDefaultPoint(double x, double y, double z, double rx, double ry, double rz, double t)
+{
+  this->Trajectory->GetPoints()->InsertNextPoint(x, y, z);
+  static_cast<vtkDoubleArray*>(this->Trajectory->GetPointData()->GetArray("time"))->InsertNextValue(t);
+  static_cast<vtkDoubleArray*>(this->Trajectory->GetPointData()->GetArray("roll"))->InsertNextValue(rx);
+  static_cast<vtkDoubleArray*>(this->Trajectory->GetPointData()->GetArray("pitch"))->InsertNextValue(ry);
+  static_cast<vtkDoubleArray*>(this->Trajectory->GetPointData()->GetArray("yaw"))->InsertNextValue(rz);
+  static_cast<vtkDoubleArray*>(this->Trajectory->GetPointData()->GetArray("Mapping: intiale cost function"))->InsertNextValue(0);
+  static_cast<vtkDoubleArray*>(this->Trajectory->GetPointData()->GetArray("Mapping: final cost function"))->InsertNextValue(0);
+  static_cast<vtkDoubleArray*>(this->Trajectory->GetPointData()->GetArray("Variance Error"))->InsertNextValue(0);
+  static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("Mapping: edges used"))->InsertNextValue(0);
+  static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("Mapping: planes used"))->InsertNextValue(0);
+  static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("Mapping: blobs used"))->InsertNextValue(0);
+  static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("Mapping: total keypoints used"))->InsertNextValue(0);
+  static_cast<vtkDoubleArray*>(this->Trajectory->GetPointData()->GetArray("EgoMotion: intiale cost function"))->InsertNextValue(0);
+  static_cast<vtkDoubleArray*>(this->Trajectory->GetPointData()->GetArray("EgoMotion: final cost function"))->InsertNextValue(0);
+  static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("EgoMotion: edges used"))->InsertNextValue(0);
+  static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("EgoMotion: planes used"))->InsertNextValue(0);
+  static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("EgoMotion: blobs used"))->InsertNextValue(0);
+  static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("EgoMotion: total keypoints used"))->InsertNextValue(0);
+}
+
+//-----------------------------------------------------------------------------
 void vtkSlam::OnlyComputeKeypoints(vtkSmartPointer<vtkPolyData> newFrame)
 {
   this->PrepareDataForNextFrame();
@@ -1656,14 +1756,16 @@ void vtkSlam::LoadTransforms(const std::string& filename)
     vtkGenericWarningMacro("Can't load the specified file");
   }
 
-  std::string line;
+  std::string line, header;
   std::string expectedLine = "Time,Rx(Roll),Ry(Pitch),Rz(Yaw),X,Y,Z";
-  std::getline(file, line);
-  if (line != expectedLine)
+  std::string expectedLine2 = "Time,Rx(Roll),Ry(Pitch),Rz(Yaw),X,Y,Z,easting,northing,height,utm";
+  std::getline(file, header);
+  if (header != expectedLine && header != expectedLine2)
   {
     vtkGenericWarningMacro("Header file not expected. Version incompability");
   }
 
+  bool shouldReadGeorefData = (header == expectedLine2);
   while (std::getline(file, line))
   {
     std::vector<std::string> values;
@@ -1683,24 +1785,20 @@ void vtkSlam::LoadTransforms(const std::string& filename)
     // fill interpolator
     this->AddTransform(rx, ry, rz, x, y, z, t);
 
-    this->Trajectory->GetPoints()->InsertNextPoint(x, y, z);
-    static_cast<vtkDoubleArray*>(this->Trajectory->GetPointData()->GetArray("time"))->InsertNextValue(t);
-    static_cast<vtkDoubleArray*>(this->Trajectory->GetPointData()->GetArray("roll"))->InsertNextValue(rx);
-    static_cast<vtkDoubleArray*>(this->Trajectory->GetPointData()->GetArray("pitch"))->InsertNextValue(ry);
-    static_cast<vtkDoubleArray*>(this->Trajectory->GetPointData()->GetArray("yaw"))->InsertNextValue(rz);
-    static_cast<vtkDoubleArray*>(this->Trajectory->GetPointData()->GetArray("Mapping: intiale cost function"))->InsertNextValue(0);
-    static_cast<vtkDoubleArray*>(this->Trajectory->GetPointData()->GetArray("Mapping: final cost function"))->InsertNextValue(0);
-    static_cast<vtkDoubleArray*>(this->Trajectory->GetPointData()->GetArray("Variance Error"))->InsertNextValue(0);
-    static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("Mapping: edges used"))->InsertNextValue(0);
-    static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("Mapping: planes used"))->InsertNextValue(0);
-    static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("Mapping: blobs used"))->InsertNextValue(0);
-    static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("Mapping: total keypoints used"))->InsertNextValue(0);
-    static_cast<vtkDoubleArray*>(this->Trajectory->GetPointData()->GetArray("EgoMotion: intiale cost function"))->InsertNextValue(0);
-    static_cast<vtkDoubleArray*>(this->Trajectory->GetPointData()->GetArray("EgoMotion: final cost function"))->InsertNextValue(0);
-    static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("EgoMotion: edges used"))->InsertNextValue(0);
-    static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("EgoMotion: planes used"))->InsertNextValue(0);
-    static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("EgoMotion: blobs used"))->InsertNextValue(0);
-    static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("EgoMotion: total keypoints used"))->InsertNextValue(0);
+    // Add default point to traj polyline
+    this->AddDefaultPoint(x, y, z, rx, ry, rz, t);
+
+    // get the georeferencing data
+    if (shouldReadGeorefData)
+    {
+      vtkGenericWarningMacro("Slam data loaded are georeferenced");
+      shouldReadGeorefData = false;
+      double easting0 = std::atof(values[7].c_str());
+      double northing0 = std::atof(values[8].c_str());
+      double height0 = std::atof(values[9].c_str());
+      int utm = std::atoi(values[10].c_str());
+      this->AddGeoreferencingFieldInformation(easting0, northing0, height0, utm);
+    }
   }
 }
 
@@ -4343,6 +4441,66 @@ void vtkSlam::SetMotionModel(int input)
   this->MotionModel = input;
   if (input > 0)
     this->KalmanEstimator.SetMode(input - 1);
+}
+
+//-----------------------------------------------------------------------------
+void vtkSlam::ExportTransforms(const std::string& filename)
+{
+  std::ofstream file;
+  file.open(filename);
+
+  if (!file.is_open())
+  {
+    vtkGenericWarningMacro("Can't write the specified file");
+  }
+
+  std::vector<std::vector<double> > transforms = this->InternalInterp->GetTransformList();
+  std::vector<double> T;
+
+  file.precision(12);
+
+  // check if the slam is georeferenced
+  vtkDataArray* const zone = this->Trajectory->GetFieldData()->GetArray("zone");
+  vtkDataArray* const easting = this->Trajectory->GetFieldData()->GetArray("easting");
+  vtkDataArray* const northing = this->Trajectory->GetFieldData()->GetArray("northing");
+  vtkDataArray* const height = this->Trajectory->GetFieldData()->GetArray("height");
+  bool isGeoreferenced = false;
+  double easting0, northing0, height0;
+  int utmZone;
+  if (zone && zone->GetNumberOfTuples() &&
+      easting && easting->GetNumberOfTuples() &&
+      northing && northing->GetNumberOfTuples() &&
+      height && height->GetNumberOfTuples())
+  {
+    isGeoreferenced = true;
+    utmZone = static_cast<int>(zone->GetComponent(0, 0));
+    easting0 = static_cast<double>(easting->GetComponent(0, 0));
+    northing0 = static_cast<double>(northing->GetComponent(0, 0));
+    height0 = static_cast<double>(height->GetComponent(0, 0));
+  }
+
+  if (!isGeoreferenced)
+  {
+    file << "Time,Rx(Roll),Ry(Pitch),Rz(Yaw),X,Y,Z" << std::endl;
+  }
+  else
+  {
+    file << "Time,Rx(Roll),Ry(Pitch),Rz(Yaw),X,Y,Z,easting,northing,height,utm" << std::endl;
+  }
+  for (unsigned int k = 0; k < transforms.size(); ++k)
+  {
+    T = transforms[k];
+    file << T[0] << "," << T[1] << "," << T[2] << "," << T[3] << ","
+         << T[4] << "," << T[5] << "," << T[6] << ",";
+    if (isGeoreferenced)
+    {
+      file << easting0 << "," << northing0 << "," << height0 << "," << utmZone;
+    }
+    file << std::endl;
+  }
+
+  file.close();
+  return;
 }
 
 //-----------------------------------------------------------------------------

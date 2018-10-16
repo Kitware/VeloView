@@ -187,15 +187,6 @@ def launch():
     progressDialog.setModal(True)
     progressDialog.show()
 
-    # Estimated computed transforms parameters
-    time = range(int(start), int(stop)+1)
-    rx = range(int(start), int(stop)+1)
-    ry = range(int(start), int(stop)+1)
-    rz = range(int(start), int(stop)+1)
-    tx = range(int(start), int(stop)+1)
-    ty = range(int(start), int(stop)+1)
-    tz = range(int(start), int(stop)+1)
-
     # iteration
     frameCount = 0
     for i in range(int(start), int(stop)+1):
@@ -204,27 +195,10 @@ def launch():
         # compute the SLAM for the current frame
         slam.GetClientSideObject().AddFrame(polyData)
 
-        # get the transformation computed
-        Tworld = range(6)
-        slam.GetClientSideObject().GetWorldTransform(Tworld)
-        time[frameCount] = polyData.GetPointData().GetArray("timestamp").GetTuple1(0) * 1e-6
-
-        # convert in degree
-        rx[frameCount] = Tworld[0] * 180 / vtk.vtkMath.Pi()
-        ry[frameCount] = Tworld[1] * 180 / vtk.vtkMath.Pi()
-        rz[frameCount] = Tworld[2] * 180 / vtk.vtkMath.Pi()
-        tx[frameCount] = Tworld[3]
-        ty[frameCount] = Tworld[4]
-        tz[frameCount] = Tworld[5]
-
         # update the ui
         if (progressDialog.wasCanceled):
-            # TODO pop up a message
-
-#            msg = QtGui.QMessageBox(QtGui.QMessageBox.Information,"Helo","Aurevoir")
-#            msg.setInformativeText("This is additional information")
-#            msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
             break
+
         frameCount = frameCount + 1
         progressDialog.setValue(i)
 
@@ -234,10 +208,7 @@ def launch():
     # create Linear Interpolator()
     # and fill it with the slam outputted
     # transform parameters
-    source.CreateNearestInterpolator()
-    for i in range(frameCount):
-        # add the transform
-        source.AddTransform(rx[i], ry[i], rz[i], tx[i], ty[i], tz[i], time[i])
+    source.SetInterpolator(slam.GetClientSideObject().GetInterpolator())
 
     #source.SetInterpolator(slam.GetClientSideObject().GetInterpolator())
     slam.GetClientSideObject().Update()

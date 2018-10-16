@@ -830,7 +830,10 @@ def saveLASFrames(filename, first, last, transform = 0):
 
     # Check that we have a position provider
     if getPosition() is not None:
-        position = getPosition().GetClientSideObject().GetOutput()
+        if getPosition().GetNumberOfOutputPorts() > 2 :
+            position = getPosition().GetClientSideObject().GetOutput(1)
+        else :
+            position = getPosition().GetClientSideObject().GetOutput()
 
         PythonQt.paraview.pqVelodyneManager.saveFramesToLAS(
             reader, position, first, last, filename, transform)
@@ -2262,20 +2265,30 @@ def toggleLoadTransform():
     # interpolator
     fileName = getOpenFileName('Load Transforms', 'csv')
     reader = getReader()
-    reader.GetClientSideObject().LoadTransforms(fileName)
 
     # load the transform in a slam algorithm
     # and display the trajectory output in the
     # overhead view
     tempSlam = smp.Slam()
     tempSlam.GetClientSideObject().LoadTransforms(fileName)
+    tempSlam.GetClientSideObject().Update()
+    reader.GetClientSideObject().SetInterpolator(tempSlam.GetClientSideObject().GetInterpolator())
     smp.Show(tempSlam[1], app.overheadView)
     app.slamSave = tempSlam
 
+    # Set the slam as posreader
+    oldPosition = app.position
+    app.position = (tempSlam, None, oldPosition[2])
+
+    # Reset reader as active source so we can use the paraview toolbox to visualize the different array: density, ...
+    smp.SetActiveSource(getReader())
+
 def toggleExportTransform():
+    if app.slamSave is None:
+        QtGui.QMessageBox.warning(getMainWindow(), 'No transform to export', 'Could not export transform data, none was loaded or computed')
+
     fileName = getSaveFileName('Save Transforms', 'csv')
-    reader = getReader()
-    reader.GetClientSideObject().ExportTransforms(fileName)
+    app.slamSave.GetClientSideObject().ExportTransforms(fileName)
 
 def toggleMergeTransforms():
     fileNameIMU = getOpenFileName('Load IMU transforms', 'csv')
@@ -2307,6 +2320,38 @@ def toggleRegisterSlamOnGps():
 
     sensorFusion = vtkSensorTransformFusion()
     sensorFusion.RegisterSlamOnGps(slamT.GetClientSideObject().GetInterpolator(), gps.GetClientSideObject().GetInterpolator())
+
+    # Provide the new interpolator to the source
+    source = getReader()
+    source.GetClientSideObject().SetInterpolator(sensorFusion.GetInterpolator())
+
+    # provide the new interpolator to the slam
+    app.slamSave.GetClientSideObject().SetInterpolator(sensorFusion.GetInterpolator())
+
+    # Add georeferencing information to the slam
+    pc = gps.GetClientSideObject().GetOutput()
+    zone = pc.GetFieldData().GetArray("zone")
+    easting = pc.GetPointData().GetArray("easting")
+    northing = pc.GetPointData().GetArray("northing")
+    height = pc.GetPointData().GetArray("height")
+
+    if ((zone is not None) and (zone.GetNumberOfTuples()) and
+    (easting is not None) and (easting.GetNumberOfTuples()) and
+    (northing is not None) and (northing.GetNumberOfTuples()) and
+    (height is not None) and (height.GetNumberOfTuples())) :
+        easting0 = easting.GetComponent(0, 0)
+        northing0 = northing.GetComponent(0, 0)
+        height0 = height.GetComponent(0, 0)
+        utm = int(zone.GetComponent(0, 0))
+        app.slamSave.GetClientSideObject().AddGeoreferencingFieldInformation(easting0, northing0, height0, utm)
+
+    app.slamSave.GetClientSideObject().Update()
+
+    # Reset reader as active source so we can use the paraview toolbox to visualize the different array: density, ...
+    smp.SetActiveSource(getReader())
+
+    # Display Slam output in the overhead viewer
+    smp.Show(app.slamSave[1], app.overheadView)
 
 def toggleSelectDualReturn():
     # test if we are on osx os

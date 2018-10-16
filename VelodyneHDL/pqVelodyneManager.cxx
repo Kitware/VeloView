@@ -253,7 +253,6 @@ void pqVelodyneManager::saveFramesToLAS(vtkVelodyneHDLReader* reader, vtkPolyDat
     return;
   }
 
-
   startFrame += 1;
   endFrame -= 1;
 

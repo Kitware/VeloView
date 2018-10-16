@@ -371,6 +371,12 @@ public:
 
   // return the internal interpolator
   vtkVelodyneTransformInterpolator* GetInterpolator() const;
+  void SetInterpolator(vtkVelodyneTransformInterpolator* interpolator, double easting0, double northing0, double height0, int utm);
+  void SetInterpolator(vtkVelodyneTransformInterpolator* interpolator);
+  void AddGeoreferencingFieldInformation(double easting0, double northing0, double height0, int utm);
+
+  // Export the transforms that have been computed
+  void ExportTransforms(const std::string& filename);
 
 protected:
   // vtkPolyDataAlgorithm functions
@@ -576,6 +582,9 @@ private:
   double VelocityNormCov;
   bool shouldBeRawTime;
   double CurrentTime;
+
+  // Add a default point to the trajectories
+  void AddDefaultPoint(double x, double y, double z, double rx, double ry, double rz, double t);
 
   // Convert the input vtk-format pointcloud
   // into a pcl-pointcloud format. scan lines

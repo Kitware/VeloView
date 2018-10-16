@@ -85,6 +85,7 @@ private:
   void operator=(const vtkSensorTransformFusion&);
 
   std::vector<std::vector<double> > LoadTransforms(const std::string& filename);
+  void ApplyTransform(Eigen::Matrix<double, 3, 1> angles, Eigen::Matrix<double, 3, 1> T, vtkVelodyneTransformInterpolator* slam);
 
   vtkSmartPointer<vtkVelodyneTransformInterpolator> IMUInterp;
   vtkSmartPointer<vtkVelodyneTransformInterpolator> SLAMInterp;

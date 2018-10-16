@@ -575,8 +575,11 @@ void GetPairMatchedPoints(vtkVelodyneTransformInterpolator* slam, vtkVelodyneTra
 }
 
 //-----------------------------------------------------------------------------
-void ApplyTransform(Eigen::Matrix<double, 3, 1> angles, Eigen::Matrix<double, 3, 1> T, vtkVelodyneTransformInterpolator* slam)
+void vtkSensorTransformFusion::ApplyTransform(Eigen::Matrix<double, 3, 1> angles, Eigen::Matrix<double, 3, 1> T, vtkVelodyneTransformInterpolator* slam)
 {
+  this->MergedInterp = vtkSmartPointer<vtkVelodyneTransformInterpolator>::New();
+  this->MergedInterp->SetInterpolationTypeToNearestLowBounded();
+
   std::vector<std::vector<double> > slamTransforms = slam->GetTransformList();
   Eigen::Matrix<double, 3, 3> Rcorr = GetRotationMatrix(angles);
 
@@ -596,18 +599,17 @@ void ApplyTransform(Eigen::Matrix<double, 3, 1> angles, Eigen::Matrix<double, 3,
     Eigen::Matrix<double, 3, 1> newAngles = GetEulerAngles(Rslam);
     newAngles = newAngles / vtkMath::Pi() * 180.0;
 
+
     vtkNew<vtkTransform> trans;
     trans->PostMultiply();
-
-    // Passage from L(t_current) to L(t_begin) first frame
-    // Application of the SLAM result
     trans->RotateX(newAngles(0));
     trans->RotateY(newAngles(1));
     trans->RotateZ(newAngles(2));
     double pos[3] = {Tslam(0), Tslam(1), Tslam(2)};
     trans->Translate(pos);
-    //this->InternalInterp->AddTransform(t, mappingTransform.GetPointer());
-    //this->InternalInterp->Modified();
+
+    this->MergedInterp->AddTransform(tSlam, trans.GetPointer());
+    this->MergedInterp->Modified();
   }
 }
 
@@ -739,14 +741,14 @@ void vtkSensorTransformFusion::RegisterSlamOnGps(vtkVelodyneTransformInterpolato
   finalAngles << W(0), W(1), W(2);
   Eigen::Matrix<double, 3, 3> finalRot = GetRotationMatrix(finalAngles);
   finalAngles = GetEulerAngles(finalRot);
-
   finalT << W(3), W(4), W(5);
-  finalAngles = finalAngles * 180.0 / vtkMath::Pi();
-
-  std::cout << "Final parameters: " << std::endl;
-  std::cout << "angles: " << finalAngles.transpose() << std::endl;
-  std::cout << "Positi: " << finalT.transpose() << std::endl;
 
   // now Apply the founded rigid transform to the slam
   ApplyTransform(finalAngles, finalT, slam);
+
+  // transform in degree to display result
+  finalAngles = finalAngles * 180.0 / vtkMath::Pi();
+  std::cout << "Final parameters: " << std::endl;
+  std::cout << "angles: " << finalAngles.transpose() << std::endl;
+  std::cout << "Positi: " << finalT.transpose() << std::endl;
 }
