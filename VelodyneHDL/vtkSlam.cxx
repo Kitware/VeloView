@@ -1307,6 +1307,12 @@ void vtkSlam::AddDefaultPoint(double x, double y, double z, double rx, double ry
   static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("EgoMotion: planes used"))->InsertNextValue(0);
   static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("EgoMotion: blobs used"))->InsertNextValue(0);
   static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("EgoMotion: total keypoints used"))->InsertNextValue(0);
+
+  this->Orientation->GetPoints()->InsertNextPoint(rx, ry, rz);
+  static_cast<vtkDoubleArray*>(this->Orientation->GetPointData()->GetArray("time"))->InsertNextValue(t);
+  static_cast<vtkDoubleArray*>(this->Orientation->GetPointData()->GetArray("X"))->InsertNextValue(x);
+  static_cast<vtkDoubleArray*>(this->Orientation->GetPointData()->GetArray("Y"))->InsertNextValue(y);
+  static_cast<vtkDoubleArray*>(this->Orientation->GetPointData()->GetArray("Z"))->InsertNextValue(z);
 }
 
 //-----------------------------------------------------------------------------
