@@ -534,6 +534,9 @@ private:
   double EgoMotionMaxPlaneDistance;
   double EgoMotionMaxLineDistance;
 
+  // norm of the farest keypoints
+  double FarestKeypointDist;
+
   // Use or not blobs
   bool UseBlob;
 

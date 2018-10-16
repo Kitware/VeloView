@@ -453,6 +453,12 @@ public:
       {
         for (int k = frameCenterZ - std::ceil(this->PointCloud_NbVoxelZ / 2); k <= frameCenterZ + std::ceil(this->PointCloud_NbVoxelZ / 2); k++)
         {
+          if (i < 0 || i > (this->Grid_NbVoxelX - 1) ||
+              j < 0 || j > (this->Grid_NbVoxelY - 1) ||
+              k < 0 || k > (this->Grid_NbVoxelZ - 1))
+          {
+            continue;
+          }
           pcl::PointCloud<Point>:: Ptr voxel = this->grid[i][j][k];
           for (int l = 0; l < voxel->size(); l++)
           {
@@ -2337,17 +2343,26 @@ void vtkSlam::SetKeyPointsLabels(vtkSmartPointer<vtkPolyData> input)
   std::sort(planarIndex.begin(), planarIndex.end());
   std::sort(blobIndex.begin(), blobIndex.end());
 
+  // fill the keypoints vectors and compute the max dist keypoints
+  this->FarestKeypointDist = 0.0;
+  Point p;
   for (unsigned int k = 0; k < edgesIndex.size(); ++k)
   {
-    this->CurrentEdgesPoints->push_back(this->pclCurrentFrameByScan[edgesIndex[k].first]->points[edgesIndex[k].second]);
+    p = this->pclCurrentFrameByScan[edgesIndex[k].first]->points[edgesIndex[k].second];
+    this->CurrentEdgesPoints->push_back(p);
+    this->FarestKeypointDist = std::max(this->FarestKeypointDist, static_cast<double>(std::sqrt(std::pow(p.x, 2) + std::pow(p.y, 2) + std::pow(p.z, 2))));
   }
   for (unsigned int k = 0; k < planarIndex.size(); ++k)
   {
-    this->CurrentPlanarsPoints->push_back(this->pclCurrentFrameByScan[planarIndex[k].first]->points[planarIndex[k].second]);
+    p = this->pclCurrentFrameByScan[planarIndex[k].first]->points[planarIndex[k].second];
+    this->CurrentPlanarsPoints->push_back(p);
+    this->FarestKeypointDist = std::max(this->FarestKeypointDist, static_cast<double>(std::sqrt(std::pow(p.x, 2) + std::pow(p.y, 2) + std::pow(p.z, 2))));
   }
   for (unsigned int k = 0; k < blobIndex.size();  ++k)
   {
-    this->CurrentBlobsPoints->push_back(this->pclCurrentFrameByScan[blobIndex[k].first]->points[blobIndex[k].second]);
+    p = this->pclCurrentFrameByScan[blobIndex[k].first]->points[blobIndex[k].second];
+    this->CurrentBlobsPoints->push_back(p);
+    this->FarestKeypointDist = std::max(this->FarestKeypointDist, static_cast<double>(std::sqrt(std::pow(p.x, 2) + std::pow(p.y, 2) + std::pow(p.z, 2))));
   }
 
   if (this->FastSlam)
@@ -3785,10 +3800,20 @@ void vtkSlam::Mapping()
   pcl::KdTreeFLANN<Point>::Ptr kdtreePlanes(new pcl::KdTreeFLANN<Point>());
   pcl::KdTreeFLANN<Point>::Ptr kdtreeBlobs(new pcl::KdTreeFLANN<Point>());
 
+  // Compute the number of voxel required depending on the
+  // max range of the keypoints
+  // the max keypoint distance in number of voxel
+  double requiredVoxels = this->FarestKeypointDist / static_cast<double>(this->EdgesPointsLocalMap->Get_VoxelSize());
+  // Since we want a diameter and not the radius, multiply it by two; Add an extra 10% distance
+  unsigned int nbrRequiredVoxels = static_cast<unsigned int>(vtkMath::Round(1.15 * 2.0 * requiredVoxels));
+  double voxelsR[3] = {nbrRequiredVoxels, nbrRequiredVoxels, nbrRequiredVoxels};
+  // Set it
+  this->Set_RollingGrid_PointCloud_NbVoxel(voxelsR);
+
   pcl::PointCloud<Point>::Ptr subEdgesPointsLocalMap = this->EdgesPointsLocalMap->Get(this->Tworld);
   pcl::PointCloud<Point>::Ptr subPlanarPointsLocalMap = this->PlanarPointsLocalMap->Get(this->Tworld);
   pcl::PointCloud<Point>::Ptr subBlobPointsLocalMap = this->BlobsPointsLocalMap->Get(this->Tworld);
-  std::cout << "Tworld: " << this->Tworld.transpose() << std::endl;
+  std::cout << "Required voxels computed using max range is: " << nbrRequiredVoxels << std::endl;
   std::cout << "edges map : " << subEdgesPointsLocalMap->points.size() << std::endl;
   std::cout << "flat map : " << subPlanarPointsLocalMap->points.size() << std::endl;
   std::cout << "blobs map : " << subBlobPointsLocalMap->points.size() << std::endl;
@@ -3836,9 +3861,7 @@ void vtkSlam::Mapping()
         // If the undistortion
         if (this->Undistortion)
         {
-          //std::cout << "pt before: " << currentPoint.x << ", " << currentPoint.y << ", " << currentPoint.z << std::endl;
           this->ExpressPointInStartReferencial(currentPoint, undistortionInterp);
-          //std::cout << "pt after: " << currentPoint.x << ", " << currentPoint.y << ", " << currentPoint.z << std::endl;
         }
 
         if (this->CurrentEdgesPoints->size() > 0 && subEdgesPointsLocalMap->points.size() > 10)
@@ -3878,9 +3901,9 @@ void vtkSlam::Mapping()
 
     // Skip this frame if there is too few geometric
     // keypoints matched
-    if (usedPlanes < 10 || usedEdges < 10)
+    if ((usedPlanes + usedEdges) < 20)
     {
-      vtkGenericWarningMacro("Too few geometric features, frame skipped");
+      vtkGenericWarningMacro("Too few geometric features, loop breaked");
       break;
     }
 
@@ -3915,7 +3938,7 @@ void vtkSlam::Mapping()
 
     if (!vtkMath::IsFinite(X(0)) || !vtkMath::IsFinite(X(3)))
     {
-      vtkGenericWarningMacro("Estimated transform not finite, skip this frame");
+      vtkGenericWarningMacro("Estimated transform not finite, loop breaked");
       break;
     }
 
@@ -4385,6 +4408,7 @@ void vtkSlam::Set_RollingGrid_PointCloud_NbVoxel(const double nbVoxel[3])
 {
   this->EdgesPointsLocalMap->Set_PointCloud_NbVoxel(nbVoxel);
   this->PlanarPointsLocalMap->Set_PointCloud_NbVoxel(nbVoxel);
+  this->BlobsPointsLocalMap->Set_PointCloud_NbVoxel(nbVoxel);
 }
 
 //-----------------------------------------------------------------------------
