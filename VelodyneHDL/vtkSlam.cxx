@@ -1645,19 +1645,6 @@ void vtkSlam::AddFrame(vtkPolyData* newFrame)
     // Compute the edges and planars keypoints
     this->ComputeKeyPoints(newFrame);
 
-    // Populate keypoints maps
-    // edges
-    EdgesPointsLocalMap->Roll(this->Tworld);
-    EdgesPointsLocalMap->Add(this->CurrentEdgesPoints);
-
-    // planes
-    PlanarPointsLocalMap->Roll(this->Tworld);
-    PlanarPointsLocalMap->Add(this->MappingPlanarsPoints);
-
-    // Blobs
-    BlobsPointsLocalMap->Roll(this->Tworld);
-    BlobsPointsLocalMap->Add(this->CurrentBlobsPoints);
-
     // update map using tworld
     this->UpdateMapsUsingTworld();
 
@@ -3558,8 +3545,8 @@ void vtkSlam::ComputeResidualJacobians(std::vector<Eigen::Matrix<double, 3, 3> >
 void vtkSlam::ComputeEgoMotion()
 {
   // Check that there is enought points to compute the EgoMotion
-  if (this->CurrentEdgesPoints->size() == 0 || this->CurrentPlanarsPoints->size() == 0 ||
-      this->PreviousEdgesPoints->size() == 0 || this->PreviousPlanarsPoints->size() == 0)
+  if ((this->CurrentEdgesPoints->size() == 0 || this->PreviousEdgesPoints->size() == 0) &&
+      (this->CurrentPlanarsPoints->size() == 0 || this->PreviousPlanarsPoints->size() == 0))
   {
     this->FillEgoMotionInfoArrayWithDefaultValues();
     vtkGenericWarningMacro("Not enought keypoints, EgoMotion skipped for this frame");
@@ -3627,7 +3614,7 @@ void vtkSlam::ComputeEgoMotion()
         currentPoint = this->CurrentEdgesPoints->points[edgeIndex];
 
         // Find the closest correspondence edge line of the current edge point
-        if (this->PreviousEdgesPoints->size() > 1)
+        if ((this->PreviousEdgesPoints->size() > 7) && (this->CurrentEdgesPoints->size() > 0))
         {
           // Compute the parameters of the point - line distance
           // i.e A = (I - n*n.t)^2 with n being the director vector
@@ -3643,7 +3630,7 @@ void vtkSlam::ComputeEgoMotion()
         currentPoint = this->CurrentPlanarsPoints->points[planarIndex];
 
         // Find the closest correspondence plane of the current planar point
-        if (this->PreviousPlanarsPoints->size() > 2)
+        if ((this->PreviousPlanarsPoints->size() > 7) && (this->CurrentPlanarsPoints->size() > 0))
         {
           // Compute the parameters of the point - plane distance
           // i.e A = n * n.t with n being a normal of the plane
@@ -3672,7 +3659,7 @@ void vtkSlam::ComputeEgoMotion()
 
     // Skip this frame if there is too few geometric
     // keypoints matched
-    if (usedPlanes < 10 || usedEdges < 10)
+    if ((usedPlanes + usedEdges) < 20)
     {
       vtkGenericWarningMacro("Too few geometric features, frame skipped");
       break;
@@ -3777,9 +3764,11 @@ void vtkSlam::Mapping()
   double lambda = this->Lambda0;
 
   // Check that there is enought points to compute the EgoMotion
-  if (this->CurrentEdgesPoints->size() == 0 || this->CurrentPlanarsPoints->size() == 0)
+  if (this->CurrentEdgesPoints->size() == 0 && this->CurrentPlanarsPoints->size() == 0)
   {
     this->FillMappingInfoArrayWithDefaultValues();
+    // update maps
+    this->UpdateMapsUsingTworld();
     vtkGenericWarningMacro("Not enought keypoints, Mapping skipped for this frame");
     return;
   }
@@ -3799,7 +3788,7 @@ void vtkSlam::Mapping()
   pcl::PointCloud<Point>::Ptr subEdgesPointsLocalMap = this->EdgesPointsLocalMap->Get(this->Tworld);
   pcl::PointCloud<Point>::Ptr subPlanarPointsLocalMap = this->PlanarPointsLocalMap->Get(this->Tworld);
   pcl::PointCloud<Point>::Ptr subBlobPointsLocalMap = this->BlobsPointsLocalMap->Get(this->Tworld);
-
+  std::cout << "Tworld: " << this->Tworld.transpose() << std::endl;
   std::cout << "edges map : " << subEdgesPointsLocalMap->points.size() << std::endl;
   std::cout << "flat map : " << subPlanarPointsLocalMap->points.size() << std::endl;
   std::cout << "blobs map : " << subBlobPointsLocalMap->points.size() << std::endl;
@@ -3852,9 +3841,12 @@ void vtkSlam::Mapping()
           //std::cout << "pt after: " << currentPoint.x << ", " << currentPoint.y << ", " << currentPoint.z << std::endl;
         }
 
-        // Find the closest correspondence edge line of the current edge point
-        this->ComputeLineDistanceParametersAccurate(kdtreeEdges, R1, T1, currentPoint, "mapping");
-        usedEdges = this->Xvalues.size();
+        if (this->CurrentEdgesPoints->size() > 0 && subEdgesPointsLocalMap->points.size() > 10)
+        {
+          // Find the closest correspondence edge line of the current edge point
+          this->ComputeLineDistanceParametersAccurate(kdtreeEdges, R1, T1, currentPoint, "mapping");
+          usedEdges = this->Xvalues.size();
+        }
       }
 
       // loop over surfaces
@@ -3862,9 +3854,12 @@ void vtkSlam::Mapping()
       {
         currentPoint = this->MappingPlanarsPoints->points[planarIndex];
 
-        // Find the closest correspondence plane of the current planar point
-        this->ComputePlaneDistanceParametersAccurate(kdtreePlanes, R1, T1, currentPoint, "mapping");
-        usedPlanes = this->Xvalues.size() - usedEdges;
+        if (this->MappingPlanarsPoints->size() > 0 && subPlanarPointsLocalMap->size() > 10)
+        {
+          // Find the closest correspondence plane of the current planar point
+          this->ComputePlaneDistanceParametersAccurate(kdtreePlanes, R1, T1, currentPoint, "mapping");
+          usedPlanes = this->Xvalues.size() - usedEdges;
+        }
       }
 
       if (this->UseBlob)
