@@ -90,11 +90,11 @@ public:
     T crx = ceres::cos(rx[0]); T srx = ceres::sin(rx[0]);
     T cry = ceres::cos(ry[0]); T sry = ceres::sin(ry[0]);
     T crz = ceres::cos(rz[0]); T srz = ceres::sin(rz[0]);
-    T Yx = cry*crz*X(0) + (srx*sry*crz-crx*srz)*X(1) + (crx*sry*crz+srx*srz)*X(2) + tx[0] - C(0);
-    T Yy = cry*srz*X(0) + (srx*sry*srz+crx*crz)*X(1) + (crx*sry*srz-srx*crz)*X(2) + ty[0] - C(1);
-    T Yz = -sry*X(0) + srx*cry*X(1) + crx*cry*X(2) + tz[0] - C(2);
+    T Yx = cry*crz*T(X(0)) + (srx*sry*crz-crx*srz)*T(X(1)) + (crx*sry*crz+srx*srz)*T(X(2)) + tx[0] - T(C(0));
+    T Yy = cry*srz*T(X(0)) + (srx*sry*srz+crx*crz)*T(X(1)) + (crx*sry*srz-srx*crz)*T(X(2)) + ty[0] - T(C(1));
+    T Yz = -sry*T(X(0)) + srx*cry*T(X(1)) + crx*cry*T(X(2)) + tz[0] - T(C(2));
 
-    residual[0] = ceres::sqrt(ceres::pow(Yx, 2) + ceres::pow(Yz, 2) + ceres::pow(Yz, 2));
+    residual[0] = ceres::sqrt(ceres::pow(Yx, 2) + ceres::pow(Yy, 2) + ceres::pow(Yz, 2));
     return true;
   }
 
@@ -796,16 +796,17 @@ void vtkSensorTransformFusion::RegisterSlamOnGps(vtkVelodyneTransformInterpolato
   // Another way, using ceres
   google::InitGoogleLogging("Slam_optimisation");
   ceres::Problem problem;
-  Eigen::Matrix<double, 6, 1> Testimated = Eigen::Matrix<double, 6, 1>::Zero();
+  Eigen::Matrix<double, 3, 1> anglesEstimated = Eigen::Matrix<double, 3, 1>::Zero();
+  Eigen::Matrix<double, 3, 1> transEstimated = Eigen::Matrix<double, 3, 1>::Zero();
   for (unsigned int k = 0; k < slamT.size(); ++k)
   {
     Eigen::Matrix<double, 3, 3> Id = Eigen::Matrix<double, 3, 3>::Identity();
     ceres::CostFunction* cost_function = new ceres::AutoDiffCostFunction<AffineIsometryResidual, 1, 1, 1, 1, 1, 1, 1>(new AffineIsometryResidual(Id, slamT[k], gpsT[k]));
-    problem.AddResidualBlock(cost_function, NULL, &Testimated(0), &Testimated(1), &Testimated(2), &Testimated(3), &Testimated(4), &Testimated(5));
+    problem.AddResidualBlock(cost_function, NULL, &anglesEstimated(0), &anglesEstimated(1), &anglesEstimated(2), &transEstimated(0), &transEstimated(1), &transEstimated(2));
   }
 
   ceres::Solver::Options options;
-  options.max_num_iterations = 25;
+  options.max_num_iterations = 1500;
   options.linear_solver_type = ceres::DENSE_QR;
   options.minimizer_progress_to_stdout = true;
 
@@ -813,5 +814,6 @@ void vtkSensorTransformFusion::RegisterSlamOnGps(vtkVelodyneTransformInterpolato
   ceres::Solve(options, &problem, &summary);
   std::cout << summary.BriefReport() << "\n";
   std::cout << "Initial m: " << 0.0 << " c: " << 0.0 << "\n";
-  std::cout << "Final: " << Testimated.transpose() << std::endl;
+  anglesEstimated = anglesEstimated / vtkMath::Pi() * 180.0;
+  std::cout << "Final: " << anglesEstimated.transpose() << "; " << transEstimated.transpose() << std::endl;
 }
