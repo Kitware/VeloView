@@ -1080,8 +1080,6 @@ void vtkSlam::PrepareDataForNextFrame()
   this->CurrentEdgesPoints.reset(new pcl::PointCloud<Point>());
   this->CurrentPlanarsPoints.reset(new pcl::PointCloud<Point>());
   this->CurrentBlobsPoints.reset(new pcl::PointCloud<Point>());
-  this->DensePlanarsPoints.reset(new pcl::PointCloud<Point>());
-  this->MappingPlanarsPoints.reset(new pcl::PointCloud<Point>());
 
   // reset vtk <-> pcl id mapping
   this->FromVTKtoPCLMapping.clear();
@@ -2193,20 +2191,6 @@ void vtkSlam::SetKeyPointsLabels(vtkSmartPointer<vtkPolyData> input)
     double blobScore = 0;
     int index = 0;
 
-    if (!this->FastSlam)
-    {
-      for (int k = 0; k < Npts; ++k)
-      {
-        // if the point is invalid continue
-        if (this->IsPointValid[scanLine][k] == 0)
-        {
-          continue;
-        }
-
-        this->DensePlanarsPoints->push_back(this->pclCurrentFrameByScan[scanLine]->points[k]);
-      }
-    }
-
     // Edges using depth gap
     for (int k = 0; k < Npts; ++k)
     {
@@ -2290,14 +2274,12 @@ void vtkSlam::SetKeyPointsLabels(vtkSmartPointer<vtkPolyData> input)
     }
 
     // Blobs Points
-    for (int k = 0; k < Npts; k = k + 3)
+    if (!this->FastSlam)
     {
-      // else indicate that the point is a blob
-      if (this->Label[scanLine][index] == 0)
+      for (int k = 0; k < Npts; ++k)
       {
-        this->Label[scanLine][k] = 3;
+        blobIndex.push_back(std::pair<int, int>(scanLine, k));
       }
-      blobIndex.push_back(std::pair<int, int>(scanLine, k));
     }
 
     // Planes
@@ -2377,26 +2359,9 @@ void vtkSlam::SetKeyPointsLabels(vtkSmartPointer<vtkPolyData> input)
     this->FarestKeypointDist = std::max(this->FarestKeypointDist, static_cast<double>(std::sqrt(std::pow(p.x, 2) + std::pow(p.y, 2) + std::pow(p.z, 2))));
   }
 
-  if (this->FastSlam)
-  {
-    this->MappingPlanarsPoints = this->CurrentPlanarsPoints;
-  }
-  else
-  {
-    // Apply a voxel grid filter on the Dense planars points
-    pcl::VoxelGrid<Point> downSizeFilter;
-    pcl::PointCloud<Point> tempCloud;
-    downSizeFilter.setInputCloud(this->DensePlanarsPoints);
-    downSizeFilter.setLeafSize(0.1, 0.1, 0.1);
-    downSizeFilter.filter(tempCloud);
-
-    *this->MappingPlanarsPoints += tempCloud;
-  }
-
   std::cout << "Extracted : " << this->CurrentEdgesPoints->size() << " : edges points" << std::endl;
   std::cout << "Extracted : " << this->CurrentPlanarsPoints->size() << " : planars points" << std::endl;
   std::cout << "Extracted : " << this->CurrentBlobsPoints->size() << " : Blobs points" << std::endl;
-  std::cout << "Extracted : " << this->MappingPlanarsPoints->size() << " : mapping planars points" << std::endl;
 }
 
 //-----------------------------------------------------------------------------
@@ -2474,18 +2439,6 @@ void vtkSlam::TransformCurrentKeypointsToEnd()
     currentPoint = this->CurrentPlanarsPoints->points[k];
     this->TransformToEnd(currentPoint, transformedPoint, this->Trelative);
     this->CurrentPlanarsPoints->points[k] = transformedPoint;
-  }
-  // if fast slam is set to true, the mapping planars keypoints
-  // are the same than the ego motion one and have already been
-  // transformed
-  if (!this->FastSlam)
-  {
-    for (unsigned int k = 0; k < this->MappingPlanarsPoints->size(); ++k)
-    {
-      currentPoint = this->MappingPlanarsPoints->points[k];
-      this->TransformToEnd(currentPoint, transformedPoint, this->Trelative);
-      this->MappingPlanarsPoints->points[k] = transformedPoint;
-    }
   }
 }
 
@@ -3187,12 +3140,12 @@ void vtkSlam::ComputeBlobsDistanceParametersAccurate(pcl::KdTreeFLANN<Point>::Pt
   if (step == "egoMotion")
   {
     requiredNearest = 5;
-    maxDist = 4.5;
+    maxDist = 6.5;
   }
   else if (step == "mapping")
   {
     requiredNearest = 7;
-    maxDist = 2.0;
+    maxDist = 5.0;
   }
   else
   {
@@ -3242,50 +3195,44 @@ void vtkSlam::ComputeBlobsDistanceParametersAccurate(pcl::KdTreeFLANN<Point>::Pt
   Eigen::Matrix<double, 3, 1> mean = data.colwise().mean();
   Eigen::MatrixXd centered = data.rowwise() - mean.transpose();
   Eigen::MatrixXd cov = centered.transpose() * centered;
-  Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eig(cov);
 
-  // Eigen values
-  Eigen::MatrixXd D(1,3);
-  D = eig.eigenvalues();
+  // Sigma is the inverse of the covariance
+  // Matrix encoding the mahalanobis distance
+  if (std::abs(cov.determinant()) < 1e-6)
+  {
+    return;
+  }
+  Eigen::MatrixXd sigma = cov.inverse();
+  Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eig(sigma);
 
-  // A is the inverse of the covariance
-  // Matrix, encode the mahalanobis distance
-  A = this->I3;
+  // rescale the variance covariance matrix to preserve the
+  // shape of the mahalanobis distance but removing the
+  // variance values scaling
+  Eigen::MatrixXd D = eig.eigenvalues();
+  Eigen::MatrixXd U = eig.eigenvectors();
+  D = D / D(2);
+  Eigen::Matrix<double, 3, 3> diagD = Eigen::Matrix<double, 3, 3>::Zero();
+  diagD(0, 0) = D(0); diagD(1, 1) = D(1); diagD(2, 2) = D(2);
+  A = U * diagD * U.transpose();
+
+  if (!vtkMath::IsFinite(A.determinant()))
+  {
+    return;
+  }
 
   // Coefficient the distance
   // using the distance between the point
   // and its matching blob; The aim is to prevent
   // wrong matching to pull the point cloud in the
   // bad direction
-  double s = 1.0 - nearestDist[requiredNearest - 1] / maxDist;
-
-  if (step == "egoMotion")
-  {
-    double r = std::tan(2.0 / 180.0 * vtkMath::Pi()) * (P0.norm() + mean.norm()) / 2.0;
-    // store the distance parameters values
-    this->Avalues.push_back(A);
-    this->Pvalues.push_back(mean);
-    this->Xvalues.push_back(P0);
-    this->OutlierDistScale.push_back(s);
-    this->RadiusIncertitude.push_back(r);
-  }
-
-  // Check that the region is a blob
-  // i.e check the sphericity by computing
-  // the ratio between the smallest and biggest
-  // eigen value
-  double sphericity = D(0) / D(2);
-  if (sphericity < this->SphericityThreshold)
-  {
-    return;
-  }
+  double s = 1.0;//1.0 - nearestDist[requiredNearest - 1] / maxDist;
 
   // store the distance parameters values
   this->Avalues.push_back(A);
   this->Pvalues.push_back(mean);
   this->Xvalues.push_back(P0);
   this->OutlierDistScale.push_back(s);
-  this->RadiusIncertitude.push_back(1.0 / 10.0 * this->IncertitudeCoef * std::sqrt(D(2)));
+  this->RadiusIncertitude.push_back(0.0);
 }
 
 //-----------------------------------------------------------------------------
@@ -3668,7 +3615,7 @@ void vtkSlam::ComputeEgoMotion()
       }
 
       // loop over blobs
-      if (this->UseBlob)
+      if (!this->FastSlam)
       {
         for (unsigned int blobIndex = 0; blobIndex < this->CurrentBlobsPoints->size(); ++blobIndex)
         {
@@ -3677,7 +3624,7 @@ void vtkSlam::ComputeEgoMotion()
           // Find the closest correspondence blob of the current blob point
           if (this->CurrentBlobsPoints->size() > 2)
           {
-            this->ComputeBlobsDistanceParametersAccurate(kdtreePreviousBlobs, R, dT, currentPoint, "egoMotion");
+            //this->ComputeBlobsDistanceParametersAccurate(kdtreePreviousBlobs, R, dT, currentPoint, "egoMotion");
             usedBlobs = this->Xvalues.size() - usedPlanes - usedEdges;
           }
         }
@@ -3686,7 +3633,7 @@ void vtkSlam::ComputeEgoMotion()
 
     // Skip this frame if there is too few geometric
     // keypoints matched
-    if ((usedPlanes + usedEdges) < 20)
+    if ((usedPlanes + usedEdges + usedBlobs) < 20)
     {
       vtkGenericWarningMacro("Too few geometric features, frame skipped");
       break;
@@ -3885,11 +3832,11 @@ void vtkSlam::Mapping()
       }
 
       // loop over surfaces
-      for (unsigned int planarIndex = 0; planarIndex < this->MappingPlanarsPoints->size(); ++planarIndex)
+      for (unsigned int planarIndex = 0; planarIndex < this->CurrentPlanarsPoints->size(); ++planarIndex)
       {
-        currentPoint = this->MappingPlanarsPoints->points[planarIndex];
+        currentPoint = this->CurrentPlanarsPoints->points[planarIndex];
 
-        if (this->MappingPlanarsPoints->size() > 0 && subPlanarPointsLocalMap->size() > 10)
+        if (this->CurrentPlanarsPoints->size() > 0 && subPlanarPointsLocalMap->size() > 10)
         {
           // Find the closest correspondence plane of the current planar point
           this->ComputePlaneDistanceParametersAccurate(kdtreePlanes, R1, T1, currentPoint, "mapping");
@@ -3897,7 +3844,7 @@ void vtkSlam::Mapping()
         }
       }
 
-      if (this->UseBlob)
+      if (!this->FastSlam)
       {
         // loop over blobs
         for (unsigned int blobIndex = 0; blobIndex < this->CurrentBlobsPoints->size(); ++blobIndex)
@@ -3913,9 +3860,10 @@ void vtkSlam::Mapping()
 
     // Skip this frame if there is too few geometric
     // keypoints matched
-    if ((usedPlanes + usedEdges) < 20)
+    if ((usedPlanes + usedEdges + usedBlobs) < 20)
     {
       vtkGenericWarningMacro("Too few geometric features, loop breaked");
+      std::cout << "planes: " << usedPlanes << " edges: " << usedEdges << " Blobs: " << usedBlobs << std::endl;
       break;
     }
 
@@ -4078,7 +4026,7 @@ void vtkSlam::Mapping()
     }
     std::cout << "After motion model: " << this->Tworld.transpose() << std::endl;
   }
-
+  std::cout << "End L-M loop" << std::endl;
   // Add the current computed transform to the list
   this->TworldList.push_back(this->Tworld);
 
@@ -4113,9 +4061,9 @@ void vtkSlam::UpdateMapsUsingTworld()
 
   // Update PlanarMap
   pcl::PointCloud<Point>::Ptr MapPlanarsPoints(new pcl::PointCloud<Point>());
-  for (unsigned int i = 0; i < this->MappingPlanarsPoints->size(); ++i)
+  for (unsigned int i = 0; i < this->CurrentPlanarsPoints->size(); ++i)
   {
-    MapPlanarsPoints->push_back(this->MappingPlanarsPoints->at(i));
+    MapPlanarsPoints->push_back(this->CurrentPlanarsPoints->at(i));
     this->TransformToWorld(MapPlanarsPoints->at(i), this->Tworld);
   }
   PlanarPointsLocalMap->Roll(this->Tworld);

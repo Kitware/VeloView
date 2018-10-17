@@ -428,9 +428,6 @@ private:
   pcl::PointCloud<Point>::Ptr PreviousEdgesPoints;
   pcl::PointCloud<Point>::Ptr PreviousPlanarsPoints;
   pcl::PointCloud<Point>::Ptr PreviousBlobsPoints;
-  pcl::PointCloud<Point>::Ptr DensePlanarsPoints;
-  pcl::PointCloud<Point>::Ptr MappingPlanarsPoints;
-  pcl::PointCloud<Point>::Ptr MappingBlobsPoints;
 
   // keypoints local map
   RollingGrid* EdgesPointsLocalMap;
