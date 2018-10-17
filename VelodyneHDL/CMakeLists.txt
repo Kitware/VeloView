@@ -31,6 +31,9 @@ find_package(PCL REQUIRED)
 include_directories(${PCL_INCLUDE_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 
+#CERES plugin
+find_package(CERES REQUIRED)
+
 set(LASNAME las)
 if(WIN32)
   set(LASNAME liblas)
@@ -191,6 +194,7 @@ list(APPEND deps
   ${liblas_LIBRARY}
   ${ALL_BOOST_LIBRARIES}
   ${PCL_LIBRARIES}
+  ${CERES_LIBRARIES}
   )
 
 

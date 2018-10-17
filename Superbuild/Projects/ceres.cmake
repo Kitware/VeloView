@@ -1,0 +1,9 @@
+add_external_project(ceres
+  DEPENDS eigen glog
+  
+  CMAKE_ARGS
+  -DCMAKE_CXX_STANDARD=11
+  -DCMAKE_CXX_STANDARD_REQUIRED=true
+  -DEIGEN_INCLUDE_DIR=<INSTALL_DIR>/include/eigen3
+  -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>/ceres
+  )

@@ -137,6 +137,13 @@ if (pcl_ENABLED)
     include(qhull)
 endif()
 
+# If ceres has been enabled, include glog
+include(ceres)
+if (ceres_ENABLED)
+    message("CERES enabled, you will have to enable glog and eigen")
+    include(glog)
+endif()
+
 #Veloview
 include(qt)
 include(python)

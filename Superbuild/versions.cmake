@@ -60,9 +60,9 @@ add_revision(boost
   URL_MD5 dbc07ab0254df3dda6300fd737b3f264)
 
 add_revision(eigen
-  URL http://vtk.org/files/support/eigen-3.1.2.tar.gz
-  URL_MD5 bb639388192cb80f1ee797f5dbdbe74f)
-  
+  GIT_REPOSITORY https://github.com/eigenteam/eigen-git-mirror.git
+  GIT_TAG 3.2.0)
+
 add_revision(zlib
   URL "http://www.paraview.org/files/dependencies/zlib-1.2.7.tar.gz"
   URL_MD5 60df6a37c56e7c1366cca812414f7b85)
@@ -71,6 +71,14 @@ add_revision(zlib
 add_revision(png
   URL "http://paraview.org/files/dependencies/libpng-1.4.8.tar.gz"
   URL_MD5 49c6e05be5fa88ed815945d7ca7d4aa9)
+
+add_revision(ceres
+  GIT_REPOSITORY https://ceres-solver.googlesource.com/ceres-solver
+  GIT_TAG 1.14.0)
+
+add_revision(glog
+  GIT_REPOSITORY https://github.com/google/glog.git
+  GIT_TAG 8d7a107d68c127f3f494bb7807b796c8c5a97a82)
 
 add_revision(pcl
   GIT_REPOSITORY git://github.com/gcasey/pcl.git
