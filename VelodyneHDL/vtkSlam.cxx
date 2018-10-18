@@ -977,8 +977,6 @@ void vtkSlam::PrintParameters()
   std::cout << "EdgeSinAngleThreshold: " << this->EdgeSinAngleThreshold << std::endl;
   std::cout << "PlaneSinAngleThreshold: " << this->PlaneSinAngleThreshold << std::endl;
   std::cout << "EdgeDepthGapThreshold: " << this->EdgeDepthGapThreshold << std::endl;
-  std::cout << "Lambda0: " << this->Lambda0 << std::endl;
-  std::cout << "LambdaRatio: " << this->LambdaRatio << std::endl;
   std::cout << "EgoMotionLineDistanceNbrNeighbors: " << this->EgoMotionLineDistanceNbrNeighbors << std::endl;
   std::cout << "EgoMotionLineDistancefactor: " << this->EgoMotionLineDistancefactor << std::endl;
   std::cout << "MappingMaxLineDistance: " << this->MappingMaxLineDistance << std::endl;
@@ -992,6 +990,7 @@ void vtkSlam::PrintParameters()
   std::cout << "MappingMinimumLineNeighborRejection: " << this->MappingMinimumLineNeighborRejection << std::endl;
   std::cout << "MappingLineMaxDistInlier: " << this->MappingLineMaxDistInlier << std::endl;
   std::cout << "Motion Model: " << this->MotionModel << std::endl;
+  std::cout << "LeafSize: " << this->LeafSize << std::endl;
 }
 
 //-----------------------------------------------------------------------------
@@ -1000,8 +999,8 @@ void vtkSlam::ResetAlgorithm()
   google::InitGoogleLogging("Slam_optimisation");
   this->DisplayMode = true; // switch to false to improve speed
   this->NeighborWidth = 3;
-  this->EgoMotionICPMaxIter = 5;
-  this->MappingICPMaxIter = 5;
+  this->EgoMotionICPMaxIter = 3;
+  this->MappingICPMaxIter = 3;
   this->EgoMotionLMMaxIter = 15;
   this->MappingLMMaxIter = 15;
   this->MinDistanceToSensor = 3.0;
@@ -1011,12 +1010,11 @@ void vtkSlam::ResetAlgorithm()
   this->PlaneSinAngleThreshold = 0.5; // 50 degrees
   this->EdgeDepthGapThreshold = 0.02; // meters
   this->Undistortion = false; // should not undistord frame by default
+  this->LeafSize = 0.4;
 
   // Use dense planars point cloud for mapping
   this->FastSlam = true;
   this->MotionModel = 1;
-  this->Lambda0 = 0.1;
-  this->LambdaRatio = 1.5;
   this->KalmanEstimator.ResetKalmanFilter();
 
   // EgoMotion
@@ -1101,7 +1099,7 @@ void vtkSlam::ResetAlgorithm()
   PlanarPointsLocalMap->Set_PointCloud_NbVoxel(nbVoxel);
   BlobsPointsLocalMap->Set_PointCloud_NbVoxel(nbVoxel);
 
-  this->Set_RollingGrid_LeafVoxelFilterSize(0.4);
+  this->Set_RollingGrid_LeafVoxelFilterSize(this->LeafSize);
 
   // Represent the distance that the lidar has made during one sweep
   // if it is moving at a speed of 90 km/h and spinning at a rpm
@@ -1783,7 +1781,6 @@ void vtkSlam::AddFrame(vtkPolyData* newFrame)
   // Current keypoints become previous ones
   this->PreviousEdgesPoints = this->CurrentEdgesPoints;
   this->PreviousPlanarsPoints = this->CurrentPlanarsPoints;
-  this->PreviousBlobsPoints = this->CurrentBlobsPoints;
   this->NbrFrameProcessed++;
 
   // Information
@@ -2354,7 +2351,7 @@ void vtkSlam::SetKeyPointsLabels(vtkSmartPointer<vtkPolyData> input)
     // Blobs Points
     if (!this->FastSlam)
     {
-      for (int k = 0; k < Npts; ++k)
+      for (int k = 0; k < Npts; k = k + 5)
       {
         blobIndex.push_back(std::pair<int, int>(scanLine, k));
       }
@@ -3545,7 +3542,6 @@ void vtkSlam::ComputeEgoMotion()
 
   unsigned int usedEdges = 0;
   unsigned int usedPlanes = 0;
-  unsigned int usedBlobs = 0;
   Point currentPoint, transformedPoint;
 
   // ICP - Levenberg-Marquardt loop:
@@ -3595,25 +3591,9 @@ void vtkSlam::ComputeEgoMotion()
       }
     }
 
-    // loop over blobs
-    if (!this->FastSlam)
-    {
-      for (unsigned int blobIndex = 0; blobIndex < this->CurrentBlobsPoints->size(); ++blobIndex)
-      {
-        currentPoint = this->CurrentBlobsPoints->points[blobIndex];
-
-        // Find the closest correspondence blob of the current blob point
-        if (this->CurrentBlobsPoints->size() > 2)
-        {
-          //this->ComputeBlobsDistanceParametersAccurate(kdtreePreviousBlobs, R, dT, currentPoint, "egoMotion");
-          usedBlobs = this->Xvalues.size() - usedPlanes - usedEdges;
-        }
-      }
-    }
-
     // Skip this frame if there is too few geometric
     // keypoints matched
-    if ((usedPlanes + usedEdges + usedBlobs) < 20)
+    if ((usedPlanes + usedEdges) < 20)
     {
       vtkGenericWarningMacro("Too few geometric features, frame skipped");
       break;
@@ -3653,10 +3633,10 @@ void vtkSlam::ComputeEgoMotion()
   static_cast<vtkDoubleArray*>(this->Trajectory->GetPointData()->GetArray("EgoMotion: final cost function"))->InsertNextValue(0);
   static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("EgoMotion: edges used"))->InsertNextValue(usedEdges);
   static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("EgoMotion: planes used"))->InsertNextValue(usedPlanes);
-  static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("EgoMotion: blobs used"))->InsertNextValue(usedBlobs);
+  static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("EgoMotion: blobs used"))->InsertNextValue(0.0);
   static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("EgoMotion: total keypoints used"))->InsertNextValue(this->Xvalues.size());
   std::cout << "used keypoints : " << this->Xvalues.size() << std::endl;
-  std::cout << "edges : " << usedEdges << " planes : " << usedPlanes << " blobs : " << usedBlobs << std::endl;
+  std::cout << "edges : " << usedEdges << " planes : " << usedPlanes << std::endl;
 
   // Integrate the relative motion
   // to the world transformation
@@ -3693,15 +3673,19 @@ void vtkSlam::Mapping()
 
   pcl::PointCloud<Point>::Ptr subEdgesPointsLocalMap = this->EdgesPointsLocalMap->Get(this->Tworld);
   pcl::PointCloud<Point>::Ptr subPlanarPointsLocalMap = this->PlanarPointsLocalMap->Get(this->Tworld);
-  pcl::PointCloud<Point>::Ptr subBlobPointsLocalMap = this->BlobsPointsLocalMap->Get(this->Tworld);
   std::cout << "Required voxels computed using max range is: " << nbrRequiredVoxels << std::endl;
   std::cout << "edges map : " << subEdgesPointsLocalMap->points.size() << std::endl;
   std::cout << "flat map : " << subPlanarPointsLocalMap->points.size() << std::endl;
-  std::cout << "blobs map : " << subBlobPointsLocalMap->points.size() << std::endl;
 
   kdtreeEdges->setInputCloud(subEdgesPointsLocalMap);
   kdtreePlanes->setInputCloud(subPlanarPointsLocalMap);
-  kdtreeBlobs->setInputCloud(subBlobPointsLocalMap);
+
+  if (!this->FastSlam)
+  {
+    pcl::PointCloud<Point>::Ptr subBlobPointsLocalMap = this->BlobsPointsLocalMap->Get(this->Tworld);
+    kdtreeBlobs->setInputCloud(subBlobPointsLocalMap);
+    std::cout << "blobs map : " << subBlobPointsLocalMap->points.size() << std::endl;
+  }
 
   unsigned int usedEdges = 0;
   unsigned int usedPlanes = 0;
@@ -3767,7 +3751,7 @@ void vtkSlam::Mapping()
       }
     }
 
-    if (!this->FastSlam)
+    if (!this->FastSlam && this->NbrFrameProcessed > 10)
     {
       // loop over blobs
       for (unsigned int blobIndex = 0; blobIndex < this->CurrentBlobsPoints->size(); ++blobIndex)
@@ -3950,15 +3934,18 @@ void vtkSlam::UpdateMapsUsingTworld()
   PlanarPointsLocalMap->Roll(this->Tworld);
   PlanarPointsLocalMap->Add(MapPlanarsPoints);
 
-  // Update BlobsMap
-  pcl::PointCloud<Point>::Ptr MapBlobsPoints(new pcl::PointCloud<Point>());
-  for (unsigned int i = 0; i < this->CurrentBlobsPoints->size(); ++i)
+  // Update BlobsMap. The all current frame is added
+  if (!this->FastSlam)
   {
-    MapBlobsPoints->push_back(this->CurrentBlobsPoints->at(i));
-    this->TransformToWorld(MapBlobsPoints->at(i), this->Tworld);
+    pcl::PointCloud<Point>::Ptr MapBlobsPoints(new pcl::PointCloud<Point>());
+    for (unsigned int i = 0; i < this->pclCurrentFrame->size(); ++i)
+    {
+      MapBlobsPoints->push_back(this->pclCurrentFrame->at(i));
+      this->TransformToWorld(MapBlobsPoints->at(i), this->Tworld);
+    }
+    BlobsPointsLocalMap->Roll(this->Tworld);
+    BlobsPointsLocalMap->Add(MapBlobsPoints);
   }
-  BlobsPointsLocalMap->Roll(this->Tworld);
-  BlobsPointsLocalMap->Add(MapBlobsPoints);
 }
 
 //-----------------------------------------------------------------------------
@@ -4263,7 +4250,7 @@ void vtkSlam::Set_RollingGrid_LeafVoxelFilterSize(const double size)
 {
   this->EdgesPointsLocalMap->Set_LeafVoxelFilterSize(0.75 * size);
   this->PlanarPointsLocalMap->Set_LeafVoxelFilterSize(size);
-  this->BlobsPointsLocalMap->Set_LeafVoxelFilterSize(size);
+  this->BlobsPointsLocalMap->Set_LeafVoxelFilterSize(0.75 * size);
 }
 
 //-----------------------------------------------------------------------------
@@ -4373,6 +4360,13 @@ void vtkSlam::SetUndistortion(bool input)
     this->InternalInterp = vtkSmartPointer<vtkVelodyneTransformInterpolator>::New();
     this->InternalInterp->SetInterpolationTypeToNearestLowBounded();
   }
+}
+
+//-----------------------------------------------------------------------------
+void vtkSlam::SetLeafSize(double argInput)
+{
+  this->LeafSize = argInput;
+  this->Set_RollingGrid_LeafVoxelFilterSize(this->LeafSize);
 }
 
 //-----------------------------------------------------------------------------

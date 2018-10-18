@@ -60,10 +60,9 @@ def configure():
 
     # General
     slam.GetClientSideObject().Set_RollingGrid_Grid_NbVoxel([slamDialog.NbVoxel,slamDialog.NbVoxel,slamDialog.NbVoxel])
+    slam.GetClientSideObject().SetLeafSize(slamDialog.LeafSize)
     slam.GetClientSideObject().Set_AngleResolution(slamDialog.AngleResolution * vtk.vtkMath.Pi() / 180)
     slam.GetClientSideObject().Set_MaxDistanceForICPMatching(slamDialog.MaxDistanceForICPMatching)
-    slam.GetClientSideObject().Set_Lambda0(slamDialog.Lambda0)
-    slam.GetClientSideObject().Set_LambdaRatio(slamDialog.LambdaRatio)
     slam.GetClientSideObject().Set_FastSlam(slamDialog.FastSlam)
     slam.GetClientSideObject().SetMotionModel(motionModel)
     slam.GetClientSideObject().SetUndistortion(slamDialog.Undistortion)

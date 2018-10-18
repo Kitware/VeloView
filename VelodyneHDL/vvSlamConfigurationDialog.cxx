@@ -106,15 +106,9 @@ double vvSlamConfigurationDialog::MaxDistanceForICPMatching()
 }
 
 //-----------------------------------------------------------------------------
-double vvSlamConfigurationDialog::Lambda0()
+double vvSlamConfigurationDialog::LeafSize()
 {
-  return this->ui->Lambda0->value();
-}
-
-//-----------------------------------------------------------------------------
-double vvSlamConfigurationDialog::LambdaRatio()
-{
-  return this->ui->LambdaRatio->value();
+  return this->ui->LeafSize->value();
 }
 
 //-----------------------------------------------------------------------------

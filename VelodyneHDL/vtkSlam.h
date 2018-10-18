@@ -241,12 +241,6 @@ public:
   slamGetMacro(,MaxDistanceForICPMatching, double)
   slamSetMacro(,MaxDistanceForICPMatching, double)
 
-  slamGetMacro(,Lambda0, double)
-  slamSetMacro(,Lambda0, double)
-
-  slamGetMacro(,LambdaRatio, double)
-  slamSetMacro(,LambdaRatio, double)
-
   slamGetMacro(,FastSlam, bool)
   slamSetMacro(,FastSlam, bool)
 
@@ -254,6 +248,9 @@ public:
   slamGetMacro(,Undistortion, bool)
   // set the motion model
   void SetMotionModel(int input);
+
+  // set LeafSize
+  void SetLeafSize(double argInput);
 
   void SetMaxVelocityAcceleration(double acc);
   void SetMaxAngleAcceleration(double acc);
@@ -420,6 +417,10 @@ private:
   // the computation speed will decrease
   bool Undistortion;
 
+  // Size of the leafs in the voxel grid filter
+  // used by the local maps
+  double LeafSize;
+
   // keypoints extracted
   pcl::PointCloud<Point>::Ptr CurrentEdgesPoints;
   pcl::PointCloud<Point>::Ptr CurrentPlanarsPoints;
@@ -543,14 +544,6 @@ private:
   // Coef to apply to the incertitude
   // radius of the blob neighborhood
   double IncertitudeCoef;
-
-  // Levenberg-Marquardt initial value of lambda
-  double Lambda0;
-
-  // Levenberg-Marquardt increase or decrease
-  // lambda factor ratio to switch between
-  // Gauss-Newton or gradient descent algorithm
-  double LambdaRatio;
 
   // The max distance allowed between two frames
   // If the distance is over this limit, the ICP

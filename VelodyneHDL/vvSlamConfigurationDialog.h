@@ -36,10 +36,9 @@ class VelodyneHDLPlugin_EXPORT vvSlamConfigurationDialog : public QDialog
   Q_PROPERTY(int frameStop READ frameStop)
   // General
   Q_PROPERTY(int NbVoxel READ NbVoxel)
+  Q_PROPERTY(double LeafSize READ LeafSize)
   Q_PROPERTY(double AngleResolution READ AngleResolution)
   Q_PROPERTY(double MaxDistanceForICPMatching READ MaxDistanceForICPMatching)
-  Q_PROPERTY(double Lambda0 READ Lambda0)
-  Q_PROPERTY(double LambdaRatio READ LambdaRatio)
   Q_PROPERTY(bool FastSlam READ FastSlam)
   Q_PROPERTY(bool MotionModel READ MotionModel)
   Q_PROPERTY(bool MotionModelAndGPS READ MotionModelAndGPS)
@@ -89,10 +88,9 @@ public:
 
   // General
   int NbVoxel();
+  double LeafSize();
   double AngleResolution();
   double MaxDistanceForICPMatching();
-  double Lambda0();
-  double LambdaRatio();
   bool FastSlam();
   bool MotionModel();
   bool MotionModelAndGPS();

@@ -50,7 +50,7 @@
          <item row="1" column="1">
           <widget class="QSpinBox" name="Mapping_ICPMaxIter">
            <property name="value">
-            <number>5</number>
+            <number>3</number>
            </property>
           </widget>
          </item>
@@ -546,7 +546,7 @@
          <item row="1" column="2">
           <widget class="QSpinBox" name="EgoMotion_ICPMaxIter">
            <property name="value">
-            <number>5</number>
+            <number>3</number>
            </property>
           </widget>
          </item>
@@ -569,7 +569,7 @@
            </property>
           </widget>
          </item>
-         <item row="1" column="1">
+         <item row="2" column="1">
           <widget class="QDoubleSpinBox" name="AngleResolution">
            <property name="value">
             <double>0.400000000000000</double>
@@ -583,55 +583,38 @@
            </property>
           </widget>
          </item>
-         <item row="3" column="0">
-          <widget class="QLabel" name="label_30">
-           <property name="text">
-            <string>L-M lamba 0</string>
-           </property>
-          </widget>
-         </item>
-         <item row="2" column="1">
+         <item row="3" column="1">
           <widget class="QDoubleSpinBox" name="MaxDistanceICP">
            <property name="value">
             <double>20.000000000000000</double>
            </property>
           </widget>
          </item>
-         <item row="3" column="1">
-          <widget class="QDoubleSpinBox" name="Lambda0">
-           <property name="singleStep">
-            <double>0.100000000000000</double>
-           </property>
-           <property name="value">
-            <double>0.100000000000000</double>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="0">
+         <item row="2" column="0">
           <widget class="QLabel" name="label_3">
            <property name="text">
             <string>Angle Resolution</string>
            </property>
           </widget>
          </item>
-         <item row="2" column="0">
+         <item row="3" column="0">
           <widget class="QLabel" name="label_29">
            <property name="text">
             <string>Max distance ICP</string>
            </property>
           </widget>
          </item>
-         <item row="4" column="0">
-          <widget class="QLabel" name="label_31">
+         <item row="1" column="0">
+          <widget class="QLabel" name="label_30">
            <property name="text">
-            <string>L-M Lambda ratio</string>
+            <string>Voxel Leaf Size </string>
            </property>
           </widget>
          </item>
-         <item row="4" column="1">
-          <widget class="QDoubleSpinBox" name="LambdaRatio">
+         <item row="1" column="1">
+          <widget class="QDoubleSpinBox" name="LeafSize">
            <property name="value">
-            <double>1.500000000000000</double>
+            <double>0.400000000000000</double>
            </property>
           </widget>
          </item>
