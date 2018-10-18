@@ -17,7 +17,7 @@
 // limitations under the License.
 //=========================================================================
 
-// This slam algorithm is largely inspired by the LOAM algorithm:
+// This slam algorithm is inspired by the LOAM algorithm:
 // J. Zhang and S. Singh. LOAM: Lidar Odometry and Mapping in Real-time.
 // Robotics: Science and Systems Conference (RSS). Berkeley, CA, July 2014.
 
@@ -250,9 +250,8 @@ public:
   slamGetMacro(,FastSlam, bool)
   slamSetMacro(,FastSlam, bool)
 
+  void SetUndistortion(bool input);
   slamGetMacro(,Undistortion, bool)
-  slamSetMacro(,Undistortion, bool)
-
   // set the motion model
   void SetMotionModel(int input);
 
@@ -292,11 +291,11 @@ public:
   slamSetMacro(_Keypoint,EdgeDepthGapThreshold, double)
 
   // Get/Set EgoMotion
-  slamGetMacro(,EgoMotionMaxIter, unsigned int)
-  slamSetMacro(,EgoMotionMaxIter, unsigned int)
+  slamGetMacro(,EgoMotionLMMaxIter, unsigned int)
+  slamSetMacro(,EgoMotionLMMaxIter, unsigned int)
 
-  slamGetMacro(,EgoMotionIcpFrequence, unsigned int)
-  slamSetMacro(,EgoMotionIcpFrequence, unsigned int)
+  slamGetMacro(,EgoMotionICPMaxIter, unsigned int)
+  slamSetMacro(,EgoMotionICPMaxIter, unsigned int)
 
   slamGetMacro(,EgoMotionLineDistanceNbrNeighbors, unsigned int)
   slamSetMacro(,EgoMotionLineDistanceNbrNeighbors, unsigned int)
@@ -323,11 +322,11 @@ public:
   slamSetMacro(,EgoMotionMaxPlaneDistance, double)
 
   // Get/Set Mapping
-  slamGetMacro(,MappingMaxIter, unsigned int)
-  slamSetMacro(,MappingMaxIter, unsigned int)
+  slamGetMacro(,MappingLMMaxIter, unsigned int)
+  slamSetMacro(,MappingLMMaxIter, unsigned int)
 
-  slamGetMacro(,MappingIcpFrequence, unsigned int)
-  slamSetMacro(,MappingIcpFrequence, unsigned int)
+  slamGetMacro(,MappingICPMaxIter, unsigned int)
+  slamSetMacro(,MappingICPMaxIter, unsigned int)
 
   slamGetMacro(,MappingLineDistanceNbrNeighbors, unsigned int)
   slamSetMacro(,MappingLineDistanceNbrNeighbors, unsigned int)
@@ -485,21 +484,21 @@ private:
 
   // Maximum number of iteration
   // in the ego motion optimization step
-  unsigned int EgoMotionMaxIter;
+  unsigned int EgoMotionLMMaxIter;
   unsigned int EgoMotionIterMade;
 
   // Maximum number of iteration
   // in the mapping optimization step
-  unsigned int MappingMaxIter;
+  unsigned int MappingLMMaxIter;
   unsigned int MappingIterMade;
 
   // During the Levenberg-Marquardt algoritm
   // keypoints will have to be match with planes
   // and lines of the previous frame. This parameter
-  // indicates how many iteration we want to do before
-  // running the closest-point matching again
-  unsigned int EgoMotionIcpFrequence;
-  unsigned int MappingIcpFrequence;
+  // indicates how many times we want to do the
+  // the ICP matching
+  unsigned int EgoMotionICPMaxIter;
+  unsigned int MappingICPMaxIter;
 
   // When computing the point<->line and point<->plane distance
   // in the ICP, the kNearest edges/planes points of the current
@@ -633,27 +632,6 @@ private:
   // using the map and the keypoints extracted.
   void Mapping();
 
-  // Transform the input point acquired at time t1 to the
-  // initial time t0. So that the deformation induced by
-  // the motion of the sensor will be removed. We use the assumption
-  // of constant angular velocity and velocity.
-  void TransformToStart(Point& pi, Point& pf, Eigen::Matrix<double, 6, 1>& T);
-  void TransformToStart(Eigen::Matrix<double, 3, 1>& Xi, Eigen::Matrix<double, 3, 1>& Xf, double s, Eigen::Matrix<double, 6, 1>& T);
-
-  // Transform the input point acquired at time t1 to the
-  // final time tf. So that the deformation induced by
-  // the motion of the sensor will be removed. We use the assumption
-  // of constant angular velocity and velocity.
-  void TransformToEnd(Point& pi, Point& pf, Eigen::Matrix<double, 6, 1>& T);
-
-  // All points of the current frame has been
-  // acquired at a different timestamp. The goal
-  // is to express them in a same referential
-  // corresponding to the referential the end of the sweep.
-  // This can be done using estimated egomotion and assuming
-  // a constant angular velocity and velocity during a sweep
-  void TransformCurrentKeypointsToEnd();
-
   // Transform the input point already undistort into Tworld.
   void TransformToWorld(Point& p, Eigen::Matrix<double, 6, 1>& T);
 
@@ -709,6 +687,12 @@ private:
                                         unsigned int nearestSearch, pcl::KdTreeFLANN<Point>::Ptr kdtreePreviousEdges, Point p);
   void GetMappingPlaneSpecificNeigbbor();
 
+  // All points of the current frame has been
+  // acquired at a different timestamp. The goal
+  // is to express them in a same referential
+  // This can be done using estimated egomotion and assuming
+  // a constant angular velocity and velocity during a sweep
+
   // Express the provided point into the referential of the sensor
   // at time t0. The referential at time of acquisition t is estimated
   // using the constant velocity hypothesis and the provided sensor
@@ -738,9 +722,6 @@ private:
   // it is used if a mapping step is skipped for example
   void FillMappingInfoArrayWithDefaultValues();
   void FillEgoMotionInfoArrayWithDefaultValues();
-
-  // Predict Tworld using last points of the trajectory
-  Eigen::Matrix<double, 6, 1> PredictTWorld();
 
   // Update the maps by populate the rolling grids
   // using the current keypoints expressed in the

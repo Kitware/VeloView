@@ -69,6 +69,53 @@
 #include <glog/logging.h>
 
 //-----------------------------------------------------------------------------
+Eigen::Matrix<double, 3, 3> GetRotationMatrix(Eigen::Matrix<double, 3, 1> T)
+{
+  // Rotation and translation relative
+  Eigen::Matrix<double, 3, 3> Rx, Ry, Rz, R;
+  // rotation around X-axis
+  Rx << 1,         0,          0,
+        0, cos(T(0)), -sin(T(0)),
+        0, sin(T(0)),  cos(T(0));
+  // rotation around Y-axis
+  Ry <<  cos(T(1)), 0, sin(T(1)),
+        0,          1,         0,
+        -sin(T(1)), 0, cos(T(1));
+  // rotation around Z-axis
+  Rz << cos(T(2)), -sin(T(2)), 0,
+        sin(T(2)),  cos(T(2)), 0,
+                0,          0, 1;
+
+  // full rotation
+  R = Rz * Ry * Rx;
+  return R;
+}
+
+//-----------------------------------------------------------------------------
+template <typename T>
+Eigen::Matrix<T, 3, 3> GetRotationMatrixT(Eigen::Matrix<T, 3, 1> T)
+{
+  // Rotation and translation relative
+  Eigen::Matrix<T, 3, 3> Rx, Ry, Rz, R;
+  // rotation around X-axis
+  Rx << 1,         0,          0,
+        0, ceres::cos(T(0)), -ceres::sin(T(0)),
+        0, ceres::sin(T(0)),  ceres::cos(T(0));
+  // rotation around Y-axis
+  Ry <<  ceres::cos(T(1)), 0, ceres::sin(T(1)),
+        0,          1,         0,
+        -ceres::sin(T(1)), 0, ceres::cos(T(1));
+  // rotation around Z-axis
+  Rz << ceres::cos(T(2)), -ceres::sin(T(2)), 0,
+        ceres::sin(T(2)),  ceres::cos(T(2)), 0,
+                0,          0, 1;
+
+  // full rotation
+  R = Rz * Ry * Rx;
+  return R;
+}
+
+//-----------------------------------------------------------------------------
 struct AffineIsometryResidual
 {
 public:
@@ -86,15 +133,29 @@ public:
                   const T* const tx, const T* const ty, const T* const tz,
                   T* residual) const
   {
-    // store sin / cos values
+    // Convert internal double matrix
+    // to a Jet matrix for auto diff calculous
+    Eigen::Matrix<T, 3, 3> Ac;
+    for (int i = 0; i < 3; ++i)
+      for (int j = 0; j < 3; ++j)
+        Ac(i, j) = T(this->A(i, j));
+
+    // store sin / cos values for this angle
     T crx = ceres::cos(rx[0]); T srx = ceres::sin(rx[0]);
     T cry = ceres::cos(ry[0]); T sry = ceres::sin(ry[0]);
     T crz = ceres::cos(rz[0]); T srz = ceres::sin(rz[0]);
+
+    // Compute Y = R(theta) * X + T - C
     T Yx = cry*crz*T(X(0)) + (srx*sry*crz-crx*srz)*T(X(1)) + (crx*sry*crz+srx*srz)*T(X(2)) + tx[0] - T(C(0));
     T Yy = cry*srz*T(X(0)) + (srx*sry*srz+crx*crz)*T(X(1)) + (crx*sry*srz-srx*crz)*T(X(2)) + ty[0] - T(C(1));
     T Yz = -sry*T(X(0)) + srx*cry*T(X(1)) + crx*cry*T(X(2)) + tz[0] - T(C(2));
 
-    residual[0] = ceres::sqrt(ceres::pow(Yx, 2) + ceres::pow(Yy, 2) + ceres::pow(Yz, 2));
+    // Compute final residual value which is:
+    // Ht * A * H with H = R(theta)X + T
+    Eigen::Matrix<T, 3, 1> Y;
+    Y << Yx, Yy, Yz;
+    residual[0] = ceres::sqrt((Y.transpose() * Ac * Y)(0));
+
     return true;
   }
 
@@ -179,29 +240,6 @@ void AddTransform(vtkSmartPointer<vtkVelodyneTransformInterpolator> interp, std:
     interp->AddTransform(time, VTKTransform.GetPointer());
     interp->Modified();
   }
-}
-
-//-----------------------------------------------------------------------------
-Eigen::Matrix<double, 3, 3> GetRotationMatrix(Eigen::Matrix<double, 3, 1> T)
-{
-  // Rotation and translation relative
-  Eigen::Matrix<double, 3, 3> Rx, Ry, Rz, R;
-  // rotation around X-axis
-  Rx << 1,         0,          0,
-        0, cos(T(0)), -sin(T(0)),
-        0, sin(T(0)),  cos(T(0));
-  // rotation around Y-axis
-  Ry <<  cos(T(1)), 0, sin(T(1)),
-        0,          1,         0,
-        -sin(T(1)), 0, cos(T(1));
-  // rotation around Z-axis
-  Rz << cos(T(2)), -sin(T(2)), 0,
-        sin(T(2)),  cos(T(2)), 0,
-                0,          0, 1;
-
-  // full rotation
-  R = Rz * Ry * Rx;
-  return R;
 }
 
 //-----------------------------------------------------------------------------
@@ -801,7 +839,7 @@ void vtkSensorTransformFusion::RegisterSlamOnGps(vtkVelodyneTransformInterpolato
   for (unsigned int k = 0; k < slamT.size(); ++k)
   {
     Eigen::Matrix<double, 3, 3> Id = Eigen::Matrix<double, 3, 3>::Identity();
-    ceres::CostFunction* cost_function = new ceres::AutoDiffCostFunction<AffineIsometryResidual, 1, 1, 1, 1, 1, 1, 1>(new AffineIsometryResidual(Id, slamT[k], gpsT[k]));
+    ceres::CostFunction* cost_function = new ceres::AutoDiffCostFunction<AffineIsometryResidual, 1, 1, 1, 1, 1, 1, 1>(new AffineIsometryResidual(Id, gpsT[k], slamT[k]));
     problem.AddResidualBlock(cost_function, NULL, &anglesEstimated(0), &anglesEstimated(1), &anglesEstimated(2), &transEstimated(0), &transEstimated(1), &transEstimated(2));
   }
 

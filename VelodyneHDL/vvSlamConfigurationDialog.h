@@ -1,3 +1,22 @@
+//=========================================================================
+//
+// Copyright 2018 Kitware, Inc.
+// Author: Guilbert Pierre (spguilbert@gmail.com)
+// Data: 03-27-2018
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//=========================================================================
+
 #ifndef VVSLAMCONFIGURATIONDIALOG_H
 #define VVSLAMCONFIGURATIONDIALOG_H
 
@@ -35,8 +54,8 @@ class VelodyneHDLPlugin_EXPORT vvSlamConfigurationDialog : public QDialog
   Q_PROPERTY(double Keypoint_PlaneSinAngleThreshold READ Keypoint_PlaneSinAngleThreshold)
   Q_PROPERTY(double Keypoint_EdgeDepthGapThreshold READ Keypoint_EdgeDepthGapThreshold)
   //Egomotion
-  Q_PROPERTY(int EgoMotion_MaxIter READ EgoMotion_MaxIter)
-  Q_PROPERTY(int EgoMotion_IcpFrequence READ EgoMotion_IcpFrequence)
+  Q_PROPERTY(int EgoMotion_LMMaxIter READ EgoMotion_LMMaxIter)
+  Q_PROPERTY(int EgoMotion_ICPMaxIter READ EgoMotion_ICPMaxIter)
   Q_PROPERTY(int EgoMotion_LineDistance_k READ EgoMotion_LineDistance_k)
   Q_PROPERTY(double EgoMotion_LineDistance_factor READ EgoMotion_LineDistance_factor)
   Q_PROPERTY(int EgoMotion_PlaneDistance_k READ EgoMotion_PlaneDistance_k)
@@ -46,8 +65,8 @@ class VelodyneHDLPlugin_EXPORT vvSlamConfigurationDialog : public QDialog
   Q_PROPERTY(double EgoMotion_Plane_Max_Distance READ EgoMotion_Plane_Max_Distance)
   Q_PROPERTY(int EgoMotionMinimalLineNeighborRejection READ EgoMotionMinimalLineNeighborRejection)
   //Mapping
-  Q_PROPERTY(int Mapping_MaxIter READ Mapping_MaxIter)
-  Q_PROPERTY(int Mapping_IcpFrequence READ Mapping_IcpFrequence)
+  Q_PROPERTY(int Mapping_LMMaxIter READ Mapping_LMMaxIter)
+  Q_PROPERTY(int Mapping_ICPMaxIter READ Mapping_ICPMaxIter)
   Q_PROPERTY(int Mapping_LineDistance_k READ Mapping_LineDistance_k)
   Q_PROPERTY(double Mapping_LineDistance_factor READ Mapping_LineDistance_factor)
   Q_PROPERTY(int Mapping_PlaneDistance_k READ Mapping_PlaneDistance_k)
@@ -90,8 +109,8 @@ public:
   double Keypoint_EdgeDepthGapThreshold();
 
   // Egomotion
-  int EgoMotion_MaxIter();
-  int EgoMotion_IcpFrequence();
+  int EgoMotion_LMMaxIter();
+  int EgoMotion_ICPMaxIter();
   int EgoMotion_LineDistance_k();
   int EgoMotionMinimalLineNeighborRejection();
   double EgoMotion_LineDistance_factor();
@@ -102,8 +121,8 @@ public:
   double EgoMotion_Plane_Max_Distance();
 
   // Mapping
-  int Mapping_MaxIter();
-  int Mapping_IcpFrequence();
+  int Mapping_LMMaxIter();
+  int Mapping_ICPMaxIter();
   int Mapping_LineDistance_k();
   int MappingMinimalLineNeighborRejection();
   double Mapping_LineDistance_factor();

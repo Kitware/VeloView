@@ -17,7 +17,7 @@
 // limitations under the License.
 //=========================================================================
 
-// This slam algorithm is largely inspired by the LOAM algorithm:
+// This slam algorithm is inspired by the LOAM algorithm:
 // J. Zhang and S. Singh. LOAM: Lidar Odometry and Mapping in Real-time.
 // Robotics: Science and Systems Conference (RSS). Berkeley, CA, July 2014.
 
@@ -115,11 +115,88 @@
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
 #include <boost/algorithm/string.hpp>
+// CERES
+#include <ceres/ceres.h>
+#include <glog/logging.h>
 
 vtkStandardNewMacro(vtkSlam);
 
 
 namespace {
+//-----------------------------------------------------------------------------
+template <typename T>
+Eigen::Matrix<T, 3, 3> GetRotationMatrixT(Eigen::Matrix<T, 3, 1> T)
+{
+  // Rotation and translation relative
+  Eigen::Matrix<T, 3, 3> Rx, Ry, Rz, R;
+  // rotation around X-axis
+  Rx << 1,         0,          0,
+        0, ceres::cos(T(0)), -ceres::sin(T(0)),
+        0, ceres::sin(T(0)),  ceres::cos(T(0));
+  // rotation around Y-axis
+  Ry <<  ceres::cos(T(1)), 0, ceres::sin(T(1)),
+        0,          1,         0,
+        -ceres::sin(T(1)), 0, ceres::cos(T(1));
+  // rotation around Z-axis
+  Rz << ceres::cos(T(2)), -ceres::sin(T(2)), 0,
+        ceres::sin(T(2)),  ceres::cos(T(2)), 0,
+                0,          0, 1;
+
+  // full rotation
+  R = Rz * Ry * Rx;
+  return R;
+}
+
+//-----------------------------------------------------------------------------
+struct AffineIsometryResidual
+{
+public:
+  AffineIsometryResidual(Eigen::Matrix<double, 3, 3> argA,
+                         Eigen::Matrix<double, 3, 1> argC,
+                         Eigen::Matrix<double, 3, 1> argX)
+  {
+    this->A = argA;
+    this->C = argC;
+    this->X = argX;
+  }
+
+  template <typename T>
+  bool operator()(const T* const rx, const T* const ry, const T* const rz,
+                  const T* const tx, const T* const ty, const T* const tz,
+                  T* residual) const
+  {
+    // Convert internal double matrix
+    // to a Jet matrix for auto diff calculous
+    Eigen::Matrix<T, 3, 3> Ac;
+    for (int i = 0; i < 3; ++i)
+      for (int j = 0; j < 3; ++j)
+        Ac(i, j) = T(this->A(i, j));
+
+    // store sin / cos values for this angle
+    T crx = ceres::cos(rx[0]); T srx = ceres::sin(rx[0]);
+    T cry = ceres::cos(ry[0]); T sry = ceres::sin(ry[0]);
+    T crz = ceres::cos(rz[0]); T srz = ceres::sin(rz[0]);
+
+    // Compute Y = R(theta) * X + T - C
+    T Yx = cry*crz*T(X(0)) + (srx*sry*crz-crx*srz)*T(X(1)) + (crx*sry*crz+srx*srz)*T(X(2)) + tx[0] - T(C(0));
+    T Yy = cry*srz*T(X(0)) + (srx*sry*srz+crx*crz)*T(X(1)) + (crx*sry*srz-srx*crz)*T(X(2)) + ty[0] - T(C(1));
+    T Yz = -sry*T(X(0)) + srx*cry*T(X(1)) + crx*cry*T(X(2)) + tz[0] - T(C(2));
+
+    // Compute final residual value which is:
+    // Ht * A * H with H = R(theta)X + T
+    Eigen::Matrix<T, 3, 1> Y;
+    Y << Yx, Yy, Yz;
+    residual[0] = ceres::sqrt((Y.transpose() * Ac * Y)(0));
+
+    return true;
+  }
+
+private:
+  Eigen::Matrix<double, 3, 3> A;
+  Eigen::Matrix<double, 3, 1> C;
+  Eigen::Matrix<double, 3, 1> X;
+};
+
 class LineFitting
 {
 public:
@@ -891,10 +968,10 @@ void vtkSlam::GetWorldTransform(double* Tworld)
 void vtkSlam::PrintParameters()
 {
   std::cout << "Launching slam with parameters: " << std::endl;
-  std::cout << "EgoMotionMaxIter: " << this->EgoMotionMaxIter << std::endl;
-  std::cout << "MappingMaxIter: " << this->MappingMaxIter << std::endl;
-  std::cout << "MappingIcpFrequence: " << this->MappingIcpFrequence << std::endl;
-  std::cout << "EgoMotionIcpFrequence: " << this->EgoMotionIcpFrequence << std::endl;
+  std::cout << "EgoMotionLMMaxIter: " << this->EgoMotionLMMaxIter << std::endl;
+  std::cout << "MappingLMMaxIter: " << this->MappingLMMaxIter << std::endl;
+  std::cout << "MappingICPMaxIter: " << this->MappingICPMaxIter << std::endl;
+  std::cout << "EgoMotionICPMaxIter: " << this->EgoMotionICPMaxIter << std::endl;
   std::cout << "MaxEdgePerScanLine: " << this->MaxEdgePerScanLine << std::endl;
   std::cout << "MaxPlanarsPerScanLine: " << this->MaxPlanarsPerScanLine << std::endl;
   std::cout << "EdgeSinAngleThreshold: " << this->EdgeSinAngleThreshold << std::endl;
@@ -920,12 +997,13 @@ void vtkSlam::PrintParameters()
 //-----------------------------------------------------------------------------
 void vtkSlam::ResetAlgorithm()
 {
+  google::InitGoogleLogging("Slam_optimisation");
   this->DisplayMode = true; // switch to false to improve speed
-  this->NeighborWidth = 3; // size indicated in Zhang paper
-  this->EgoMotionIcpFrequence = 5;
-  this->MappingIcpFrequence = 5;
-  this->EgoMotionMaxIter = 3 * EgoMotionIcpFrequence; // So that 3 icp will be made
-  this->MappingMaxIter = 3 * MappingIcpFrequence; // So that 3 icp will be made
+  this->NeighborWidth = 3;
+  this->EgoMotionICPMaxIter = 5;
+  this->MappingICPMaxIter = 5;
+  this->EgoMotionLMMaxIter = 15;
+  this->MappingLMMaxIter = 15;
   this->MinDistanceToSensor = 3.0;
   this->MaxEdgePerScanLine = 200;
   this->MaxPlanarsPerScanLine = 200;
@@ -2365,84 +2443,6 @@ void vtkSlam::SetKeyPointsLabels(vtkSmartPointer<vtkPolyData> input)
 }
 
 //-----------------------------------------------------------------------------
-void vtkSlam::TransformToStart(Point& pi, Point& pf, Eigen::Matrix<double, 6, 1>& T)
-{
-  // Remember, the intensity is the relative time
-  // Hence s worth the relTime
-  double s = pi.intensity;
-  Eigen::Matrix<double, 3, 1> P0, P1;
-  P0 << pi.x, pi.y, pi.z;
-  this->TransformToStart(P0, P1, s, T);
-  pf.x = P1(0);
-  pf.y = P1(1);
-  pf.z = P1(2);
-}
-
-//-----------------------------------------------------------------------------
-void vtkSlam::TransformToStart(Eigen::Matrix<double, 3, 1>& Xi, Eigen::Matrix<double, 3, 1>& Xf, double s, Eigen::Matrix<double, 6, 1>& T)
-{
-  // Linearly interpolate the motion estimation depending
-  // on the time at which the point has been acquired. This
-  // interpolation assumes that during a sweep of the lidar the
-  // angular velocity and the velocity are constant. This assumption
-  // is pertinent as long as the sensor do not undergone strong
-  // acceleration
-  Eigen::Matrix<double, 6, 1> sT = s * T;
-
-  Eigen::Matrix<double, 3, 3> R;
-  Eigen::Matrix<double, 3, 1> dT;
-  
-  // full rotation
-  R = GetRotationMatrix(sT);
-  dT << sT(3), sT(4), sT(5);
-
-  // Express the current point acquired at time t1
-  // in the referential of the sensor at time t0.
-  Xf = R * Xi + dT;
-}
-
-//-----------------------------------------------------------------------------
-void vtkSlam::TransformToEnd(Point& pi, Point& pf, Eigen::Matrix<double, 6, 1>& T)
-{
-  // first transform to start
-  Point ptemp;
-  this->TransformToStart(pi, ptemp, T);
-
-  // then transform to end using the estimated transformation
-  // since the first transformation has distorted the point cloud
-  // there is no need to interpolate again
-  Eigen::Matrix<double, 3, 3> R;
-  Eigen::Matrix<double, 3, 1> dT, P0, P1;
-  P0 << ptemp.x, ptemp.y, ptemp.z;
-
-  R = GetRotationMatrix(T);
-  dT << T(3), T(4), T(5);
-  P1 = R.transpose() * (P0 - dT);
-  pf.x = P1(0);
-  pf.y = P1(1);
-  pf.z = P1(2);
-}
-
-//-----------------------------------------------------------------------------
-void vtkSlam::TransformCurrentKeypointsToEnd()
-{
-  Point currentPoint, transformedPoint;
-  // transform edges and planars keypoints
-  for (unsigned int k = 0; k < this->CurrentEdgesPoints->size(); ++k)
-  {
-    currentPoint = this->CurrentEdgesPoints->points[k];
-    this->TransformToEnd(currentPoint, transformedPoint, this->Trelative);
-    this->CurrentEdgesPoints->points[k] = transformedPoint;
-  }
-  for (unsigned int k = 0; k < this->CurrentPlanarsPoints->size(); ++k)
-  {
-    currentPoint = this->CurrentPlanarsPoints->points[k];
-    this->TransformToEnd(currentPoint, transformedPoint, this->Trelative);
-    this->CurrentPlanarsPoints->points[k] = transformedPoint;
-  }
-}
-
-//-----------------------------------------------------------------------------
 void vtkSlam::TransformToWorld(Point& p, Eigen::Matrix<double, 6, 1>& T)
 {
   // Rotation and translation and points
@@ -3528,7 +3528,7 @@ void vtkSlam::ComputeEgoMotion()
   }
 
   // reset the relative transform
-  this->Trelative << 0, 0, 0, 0, 0, 0;
+  this->Trelative = Eigen::Matrix<double, 6, 1>::Zero();
 
   // kd-tree to process fast nearest neighbor
   // among the keypoints of the previous pointcloud
@@ -3543,90 +3543,70 @@ void vtkSlam::ComputeEgoMotion()
   std::cout << "previous edges : " << this->PreviousEdgesPoints->size() << " current edges : " << this->CurrentEdgesPoints->size() << std::endl;
   std::cout << "previous planes : " << this->PreviousPlanarsPoints->size() << " current planes : " << this->CurrentPlanarsPoints->size() << std::endl;
 
-  std::vector<double> costFunction(0, 0);
-
-  // let's note f(R, T) = sum(d(point, line)^2) + sum(d(point, plane)^2)
-  // f(R, T) = sum(fi(R, T)) = sum(sqrt((R*X+T-P).t*A*(R*X+T-P))). We also note
-  // the new step toward the solution is
-  // (H + lambda * I)^(-1)*d. Whith H the hessian
-  // of the cost function and d = fi(R, T) * gradFi(R, T).
-  // Here we approximate the hessian using its jacobian H = JtJ.
-  // The lambda parameter is a trade off between X = H^(-1) * d
-  // = H^(-1) * (fi(R, T) * gradfi(R, T)) which is tge Gauss-Newton
-  // algorithm and
-  // X = 1 / lambda * d = 1 / lambda * fi(R, T) * gradfi(R, T)
-  // = 1 / (2.0 * lambda) * gradf which is the gradient descent algorithm.
-  // The Gauss-Newton algorithm makes the assumption that the point (R, T)
-  // is close enought to the solution so that f can be approximated by its
-  // quadratic part involving its hessian. The idea of the Levenberg-Marquardt
-  // algorithm is to start with a gradient descent value and to slowly drift toward
-  // a Gauss-Newton algortihm as we converge toward the minimum of the function
-  double lambda = this->Lambda0;
-
   unsigned int usedEdges = 0;
   unsigned int usedPlanes = 0;
   unsigned int usedBlobs = 0;
-  unsigned int nbrRejection = 0;
-  // ICP - Levenberg-Marquardt loop
-  for (unsigned int iterCount = 0; iterCount < this->EgoMotionMaxIter; ++iterCount)
+  Point currentPoint, transformedPoint;
+
+  // ICP - Levenberg-Marquardt loop:
+  // At each step of this loop an ICP matching is performed
+  // Once the keypoints matched, we estimate the the 6-DOF
+  // parameters by minimizing a non-linear least square cost
+  // function using a Levenberg-Marquardt algorithm
+  for (unsigned int icpCount = 0; icpCount < this->EgoMotionICPMaxIter; ++icpCount)
   {
     // Rotation and translation at this step
-    Eigen::Matrix<double, 3, 3> R;
-    Eigen::Matrix<double, 3, 1> dT;
-    R = GetRotationMatrix(this->Trelative);
-    dT << this->Trelative(3), this->Trelative(4), this->Trelative(5);
+    Eigen::Matrix<double, 3, 3> R = GetRotationMatrix(this->Trelative);
+    Eigen::Matrix<double, 3, 1> T;
+    T << this->Trelative(3), this->Trelative(4), this->Trelative(5);
 
-    Point currentPoint, transformedPoint;
+    // clear all keypoints matching data
+    this->ResetDistanceParameters();
 
-    if (iterCount % this->EgoMotionIcpFrequence == 0)
+    // loop over edges
+    for (unsigned int edgeIndex = 0; edgeIndex < this->CurrentEdgesPoints->size(); ++edgeIndex)
     {
-      this->ResetDistanceParameters();
+      currentPoint = this->CurrentEdgesPoints->points[edgeIndex];
 
-      // loop over edges
-      for (unsigned int edgeIndex = 0; edgeIndex < this->CurrentEdgesPoints->size(); ++edgeIndex)
+      // Find the closest correspondence edge line of the current edge point
+      if ((this->PreviousEdgesPoints->size() > 7) && (this->CurrentEdgesPoints->size() > 0))
       {
-        currentPoint = this->CurrentEdgesPoints->points[edgeIndex];
-
-        // Find the closest correspondence edge line of the current edge point
-        if ((this->PreviousEdgesPoints->size() > 7) && (this->CurrentEdgesPoints->size() > 0))
-        {
-          // Compute the parameters of the point - line distance
-          // i.e A = (I - n*n.t)^2 with n being the director vector
-          // and P a point of the line
-          this->ComputeLineDistanceParametersAccurate(kdtreePreviousEdges, R, dT, currentPoint, "egoMotion");
-          usedEdges = this->Xvalues.size();
-        }
+        // Compute the parameters of the point - line distance
+        // i.e A = (I - n*n.t)^2 with n being the director vector
+        // and P a point of the line
+        this->ComputeLineDistanceParametersAccurate(kdtreePreviousEdges, R, T, currentPoint, "egoMotion");
+        usedEdges = this->Xvalues.size();
       }
+    }
 
-      // loop over surfaces
-      for (unsigned int planarIndex = 0; planarIndex < this->CurrentPlanarsPoints->size(); ++planarIndex)
+    // loop over surfaces
+    for (unsigned int planarIndex = 0; planarIndex < this->CurrentPlanarsPoints->size(); ++planarIndex)
+    {
+      currentPoint = this->CurrentPlanarsPoints->points[planarIndex];
+
+      // Find the closest correspondence plane of the current planar point
+      if ((this->PreviousPlanarsPoints->size() > 7) && (this->CurrentPlanarsPoints->size() > 0))
       {
-        currentPoint = this->CurrentPlanarsPoints->points[planarIndex];
-
-        // Find the closest correspondence plane of the current planar point
-        if ((this->PreviousPlanarsPoints->size() > 7) && (this->CurrentPlanarsPoints->size() > 0))
-        {
-          // Compute the parameters of the point - plane distance
-          // i.e A = n * n.t with n being a normal of the plane
-          // and is a point of the plane
-          this->ComputePlaneDistanceParametersAccurate(kdtreePreviousPlanes, R, dT, currentPoint, "egoMotion");
-          usedPlanes = this->Xvalues.size() - usedEdges;
-        }
+        // Compute the parameters of the point - plane distance
+        // i.e A = n * n.t with n being a normal of the plane
+        // and is a point of the plane
+        this->ComputePlaneDistanceParametersAccurate(kdtreePreviousPlanes, R, T, currentPoint, "egoMotion");
+        usedPlanes = this->Xvalues.size() - usedEdges;
       }
+    }
 
-      // loop over blobs
-      if (!this->FastSlam)
+    // loop over blobs
+    if (!this->FastSlam)
+    {
+      for (unsigned int blobIndex = 0; blobIndex < this->CurrentBlobsPoints->size(); ++blobIndex)
       {
-        for (unsigned int blobIndex = 0; blobIndex < this->CurrentBlobsPoints->size(); ++blobIndex)
-        {
-          currentPoint = this->CurrentBlobsPoints->points[blobIndex];
+        currentPoint = this->CurrentBlobsPoints->points[blobIndex];
 
-          // Find the closest correspondence blob of the current blob point
-          if (this->CurrentBlobsPoints->size() > 2)
-          {
-            //this->ComputeBlobsDistanceParametersAccurate(kdtreePreviousBlobs, R, dT, currentPoint, "egoMotion");
-            usedBlobs = this->Xvalues.size() - usedPlanes - usedEdges;
-          }
+        // Find the closest correspondence blob of the current blob point
+        if (this->CurrentBlobsPoints->size() > 2)
+        {
+          //this->ComputeBlobsDistanceParametersAccurate(kdtreePreviousBlobs, R, dT, currentPoint, "egoMotion");
+          usedBlobs = this->Xvalues.size() - usedPlanes - usedEdges;
         }
       }
     }
@@ -3639,77 +3619,44 @@ void vtkSlam::ComputeEgoMotion()
       break;
     }
 
-    // f(R, T) = sum(fi(R, T))
-    // fi(R, T) = sqrt((R*X+T-P).t * A * (R*X+T-P)
-    // J: residual jacobians, [dfi(R, T)/dR, dfi(R, T)/dT]
-    // Y: residual values, fi(R, T)
-    Eigen::MatrixXd J, Y;
-    this->ComputeResidualValues(this->Avalues, this->Xvalues, this->Pvalues, this->OutlierDistScale, R, dT, Y);
-    this->ComputeResidualJacobians(this->Avalues, this->Xvalues, this->Pvalues, this->OutlierDistScale, this->Trelative, J);
-
-    // RMSE
-    costFunction.push_back(std::sqrt(0.5 / static_cast<double>(Y.rows()) * (Y.transpose() * Y)(0)));
-
-    Eigen::MatrixXd Jt = J.transpose();
-    Eigen::MatrixXd JtJ = Jt * J;
-    Eigen::MatrixXd JtY = Jt * Y;
-    Eigen::Matrix<double, 6, 6> diagJtJ;
-    diagJtJ << JtJ(0, 0), 0, 0, 0, 0, 0,
-               0, JtJ(1, 1), 0, 0, 0, 0,
-               0, 0, JtJ(2, 2), 0, 0, 0,
-               0, 0, 0, JtJ(3, 3), 0, 0,
-               0, 0, 0, 0, JtJ(4, 4), 0,
-               0, 0, 0, 0, 0, JtJ(5, 5);
-
-    // The next step of the L-M algorithm is computed by solving
-    // (JtJ + lambda * diagJtJ) = Jt * Y. To avoid the computation
-    // of the inverse of (JtJ + lambda * diagJtJ) we use a gauss-pivot
-    // algorithm to solve the linear equation for this particular point
-    Eigen::ColPivHouseholderQR<Eigen::MatrixXd> dec(JtJ + lambda * diagJtJ);
-    Eigen::Matrix<double, 6, 1> X = dec.solve(JtY);
-    if (!vtkMath::IsFinite(X(0)) || !vtkMath::IsFinite(X(3)))
+    // We want to estimate our 6-DOF parameters using a non
+    // linear least square minimization. The non linear part
+    // comes from the Euler Angle parametrization of the rotation
+    // endomorphism SO(3). To minimize it we use CERES to perform
+    // the Levenberg-Marquardt algorithm.
+    ceres::Problem problem;
+    for (unsigned int k = 0; k < Xvalues.size(); ++k)
     {
-      vtkGenericWarningMacro("Estimated transform not finite, skip this frame");
+      ceres::CostFunction* cost_function = new ceres::AutoDiffCostFunction<AffineIsometryResidual, 1, 1, 1, 1, 1, 1, 1>(
+                                            new AffineIsometryResidual(this->Avalues[k], this->Pvalues[k], this->Xvalues[k]));
+      problem.AddResidualBlock(cost_function, NULL, &this->Trelative(0), &this->Trelative(1), &this->Trelative(2), &this->Trelative(3), &this->Trelative(4), &this->Trelative(5));
+    }
+
+    ceres::Solver::Options options;
+    options.max_num_iterations = this->EgoMotionLMMaxIter;
+    options.linear_solver_type = ceres::DENSE_QR;
+    options.minimizer_progress_to_stdout = false;
+
+    ceres::Solver::Summary summary;
+    ceres::Solve(options, &problem, &summary);
+    std::cout << summary.BriefReport() << std::endl;
+
+    // If no L-M iteration has been made since the
+    // last ICP matching it means we reached a local
+    // minimum for the ICP-LM algorithm
+    if (summary.num_successful_steps == 1)
+    {
       break;
     }
-
-    // Check if the cost function has not increase
-    // in the last iteration. If it does, we are too
-    // away from the solution to use the Gauss-Newton
-    // algorithm. Increase lambda to drift toward gradient descent
-    Eigen::Matrix<double, 6, 1> Tcandidate;
-    Tcandidate = this->Trelative - X;
-    Eigen::Matrix<double, 3, 3> Rcandidate = GetRotationMatrix(Tcandidate);
-    Eigen::Matrix<double, 3, 1> dTcandidate;
-    dTcandidate << Tcandidate(3), Tcandidate(4), Tcandidate(5);
-    Eigen::MatrixXd Ycandidate;
-    this->ComputeResidualValues(this->Avalues, this->Xvalues, this->Pvalues, this->OutlierDistScale, Rcandidate, dTcandidate, Ycandidate);
-    double newCost = std::sqrt(0.5 / static_cast<double>(Ycandidate.rows()) * (Ycandidate.transpose() * Ycandidate)(0));
-
-    if (newCost > costFunction[costFunction.size() - 1])
-    {
-      lambda = this->LambdaRatio * lambda;
-      nbrRejection++;
-    }
-    else
-    {
-      this->Trelative = Tcandidate;
-      lambda = 1.0 / this->LambdaRatio * lambda;
-    }
-    
-    this->EgoMotionIterMade = iterCount + 1;
   }
-  static_cast<vtkDoubleArray*>(this->Trajectory->GetPointData()->GetArray("EgoMotion: intiale cost function"))->InsertNextValue(costFunction[0]);
-  static_cast<vtkDoubleArray*>(this->Trajectory->GetPointData()->GetArray("EgoMotion: final cost function"))->InsertNextValue(costFunction[costFunction.size() - 1]);
+  static_cast<vtkDoubleArray*>(this->Trajectory->GetPointData()->GetArray("EgoMotion: intiale cost function"))->InsertNextValue(0);
+  static_cast<vtkDoubleArray*>(this->Trajectory->GetPointData()->GetArray("EgoMotion: final cost function"))->InsertNextValue(0);
   static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("EgoMotion: edges used"))->InsertNextValue(usedEdges);
   static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("EgoMotion: planes used"))->InsertNextValue(usedPlanes);
   static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("EgoMotion: blobs used"))->InsertNextValue(usedBlobs);
   static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("EgoMotion: total keypoints used"))->InsertNextValue(this->Xvalues.size());
-  std::cout << "cost goes from : " << costFunction[0] << " to : " << costFunction[costFunction.size() - 1] << std::endl;
   std::cout << "used keypoints : " << this->Xvalues.size() << std::endl;
   std::cout << "edges : " << usedEdges << " planes : " << usedPlanes << " blobs : " << usedBlobs << std::endl;
-  std::cout << "nbr rejection : " << nbrRejection << std::endl;
-  std::cout << "final lambda value : " << lambda << std::endl;
 
   // Integrate the relative motion
   // to the world transformation
@@ -3719,24 +3666,6 @@ void vtkSlam::ComputeEgoMotion()
 //-----------------------------------------------------------------------------
 void vtkSlam::Mapping()
 {
-  // let's note f(R, T) = sum(d(point, line)^2) + sum(d(point, plane)^2)
-  // f(R, T) = sum(fi(R, T)) = sum(sqrt((R*X+T-P).t*A*(R*X+T-P))). We also note
-  // the new step toward the solution is
-  // (H + lambda * I)^(-1)*d. Whith H the hessian
-  // of the cost function and d = fi(R, T) * gradFi(R, T).
-  // Here we approximate the hessian using its jacobian H = JtJ.
-  // The lambda parameter is a trade off between X = H^(-1) * d
-  // = H^(-1) * (fi(R, T) * gradfi(R, T)) which is tge Gauss-Newton
-  // algorithm and
-  // X = 1 / lambda * d = 1 / lambda * fi(R, T) * gradfi(R, T)
-  // = 1 / (2.0 * lambda) * gradf which is the gradient descent algorithm.
-  // The Gauss-Newton algorithm makes the assumption that the point (R, T)
-  // is close enought to the solution so that f can be approximated by its
-  // quadratic part involving its hessian. The idea of the Levenberg-Marquardt
-  // algorithm is to start with a gradient descent value and to slowly drift toward
-  // a Gauss-Newton algortihm as we converge toward the minimum of the function
-  double lambda = this->Lambda0;
-
   // Check that there is enought points to compute the EgoMotion
   if (this->CurrentEdgesPoints->size() == 0 && this->CurrentPlanarsPoints->size() == 0)
   {
@@ -3746,13 +3675,6 @@ void vtkSlam::Mapping()
     vtkGenericWarningMacro("Not enought keypoints, Mapping skipped for this frame");
     return;
   }
-
-  // Get a prediction of Tworld using motion
-  // model of a constant acceleration
-  Eigen::Matrix<double, 6, 1> Tpredicted = this->PredictTWorld();
-
-  std::vector<double> costFunction(0, 0);
-  std::vector<double> normJacobian(0, 0);
 
   // contruct kd-tree for fast search
   pcl::KdTreeFLANN<Point>::Ptr kdtreeEdges(new pcl::KdTreeFLANN<Point>());
@@ -3784,82 +3706,81 @@ void vtkSlam::Mapping()
   unsigned int usedEdges = 0;
   unsigned int usedPlanes = 0;
   unsigned int usedBlobs = 0;
+  Point currentPoint;
 
   // Interpolator used to undistord the frames
   vtkSmartPointer<vtkVelodyneTransformInterpolator> undistortionInterp;
 
-  // ICP - Levenberg-Marquardt loop
-  for (int iterCount = 0; iterCount < this->MappingMaxIter; ++iterCount)
+  // ICP - Levenberg-Marquardt loop:
+  // At each step of this loop an ICP matching is performed
+  // Once the keypoints matched, we estimate the the 6-DOF
+  // parameters by minimizing a non-linear least square cost
+  // function using a Levenberg-Marquardt algorithm
+  for (int icpCount = 0; icpCount < this->MappingICPMaxIter; ++icpCount)
   {
+    // clear all keypoints matching data
+    this->ResetDistanceParameters();
+
     // Rotation and position at this step
-    Eigen::Matrix<double, 3, 3> R1;
-    Eigen::Matrix<double, 3, 1> T1;
-    R1 = GetRotationMatrix(this->Tworld);
-    T1 << this->Tworld(3), this->Tworld(4), this->Tworld(5);
+    Eigen::Matrix<double, 3, 3> R = GetRotationMatrix(this->Tworld);
+    Eigen::Matrix<double, 3, 1> T;
+    T << this->Tworld(3), this->Tworld(4), this->Tworld(5);
 
-    Point currentPoint;
-
-    // ICP matching
-    if (iterCount % this->MappingIcpFrequence == 0)
+    // Init the undistortion interpolator
+    // if required
+    if (this->Undistortion)
     {
-      // clear all data
-      this->ResetDistanceParameters();
+      undistortionInterp = this->InitUndistortionInterpolator();
+    }
 
-      // Init the undistortion interpolator
-      // if required
+    // loop over edges
+    for (unsigned int edgeIndex = 0; edgeIndex < this->CurrentEdgesPoints->size(); ++edgeIndex)
+    {
+      currentPoint = this->CurrentEdgesPoints->points[edgeIndex];
+
+      // If the undistortion
       if (this->Undistortion)
+        this->ExpressPointInStartReferencial(currentPoint, undistortionInterp);
+
+      if (this->CurrentEdgesPoints->size() > 0 && subEdgesPointsLocalMap->points.size() > 10)
       {
-        undistortionInterp = this->InitUndistortionInterpolator();
-      }
-
-      // loop over edges
-      for (unsigned int edgeIndex = 0; edgeIndex < this->CurrentEdgesPoints->size(); ++edgeIndex)
-      {
-        currentPoint = this->CurrentEdgesPoints->points[edgeIndex];
-
-        // If the undistortion
-        if (this->Undistortion)
-        {
-          this->ExpressPointInStartReferencial(currentPoint, undistortionInterp);
-        }
-
-        if (this->CurrentEdgesPoints->size() > 0 && subEdgesPointsLocalMap->points.size() > 10)
-        {
-          // Find the closest correspondence edge line of the current edge point
-          this->ComputeLineDistanceParametersAccurate(kdtreeEdges, R1, T1, currentPoint, "mapping");
-          usedEdges = this->Xvalues.size();
-        }
-      }
-
-      // loop over surfaces
-      for (unsigned int planarIndex = 0; planarIndex < this->CurrentPlanarsPoints->size(); ++planarIndex)
-      {
-        currentPoint = this->CurrentPlanarsPoints->points[planarIndex];
-
-        if (this->CurrentPlanarsPoints->size() > 0 && subPlanarPointsLocalMap->size() > 10)
-        {
-          // Find the closest correspondence plane of the current planar point
-          this->ComputePlaneDistanceParametersAccurate(kdtreePlanes, R1, T1, currentPoint, "mapping");
-          usedPlanes = this->Xvalues.size() - usedEdges;
-        }
-      }
-
-      if (!this->FastSlam)
-      {
-        // loop over blobs
-        for (unsigned int blobIndex = 0; blobIndex < this->CurrentBlobsPoints->size(); ++blobIndex)
-        {
-          currentPoint = this->CurrentBlobsPoints->points[blobIndex];
-
-          // Find the closest correspondence plane of the current planar point
-          this->ComputeBlobsDistanceParametersAccurate(kdtreeBlobs, R1, T1, currentPoint, "mapping");
-          usedBlobs = this->Xvalues.size() - usedPlanes - usedEdges;
-        }
+        // Find the closest correspondence edge line of the current edge point
+        this->ComputeLineDistanceParametersAccurate(kdtreeEdges, R, T, currentPoint, "mapping");
+        usedEdges = this->Xvalues.size();
       }
     }
 
-    // Skip this frame if there is too few geometric
-    // keypoints matched
+    // loop over surfaces
+    for (unsigned int planarIndex = 0; planarIndex < this->CurrentPlanarsPoints->size(); ++planarIndex)
+    {
+      currentPoint = this->CurrentPlanarsPoints->points[planarIndex];
+
+      // If the undistortion
+      if (this->Undistortion)
+        this->ExpressPointInStartReferencial(currentPoint, undistortionInterp);
+
+      if (this->CurrentPlanarsPoints->size() > 0 && subPlanarPointsLocalMap->size() > 10)
+      {
+        // Find the closest correspondence plane of the current planar point
+        this->ComputePlaneDistanceParametersAccurate(kdtreePlanes, R, T, currentPoint, "mapping");
+        usedPlanes = this->Xvalues.size() - usedEdges;
+      }
+    }
+
+    if (!this->FastSlam)
+    {
+      // loop over blobs
+      for (unsigned int blobIndex = 0; blobIndex < this->CurrentBlobsPoints->size(); ++blobIndex)
+      {
+        currentPoint = this->CurrentBlobsPoints->points[blobIndex];
+
+        // Find the closest correspondence plane of the current planar point
+        this->ComputeBlobsDistanceParametersAccurate(kdtreeBlobs, R, T, currentPoint, "mapping");
+        usedBlobs = this->Xvalues.size() - usedPlanes - usedEdges;
+      }
+    }
+
+    // Skip this frame if there is too few geometric keypoints matched
     if ((usedPlanes + usedEdges + usedBlobs) < 20)
     {
       vtkGenericWarningMacro("Too few geometric features, loop breaked");
@@ -3867,72 +3788,35 @@ void vtkSlam::Mapping()
       break;
     }
 
-    // f(R, T) = sum(fi(R, T))
-    // fi(R, T) = sqrt((R*X+T-P).t * A * (R*X+T-P)
-    // J: residual jacobians, [dfi(R, T)/dR, dfi(R, T)/dT]
-    // Y: residual values, fi(R, T)
-    Eigen::MatrixXd J, Y, Jsum;
-    this->ComputeResidualValues(this->Avalues, this->Xvalues, this->Pvalues, this->OutlierDistScale, R1, T1, Y);
-    this->ComputeResidualJacobians(this->Avalues, this->Xvalues, this->Pvalues, this->OutlierDistScale, this->Tworld, J);
-
-    // RMSE
-    costFunction.push_back(std::sqrt(0.5 / static_cast<double>(Y.rows()) * (Y.transpose() * Y)(0)));
-
-    Eigen::MatrixXd Jt = J.transpose();
-    Eigen::MatrixXd JtJ = Jt * J;
-    Eigen::MatrixXd JtY = Jt * Y;
-    Eigen::Matrix<double, 6, 6> diagJtJ;
-    diagJtJ << JtJ(0, 0), 0, 0, 0, 0, 0,
-               0, JtJ(1, 1), 0, 0, 0, 0,
-               0, 0, JtJ(2, 2), 0, 0, 0,
-               0, 0, 0, JtJ(3, 3), 0, 0,
-               0, 0, 0, 0, JtJ(4, 4), 0,
-               0, 0, 0, 0, 0, JtJ(5, 5);
-
-    // The next step of the L-M algorithm is computed by solving
-    // (JtJ + lambda * diagJtJ) = Jt * Y. To avoid the computation
-    // of the inverse of (JtJ + lambda * diagJtJ) we use a gauss-pivot
-    // algorithm to solve the linear equation for this particular point
-    Eigen::ColPivHouseholderQR<Eigen::MatrixXd> dec(JtJ + lambda * diagJtJ);
-    Eigen::Matrix<double, 6, 1> X = dec.solve(JtY);
-
-    if (!vtkMath::IsFinite(X(0)) || !vtkMath::IsFinite(X(3)))
+    // We want to estimate our 6-DOF parameters using a non
+    // linear least square minimization. The non linear part
+    // comes from the Euler Angle parametrization of the rotation
+    // endomorphism SO(3). To minimize it we use CERES to perform
+    // the Levenberg-Marquardt algorithm.
+    ceres::Problem problem;
+    for (unsigned int k = 0; k < Xvalues.size(); ++k)
     {
-      vtkGenericWarningMacro("Estimated transform not finite, loop breaked");
+      ceres::CostFunction* cost_function = new ceres::AutoDiffCostFunction<AffineIsometryResidual, 1, 1, 1, 1, 1, 1, 1>(
+                                            new AffineIsometryResidual(this->Avalues[k], this->Pvalues[k], this->Xvalues[k]));
+      problem.AddResidualBlock(cost_function, NULL, &this->Tworld(0), &this->Tworld(1), &this->Tworld(2), &this->Tworld(3), &this->Tworld(4), &this->Tworld(5));
+    }
+
+    ceres::Solver::Options options;
+    options.max_num_iterations = this->MappingLMMaxIter;
+    options.linear_solver_type = ceres::DENSE_QR;
+    options.minimizer_progress_to_stdout = false;
+
+    ceres::Solver::Summary summary;
+    ceres::Solve(options, &problem, &summary);
+    std::cout << summary.BriefReport() << std::endl;
+ 
+    // If no L-M iteration has been made since the
+    // last ICP matching it means we reached a local
+    // minimum for the ICP-LM algorithm
+    if (summary.num_successful_steps == 1)
+    {
       break;
     }
-
-    // Jacobian of the full sum function
-    // F(R, T) = sum fi(R, T)^2. Derivate
-    // upon R and T (=P) we found:
-    // dF / dP = 2 * sum(fi(P) * dfi(P) / dP)
-    Jsum = 2 * Y.transpose() * J;
-    normJacobian.push_back(Jsum.norm());
-
-    // Check if the cost function has not increase
-    // in the last iteration. If it does, we are too
-    // away from the solution to use the Gauss-Newton
-    // algorithm. Increase lambda to drift toward gradient descent
-    Eigen::Matrix<double, 6, 1> Tcandidate;
-    Tcandidate = this->Tworld - X;
-    Eigen::Matrix<double, 3, 3> Rcandidate = GetRotationMatrix(Tcandidate);
-    Eigen::Matrix<double, 3, 1> dTcandidate;
-    dTcandidate << Tcandidate(3), Tcandidate(4), Tcandidate(5);
-    Eigen::MatrixXd Ycandidate;
-    this->ComputeResidualValues(this->Avalues, this->Xvalues, this->Pvalues, this->OutlierDistScale, Rcandidate, dTcandidate, Ycandidate);
-    double newCost = std::sqrt(0.5 / static_cast<double>(Ycandidate.rows()) * (Ycandidate.transpose() * Ycandidate)(0));
-
-    if (newCost > costFunction[costFunction.size() - 1])
-    {
-      lambda = this->LambdaRatio * lambda;
-    }
-    else
-    {
-      this->Tworld = Tcandidate;
-      lambda = 1.0 / this->LambdaRatio * lambda;
-    }
-
-    this->MappingIterMade = iterCount + 1;
   }
 
   // Now evaluate the quality of the parameters
@@ -3964,19 +3848,16 @@ void vtkSlam::Mapping()
   Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eig(Sigma);
   Eigen::MatrixXd D = eig.eigenvalues();
 
-  static_cast<vtkDoubleArray*>(this->Trajectory->GetPointData()->GetArray("Mapping: intiale cost function"))->InsertNextValue(costFunction[0]);
-  static_cast<vtkDoubleArray*>(this->Trajectory->GetPointData()->GetArray("Mapping: final cost function"))->InsertNextValue(costFunction[costFunction.size() - 1]);
-  static_cast<vtkDoubleArray*>(this->Trajectory->GetPointData()->GetArray("Variance Error"))->InsertNextValue(costFunction[D(5)]);
+  static_cast<vtkDoubleArray*>(this->Trajectory->GetPointData()->GetArray("Mapping: intiale cost function"))->InsertNextValue(0);
+  static_cast<vtkDoubleArray*>(this->Trajectory->GetPointData()->GetArray("Mapping: final cost function"))->InsertNextValue(0);
+  static_cast<vtkDoubleArray*>(this->Trajectory->GetPointData()->GetArray("Variance Error"))->InsertNextValue(D(5));
   static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("Mapping: edges used"))->InsertNextValue(usedEdges);
   static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("Mapping: planes used"))->InsertNextValue(usedPlanes);
   static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("Mapping: blobs used"))->InsertNextValue(usedBlobs);
   static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("Mapping: total keypoints used"))->InsertNextValue(this->Xvalues.size());
 
-  std::cout << "cost goes from : " << costFunction[0] << " to : " << costFunction[costFunction.size() - 1] << " is equal ? : " << residualSum << std::endl;
   std::cout << "used keypoints : " << this->Xvalues.size() << std::endl;
   std::cout << "edges : " << usedEdges << " planes : " << usedPlanes << " blobs : " << usedBlobs << std::endl;
-  std::cout << "final lambda value : " << lambda << std::endl;
-  std::cout << "Jacobian norm goes from: " << normJacobian[0] << " to : " << normJacobian[normJacobian.size() - 1] << std::endl;
   std::cout << "Covariance matrix: " << Sigma << std::endl;
   std::cout << "Covariance Eigen values: " << D << std::endl;
   std::cout << "Maximum variance: " << D(5) << std::endl;
@@ -4386,12 +4267,6 @@ void vtkSlam::Set_RollingGrid_LeafVoxelFilterSize(const double size)
 }
 
 //-----------------------------------------------------------------------------
-Eigen::Matrix<double, 6, 1> vtkSlam::PredictTWorld()
-{
-  return Eigen::Matrix<double, 6, 1>();
-}
-
-//-----------------------------------------------------------------------------
 void vtkSlam::SetMaxVelocityAcceleration(double acc)
 {
   this->KalmanEstimator.SetMaxVelocityAcceleration(acc);
@@ -4480,6 +4355,24 @@ void vtkSlam::ExportTransforms(const std::string& filename)
 
   file.close();
   return;
+}
+
+//-----------------------------------------------------------------------------
+void vtkSlam::SetUndistortion(bool input)
+{
+  this->Undistortion = input;
+
+  // Use linear interpolator if undistortion has been chosed
+  if (this->Undistortion)
+  {
+    this->InternalInterp = vtkSmartPointer<vtkVelodyneTransformInterpolator>::New();
+    this->InternalInterp->SetInterpolationTypeToLinear();
+  }
+  else
+  {
+    this->InternalInterp = vtkSmartPointer<vtkVelodyneTransformInterpolator>::New();
+    this->InternalInterp->SetInterpolationTypeToNearestLowBounded();
+  }
 }
 
 //-----------------------------------------------------------------------------

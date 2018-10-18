@@ -66,7 +66,7 @@ def configure():
     slam.GetClientSideObject().Set_LambdaRatio(slamDialog.LambdaRatio)
     slam.GetClientSideObject().Set_FastSlam(slamDialog.FastSlam)
     slam.GetClientSideObject().SetMotionModel(motionModel)
-    slam.GetClientSideObject().Set_Undistortion(slamDialog.Undistortion)
+    slam.GetClientSideObject().SetUndistortion(slamDialog.Undistortion)
     slam.GetClientSideObject().SetMaxVelocityAcceleration(slamDialog.MaxVelocityAcc)
     slam.GetClientSideObject().SetMaxAngleAcceleration(slamDialog.MaxAngleAcc)
 
@@ -78,8 +78,8 @@ def configure():
     slam.GetClientSideObject().Set_Keypoint_PlaneSinAngleThreshold(slamDialog.Keypoint_PlaneSinAngleThreshold)
     slam.GetClientSideObject().Set_Keypoint_EdgeDepthGapThreshold(slamDialog.Keypoint_EdgeDepthGapThreshold)
     # Egomotion
-    slam.GetClientSideObject().Set_EgoMotionMaxIter(slamDialog.EgoMotion_MaxIter)
-    slam.GetClientSideObject().Set_EgoMotionIcpFrequence(slamDialog.EgoMotion_IcpFrequence)
+    slam.GetClientSideObject().Set_EgoMotionLMMaxIter(slamDialog.EgoMotion_LMMaxIter)
+    slam.GetClientSideObject().Set_EgoMotionICPMaxIter(slamDialog.EgoMotion_ICPMaxIter)
     slam.GetClientSideObject().Set_EgoMotionLineDistanceNbrNeighbors(slamDialog.EgoMotion_LineDistance_k)
     slam.GetClientSideObject().Set_EgoMotionLineDistancefactor(slamDialog.EgoMotion_LineDistance_factor)
     slam.GetClientSideObject().Set_EgoMotionPlaneDistanceNbrNeighbors(slamDialog.EgoMotion_PlaneDistance_k)
@@ -89,8 +89,8 @@ def configure():
     slam.GetClientSideObject().Set_EgoMotionMaxPlaneDistance(slamDialog.EgoMotion_Plane_Max_Distance)
     slam.GetClientSideObject().Set_EgoMotionMinimumLineNeighborRejection(slamDialog.EgoMotionMinimalLineNeighborRejection)
     # Mapping
-    slam.GetClientSideObject().Set_MappingMaxIter(slamDialog.Mapping_MaxIter)
-    slam.GetClientSideObject().Set_MappingIcpFrequence(slamDialog.Mapping_IcpFrequence)
+    slam.GetClientSideObject().Set_MappingLMMaxIter(slamDialog.Mapping_LMMaxIter)
+    slam.GetClientSideObject().Set_MappingICPMaxIter(slamDialog.Mapping_ICPMaxIter)
     slam.GetClientSideObject().Set_MappingLineDistanceNbrNeighbors(slamDialog.Mapping_LineDistance_k)
     slam.GetClientSideObject().Set_MappingLineDistancefactor(slamDialog.Mapping_LineDistance_factor)
     slam.GetClientSideObject().Set_MappingPlaneDistanceNbrNeighbors(slamDialog.Mapping_PlaneDistance_k)

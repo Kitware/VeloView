@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>869</width>
-    <height>757</height>
+    <height>782</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -29,26 +29,26 @@
          <item row="1" column="0">
           <widget class="QLabel" name="label_14">
            <property name="text">
-            <string>ICP frequence</string>
+            <string># ICP Matching</string>
            </property>
           </widget>
          </item>
          <item row="0" column="0">
           <widget class="QLabel" name="label_15">
            <property name="text">
-            <string># Itertations</string>
+            <string># L-M Itertations</string>
            </property>
           </widget>
          </item>
          <item row="0" column="1">
-          <widget class="QSpinBox" name="Mapping_MaxIter">
+          <widget class="QSpinBox" name="Mapping_LMMaxIter">
            <property name="value">
             <number>15</number>
            </property>
           </widget>
          </item>
          <item row="1" column="1">
-          <widget class="QSpinBox" name="Mapping_IcpFrequence">
+          <widget class="QSpinBox" name="Mapping_ICPMaxIter">
            <property name="value">
             <number>5</number>
            </property>
@@ -376,7 +376,7 @@
          <item row="0" column="1">
           <widget class="QLabel" name="label_12">
            <property name="text">
-            <string># Iterations</string>
+            <string># L-M Iterations</string>
            </property>
           </widget>
          </item>
@@ -530,7 +530,7 @@
           </widget>
          </item>
          <item row="0" column="2">
-          <widget class="QSpinBox" name="EgoMotion_MaxIter">
+          <widget class="QSpinBox" name="EgoMotion_LMMaxIter">
            <property name="value">
             <number>15</number>
            </property>
@@ -539,12 +539,12 @@
          <item row="1" column="1">
           <widget class="QLabel" name="label_13">
            <property name="text">
-            <string>ICP frequence</string>
+            <string># ICP matching</string>
            </property>
           </widget>
          </item>
          <item row="1" column="2">
-          <widget class="QSpinBox" name="EgoMotion_IcpFrequence">
+          <widget class="QSpinBox" name="EgoMotion_ICPMaxIter">
            <property name="value">
             <number>5</number>
            </property>
