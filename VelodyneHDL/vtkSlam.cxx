@@ -3629,7 +3629,7 @@ void vtkSlam::ComputeEgoMotion()
     {
       ceres::CostFunction* cost_function = new ceres::AutoDiffCostFunction<AffineIsometryResidual, 1, 1, 1, 1, 1, 1, 1>(
                                             new AffineIsometryResidual(this->Avalues[k], this->Pvalues[k], this->Xvalues[k]));
-      problem.AddResidualBlock(cost_function, NULL, &this->Trelative(0), &this->Trelative(1), &this->Trelative(2), &this->Trelative(3), &this->Trelative(4), &this->Trelative(5));
+      problem.AddResidualBlock(cost_function, new ceres::ArctanLoss(2.0), &this->Trelative(0), &this->Trelative(1), &this->Trelative(2), &this->Trelative(3), &this->Trelative(4), &this->Trelative(5));
     }
 
     ceres::Solver::Options options;
@@ -3798,7 +3798,7 @@ void vtkSlam::Mapping()
     {
       ceres::CostFunction* cost_function = new ceres::AutoDiffCostFunction<AffineIsometryResidual, 1, 1, 1, 1, 1, 1, 1>(
                                             new AffineIsometryResidual(this->Avalues[k], this->Pvalues[k], this->Xvalues[k]));
-      problem.AddResidualBlock(cost_function, NULL, &this->Tworld(0), &this->Tworld(1), &this->Tworld(2), &this->Tworld(3), &this->Tworld(4), &this->Tworld(5));
+      problem.AddResidualBlock(cost_function, new ceres::ArctanLoss(2.0), &this->Tworld(0), &this->Tworld(1), &this->Tworld(2), &this->Tworld(3), &this->Tworld(4), &this->Tworld(5));
     }
 
     ceres::Solver::Options options;
