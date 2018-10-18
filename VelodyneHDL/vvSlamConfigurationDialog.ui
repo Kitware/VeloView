@@ -70,7 +70,7 @@
             <item row="1" column="1">
              <widget class="QSpinBox" name="MappingMinimalLineNeighborRejection">
               <property name="value">
-               <number>5</number>
+               <number>4</number>
               </property>
              </widget>
             </item>
@@ -91,7 +91,7 @@
             <item row="0" column="1">
              <widget class="QSpinBox" name="Mapping_LineDistance_k">
               <property name="value">
-               <number>15</number>
+               <number>10</number>
               </property>
              </widget>
             </item>
@@ -614,7 +614,7 @@
          <item row="1" column="1">
           <widget class="QDoubleSpinBox" name="LeafSize">
            <property name="value">
-            <double>0.400000000000000</double>
+            <double>0.600000000000000</double>
            </property>
           </widget>
          </item>

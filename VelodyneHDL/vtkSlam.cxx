@@ -161,9 +161,7 @@ public:
   }
 
   template <typename T>
-  bool operator()(const T* const rx, const T* const ry, const T* const rz,
-                  const T* const tx, const T* const ty, const T* const tz,
-                  T* residual) const
+  bool operator()(const T* const w, T* residual) const
   {
     // Convert internal double matrix
     // to a Jet matrix for auto diff calculous
@@ -173,14 +171,14 @@ public:
         Ac(i, j) = T(this->A(i, j));
 
     // store sin / cos values for this angle
-    T crx = ceres::cos(rx[0]); T srx = ceres::sin(rx[0]);
-    T cry = ceres::cos(ry[0]); T sry = ceres::sin(ry[0]);
-    T crz = ceres::cos(rz[0]); T srz = ceres::sin(rz[0]);
+    T crx = ceres::cos(w[0]); T srx = ceres::sin(w[0]);
+    T cry = ceres::cos(w[1]); T sry = ceres::sin(w[1]);
+    T crz = ceres::cos(w[2]); T srz = ceres::sin(w[2]);
 
     // Compute Y = R(theta) * X + T - C
-    T Yx = cry*crz*T(X(0)) + (srx*sry*crz-crx*srz)*T(X(1)) + (crx*sry*crz+srx*srz)*T(X(2)) + tx[0] - T(C(0));
-    T Yy = cry*srz*T(X(0)) + (srx*sry*srz+crx*crz)*T(X(1)) + (crx*sry*srz-srx*crz)*T(X(2)) + ty[0] - T(C(1));
-    T Yz = -sry*T(X(0)) + srx*cry*T(X(1)) + crx*cry*T(X(2)) + tz[0] - T(C(2));
+    T Yx = cry*crz*T(X(0)) + (srx*sry*crz-crx*srz)*T(X(1)) + (crx*sry*crz+srx*srz)*T(X(2)) + w[3] - T(C(0));
+    T Yy = cry*srz*T(X(0)) + (srx*sry*srz+crx*crz)*T(X(1)) + (crx*sry*srz-srx*crz)*T(X(2)) + w[4] - T(C(1));
+    T Yz = -sry*T(X(0)) + srx*cry*T(X(1)) + crx*cry*T(X(2)) + w[5] - T(C(2));
 
     // Compute final residual value which is:
     // Ht * A * H with H = R(theta)X + T
@@ -1010,7 +1008,7 @@ void vtkSlam::ResetAlgorithm()
   this->PlaneSinAngleThreshold = 0.5; // 50 degrees
   this->EdgeDepthGapThreshold = 0.02; // meters
   this->Undistortion = false; // should not undistord frame by default
-  this->LeafSize = 0.4;
+  this->LeafSize = 0.6;
 
   // Use dense planars point cloud for mapping
   this->FastSlam = true;
@@ -1019,8 +1017,8 @@ void vtkSlam::ResetAlgorithm()
 
   // EgoMotion
   // edges
-  this->EgoMotionLineDistanceNbrNeighbors = 5;
-  this->EgoMotionMinimumLineNeighborRejection = 2;
+  this->EgoMotionLineDistanceNbrNeighbors = 10;
+  this->EgoMotionMinimumLineNeighborRejection = 4;
   this->EgoMotionLineDistancefactor = 5.0;
   this->EgoMotionMaxLineDistance = 0.10; // 10 cm
 
@@ -3128,26 +3126,12 @@ void vtkSlam::ComputeBlobsDistanceParametersAccurate(pcl::KdTreeFLANN<Point>::Pt
 {
   // number of neighbors blobs points required to approximate
   // the corresponding ellipsoide
-  unsigned int requiredNearest;
+  unsigned int requiredNearest = 7;
 
   // maximum distance between keypoints
   // and its neighbor
-  double maxDist;
-
-  if (step == "egoMotion")
-  {
-    requiredNearest = 5;
-    maxDist = 6.5;
-  }
-  else if (step == "mapping")
-  {
-    requiredNearest = 7;
-    maxDist = 5.0;
-  }
-  else
-  {
-    throw "ComputeLineDistanceParametersAccurate function got invalide step parameter";
-  }
+  double maxDist = this->MaxDistanceForICPMatching;
+  float maxDiameterTol = std::pow(4.0, 2);
 
   // Usefull variables
   Eigen::Matrix<double, 3, 1> P0, P, n;
@@ -3176,6 +3160,26 @@ void vtkSlam::ComputeBlobsDistanceParametersAccurate(pcl::KdTreeFLANN<Point>::Pt
     return;
   }
 
+  // check the diameter of the neighborhood
+  // if the diameter is too big we don't want
+  // to keep this blobs. We must do that since
+  // the blobs fitted ellipsoide is assume to
+  // encode the local neighborhood shape.
+  float maxDiameter = 0;
+  for (unsigned int i = 0; i < requiredNearest; ++i)
+  {
+    for (unsigned int j = 0; j < requiredNearest; ++j)
+    {
+      Point pt1 = kdtreePreviousBlobs->getInputCloud()->points[nearestIndex[i]];
+      Point pt2 = kdtreePreviousBlobs->getInputCloud()->points[nearestIndex[j]];
+      maxDiameter = std::max(maxDiameter, std::pow(pt1.x - pt2.x, 2) + std::pow(pt1.y - pt2.y, 2) + std::pow(pt1.z - pt2.z, 2));
+    }
+  }
+  if (maxDiameter > maxDiameterTol)
+  {
+    return;
+  }
+
   // Compute PCA to determine best ellipsoide approximation
   // of the requiredNearest nearest blobs points extracted
   // Thanks to the PCA we will check the shape of the neighborhood
@@ -3195,6 +3199,7 @@ void vtkSlam::ComputeBlobsDistanceParametersAccurate(pcl::KdTreeFLANN<Point>::Pt
 
   // Sigma is the inverse of the covariance
   // Matrix encoding the mahalanobis distance
+  // check that the covariance matrix is inversible
   if (std::abs(cov.determinant()) < 1e-6)
   {
     return;
@@ -3607,9 +3612,9 @@ void vtkSlam::ComputeEgoMotion()
     ceres::Problem problem;
     for (unsigned int k = 0; k < Xvalues.size(); ++k)
     {
-      ceres::CostFunction* cost_function = new ceres::AutoDiffCostFunction<AffineIsometryResidual, 1, 1, 1, 1, 1, 1, 1>(
+      ceres::CostFunction* cost_function = new ceres::AutoDiffCostFunction<AffineIsometryResidual, 1, 6>(
                                             new AffineIsometryResidual(this->Avalues[k], this->Pvalues[k], this->Xvalues[k]));
-      problem.AddResidualBlock(cost_function, new ceres::ArctanLoss(2.0), &this->Trelative(0), &this->Trelative(1), &this->Trelative(2), &this->Trelative(3), &this->Trelative(4), &this->Trelative(5));
+      problem.AddResidualBlock(cost_function, new ceres::ArctanLoss(2.0), this->Trelative.data());
     }
 
     ceres::Solver::Options options;
@@ -3687,10 +3692,12 @@ void vtkSlam::Mapping()
     std::cout << "blobs map : " << subBlobPointsLocalMap->points.size() << std::endl;
   }
 
+  bool shouldBreak = false;
   unsigned int usedEdges = 0;
   unsigned int usedPlanes = 0;
   unsigned int usedBlobs = 0;
   Point currentPoint;
+  Eigen::MatrixXd estimatorCovariance(6, 6);
 
   // Interpolator used to undistord the frames
   vtkSmartPointer<vtkVelodyneTransformInterpolator> undistortionInterp;
@@ -3780,9 +3787,9 @@ void vtkSlam::Mapping()
     ceres::Problem problem;
     for (unsigned int k = 0; k < Xvalues.size(); ++k)
     {
-      ceres::CostFunction* cost_function = new ceres::AutoDiffCostFunction<AffineIsometryResidual, 1, 1, 1, 1, 1, 1, 1>(
+      ceres::CostFunction* cost_function = new ceres::AutoDiffCostFunction<AffineIsometryResidual, 1, 6>(
                                             new AffineIsometryResidual(this->Avalues[k], this->Pvalues[k], this->Xvalues[k]));
-      problem.AddResidualBlock(cost_function, new ceres::ArctanLoss(2.0), &this->Tworld(0), &this->Tworld(1), &this->Tworld(2), &this->Tworld(3), &this->Tworld(4), &this->Tworld(5));
+      problem.AddResidualBlock(cost_function, new ceres::ArctanLoss(2.0), this->Tworld.data());
     }
 
     ceres::Solver::Options options;
@@ -3797,39 +3804,40 @@ void vtkSlam::Mapping()
     // If no L-M iteration has been made since the
     // last ICP matching it means we reached a local
     // minimum for the ICP-LM algorithm
+    shouldBreak = (icpCount == this->MappingICPMaxIter - 1);
     if (summary.num_successful_steps == 1)
     {
+      shouldBreak = true;
+    }
+
+    // If it is the last iteration, compute
+    // the variance covariance of the estimator
+
+    // Now evaluate the quality of the parameters
+    // estimated using an approximate computation
+    // of the variance covariance matrix
+    if (shouldBreak)
+    {
+      // Covariance computation options
+      ceres::Covariance::Options covOptions;
+      covOptions.apply_loss_function = true;
+      covOptions.algorithm_type = ceres::CovarianceAlgorithmType::DENSE_SVD;
+
+      // Computation of the variance-covariance matrix
+      ceres::Covariance covariance(covOptions);
+      std::vector<std::pair<const double*, const double* > > covariance_blocks;
+      covariance_blocks.push_back(std::make_pair(this->Tworld.data(), this->Tworld.data()));
+      covariance.Compute(covariance_blocks, &problem);
+      double covarianceMat[6 * 6];
+      covariance.GetCovarianceBlock(this->Tworld.data(), this->Tworld.data(), covarianceMat);
+      for (int i = 0; i < 6; ++i)
+        for (int j = 0; j < 6; ++j)
+          estimatorCovariance(i, j) = covarianceMat[i + 6 * j];
       break;
     }
   }
 
-  // Now evaluate the quality of the parameters
-  // prediction using an approxiamte computation
-  // of the variance covariance matrix
-  // Rotation and translation at the end of the mapping
-  Eigen::Matrix<double, 3, 3> R;
-  Eigen::Matrix<double, 3, 1> dT;
-  R = GetRotationMatrix(this->Tworld);
-  dT << this->Tworld(3), this->Tworld(4), this->Tworld(5);
-
-  // Compute residuals values mean and variance
-  Eigen::MatrixXd Y;
-  this->ComputeResidualValues(this->Avalues, this->Xvalues, this->Pvalues, this->OutlierDistScale, R, dT, Y);
-  double residualSum = std::sqrt(0.5 / static_cast<double>(Y.rows()) * (Y.transpose() * Y)(0));
-  double meanResidual = Y.sum();
-  double varResidual = 0;
-  for (unsigned int k = 0; k < Y.rows(); ++k)
-  {
-    varResidual = std::pow(Y(k) - meanResidual, 2);
-  }
-  varResidual /= static_cast<double>(Y.rows());
-
-  Eigen::MatrixXd J;
-  this->ComputeResidualJacobians(this->Avalues, this->Xvalues, this->Pvalues, this->OutlierDistScale, this->Tworld, J);
-
-  Eigen::MatrixXd JtJ = J.transpose() * J;
-  Eigen::MatrixXd Sigma = varResidual * JtJ.inverse();
-  Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eig(Sigma);
+  Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eig(estimatorCovariance);
   Eigen::MatrixXd D = eig.eigenvalues();
 
   static_cast<vtkDoubleArray*>(this->Trajectory->GetPointData()->GetArray("Mapping: intiale cost function"))->InsertNextValue(0);
@@ -3842,8 +3850,8 @@ void vtkSlam::Mapping()
 
   std::cout << "used keypoints : " << this->Xvalues.size() << std::endl;
   std::cout << "edges : " << usedEdges << " planes : " << usedPlanes << " blobs : " << usedBlobs << std::endl;
-  std::cout << "Covariance matrix: " << Sigma << std::endl;
-  std::cout << "Covariance Eigen values: " << D << std::endl;
+  std::cout << "Covariance Matrix ceres: " << std::endl << estimatorCovariance << std::endl;
+  std::cout << "Covariance Eigen values: " << D.transpose() << std::endl;
   std::cout << "Maximum variance: " << D(5) << std::endl;
 
   if (this->MotionModel > 0)
@@ -3868,7 +3876,7 @@ void vtkSlam::Mapping()
         Measure(i) = this->Tworld(i);
         for (unsigned int j = 0; j < 6; ++j)
         {
-          SigmaMeas(i, j) = Sigma(i, j);
+          SigmaMeas(i, j) = estimatorCovariance(i, j);
         }
       }
       Measure(6) = V.norm();
@@ -3876,7 +3884,7 @@ void vtkSlam::Mapping()
     }
     else
     {
-      SigmaMeas = Sigma;
+      SigmaMeas = estimatorCovariance;
       Measure = this->Tworld;
     }
     this->KalmanEstimator.Prediction();
