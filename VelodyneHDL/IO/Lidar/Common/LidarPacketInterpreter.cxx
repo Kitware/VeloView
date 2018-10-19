@@ -50,6 +50,12 @@ LidarPacketInterpreter::LidarPacketInterpreter()
 }
 
 //-----------------------------------------------------------------------------
+LidarPacketInterpreter::~LidarPacketInterpreter()
+{
+
+}
+
+//-----------------------------------------------------------------------------
 bool LidarPacketInterpreter::SplitFrame(bool force)
 {
   if (this->IgnoreEmptyFrames && this->CurrentFrame->GetNumberOfPoints() == 0 && !force)

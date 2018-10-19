@@ -20,6 +20,8 @@
 
 #include <QMessageBox>
 
+
+
 //-----------------------------------------------------------------------------
 class vvSelectFramesDialog::pqInternal : public Ui::vvSelectFramesDialog
 {
@@ -170,6 +172,36 @@ int vvSelectFramesDialog::frameTransform() const
   {
     return SENSOR;
   }
+}
+
+//-----------------------------------------------------------------------------
+int vvSelectFramesDialog::frameMaximun() const
+{
+  return std::max( this->Internal->FrameStart->maximum(), this->Internal->FrameStop->maximum());
+}
+
+//-----------------------------------------------------------------------------
+int vvSelectFramesDialog::frameMinimun() const
+{
+  return std::max( this->Internal->FrameStart->minimum(), this->Internal->FrameStop->minimum());;
+}
+
+//-----------------------------------------------------------------------------
+bool vvSelectFramesDialog::frameStrideVisibility() const
+{
+  return  this->Internal->FrameStrideContainer->isVisible();;
+}
+
+//-----------------------------------------------------------------------------
+bool vvSelectFramesDialog::framePackVisibility() const
+{
+  return this->Internal->FramePackContainer->isVisible();;
+}
+
+//-----------------------------------------------------------------------------
+bool vvSelectFramesDialog::frameTransformVisibility() const
+{
+  return  this->Internal->FrameTransformContainer->isVisible();;
 }
 
 //-----------------------------------------------------------------------------

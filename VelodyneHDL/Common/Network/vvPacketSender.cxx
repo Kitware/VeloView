@@ -30,8 +30,8 @@ public:
     , PositionSocket(0)
     , PacketReader(0)
     , Done(false)
-    , PacketCount(0)
     , lastTimestamp(0)
+    , PacketCount(0)
     , LIDAREndpoint(boost::asio::ip::address_v4::from_string(destinationIp), lidarPort)
     , PositionEndpoint(boost::asio::ip::address_v4::from_string(destinationIp), positionPort)
   {
@@ -87,7 +87,7 @@ int vvPacketSender::pumpPacket()
 {
   if (this->Internal->Done)
   {
-    return std::numeric_limits<double>::max();
+    return std::numeric_limits<int>::max();
   }
 
   const unsigned char* data = 0;
@@ -103,7 +103,7 @@ int vvPacketSender::pumpPacket()
   // Position packet
   if ((dataLength == 512))
   {
-    size_t bytesSent = this->Internal->PositionSocket->send_to(
+    this->Internal->PositionSocket->send_to(
       boost::asio::buffer(data, dataLength), this->Internal->PositionEndpoint);
   }
 
@@ -116,9 +116,8 @@ int vvPacketSender::pumpPacket()
       static_cast<int>(dataPacket->gpsTimestamp) - static_cast<int>(this->Internal->lastTimestamp);
     this->Internal->lastTimestamp = dataPacket->gpsTimestamp;
     ++this->Internal->PacketCount;
-    HDLDataPacket* modifiableDataPacket = const_cast<HDLDataPacket*>(dataPacket);
 
-    size_t bytesSent = this->Internal->LIDARSocket->send_to(
+    this->Internal->LIDARSocket->send_to(
       boost::asio::buffer(data, dataLength), this->Internal->LIDAREndpoint);
   }
 

@@ -41,14 +41,6 @@ projPJ CreateProj(int epsg)
 }
 
 //-----------------------------------------------------------------------------
-projPJ CreateProj(int epsg, int epsgVerticalDatum)
-{
-  std::ostringstream ss;
-  ss << "+init=epsg:" << epsg << "+" << epsgVerticalDatum << " ";
-  return pj_init_plus(ss.str().c_str());
-}
-
-//-----------------------------------------------------------------------------
 Eigen::Vector3d ConvertGcs(Eigen::Vector3d p, projPJ inProj, projPJ outProj)
 {
   if (pj_is_latlong(inProj))

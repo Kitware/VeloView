@@ -106,7 +106,6 @@ double GaussianMixture::operator()(double x)
 void GaussianMixture::AddPoint(double x)
 {
   double maxProba = 0.0;
-  unsigned int indexProba = 0;
   std::list<Gaussian>::iterator itMaxProba;
 
   // add the point to the right gaussian

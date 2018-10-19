@@ -179,7 +179,6 @@ void vtkVeloViewPiecewiseFunction::GetTableDichotomic( double xStart, double xEn
                                      int stride )
  {
    int i;
-  int idx = 0;
   int numNodes = static_cast<int>(this->Internal->Nodes.size());
 
   // Need to keep track of the last value so that

@@ -43,7 +43,7 @@ vtkSmartPointer<vtkPolyData> PacketConsumer::GetFrameForTime(double timeRequest,
     else
     {
       vtkSmartPointer<vtkAppendPolyData> appendFilter = vtkSmartPointer<vtkAppendPolyData>::New();
-      for (int i = stepIndex - std::min(stepIndex, static_cast<size_t>(numberOfTrailingFrames));
+      for (size_t i = stepIndex - std::min(stepIndex, static_cast<size_t>(numberOfTrailingFrames));
            i < stepIndex; ++i)
       {
         appendFilter->AddInputData(this->Frames[i]);
@@ -142,7 +142,7 @@ void PacketConsumer::UpdateDequeSize()
   {
     return;
   }
-  while (this->Frames.size() >= this->MaxNumberOfFrames)
+  while (static_cast<int>(this->Frames.size()) >= this->MaxNumberOfFrames)
   {
     this->Frames.pop_front();
     this->Timesteps.pop_front();

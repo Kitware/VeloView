@@ -231,7 +231,6 @@ QVector3D vvCropReturnsDialog::firstCorner() const
   double cropRegion[6];
   this->Internal->GetCropRegion(cropRegion);
 
-  const pqInternal* const d = this->Internal.data();
   if (this->Internal->sphericalRadioButton->isChecked())
   {
     return QVector3D(cropRegion[0], cropRegion[2], qMin(cropRegion[4], cropRegion[5]));
@@ -249,7 +248,6 @@ QVector3D vvCropReturnsDialog::secondCorner() const
   double cropRegion[6];
   this->Internal->GetCropRegion(cropRegion);
 
-  const pqInternal* const d = this->Internal.data();
   if (this->Internal->sphericalRadioButton->isChecked())
   {
     return QVector3D(cropRegion[1], cropRegion[3], qMax(cropRegion[4], cropRegion[5]));

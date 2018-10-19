@@ -288,7 +288,7 @@
      <property name="title">
       <string>Network Forwarding</string>
      </property>
-     <layout class="QFormLayout" name="PortLayout">
+     <layout class="QFormLayout">
       <property name="fieldGrowthPolicy">
        <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
       </property>
@@ -361,7 +361,7 @@
      <property name="title">
       <string>Network Configuration</string>
      </property>
-     <layout class="QFormLayout" name="PortLayout">
+     <layout class="QFormLayout">
       <property name="fieldGrowthPolicy">
        <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
       </property>
@@ -494,7 +494,7 @@
        </spacer>
       </item>
       <item>
-       <layout class="QFormLayout" name="formLayout">
+       <layout class="QFormLayout">
         <property name="fieldGrowthPolicy">
          <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
         </property>

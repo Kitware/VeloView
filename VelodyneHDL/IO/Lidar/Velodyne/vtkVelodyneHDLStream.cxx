@@ -200,7 +200,7 @@ void vtkVelodyneHDLStream::SetSelectedPointsWithDualReturn(double* data, int Npo
   this->Interpreter->SelectedDualReturn->Allocate(60000);
   this->Interpreter->SelectedDualReturn->SetName("dualReturn_of_selectedPoints");
 
-  for (unsigned int k = 0; k < Npoints; ++k)
+  for (int k = 0; k < Npoints; ++k)
   {
     this->Interpreter->SelectedDualReturn->InsertNextValue(data[k]);
   }

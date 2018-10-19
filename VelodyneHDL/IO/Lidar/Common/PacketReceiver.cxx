@@ -6,9 +6,9 @@
 
 //-----------------------------------------------------------------------------
 PacketReceiver::PacketReceiver(boost::asio::io_service &io, int port, int forwardport, std::string forwarddestinationIp, bool isforwarding, NetworkSource *parent)
-  : Port(port)
+  : isForwarding(isforwarding)
+  , Port(port)
   , PacketCounter(0)
-  , isForwarding(isforwarding)
   , Socket(io)
   , ForwardedSocket(io)
   , Parent(parent)
@@ -115,8 +115,7 @@ void PacketReceiver::SocketCallback(
 
   if (this->isForwarding)
   {
-    size_t bytesSent =
-      ForwardedSocket.send_to(boost::asio::buffer(packet->c_str(), numberOfBytes), ForwardEndpoint);
+    ForwardedSocket.send_to(boost::asio::buffer(packet->c_str(), numberOfBytes), ForwardEndpoint);
   }
   if (this->fileCrashAnalysis.is_open())
   {

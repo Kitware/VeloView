@@ -55,7 +55,7 @@ enum SensorType
   HDL64 = 0xa0, // decimal: 160
 };
 
-static std::string SensorTypeToString(SensorType type)
+static inline std::string SensorTypeToString(SensorType type)
 {
     switch (type) {
       case SensorType::HDL32E:
@@ -85,7 +85,7 @@ static std::string SensorTypeToString(SensorType type)
   */
 }
 
-static int num_laser(SensorType sensorType)
+static inline int num_laser(SensorType sensorType)
 {
   switch (sensorType)
   {
@@ -110,7 +110,7 @@ enum DualReturnSensorMode
   DUAL_RETURN = 0x39,
 };
 
-static std::string DualReturnSensorModeToString(DualReturnSensorMode type)
+static inline std::string DualReturnSensorModeToString(DualReturnSensorMode type)
 {
     switch (type) {
       case DualReturnSensorMode::STRONGEST_RETURN:

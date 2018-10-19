@@ -118,7 +118,6 @@ int vtkVelodyneHDLGridSource::RequestData(
   vtkInformation* request, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
   vtkPolyData* output = vtkPolyData::GetData(outputVector);
-  vtkInformation* info = outputVector->GetInformationObject(0);
 
   if (this->GridNbTicks < 1)
   {
