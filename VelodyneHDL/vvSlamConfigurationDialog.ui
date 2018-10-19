@@ -149,7 +149,7 @@
          <item row="2" column="2" colspan="2">
           <widget class="QGroupBox" name="groupBox_9">
            <property name="title">
-            <string>Planes</string>
+            <string>Planes </string>
            </property>
            <layout class="QGridLayout" name="gridLayout_9">
             <item row="0" column="1">
@@ -165,7 +165,7 @@
                <double>999.990000000000009</double>
               </property>
               <property name="value">
-               <double>30.000000000000000</double>
+               <double>35.000000000000000</double>
               </property>
              </widget>
             </item>
@@ -182,7 +182,7 @@
                <double>999.990000000000009</double>
               </property>
               <property name="value">
-               <double>5.000000000000000</double>
+               <double>8.000000000000000</double>
               </property>
              </widget>
             </item>
@@ -210,7 +210,7 @@
             <item row="3" column="1">
              <widget class="QDoubleSpinBox" name="Mapping_Plane_Max_Distance">
               <property name="value">
-               <double>0.040000000000000</double>
+               <double>0.200000000000000</double>
               </property>
              </widget>
             </item>
@@ -477,7 +477,7 @@
                <double>999.990000000000009</double>
               </property>
               <property name="value">
-               <double>50.000000000000000</double>
+               <double>35.000000000000000</double>
               </property>
              </widget>
             </item>
@@ -494,7 +494,7 @@
                <double>999.990000000000009</double>
               </property>
               <property name="value">
-               <double>5.000000000000000</double>
+               <double>8.000000000000000</double>
               </property>
              </widget>
             </item>
@@ -522,7 +522,7 @@
             <item row="3" column="1">
              <widget class="QDoubleSpinBox" name="EgoMotion_Plane_Max_Distance">
               <property name="value">
-               <double>0.040000000000000</double>
+               <double>0.200000000000000</double>
               </property>
              </widget>
             </item>

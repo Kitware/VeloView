@@ -994,7 +994,7 @@ void vtkSlam::PrintParameters()
 //-----------------------------------------------------------------------------
 void vtkSlam::ResetAlgorithm()
 {
-  google::InitGoogleLogging("Slam_optimisation");
+  //google::InitGoogleLogging("Slam_optimisation");
   this->DisplayMode = true; // switch to false to improve speed
   this->NeighborWidth = 3;
   this->EgoMotionICPMaxIter = 3;
@@ -1024,9 +1024,9 @@ void vtkSlam::ResetAlgorithm()
 
   // planes
   this->EgoMotionPlaneDistanceNbrNeighbors = 5;
-  this->EgoMotionPlaneDistancefactor1 = 50.0;
-  this->EgoMotionPlaneDistancefactor2 = 5.0;
-  this->EgoMotionMaxPlaneDistance = 0.04; // 4 cm
+  this->EgoMotionPlaneDistancefactor1 = 35.0;
+  this->EgoMotionPlaneDistancefactor2 = 8.0;
+  this->EgoMotionMaxPlaneDistance = 0.2; // 4 cm
 
   // Mapping
   // edges
@@ -1038,9 +1038,9 @@ void vtkSlam::ResetAlgorithm()
 
   // planes
   this->MappingPlaneDistanceNbrNeighbors = 5;
-  this->MappingPlaneDistancefactor1 = 50.0;
-  this->MappingPlaneDistancefactor2 = 5.0;
-  this->MappingMaxPlaneDistance = 0.04; // 4 cm
+  this->MappingPlaneDistancefactor1 = 35.0;
+  this->MappingPlaneDistancefactor2 = 8.0;
+  this->MappingMaxPlaneDistance = 0.2; // 4 cm
 
   // Blobs
   this->SphericityThreshold = 0.35;
