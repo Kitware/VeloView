@@ -33,9 +33,6 @@ import planefit
 
 from PythonQt.paraview import vvCalibrationDialog, vvCropReturnsDialog, vvSelectFramesDialog
 from VelodyneHDLPluginPython import vtkVelodyneHDLReader
-from VelodyneHDLPluginPython import vtkRansacPlaneModel
-from VelodyneHDLPluginPython import vtkBirdEyeViewSnap
-from VelodyneHDLPluginPython import vtkMotionDetector
 
 _repCache = {}
 
@@ -1802,7 +1799,7 @@ def createGrid(view=None):
     grid = smp.VelodyneHDLGridSource(guiName='Measurement Grid')
 
     if app.gridProperties.Persist == False:
-        grid.GridNbTicks = (int(math.ceil(50000 * app.DistanceResolutionM/ grid.GetClientSideObject().GetScale()) ))
+        grid.GridNbTicks = (int(math.ceil(50000 * app.DistanceResolutionM/ grid.Scale )))
     else:
         # Restore grid properties
         grid.Normal = app.gridProperties.Normal

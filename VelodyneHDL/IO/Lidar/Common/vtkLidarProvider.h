@@ -19,7 +19,7 @@
 #include <vtkPolyDataAlgorithm.h>
 #include <vtkTransform.h>
 
-#include <LidarPacketInterpreter.h>
+#include "LidarPacketInterpreter.h"
 
 //
 // Set built-in type.  Creates member Set"name"() (e.g., SetVisibility());
