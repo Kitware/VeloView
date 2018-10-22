@@ -242,24 +242,45 @@ void vtkVelodyneHDLPositionReader::vtkInternal::InterpolateGPS(
   double timeOffset = 0.0;
 
   assert(times->GetNumberOfTuples() == gpsTime->GetNumberOfTuples());
-  unsigned int lastGPS = 0;
+  double lastGPSTime = 0;
+  bool shouldWarnTimeShift = true;
   for (vtkIdType i = 0, k = times->GetNumberOfTuples(); i < k; ++i)
   {
-    const unsigned int currGPS = gpsTime->GetTuple1(i);
-    if (currGPS != lastGPS)
+    const double currGPSTime = gpsTime->GetTuple1(i);
+    const unsigned int currGPSTime_int = static_cast<unsigned int>(currGPSTime);
+
+    if (currGPSTime != lastGPSTime)
     {
-      if (currGPS < lastGPS)
+      if (currGPSTime < lastGPSTime)
       {
         // time of day has wrapped; increment time offset
         timeOffset += 24.0 * 3600.0;
       }
-      lastGPS = currGPS;
+      lastGPSTime = currGPSTime;
 
       // Compute time in seconds from decimal-encoded time
-      const int hours = currGPS / 10000;
-      const int minutes = (currGPS / 100) % 100;
-      const int seconds = currGPS % 100;
-      const double convertedtime = ((3600 * hours) + (60.0 * minutes) + seconds) + timeOffset;
+      const int hours = currGPSTime_int / 10000;
+      const int minutes = (currGPSTime_int / 100) % 100;
+      const int seconds = currGPSTime_int % 100;
+      const double fraction_seconds = currGPSTime - static_cast<double>(currGPSTime_int);
+      const double convertedtime = ((3600 * hours) + (60.0 * minutes) + seconds + fraction_seconds) + timeOffset;
+
+      // check that the sensor internal time
+      // and the the GPS time are equal modulo
+      // an hours = 3600 seconds
+      const double sensorInternalTime = times->GetTuple1(i) * 1e-6;
+      const double timeDiff = std::abs(convertedtime - sensorInternalTime);
+      const unsigned int timeDiffInt = static_cast<unsigned int>(timeDiff);
+      if ((timeDiffInt % 3600 != 0) && shouldWarnTimeShift)
+      {
+        double timeshift = std::min(3600.0 - static_cast<double>(timeDiffInt % 3600), static_cast<double>(timeDiffInt % 3600));
+        std::stringstream ss;
+        ss << "Unconsistent timeshift between sensor internal time and gps time" << std::endl;
+        ss << "timeshift: " << (int)timeshift << "s sensor internal time: " << sensorInternalTime
+           << "s gps time: " << convertedtime << "s" << std::endl;
+        vtkGenericWarningMacro(<< ss.str());
+        shouldWarnTimeShift = false;
+      }
 
       // Get position and heading
       double pos[3];
