@@ -481,6 +481,7 @@ int vtkVelodyneHDLPositionReader::RequestData(
         lonDegGPRMC = 0.0;
         latDegGPRMC = 0.0;
         heading = 0.0;
+        continue;
       }
       else
       {
@@ -488,6 +489,8 @@ int vtkVelodyneHDLPositionReader::RequestData(
         latDegGPRMC = atof(words[3].c_str());
         lonDegGPRMC = atof(words[5].c_str());
         heading = atof(words[8].c_str());
+        if (words[2][0] != 'A')
+          continue;
       }
 
       double latDegDec = floor(latDegGPRMC / 100);
