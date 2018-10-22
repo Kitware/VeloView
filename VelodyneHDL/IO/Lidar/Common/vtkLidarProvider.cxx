@@ -120,11 +120,15 @@ void vtkLidarProvider::SetDummyProperty(int)
 //-----------------------------------------------------------------------------
 vtkLidarProvider::vtkLidarProvider()
 {
-
+  this->SetNumberOfInputPorts(0);
+  this->SetNumberOfOutputPorts(1);
 }
 
 //-----------------------------------------------------------------------------
 vtkLidarProvider::~vtkLidarProvider()
 {
-  delete this->Interpreter;
+  if (this->Interpreter)
+  {
+    delete this->Interpreter;
+  }
 }
