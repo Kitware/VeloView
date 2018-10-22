@@ -546,7 +546,7 @@
          <item row="1" column="2">
           <widget class="QSpinBox" name="EgoMotion_ICPMaxIter">
            <property name="value">
-            <number>3</number>
+            <number>4</number>
            </property>
           </widget>
          </item>

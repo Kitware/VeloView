@@ -690,17 +690,22 @@ private:
   // at time t0. The referential at time of acquisition t is estimated
   // using the constant velocity hypothesis and the provided sensor
   // position estimation
-  void ExpressPointInStartReferencial(Point& p, vtkSmartPointer<vtkVelodyneTransformInterpolator> undistortionInterp);
+  void ExpressPointInOtherReferencial(Point& p, vtkSmartPointer<vtkVelodyneTransformInterpolator> undistortionInterp);
 
   // Express the keypoints into the referential of the sensor
   // at time t1. The referential at time of acquisition t is estimated
   // using the constant velocity hypothesis and the provided sensor
   // position estimation
-  void ExpressKeypointsInEndFrameRef();
-  void ExpressPointInEndReferencial(Point& p, vtkSmartPointer<vtkVelodyneTransformInterpolator> undistortionInterp);
+  void ExpressKeypointsInEndFrameRefMapping();
+  void ExpressKeypointsInEndFrameRefEgoMotion();
 
   // Initialize the undistortion interpolator
-  vtkSmartPointer<vtkVelodyneTransformInterpolator> InitUndistortionInterpolator();
+  // for the EgoMotion part it is just an interpolation
+  // between Id and Trelative
+  // for the mapping part it is an interpolation between indentity
+  // and the incremental transform between TworldPrevious and Tworld
+  vtkSmartPointer<vtkVelodyneTransformInterpolator> InitUndistortionInterpolatorEgoMotion();
+  vtkSmartPointer<vtkVelodyneTransformInterpolator> InitUndistortionInterpolatorMapping();
 
   // Update the world transformation by integrating
   // the relative motion recover and the previous
