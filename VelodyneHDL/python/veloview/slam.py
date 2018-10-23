@@ -170,7 +170,7 @@ def launch():
 
     # Clam the end frame if user settled it over
     # the maximum of frames contained in the data
-    stop = min(stop, source.GetNumberOfFrames() - 1)
+    stop = min(stop, source.GetNumberOfFrames() - 2)
 
     # If a position source is available
     # provide it to the slam algorithm

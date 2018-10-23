@@ -221,8 +221,6 @@ public:
 
   // SLAM transforms related
   void AddTransform(double rx, double ry, double rz, double tx, double ty, double tz, double time);
-  void LoadTransforms(const std::string& filename);
-  void ExportTransforms(const std::string& filename);
 
   friend class vtkLidarReaderInternal;
   friend class vtkLidarStreamInternal;
