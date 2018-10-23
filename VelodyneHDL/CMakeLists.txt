@@ -1,15 +1,40 @@
-include(../SoftwareInformation/branding.cmake)
 project(VelodyneHDLPlugin)
 cmake_minimum_required(VERSION 2.8)
 
-message("Until the 'Speedup interpolator' merge request is integrated to VTK, we provide the patch")
+#-----------------------------------------------------------------------------
+# Temporary Fix
+#-----------------------------------------------------------------------------
 
+message(AUTHOR_WARNING "Until the 'Speedup interpolator' merge request is integrated to VTK, we provide the patch")
+set(interpolator_pach_until_vtk_update
+  vtkPatchVeloView/vtkVeloViewPiecewiseFunction.cxx
+  vtkPatchVeloView/vtkVeloViewQuaternionInterpolator.cxx
+  vtkPatchVeloView/vtkVeloViewTupleInterpolator.cxx
+)
+
+#-----------------------------------------------------------------------------
+# Option to hide/show external warning library
+#-----------------------------------------------------------------------------
+
+set(SYSTEM_OPTION)
+option(BUILD_HIDE_WARNING_FROM_EXTERNAL_DEPENDENCIES "hide external libraries warning, by handling them as system libraries" ON)
+if(BUILD_HIDE_WARNING_FROM_EXTERNAL_DEPENDENCIES)
+  set(SYSTEM_OPTION SYSTEM)
+endif()
+
+#-----------------------------------------------------------------------------
+# Handle plugin library dependencies
+#-----------------------------------------------------------------------------
+
+#--------------------------------------
+# ParaView dependency
+#--------------------------------------
 if(ParaView_SOURCE_DIR)
 
-  include_directories(${VTK_INCLUDE_DIRS})
+  include_directories(${SYSTEM_OPTION} ${VTK_INCLUDE_DIRS})
   if(PARAVIEW_BUILD_QT_GUI)
     include(${QT_USE_FILE})
-    include_directories(${PARAVIEW_GUI_INCLUDE_DIRS})
+    include_directories(${SYSTEM_OPTION} ${PARAVIEW_GUI_INCLUDE_DIRS})
   endif(PARAVIEW_BUILD_QT_GUI)
 
 else(ParaView_SOURCE_DIR)
@@ -19,21 +44,20 @@ else(ParaView_SOURCE_DIR)
 endif(ParaView_SOURCE_DIR)
 
 vtk_module_load(vtklibproj4)
-include_directories(${vtklibproj4_INCLUDE_DIRS})
+include_directories(${SYSTEM_OPTION} ${vtklibproj4_INCLUDE_DIRS})
+include_directories(${SYSTEM_OPTION} ${PYTHONQT_INCLUDE_DIRS})
 
+#--------------------------------------
+# pcap dependency
+#--------------------------------------
 find_library(PCAP_LIBRARY pcap DOC "pcap library")
 find_path(PCAP_INCLUDE_DIR pcap.h DOC "pcap include directory")
 mark_as_advanced(PCAP_LIBRARY PCAP_INCLUDE_DIR)
-include_directories(${PCAP_INCLUDE_DIR})
+include_directories(${SYSTEM_OPTION} ${PCAP_INCLUDE_DIR})
 
-#PCL plugin
-find_package(PCL REQUIRED)
-include_directories(${PCL_INCLUDE_DIRS})
-add_definitions(${PCL_DEFINITIONS})
-
-#CERES plugin
-find_package(CERES REQUIRED)
-
+#--------------------------------------
+# liblas dependency
+#--------------------------------------
 set(LASNAME las)
 if(WIN32)
   set(LASNAME liblas)
@@ -42,137 +66,124 @@ endif()
 find_library(liblas_LIBRARY ${LASNAME} DOC "liblas library")
 find_path(liblas_INCLUDE_DIR liblas/version.hpp DOC "liblas include directory")
 mark_as_advanced(liblas_LIBRARY liblas_INCLUDE_DIR)
-include_directories(${liblas_INCLUDE_DIR})
+include_directories(${SYSTEM_OPTION} ${liblas_INCLUDE_DIR})
 
+#--------------------------------------
+# Eigen dependency
+#--------------------------------------
 find_package(Eigen REQUIRED)
-include_directories(${EIGEN_INCLUDE_DIR})
+include_directories(${SYSTEM_OPTION} ${EIGEN_INCLUDE_DIR})
 
+#--------------------------------------
+# Boost dependency
+#--------------------------------------
 if(WIN32)
   set(Boost_USE_STATIC_LIBS ON)
 endif(WIN32)
 set(Boost_USE_MULTITHREADED ON)
+# the expected behavior of find_package when  used wiht REQUIRED and OPTIONAL_COMPONENTS
+# it not the one expected, as it also required the optional component...
 find_package(Boost REQUIRED COMPONENTS system thread chrono regex date_time filesystem)
+include_directories(${SYSTEM_OPTION} ${Boost_INCLUDE_DIRS})
 set(ALL_BOOST_LIBRARIES ${Boost_LIBRARIES})
-include_directories(${Boost_INCLUDE_DIRS})
-find_package(Boost COMPONENTS atomic)
+find_package(Boost OPTIONAL_COMPONENTS atomic timer)
+include_directories(${SYSTEM_OPTION} ${Boost_INCLUDE_DIRS})
 list(APPEND ALL_BOOST_LIBRARIES ${Boost_LIBRARIES})
-include_directories(${Boost_INCLUDE_DIRS})
-find_package(Boost COMPONENTS timer)
-list(APPEND ALL_BOOST_LIBRARIES ${Boost_LIBRARIES})
-include_directories(${Boost_INCLUDE_DIRS})
 
-########################
-# build paraview plugin
+#--------------------------------------
+# pcl dependency
+#--------------------------------------
+find_package(PCL REQUIRED)
+include_directories(${SYSTEM_OPTION} ${PCL_INCLUDE_DIRS})
+add_definitions(${PCL_DEFINITIONS})
 
-set(gui_sources)
-set(gui_interfaces)
-set(gui_xml)
-set(servermanager_sources)
-set(servermanager_xml)
-set(deps)
+#--------------------------------------
+# ceres dependency
+#--------------------------------------
+find_package(CERES REQUIRED)
+include_directories(${SYSTEM_OPTION} ${CERES_INCLUDE_DIRS})
 
+#-----------------------------------------------------------------------------
+# Build Paraview Plugin
+#-----------------------------------------------------------------------------
+# The plugin contain both server code and gui code.
+# It's possible to only build the server code and skip the gui code
+# Currently it's not working well...
+
+# gui specific code
 if(PARAVIEW_BUILD_QT_GUI)
 
   include_directories(${PYTHONQT_INCLUDE_DIRS})
 
   set(UI_FILES
-    vvCalibrationDialog.ui
-    vvCropReturnsDialog.ui
-    vvLaserSelectionDialog.ui
-    vvSelectFramesDialog.ui
-    vvSlamConfigurationDialog.ui
+    Ui/vvCalibrationDialog.ui
+    Ui/vvCropReturnsDialog.ui
+    Ui/vvLaserSelectionDialog.ui
+    Ui/vvSelectFramesDialog.ui
+    Ui/vvSlamConfigurationDialog.ui
     )
 
   set(MOC_HEADERS
-    pqVelodyneHDLSource.h
-    vvCalibrationDialog.h
-    vvCropReturnsDialog.h
-    vvLaserSelectionDialog.h
-    vvSelectFramesDialog.h
-    vvSlamConfigurationDialog.h
+    Ui/vvCalibrationDialog.h
+    Ui/vvCropReturnsDialog.h
+    Ui/vvLaserSelectionDialog.h
+    Ui/vvSelectFramesDialog.h
+    Ui/vvSlamConfigurationDialog.h
     )
 
   set(resources
-    images/resources.qrc)
+    Ui/images/resources.qrc)
 
-  set(vtk_sources
-    vtkPCLConversions.cxx
-    vtkPlaneFitter.cxx
-    vtkVelodyneTransformInterpolator.cxx
-    vtkWrappedTupleInterpolator.cxx
-    )
-
-  # Until the 'Speedup interpolator' merge request is
-  # integrated to VTK, we provide the patch
-  set(non_vtk_sources
-    vtkPCLRansacModel.cxx
-    vtkLidarProvider.cxx
-    vtkLidarProviderInternal.cxx
-    vtkLidarReader.cxx
-    vtkLidarReaderInternal.cxx
-    vtkBirdEyeViewSnap.cxx
-    vtkLASFileWriter.cxx
-    vtkPacketFileWriter.cxx
-    vtkRansacPlaneModel.cxx
-    vtkRollingDataAccumulator.cxx
-    vtkSphericalMap.cxx
-    vvPacketSender.cxx
-    vtkSlam.cxx
-    vtkSensorTransformFusion.cxx
-    vtkPatchVeloView/vtkVeloViewPiecewiseFunction.cxx
-    vtkPatchVeloView/vtkVeloViewQuaternionInterpolator.cxx
-    vtkPatchVeloView/vtkVeloViewTupleInterpolator.cxx
-    )
-
+  # call some qt macro to create moc and code
   QT4_WRAP_CPP(moc_srcs ${MOC_HEADERS})
   QT4_WRAP_UI(ui_srcs ${UI_FILES})
   QT4_ADD_RESOURCES(resource_srcs ${resources})
 
-  ADD_PARAVIEW_OBJECT_PANEL(
-    ifaces iface_srcs
-    CLASS_NAME pqVelodyneHDLSource
-    XML_NAME VelodyneHDLSource
-    XML_GROUP sources)
-
-  list(APPEND gui_interfaces ${ifaces})
   list(APPEND gui_sources
-    ${iface_srcs}
     ${moc_srcs}
     ${ui_srcs}
     ${resource_srcs}
-    vvCalibrationDialog.cxx
-    vvCropReturnsDialog.cxx
-    vvLaserSelectionDialog.cxx
-    vvSelectFramesDialog.cxx
-    vvSlamConfigurationDialog.cxx
+    Ui/vvCalibrationDialog.cxx
+    Ui/vvCropReturnsDialog.cxx
+    Ui/vvLaserSelectionDialog.cxx
+    Ui/vvSelectFramesDialog.cxx
+    Ui/vvSlamConfigurationDialog.cxx
     )
 
+  # TODO I don"t get this dependancy is for
   list(APPEND deps
     pqApplicationComponents
-    ${vtklibproj4_LIBRARIES}
     )
 
 endif()
 
-
+# sources that will be wrap by paraview
+# this sources will also be wrap in python in another plugin
+# WARNING in case of inheritance, put also the upper classes
 list(APPEND servermanager_sources
-  vtkPCLRansacModel.cxx
-  vtkApplanixPositionReader.cxx
-  vtkMotionDetector.cxx
-  vtkBirdEyeViewSnap.cxx
-  vtkProcessingSample.cxx
-  vtkSlam.cxx
-  vtkSensorTransformFusion.cxx
-  vtkRansacPlaneModel.cxx
-  vtkVelodyneHDLGridSource.cxx
-  vtkLidarProvider.cxx
-  vtkLidarReader.cxx
-  vtkVelodyneHDLReader.cxx
-  vtkVelodyneHDLPositionReader.cxx
-  vtkVelodyneHDLSource.cxx)
+  ${CMAKE_CURRENT_SOURCE_DIR}/IO/Lidar/Common/vtkLidarProvider.cxx
+  ${CMAKE_CURRENT_SOURCE_DIR}/IO/Lidar/Common/vtkLidarReader.cxx
+  ${CMAKE_CURRENT_SOURCE_DIR}/IO/Lidar/Common/vtkLidarStream.cxx
+  ${CMAKE_CURRENT_SOURCE_DIR}/IO/Lidar/Velodyne/vtkVelodyneHDLReader.cxx
+  ${CMAKE_CURRENT_SOURCE_DIR}/IO/Lidar/Velodyne/vtkVelodyneHDLStream.cxx
+  ${CMAKE_CURRENT_SOURCE_DIR}/IO/GPS-IMU/Velodyne/vtkVelodyneHDLPositionReader.cxx
+  ${CMAKE_CURRENT_SOURCE_DIR}/IO/GPS-IMU/Applanix/vtkApplanixPositionReader.cxx
+  ${CMAKE_CURRENT_SOURCE_DIR}/Filter/MotionDetector/vtkMotionDetector.cxx
+  ${CMAKE_CURRENT_SOURCE_DIR}/Filter/BirdEyeViewSnap/vtkBirdEyeViewSnap.cxx
+  ${CMAKE_CURRENT_SOURCE_DIR}/Filter/ProcessingSample/vtkProcessingSample.cxx
+  ${CMAKE_CURRENT_SOURCE_DIR}/Filter/Ransac/vtkRansacPlaneModel.cxx
+  ${CMAKE_CURRENT_SOURCE_DIR}/Source/Grid/vtkVelodyneHDLGridSource.cxx
+  ${CMAKE_CURRENT_SOURCE_DIR}/vtkPCLRansacModel.cxx
+  ${CMAKE_CURRENT_SOURCE_DIR}/vtkSlam.cxx
+  ${CMAKE_CURRENT_SOURCE_DIR}/vtkSensorTransformFusion.cxx
 
+)
 
+# xml file that describe the proxy of the wrap sources in paraview
 list(APPEND servermanager_xml
+  xml/VelodyneHDLReader.xml
+  xml/VelodyneHDLStream.xml
+  xml/VelodyneHDLPositionReader.xml
   xml/vtkPCLRansacModel.xml
   xml/ApplanixPositionReader.xml
   xml/MotionDetector.xml
@@ -182,43 +193,92 @@ list(APPEND servermanager_xml
   xml/SensorTransformFusion.xml
   xml/RansacPlaneModel.xml
   xml/VelodyneHDLGridSource.xml
-  xml/VelodyneHDLReader.xml
-  xml/VelodyneHDLPositionReader.xml
-  xml/VelodyneHDLSource.xml)
+  )
 
-list(APPEND gui_xml
-  xml/VelodyneHDLSourcesGUI.xml)
+# other source code than won't be wrap by paraview but are needed to create the plugin
+# We make the distinction on that inherit from vtkObject as this one will be also wrap
+# in python later on
+set(sources_which_inherit_from_vtkObject
+  ${CMAKE_CURRENT_SOURCE_DIR}/Common/vtkVelodyneTransformInterpolator.cxx
+  ${CMAKE_CURRENT_SOURCE_DIR}/IO/Lidar/Common/vtkLidarProvider.cxx
+  ${CMAKE_CURRENT_SOURCE_DIR}/IO/Lidar/Common/vtkLidarReader.cxx
+  ${CMAKE_CURRENT_SOURCE_DIR}/IO/Lidar/Common/vtkLidarStream.cxx
+  ${CMAKE_CURRENT_SOURCE_DIR}/Filter/OldPlaneFitter/vtkPlaneFitter.cxx
+  ${CMAKE_CURRENT_SOURCE_DIR}/vtkPCLRansacModel.cxx
+)
+set(sources_which_do_not_inherit_from_vtkObject
+  ${CMAKE_CURRENT_SOURCE_DIR}/IO/Lidar/Common/LidarPacketInterpreter.cxx
+  ${CMAKE_CURRENT_SOURCE_DIR}/IO/Lidar/Common/NetworkSource.cxx
+  ${CMAKE_CURRENT_SOURCE_DIR}/IO/Lidar/Common/PacketReceiver.cxx
+  ${CMAKE_CURRENT_SOURCE_DIR}/IO/Lidar/Common/PacketFileWriter.cxx
+  ${CMAKE_CURRENT_SOURCE_DIR}/IO/Lidar/Common/PacketConsumer.cxx
+  ${CMAKE_CURRENT_SOURCE_DIR}/IO/Lidar/Velodyne/VelodynePacketInterpreter.cxx
+  ${CMAKE_CURRENT_SOURCE_DIR}/IO/Lidar/Velodyne/vtkRollingDataAccumulator.cxx
+  ${CMAKE_CURRENT_SOURCE_DIR}/IO/vtkLASFileWriter.cxx
+  ${CMAKE_CURRENT_SOURCE_DIR}/Filter/MotionDetector/vtkSphericalMap.cxx
+  ${CMAKE_CURRENT_SOURCE_DIR}/Common/Network/vtkPacketFileWriter.cxx
+  ${CMAKE_CURRENT_SOURCE_DIR}/Common/Network/vvPacketSender.cxx
+  ${CMAKE_CURRENT_SOURCE_DIR}/vtkPCLConversions.cxx
+  ${CMAKE_CURRENT_SOURCE_DIR}/${interpolator_pach_until_vtk_update}
+  )
 
+
+# plugin dependencies
 list(APPEND deps
   ${PCAP_LIBRARY}
   ${liblas_LIBRARY}
   ${ALL_BOOST_LIBRARIES}
+  ${vtklibproj4_LIBRARIES}
   ${PCL_LIBRARIES}
   ${CERES_LIBRARIES}
   )
 
+# folder where to look for header file
+set(plugin_include_dirs
+  ${CMAKE_CURRENT_SOURCE_DIR}/Common
+  ${CMAKE_CURRENT_SOURCE_DIR}/Common/Network
+  ${CMAKE_CURRENT_SOURCE_DIR}/IO/Lidar/Common
+  ${CMAKE_CURRENT_SOURCE_DIR}/IO/Lidar/Velodyne
+  ${CMAKE_CURRENT_SOURCE_DIR}/IO/GPS-IMU/Applanix
+  ${CMAKE_CURRENT_SOURCE_DIR}/IO/GPS-IMU/Velodyne
+  ${CMAKE_CURRENT_SOURCE_DIR}/IO
+  ${CMAKE_CURRENT_SOURCE_DIR}/Filter/MotionDetector
+  ${CMAKE_CURRENT_SOURCE_DIR}/Filter/BirdEyeViewSnap
+  ${CMAKE_CURRENT_SOURCE_DIR}/Filter/OldPlaneFitter
+  ${CMAKE_CURRENT_SOURCE_DIR}/Filter/Ransac
+  ${CMAKE_CURRENT_SOURCE_DIR}/Filter/ProcessingSample
+  ${CMAKE_CURRENT_SOURCE_DIR}/Source/Grid
+  )
 
-set(library_name VelodyneHDLPlugin)
+# give default target name if not specify otherwise
+if (NOT VV_PLUGIN_LIBRARY)
+  set(VV_PLUGIN_LIBRARY VelodyneHDLPlugin) # veloview plugin
+endif()
 
-add_paraview_plugin(${library_name} "1.0"
-  GUI_INTERFACES ${gui_interfaces}
-  GUI_RESOURCE_FILES ${gui_xml}
-  GUI_SOURCES ${gui_sources} ${vtk_sources}
-  SERVER_MANAGER_XML ${servermanager_xml}
+# create pluging
+add_paraview_plugin(${VV_PLUGIN_LIBRARY} "1.0"
   SERVER_MANAGER_SOURCES ${servermanager_sources}
-  SOURCES ${non_vtk_sources}
+  SERVER_MANAGER_XML ${servermanager_xml}
+  SERVER_SOURCES ${sources_which_inherit_from_vtkObject} ${sources_which_do_not_inherit_from_vtkObject}
+  GUI_SOURCES ${gui_sources}
   REQUIRED_ON_SERVER)
+target_include_directories(${VV_PLUGIN_LIBRARY} PRIVATE ${plugin_include_dirs})
+target_link_libraries(${VV_PLUGIN_LIBRARY} LINK_PUBLIC ${deps})
 
-target_link_libraries(${library_name} LINK_PUBLIC ${deps})
+#-----------------------------------------------------------------------------
+# Build PacketFileSender target which enable to playback a recorded pcap on the network
+#-----------------------------------------------------------------------------
 
-add_executable(PacketFileSender PacketFileSender.cxx)
-target_link_libraries(PacketFileSender LINK_PUBLIC ${library_name})
+add_executable(PacketFileSender StandAloneTools/PacketFileSender.cxx)
+target_include_directories(PacketFileSender PRIVATE Common/Network)
+target_link_libraries(PacketFileSender LINK_PUBLIC ${VV_PLUGIN_LIBRARY})
 
-
-#########
+#-----------------------------------------------------------------------------
+# As we don't want our paraview pluging to have a dependancies to PythonQt we
+# we create another target which contain all the code "glue" code.
+#-----------------------------------------------------------------------------
 set(MOC_HEADERS
   pqVelodyneManager.h
-  vvLoadDataReaction.h
   vvPythonQtDecorators.h
   )
 
@@ -229,55 +289,56 @@ set(gui_sources)
 list(APPEND gui_sources
   ${moc_srcs}
   pqVelodyneManager.cxx
-  vvLoadDataReaction.cxx
   )
 
-add_library(VelodyneHDLPythonQT ${gui_sources})
-target_link_libraries(VelodyneHDLPythonQT ${library_name} ${PYTHONQT_LIBRARIES})
-#########
+# give default target name if not specify otherwise
+if (NOT VV_NONE_PLUGIN_LIBRARY)
+  set(VV_NONE_PLUGIN_LIBRARY VelodyneHDLPythonQT)
+endif()
 
-list(APPEND wrap_sources ${vtk_sources} ${servermanager_sources})
+add_library(${VV_NONE_PLUGIN_LIBRARY} ${gui_sources})
+target_include_directories(${VV_NONE_PLUGIN_LIBRARY} PRIVATE ${plugin_include_dirs})
+target_link_libraries(${VV_NONE_PLUGIN_LIBRARY} ${VV_PLUGIN_LIBRARY} ${PYTHONQT_LIBRARIES})
 
-WRAP_PLUGIN_FOR_PYTHON(VelodyneHDLPlugin "${wrap_sources}" "NOTTHERE")
+#-----------------------------------------------------------------------------
+# This code is here for LEGACY REASON and should NOT BE USED and even REMOVE at some point !!!!
+# It's actually nice to expose the classes in python, but the more freedom we have
+# the more dirty the code get...
+# Create a static and dynamic python target named ${VV_PLUGIN_LIBRARY}Python and
+# (${VV_PLUGIN_LIBRARY}PythonD that wrap all the classes that inherit from vtk in python.
+# When a paraview plugin is created, you only have acces to the Filter exposed
+# with a proxy, and you can but SHOULDN'T used the method GetClientSideObject()
+# to have acces to the vtkObject directly.
+# With what is done here you have acces to all the vtk inherit  C++ code, even if
+# it's not exposed in paraview.
+# Simply used "import ${VV_PLUGIN_LIBRARY}Python" and you have acces to the
+# wrapped c++ code
+#-----------------------------------------------------------------------------
 
-if (NOT APPLE)
-  install(TARGETS VelodyneHDLPlugin
-          RUNTIME DESTINATION ${VV_INSTALL_RUNTIME_DIR}
-          LIBRARY DESTINATION ${VV_INSTALL_LIBRARY_DIR}
-          COMPONENT Runtime)
+# needed as we can't use target_include_directories because the target are not defined yet
+include_directories(${plugin_include_dirs})
+set(towrap
+  ${servermanager_sources}
+  ${sources_which_inherit_from_vtkObject}
+  )
+# the quoted "" are needed otherwise only the first file of the list will be process
+WRAP_PLUGIN_FOR_PYTHON(${VV_PLUGIN_LIBRARY} "${towrap}" "NOTTHERE")
 
-  install(TARGETS VelodyneHDLPluginPython
-          RUNTIME DESTINATION ${VV_INSTALL_RUNTIME_DIR}
-          LIBRARY DESTINATION ${VV_INSTALL_LIBRARY_DIR}
-          COMPONENT Runtime)
+#-----------------------------------------------------------------------------
+# Install targets and ressources
+#-----------------------------------------------------------------------------
 
-  install(TARGETS VelodyneHDLPluginPythonD
-          RUNTIME DESTINATION ${VV_INSTALL_RUNTIME_DIR}
-          LIBRARY DESTINATION ${VV_INSTALL_LIBRARY_DIR}
-          COMPONENT Runtime)
+set(target_to_install
+  ${VV_PLUGIN_LIBRARY}
+  ${VV_NONE_PLUGIN_LIBRARY}
+  ${VV_PLUGIN_LIBRARY}Python
+  ${VV_PLUGIN_LIBRARY}PythonD
+  )
 
-  install(TARGETS VelodyneHDLPythonQT
-          RUNTIME DESTINATION ${VV_INSTALL_RUNTIME_DIR}
-          LIBRARY DESTINATION ${VV_INSTALL_LIBRARY_DIR}
-          COMPONENT Runtime)
+if (APPLE)
 
-else()
-  install(TARGETS VelodyneHDLPlugin
-          RUNTIME DESTINATION ${VV_INSTALL_RUNTIME_DIR}/${SOFTWARE_NAME}.app/Contents/Libraries
-          LIBRARY DESTINATION ${VV_INSTALL_RUNTIME_DIR}/${SOFTWARE_NAME}.app/Contents/Libraries
-          COMPONENT Runtime)
-
-  install(TARGETS VelodyneHDLPluginPython
-          RUNTIME DESTINATION ${VV_INSTALL_RUNTIME_DIR}/${SOFTWARE_NAME}.app/Contents/Libraries
-          LIBRARY DESTINATION ${VV_INSTALL_RUNTIME_DIR}/${SOFTWARE_NAME}.app/Contents/Libraries
-          COMPONENT Runtime)
-
-  install(TARGETS VelodyneHDLPluginPythonD
-          RUNTIME DESTINATION ${VV_INSTALL_RUNTIME_DIR}/${SOFTWARE_NAME}.app/Contents/Libraries
-          LIBRARY DESTINATION ${VV_INSTALL_RUNTIME_DIR}/${SOFTWARE_NAME}.app/Contents/Libraries
-          COMPONENT Runtime)
-
-  install(TARGETS VelodyneHDLPythonQT
+  # install target
+  install(TARGETS ${target_to_install}
           RUNTIME DESTINATION ${VV_INSTALL_RUNTIME_DIR}/${SOFTWARE_NAME}.app/Contents/Libraries
           LIBRARY DESTINATION ${VV_INSTALL_RUNTIME_DIR}/${SOFTWARE_NAME}.app/Contents/Libraries
           COMPONENT Runtime)
@@ -287,15 +348,33 @@ else()
   file(GLOB python_libs ${ParaView_DIR}/lib/*Python.so)
   install(FILES ${python_libs} DESTINATION ${VV_INSTALL_RUNTIME_DIR}/${SOFTWARE_NAME}.app/Contents/Libraries)
 
+  # install some pdf
   install(FILES ${VeloView_SOURCE_DIR}/Documentation/VeloView_Developer_Guide.pdf DESTINATION ${VV_INSTALL_RUNTIME_DIR}/${SOFTWARE_NAME}.app/Contents/Resources)
   configure_file(${VeloView_SOURCE_DIR}/Documentation/VeloView_Developer_Guide.pdf ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${SOFTWARE_NAME}.app/Contents/Resources/VeloView_Developer_Guide.pdf)
 
   install(FILES ${VeloView_SOURCE_DIR}/Documentation/VeloView_User_Guide.pdf DESTINATION ${VV_INSTALL_RUNTIME_DIR}/${SOFTWARE_NAME}.app/Contents/Resources)
   configure_file(${VeloView_SOURCE_DIR}/Documentation/VeloView_User_Guide.pdf ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${SOFTWARE_NAME}.app/Contents/Resources/VeloView_User_Guide.pdf)
 
+else()
+  # install target
+  install(TARGETS ${target_to_install}
+          RUNTIME DESTINATION ${VV_INSTALL_RUNTIME_DIR}
+          LIBRARY DESTINATION ${VV_INSTALL_LIBRARY_DIR}
+          COMPONENT Runtime)
+
 endif()
 
+#-----------------------------------------------------------------------------
+# Add python source
+#-----------------------------------------------------------------------------
+
 add_subdirectory(python)
+
+#-----------------------------------------------------------------------------
+# Option to build some tests
+#-----------------------------------------------------------------------------
+
+option(BUILD_TESTING "Build some unitary test" OFF)
 if(BUILD_TESTING)
   add_subdirectory(Testing)
 endif()

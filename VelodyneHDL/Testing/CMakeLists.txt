@@ -1,8 +1,11 @@
 add_executable(TestVelodyneHDLSource TestHelpers.cxx TestVelodyneHDLSource.cxx)
-target_link_libraries(TestVelodyneHDLSource VelodyneHDLPlugin)
+target_include_directories(TestVelodyneHDLSource PRIVATE ${plugin_include_dirs})
+target_link_libraries(TestVelodyneHDLSource LINK_PUBLIC VelodyneHDLPlugin)
 
+message ( ${plugin_include_dirs})
 add_executable(TestVelodyneHDLReader TestVelodyneHDLReader.cxx TestHelpers.cxx)
-target_link_libraries(TestVelodyneHDLReader VelodyneHDLPlugin)
+target_include_directories(TestVelodyneHDLReader PRIVATE ${plugin_include_dirs})
+target_link_libraries(TestVelodyneHDLReader LINK_PUBLIC VelodyneHDLPlugin)
 
 set(sensors "HDL-64"
             "VLP-16"

@@ -123,29 +123,6 @@ vtkStandardNewMacro(vtkSlam);
 
 
 namespace {
-//-----------------------------------------------------------------------------
-template <typename T>
-Eigen::Matrix<T, 3, 3> GetRotationMatrixT(Eigen::Matrix<T, 3, 1> T)
-{
-  // Rotation and translation relative
-  Eigen::Matrix<T, 3, 3> Rx, Ry, Rz, R;
-  // rotation around X-axis
-  Rx << 1,         0,          0,
-        0, ceres::cos(T(0)), -ceres::sin(T(0)),
-        0, ceres::sin(T(0)),  ceres::cos(T(0));
-  // rotation around Y-axis
-  Ry <<  ceres::cos(T(1)), 0, ceres::sin(T(1)),
-        0,          1,         0,
-        -ceres::sin(T(1)), 0, ceres::cos(T(1));
-  // rotation around Z-axis
-  Rz << ceres::cos(T(2)), -ceres::sin(T(2)), 0,
-        ceres::sin(T(2)),  ceres::cos(T(2)), 0,
-                0,          0, 1;
-
-  // full rotation
-  R = Rz * Ry * Rx;
-  return R;
-}
 
 //-----------------------------------------------------------------------------
 struct AffineIsometryResidual
@@ -3172,7 +3149,8 @@ void vtkSlam::ComputeBlobsDistanceParametersAccurate(pcl::KdTreeFLANN<Point>::Pt
     {
       Point pt1 = kdtreePreviousBlobs->getInputCloud()->points[nearestIndex[i]];
       Point pt2 = kdtreePreviousBlobs->getInputCloud()->points[nearestIndex[j]];
-      maxDiameter = std::max(maxDiameter, std::pow(pt1.x - pt2.x, 2) + std::pow(pt1.y - pt2.y, 2) + std::pow(pt1.z - pt2.z, 2));
+      float neighborhoodDiameter = std::pow(pt1.x - pt2.x, 2) + std::pow(pt1.y - pt2.y, 2) + std::pow(pt1.z - pt2.z, 2);
+      maxDiameter = std::max(maxDiameter, neighborhoodDiameter);
     }
   }
   if (maxDiameter > maxDiameterTol)

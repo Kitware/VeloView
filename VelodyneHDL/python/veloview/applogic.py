@@ -34,10 +34,6 @@ import slam
 
 from PythonQt.paraview import vvCalibrationDialog, vvCropReturnsDialog, vvSelectFramesDialog
 from VelodyneHDLPluginPython import vtkVelodyneHDLReader
-from VelodyneHDLPluginPython import vtkSensorTransformFusion
-from VelodyneHDLPluginPython import vtkRansacPlaneModel
-from VelodyneHDLPluginPython import vtkBirdEyeViewSnap
-from VelodyneHDLPluginPython import vtkMotionDetector
 
 _repCache = {}
 
@@ -439,13 +435,13 @@ def openSensor():
 
     initializeRPMText()
 
-    sensor = smp.VelodyneHDLSource(guiName='Data', CalibrationFile=calibrationFile, CacheSize=100)
+    sensor = smp.VelodyneHDLStream(guiName='Data', CalibrationFile=calibrationFile, CacheSize=100)
     sensor.GetClientSideObject().SetLIDARPort(LIDARPort)
-    sensor.GetClientSideObject().SetGPSPort(GPSPort)
-    sensor.GetClientSideObject().SetForwardedGPSPort(GPSForwardingPort)
+#    sensor.GetClientSideObject().SetGPSPort(GPSPort)
+#    sensor.GetClientSideObject().SetForwardedGPSPort(GPSForwardingPort)
     sensor.GetClientSideObject().SetForwardedLIDARPort(LIDARForwardingPort)
-    sensor.GetClientSideObject().SetisForwarding(isForwarding)
-    sensor.GetClientSideObject().SetisCrashAnalysing(app.EnableCrashAnalysis)
+    sensor.GetClientSideObject().SetIsForwarding(isForwarding)
+    sensor.GetClientSideObject().SetIsCrashAnalysing(app.EnableCrashAnalysis)
     sensor.GetClientSideObject().SetForwardedIpAddress(ipAddressForwarding)
     sensor.GetClientSideObject().SetSensorTransform(sensorTransform)
     sensor.GetClientSideObject().SetGpsTransform(gpsTransform)
@@ -483,7 +479,7 @@ def openSensor():
     app.actions['actionCorrectIntensityValues'].enabled = True
 
     #Auto adjustment of the grid size with the distance resolution
-    app.distanceResolutionM = sensor.GetClientSideObject().GetDistanceResolutionM()
+    app.DistanceResolutionM = sensor.GetClientSideObject().GetDistanceResolutionM()
     app.actions['actionMeasurement_Grid'].setChecked(True)
     showMeasurementGrid()
 
@@ -661,7 +657,7 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
     app.actions['actionCorrectIntensityValues'].enabled = True
 
     #Auto adjustment of the grid size with the distance resolution
-    app.distanceResolutionM = reader.GetClientSideObject().GetDistanceResolutionM()
+    app.DistanceResolutionM = reader.GetClientSideObject().GetDistanceResolutionM()
     app.grid = createGrid()
     app.actions['actionMeasurement_Grid'].setChecked(True)
     showMeasurementGrid()
@@ -1849,7 +1845,7 @@ def createGrid(view=None):
     grid = smp.VelodyneHDLGridSource(guiName='Measurement Grid')
 
     if app.gridProperties.Persist == False:
-        grid.GridNbTicks = (int(math.ceil(50000 * app.distanceResolutionM/ grid.GetClientSideObject().GetScale()) ))
+        grid.GridNbTicks = (int(math.ceil(50000 * app.DistanceResolutionM/ grid.Scale )))
     else:
         # Restore grid properties
         grid.Normal = app.gridProperties.Normal
@@ -1897,7 +1893,7 @@ def start():
     view.UseGradientBackground = True
     smp._DisableFirstRenderCameraReset()
     smp.GetActiveView().LODThreshold = 1e100
-    app.distanceResolutionM = 0.002
+    app.DistanceResolutionM = 0.002
     app.grid = createGrid()
     app.ruler = createRuler()
 

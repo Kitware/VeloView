@@ -14,7 +14,7 @@
 // limitations under the License.
 
 #include "TestHelpers.h"
-#include "vtkVelodyneHDLSource.h"
+#include "vtkVelodyneHDLStream.h"
 #include "vvPacketSender.h"
 
 #include <vtkNew.h>
@@ -61,13 +61,12 @@ int main(int argc, char* argv[])
   const int dataPort = 2368;
 
   // Generate a Velodyne HDL source
-  vtkNew<vtkVelodyneHDLSource> HDLsource;
-  HDLsource->SetCorrectionsFile(correctionFileName);
+  vtkNew<vtkVelodyneHDLStream> HDLsource;
+  HDLsource->SetCalibrationFileName(correctionFileName);
   HDLsource->SetCacheSize(100);
   HDLsource->SetLIDARPort(dataPort);
-  HDLsource->SetGPSPort(8308);
-  HDLsource->SetisForwarding(false);
-  HDLsource->SetisCrashAnalysing(true);
+  HDLsource->SetIsForwarding(false);
+  HDLsource->SetIsCrashAnalysing(true);
   HDLsource->Start();
 
   std::cout << "Sending data... " << std::endl;
@@ -97,7 +96,7 @@ int main(int argc, char* argv[])
 
   if (correctionFileName == "" && HDLsource->GetIsCalibrated())
   {
-    HDLsource->UnloadDatasets();
+    HDLsource->UnloadFrames();
 
     std::cout << "Live Correction initialized, resend data..." << std::endl;
     const double resendingDataStartTime = vtkTimerLog::GetUniversalTime();

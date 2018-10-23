@@ -20,7 +20,7 @@
 
 class vtkErrorObserver;
 class vtkVelodyneHDLReader;
-class vtkVelodyneHDLSource;
+class vtkVelodyneHDLStream;
 class vtkPolyData;
 
 // Represent every processing options as a bit. Options are in the following order:
@@ -50,9 +50,9 @@ std::string toString(double const (&d)[N])
 
 vtkPolyData* GetCurrentFrame(vtkVelodyneHDLReader* HDLreader, int index);
 
-vtkPolyData* GetCurrentFrame(vtkVelodyneHDLSource* HDLsource, int index);
+vtkPolyData* GetCurrentFrame(vtkVelodyneHDLStream* HDLsource, int index);
 
-int GetNumberOfTimesteps(vtkVelodyneHDLSource* HDLSource);
+int GetNumberOfTimesteps(vtkVelodyneHDLStream* HDLSource);
 
 std::vector<std::string> GenerateFileList(const std::string& metaFileName);
 
@@ -61,8 +61,8 @@ vtkPolyData* GetCurrentReference(const std::vector<std::string>& referenceFilesL
 void SetProcessingOptions(vtkVelodyneHDLReader* HDLReader, vvProcessingOptionsType currentOptions,
   int numProcessingOptions);
 
-void SetProcessingOptions(vtkVelodyneHDLSource* HDLSource, vvProcessingOptionsType currentOptions,
-  int numProcessingOptions, std::string pcapFileName, std::string destinationIp, int dataPort);
+//void SetProcessingOptions(vtkVelodyneHDLStream* HDLSource, vvProcessingOptionsType currentOptions,
+//  int numProcessingOptions, std::string pcapFileName, std::string destinationIp, int dataPort);
 
 // Test functions
 /**
@@ -129,7 +129,7 @@ int TestProcessingOptions(vtkVelodyneHDLReader* HDLReader);
  * @param HDLSource Current source
  * @return 0 on success, 1 on failure
  */
-int TestProcessingOptions(vtkVelodyneHDLSource* HDLSource, std::string pcapFileName,
+int TestProcessingOptions(vtkVelodyneHDLStream* HDLSource, std::string pcapFileName,
   std::string destinationIp, int dataPort);
 
 #endif

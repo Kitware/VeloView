@@ -91,29 +91,6 @@ Eigen::Matrix<double, 3, 3> GetRotationMatrix(Eigen::Matrix<double, 3, 1> T)
   return R;
 }
 
-//-----------------------------------------------------------------------------
-template <typename T>
-Eigen::Matrix<T, 3, 3> GetRotationMatrixT(Eigen::Matrix<T, 3, 1> T)
-{
-  // Rotation and translation relative
-  Eigen::Matrix<T, 3, 3> Rx, Ry, Rz, R;
-  // rotation around X-axis
-  Rx << 1,         0,          0,
-        0, ceres::cos(T(0)), -ceres::sin(T(0)),
-        0, ceres::sin(T(0)),  ceres::cos(T(0));
-  // rotation around Y-axis
-  Ry <<  ceres::cos(T(1)), 0, ceres::sin(T(1)),
-        0,          1,         0,
-        -ceres::sin(T(1)), 0, ceres::cos(T(1));
-  // rotation around Z-axis
-  Rz << ceres::cos(T(2)), -ceres::sin(T(2)), 0,
-        ceres::sin(T(2)),  ceres::cos(T(2)), 0,
-                0,          0, 1;
-
-  // full rotation
-  R = Rz * Ry * Rx;
-  return R;
-}
 
 //-----------------------------------------------------------------------------
 struct AffineIsometryResidual

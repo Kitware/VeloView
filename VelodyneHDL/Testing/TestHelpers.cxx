@@ -15,7 +15,7 @@
 #include "TestHelpers.h"
 
 #include "vtkVelodyneHDLReader.h"
-#include "vtkVelodyneHDLSource.h"
+#include "vtkVelodyneHDLStream.h"
 
 #include <vtkCommand.h>
 #include <vtkExecutive.h>
@@ -133,66 +133,66 @@ void SetProcessingOptions(
   }
 }
 
-//-----------------------------------------------------------------------------
-void SetProcessingOptions(vtkVelodyneHDLSource* HDLSource, vvProcessingOptionsType currentOptions,
-  int numProcessingOptions, std::string pcapFileName, std::string destinationIp, int dataPort)
-{
-  vtkNew<vtkErrorObserver> errorObserver;
+////-----------------------------------------------------------------------------
+//void SetProcessingOptions(vtkVelodyneHDLStream* HDLSource, vvProcessingOptionsType currentOptions,
+//  int numProcessingOptions, std::string pcapFileName, std::string destinationIp, int dataPort)
+//{
+//  vtkNew<vtkErrorObserver> errorObserver;
 
-  HDLSource->AddObserver(vtkCommand::ErrorEvent, errorObserver.Get());
-  HDLSource->AddObserver(vtkCommand::WarningEvent, errorObserver.Get());
+//  HDLSource->AddObserver(vtkCommand::ErrorEvent, errorObserver.Get());
+//  HDLSource->AddObserver(vtkCommand::WarningEvent, errorObserver.Get());
 
-  HDLSource->GetExecutive()->AddObserver(vtkCommand::ErrorEvent, errorObserver.Get());
-  HDLSource->GetExecutive()->AddObserver(vtkCommand::WarningEvent, errorObserver.Get());
+//  HDLSource->GetExecutive()->AddObserver(vtkCommand::ErrorEvent, errorObserver.Get());
+//  HDLSource->GetExecutive()->AddObserver(vtkCommand::WarningEvent, errorObserver.Get());
 
-  std::vector<int> parsedOptions = parseOptions(currentOptions, numProcessingOptions);
+//  std::vector<int> parsedOptions = parseOptions(currentOptions, numProcessingOptions);
 
-  HDLSource->SetIgnoreEmptyFrames(parsedOptions[0]);
-  HDLSource->SetIntraFiringAdjust(parsedOptions[1]);
-  HDLSource->SetIgnoreZeroDistances(parsedOptions[2]);
+//  HDLSource->SetIgnoreEmptyFrames(parsedOptions[0]);
+//  HDLSource->SetIntraFiringAdjust(parsedOptions[1]);
+//  HDLSource->SetIgnoreZeroDistances(parsedOptions[2]);
 
-//  if (HDLSource->getIsHDL64Data())
+////  if (HDLSource->getIsHDL64Data())
+////  {
+////    HDLSource->SetIntensitiesCorrected(parsedOptions[3]);
+////  }
+
+//  HDLSource->UnloadFrames();
+
+//  try
 //  {
-//    HDLSource->SetIntensitiesCorrected(parsedOptions[3]);
+//    HDLSource->Start();
+//    vvPacketSender sender(pcapFileName, destinationIp, dataPort);
+
+//    boost::this_thread::sleep(boost::posix_time::microseconds(1000));
+//    sender.pumpPacket();
+
+//    while (!sender.done())
+//    {
+//      sender.pumpPacket();
+//      boost::this_thread::sleep(boost::posix_time::microseconds(1000));
+//    }
+
+//    HDLSource->Stop();
+//    std::cout << "Done." << std::endl;
+//  }
+//  catch (std::exception& e)
+//  {
+//    std::cout << "Caught Exception: " << e.what() << std::endl;
+
+//    return;
 //  }
 
-  HDLSource->UnloadDatasets();
+//  if (errorObserver->GetError())
+//  {
+//    std::cerr << "Error happend when setting processing options. Options were: " << std::endl
+//              << " - Ignore empty frames: " << parsedOptions[0] << std::endl
+//              << " - Intra firing adjust: " << parsedOptions[1] << std::endl
+//              << " - Ignore zero distances: " << parsedOptions[2] << std::endl
+//              << " - Intensity corrected: " << parsedOptions[3] << std::endl;
 
-  try
-  {
-    HDLSource->Start();
-    vvPacketSender sender(pcapFileName, destinationIp, dataPort);
-
-    boost::this_thread::sleep(boost::posix_time::microseconds(1000));
-    sender.pumpPacket();
-
-    while (!sender.done())
-    {
-      sender.pumpPacket();
-      boost::this_thread::sleep(boost::posix_time::microseconds(1000));
-    }
-
-    HDLSource->Stop();
-    std::cout << "Done." << std::endl;
-  }
-  catch (std::exception& e)
-  {
-    std::cout << "Caught Exception: " << e.what() << std::endl;
-
-    return;
-  }
-
-  if (errorObserver->GetError())
-  {
-    std::cerr << "Error happend when setting processing options. Options were: " << std::endl
-              << " - Ignore empty frames: " << parsedOptions[0] << std::endl
-              << " - Intra firing adjust: " << parsedOptions[1] << std::endl
-              << " - Ignore zero distances: " << parsedOptions[2] << std::endl
-              << " - Intensity corrected: " << parsedOptions[3] << std::endl;
-
-    return;
-  }
-}
+//    return;
+//  }
+//}
 
 // Processing tests
 //-----------------------------------------------------------------------------
@@ -232,44 +232,44 @@ int TestProcessingOptions(vtkVelodyneHDLReader* HDLReader)
   return 0;
 }
 
-//-----------------------------------------------------------------------------
-int TestProcessingOptions(vtkVelodyneHDLSource* HDLSource, std::string pcapFileName,
-  std::string destinationIp, int dataPort)
-{
-  // Total number of processing options
-  int nbProcessingOptions = 4;
+////-----------------------------------------------------------------------------
+//int TestProcessingOptions(vtkVelodyneHDLStream* HDLSource, std::string pcapFileName,
+//  std::string destinationIp, int dataPort)
+//{
+//  // Total number of processing options
+//  int nbProcessingOptions = 4;
 
-  // Number of case to cover
-  int maxOptionStatus = pow(2, nbProcessingOptions);
+//  // Number of case to cover
+//  int maxOptionStatus = pow(2, nbProcessingOptions);
 
-  for (int currentOptionsCase = 0; currentOptionsCase < maxOptionStatus; ++currentOptionsCase)
-  {
-    SetProcessingOptions(
-      HDLSource, currentOptionsCase, nbProcessingOptions, pcapFileName, destinationIp, dataPort);
+//  for (int currentOptionsCase = 0; currentOptionsCase < maxOptionStatus; ++currentOptionsCase)
+//  {
+//    SetProcessingOptions(
+//      HDLSource, currentOptionsCase, nbProcessingOptions, pcapFileName, destinationIp, dataPort);
 
-    int nbFrames = GetNumberOfTimesteps(HDLSource);
+//    int nbFrames = GetNumberOfTimesteps(HDLSource);
 
-    for (int idFrame = 0; idFrame < nbFrames; ++idFrame)
-    {
-      vtkPolyData* currentFrame = GetCurrentFrame(HDLSource, idFrame);
+//    for (int idFrame = 0; idFrame < nbFrames; ++idFrame)
+//    {
+//      vtkPolyData* currentFrame = GetCurrentFrame(HDLSource, idFrame);
 
-      if (!currentFrame)
-      {
-        std::vector<int> parsedOptions = parseOptions(currentOptionsCase, nbProcessingOptions);
+//      if (!currentFrame)
+//      {
+//        std::vector<int> parsedOptions = parseOptions(currentOptionsCase, nbProcessingOptions);
 
-        std::cerr << "Cannot run HDLReader with options: " << std::endl
-                  << " - Ignore empty frames: " << parsedOptions[0] << std::endl
-                  << " - Intra firing adjust: " << parsedOptions[1] << std::endl
-                  << " - Ignore zero distances: " << parsedOptions[2] << std::endl
-                  << " - Intensity corrected: " << parsedOptions[3] << std::endl;
+//        std::cerr << "Cannot run HDLReader with options: " << std::endl
+//                  << " - Ignore empty frames: " << parsedOptions[0] << std::endl
+//                  << " - Intra firing adjust: " << parsedOptions[1] << std::endl
+//                  << " - Ignore zero distances: " << parsedOptions[2] << std::endl
+//                  << " - Intensity corrected: " << parsedOptions[3] << std::endl;
 
-        return 1;
-      }
-    }
-  }
+//        return 1;
+//      }
+//    }
+//  }
 
-  return 0;
-}
+//  return 0;
+//}
 
 // Helper functions
 //-----------------------------------------------------------------------------
@@ -303,7 +303,7 @@ std::string toString(const double* const d, const size_t N)
 }
 
 //-----------------------------------------------------------------------------
-int GetNumberOfTimesteps(vtkVelodyneHDLSource* HDLSource)
+int GetNumberOfTimesteps(vtkVelodyneHDLStream* HDLSource)
 {
   HDLSource->UpdateInformation();
 
@@ -323,7 +323,7 @@ vtkPolyData* GetCurrentFrame(vtkVelodyneHDLReader* HDLreader, int index)
 }
 
 //-----------------------------------------------------------------------------
-vtkPolyData* GetCurrentFrame(vtkVelodyneHDLSource* HDLsource, int index)
+vtkPolyData* GetCurrentFrame(vtkVelodyneHDLStream* HDLsource, int index)
 {
   HDLsource->UpdateInformation();
 

@@ -1,0 +1,249 @@
+#include "vtkLidarProvider.h"
+#include "LidarPacketInterpreter.h"
+#include "vtkVelodyneTransformInterpolator.h"
+
+#include <boost/filesystem.hpp>
+#include <boost/algorithm/string.hpp>
+#include <sstream>
+
+//-----------------------------------------------------------------------------
+void vtkLidarProvider::SetCalibrationFileName(const std::string &filename)
+{
+  if (filename == this->Interpreter->GetCalibrationFileName())
+  {
+    return;
+  }
+
+  if (!boost::filesystem::exists(filename) ||
+    boost::filesystem::is_directory(filename))
+  {
+    std::ostringstream errorMessage("Invalid sensor configuration file ");
+    errorMessage << filename << ": ";
+    if (!boost::filesystem::exists(filename))
+    {
+      errorMessage << "File not found!";
+    }
+    else
+    {
+      errorMessage << "It is a directory!";
+    }
+    vtkErrorMacro(<< errorMessage.str());
+    return;
+  }
+
+  this->Interpreter->LoadCalibration(filename);
+  this->Modified();
+}
+
+//-----------------------------------------------------------------------------
+int vtkLidarProvider::GetNumberOfChannels()
+{
+  return this->Interpreter->GetCalibrationReportedNumLasers();
+}
+
+//-----------------------------------------------------------------------------
+void vtkLidarProvider::SetLaserSelection(bool laserSelection[])
+{
+  this->Interpreter->SetLaserSelection(
+        std::vector<bool>(laserSelection, laserSelection + this->Interpreter->GetCalibrationReportedNumLasers()));
+  this->Modified();
+}
+
+//-----------------------------------------------------------------------------
+void vtkLidarProvider::GetLaserSelection(bool laserSelection[])
+{
+  // Bool vector is a particular data structure
+  // you can't access to the data
+  //this->Interpreter->GetLaserSelection().data();
+}
+
+//-----------------------------------------------------------------------------
+void vtkLidarProvider::SetCropMode(const int mode)
+{
+  this->Interpreter->SetCropMode(/*static_cast<CropModeEnum>(*/mode/*)*/);
+  this->Modified();
+}
+
+//-----------------------------------------------------------------------------
+void vtkLidarProvider::SetCropRegion(double region[6])
+{
+  this->Interpreter->SetCropRegion(region);
+  this->Modified();
+}
+
+//-----------------------------------------------------------------------------
+void vtkLidarProvider::SetCropRegion(const double v0, const double v1, const double v2, const double v3, const double v4, const double v5)
+{
+  double region[6];
+  region[0] = v0;
+  region[1] = v1;
+  region[2] = v2;
+  region[3] = v3;
+  region[4] = v4;
+  region[5] = v5;
+  this->SetCropRegion(region);
+  this->Modified();
+}
+
+//-----------------------------------------------------------------------------
+void vtkLidarProvider::SetSensorTransform(vtkTransform * t)
+{
+  if (t)
+  {
+    this->Interpreter->SensorTransform->SetMatrix(t->GetMatrix());
+  }
+  else
+  {
+    this->Interpreter->SensorTransform->Identity();
+  }
+  this->Modified();
+}
+
+//-----------------------------------------------------------------------------
+vtkVelodyneTransformInterpolator *vtkLidarProvider::GetInterpolator() const
+{
+  return this->Interpreter->Interp;
+}
+
+//-----------------------------------------------------------------------------
+void vtkLidarProvider::SetInterpolator(vtkVelodyneTransformInterpolator *interpolator)
+{
+  this->Interpreter->Interp = interpolator;
+  this->Modified();
+}
+
+//-----------------------------------------------------------------------------
+void vtkLidarProvider::SetDummyProperty(int)
+{
+  return this->Modified();
+}
+
+//-----------------------------------------------------------------------------
+vtkLidarProvider::vtkLidarProvider()
+{
+
+}
+
+//-----------------------------------------------------------------------------
+vtkLidarProvider::~vtkLidarProvider()
+{
+  delete this->Interpreter;
+}
+
+void vtkLidarProvider::SetGpsTransform(vtkTransform* t)
+{
+  if (t)
+  {
+    this->Interpreter->GpsTransform->SetMatrix(t->GetMatrix());
+  }
+  else
+  {
+    this->Interpreter->GpsTransform->Identity();
+  }
+  this->Modified();
+}
+
+//-----------------------------------------------------------------------------
+void vtkLidarProvider::AddTransform(double rx, double ry, double rz, double tx, double ty, double tz, double time)
+{
+  // All the result obtained was with ZXY but it should be ZYX
+  // at the end, let's try with ZYX and make some test
+  vtkNew<vtkTransform> mappingTransform;
+  mappingTransform->PostMultiply();
+
+  // Passage from L(t_current) to L(t_begin) first frame
+  // Application of the SLAM result
+  mappingTransform->RotateX(rx);
+  mappingTransform->RotateY(ry);
+  mappingTransform->RotateZ(rz);
+  double pos[3] = {tx,ty,tz};
+  mappingTransform->Translate(pos);
+  this->Interpreter->Interp->AddTransform(time, mappingTransform.GetPointer());
+  this->Interpreter->Interp->Modified();
+}
+
+//-----------------------------------------------------------------------------
+void vtkLidarProvider::LoadTransforms(const std::string& filename)
+{
+  std::ifstream file;
+  file.open(filename);
+
+  if (!file.is_open())
+  {
+    vtkGenericWarningMacro("Can't load the specified file");
+  }
+
+  // Create a new interpolator
+  this->CreateNearestInterpolator();
+
+  std::string line;
+  std::string expectedLine = "Time,Rx(Roll),Ry(Pitch),Rz(Yaw),X,Y,Z";
+  std::getline(file, line);
+  if (line != expectedLine)
+  {
+    vtkGenericWarningMacro("Header file not expected. Version incompability");
+  }
+
+  while (std::getline(file, line))
+  {
+    std::vector<std::string> values;
+    boost::split(values, line, boost::is_any_of(","));
+
+    // time
+    double t = std::atof(values[0].c_str());
+    // rotation
+    double rx = std::atof(values[1].c_str()) * 180.0 / vtkMath::Pi();
+    double ry = std::atof(values[2].c_str()) * 180.0 / vtkMath::Pi();
+    double rz = std::atof(values[3].c_str()) * 180.0 / vtkMath::Pi();
+    // position
+    double x = std::atof(values[4].c_str());
+    double y = std::atof(values[5].c_str());
+    double z = std::atof(values[6].c_str());
+    // add the transform
+    this->AddTransform(rx, ry, rz, x, y, z, t);
+  }
+}
+
+//-----------------------------------------------------------------------------
+void vtkLidarProvider::ExportTransforms(const std::string& filename)
+{
+  std::ofstream file;
+  file.open(filename);
+
+  if (!file.is_open())
+  {
+    vtkGenericWarningMacro("Can't write the specified file");
+  }
+
+  std::vector<std::vector<double> > transforms = this->Interpreter->Interp->GetTransformList();
+  std::vector<double> T;
+
+  file.precision(12);
+  file << "Time,Rx(Roll),Ry(Pitch),Rz(Yaw),X,Y,Z" << std::endl;
+  for (unsigned int k = 0; k < transforms.size(); ++k)
+  {
+    T = transforms[k];
+    file << T[0] << "," << T[1] << "," << T[2] << "," << T[3] << ","
+         << T[4] << "," << T[5] << "," << T[6] << std::endl;
+  }
+  file.close();
+  return;
+}
+
+//-----------------------------------------------------------------------------
+void vtkLidarProvider::CreateLinearInterpolator()
+{
+  // Initialize the interpolator
+  this->Interpreter->Interp = vtkSmartPointer<vtkVelodyneTransformInterpolator>::New();
+  this->Interpreter->Interp->SetInterpolationTypeToLinear();
+  this->Interpreter->SetApplyTransform(false);
+}
+
+//-----------------------------------------------------------------------------
+void vtkLidarProvider::CreateNearestInterpolator()
+{
+  // Initialize the interpolator
+  this->Interpreter->Interp = vtkSmartPointer<vtkVelodyneTransformInterpolator>::New();
+  this->Interpreter->Interp->SetInterpolationTypeToNearestLowBounded();
+  this->Interpreter->SetApplyTransform(false);
+}
