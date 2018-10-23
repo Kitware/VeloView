@@ -1,0 +1,22 @@
+<ServerManagerConfiguration>
+  <!-- Begin MotionDetector -->
+  <ProxyGroup name="filters">
+    <SourceProxy name="MotionDetector" class="vtkMotionDetector" label="MotionDetector">
+      <Documentation
+        short_help="Class that is responsible to collect point clouds and transforms to create a stabilized dense point cloud"
+        long_help="Class that is responsible to collect point clouds and transforms to create a stabilized dense point cloud">
+        Class that is responsible to collect point clouds and transforms to create a stabilized dense point cloud
+      </Documentation>
+
+    <InputProperty
+      name="Input"
+      command="SetInputConnection">
+      <DataTypeDomain name="input_type">
+        <DataType value="vtkPolyData"/>
+      </DataTypeDomain>
+    </InputProperty>
+
+    </SourceProxy>
+  </ProxyGroup>
+  <!-- End MotionDetector -->
+</ServerManagerConfiguration>

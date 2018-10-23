@@ -14,7 +14,7 @@
 /*=========================================================================
 
   Program:   Visualization Toolkit
-  Module:    vtkVelodyneHDLSource.h
+  Module:    vtkVelodyneHDLStream.h
 
   Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
   All rights reserved.

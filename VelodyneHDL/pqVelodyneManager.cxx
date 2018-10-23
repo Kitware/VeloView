@@ -16,8 +16,7 @@
 #include "vtkLASFileWriter.h"
 #include "vtkPVConfig.h" //  needed for PARAVIEW_VERSION
 #include "vtkVelodyneHDLReader.h"
-#include "vtkVelodyneTransformInterpolator.h"
-#include "vvLoadDataReaction.h"
+#include "Common/vtkVelodyneTransformInterpolator.h"
 #include "vvPythonQtDecorators.h"
 
 #include <pqActiveObjects.h>
@@ -240,7 +239,7 @@ void pqVelodyneManager::saveFramesToPCAP(
   }
 
   reader->Open();
-  reader->DumpFrames(startFrame, endFrame, filename.toAscii().data());
+  reader->SaveFrame(startFrame, endFrame, filename.toAscii().data());
   reader->Close();
 }
 

@@ -110,7 +110,7 @@ class AppLogic(object):
     def createStatusBarWidgets(self):
 
         self.logoLabel = QtGui.QLabel()
-        self.logoLabel.setPixmap(QtGui.QPixmap(":/VelodyneHDLPlugin/bottom_logo.png"))
+        self.logoLabel.setPixmap(QtGui.QPixmap(":/vvResources/SoftwareInformation/bottom_logo.png"))
         self.logoLabel.setScaledContents(True)
 
         self.filenameLabel = QtGui.QLabel()
@@ -372,15 +372,25 @@ def chooseCalibration(calibrationFilename=None):
             self.isForwarding = dialog.isForwarding()
             self.ipAddressForwarding = dialog.ipAddressForwarding()
             self.sensorTransform = vtk.vtkTransform()
+            self.gpsTransform = vtk.vtkTransform()
 
             qm = dialog.sensorTransform()
-            vm = vtk.vtkMatrix4x4()
+            vmLidar = vtk.vtkMatrix4x4()
             for row in xrange(4):
-                vm.SetElement(row, 0, qm.row(row).x())
-                vm.SetElement(row, 1, qm.row(row).y())
-                vm.SetElement(row, 2, qm.row(row).z())
-                vm.SetElement(row, 3, qm.row(row).w())
-            self.sensorTransform.SetMatrix(vm)
+                vmLidar.SetElement(row, 0, qm.row(row).x())
+                vmLidar.SetElement(row, 1, qm.row(row).y())
+                vmLidar.SetElement(row, 2, qm.row(row).z())
+                vmLidar.SetElement(row, 3, qm.row(row).w())
+            self.sensorTransform.SetMatrix(vmLidar)
+
+            qm = dialog.gpsTransform()
+            vmGps = vtk.vtkMatrix4x4()
+            for row in xrange(4):
+                vmGps.SetElement(row, 0, qm.row(row).x())
+                vmGps.SetElement(row, 1, qm.row(row).y())
+                vmGps.SetElement(row, 2, qm.row(row).z())
+                vmGps.SetElement(row, 3, qm.row(row).w())
+            self.gpsTransform.SetMatrix(vmGps)
 
 
     dialog = vvCalibrationDialog(getMainWindow())
@@ -429,13 +439,13 @@ def openSensor():
 
     initializeRPMText()
 
-    sensor = smp.VelodyneHDLSource(guiName='Data', CalibrationFile=calibrationFile, CacheSize=100)
+    sensor = smp.VelodyneHDLStream(guiName='Data', CalibrationFile=calibrationFile, CacheSize=100)
     sensor.GetClientSideObject().SetLIDARPort(LIDARPort)
-    sensor.GetClientSideObject().SetGPSPort(GPSPort)
-    sensor.GetClientSideObject().SetForwardedGPSPort(GPSForwardingPort)
+#    sensor.GetClientSideObject().SetGPSPort(GPSPort)
+#    sensor.GetClientSideObject().SetForwardedGPSPort(GPSForwardingPort)
     sensor.GetClientSideObject().SetForwardedLIDARPort(LIDARForwardingPort)
-    sensor.GetClientSideObject().SetisForwarding(isForwarding)
-    sensor.GetClientSideObject().SetisCrashAnalysing(app.EnableCrashAnalysis)
+    sensor.GetClientSideObject().SetIsForwarding(isForwarding)
+    sensor.GetClientSideObject().SetIsCrashAnalysing(app.EnableCrashAnalysis)
     sensor.GetClientSideObject().SetForwardedIpAddress(ipAddressForwarding)
     sensor.GetClientSideObject().SetSensorTransform(sensorTransform)
     sensor.GetClientSideObject().SetIgnoreZeroDistances(app.actions['actionIgnoreZeroDistances'].isChecked())
@@ -476,7 +486,7 @@ def openSensor():
     app.actions['actionFastRenderer'].enabled = True
 
     #Auto adjustment of the grid size with the distance resolution
-    app.distanceResolutionM = sensor.GetClientSideObject().GetDistanceResolutionM()
+    app.DistanceResolutionM = sensor.GetClientSideObject().GetDistanceResolutionM()
     app.actions['actionMeasurement_Grid'].setChecked(True)
     showMeasurementGrid()
 
@@ -554,6 +564,7 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
 
     smp.GetActiveView().ViewTime = 0.0
 
+    rep = smp.Show(reader)
     if SAMPLE_PROCESSING_MODE:
         prep = smp.Show(processor)
     app.scene.UpdateAnimationUsingDataTimeSteps()
@@ -568,9 +579,8 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
     else:
         posreader = smp.ApplanixPositionReader(guiName="Position",
                                                FileName=positionFilename)
-        posreader.BaseYaw = calibration.gpsYaw
-        posreader.BaseRoll = calibration.gpsRoll
-        posreader.BasePitch = calibration.gpsPitch
+
+    posreader.GetClientSideObject().SetCalibrationTransform(calibration.gpsTransform)
 
     smp.Show(posreader)
 
@@ -648,7 +658,7 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
     app.actions['actionFastRenderer'].enabled = True
 
     #Auto adjustment of the grid size with the distance resolution
-    app.distanceResolutionM = reader.GetClientSideObject().GetDistanceResolutionM()
+    app.DistanceResolutionM = reader.GetClientSideObject().GetDistanceResolutionM()
     app.grid = createGrid()
     app.actions['actionMeasurement_Grid'].setChecked(True)
     showMeasurementGrid()
@@ -857,7 +867,7 @@ def saveCSV(filename, timesteps):
     filenameTemplate = os.path.join(outDir, basenameWithoutExtension + ' (Frame %04d).csv')
     os.makedirs(outDir)
 
-    writer = smp.CreateWriter('tmp.csv', getSensor() or getReader())
+    writer = smp.CreateWriter('tmp.csv', getLidar())
     writer.FieldAssociation = 'Points'
     writer.Precision = 16
 
@@ -1481,7 +1491,7 @@ def onPlayTimer():
 
 def setPlayMode(mode):
 
-    if not getReader() and not getSensor():
+    if not getLidar():
         return
 
     app.playing = mode
@@ -1574,11 +1584,7 @@ def playbackTick():
             return
 
         if view.ViewTime == timesteps[-1]:
-            return # Already on last frame, cannot go forward
-        elif view.ViewTime < timesteps[-2]:
-            #There is more than one new frame in the queue, goToLast
-            #print "Shown frame: " + str(view.ViewTime) + ", but lastest frame received is " + str(timesteps[-1]) + ". Skipping drawing of " +str(timesteps[-1]-view.ViewTime-1) + " intermediate frames to avoid lag"
-            pass
+            return
 
         if not app.colorByInitialized:
             sensor.UpdatePipeline()
@@ -1633,9 +1639,11 @@ def unloadData():
 def getReader():
     return getattr(app, 'reader', None)
 
-
 def getSensor():
     return getattr(app, 'sensor', None)
+
+def getLidar():
+    return getReader() or getSensor()
 
 def getPosition():
     return getattr(app, 'position', (None, None, None))[0]
@@ -1655,18 +1663,12 @@ def onChooseCalibrationFile():
     calibrationFile = calibration.calibrationFile
     sensorTransform = calibration.sensorTransform
 
-    reader = getReader()
-    sensor = getSensor()
-
-    if reader is not None:
-        reader.GetClientSideObject().SetSensorTransform(sensorTransform)
-        reader.CalibrationFile = calibrationFile
-        reloadCurrentFrame()
-
-    elif sensor is not None:
-        sensor.GetClientSideObject().SetSensorTransform(sensorTransform)
-        sensor.CalibrationFile = calibrationFile
-        # no need to render now, calibration file will be used on the next frame
+    lidar = getLidar()
+    if lidar:
+        lidar.GetClientSideObject().SetSensorTransform(sensorTransform)
+        lidar.CalibrationFile = calibrationFile
+        if getReader():
+            reloadCurrentFrame()
 
     restoreLaserSelectionDialog()
 
@@ -1679,14 +1681,14 @@ def onCropReturns(show = True):
     firstCorner = QtGui.QVector3D()
     secondCorner = QtGui.QVector3D()
 
-    readerOrSensor = getReader() or getSensor()
+    lidar = getLidar()
 
     # Retrieve current values to fill the UI
-    if readerOrSensor is not None:
-        cropEnabled = readerOrSensor.CropReturns
-        cropOutside = readerOrSensor.CropOutside
-        firstCorner = QtGui.QVector3D(readerOrSensor.CropRegion[0], readerOrSensor.CropRegion[2], readerOrSensor.CropRegion[4])
-        secondCorner = QtGui.QVector3D(readerOrSensor.CropRegion[1], readerOrSensor.CropRegion[3], readerOrSensor.CropRegion[5])
+    if lidar:
+        cropEnabled = lidar.CropReturns
+        cropOutside = lidar.CropOutside
+        firstCorner = QtGui.QVector3D(lidar.CropRegion[0], lidar.CropRegion[2], lidar.CropRegion[4])
+        secondCorner = QtGui.QVector3D(lidar.CropRegion[1], lidar.CropRegion[3], lidar.CropRegion[5])
 
     #show the dialog box
     if show:
@@ -1704,13 +1706,13 @@ def onCropReturns(show = True):
         if not dialog.exec_():
             return
 
-    if readerOrSensor is not None:
-        readerOrSensor.CropReturns = dialog.croppingEnabled
-        readerOrSensor.CropOutside = dialog.cropOutside
-        readerOrSensor.GetClientSideObject().SetCropMode(dialog.GetCropMode())
+    if lidar:
+        lidar.CropReturns = dialog.croppingEnabled
+        lidar.CropOutside = dialog.cropOutside
+        lidar.GetClientSideObject().SetCropMode(dialog.GetCropMode())
         p1 = dialog.firstCorner
         p2 = dialog.secondCorner
-        readerOrSensor.CropRegion = [p1.x(), p2.x(), p1.y(), p2.y(), p1.z(), p2.z()]
+        lidar.CropRegion = [p1.x(), p2.x(), p1.y(), p2.y(), p1.z(), p2.z()]
         if show:
             smp.Render()
 
@@ -1815,7 +1817,7 @@ def createGrid(view=None):
     grid = smp.VelodyneHDLGridSource(guiName='Measurement Grid')
 
     if app.gridProperties.Persist == False:
-        grid.GridNbTicks = (int(math.ceil(50000 * app.distanceResolutionM/ grid.GetClientSideObject().GetScale()) ))
+        grid.GridNbTicks = (int(math.ceil(50000 * app.DistanceResolutionM/ grid.Scale )))
     else:
         # Restore grid properties
         grid.Normal = app.gridProperties.Normal
@@ -1863,7 +1865,7 @@ def start():
     view.UseGradientBackground = True
     smp._DisableFirstRenderCameraReset()
     smp.GetActiveView().LODThreshold = 1e100
-    app.distanceResolutionM = 0.002
+    app.DistanceResolutionM = 0.002
     app.grid = createGrid()
     app.ruler = createRuler()
 
@@ -2038,9 +2040,11 @@ def onLaserSelection(show = True):
     minIntensity = [0] * nchannels
     maxIntensity = [0] * nchannels
 
-    if reader:
-        reader.GetClientSideObject().GetLaserSelection(oldmask)
-        reader.GetClientSideObject().GetLaserCorrections(verticalCorrection,
+    lidar = getLidar()
+
+    if lidar:
+        lidar.GetClientSideObject().GetLaserSelection(oldmask)
+        lidar.GetClientSideObject().GetLaserCorrections(verticalCorrection,
             rotationalCorrection,
             distanceCorrection,
             distanceCorrectionX,
@@ -2051,23 +2055,7 @@ def onLaserSelection(show = True):
             focalSlope,
             minIntensity,
             maxIntensity)
-        nchannels = reader.GetPropertyValue('NumberOfChannels')
-
-    elif sensor:
-        sensor.GetClientSideObject().GetLaserSelection(oldmask)
-        sensor.GetClientSideObject().GetLaserCorrections(verticalCorrection,
-            rotationalCorrection,
-            distanceCorrection,
-            distanceCorrectionX,
-            distanceCorrectionY,
-            verticalOffsetCorrection,
-            horizontalOffsetCorrection,
-            focalDistance,
-            focalSlope,
-            minIntensity,
-            maxIntensity)
-
-        nchannels = sensor.GetPropertyValue('NumberOfChannels')
+        nchannels = lidar.GetPropertyValue('NumberOfChannels')
 
     # Initializing the laser selection dialog
     if app.laserSelectionDialog == None:
@@ -2098,16 +2086,11 @@ def onLaserSelection(show = True):
 
 def onLaserSelectionChanged():
     dialog = getLaserSelectionDialog();
-    reader = getReader()
-    sensor = getSensor()
+    lidar = getLidar()
 
     mask = dialog.getLaserSelectionSelector()
-    if reader:
-        reader.GetClientSideObject().SetLaserSelection(mask)
-        reloadCurrentFrame()
-
-    if sensor:
-        sensor.GetClientSideObject().SetLaserSelection(mask)
+    if lidar:
+        lidar.GetClientSideObject().SetLaserSelection(mask)
         reloadCurrentFrame()
 
 
@@ -2274,6 +2257,47 @@ def toggleCrashAnalysis():
 
     app.EnableCrashAnalysis = app.actions['actionEnableCrashAnalysis'].isChecked()
 
+def toggleRansacPlaneFitting():
+    reader = getReader()
+    ransacPlaneFitting = smp.RansacPlaneModel(reader)
+    ransacPlaneFitting.GetClientSideObject().SetMaximumIteration(250)
+    ransacPlaneFitting.GetClientSideObject().SetThreshold(0.10)
+    ransacPlaneFitting.GetClientSideObject().SetRatioInlierRequired(0.35)
+
+def toggleBirdEyeViewSnap():
+    # Get export images filename
+    fileName = getSaveFileName('Choose Output File', 'png', getDefaultSaveFileName('png'))
+    if not fileName:
+        QtGui.QMessageBox.warning(getMainWindow(), 'Invalid filename', 'Please, select a valid filename')
+        return
+
+    # Fit a plane using ransac algorithm
+    reader = getReader()
+    ransacPlaneFitting = smp.RansacPlaneModel(reader)
+    ransacPlaneFitting.GetClientSideObject().SetMaximumIteration(1000)
+    ransacPlaneFitting.GetClientSideObject().SetThreshold(0.35)
+    ransacPlaneFitting.GetClientSideObject().SetRatioInlierRequired(0.80)
+    ransacPlaneFitting.UpdatePipeline()
+    planeParams = range(4)
+    ransacPlaneFitting.GetClientSideObject().GetPlaneParam(planeParams)
+
+    # use the fitted plane to generate the bird eye view
+    # image (i.e: project the point cloud on the fitted plan
+    # and use the 2D projected point cloud to generate the image)
+    birdEyeViewGenerator = smp.BirdEyeViewSnap(reader)
+    birdEyeViewGenerator.GetClientSideObject().SetFolderName(fileName)
+    birdEyeViewGenerator.GetClientSideObject().SetPlaneParam(planeParams)
+    birdEyeViewGenerator.UpdatePipeline()
+
+def toggleMotionDetection():
+    reader = getReader()
+
+    # check that a reader is available
+    if reader is None:
+        return
+
+    motionDetector = smp.MotionDetector(reader)
+    motionDetector.UpdatePipeline()
 
 def setViewTo(axis,sign):
     view = smp.GetActiveView()
@@ -2339,22 +2363,10 @@ def setFilterToIntensityLow():
 
 def setFilterTo(mask):
 
-    reader = getReader()
-    if reader:
-        if reader.GetClientSideObject().GetHasDualReturn():
-            reader.DualReturnFilter = mask
-            smp.Render()
-            smp.Render(getSpreadSheetViewProxy())
-        else:
-            app.actions['actionDualReturnModeDual'].setChecked(True)
-            QtGui.QMessageBox.warning(getMainWindow(), 'Dual returns not found',
-            "The functionality only works with dual returns, and the current"
-            "frame has no dual returns.")
-
-    sensor = getSensor()
-    if sensor:
-        if sensor.GetClientSideObject().GetHasDualReturn():
-            sensor.DualReturnFilter = mask
+    lidar = getLidar()
+    if lidar:
+        if lidar.GetClientSideObject().GetHasDualReturn():
+            lidar.DualReturnFilter = mask
             smp.Render()
             smp.Render(getSpreadSheetViewProxy())
         else:
@@ -2410,14 +2422,9 @@ def fastRendererChanged():
     seekBackward()
 
 def intensitiesCorrectedChanged():
-    reader = getReader()
-    sensor = getSensor()
-
-    if sensor is not None:
-        sensor.GetClientSideObject().SetIntensitiesCorrected(value)
-    if reader is not None:
-        reader.GetClientSideObject().SetIntensitiesCorrected(value)
-
+    lidar = getLidar()
+    if lidar:
+        lidar.GetClientSideObject().SetIntensitiesCorrected(app.actions['actionCorrectIntensityValues'].isChecked())
     # Workaround to force the refresh for all the views
     seekForward()
     seekBackward()
@@ -2483,6 +2490,9 @@ def setupActions():
     app.actions['actionFastRenderer'].connect('triggered()',fastRendererChanged)
     app.actions['actionSelectDualReturn'].connect('triggered()',toggleSelectDualReturn)
     app.actions['actionSelectDualReturn2'].connect('triggered()',toggleSelectDualReturn)
+    app.actions['actionRansacPlaneFitting'].connect('triggered()', toggleRansacPlaneFitting)
+    app.actions['actionBirdEyeViewSnap'].connect('triggered()', toggleBirdEyeViewSnap)
+    app.actions['actionMotionDetection'].connect('triggered()', toggleMotionDetection)
     app.EnableCrashAnalysis = app.actions['actionEnableCrashAnalysis'].isChecked()
 
     # Restore action states from settings
@@ -2593,11 +2603,9 @@ def setupActions():
 def showRPM():
 
     rpmArray = None
-
-    if getReader():
-        rpmArray = getReader().GetClientSideObject().GetOutput().GetFieldData().GetArray('RotationPerMinute')
-    elif getSensor():
-        rpmArray = getSensor().GetClientSideObject().GetOutput().GetFieldData().GetArray('RotationPerMinute')
+    lidar = getLidar()
+    if lidar():
+        rpmArray = lidar().GetClientSideObject().GetOutput().GetFieldData().GetArray('RotationPerMinute')
 
     if rpmArray:
         rpm = rpmArray.GetTuple1(0)
@@ -2636,10 +2644,9 @@ def onIgnoreZeroDistances():
     getPVSettings().setValue('VelodyneHDLPlugin/IgnoreZeroDistances', IgnoreZeroDistances)
 
     # Apply it to the current source if any
-    source = getReader() or getSensor()
-
-    if source:
-        source.GetClientSideObject().SetIgnoreZeroDistances(IgnoreZeroDistances)
+    lidar = getLidar()
+    if lidar:
+        lidar.GetClientSideObject().SetIgnoreZeroDistances(IgnoreZeroDistances)
         reloadCurrentFrame()
 
 
@@ -2651,10 +2658,10 @@ def onIntraFiringAdjust():
     getPVSettings().setValue('VelodyneHDLPlugin/IntraFiringAdjust', intraFiringAdjust)
 
     # Apply it to the current source if any
-    source = getReader() or getSensor()
+    lidar = getLidar()
 
-    if source:
-        source.GetClientSideObject().SetIntraFiringAdjust(intraFiringAdjust)
+    if lidar:
+        lidar.GetClientSideObject().SetIntraFiringAdjust(intraFiringAdjust)
         reloadCurrentFrame()
 
 
@@ -2666,17 +2673,17 @@ def onIgnoreEmptyFrames():
     getPVSettings().setValue('VelodyneHDLPlugin/IgnoreEmptyFrames', ignoreEmptyFrames)
 
     # Apply it to the current source if any
-    source = getReader() or getSensor()
+    lidar = getLidar()
 
-    if source:
+    if ldiar:
         source.GetClientSideObject().SetIgnoreEmptyFrames(ignoreEmptyFrames)
         reloadCurrentFrame()
 
 
 def reloadCurrentFrame():
-    source = getReader() or getSensor()
-    if source:
-        source.DummyProperty = not source.DummyProperty
+    lidar = getLidar()
+    if lidar:
+        lidar.DummyProperty = not source.DummyProperty
         smp.Render()
         smp.Render(getSpreadSheetViewProxy())
     updateUIwithNewFrame()
@@ -2685,10 +2692,10 @@ def updateUIwithNewFrame():
     frame = int(getTimeKeeper().getTime())
     app.timeLabel.setText('  Frame: %s' % frame)
 
-    reader = getReader() or getSensor()
-    if reader is not None:
-        app.sensorInformationLabel.setText(reader.GetClientSideObject().GetSensorInformation())
-    #Remove the Rotation per minute from color label comboBox
+    lidar = getLidar()
+    if lidar:
+        app.sensorInformationLabel.setText(lidar.GetClientSideObject().GetSensorInformation())
+        #Remove the Rotation per minute from color label comboBox
     ComboBox = getMainWindow().findChild('vvColorToolbar').findChild('pqDisplayColorWidget').findChildren('QComboBox')[0]
     n = ComboBox.findText('RotationPerMinute')
     ComboBox.removeItem(n)
