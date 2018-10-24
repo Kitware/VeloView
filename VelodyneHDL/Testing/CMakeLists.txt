@@ -7,6 +7,12 @@ add_executable(TestVelodyneHDLReader TestVelodyneHDLReader.cxx TestHelpers.cxx)
 target_include_directories(TestVelodyneHDLReader PRIVATE ${plugin_include_dirs})
 target_link_libraries(TestVelodyneHDLReader LINK_PUBLIC VelodyneHDLPlugin)
 
+add_executable(TestVelodyneHDLPositionReader TestVelodyneHDLPositionReader.cxx)
+target_link_libraries(TestVelodyneHDLPositionReader VelodyneHDLPlugin)
+
+add_executable(TestNMEAParser TestNMEAParser.cxx TestHelpers.cxx)
+target_link_libraries(TestNMEAParser VelodyneHDLPlugin)
+
 set(sensors "HDL-64"
             "VLP-16"
             "VLP-32c")
@@ -90,4 +96,13 @@ add_test(TestVelodyneHDLReader_HDL-64_Dual-autocalib
   ${CMAKE_SOURCE_DIR}/TestData/HDL-64_Dual-autocalib.pcap
   ${CMAKE_SOURCE_DIR}/TestData/HDL-64_Dual-autocalib/files.txt
   ""
+)
+
+add_test(TestVelodyneHDLPositionReader
+  ${INSTALL_LOCAL_DIR}/TestVelodyneHDLPositionReader
+  "${CMAKE_SOURCE_DIR}/TestData/HDL32-V2_R_into_Butterfield_into_Digital_Drive.pcap"
+)
+
+add_test(TestNMEAParser
+  ${INSTALL_LOCAL_DIR}/TestNMEAParser
 )
