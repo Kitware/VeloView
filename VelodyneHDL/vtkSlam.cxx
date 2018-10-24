@@ -2345,7 +2345,7 @@ void vtkSlam::SetKeyPointsLabels(vtkSmartPointer<vtkPolyData> input)
     // Blobs Points
     if (!this->FastSlam)
     {
-      for (int k = 0; k < Npts; k = k + 5)
+      for (int k = 0; k < Npts; k = k + 3)
       {
         blobIndex.push_back(std::pair<int, int>(scanLine, k));
       }
@@ -3122,7 +3122,7 @@ void vtkSlam::ComputeBlobsDistanceParametersAccurate(pcl::KdTreeFLANN<Point>::Pt
 {
   // number of neighbors blobs points required to approximate
   // the corresponding ellipsoide
-  unsigned int requiredNearest = 7;
+  unsigned int requiredNearest = 25;
 
   // maximum distance between keypoints
   // and its neighbor
@@ -4384,7 +4384,7 @@ void vtkSlam::Set_RollingGrid_LeafVoxelFilterSize(const double size)
 {
   this->EdgesPointsLocalMap->Set_LeafVoxelFilterSize(0.75 * size);
   this->PlanarPointsLocalMap->Set_LeafVoxelFilterSize(size);
-  this->BlobsPointsLocalMap->Set_LeafVoxelFilterSize(0.75 * size);
+  this->BlobsPointsLocalMap->Set_LeafVoxelFilterSize(0.20 * size);
 }
 
 //-----------------------------------------------------------------------------
