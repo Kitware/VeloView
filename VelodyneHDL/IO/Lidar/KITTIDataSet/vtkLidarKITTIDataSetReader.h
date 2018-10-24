@@ -38,17 +38,17 @@ class VTK_EXPORT vtkLidarKITTIDataSetReader : public vtkLidarReader
 public:
   static vtkLidarKITTIDataSetReader* New();
   vtkTypeMacro(vtkLidarKITTIDataSetReader, vtkLidarReader)
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) override;
 
   vtkSmartPointer<vtkPolyData> GetFrame(int frameNumber, int wantedNumberOfTrailingFrames = 0) override;
 
-  vtkGetMacro(FileName, std::string);
+  vtkGetMacro(FileName, std::string)
   void SetFileName(const std::string& filename) override;
 
-  int GetNumberOfTrailingFrames() override { return this->NumberOfFrames; }
-  void SetNumberOfTrailingFrames(const int nbTrailingFrames) override;
+  vtkGetMacro(NumberOfTrailingFrames, int)
+  vtkSetMacro(NumberOfTrailingFrames, int)
 
-  int GetNumberOfFrames() override;
+  vtkGetMacro(NumberOfFrames, int)
 
   //! Not implemented
   notImplementedGetMacro(CalibrationFileName, std::string)
@@ -113,7 +113,7 @@ public:
   void SaveFrame(int startFrame, int endFrame, const std::string& filename) override {notImpementedBody}
 
   //! Not implemented
-  std::string GetSensorInformation() override {notImpementedBody return "";}
+  std::string GetSensorInformation() ;
 
 private:
   vtkLidarKITTIDataSetReader();

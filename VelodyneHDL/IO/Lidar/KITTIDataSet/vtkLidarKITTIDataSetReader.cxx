@@ -12,6 +12,7 @@
 #include <sstream>
 
 # include <boost/filesystem.hpp>
+
 namespace  {
 //-----------------------------------------------------------------------------
 vtkSmartPointer<vtkCellArray> NewVertexCells(vtkIdType numberOfVerts)
@@ -48,7 +49,6 @@ typedef struct point {
 } point_t;
 }
 
-
 //-----------------------------------------------------------------------------
 vtkStandardNewMacro(vtkLidarKITTIDataSetReader)
 
@@ -76,12 +76,12 @@ void vtkLidarKITTIDataSetReader::SetFileName(const std::string &filename)
 
   if (!boost::filesystem::exists(filename))
   {
-    vtkErrorMacro(<< "Folder not be found! Contrary to the function name, the \
-                    nput must be the folder containing all bin file for a given sequence");
+    vtkErrorMacro(<< "Folder not be found! Contrary to what the name of this function implies, \
+                    the input must be the folder containing all '.bin' files for a given sequence");
     return;
   }
 
-  // count number of frame inside the folder
+  // count number of frames inside the folder
   this->NumberOfFrames = 0;
   boost::filesystem::path folder(filename);
   boost::filesystem::directory_iterator it{folder};
@@ -95,13 +95,10 @@ void vtkLidarKITTIDataSetReader::SetFileName(const std::string &filename)
 }
 
 //-----------------------------------------------------------------------------
-void vtkLidarKITTIDataSetReader::SetNumberOfTrailingFrames(const int nbTrailingFrames)
+std::string vtkLidarKITTIDataSetReader::GetSensorInformation()
 {
-  if (this->NumberOfTrailingFrames == nbTrailingFrames)
-  {
-    return;
-  }
-  this->NumberOfTrailingFrames = nbTrailingFrames;
+  return "Velodyne HDL64 sensor playing back data from the KITTI dataset\n \
+          The data are the .bin file contain in following folder: " + this->FileName;
 }
 
 //-----------------------------------------------------------------------------
@@ -117,19 +114,18 @@ vtkSmartPointer<vtkPolyData> vtkLidarKITTIDataSetReader::GetFrame(int frameNumbe
   poly->SetPoints(points.GetPointer());
 
   vtkSmartPointer<vtkDoubleArray> xArray = CreateDataArray<vtkDoubleArray>("X", poly);
-  vtkSmartPointer<vtkDoubleArray> yArray = CreateDataArray<vtkDoubleArray>("y", poly);
-  vtkSmartPointer<vtkDoubleArray> zArray = CreateDataArray<vtkDoubleArray>("z", poly);
+  vtkSmartPointer<vtkDoubleArray> yArray = CreateDataArray<vtkDoubleArray>("Y", poly);
+  vtkSmartPointer<vtkDoubleArray> zArray = CreateDataArray<vtkDoubleArray>("Z", poly);
   vtkSmartPointer<vtkDoubleArray> intensityArray = CreateDataArray<vtkDoubleArray>("intensity", poly);
   vtkSmartPointer<vtkDoubleArray> azimutArray = CreateDataArray<vtkDoubleArray>("azimut", poly);
   vtkSmartPointer<vtkDoubleArray> elevationArray = CreateDataArray<vtkDoubleArray>("elevation", poly);
   vtkSmartPointer<vtkDoubleArray> radiusArray = CreateDataArray<vtkDoubleArray>("radius", poly);
-  vtkSmartPointer<vtkDoubleArray> idArray = CreateDataArray<vtkDoubleArray>("id", poly);
+  vtkSmartPointer<vtkDoubleArray> idArray = CreateDataArray<vtkDoubleArray>("laser_id", poly);
 
-  int startFrame = std::max(0, frameNumber-wantedNumberOfTrailingFrames);
+  int startFrame = std::max(0, frameNumber - wantedNumberOfTrailingFrames);
   for (int i = startFrame; i <= frameNumber; i++)
   {
-
-    // get the desire bin file
+    // produce path to the required .bin file
     std::stringstream ss;
     ss << std::setw(10) << std::setfill('0') << i;
     std::string filename = this->GetFileName() + ss.str() + ".bin";
@@ -141,7 +137,7 @@ vtkSmartPointer<vtkPolyData> vtkLidarKITTIDataSetReader::GetFrame(int frameNumbe
     int length = is.tellg();
     is.seekg(0, ios::beg);
 
-    // variable use to detect a laser jump
+    // variable used to detect a laser jump
     double old_azimut = 0;
     int laser_id = 1;
 
@@ -160,13 +156,12 @@ vtkSmartPointer<vtkPolyData> vtkLidarKITTIDataSetReader::GetFrame(int frameNumbe
       double radius = sqrt(x*x + y*y + z*z);
 
       // crop points which belong to the vehicle
-      if (radius < 4)
+      if (radius < 4.0)
       {
         continue;
       }
 
-
-      double azimut = 180 / vtkMath::Pi() * atan2(pt->y,pt->x);
+      double azimut = 180 / vtkMath::Pi() * std::atan2(pt->y,pt->x);
       if(old_azimut < 0 && azimut >= 0)
       {
         laser_id++;
@@ -175,7 +170,7 @@ vtkSmartPointer<vtkPolyData> vtkLidarKITTIDataSetReader::GetFrame(int frameNumbe
           vtkErrorMacro(<< "An error occur while parsing the frame, more than 64 laser where detected")
         }
       }
-      double elevation = 180 / vtkMath::Pi() * acos(pt->z/radius);
+      double elevation = 180 / vtkMath::Pi() * std::acos(pt->z/radius);
 
       // fill the polydata
       points->InsertNextPoint(pt->x, pt->y, pt->z);
@@ -197,12 +192,6 @@ vtkSmartPointer<vtkPolyData> vtkLidarKITTIDataSetReader::GetFrame(int frameNumbe
   poly->SetVerts(NewVertexCells(poly->GetNumberOfPoints()));
 
   return poly;
-}
-
-//----------------------------------------------------------------------------
-int vtkLidarKITTIDataSetReader::GetNumberOfFrames()
-{
-  return this->NumberOfFrames;
 }
 
 //----------------------------------------------------------------------------
@@ -234,7 +223,7 @@ int vtkLidarKITTIDataSetReader::RequestInformation(vtkInformation* request, vtkI
   vtkInformation* info = outputVector->GetInformationObject(0);
   int numberOfTimesteps = this->NumberOfFrames;
   std::vector<double> timesteps;
-  for (size_t i = 0; i < numberOfTimesteps; ++i)
+  for (int i = 0; i < numberOfTimesteps; ++i)
   {
     timesteps.push_back(i);
   }

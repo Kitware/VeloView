@@ -2565,8 +2565,8 @@ def showRPM():
 
     rpmArray = None
     lidar = getLidar()
-    if lidar():
-        rpmArray = lidar().GetClientSideObject().GetOutput().GetFieldData().GetArray('RotationPerMinute')
+    if lidar:
+        rpmArray = lidar.GetClientSideObject().GetOutput().GetFieldData().GetArray('RotationPerMinute')
 
     if rpmArray:
         rpm = rpmArray.GetTuple1(0)
