@@ -700,7 +700,7 @@ void VelodynePacketInterpreter::ProcessPacket(unsigned char const * data, unsign
   vtkNew<vtkTransform> geotransform;
   const unsigned int rawtime = dataPacket->gpsTimestamp;
   const double timestamp = this->ComputeTimestamp(dataPacket->gpsTimestamp);
-  this->ComputeOrientation(timestamp, geotransform.GetPointer());
+  this->ComputeOrientation(timestamp, static_cast<double>(rawtime), geotransform.GetPointer());
 
   // Update the rpm computation (by packets)
   this->RpmCalculator_->AddData(dataPacket, rawtime);
@@ -1131,13 +1131,15 @@ double VelodynePacketInterpreter::ComputeTimestamp(unsigned int tohTime)
 }
 
 //-----------------------------------------------------------------------------
-void VelodynePacketInterpreter::ComputeOrientation(double timestamp, vtkTransform *geotransform)
+void VelodynePacketInterpreter::ComputeOrientation(double adjustedTimestamp, double rawtime, vtkTransform *geotransform)
 {
   if (this->ApplyTransform && this->Interp && this->Interp->GetNumberOfTransforms())
   {
     // NOTE: We store time in milliseconds, but the interpolator uses seconds,
     //       so we need to adjust here
-    const double t = timestamp * 1e-6;
+    double t = adjustedTimestamp * 1e-6;
+    if (t < this->Interp->GetMinimumT() || t > this->Interp->GetMaximumT())
+      t = rawtime * 1e-6;
     this->Interp->InterpolateTransform(t, geotransform);
   }
   else

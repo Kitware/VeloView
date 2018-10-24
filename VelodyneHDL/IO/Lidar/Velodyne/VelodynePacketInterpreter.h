@@ -73,7 +73,7 @@ private:
 
   double ComputeTimestamp(unsigned int tohTime);
 
-  void ComputeOrientation(double timestamp, vtkTransform* geotransform);
+  void ComputeOrientation(double adjustedTimestamp, double rawtime, vtkTransform* geotransform);
 
   void ComputeCorrectedValues(const unsigned short azimuth,
                               const HDLLaserReturn* laserReturn, const HDLLaserCorrection* correction, double pos[3],
