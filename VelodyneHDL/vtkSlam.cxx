@@ -161,7 +161,21 @@ public:
     // Ht * A * H with H = R(theta)X + T
     Eigen::Matrix<T, 3, 1> Y;
     Y << Yx, Yy, Yz;
-    residual[0] = ceres::sqrt((Y.transpose() * Ac * Y)(0));
+    T squaredResidual = (Y.transpose() * Ac * Y)(0);
+
+    // since t -> sqrt(t) is not differentiable
+    // in 0, we check the value of the distance
+    // infenitesimale part. If it is not finite
+    // it means that the first order derivative
+    // has been evaluated in 0
+    if (squaredResidual < T(1e-6))
+    {
+      residual[0] = T(0);
+    }
+    else
+    {
+      residual[0] = ceres::sqrt(squaredResidual);
+    }
 
     return true;
   }
