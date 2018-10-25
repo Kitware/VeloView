@@ -66,6 +66,7 @@ public:
     , Writer()
     , DummyWork(new boost::asio::io_service::work(this->IOService))
   {
+      this->ListenGPS = false;
   }
 
   ~NetworkSource();
@@ -77,16 +78,23 @@ public:
   void Stop();
 
   //! @todo currently evrything is public, but it should be private
+  int LIDARPort;                  /*!< The port to receive LIDAR information. Default is 2368 */
+  bool ListenGPS;
+  int GPSPort;                    /*!< The port to receive GPS information. Default is 8308 */
+  int ForwardedLIDARPort;         /*!< The port to send LIDAR forwarded packets*/
+  int ForwardedGPSPort;           /*!< The port to send GPS forwarded packets*/
+  std::string ForwardedIpAddress; /*!< The ip to send forwarded packets*/
+  bool IsForwarding;              /*!< Allowing the forwarding of the packets*/
   bool IsCrashAnalysing;
-  bool IsForwarding; /*!< Allowing the forward of the packets */
-  std::string ForwardedIpAddress;   /*!< Ip of the computer which will receive the forwarded packets */
-  int ForwardedLIDARPort; /*!< Port address which will receive the lidar forwarded packet */
-  int LIDARPort;          /*!< Listening port for LIDAR information */
+
   boost::asio::io_service IOService; /*!< The in/out service which will handle the Packets */
   boost::shared_ptr<boost::thread> Thread;
 
   boost::shared_ptr<PacketReceiver>
     LIDARPortReceiver; /*!< The PacketReceiver configured to receive LIDAR information */
+
+  boost::shared_ptr<PacketReceiver>
+    PositionPortReceiver; /*!< The PacketReceiver configured to receive GPS information */
 
   std::shared_ptr<PacketConsumer> Consumer;
   std::shared_ptr<PacketFileWriter> Writer;

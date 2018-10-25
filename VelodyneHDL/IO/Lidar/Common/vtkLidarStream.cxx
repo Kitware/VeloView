@@ -98,6 +98,18 @@ void vtkLidarStream::SetLIDARPort(const int value)
 }
 
 //-----------------------------------------------------------------------------
+int vtkLidarStream::GetGPSPort()
+{
+  return this->Internal->Network->GPSPort;
+}
+
+//-----------------------------------------------------------------------------
+void vtkLidarStream::SetGPSPort(const int value)
+{
+  this->Internal->Network->GPSPort = value;
+}
+
+//-----------------------------------------------------------------------------
 int vtkLidarStream::GetForwardedLIDARPort()
 {
   return this->Internal->Network->ForwardedLIDARPort;
@@ -110,10 +122,29 @@ void vtkLidarStream::SetForwardedLIDARPort(const int value)
 }
 
 //-----------------------------------------------------------------------------
+int vtkLidarStream::GetForwardedGPSPort()
+{
+  return this->Internal->Network->ForwardedGPSPort;
+}
+
+//-----------------------------------------------------------------------------
+void vtkLidarStream::SetForwardedGPSPort(const int value)
+{
+  this->Internal->Network->ForwardedGPSPort = value;
+}
+
+//-----------------------------------------------------------------------------
 bool vtkLidarStream::GetIsForwarding()
 {
   return this->Internal->Network->IsForwarding;
 }
+
+//-----------------------------------------------------------------------------
+void vtkLidarStream::EnableGPSListening(const bool value)
+{
+  this->Internal->Network->ListenGPS = value;
+}
+
 
 //-----------------------------------------------------------------------------
 void vtkLidarStream::SetIsForwarding(const bool value)
