@@ -281,12 +281,14 @@ void vtkLidarReader::SaveFrame(int startFrame, int endFrame, const std::string &
            data, dataLength, timeSinceStart, &header, &dataHeaderLength) &&
     currentFrame <= endFrame)
   {
+    // writing all packets, even those that do not contain lidar frames,
+    // such as the 512 bytes packets of Velodyne IMU data + forwarded GPS data
+    writer.WritePacket(header, const_cast<unsigned char*>(data) - dataHeaderLength);
     if (this->Interpreter->IsLidarPacket(const_cast<unsigned char*>(data), dataLength))
     {
-      writer.WritePacket(header, const_cast<unsigned char*>(data) - dataHeaderLength);
-
-      this->Interpreter->PreProcessPacket(const_cast<unsigned char*>(data),dataLength, isNewFrame, notUsed);
-      currentFrame += static_cast<int> (isNewFrame);
+      // we need to count frames and some are split in multiple packets
+      this->Interpreter->PreProcessPacket(const_cast<unsigned char*>(data), dataLength, isNewFrame, notUsed);
+      currentFrame += static_cast<int>(isNewFrame);
       this->UpdateProgress(0.0);
     }
   }

@@ -55,6 +55,7 @@
 #include <vtkUnsignedShortArray.h>
 
 #include <vtk_libproj4.h>
+#include "NMEAParser.h"
 
 #include <boost/foreach.hpp>
 #include <boost/property_tree/ptree.hpp>
@@ -77,7 +78,13 @@ namespace
 {
 struct PositionPacket
 {
-  unsigned int gpsTimestamp;
+  // tohTimestamp is a microseconds rolling counter provided by the lidar
+  // internal clock which will be adjusted using the gps data (if one is plugged)
+  // tohTimestamp gives the number of microseconds ellapsed since the top of
+  // the hour. The top of the hour is defined as (modulo 1 hour):
+  // - without a gps plugged: the instant when the lidar was powered on
+  // - with a gps: any full UTC hour (such as 12:00:00 am, UTC)
+  unsigned int tohTimestamp;
   short gyro[3];
   short temp[3];
   short accelx[3];
@@ -173,7 +180,7 @@ int vtkVelodyneHDLPositionReader::vtkInternal::ProcessHDLPacket(
       (position.accely[i] & REMAINDER_12_MASK);
   }
 
-  memcpy(&position.gpsTimestamp, data + 14 + 3 * 8 + 160, 4);
+  memcpy(&position.tohTimestamp, data + 14 + 3 * 8 + 160, 4);
 
   std::copy(data + 14 + 8 + 8 + 8 + 160 + 4 + 4, data + 14 + 8 + 8 + 8 + 160 + 4 + 4 + 72,
     position.sentance);
@@ -242,8 +249,10 @@ void vtkVelodyneHDLPositionReader::vtkInternal::InterpolateGPS(
   double timeOffset = 0.0;
 
   assert(times->GetNumberOfTuples() == gpsTime->GetNumberOfTuples());
+
   double lastGPSTime = 0;
   bool shouldWarnTimeShift = true;
+
   for (vtkIdType i = 0, k = times->GetNumberOfTuples(); i < k; ++i)
   {
     const double currGPSTime = gpsTime->GetTuple1(i);
@@ -484,58 +493,41 @@ int vtkVelodyneHDLPositionReader::RequestData(
   while (this->Internal->Reader->NextPacket(data, dataLength, timeSinceStart))
   {
     PositionPacket position;
-    if (this->Internal->ProcessHDLPacket(data, dataLength, position))
+    if (!this->Internal->ProcessHDLPacket(data, dataLength, position))
     {
-      std::vector<std::string> words = this->Internal->ParseSentance(position.sentance);
+      continue;
+    }
 
-      double gpsUpdateTime;
-      double latDegGPRMC;
-      double lonDegGPRMC;
-      double heading;
-
-      // Words.size()==13 include RMC format with mode indicator (NMEA = 2.3)
-      // Words.size()==14 might correspond to another format
-      // Words.size()==12 include RMC format without mode indicator(NMEA = pre 2.3)
-      if (words.size() != 13 && words.size() != 14 && words.size() != 12)
+    double x, y, z, lat, lon, heading, gpsUpdateTime;
+    if (std::string(position.sentance).size() == 0)
+    {
+      // If there is no sentence to parse (no gps connected),
+      // we use the following:
+      x = 0.0;
+      y = 0.0;
+      z = 0.0;
+      lat = 0.0;
+      lon = 0.0;
+      heading = 0.0;
+      // the follwing value is wrong (no gps update so no update time),
+      // so it should also be 0.0 (invalid)
+      // but this value is kept to not risk breaking anything:
+      gpsUpdateTime = position.tohTimestamp;
+    }
+    else
+    {
+      NMEAParser parser;
+      NMEALocation parsedNMEA;
+      if (!parser.ParseLocation(position.sentance, parsedNMEA))
       {
-        gpsUpdateTime = position.gpsTimestamp;
-        lonDegGPRMC = 0.0;
-        latDegGPRMC = 0.0;
-        heading = 0.0;
-        continue;
-      }
-      else
-      {
-        gpsUpdateTime = atof(words[1].c_str());
-        latDegGPRMC = atof(words[3].c_str());
-        lonDegGPRMC = atof(words[5].c_str());
-        heading = atof(words[8].c_str());
-        if (words[2][0] != 'A')
-          continue;
-      }
-
-      double latDegDec = floor(latDegGPRMC / 100);
-      double latDegMin = 100 * ((latDegGPRMC / 100) - latDegDec);
-      double lat = latDegDec + latDegMin / 60.0;
-
-      if (words.size() > 5 && words[4][0] == 'S')
-      {
-        lat = -lat;
-      }
-
-      double lonDegDec = floor(lonDegGPRMC / 100);
-      double lonDegMin = 100 * ((lonDegGPRMC / 100) - lonDegDec);
-      double lon = lonDegDec + lonDegMin / 60.0;
-
-      if (words.size() > 7 && words[6][0] == 'W')
-      {
-        lon = -lon;
+        vtkGenericWarningMacro("Failed to parse NMEA sentence: "
+                               << position.sentance);
       }
 
       if (this->Internal->UTMZone < 0)
       {
         assert(!pj_utm);
-        this->Internal->UTMZone = LatLongToZone(lat, lon);
+        this->Internal->UTMZone = LatLongToZone(parsedNMEA.Lat, parsedNMEA.Long);
         std::stringstream utmparams;
         utmparams << "+proj=utm ";
         std::stringstream zone;
@@ -544,7 +536,7 @@ int vtkVelodyneHDLPositionReader::RequestData(
         // WARNING: Dont let the string stream pass out of scope until
         // we finish initialization
         utmparams << this->Internal->UTMString << " ";
-        if (lat < 0)
+        if (parsedNMEA.Lat < 0)
         {
           utmparams << "+south ";
         }
@@ -563,8 +555,8 @@ int vtkVelodyneHDLPositionReader::RequestData(
       // xy.y = lat * DEG_TO_RAD;
 
       projUV lp;
-      lp.u = lon * DEG_TO_RAD;
-      lp.v = lat * DEG_TO_RAD;
+      lp.u = DEG_TO_RAD * parsedNMEA.Long;
+      lp.v = DEG_TO_RAD * parsedNMEA.Lat;
 
       projUV xy;
       xy = pj_fwd(lp, pj_utm);
@@ -574,45 +566,47 @@ int vtkVelodyneHDLPositionReader::RequestData(
                                "Please check the latitude and longitude inputs");
       }
 
-      double x = xy.u;
-      double y = xy.v;
-      double z = 0;
-
-      if (pointcount == 0)
-      {
-        this->Internal->Offset[0] = x;
-        this->Internal->Offset[1] = y;
-      }
-
-      x -= this->Internal->Offset[0];
-      y -= this->Internal->Offset[1];
-
-      points->InsertNextPoint(x, y, z);
-      lats->InsertNextValue(lat);
-      lons->InsertNextValue(lon);
-      gpsTime->InsertNextValue(gpsUpdateTime);
-      polyIds->InsertNextId(pointcount);
-
-      times->InsertNextValue(position.gpsTimestamp);
-
-      zoneData->InsertNextValue(this->Internal->UTMZone);
-
-      dataVectors["gyro1"]->InsertNextValue(position.gyro[0] * GYRO_SCALE);
-      dataVectors["gyro2"]->InsertNextValue(position.gyro[1] * GYRO_SCALE);
-      dataVectors["gyro3"]->InsertNextValue(position.gyro[2] * GYRO_SCALE);
-      dataVectors["temp1"]->InsertNextValue(position.temp[0] * TEMP_SCALE + TEMP_OFFSET);
-      dataVectors["temp2"]->InsertNextValue(position.temp[1] * TEMP_SCALE + TEMP_OFFSET);
-      dataVectors["temp3"]->InsertNextValue(position.temp[2] * TEMP_SCALE + TEMP_OFFSET);
-      dataVectors["accel1x"]->InsertNextValue(position.accelx[0] * ACCEL_SCALE);
-      dataVectors["accel2x"]->InsertNextValue(position.accelx[1] * ACCEL_SCALE);
-      dataVectors["accel3x"]->InsertNextValue(position.accelx[2] * ACCEL_SCALE);
-      dataVectors["accel1y"]->InsertNextValue(position.accely[0] * ACCEL_SCALE);
-      dataVectors["accel2y"]->InsertNextValue(position.accely[1] * ACCEL_SCALE);
-      dataVectors["accel3y"]->InsertNextValue(position.accely[2] * ACCEL_SCALE);
-      dataVectors["heading"]->InsertNextValue(heading);
-
-      pointcount++;
+      x = xy.u;
+      y = xy.v;
+      z = 0.0;
+      lat = parsedNMEA.Lat;
+      lon = parsedNMEA.Long;
+      heading = parsedNMEA.TrackAngle;
+      gpsUpdateTime = parsedNMEA.UTCSecondsOfDay;
     }
+
+    if (pointcount == 0)
+    {
+      this->Internal->Offset[0] = x;
+      this->Internal->Offset[1] = y;
+    }
+
+    x -= this->Internal->Offset[0];
+    y -= this->Internal->Offset[1];
+
+    points->InsertNextPoint(x, y, z);
+    lats->InsertNextValue(lat);
+    lons->InsertNextValue(lon);
+    gpsTime->InsertNextValue(gpsUpdateTime);
+    polyIds->InsertNextId(pointcount);
+
+    times->InsertNextValue(position.tohTimestamp);
+
+    dataVectors["gyro1"]->InsertNextValue(position.gyro[0] * GYRO_SCALE);
+    dataVectors["gyro2"]->InsertNextValue(position.gyro[1] * GYRO_SCALE);
+    dataVectors["gyro3"]->InsertNextValue(position.gyro[2] * GYRO_SCALE);
+    dataVectors["temp1"]->InsertNextValue(position.temp[0] * TEMP_SCALE + TEMP_OFFSET);
+    dataVectors["temp2"]->InsertNextValue(position.temp[1] * TEMP_SCALE + TEMP_OFFSET);
+    dataVectors["temp3"]->InsertNextValue(position.temp[2] * TEMP_SCALE + TEMP_OFFSET);
+    dataVectors["accel1x"]->InsertNextValue(position.accelx[0] * ACCEL_SCALE);
+    dataVectors["accel2x"]->InsertNextValue(position.accelx[1] * ACCEL_SCALE);
+    dataVectors["accel3x"]->InsertNextValue(position.accelx[2] * ACCEL_SCALE);
+    dataVectors["accel1y"]->InsertNextValue(position.accely[0] * ACCEL_SCALE);
+    dataVectors["accel2y"]->InsertNextValue(position.accely[1] * ACCEL_SCALE);
+    dataVectors["accel3y"]->InsertNextValue(position.accely[2] * ACCEL_SCALE);
+    dataVectors["heading"]->InsertNextValue(heading);
+
+    pointcount++;
   }
   this->Close();
 
