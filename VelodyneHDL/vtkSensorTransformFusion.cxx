@@ -672,6 +672,8 @@ void vtkSensorTransformFusion::ApplyTransform(Eigen::Matrix<double, 3, 1> angles
 //-----------------------------------------------------------------------------
 void vtkSensorTransformFusion::RegisterSlamOnGps(vtkVelodyneTransformInterpolator* slam, vtkVelodyneTransformInterpolator* gps)
 {
+  this->MergedInterp = vtkSmartPointer<vtkVelodyneTransformInterpolator>::New();
+  this->MergedInterp->SetInterpolationTypeToNearestLowBounded();
   // check that the interp are provided
   if (!slam || !gps)
   {

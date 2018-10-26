@@ -2273,12 +2273,12 @@ def toggleMergeTransforms():
     if not fileNameSlam:
         return
 
-    sensorFusion = vtkSensorTransformFusion()
-    sensorFusion.LoadIMUTransforms(fileNameIMU)
-    sensorFusion.LoadSLAMTransforms(fileNameSlam)
-    sensorFusion.MergeTransforms()
+    sensorFusion = smp.SensorTransformFusion()
+    sensorFusion.GetClientSideObject().LoadIMUTransforms(fileNameIMU)
+    sensorFusion.GetClientSideObject().LoadSLAMTransforms(fileNameSlam)
+    sensorFusion.GetClientSideObject().MergeTransforms()
     source = getReader();
-    source.GetClientSideObject().SetInterpolator(sensorFusion.GetInterpolator())
+    source.GetClientSideObject().SetInterpolator(sensorFusion.GetClientSideObject().GetInterpolator())
 
 def toggleRegisterSlamOnGps():
     gps = app.posreaderSave
@@ -2292,15 +2292,15 @@ def toggleRegisterSlamOnGps():
         QtGui.QMessageBox.warning(getMainWindow(), 'Trajectory registration', 'Gps data not provided')
         return
 
-    sensorFusion = vtkSensorTransformFusion()
-    sensorFusion.RegisterSlamOnGps(slamT.GetClientSideObject().GetInterpolator(), gps.GetClientSideObject().GetInterpolator())
+    sensorFusion = smp.SensorTransformFusion()
+    sensorFusion.GetClientSideObject().RegisterSlamOnGps(slamT.GetClientSideObject().GetInterpolator(), gps.GetClientSideObject().GetInterpolator())
 
     # Provide the new interpolator to the source
     source = getReader()
-    source.GetClientSideObject().SetInterpolator(sensorFusion.GetInterpolator())
+    source.GetClientSideObject().SetInterpolator(sensorFusion.GetClientSideObject().GetInterpolator())
 
     # provide the new interpolator to the slam
-    app.slamSave.GetClientSideObject().SetInterpolator(sensorFusion.GetInterpolator())
+    app.slamSave.GetClientSideObject().SetInterpolator(sensorFusion.GetClientSideObject().GetInterpolator())
 
     # Add georeferencing information to the slam
     pc = gps.GetClientSideObject().GetOutput()
