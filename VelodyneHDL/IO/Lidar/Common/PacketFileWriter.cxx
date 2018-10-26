@@ -54,3 +54,19 @@ void PacketFileWriter::Stop()
     this->Packets.reset();
   }
 }
+
+//-----------------------------------------------------------------------------
+void PacketFileWriter::Enqueue(std::string *packet)
+{
+  // TODO
+  // After capturing a stream and stoping the recording, Packets is NULL
+  // and this loop continues until a new reader or stream is selected.
+  if (this->Packets != NULL)
+  {
+    this->Packets->enqueue(packet);
+  }
+  else
+  {
+    this->Stop();
+  }
+}
