@@ -84,8 +84,8 @@ void vtkLidarKITTIDataSetReader::SetFileName(const std::string &filename)
   // count number of frames inside the folder
   this->NumberOfFrames = 0;
   boost::filesystem::path folder(filename);
-  boost::filesystem::directory_iterator it{folder};
-  while (it != boost::filesystem::directory_iterator{})
+  boost::filesystem::directory_iterator it(folder);
+  while (it != boost::filesystem::directory_iterator())
   {
     this->NumberOfFrames++;
     *it++;

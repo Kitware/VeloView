@@ -6,8 +6,13 @@
 #include <vtkSmartPointer.h>
 #include <vtkPolyData.h>
 
+#ifndef _WIN32
 #define notImpementedBody \
 std::cerr << typeid(this).name() << "::" << __func__ << " is not implemented" << std::endl;
+#else
+#define notImpementedBody \
+std::cerr << typeid(this).name() << "::" << __FUNCTION__ << " is not implemented" << std::endl;
+#endif
 
 //
 // Set built-in type.  Creates member Set"name"() (e.g., SetVisibility());
