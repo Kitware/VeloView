@@ -5,5 +5,4 @@ add_external_project(eigen
     <SOURCE_DIR>/cmake/language_support.cmake
   CMAKE_ARGS
     -DEIGEN_BUILD_PKGCONFIG=off
-    -DBUILD_TESTING:BOOL=OFF
   )
