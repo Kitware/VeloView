@@ -42,7 +42,7 @@ def vtkGetFileNameFromPluginName(pluginName):
   import os
   if os.name == "nt":
     return pluginName + ".dll";
-  elif os.name == "mac":
+  elif sys.platform == "darwin":
     return "lib" + pluginName + ".dylib";
   else:
     return "lib" + pluginName + ".so";

@@ -636,8 +636,8 @@ public:
   unsigned int DualReturnFilter;
 
   void SplitFrame(bool force = false);
-  static const vtkIdType defaultPrereservedNumberOfPointsPerFrame = 60000;
-  vtkSmartPointer<vtkPolyData> CreateData(vtkIdType numberOfPoints, vtkIdType prereservedNumberOfPoints = defaultPrereservedNumberOfPointsPerFrame);
+  vtkIdType defaultPrereservedNumberOfPointsPerFrame = 60000;
+  vtkSmartPointer<vtkPolyData> CreateData(vtkIdType numberOfPoints, vtkIdType prereservedNumberOfPoints =60000);
   vtkSmartPointer<vtkCellArray> NewVertexCells(vtkIdType numberOfVerts);
 
   void Init();
