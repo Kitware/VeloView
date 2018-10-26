@@ -60,6 +60,7 @@
 #include <boost/foreach.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
+#include <boost/algorithm/string.hpp>
 
 #include <algorithm>
 #include <map>
@@ -89,7 +90,12 @@ struct PositionPacket
   short temp[3];
   short accelx[3];
   short accely[3];
-  char sentance[73];
+  // UDP position packet is 554 bytes long with 42 bytes of header and 512 bytes
+  // of payload. In the payload, 512 - (198 + 4 + 1 + 3) = 306 are available for
+  // the NMEA sequence.
+  // The last bytes stored in the sentence char array should be 0 (NMEA
+  // sentences are not that long).
+  char sentance[306];
 };
 }
 
@@ -182,9 +188,13 @@ int vtkVelodyneHDLPositionReader::vtkInternal::ProcessHDLPacket(
 
   memcpy(&position.tohTimestamp, data + 14 + 3 * 8 + 160, 4);
 
-  std::copy(data + 14 + 8 + 8 + 8 + 160 + 4 + 4, data + 14 + 8 + 8 + 8 + 160 + 4 + 4 + 72,
-    position.sentance);
-  position.sentance[72] = '\0';
+  const int sentence_start =  14 + 8 + 8 + 8 + 160 + 4 + 4;
+  std::copy(data + sentence_start,
+            data + sentence_start + 306,
+            position.sentance);
+  // protection to terminate the string in case the sentence does not fit in the
+  // 306 bytes.
+  position.sentance[305] = '\0';
 
   return 1;
 }
@@ -493,10 +503,12 @@ int vtkVelodyneHDLPositionReader::RequestData(
     {
       NMEAParser parser;
       NMEALocation parsedNMEA;
-      if (!parser.ParseLocation(position.sentance, parsedNMEA))
+      std::string sentence = std::string(position.sentance);
+      boost::trim_right(sentence);
+      if (!parser.ParseLocation(sentence, parsedNMEA))
       {
         vtkGenericWarningMacro("Failed to parse NMEA sentence: "
-                               << position.sentance);
+                               << "<" << sentence << ">");
       }
 
       if (this->Internal->UTMZone < 0)
