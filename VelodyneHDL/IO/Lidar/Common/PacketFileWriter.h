@@ -46,7 +46,7 @@ public:
 
   void Stop();
 
-  void Enqueue(std::string* packet) { this->Packets->enqueue(packet); }
+  void Enqueue(std::string* packet);
 
   bool IsOpen() { return this->PacketWriter.IsOpen(); }
 
