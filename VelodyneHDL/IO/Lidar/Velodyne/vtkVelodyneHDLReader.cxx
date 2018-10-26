@@ -46,8 +46,6 @@ vtkVelodyneHDLReader::vtkVelodyneHDLReader()
 {
   this->Interpreter = new VelodynePacketInterpreter;
   vtkLidarProvider::SetInterpreter(this->Interpreter);
-  this->SetNumberOfInputPorts(0);
-  this->SetNumberOfOutputPorts(1);
 }
 
 //-----------------------------------------------------------------------------

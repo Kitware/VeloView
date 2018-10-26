@@ -133,7 +133,7 @@ public:
   /**
    * @copydoc LidarPacketInterpreter::CalibrationReportedNumLasers
    */
-  int GetNumberOfChannels();
+  virtual int GetNumberOfChannels();
 
   /**
    * \copydoc LidarPacketInterpreter::Frequency
@@ -160,15 +160,15 @@ public:
   /**
    * @copydoc LidarPacketInterpreter::LaserSelection
    */
-  void SetLaserSelection(bool laserSelection[]);
-  void GetLaserSelection(bool laserSelection[]);
+  virtual void SetLaserSelection(bool laserSelection[]);
+  virtual void GetLaserSelection(bool laserSelection[]);
 
   /**
    * @copydoc LidarPacketInterpreter::CropMode
    * Due to the restrictions of the Python wrappings, an int is required instead of an enum.
    * vtkLidarProvider::CropModeEnum
    */
-  void SetCropMode(const int mode);
+  virtual void SetCropMode(const int mode);
 
   /**
    * @copydoc LidarPacketInterpreter::CropReturns
@@ -185,15 +185,15 @@ public:
   /**
    * @copydoc LidarPacketInterpreter::CropRegion
    */
-  void SetCropRegion(double region[6]);
-  void SetCropRegion(const double v0, const double v1,
+  virtual void SetCropRegion(double region[6]);
+  virtual void SetCropRegion(const double v0, const double v1,
                      const double v2, const double v3,
                      const double v4, const double v5);
 
   /**
    * @copydoc LidarPacketInterpreter::SensorTransform
    */
-  void SetSensorTransform(vtkTransform* t);
+  virtual void SetSensorTransform(vtkTransform* t);
 
   /**
    * @copydoc LidarPacketInterpreter::ApplyTransform
@@ -204,8 +204,8 @@ public:
   /**
    * @copydoc LidarPacketInterpreter::Interp
    */
-  vtkVelodyneTransformInterpolator* GetInterpolator() const;
-  void SetInterpolator(vtkVelodyneTransformInterpolator* interpolator);
+  virtual vtkVelodyneTransformInterpolator* GetInterpolator() const;
+  virtual void SetInterpolator(vtkVelodyneTransformInterpolator* interpolator);
 
   /**
    * @brief SetDummyProperty a trick to workaround failure to wrap LaserSelection, this actually only calls Modified,
