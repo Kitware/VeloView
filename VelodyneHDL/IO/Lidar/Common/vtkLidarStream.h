@@ -54,6 +54,12 @@ public:
   void SetLIDARPort(const int);
 
   /**
+   * @copydoc NetworkSource::GPSPort
+   */
+  int GetGPSPort();
+  void SetGPSPort(const int);
+
+  /**
    * @copydoc NetworkSource::ForwardedIpAddress
    */
   std::string GetForwardedIpAddress();
@@ -64,6 +70,14 @@ public:
    */
   int GetForwardedLIDARPort();
   void SetForwardedLIDARPort(const int);
+
+  /**
+   * @copydoc NetworkSource::ForwardedLIDARPort
+   */
+  int GetForwardedGPSPort();
+  void SetForwardedGPSPort(const int);
+
+  void EnableGPSListening(const bool);
 
   /**
    * @copydoc NetworkSource::IsForwarding

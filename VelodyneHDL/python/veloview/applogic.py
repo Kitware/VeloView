@@ -437,8 +437,9 @@ def openSensor():
 
     sensor = smp.VelodyneHDLStream(guiName='Data', CalibrationFile=calibrationFile, CacheSize=100)
     sensor.GetClientSideObject().SetLIDARPort(LIDARPort)
-#    sensor.GetClientSideObject().SetGPSPort(GPSPort)
-#    sensor.GetClientSideObject().SetForwardedGPSPort(GPSForwardingPort)
+    sensor.GetClientSideObject().EnableGPSListening(True)
+    sensor.GetClientSideObject().SetGPSPort(GPSPort)
+    sensor.GetClientSideObject().SetForwardedGPSPort(GPSForwardingPort)
     sensor.GetClientSideObject().SetForwardedLIDARPort(LIDARForwardingPort)
     sensor.GetClientSideObject().SetIsForwarding(isForwarding)
     sensor.GetClientSideObject().SetIsCrashAnalysing(app.EnableCrashAnalysis)
@@ -2736,8 +2737,8 @@ def showRPM():
 
     rpmArray = None
     lidar = getLidar()
-    if lidar():
-        rpmArray = lidar().GetClientSideObject().GetOutput().GetFieldData().GetArray('RotationPerMinute')
+    if lidar:
+        rpmArray = lidar.GetClientSideObject().GetOutput().GetFieldData().GetArray('RotationPerMinute')
 
     if rpmArray:
         rpm = rpmArray.GetTuple1(0)
