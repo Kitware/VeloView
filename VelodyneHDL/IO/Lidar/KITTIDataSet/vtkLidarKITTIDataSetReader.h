@@ -63,9 +63,6 @@ public:
   notImplementedGetMacro(IsCalibrated, bool)
 
   //! Not implemented
-  notImplementedGetMacro(NumberOfChannels, int)
-
-  //! Not implemented
   notImplementedGetMacro(Frequency, double)
 
   //! Not implemented
@@ -118,7 +115,13 @@ public:
   void SaveFrame(int startFrame, int endFrame, const std::string& filename) override {notImpementedBody}
 
   //! Not implemented
-  std::string GetSensorInformation() ;
+  std::string GetSensorInformation();
+
+  // return laser id mapping
+  void GetLaserIdMapping(int* output) const;
+
+  // return the number of channels
+  int GetNumberOfChannels() override;
 
 private:
   vtkLidarKITTIDataSetReader();
@@ -139,6 +142,7 @@ private:
   //! Number of frame in this sequence
   int NumberOfFrames;
 
+  int NbrLaser;
 
   vtkLidarKITTIDataSetReader(const vtkLidarKITTIDataSetReader&); // not implemented
   void operator=(const vtkLidarKITTIDataSetReader&); // not implemented
