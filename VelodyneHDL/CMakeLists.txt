@@ -166,6 +166,7 @@ list(APPEND servermanager_sources
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/Lidar/Common/vtkLidarStream.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/Lidar/Velodyne/vtkVelodyneHDLReader.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/Lidar/Velodyne/vtkVelodyneHDLStream.cxx
+  ${CMAKE_CURRENT_SOURCE_DIR}/IO/Lidar/KITTIDataSet/vtkLidarKITTIDataSetReader.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/GPS-IMU/Velodyne/vtkVelodyneHDLPositionReader.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/GPS-IMU/Applanix/vtkApplanixPositionReader.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/MotionDetector/vtkMotionDetector.cxx
@@ -183,6 +184,7 @@ list(APPEND servermanager_sources
 list(APPEND servermanager_xml
   xml/VelodyneHDLReader.xml
   xml/VelodyneHDLStream.xml
+  xml/LidarKITTIDataSetReader.xml
   xml/VelodyneHDLPositionReader.xml
   xml/vtkPCLRansacModel.xml
   xml/ApplanixPositionReader.xml
@@ -239,6 +241,7 @@ set(plugin_include_dirs
   ${CMAKE_CURRENT_SOURCE_DIR}/Common
   ${CMAKE_CURRENT_SOURCE_DIR}/Common/Network
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/Lidar/Common
+  ${CMAKE_CURRENT_SOURCE_DIR}/IO/Lidar/KITTIDataSet
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/Lidar/Velodyne
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/GPS-IMU/Applanix
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/GPS-IMU/Velodyne

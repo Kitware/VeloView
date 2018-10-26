@@ -45,14 +45,14 @@ public:
    * @todo a decition should be made if the opening/closing of the pcap should be handle by
    * the class itself of the class user. Currently this is not clear
    */
-  void Open();
+  virtual void Open();
 
   /**
    * @copydoc vtkLidarReaderInternal::Close()
    * @todo a decition should be made if the opening/closing of the pcap should be handle by
    * the class itself of the class user. Currently this is not clear
    */
-  void Close();
+  virtual void Close();
 
   /**
    * @brief SaveFrame save the packet corresponding to the desired frames in a pcap file.
@@ -61,7 +61,7 @@ public:
    * @param endFrame last frame to record, this frame is included
    * @param filename where to save the generate pcap file
    */
-  void SaveFrame(int startFrame, int endFrame, const std::string& filename);
+  virtual void SaveFrame(int startFrame, int endFrame, const std::string& filename);
 
 protected:
   vtkLidarReader();
