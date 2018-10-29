@@ -226,7 +226,6 @@ public:
   }
 
   int ProcessHDLPacket(const unsigned char* data, unsigned int bytes, PositionPacket& position);
-  std::vector<std::string> ParseSentance(const std::string& sentance);
 
   void InterpolateGPS(
     vtkPoints* points, vtkDataArray* gpsTime, vtkDataArray* times, vtkDataArray* heading);
@@ -307,23 +306,6 @@ int vtkVelodyneHDLPositionReader::vtkInternal::ProcessHDLPacket(
   position.sentance[305] = '\0';
 
   return 1;
-}
-
-//-----------------------------------------------------------------------------
-std::vector<std::string> vtkVelodyneHDLPositionReader::vtkInternal::ParseSentance(
-  const std::string& sentance)
-{
-  std::stringstream sstr(sentance);
-  std::string token;
-
-  std::vector<std::string> result;
-
-  while (std::getline(sstr, token, ','))
-  {
-    result.push_back(token);
-  }
-
-  return result;
 }
 
 //-----------------------------------------------------------------------------
