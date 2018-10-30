@@ -1,3 +1,5 @@
+#include <type_traits>
+
 //! @brief Lookup table for the number of set bits in a byte.
 static uint8_t const SET_BITS_IN_BYTE[0x100] = {
   0, 1, 1, 2,   1, 2, 2, 3,   1, 2, 2, 3,   2, 3, 3, 4,   1, 2, 2, 3,   2, 3, 3, 4,   2, 3, 3, 4,   3, 4, 4, 5
@@ -60,7 +62,7 @@ enum ChannelStatus
 
 //------------------------------------------------------------------------------
 //! @brief Mask format to specify number and type of values in intensity set.
-enum isetMask
+enum IntensityType
 {
   IM_REFLECTIVITY = 0,
   IM_INTENSITY    = 1 << 0,
@@ -70,7 +72,7 @@ enum isetMask
 
 //------------------------------------------------------------------------------
 //! @brief Mask format to specify values in returned distance set.
-enum dsetMask
+enum DistanceType
 {
   DM_FIRST            = 0,
   DM_STRONGEST        = 1 << 0,
@@ -86,10 +88,12 @@ enum dsetMask
 #define BYTES_PER_HEADER_LENGTH_UNIT 4;
 
 //! @brief Simple getter for uninterpretted values.
-#define GET_RAW(attr) decltype(auto) get ## attr const { return this->attr; }
+#define GET_RAW(attr) decltype(auto) Get ## attr const { return this->attr; }
 
 //! @brief Get a header length in bytes.
-#define GET_LENGTH(attr) decltype(auto) get ** attr const { return this->attr * BYTES_PER_HEADER_LENGTH_UNIT; }
+#define GET_LENGTH(attr) decltype(auto) Get ** attr const { return this->attr * BYTES_PER_HEADER_LENGTH_UNIT; }
+
+#define GET_HEADER decltype(auto) const & GetHeader const { return this->Header; }
 
 //------------------------------------------------------------------------------
 // Convenience functions.
@@ -98,19 +102,24 @@ enum dsetMask
  * @brief Set a value from a byte sequence.
  * @todo Add endianness detection and optimize accordingly.
  * @param[in]     bytes         The array of input bytes.
- * @param[in,out] i             The index of the first byte to read.
+ * @param[in,out] index         The index of the first byte to read.
  * @param[out]    value         The output value.
  * @param[in]     numberOfBytes Number of bytes to use for the value.
  */
-template <typename S, typename T>
+template <typename IndexT, typename ValueT>
 inline
-void set_from_bytes(uint8_t const * bytes, S & i, T & value, size_t numberOfBytes = sizeof(T))
+void setFromBytes(
+  uint8_t const * bytes, 
+  IndexT & index, 
+  ValueT & value, 
+  size_t numberOfBytes = sizeof(T)
+)
 {
-  S stop = i + numberOfBytes;
-  value = bytes[i++];
-  while (i < stop)
+  IndexT stop = index + numberOfBytes;
+  value = bytes[index++];
+  while (index < stop)
   {
-    value = bytes[i++] + (value * (1 << sizeof(uint8_t)));
+    value = bytes[index++] + (value * (1 << sizeof(uint8_t)));
   }
 }
 
@@ -118,20 +127,113 @@ void set_from_bytes(uint8_t const * bytes, S & i, T & value, size_t numberOfByte
 /*!
  * @brief Set a target value from a range of bits in another value.
  *
- * @tparam T    The value type.
+ * @tparam TS The source value type.
+ * @tparam TD The destination value type.
  *
- * @param[in]     value  The value from which to set the targets.
- * @param[in]     lsb    The least significant bit of the range for the first target.
- * @param[in]     msb    The most significant bit of the range for the first target.
- * @param[out]    target The target to set from the range [lsb-msb] of the value.
+ * @param[in]  source The source value from which to set the destination value.
+ * @param[in]  offset The offset of the least significant bit.
+ * @param[in]  number The number of bits to set.
+ * @param[out] destination The destination value to set.
  */
-template <typename T>
+template <typename TS, typename TD>
 inline
-void set_from_bits(T & value, uint8_t offset, uint8_t number, T & target)
+void setFromBits(TS & source, uint8_t offset, uint8_t number, TD & destination)
 {
   T const mask = (1 << number) - 1;
   target = (value >> offset) & mask;
-  set_bits(value, args);
+}
+
+/*!
+ * @brief 
+ * Variadic overload to handle variable number of destination values (repeated
+ * triples of offset, number and destination).
+ *
+ * @todo Check if this has any noticeable performance penalty.
+ */
+template <typename TS, typename TD, typename... RemainingArgs>
+inline
+void setFromBits(TS & source, uint8_t offset, uint8_t number, TD & destination, RemainingArgs... remainingArgs)
+{
+  setFromBits(source, offset, number, destination);
+  setFromBits(source, remainingArgs);
+}
+
+//------------------------------------------------------------------------------
+//! @brief Convencience struct for processing packet data.
+class PacketData
+{
+private:
+  //! @brief The raw data.
+  uint8_t const * Data;
+  //! @brief The number of bytes in the raw data.
+  size_t Length;
+  //! @brief The index of the next byte to process.
+  size_t Index;
+
+public:
+  //! @brief Get the number of bytes remaining from the current index.
+  size_t GetRemainingLength()
+  {
+    return (this->Length > this-Index) ? (this->Length - this->Index) : 0;
+  }
+
+  //! @brief Set a 1-byte value.
+  template <typename T>
+  void SetFromByte(T & value)
+  {
+    value = this->Data[(this->Index)++];
+  }
+
+  //! @brief Set a multi-byte value (wraps setFromBytes).
+  template <typename T>
+  void SetFromBytes(T & value, size_t numberOfBytes = sizeof(T))
+  {
+    setFromBytes(this->Data, this->Index, value, numberOfBytes);
+  }
+
+  /*!
+   * @brief Set values from bit sequences that do not align with bytes.
+   *
+   * This is a wrapper around SetFromBits with automatic deduction of the
+   * smallest type required to hold the number of bytes to process.
+   *
+   * @tparam numberOfBytes The number of bytes to consume from the input data.
+   * @tparam PassthroughArgs All arguments to pass through to SetFromBits.
+   *
+   * @param[in,out] passthroughArgs All remaining arguments.
+   */
+
+  template <uint8_t numberOfBytes, typename... PassthroughArgs>
+  void SetFromBits(PassthroughArgs... passthroughArgs)
+  {
+    // Select a placeholder type large enough to hold the required value. All
+    // bits are counted from the least significant bit so bits in the padding
+    // byte(s), if any, will be ignored.
+    typename std::conditional<
+      (numberOfBytes == 1),
+      uint8_t,
+      typename std::conditional<
+        (numberOfBytes == 2),
+        uint16_t,
+        typename std::conditional<(numberOfBytes <= 4), uint32_t, uint64_t>:: type
+      >::type
+    >::type placeholder;
+
+    this->SetFromBytes(placeholder, numberOfBytes);
+    SetFromBits(placeholder, passthroughArgs);
+  }
+
+  /*!
+   * @brief Copy a sequence of bytes.
+   * @param[out] data  The destination to which to copy the data.
+   * @param[in] length The number of bytes to copy.
+   */
+  void CopyBytes(uint8_t * & data, size_t length)
+  {
+    data = new uint8_t[length];
+    std::memcpy(data, this->Data[this->Index], length);
+    this->Index += length;
+  }
 }
 
 //------------------------------------------------------------------------------
@@ -139,7 +241,7 @@ void set_from_bits(T & value, uint8_t offset, uint8_t number, T & target)
 //------------------------------------------------------------------------------
 /*!
  * @brief Payload header of the VLP Advanced data packet format.
- *
+  Elle en aura besoin pour développer son algo de SLAM*
  * All lengths count 32-bit words, e.g. a Glen value of 4 indicates that the
  * firing group header consists of 4 32-bit words.
  */
@@ -147,22 +249,22 @@ class PayloadHeader
 {
 private:
   //! @brief Protocol version.
-  uint8_t Ver;
+  uint8_t Ver : 4;
 
   //! @brief Header length (min: 6)
-  uint8_t Hlen;
+  uint8_t Hlen : 4;
 
   //! @brief Next header type.
   uint8_t Nxhdr;
 
   //! @brief Firing group header length.
-  uint8_t Glen;
+  uint8_t Glen : 4;
 
   //! @brief Firing header length.
-  uint8_t Flen;
+  uint8_t Flen : 4;
 
   //! @brief Model Identification Code
-  ModelIdentificationCode Mic;
+  uint8_t Mic;
 
   //! @brief Time status (TBD).
   uint8_t Tstat;
@@ -180,24 +282,87 @@ private:
   uint32_t Pseq;
 
 
+  //! @brief The number of distances in a firing.
+  decltype(Dset) DistanceCount;
+
+  //! @brief The number of bytes per distance.
+  decltype(Dset) BytesPerDistance;
+
+  //! @brief The number of intensities for a given distance.
+  decltype(Iset) IntensityCount;
+
 public:
   //@{
-  //! @brief Getters for header values.
-
-  GET_RAW(Ver);
-  GET_LENGTH(Hlen);
-  GET_RAW(Nxhdr);
-  GET_LENGTH(Glen);
-  GET_LENGTH(Flen);
-  GET_RAW(Mic);
-  GET_RAW(Tstat);
 
   // TODO
   // Dset, Iset and Tref all require interpretation.
 
-  GET_RAW(Pset);
+  //! @brief Getters for header values.
 
+  GET_RAW(Ver)
+  GET_LENGTH(Hlen)
+  GET_RAW(Nxhdr)
+  GET_LENGTH(Glen)
+  GET_LENGTH(Flen)
+  
+  ModelIdentificationCode GetMic const ()
+  {
+    switch (this->Mic)
+    {
+      case 1:
+        return MIC_VLP16;
+      case 2:
+        return MIC_VLP16_HD;
+      case 3:
+        return MIC_VLP32A;
+      case 4:
+        return MIC_VLP32B;
+      // case 0:
+      default:
+        return MIC_RESERVED;
+    }
+  }
+
+  GET_RAW(Tstat)
+  GET_RAW(Dset)
+  GET_RAW(Iset)
+  GET_RAW(Tref)
+  GET_RAW(Pset)
   //@}
+
+
+  //! @brief The number of bytes per value in a return.
+  uint8_t GetDsetEncodingSizeInBytes const ()
+  {
+    return ((this->Dset & (1 << 7)) ? 3 : 2);
+  }
+
+  //! @brief True if the distance set includes a mask, false if a count.
+  bool IsDsetMask const ()
+  {
+    return ! (this->Dset & (1 << 6));
+  }
+  
+  //! @brief The mask or count, depending on the return value of isDsetMask.
+  uint8_t GetDsetMask const ()
+  {
+    return (this->Dset & ((1 << 6) - 1));
+  }
+
+  //! @brief Get the number of distances in each firing group.
+  uint8_t GetDistanceCount const ()
+  {
+    auto mask = this->GetDsetMask();
+    return (this->IsDsetMask()) ? SET_BITS_IN_BYTE[mask] : mask;
+
+  }
+
+  //! @brief The number of intensities in each firing.
+  uint8_t GetIntensityCount const ()
+  {
+    return SET_BITS_IN_BYTE[this->Iset];
+  }
+
 
   /*!
    * @brief Construct a PayloadHeader.
@@ -206,34 +371,29 @@ public:
    *   The offset to the start of the header. The offset will be advanced as the
    *   data is consumed.
    */
-  PayloadHeader(uint8_t const * const data, size_t length, size_t & i)
+  PayloadHeader(PacketData & packetData)
   {
-    size_t remainingLength = length - i;
+    packetData.SetFromBits<1>(
+      4, 4, this->Ver,
+      0, 4, this->Hlen
+    );
 
-    // Note the post-increment operators here.
-    uint8_t verHlen = data[i++];
-    set_from_bits(verHlen, 4, 4, this->Ver);
-    set_from_bits(verHlen, 0, 4, this->Hlen);
-
-    if (this->getHlen()> remainingLength)
+    if (this->GetHlen() > packetData.GetRemainingLength())
     {
       raise std::length_error("data does not contain enough bytes for header");
     }
 
-    this->Nxhdr = data[i++];
-
-    uint8_t glenFlen = data[i++];
-    set_from_bits(glenFlen, 4, 4, this->Glen);
-    set_from_bits(glenFlen, 0, 4, this->Flen);
-
-    this->Mic = static_cast<decltype(this->Mic)>(data[i++]);
-    this->Tstat = data[i++];
-    this->Dset = data[i++];
-    this->Iset = data[i++];
-
-    // set_from_bytes increments i by the size of the third argument.
-    set_from_bytes(data, i, this->Tref);
-    set_from_bytes(data, i, this->Pseq);
+    packetData.SetFromByte(this->Nxhdr);
+    packetData.SetFromBits<1>(
+      4, 4, this->Glen,
+      0, 4, this->Flen
+    );
+    packetData.SetFromByte(this->Mic);
+    packetData.SetFromByte(this->Tstat);
+    packetData.SetFromByte(this->Dset);
+    packetData.SetFromByte(this->Iset);
+    packetData.SetFromBytes(this->Tref);
+    packetData.SetFromBytes(this->Pseq);
   }
 }
 
@@ -263,14 +423,14 @@ private:
     * extension-specific and determined by the NXHDR value of the payload
     * header.
     */
-  uint8_t * data;
+  uint8_t * Data;
 
 public:
   //@{
   //! @brief Getters for header values.
-  GET_LENGTH(Hlen);
-  GET_RAW(Nxhdr);
-  uint8_t const * const getData const { return this->Data; }
+  GET_LENGTH(Hlen)
+  GET_RAW(Nxhdr)
+  uint8_t const * GetData const { return this->Data; }
   //@}
 
   /*!
@@ -280,30 +440,25 @@ public:
    *   The offset to the start of the header. The offset will be advanced as the
    *   data is consumed.
    */
-  ExtensionHeader(uint8_t const * data, size_t length, size_t & i)
+  ExtensionHeader(PacketData & packetData)
   {
-    size_t remainingLength = length - i;
-    this->Hlen = data[i++];
+    packetData.SetFromByte(this->Hlen);
 
-    auto hlen = this->getHlen();
-
-    if (hlen > remainingLength)
+    auto hlen = this->GetHlen();
+    if (hlen > packetData.GetRemainingLength())
     {
       raise std::length_error("data does not contain enough bytes for header");
     }
 
-    this->Nxhdr = data[i++];
+    packetData.SetFromByte(this->Nxhdr);
 
     auto dataLen = hlen - (sizeof(Hlen) + sizeof(Nxhdr));
-    // The length is in units of 32-bit/4-byte words.
-    this->data = new uint8_t[dataLen];
-    std::memcpy(this->data, data[i], dataLen);
-    i += dataLen;
+    packetData.CopyBytes(this->Data, dataLen);
   }
 
   ~ExtensionHeader()
   {
-    delete[] this->data;
+    delete[] this->Data;
   }
 }
 
@@ -363,13 +518,17 @@ private:
 public:
   //@{
   //! @brief Getters for header values.
-  uint8_t getFcnt const { return this->Fcnt + 1; }
-  uint8_t getFspn const { return this->Fspn + 1; }
-  GET_RAW(Fdly);
-  HorizontalDirection getHdir const { return this->Hdir; }
-  VerticalDirection   getVdir const { return this->Vdir; }
-  double getVdfl const { return this->Vdfl * 0.01; }
-  double getAzm const { return this->Azm * 0.01; }
+  uint8_t GetFcnt const { return this->Fcnt + 1; }
+  uint8_t GetFspn const { return this->Fspn + 1; }
+  GET_RAW(Fdly)
+  HorizontalDirection GetHdir const { return this->Hdir; }
+  VerticalDirection   GetVdir const { return this->Vdir; }
+  double GetVdfl const { return this->Vdfl * 0.01; }
+  double GetAzm const { return this->Azm * 0.01; }
+  //! @brief Get the TOFFS in nanoseconds.
+  uint32_t GetToffs const {
+    return static_cast<uint32_t>(this->Toffs) * 64;
+  }
   //@}
 
   /*!
@@ -379,29 +538,20 @@ public:
    *   The offset to the start of the header. The offset will be advanced as the
    *   data is consumed.
    */
-  FiringGroupHeader(uint8_t const * data, size_t & i)
+  FiringGroupHeader(PacketData & packetData)
   {
-    // set_from_bytes increments i by the size of the third argument.
-    set_from_bytes(data, i, this->Toffs);
-
-    uint8_t fcntFspn = data[i++];
-    set_from_bits(fcntFspn, 3, 5, this->Fcnt);
-    set_from_bits(fcntFspn, 0, 3, this->Fspn);
-
-    this->Fdly = data[i++];
-
-    uint16_t hdirVdirVdfl;
-    set_from_bytes(data, i, hdirVdirVdfl);
-    set_from_bits(hdirVdirVdfl, 15,  1, this->Hdir);
-    set_from_bits(hdirVdirVdfl, 14,  1, this->Vdir);
-    set_from_bits(hdirVdirVdfl,  0, 14, this->Vdfl);
-
-    set_from_bytes(data, i, this->Azm;
-  }
-
-  //! @brief Get the TOFFS in nanoseconds.
-  uint32_t getToffs const {
-    return static_cast<uint32_t>(this->Toffs) * 64;
+    packetData.SetFromBytes(this->Toffs);
+    packetData.SetFromBits<1>(
+      3, 5, this->Fcnt,
+      0, 3, this->Fspn
+    );
+    packetData.SetFromByte(this->Fdly);
+    packetData.SetFromBits<2>(
+      15,  1, this->Hdir,
+      14,  1, this->Vdir,
+       0, 14, this->Vdfl
+    );
+    packetData.SetFromBytes(this->Azm);
   }
 };
 
@@ -432,9 +582,9 @@ private:
 public:
   //@{
   //! @brief Getters for header values.
-  GET_RAW(Lcn);
+  GET_RAW(Lcn)
 
-  FiringMode getFm const ()
+  FiringMode GetFm const ()
   {
     switch (this->Fm)
     {
@@ -448,10 +598,10 @@ public:
         return FM_RESERVED;
     }
   }
-  GET_RAW(Pwr);
-  GET_RAW(Nf);
+  GET_RAW(Pwr)
+  GET_RAW(Nf)
 
-  ChannelStatus getStat const ()
+  ChannelStatus GetStat const ()
   {
     switch (this->Stat)
     {
@@ -475,18 +625,15 @@ public:
    *   The offset to the start of the header. The offset will be advanced as the
    *   data is consumed.
    */
-  FiringHeader(uint8_t const * data, size_t & i)
+  FiringHeader(PacketData & packetData)
   {
-    this->Lcn = data[i++];
-
-    // set_from_bytes increments i by the size of the third argument.
-    uint8_t fmPwr;
-    set_from_bytes(data, i, fmPwr);
-    set_from_bits(fmPwr, 4, 4, this->Fm);
-    set_from_bits(fmPwr, 0, 4, this->Pwr);
-
-    this->Nf = data[i++];
-    this->Stat = data[i++];
+    packetData.SetFromByte(this->Lcn);
+    packetData.SetFromBits<1>(
+      4, 4, this->Fm,
+      0, 4, this->Pwr
+    );
+    packetData.SetFromByte(this->Nf);
+    packetData.SetFromByte(this->Stat);
   }
 
 
@@ -506,33 +653,73 @@ public:
 class FiringReturn
 {
 private:
-  //! @brief The firing to which this return belongs.
-  Firing * firing;
-
-  //! @brief The firing distance.
-  uint32_t Distance;
-
-  //! @brief Intensities
-  uint32_t * Intensities;
+  //! @brief The packed data with the return values.
+  decltype(PacketData::Data) Data;
 
 public:
-  FiringReturn(Firing * firing_, uint8_t const * const data, size_t & i)
-    : firing = firing_
-  {
-    auto icount = this->firing->firingGroup->payload->getIcount();
-    auto bytesPerDistance = this->firing->firingGroup->payload->getBytesPerDistance();
+  //! @brief Reference to this return's firing.
+  Firing const & MyFiring;
 
-    set_from_bytes(data, i, this->Distance, bytesPerValue);
-    this->Intensities = new T[icount];
-    for (uint8_t i = 0; i < icount; ++i)
+  //! @brief Templated subscript operator for accessing distance and intensities.
+  template <typename T>
+  T operator[](const int i)
+  {
+    // Range check.
+    if (i < 0 || i >= SET_BITS_IN_BYTE[this->MyFiring.MyFiringGroup.MyPayload.GetHeader().GetIset()])
     {
-      set_from_bytes(data, i, this->Intensities[i], encodingSizeInBytes);
+      throw std::out_of_range("requested intensity is out of range of current set");
     }
+    T value;
+    auto index = i * this->BytesPerValue;
+    setFromBytes(this->Data, index, value, this->BytesPerValue);
+    return value;
+  }
+
+  //! @brief Get the distance from this firing.
+  template <typename T>
+  T GetDistance() { return this->operator[]<T>(0); }
+
+  //! @brief Get an intensity from this firing by index.
+  template <typename T>
+  T GetIntensity(const int i) { return this->operator[]<T>(i+1); }
+
+  //! @brief Get an intensity from this firing by type.
+  template <typename T>
+  T GetIntensity(IntensityType type) {
+    // Check that the value is actually present otherwise the calculate index
+    // will yield a different value or end up out of range.
+    if (! (this->MyFiring->MyFiringGroup->MyPayload->GetIset() & type))
+    {
+      throw std::out_of_range("requested intensity type is not in the intensity set");
+    }
+
+    // Start at 1 to skip distance.
+    int i = 1;
+
+    // Count the number of bits set before the requested one. `mask` constains a
+    // single set bit. By decrementing the value, we obtain a mask over all
+    // preceding bits which we can then count to get the offset of the requested
+    // intensity.
+    uint8_t mask = static_cast<uint8_t>(type);
+    if (mask)
+    {
+      mask--;
+      i += SET_BITS_IN_BYTE[this->Iset & mask];
+    }
+    return this->operator[]<T>(i);
+  }
+
+  FiringReturn(Firing const & firing, PacketData & packetData)
+    : FiringRef = firing
+  {
+    auto icount        = this->MyFiring.MyFiringGroup.MyPayload.GetHeader().GetIntensityCount();
+    auto bytesPerValue = this->MyFiring.MyFiringGroup.MyPayload.GetHeader().GetBytesPerDistance();
+    packetData.CopyBytes(this->Data, (icount * bytesPerValue));
   }
 
   ~FiringReturn()
   {
-    delete[] this->Intensities;
+    delete[] this->Data;
   }
 };
 
@@ -542,27 +729,28 @@ public:
 class Firing
 {
 private:
-  //! @brief The firing group to which this firing belongs.
-  FiringGroup * firingGroup
-
   //! @brief Firing header.
-  FiringHeader header;
+  FiringHeader Header;
 
   //! @brief Returns in this firing.
   std::vector<FiringReturn> returns;
 
 public:
-  Firing(
-    FiringGroup * firingGroup_,
-    uint8_t const * const data, size_t dataLength, size_t & i
-  )
-    : firingGroup = firingGroup_
+  GET_HEADER
+
+  //! @brief Reference to this firing's group.
+  FiringGroup const & MyFiringGroup;
+
+  Firing(FiringGroup const & firingGroup, PacketData & packetData)
+    : MyFiringGroup = firingGroup
   {
-    auto dcount = this->firingGroup->payload->getDcount();
+    this->Header = FiringHeader(packetData);
+
+    auto dcount = this->MyFiringGroup.MyPayload.GetHeader()->GetDistanceCount();
     this->returns.reserve(dcount);
     for (decltype(dcount) j = 0; j < dcount; ++j)
     {
-      FiringReturn firingReturn = FiringReturn(this, data, dataLength, i);
+      FiringReturn firingReturn = FiringReturn((* this), packetData);
       this->returns.push_back(firingReturn);
     }
   }
@@ -574,42 +762,41 @@ public:
 class FiringGroup
 {
 private:
-  //! @brief Pointer to parent payload.
-  Payload * payload;
-
   //! @brief Firing group header.
-  FiringGroupHeader header;
+  FiringGroupHeader Header;
 
   //! @brief Firings.
-  std::vector<Firing> firings {0};
+  std::vector<Firing> Firings {0};
 
 public:
+  GET_HEADER
+
+  //! @brief Reference to the payload containing this firing group.
+  Payload const & MyPayload;
+
   /*!
-   * @param[in]     payload_   The payload that contains this firing group.
+   * @param[in]     payload   The payload that contains this firing group.
    * @param[in]     data       Pointer to the packet bytes.
    * @param[in]     dataLength The byte length of the packet data.
    * @param[in,out] i          The offset to the data.
    */
-  FiringGroup(
-    Payload const * payload_,
-    uint8_t const * const data, size_t dataLength, size_t & i
-  )
-    : payload = payload_;
+  FiringGroup(Payload const & payload, PacketData & packetData)
+    : MyPayload = payload
   {
     // Group headers are padded to 32-bit boundaries. Use GLEN to advance the
     // index correctly.
-    auto glen = payload->getGlen();
-    size_t tmp_i = i;
-    this->header = FiringGroupHeader(data, dataLength, tmp_i);
-    i += glen;
+    auto glen = this->MyPayload->GetGlen();
+    size_t index = packetData.Index;
+    this->Header = FiringGroupHeader(packetData);
+    packetData.Index = index + glen;
 
-    auto fcnt = this->header.getFcnt();
-    this->firings.reserve(fcnt);
+    auto fcnt = this->header.GetFcnt();
+    this->Firings.reserve(fcnt);
 
     for (decltype(fcnt) j = 0; j < fcnt; ++j)
     {
-      Firing firing = Firing(this, data, dataLength, i);
-      this-firing.push_back(firing);
+      Firing firing = Firing((* this), packetData);
+      this->Firings.push_back(firing);
     }
   }
 }
@@ -621,7 +808,7 @@ class Payload
 {
 private:
   //! @brief Payload header.
-  PayloadHeader header;
+  PayloadHeader Header;
 
   //! @brief Variable number of extension headers.
   std::vector<ExtensionHeader> extensionHeaders {0};
@@ -629,60 +816,28 @@ private:
   //! @brief Variable number of firing groups.
   std::vector<FiringGroup> firingGroups {0};
 
-  //! @brief The number of distances in a firing.
-  decltype(PayloadHeader::Dset) Dcount;
-
-  //! @brief The number of bytes per distance.
-  decltype(PayloadHeader::Dset) BytesPerDistance;
-
-  //! @brief The number of intensities for a given distance.
-  decltype(PayloadHeader::Iset) Icount;
-
 public:
-  //@{
-  //! @brief Getters.
-  GET_RAW(Dcount);
-  GET_RAW(BytesPerDistance);
-  GET_RAW(Icount);
-  //@}
+  GET_HEADER
 
-  Payload(uint8_t const * const data, size_t dataLength, size_t & i)
+  Payload(PacketData & packetData)
   {
-    this->header = PayloadHeader(data, dataLength, i);
-
-    // Calculate dset- and iset-derived values once here to avoid redundant
-    // calculations later.
-    auto dset = this->header.getDset();
-    decltype(dset) dcount = ((1 << 6) - 1) & dset;
-    bool is_count = dset & (1 << 6);
-    // If not a count, then each set bit indicates the presence of a value.
-    if (! is_count)
-    {
-      dcount = SET_BITS_IN_BYTE[dcount];
-    }
-    this->Dcount = dcount;
-    this->BytesPerDistance = (dset & (1 << 7)) ? 3 : 2;
-
-    auto iset = this->header.getIset();
-    this->Icount = SET_BITS_IN_BYTE[iset];
-
+    this->header = PayloadHeader(packetData);
 
     // Check for extension headers.
-    auto nxhdr = this->header.getNxhdr();
+    auto nxhdr = this->header.GetNxhdr();
     while (nxhdr != 0)
     {
       // The extension header automatically adjusts its length to end on a
       // 32-bit boundary so padding need not be handled here.
-      ExtensionHeader extensionHeader = ExtensionHeader(data, dataLength, i);
-
+      ExtensionHeader extensionHeader = ExtensionHeader(packetData);
       this->extensionHeaders.push_back(extensionHeader);
-      nxhdr = extensionHeader.getNxhdr();
+      nxhdr = extensionHeader.GetNxhdr();
     }
 
-
+    // The rest of the data should be filled with firing groups.
     while (i < dataLength)
     {
-      FiringGroup firingGroup = FiringGroup(this, data, dataLength, i);
+      FiringGroup firingGroup = FiringGroup(this, packetData);
       this->firingGroups.push_back(firingGroup);
     }
   }
