@@ -1,5 +1,122 @@
 #include <type_traits>
 
+#include <boost/preprocessor.hpp>
+
+//------------------------------------------------------------------------------
+// Macros.
+//------------------------------------------------------------------------------
+//! @brief Lengths in the headers are given in units of 32-bit words.
+#define BYTES_PER_HEADER_LENGTH_UNIT 4;
+
+//! @brief Simple getter for uninterpretted values.
+#define GET_RAW(attr) decltype(auto) Get ## attr const { return this->attr; }
+
+//! @brief Getter for enum values that are stored as raw values internally.
+#define GET_ENUM(enumtype, attr) type Get ## attr const { return to ## enumtype(this->attr); }
+
+//! @brief Get a header length in bytes.
+#define GET_LENGTH(attr) decltype(auto) Get ** attr const { return this->attr * BYTES_PER_HEADER_LENGTH_UNIT; }
+
+#define GET_HEADER decltype(auto) const & GetHeader const { return this->Header; }
+
+
+//------------------------------------------------------------------------------
+// Enum macros.
+//------------------------------------------------------------------------------
+/*
+ * Define some macros to facilitate maintenance of different enum types. These
+ * allow a single macro to define an enum type with values, an overloaded
+ * ToString function to convert macro values to strings, and a templated
+ * To<enum> function to convert integral values to enums.
+ *
+ * For details of the Boost preprocessing macros, see
+ * https://www.boost.org/doc/libs/1_67_0/libs/preprocessor/doc/AppendixA-AnIntroductiontoPreprocessorMetaprogramming.html
+ */
+
+//! @brief Internal macro for defining enum values.
+#define DEFINE_ENUM_VALUES_INTERNAL(r, prefix, pair) \
+  BOOST_PP_CAT(prefix, BOOST_PP_TUPLE_ELEM(0, pair)) = BOOST_PP_TUPLE_ELEM(1, pair)
+
+//! @brief Macro for defining enum values.
+#define DEFINE_ENUM_VALUES(name, prefix, enumerators) \
+  enum name {                                         \
+    BOOST_PP_SEQ_ENUM(                                \
+      BOOST_PP_SEQ_TRANSFORM(                         \
+        DEFINE_ENUM_VALUES_INTERNAL,                  \
+        prefix,                                       \
+        enumerators                                   \
+      )                                               \
+    )                                                 \
+  };
+
+
+//! @brief Internal macro for defining enum string conversions.
+#define DEFINE_ENUM_STRING_CASES_INTERNAL(r, prefix, pair) \
+  case BOOST_PP_CAT(prefix, BOOST_PP_TUPLE_ELEM(0, pair)): return BOOST_PP_STRINGIZE(BOOST_PP_TUPLE_ELEM(0, pair));
+
+
+//! @brief Macro for defining enum string conversions.
+#define DEFINE_ENUM_TO_STRING(name, prefix, enumerators)                                \
+  inline                                                                                \
+  char const * toString(name x)                                                         \
+  {                                                                                     \
+    switch(x)                                                                           \
+    {                                                                                   \
+      BOOST_PP_SEQ_FOR_EACH(                                                            \
+        DEFINE_ENUM_STRING_CASES_INTERNAL,                                              \
+        prefix,                                                                         \
+        enumerators                                                                     \
+      )                                                                                 \
+      default: return "<unrecognized enum value of type " BOOST_PP_STRINGIZE(name) ">"; \
+    }                                                                                   \
+  }
+
+
+//! @brief Internal macro for converting integral values to enums.
+#define DEFINE_VALUE_TO_ENUM_CASES_INTERNAL(r, prefix, pair) \
+  case static_cast<T>(BOOST_PP_CAT(prefix, BOOST_PP_TUPLE_ELEM(0, pair))): return BOOST_PP_CAT(prefix, BOOST_PP_TUPLE_ELEM(0, pair));
+
+
+//! @brief Macro for converting integral values to enums.
+#define DEFINE_VALUE_TO_ENUM(name, prefix, enumerators, default_value) \
+  template <typename T>                                                \
+  inline                                                               \
+  name to ## name(T x)                                                 \
+  {                                                                    \
+    switch(x)                                                          \
+    {                                                                  \
+      BOOST_PP_SEQ_FOR_EACH(                                           \
+        DEFINE_VALUE_TO_ENUM_CASES_INTERNAL,                           \
+        prefix,                                                        \
+        enumerators                                                    \
+      )                                                                \
+      default: return BOOST_PP_CAT(prefix, default_value);             \
+    }                                                                  \
+  }
+
+/*!
+ * @brief Define enum type with string and value conversion functions.
+ * @param name        The typename of the enum. This will also be concatenated
+ *                    with "To" to define a function that converts integral
+ *                    values to this enum type. For example. the name "Foo" will
+ *                    define "Foo toFoo(T x)".
+ * @param prefix      The prefix to attach to all values of the enum. This may
+ *                    be an empty string.
+ * @param enumerators A sequence of name-value pairs in double-parentheses, e.g.
+ *                    ((a, 1))((b, 2))((c , 4)). All valid enum values may be
+ *                    used, e.g. ((a, (1<<0)))((b, (1<<1))), etc.
+ */
+#define DEFINE_ENUM(name, prefix, enumerators, default_value)    \
+  DEFINE_ENUM_VALUES(name, prefix, enumerators)                  \
+  DEFINE_ENUM_TO_STRING(name, prefix, enumerators)               \
+  DEFINE_VALUE_TO_ENUM(name, prefix, enumerators, default_value)
+
+
+
+
+//------------------------------------------------------------------------------
+// Global constants.
+//------------------------------------------------------------------------------
 //! @brief Lookup table for the number of set bits in a byte.
 static uint8_t const SET_BITS_IN_BYTE[0x100] = {
   0, 1, 1, 2,   1, 2, 2, 3,   1, 2, 2, 3,   2, 3, 3, 4,   1, 2, 2, 3,   2, 3, 3, 4,   2, 3, 3, 4,   3, 4, 4, 5
@@ -18,89 +135,95 @@ static uint8_t const SET_BITS_IN_BYTE[0x100] = {
 // Use explicit enumerations to avoid all possible confusion that might arise
 // with simple numerical tests. The compiler should optimize the checks.
 //------------------------------------------------------------------------------
+
 //! @brief Model identification code.
-enum ModelIdentificationCode {
-  MIC_RESERVED = 0,
-  MIC_VLP16    = 1,
-  MIC_VLP16_HD = 2,
-  MIC_VLP32A   = 3,
-  MIC_VLP32B   = 4
-};
+DEFINE_ENUM(
+  ModelIdentificationCode,
+  MIC_,
+  ((RESERVED , 0))
+  ((VLP16    , 1))
+  ((VLP16_HD , 2))
+  ((VLP32A   , 3))
+  ((VLP32B   , 4)) ,
+  RESERVED)
 
 //------------------------------------------------------------------------------
 //! @brief Horizontal direction of Lidar.
-enum HorizontalDirection {
-  HD_CLOCKWISE         = 0,
-  HD_COUNTER_CLOCKWISE = 1
-};
+DEFINE_ENUM(
+  HorizontalDirection,
+  HD_,
+  ((HD_CLOCKWISE         , 0))
+  ((HD_COUNTER_CLOCKWISE , 1))
+  HD_CLOCKWISE
+)
 
 //------------------------------------------------------------------------------
 //! @brief Vertical direction of Lidar.
-enum VerticalDirection {
-  VD_UP   = 0,
-  VD_DOWN = 1
-}
+DEFINE_ENUM(
+  VerticalDirection,
+  VD_
+  ((VD_UP   , 0))
+  ((VD_DOWN , 1))
+  VD_UP
+)
 
 //------------------------------------------------------------------------------
 //! @brief Firing mode.
-enum FiringMode {
-  FM_PASSIVE = 0,
-  FM_NORMAL  = 1,
-  FM_RESERVED = 2, // 2-14 are reserved
-  FM_INDEX = 15
-}
+DEFINE_ENUM(
+  FiringMode,
+  FM_
+  ((PASSIVE  , 0))
+  ((NORMAL   , 1))
+  ((RESERVED , 2))
+  ((INDEX    , 15))
+  RESERVED
+)
 
 //------------------------------------------------------------------------------
 //! @brief Channel status flags.
-enum ChannelStatus
-{
-  CS_OBSTRUCTION_DETECTED = 0,
-  CS_FAULT_DETECTED       = 1,
-  CS_POWER_NOT_PERFECT    = 2,
-  CS_RESERVED             = 3
-}
+DEFINE_ENUM(
+  ChannelStatus,
+  STAT_,
+  ((OBSTRUCTION_DETECTED , 0))
+  ((FAULT_DETECTED       , 1))
+  ((POWER_NOT_PERFECT    , 2))
+  ((RESERVED             , 3))
+  RESERVED
+)
 
 //------------------------------------------------------------------------------
 //! @brief Mask format to specify number and type of values in intensity set.
-enum IntensityType
-{
-  IM_REFLECTIVITY = 0,
-  IM_INTENSITY    = 1 << 0,
-  IM_CONFIDENCE   = 1 << 1,
-  IM_RESERVED     = 1 << 2 // bits 3-15 are reserved
+// Bits 3-15 are currently reserved.
+DEFINE_ENUM(
+  IntensityType,
+  ISET_,
+  ((REFLECTIVITY , (0u)))
+  ((INTENSITY    , (1u << 0)))
+  ((CONFIDENCE   , (1u << 1)))
+  ((RESERVED     , (1u << 2)))
+  RESERVED
 }
 
 //------------------------------------------------------------------------------
 //! @brief Mask format to specify values in returned distance set.
-enum DistanceType
-{
-  DM_FIRST            = 0,
-  DM_STRONGEST        = 1 << 0,
-  DM_SECOND_STRONGEST = 1 << 1,
-  DM_LAST             = 1 << 2,
-  DM_RESERVED         = 1 << 3 // bits 4-5 are reserved
+// Bists 4-5 are currently reserved.
+DEFINE_ENUM(
+  DistanceType,
+  DSET_,
+  ((FIRST            , (0u)))
+  ((STRONGEST        , (1u << 0)))
+  ((SECOND_STRONGEST , (1u << 1)))
+  ((LAST             , (1u << 2)))
+  ((RESERVED         , (1u << )))
+  RESERVED
 }
-
-//------------------------------------------------------------------------------
-// Macros.
-//------------------------------------------------------------------------------
-//! @brief Lengths in the headers are given in units of 32-bit words.
-#define BYTES_PER_HEADER_LENGTH_UNIT 4;
-
-//! @brief Simple getter for uninterpretted values.
-#define GET_RAW(attr) decltype(auto) Get ## attr const { return this->attr; }
-
-//! @brief Get a header length in bytes.
-#define GET_LENGTH(attr) decltype(auto) Get ** attr const { return this->attr * BYTES_PER_HEADER_LENGTH_UNIT; }
-
-#define GET_HEADER decltype(auto) const & GetHeader const { return this->Header; }
 
 //------------------------------------------------------------------------------
 // Convenience functions.
 //------------------------------------------------------------------------------
 /*!
- * @brief Set a value from a byte sequence.
- * @todo Add endianness detection and optimize accordingly.
+ * @brief         Set a value from a byte sequence.
+ * @todo          Add endianness detection and optimize accordingly.
  * @param[in]     bytes         The array of input bytes.
  * @param[in,out] index         The index of the first byte to read.
  * @param[out]    value         The output value.
@@ -109,9 +232,9 @@ enum DistanceType
 template <typename IndexT, typename ValueT>
 inline
 void setFromBytes(
-  uint8_t const * bytes, 
-  IndexT & index, 
-  ValueT & value, 
+  uint8_t const * bytes,
+  IndexT & index,
+  ValueT & value,
   size_t numberOfBytes = sizeof(T)
 )
 {
@@ -125,14 +248,15 @@ void setFromBytes(
 
 //------------------------------------------------------------------------------
 /*!
- * @brief Set a target value from a range of bits in another value.
+ * @brief      Set a target value from a range of bits in another value.
  *
- * @tparam TS The source value type.
- * @tparam TD The destination value type.
+ * @tparam     TS The source value type.
+ * @tparam     TD The destination value type.
  *
- * @param[in]  source The source value from which to set the destination value.
- * @param[in]  offset The offset of the least significant bit.
- * @param[in]  number The number of bits to set.
+ * @param[in]  source      The source value from which to set the destination
+ *                         value.
+ * @param[in]  offset      The offset of the least significant bit.
+ * @param[in]  number      The number of bits to set.
  * @param[out] destination The destination value to set.
  */
 template <typename TS, typename TD>
@@ -144,11 +268,10 @@ void setFromBits(TS & source, uint8_t offset, uint8_t number, TD & destination)
 }
 
 /*!
- * @brief 
- * Variadic overload to handle variable number of destination values (repeated
- * triples of offset, number and destination).
- *
- * @todo Check if this has any noticeable performance penalty.
+ * @copydoc setFromBits
+ * @brief   Variadic overload to handle variable number of destination values
+ *          (repeated triples of offset, number and destination).
+ * @todo    Check if this has any noticeable performance overhead.
  */
 template <typename TS, typename TD, typename... RemainingArgs>
 inline
@@ -159,7 +282,13 @@ void setFromBits(TS & source, uint8_t offset, uint8_t number, TD & destination, 
 }
 
 //------------------------------------------------------------------------------
-//! @brief Convencience struct for processing packet data.
+/*!
+ * @brief Convencience struct for processing packet data.
+ *
+ * This transparently manages an index to the next unprocessed byte and provides
+ * methods to set a value from a single byte, several bytes, or single- and
+ * multi-byte ranges of bits.
+ */
 class PacketData
 {
 private:
@@ -171,20 +300,31 @@ private:
   size_t Index;
 
 public:
-  //! @brief Get the number of bytes remaining from the current index.
+  //! @brief Get the number of bytes remaining from the current index to the end
+  //         of the data as defined by the length.
   size_t GetRemainingLength()
   {
     return (this->Length > this-Index) ? (this->Length - this->Index) : 0;
   }
 
-  //! @brief Set a 1-byte value.
+  /*!
+   * @brief      Set a 1-byte value.
+   * @tparam     T     The type of the value to set.
+   * @param[out] value The value to set.
+   */
   template <typename T>
   void SetFromByte(T & value)
   {
     value = this->Data[(this->Index)++];
   }
 
-  //! @brief Set a multi-byte value (wraps setFromBytes).
+  /*!
+   * @brief      Set a multi-byte value (wraps setFromBytes).
+   * @tparam     T             The type of the value to set.
+   * @param[out] value         The value to set.
+   * @param[in]  numberOfBytes The number of bytes to consume. If not given, the
+   *                           size of the value type will be used.
+   */
   template <typename T>
   void SetFromBytes(T & value, size_t numberOfBytes = sizeof(T))
   {
@@ -197,7 +337,8 @@ public:
    * This is a wrapper around SetFromBits with automatic deduction of the
    * smallest type required to hold the number of bytes to process.
    *
-   * @tparam numberOfBytes The number of bytes to consume from the input data.
+   * @tparam numberOfBytes   The number of bytes to consume from the input data.
+   *                         Values larger than 4 are not supported.
    * @tparam PassthroughArgs All arguments to pass through to SetFromBits.
    *
    * @param[in,out] passthroughArgs All remaining arguments.
@@ -224,9 +365,9 @@ public:
   }
 
   /*!
-   * @brief Copy a sequence of bytes.
-   * @param[out] data  The destination to which to copy the data.
-   * @param[in] length The number of bytes to copy.
+   * @brief      Copy a sequence of bytes (wrapper around std::memcpy)..
+   * @param[out] data   The destination to which to copy the data.
+   * @param[in]  length The number of bytes to copy.
    */
   void CopyBytes(uint8_t * & data, size_t length)
   {
@@ -241,9 +382,10 @@ public:
 //------------------------------------------------------------------------------
 /*!
  * @brief Payload header of the VLP Advanced data packet format.
-  Elle en aura besoin pour développer son algo de SLAM*
+ *
  * All lengths count 32-bit words, e.g. a Glen value of 4 indicates that the
- * firing group header consists of 4 32-bit words.
+ * firing group header consists of 4 32-bit words. The raw values are converted
+ * to counts with the BYTES_PER_HEADER_LENGTH_UNIT constant.
  */
 class PayloadHeader
 {
@@ -293,36 +435,13 @@ private:
 
 public:
   //@{
-
-  // TODO
-  // Dset, Iset and Tref all require interpretation.
-
   //! @brief Getters for header values.
-
   GET_RAW(Ver)
   GET_LENGTH(Hlen)
   GET_RAW(Nxhdr)
   GET_LENGTH(Glen)
   GET_LENGTH(Flen)
-  
-  ModelIdentificationCode GetMic const ()
-  {
-    switch (this->Mic)
-    {
-      case 1:
-        return MIC_VLP16;
-      case 2:
-        return MIC_VLP16_HD;
-      case 3:
-        return MIC_VLP32A;
-      case 4:
-        return MIC_VLP32B;
-      // case 0:
-      default:
-        return MIC_RESERVED;
-    }
-  }
-
+  GET_ENUM(ModelIdentificationCode, Mic);
   GET_RAW(Tstat)
   GET_RAW(Dset)
   GET_RAW(Iset)
@@ -342,7 +461,7 @@ public:
   {
     return ! (this->Dset & (1 << 6));
   }
-  
+
   //! @brief The mask or count, depending on the return value of isDsetMask.
   uint8_t GetDsetMask const ()
   {
@@ -365,11 +484,8 @@ public:
 
 
   /*!
-   * @brief Construct a PayloadHeader.
-   * @param[in] data The packet data.
-   * @param[in,out] i
-   *   The offset to the start of the header. The offset will be advanced as the
-   *   data is consumed.
+   * @brief         Construct a PayloadHeader.
+   * @param[in,out] packetData The packet data from which to parse the header.
    */
   PayloadHeader(PacketData & packetData)
   {
@@ -420,8 +536,8 @@ private:
     * @brief Extension header data value.
     *
     * The data field must end on a 32-bit boundary. The format of the data is
-    * extension-specific and determined by the NXHDR value of the payload
-    * header.
+    * extension-specific and determined by the NXHDR value of the previous
+    * header (either the payload header or a preceding extension header).
     */
   uint8_t * Data;
 
@@ -434,11 +550,10 @@ public:
   //@}
 
   /*!
-   * @brief Construct a ExtensionHeader.
-   * @param[in] data The packet data.
-   * @param[in,out] i
-   *   The offset to the start of the header. The offset will be advanced as the
-   *   data is consumed.
+   * @brief         Construct a ExtensionHeader.
+   * @param[in]     data The packet data.
+   * @param[in,out] i    The offset to the start of the header. The offset will
+   *                     be advanced as the data is consumed.
    */
   ExtensionHeader(PacketData & packetData)
   {
@@ -517,7 +632,16 @@ private:
 
 public:
   //@{
-  //! @brief Getters for header values.
+  /*!
+   * @brief Getters for header values.
+   *
+   * TOFFS is returned in nanoseconds.
+   * HDIR and VDIR are returned as their respective enums.
+   * VDFL and AZM are returned in degrees.
+   */
+  uint32_t GetToffs const {
+    return static_cast<uint32_t>(this->Toffs) * 64u;
+  }
   uint8_t GetFcnt const { return this->Fcnt + 1; }
   uint8_t GetFspn const { return this->Fspn + 1; }
   GET_RAW(Fdly)
@@ -525,10 +649,6 @@ public:
   VerticalDirection   GetVdir const { return this->Vdir; }
   double GetVdfl const { return this->Vdfl * 0.01; }
   double GetAzm const { return this->Azm * 0.01; }
-  //! @brief Get the TOFFS in nanoseconds.
-  uint32_t GetToffs const {
-    return static_cast<uint32_t>(this->Toffs) * 64;
-  }
   //@}
 
   /*!
@@ -581,41 +701,16 @@ private:
 
 public:
   //@{
-  //! @brief Getters for header values.
+  /*!
+   * @brief Getters for header values.
+   *
+   * FM and STAT are returned as their respective enums.
+   */
   GET_RAW(Lcn)
-
-  FiringMode GetFm const ()
-  {
-    switch (this->Fm)
-    {
-      case 0:
-        return FM_PASSIVE;
-      case 1:
-        return FM_NORMAL;
-      case 15:
-        return FM_INDEX;
-      default:
-        return FM_RESERVED;
-    }
-  }
+  GET_ENUM(FiringMode, Fm)
   GET_RAW(Pwr)
   GET_RAW(Nf)
-
-  ChannelStatus GetStat const ()
-  {
-    switch (this->Stat)
-    {
-      case 0:
-        return CS_OBSTRUCTION_DETECTED;
-      case 1:
-        return CS_FAULT_DETECTED;
-      case 2:
-        return CS_POWER_NOT_PERFECT;
-      default:
-        return CS_RESERVED;
-    }
-  }
-
+  GET_ENUM(ChannelStatus, Stat)
   //@}
 
   /*!
