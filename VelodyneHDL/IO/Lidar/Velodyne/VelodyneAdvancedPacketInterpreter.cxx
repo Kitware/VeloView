@@ -8,17 +8,20 @@
 //! @brief Lengths in the headers are given in units of 32-bit words.
 #define BYTES_PER_HEADER_LENGTH_UNIT 4;
 
+//------------------------------------------------------------------------------
+// Accessor macros.
+//------------------------------------------------------------------------------
 //! @brief Simple getter for uninterpretted values.
 #define GET_RAW(attr) decltype(auto) Get ## attr const { return this->attr; }
+
+//! @brief Get a const reference.
+#define GET_CONST_REF(attr) auto const & Get ## attr const { return this->attr; }
 
 //! @brief Getter for enum values that are stored as raw values internally.
 #define GET_ENUM(enumtype, attr) type Get ## attr const { return to ## enumtype(this->attr); }
 
 //! @brief Get a header length in bytes.
 #define GET_LENGTH(attr) decltype(auto) Get ** attr const { return this->attr * BYTES_PER_HEADER_LENGTH_UNIT; }
-
-#define GET_HEADER decltype(auto) const & GetHeader const { return this->Header; }
-
 
 //------------------------------------------------------------------------------
 // Enum macros.
@@ -134,6 +137,8 @@ static uint8_t const SET_BITS_IN_BYTE[0x100] = {
 //
 // Use explicit enumerations to avoid all possible confusion that might arise
 // with simple numerical tests. The compiler should optimize the checks.
+//
+// Use the abbreviations given in the specification as prefixes.
 //------------------------------------------------------------------------------
 
 //! @brief Model identification code.
@@ -151,9 +156,9 @@ DEFINE_ENUM(
 //! @brief Horizontal direction of Lidar.
 DEFINE_ENUM(
   HorizontalDirection,
-  HD_,
-  ((HD_CLOCKWISE         , 0))
-  ((HD_COUNTER_CLOCKWISE , 1))
+  HDIR_,
+  ((CLOCKWISE         , 0))
+  ((COUNTER_CLOCKWISE , 1))
   HD_CLOCKWISE
 )
 
@@ -161,9 +166,9 @@ DEFINE_ENUM(
 //! @brief Vertical direction of Lidar.
 DEFINE_ENUM(
   VerticalDirection,
-  VD_
-  ((VD_UP   , 0))
-  ((VD_DOWN , 1))
+  VDIR_
+  ((UP   , 0))
+  ((DOWN , 1))
   VD_UP
 )
 
@@ -269,8 +274,9 @@ void setFromBits(TS & source, uint8_t offset, uint8_t number, TD & destination)
 
 /*!
  * @copydoc setFromBits
- * @brief   Variadic overload to handle variable number of destination values
- *          (repeated triples of offset, number and destination).
+ * @brief   Variadic overload to set multiple destination values from the same
+ *          bytes. Extra values are passed as triples of offset, number and
+ *          destination.
  * @todo    Check if this has any noticeable performance overhead.
  */
 template <typename TS, typename TD, typename... RemainingArgs>
@@ -369,10 +375,10 @@ public:
    * @param[out] data   The destination to which to copy the data.
    * @param[in]  length The number of bytes to copy.
    */
-  void CopyBytes(uint8_t * & data, size_t length)
+  void CopyBytes(std::vector<uint8_t> & data, size_t length)
   {
-    data = new uint8_t[length];
-    std::memcpy(data, this->Data[this->Index], length);
+    data.reserve(length);
+    std::memcpy(data.(), this->Data[this->Index], length);
     this->Index += length;
   }
 }
@@ -539,7 +545,7 @@ private:
     * extension-specific and determined by the NXHDR value of the previous
     * header (either the payload header or a preceding extension header).
     */
-  uint8_t * Data;
+  std::vector<uint8_t> Data;
 
 public:
   //@{
@@ -569,11 +575,6 @@ public:
 
     auto dataLen = hlen - (sizeof(Hlen) + sizeof(Nxhdr));
     packetData.CopyBytes(this->Data, dataLen);
-  }
-
-  ~ExtensionHeader()
-  {
-    delete[] this->Data;
   }
 }
 
@@ -639,14 +640,14 @@ public:
    * HDIR and VDIR are returned as their respective enums.
    * VDFL and AZM are returned in degrees.
    */
-  uint32_t GetToffs const {
-    return static_cast<uint32_t>(this->Toffs) * 64u;
-  }
+
+  // Cast to 32-bit required to hold all values.
+  uint32_t GetToffs const { return static_cast<uint32_t>(this->Toffs) * 64u; }
   uint8_t GetFcnt const { return this->Fcnt + 1; }
   uint8_t GetFspn const { return this->Fspn + 1; }
   GET_RAW(Fdly)
-  HorizontalDirection GetHdir const { return this->Hdir; }
-  VerticalDirection   GetVdir const { return this->Vdir; }
+  GET_ENUM(HorizontalDirection, Hdir);
+  GET_ENUM(VerticalDirection, Vdir);
   double GetVdfl const { return this->Vdfl * 0.01; }
   double GetAzm const { return this->Azm * 0.01; }
   //@}
@@ -749,9 +750,14 @@ class FiringReturn
 {
 private:
   //! @brief The packed data with the return values.
-  decltype(PacketData::Data) Data;
+  std:vector<uint8_t> Data;
 
 public:
+  //@{
+  //! @brief Getters.
+  GET_CONST_REF(Data);
+  //@}
+
   //! @brief Reference to this return's firing.
   Firing const & MyFiring;
 
@@ -783,7 +789,7 @@ public:
   T GetIntensity(IntensityType type) {
     // Check that the value is actually present otherwise the calculate index
     // will yield a different value or end up out of range.
-    if (! (this->MyFiring->MyFiringGroup->MyPayload->GetIset() & type))
+    if (! (this->MyFiring.MyFiringGroup.MyPayload.GetHeader().GetIset() & type))
     {
       throw std::out_of_range("requested intensity type is not in the intensity set");
     }
@@ -811,16 +817,12 @@ public:
     auto bytesPerValue = this->MyFiring.MyFiringGroup.MyPayload.GetHeader().GetBytesPerDistance();
     packetData.CopyBytes(this->Data, (icount * bytesPerValue));
   }
-
-  ~FiringReturn()
-  {
-    delete[] this->Data;
-  }
 };
 
 //------------------------------------------------------------------------------
 // Firing
 //------------------------------------------------------------------------------
+//! @brief Contains a firing header and a variable number of firing returns.
 class Firing
 {
 private:
@@ -828,10 +830,14 @@ private:
   FiringHeader Header;
 
   //! @brief Returns in this firing.
-  std::vector<FiringReturn> returns;
+  std::vector<FiringReturn> Returns;
 
 public:
-  GET_HEADER
+  //@{
+  //! @brief Getters.
+  GET_CONST_REF(Header);
+  GET_CONST_REF(Returns);
+  //@}
 
   //! @brief Reference to this firing's group.
   FiringGroup const & MyFiringGroup;
@@ -841,7 +847,7 @@ public:
   {
     this->Header = FiringHeader(packetData);
 
-    auto dcount = this->MyFiringGroup.MyPayload.GetHeader()->GetDistanceCount();
+    auto dcount = this->MyFiringGroup.MyPayload.GetHeader().GetDistanceCount();
     this->returns.reserve(dcount);
     for (decltype(dcount) j = 0; j < dcount; ++j)
     {
@@ -864,7 +870,11 @@ private:
   std::vector<Firing> Firings {0};
 
 public:
-  GET_HEADER
+  //@{
+  //! @brief Getters.
+  GET_CONST_REF(Header);
+  GET_CONST_REF(Firings);
+  //@}
 
   //! @brief Reference to the payload containing this firing group.
   Payload const & MyPayload;
@@ -906,13 +916,18 @@ private:
   PayloadHeader Header;
 
   //! @brief Variable number of extension headers.
-  std::vector<ExtensionHeader> extensionHeaders {0};
+  std::vector<ExtensionHeader> ExtensionHeaders {0};
 
   //! @brief Variable number of firing groups.
-  std::vector<FiringGroup> firingGroups {0};
+  std::vector<FiringGroup> FiringGroups {0};
 
 public:
-  GET_HEADER
+  //@{
+  //! @brief Getters.
+  GET_CONST_REF(Header);
+  GET_CONST_REF(ExtensionHeaders);
+  GET_CONST_REF(FiringGroups);
+  //@}
 
   Payload(PacketData & packetData)
   {
@@ -925,7 +940,7 @@ public:
       // The extension header automatically adjusts its length to end on a
       // 32-bit boundary so padding need not be handled here.
       ExtensionHeader extensionHeader = ExtensionHeader(packetData);
-      this->extensionHeaders.push_back(extensionHeader);
+      this->ExtensionHeaders.push_back(extensionHeader);
       nxhdr = extensionHeader.GetNxhdr();
     }
 
@@ -933,7 +948,7 @@ public:
     while (i < dataLength)
     {
       FiringGroup firingGroup = FiringGroup(this, packetData);
-      this->firingGroups.push_back(firingGroup);
+      this->FiringGroups.push_back(firingGroup);
     }
   }
 }
