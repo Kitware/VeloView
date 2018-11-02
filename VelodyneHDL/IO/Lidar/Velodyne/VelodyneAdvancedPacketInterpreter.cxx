@@ -1,12 +1,17 @@
-#include <type_traits>
+#include "VelodyneAdvancedPacketInterpreter.h"
 
+#include <vtkPoints.h>
+#include <vtkPointData.h>
+#include <vtkDoubleArray.h>
+
+#include <type_traits>
 #include <boost/preprocessor.hpp>
 
 //------------------------------------------------------------------------------
 // Macros.
 //------------------------------------------------------------------------------
 //! @brief Lengths in the headers are given in units of 32-bit words.
-#define BYTES_PER_HEADER_LENGTH_UNIT 4;
+#define BYTES_PER_HEADER_WORD 4u;
 
 //------------------------------------------------------------------------------
 // Accessor macros.
@@ -21,7 +26,7 @@
 #define GET_ENUM(enumtype, attr) type Get ## attr const { return to ## enumtype(this->attr); }
 
 //! @brief Get a header length in bytes.
-#define GET_LENGTH(attr) decltype(auto) Get ** attr const { return this->attr * BYTES_PER_HEADER_LENGTH_UNIT; }
+#define GET_LENGTH(attr) decltype(auto) Get ** attr const { return this->attr * BYTES_PER_HEADER_WORD; }
 
 //------------------------------------------------------------------------------
 // Enum macros.
@@ -227,6 +232,22 @@ DEFINE_ENUM(
 // Convenience functions.
 //------------------------------------------------------------------------------
 /*!
+  * @brief
+  * Convert degrees to radians.
+  *
+  * @param[in] degrees
+  * The input value in degrees.
+  *
+  * @return
+  * The input value converted to radians.
+  */
+inline double degreesToRadians(double degrees)
+{
+  return (degrees * vtkMath::Pi()) / 180.0;
+}
+
+//----------------------------------------------------------------------------
+/*!
  * @brief         Set a value from a byte sequence.
  * @todo          Add endianness detection and optimize accordingly.
  * @param[in]     bytes         The array of input bytes.
@@ -288,6 +309,24 @@ void setFromBits(TS & source, uint8_t offset, uint8_t number, TD & destination, 
 }
 
 //------------------------------------------------------------------------------
+// BlockData
+//------------------------------------------------------------------------------
+//! @brief Data used to track word-aligned blocks in the packet data.
+struct BlockData
+{
+public:
+  size_t Index;
+  size_t WordSize;
+
+  BlockData(size_t index, size_t wordSize)
+    : Index = index, WordSize = wordSize
+  {
+  }
+}
+
+//------------------------------------------------------------------------------
+// Packetdata
+//------------------------------------------------------------------------------
 /*!
  * @brief Convencience struct for processing packet data.
  *
@@ -300,12 +339,69 @@ class PacketData
 private:
   //! @brief The raw data.
   uint8_t const * Data;
+
   //! @brief The number of bytes in the raw data.
   size_t Length;
+
   //! @brief The index of the next byte to process.
   size_t Index;
 
+  //! @brief Tracked data for aligning blocks on word limits.
+  std::vector<BlockData> Blocks;
+
 public:
+  //@{
+  //! @brief Getters.
+  GET_RAW(Data);
+  GET_RAW(Length);
+  GET_RAW(Index);
+  //@}
+
+  /*!
+   * @brief Mark the beginning of a block to enabled automatic word alignment
+   *        when it ends.
+   *
+   * This should be called before any values are read from the block. When all
+   * values have been read, call EndBlock().
+   *
+   * @param[in] wordSize The word size on which to align the block.
+   */
+  void BeginBlock(size_t wordSize = BYTES_PER_HEADER_WORD)
+  {
+    this->Blocks.push_back(BlockData(this->Index, wordSize));
+  }
+
+  //@{
+  /*!
+   * @brief End a block by skipping any expected padding required for word
+   *        alignment.
+   *
+   * BeginBlock() must be called first. If no argument is given, the index will
+   * be set to the next word boundary. An argument is interpretted as the block
+   * length in bytes and the index is advanced from the start of the block by
+   * this value. An error will be thrown if the length is shorter than the
+   * number of consumed bytes since BeginBlock() was called. 
+   */
+  void EndBlock()
+  {
+    auto blockData = this->Blocks.pop_back();
+    auto wordRemainder = (this->Index - blockData.Index) % blockData.WordSize;
+    if (wordRemainder > 0)
+    {
+      this->Index += (blockData.WordSize - wordRemainder);
+    }
+  }
+  void EndBlock(size_t length)
+  {
+    auto blockData = this->Blocks.pop_back();
+    if ((this->Index - blockData.Index) > length)
+    {
+      raise std::length_error("EndBlock(): block size length is less than the number of consumed bytes since BeginBlock() was called");
+    }
+    this->Index = this->blockData.Index + length;
+  }
+  //@}
+
   //! @brief Get the number of bytes remaining from the current index to the end
   //         of the data as defined by the length.
   size_t GetRemainingLength()
@@ -381,6 +477,15 @@ public:
     std::memcpy(data.(), this->Data[this->Index], length);
     this->Index += length;
   }
+
+  /*!
+   * @brief     Skip a given number of bytes.
+   * @param[in] length The number of bytes to skip.
+   */
+  void SkipBytes(size_t length)
+  {
+    this->Index += length;
+  }
 }
 
 //------------------------------------------------------------------------------
@@ -391,7 +496,7 @@ public:
  *
  * All lengths count 32-bit words, e.g. a Glen value of 4 indicates that the
  * firing group header consists of 4 32-bit words. The raw values are converted
- * to counts with the BYTES_PER_HEADER_LENGTH_UNIT constant.
+ * to counts with the BYTES_PER_HEADER_WORD constant.
  */
 class PayloadHeader
 {
@@ -429,19 +534,13 @@ private:
   //! @brief Payload sequence number.
   uint32_t Pseq;
 
-
-  //! @brief The number of distances in a firing.
-  decltype(Dset) DistanceCount;
-
-  //! @brief The number of bytes per distance.
-  decltype(Dset) BytesPerDistance;
-
-  //! @brief The number of intensities for a given distance.
-  decltype(Iset) IntensityCount;
-
 public:
   //@{
-  //! @brief Getters for header values.
+  /*!
+   * @brief Getters for header values.
+   *
+   * HLEN, GLEN and FLEN are returned in bytes, not the number of 32-bit words.
+   */
   GET_RAW(Ver)
   GET_LENGTH(Hlen)
   GET_RAW(Nxhdr)
@@ -482,12 +581,27 @@ public:
 
   }
 
-  //! @brief The number of intensities in each firing.
+  //! @brief Get the number of intensities in each firing.
   uint8_t GetIntensityCount const ()
   {
     return SET_BITS_IN_BYTE[this->Iset];
   }
 
+  //! @brief The the number of bytes per firing return.
+  size_t GetNumberOfBytesPerFiringReturn const ()
+  {
+    size_t icount = this->GetIntensityCount();
+    size_t bytesPerValue = this->.GetBytesPerDistance();
+    return icount * bytesPerValue;
+  }
+
+  //! @brief The the number of bytes per firing.
+  size_t GetNumberOfBytesPerFiring const ()
+  {
+    size_t dcount = this->GetDistanceCount();
+    size_t bytesPerReturn = this->GetNumberOfBytesPerFiringReturn();
+    return dcount * bytesPerReturn;
+  }
 
   /*!
    * @brief         Construct a PayloadHeader.
@@ -495,11 +609,14 @@ public:
    */
   PayloadHeader(PacketData & packetData)
   {
+    // For word alignment.
+    packetData.BeginBlock();
     packetData.SetFromBits<1>(
       4, 4, this->Ver,
       0, 4, this->Hlen
     );
 
+    // Use GetHlen() to get the count in bytes.
     if (this->GetHlen() > packetData.GetRemainingLength())
     {
       raise std::length_error("data does not contain enough bytes for header");
@@ -516,6 +633,8 @@ public:
     packetData.SetFromByte(this->Iset);
     packetData.SetFromBytes(this->Tref);
     packetData.SetFromBytes(this->Pseq);
+    // For word alignment.
+    packetData.EndBlock(this->GetHlen());
   }
 }
 
@@ -524,11 +643,14 @@ public:
 // ExtensionHeader
 //------------------------------------------------------------------------------
 /*!
- * @brief Extension header of the VLP Advanced data packet format.
+ * @brief  Extension header of the VLP Advanced data packet format.
  *
  * This should be subclassed to handle different types of extensions as
  * specified by the NXHDR field of the payload header.
+ * 
+ * @tparam loadData If true, load the extension data, otherwise skip it.
  */
+template <bool loadData>
 class ExtensionHeader
 {
 private:
@@ -549,10 +671,14 @@ private:
 
 public:
   //@{
-  //! @brief Getters for header values.
+  /*!
+   * @brief Getters for header values.
+   *
+   * HLEN is returned in bytes, not the number of 32-bit words.
+   */
   GET_LENGTH(Hlen)
   GET_RAW(Nxhdr)
-  uint8_t const * GetData const { return this->Data; }
+  GET_CONST_REF(Data)
   //@}
 
   /*!
@@ -574,7 +700,16 @@ public:
     packetData.SetFromByte(this->Nxhdr);
 
     auto dataLen = hlen - (sizeof(Hlen) + sizeof(Nxhdr));
-    packetData.CopyBytes(this->Data, dataLen);
+
+    // Only copy the data if the template parameter requests it.
+    if (loadData)
+    {
+      packetData.CopyBytes(this->Data, dataLen);
+    }
+    else
+    {
+      packetData.SkipBytes(dataLen);
+    }
   }
 }
 
@@ -636,9 +771,9 @@ public:
   /*!
    * @brief Getters for header values.
    *
-   * TOFFS is returned in nanoseconds.
-   * HDIR and VDIR are returned as their respective enums.
-   * VDFL and AZM are returned in degrees.
+   * - TOFFS is returned in nanoseconds.
+   * - HDIR and VDIR are returned as their respective enums.
+   * - VDFL and AZM are returned in degrees.
    */
 
   // Cast to 32-bit required to hold all values.
@@ -746,6 +881,9 @@ public:
  *
  * @todo Consider using polymorphic types to avoid wasted space.
  */
+// This class is not templated with "loadData" because it makes no sense to
+// create an empty FiringReturn (it's basically just a wrapper around a vector
+// with some bit-fiddling to access the return values).
 class FiringReturn
 {
 private:
@@ -766,7 +904,7 @@ public:
   T operator[](const int i)
   {
     // Range check.
-    if (i < 0 || i >= SET_BITS_IN_BYTE[this->MyFiring.MyFiringGroup.MyPayload.GetHeader().GetIset()])
+    if (i < 0 || i >= this->MyFiring.MyFiringGroup.MyPayload.GetHeader().GetIntensityCount())
     {
       throw std::out_of_range("requested intensity is out of range of current set");
     }
@@ -813,16 +951,20 @@ public:
   FiringReturn(Firing const & firing, PacketData & packetData)
     : FiringRef = firing
   {
-    auto icount        = this->MyFiring.MyFiringGroup.MyPayload.GetHeader().GetIntensityCount();
-    auto bytesPerValue = this->MyFiring.MyFiringGroup.MyPayload.GetHeader().GetBytesPerDistance();
-    packetData.CopyBytes(this->Data, (icount * bytesPerValue));
+    auto dataLength = this->MyFiring.MyFiringGroup.MyPayload.GetHeader().GetNumberOfBytesPerFiringReturn();
+    packetData.CopyBytes(this->Data, dataLength);
   }
 };
 
 //------------------------------------------------------------------------------
 // Firing
 //------------------------------------------------------------------------------
-//! @brief Contains a firing header and a variable number of firing returns.
+/*!
+ * @brief  Parse and optionally load data from a firing.
+ * @tparam loadData If true, load firing data, otherwise skip it via
+ *                  packetData.SkipBytes
+ */
+template <bool loadData>
 class Firing
 {
 private:
@@ -830,7 +972,7 @@ private:
   FiringHeader Header;
 
   //! @brief Returns in this firing.
-  std::vector<FiringReturn> Returns;
+  std::vector<FiringReturn<loadData>> Returns;
 
 public:
   //@{
@@ -840,19 +982,28 @@ public:
   //@}
 
   //! @brief Reference to this firing's group.
-  FiringGroup const & MyFiringGroup;
+  FiringGroup<loadData> const & MyFiringGroup;
 
   Firing(FiringGroup const & firingGroup, PacketData & packetData)
     : MyFiringGroup = firingGroup
   {
     this->Header = FiringHeader(packetData);
 
-    auto dcount = this->MyFiringGroup.MyPayload.GetHeader().GetDistanceCount();
-    this->returns.reserve(dcount);
-    for (decltype(dcount) j = 0; j < dcount; ++j)
+
+    if (loadData)
     {
-      FiringReturn firingReturn = FiringReturn((* this), packetData);
-      this->returns.push_back(firingReturn);
+      auto dcount = this->MyFiringGroup.MyPayload.GetHeader().GetDistanceCount();
+      this->returns.reserve(dcount);
+      for (decltype(dcount) j = 0; j < dcount; ++j)
+      {
+        FiringReturn<loadData> firingReturn = FiringReturn<loadData>((* this), packetData);
+        this->returns.push_back(firingReturn);
+      }
+    }
+    else
+    {
+      auto bytesPerFiring = this->MyFiringGroup.MyPayload.GetHeader().GetNumberOfBytesPerFiring();
+      packetData.SkipBytes(bytesPerFiring);
     }
   }
 }
@@ -860,6 +1011,12 @@ public:
 //------------------------------------------------------------------------------
 // FiringGroup
 //------------------------------------------------------------------------------
+/*!
+ * @brief  Parse and optionally load data from a firing group.
+ * @tparam loadData If true, load all firing data, otherwise only load firing
+ *                  headers while skipping over return values.
+ */
+template <bool loadData>
 class FiringGroup
 {
 private:
@@ -867,7 +1024,7 @@ private:
   FiringGroupHeader Header;
 
   //! @brief Firings.
-  std::vector<Firing> Firings {0};
+  std::vector<Firing<loadData>> Firings {0};
 
 public:
   //@{
@@ -877,7 +1034,7 @@ public:
   //@}
 
   //! @brief Reference to the payload containing this firing group.
-  Payload const & MyPayload;
+  Payload<loadData> const & MyPayload;
 
   /*!
    * @param[in]     payload   The payload that contains this firing group.
@@ -885,30 +1042,43 @@ public:
    * @param[in]     dataLength The byte length of the packet data.
    * @param[in,out] i          The offset to the data.
    */
-  FiringGroup(Payload const & payload, PacketData & packetData)
+  FiringGroup(Payload<loadData> const & payload, PacketData & packetData)
     : MyPayload = payload
   {
+    // For word alignment.
+    packetData.BeginBlock();
+
     // Group headers are padded to 32-bit boundaries. Use GLEN to advance the
     // index correctly.
     auto glen = this->MyPayload->GetGlen();
-    size_t index = packetData.Index;
+    packetData.BeginBlock();
     this->Header = FiringGroupHeader(packetData);
-    packetData.Index = index + glen;
+    packetData.EndBlock(this->MyPayload.GetGlen());
 
     auto fcnt = this->header.GetFcnt();
     this->Firings.reserve(fcnt);
 
     for (decltype(fcnt) j = 0; j < fcnt; ++j)
     {
-      Firing firing = Firing((* this), packetData);
+      Firing<loadData> firing = Firing<loadData>((* this), packetData);
       this->Firings.push_back(firing);
     }
+
+    // For word alignment.
+    packetData.EndBlock();
   }
 }
 
 //------------------------------------------------------------------------------
 // Payload
 //------------------------------------------------------------------------------
+/*!
+ * @brief  Parse and optionally load data from the payload.
+ * @tparam loadData If true, load all data, otherwise only load metadata (e.g.
+ *                  firing group headers, extension headers).
+ */
+
+template <bool loadData>
 class Payload
 {
 private:
@@ -916,10 +1086,10 @@ private:
   PayloadHeader Header;
 
   //! @brief Variable number of extension headers.
-  std::vector<ExtensionHeader> ExtensionHeaders {0};
+  std::vector<ExtensionHeader<loadData>> ExtensionHeaders {0};
 
   //! @brief Variable number of firing groups.
-  std::vector<FiringGroup> FiringGroups {0};
+  std::vector<FiringGroup<loadData>> FiringGroups {0};
 
 public:
   //@{
@@ -928,6 +1098,30 @@ public:
   GET_CONST_REF(ExtensionHeaders);
   GET_CONST_REF(FiringGroups);
   //@}
+
+
+  /*!
+   * @brief Detect frame boundaries between firing groups.
+   *
+   * VeloView requires some concept of a frame. The current approach is to
+   * detect the azimuth crossing zero but this will likely need to be changed in
+   * the future.
+   *
+   * @param[out] newFrameBoundaries The indices of firing groups that start a
+   *                                new frame will be pushed onto this vector.
+   */
+  void DetectFrames(FrameTracker & CurrentFrameTracker, std::vector<size_t> & newFrameBoundaries)
+  {
+    for (size_t i = 0; i < this->FiringGroups.size(); ++i)
+    {
+      FrameTracker frameTracker(this->FiringGroups[i]);
+      if (this->CurrentFrameTracker.IsNewFrame(frameTracker))
+      {
+        newFrameBoundaries.push_back(i);
+      }
+      this->CurrentFrameTracker = frameTracker;
+    }
+  }
 
   Payload(PacketData & packetData)
   {
@@ -939,7 +1133,7 @@ public:
     {
       // The extension header automatically adjusts its length to end on a
       // 32-bit boundary so padding need not be handled here.
-      ExtensionHeader extensionHeader = ExtensionHeader(packetData);
+      ExtensionHeader<loadData> extensionHeader = ExtensionHeader<loadData>((* this), packetData);
       this->ExtensionHeaders.push_back(extensionHeader);
       nxhdr = extensionHeader.GetNxhdr();
     }
@@ -947,33 +1141,309 @@ public:
     // The rest of the data should be filled with firing groups.
     while (i < dataLength)
     {
-      FiringGroup firingGroup = FiringGroup(this, packetData);
+      FiringGroup<loadData> firingGroup = FiringGroup<loadData>((* this), packetData);
       this->FiringGroups.push_back(firingGroup);
     }
+  }
+}
+
+//------------------------------------------------------------------------------
+// FrameTracker
+//------------------------------------------------------------------------------
+/*!
+ * @brief Object to track information related to frame changes. All frame change
+ *        logic should be kept here.
+ * @todo  Develop this beyond simplying tracking rollovers of the azimuth.
+ */
+class FrameTracker
+{
+private:
+  // HorizontalDirection Hdir = HD_UP;
+  // VerticalDirection Vdir = VD_CLOCKWISE;
+  // Set default values to something that will detect the first frame as a new
+  // frame.
+  // double Vdfl = -500.0;
+  double  Azm = -500.0;
+
+public:
+  FrameTracker()
+  {
+  }
+  FrameTracker(FiringGroup & firingGroup)
+  {
+    this->Azm = firingGroup.GetHeader().GetAzm();
+  }
+
+  /*!
+   * @brief Returns true if the passed FrameTracker appears to be a new frame.
+   * @todo  Consider better approaches to delimiting frames.
+   */
+  bool IsNewFrame(FrameTracker const & frameTracker)
+  {
+    return (std::abs(this->Azm - frameTracker) > 180.0)
   }
 }
 
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 //------------------------------------------------------------------------------
-// ProcessData
+// VelodyneAdvancedPacketInterpreter methods.
 //------------------------------------------------------------------------------
-void ProcessPacket(unsigned char const * data, unsigned int dataLength, int startPosition)
+VelodyneAdvancedPacketInterpreter::VelodyneAdvancedPacketInterpreter()
 {
-  size_t offset = 0;
-  // Given that startPosition is a signed int, just add it to the data pointer
-  // and be done with it.
-  data += startPosition;
+}
+
+//------------------------------------------------------------------------------
+VelodyneAdvancedPacketInterpreter::~VelodyneAdvancedPacketInterpreter()
+{
+}
+
+//------------------------------------------------------------------------------
+VelodyneAdvancedPacketInterpreter::LoadCalibration(std::string const & filename)
+{
+  // TODO
+}
+
+//------------------------------------------------------------------------------
+void VelodyneAdvancedPacketInterpreter::ProcessPacket(unsigned char const * data, unsigned int dataLength, int startPosition)
+{
+  // TODO: check how to handle startPosition
+  // PacketData packetData = PacketData(data + startPosition, dataLength - startPosition, 0);
+  PacketData packetData = PacketData(data, dataLength, 0);
+  Payload payload;
 
   // The packet classes throw length errors if the packet does not contain the
   // expected length.
   try
   {
-    PayloadHeader payloadHeader = PayloadHeader(data, dataLength, offset);
+    payload = Payload<true>(packetData);
   }
-  catch (const std::length_error & e)
+  // Length errors are raised if the packet data does not conform to the
+  // expected lengths. Returning here is basically the same thing as returning
+  // at the start of this function if  IsLidarPacket() returns false. The
+  // difference is that here the full data is checked instead of just the
+  // header.
+  catch (std::length_error const & e)
   {
+    return;
   }
+
+  auto pseq = payload.GetHeader().GetPseq();
+  auto iset = payload.GetHeader().GetIset();
+
+  for (auto firingGroup : payload.GetFiringGroups())
+  {
+    // Detect frame changes in firing groups.
+    FrameTracker frameTracker = FrameTracker(firingGroup);
+    if (this->CurrentFrameTracker.IsNewFrame(frameTracker))
+    {
+      this->SplitFrame();
+    }
+    this->CurrentFrameTracker = frameTracker;
+
+    auto timeFractionOffset = firingGroup.GetToffs(); 
+    auto coChannelTimeFractionDelay = firingGroup.GetFdly();
+    double verticalAngle = firingGroup.GetVdfl();
+    double azimuth = firingGroup.GetAzm();
+
+    // TODO
+    // This is just placeholder guesswork. Check how the data needs to be handled.
+    double phi = degreesToRadians(verticalAngle);
+    double theta = degreesToRadians(azimuth);
+    double cosPhi = std::cos(phi);
+    double sinPhi = std::sin(phi);
+    double cosTheta = std::cos(theta);
+    double sinTheta = std::sin(theta);
+
+    for (auto firing : firingGroup.GetFirings())
+    {
+      auto channelNumber = firing.GetLCN();
+
+      // The firing mode is an enum so we need to convert it to a human-readable
+      // string.
+      auto firingMode = firing.GetFM();
+      auto firingModeString = ToString(firingMode);
+
+      auto power = firing.GetPwr();
+      auto noise = firing.GetNf();
+
+      // Status is also an enum and requires a string conversion.
+      auto status = firing.GetStat();
+      auto statusString = ToString(status);
+
+
+      // TODO
+      // The distance to display must be selected here. Currently this just uses
+      // the first return.
+      for (auto firingReturn : firing.GetReturns())
+      {
+        double distance = firingReturn.GetDistance();
+
+        // TODO
+        // No information has been received yet concerning how to actually
+        // determine the distance from the returns.
+        double x = distance * cosTheta * sinPhi;
+        double y = distance * sinTheta * sinPhi;
+        double z = distance * cosphi;
+
+        // TODO
+        // Determine which information is relevent and update accordingly.
+        this->Points->InsertNextPoint({x,y,z});
+        this->MD_ComponentsX->InsertNextValue(x);
+        this->MD_ComponentsY->InsertNextValue(y);
+        this->MD_ComponentsZ->InsertNextValue(z);
+        this->MD_Pseqs->InsertNextValue(pseq);
+        this->MD_ChannelNumbers->InsertNextValue(channelNumber);
+        this->MD_FiringModes->InsertNextValue(firingModeString);
+        this->MD_Powers->InsertNextValue(power);
+        this->MD_Noises->InsertNextValue(noise);
+        this->MD_Statuses->InsertNextValue(statusString);
+
+        // TODO
+        // Define distanceTypeString.
+        this->MD_Distances->InsertNextValue(distanceTypeString);
+
+//! @brief Convenience macro for setting intensity values
+#define INSERT_INTENSITY(my_array, iset_flag) \
+        this->MD_ ## my_array->InsertNextVaue((iset & (ISET_ ## iset_flag)) ? firingReturn.GetIntensity((ISET_ ## iset_flag)) : 0);
+
+        // Add additional values here when ISET is expanded in future versions.
+        INSERT_INTENSITY(Reflectivities, REFLECTIVITY)
+        INSERT_INTENSITY(Intensities, INTENSITY)
+        INSERT_INTENSITY(Confidences, CONFIDENCE)
+
+        // TODO
+        // Remove this once the desired distance is correctly selected.
+        break;
+      }
+    }
+  }
+}
+
+//------------------------------------------------------------------------------
+bool VelodyneAdvancedPacketInterpreter::IsLidarPacket(unsigned char const * data, unsigned int dataLength)
+{
+  // TODO
+  // Determine the best way to check if a packet contains lidar data. Currently
+  // this just checks that the packet data contains a plausible payload header.
+  PacketData packetData = PacketData(data, dataLength, 0);
+  try
+  {
+    PayloadHeader payloadHeader = PayloadHeader(packetData);
+    return true;
+  }
+  catch (std::length_error const & e)
+  {
+    return false;
+  }
+  //
+}
+
+//------------------------------------------------------------------------------
+vtkSmartPointer<vtkPolyData> VelodyneAdvancedPacketInterpreter::CreateNewEmptyFrame(vtkIdType numberOfPoints)
+{
+  vtkSmartPointer<vtkPolyData> polyData = vtkSmartPointer<vtkPolyData>::New();
+
+  // Points.
+  vtkNew<vtkPoints> points;
+  points->SetDataTypeToFloat();
+  // The frame size must be large enough to contain the requested number of
+  // poins.
+  this->FrameSize = std::max(
+    this->FrameSize,
+    static_cast<decltype(this->FrameSize)>(numberOfPoints)
+  );
+  points->Allocate(this->FrameSize);
+  if (this->FrameSize > 0)
+  {
+
+    // Align the packet data to the word size to padding if present.
+    auto finalIndex = packetData.GetIndex();
+    auto wordRemainder = (finalIndex - initialIndex) % BYTES_PER_HEADER_WORD;
+    if (wordRemainder > 0)
+    {
+      packetData.SetIndex(finalIndex + (BYTES_PER_HEADER_WORD - wordRemainder));
+    }
+    points->SetNumberOfPoints(numberOfPoints);
+  }
+
+  // Same name as vtkVelodyneHDLReader.
+  // TODO
+  // Define the name as a static constant member of the parent class if it
+  // should be common to all subclasses.
+  points->GetData()->SetName("Points_m_XYZ");
+
+  // Point the polydata to the points.
+  polyData->SetPoints(points.GetPointer());
+
+  // Replace the old points.
+  this->Points = points.GetPointer();
+
+  // Replace and initialize all of the associated data arrays.
+  //
+  // Use a template here to make this section of code type-agnostic. The types
+  // of the different datapoint attributes may change in the future with
+  // evolving packet specifications.
+  InitializeDataArrayForPolyData(this->ComponentsX, "X", numberOfPoints, polyData);
+  InitializeDataArrayForPolyData(this->ComponentsY, "Y", numberOfPoints, polyData);
+  InitializeDataArrayForPolyData(this->ComponentsZ, "Z", numberOfPoints, polyData);
+  InitializeDataArrayForPolyData(this->SpotRows, "row", numberOfPoints, polyData);
+  InitializeDataArrayForPolyData(this->SpotColumns, "column", numberOfPoints, polyData);
+  InitializeDataArrayForPolyData(this->Timestamps, "timestamp", numberOfPoints, polyData);
+  InitializeDataArrayForPolyData(this->TOFs, "tof", numberOfPoints, polyData);
+  InitializeDataArrayForPolyData(this->Reflectivities, "reflectivity", numberOfPoints, polyData);
+#ifdef ADD_OPSYS_EXTRA_INFO
+  InitializeDataArrayForPolyData(this->RealTOFs, "real_tof", numberOfPoints, polyData);
+  InitializeDataArrayForPolyData(this->Radii, "radius", numberOfPoints, polyData);
+#endif // ADD_OPSYS_EXTRA_INFO
+
+  // Idem for the frame indices.
+  InitializeDataArrayForPolyData(this->FrameIndices, "frame_index", numberOfPoints, polyData);
+
+  return polyData;
+}
+
+//------------------------------------------------------------------------------
+// TODO: Revisit this if the frequency still needs to be calculated here.
+// bool VelodyneAdvancedPacketInterpreter::SplitFrame(bool force)
+// {
+// }
+
+//------------------------------------------------------------------------------
+// void VelodyneAdvancedPacketInterpreter::ResetCurrentFrame()
+// {
+// }
+
+//------------------------------------------------------------------------------
+void VelodyneAdvancedPacketInterpreter::PreProcessPacket(unsigned char const * data, unsigned int dataLength, bool & isNewFrame, int & framePositionInPacket)
+{
+  PacketData packetData = PacketData(data, dataLength, 0);
+  PayloadHeader packetHeader = PayloadHeader<false>(packetData);
+  std::vector<size_t> newFrameBoundaries {0};
+
+  // TODO
+  // Review how this is supposed to work. A packet contains a single payload so
+  // it's not possible to jump directly to a new frame, and several frames could
+  // theoretically be included in a single payload depending on how frames are
+  // determined. If the function limits this to one then perhaps we are losing
+  // frame data here.
+  packetHeader.DetectFrames(this->CurrentFrameTracker, newFrameBoundaries);
+  isNewFrame = (newFrameBoundaries.size() > 0);
+  framePositionInPacket = 0;
 }
 
