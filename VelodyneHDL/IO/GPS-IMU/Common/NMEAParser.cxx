@@ -6,23 +6,36 @@
 #include <stdexcept>
 #include <limits>
 
+#include <vtkMath.h>
+
 // Silence one "unused variable" warning https://stackoverflow.com/q/1486904/
 #define UNUSED(expr) do { (void)(expr); } while (0)
 
 namespace {
-  std::vector<std::string> SplitWords(const std::string& sentence)
+  /* parse in format HHMMSS.SS (.SS optional) */
+  bool ParseUTCSecondsOfDay(const std::vector<std::string>& w,
+                    unsigned int pos,
+                    NMEALocation& location)
   {
-    std::stringstream sstr(sentence);
-    std::string token;
-
-    std::vector<std::string> result;
-
-    while (std::getline(sstr, token, ','))
-    {
-      result.push_back(token);
+    try {
+      double read = std::stod(w[pos]);
+      double integral_part;
+      std::modf(read, &integral_part);
+      double fractional_part = read - integral_part;
+      int HHMMSS = static_cast<int>(vtkMath::Round(integral_part));
+      int SS = HHMMSS % 100;
+      int MM = ((HHMMSS - SS) % 10000) / 100;
+      int HH = (HHMMSS - SS - 100 * MM) / 10000;
+      location.UTCSecondsOfDay =
+          fractional_part
+          + static_cast<double>(SS)
+          + 60.0 * static_cast<double>(MM)
+          + 3600.0 * static_cast<double>(HH);
     }
-
-    return result;
+    catch (const std::logic_error&) {
+      return false;
+    }
+    return true;
   }
 
   bool ParseFAA(const std::vector<std::string>& w,
@@ -224,15 +237,9 @@ bool NMEAParser::ParseGPRMC(const std::vector<std::string>& w,
   {
     return false;
   }
-  else
+  else if (!ParseUTCSecondsOfDay(w, RMC_UTC_TIME, location))
   {
-    try {
-      location.UTCSecondsOfDay = static_cast<int>(
-            std::stod(w[RMC_UTC_TIME]));
-    }
-    catch (const std::logic_error&) {
-      return false;
-    }
+    return false;
   }
 
 
@@ -361,15 +368,9 @@ bool NMEAParser::ParseGPGGA(const std::vector<std::string>& w,
   {
     return false;
   }
-  else
+  else if (!ParseUTCSecondsOfDay(w, GGA_UTC_TIME, location))
   {
-    try {
-      location.UTCSecondsOfDay = static_cast<int>(
-            std::stod(w[GGA_UTC_TIME]));
-    }
-    catch (const std::logic_error&) {
-      return false;
-    }
+    return false;
   }
 
   /* Latitude and Longitude */
@@ -542,15 +543,9 @@ bool NMEAParser::ParseGPGLL(const std::vector<std::string>& w,
   {
     return false;
   }
-  else
+  else if (!ParseUTCSecondsOfDay(w, GLL_UTC_TIME, location))
   {
-    try {
-      location.UTCSecondsOfDay = static_cast<int>(
-            std::stod(w[GLL_UTC_TIME]));
-    }
-    catch (const std::logic_error&) {
-      return false;
-    }
+    return false;
   }
 
 
@@ -581,12 +576,41 @@ bool NMEAParser::ParseGPGLL(const std::vector<std::string>& w,
 
 
 //------------------------------------------------------------------------------
+bool NMEAParser::IsGPRMC(const std::vector<std::string>& w)
+{
+  const unsigned int NAME = 0;
+  return w.size() > 0
+      && w[NAME] == "$GPRMC"
+      && (w.size() == 13 || w.size() == 14);
+}
+
+
+//------------------------------------------------------------------------------
+bool NMEAParser::IsGPGGA(const std::vector<std::string>& w)
+{
+  const unsigned int NAME = 0;
+  return w.size() > 0
+      && w[NAME] == "$GPGGA"
+      && w.size() == 15; // On first read of catdb.org I understood 16
+}
+
+
+//------------------------------------------------------------------------------
+bool NMEAParser::IsGPGLL(const std::vector<std::string>& w)
+{
+  const unsigned int NAME = 0;
+  return w.size() > 0
+      && w[NAME] == "$GPGLL"
+      && (w.size() == 8 || w.size() == 9);
+}
+
+
+//------------------------------------------------------------------------------
 bool NMEAParser::ParseLocation(const std::string& sentence, NMEALocation& location)
 {
   // reset location. This is important to do because no sentence can fill
   // all NMEALocation fields.
   location.Init();
-  const unsigned int NAME = 0;
   std::vector<std::string> w = SplitWords(sentence);
   if (w.size() < 1)
   {
@@ -605,15 +629,15 @@ bool NMEAParser::ParseLocation(const std::string& sentence, NMEALocation& locati
   // present in NMEA 2.3 and later.
   // This "FAA mode indicator" is not present in Velodyne relay packets of
   // file "HDL32-V2_R into Butterfield into Digital Drive.pcap".
-  if (w[NAME] == "$GPRMC" && (w.size() == 13 || w.size() == 14))
+  if (IsGPRMC(w))
   {
     return ParseGPRMC(w, location);
   }
-  else if (w[NAME] == "$GPGGA" && w.size() == 16)
+  if (IsGPGGA(w))
   {
     return ParseGPGGA(w, location);
   }
-  else if (w[NAME] == "$GPGLL" && (w.size() == 8 || w.size() == 9))
+  else if (IsGPGLL(w))
   {
     return ParseGPGLL(w, location);
   }
@@ -629,4 +653,21 @@ bool NMEAParser::ParseLocation(const std::string& sentence, NMEALocation& locati
 bool NMEAParser::ParseLocation(const char* sentence, NMEALocation& location)
 {
   return this->ParseLocation(std::string(sentence), location);
+}
+
+
+//------------------------------------------------------------------------------
+std::vector<std::string> NMEAParser::SplitWords(const std::string& sentence)
+{
+  std::stringstream sstr(sentence);
+  std::string token;
+
+  std::vector<std::string> result;
+
+  while (std::getline(sstr, token, ','))
+  {
+    result.push_back(token);
+  }
+
+  return result;
 }

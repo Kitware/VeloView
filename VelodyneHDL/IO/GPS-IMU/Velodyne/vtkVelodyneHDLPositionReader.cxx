@@ -60,6 +60,7 @@
 #include <boost/foreach.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
+#include <boost/algorithm/string.hpp>
 
 #include <algorithm>
 #include <map>
@@ -89,7 +90,125 @@ struct PositionPacket
   short temp[3];
   short accelx[3];
   short accely[3];
-  char sentance[73];
+  // UDP position packet is 554 bytes long with 42 bytes of header and 512 bytes
+  // of payload. In the payload, 512 - (198 + 4 + 1 + 3) = 306 are available for
+  // the NMEA sequence.
+  // The last bytes stored in the sentence char array should be 0 (NMEA
+  // sentences are not that long).
+  char sentance[306];
+};
+}
+
+namespace
+{
+int LatLongToZone(double lat, double lon)
+{
+  double longTemp = (lon + 180) - static_cast<int>((lon + 180) / 360) * 360 - 180;
+
+  int zone = static_cast<int>((longTemp + 180) / 6) + 1;
+  if (lat >= 56.0 && lat < 64.0 && longTemp >= 3.0 && longTemp < 12.0)
+  {
+    zone = 32;
+  }
+
+  if (lat >= 72.0 && lat < 84)
+  {
+    if (longTemp >= 0.0 && longTemp < 9.0)
+    {
+      zone = 31;
+    }
+    else if (longTemp >= 9.0 && longTemp < 21.0)
+    {
+      zone = 33;
+    }
+    else if (longTemp >= 21.0 && longTemp < 33.0)
+    {
+      zone = 35;
+    }
+    else if (longTemp >= 33.0 && longTemp < 42.0)
+    {
+      zone = 37;
+    }
+  }
+
+  return zone;
+}
+
+
+class UTMProjector
+{
+  public:
+  UTMProjector(bool shouldWarnOnWeirdGPSData)
+  {
+    this->ShouldWarnOnWeirdGPSData = shouldWarnOnWeirdGPSData;
+    this->pj_utm = nullptr;
+    this->UTMZone = -1;
+  }
+
+  ~UTMProjector()
+  {
+    if (this->IsInitialized())
+    {
+      pj_free(this->pj_utm);
+    }
+  }
+
+  void Project(double lat, double lon, double& x, double& y)
+  {
+    if (!this->IsInitialized())
+    {
+      this->Init(lat, lon);
+    }
+
+    projUV lp;
+    lp.u = DEG_TO_RAD * lon;
+    lp.v = DEG_TO_RAD * lat;
+
+    projUV xy;
+    xy = pj_fwd(lp, pj_utm);
+    if (pj_utm->ctx->last_errno != 0 && this->ShouldWarnOnWeirdGPSData)
+    {
+      vtkGenericWarningMacro("Error : WGS84 projection failed, this will create a GPS error. "
+                             "Please check the latitude and longitude inputs");
+    }
+
+    x = xy.u;
+    y = xy.v;
+  }
+
+  private:
+  bool IsInitialized()
+  {
+    return this->pj_utm != nullptr;
+  }
+
+  void Init(double initial_lat, double initial_lon)
+  {
+    assert(!pj_utm);
+    this->UTMZone = LatLongToZone(initial_lat, initial_lon);
+    std::stringstream utmparams;
+    utmparams << "+proj=utm ";
+    std::stringstream zone;
+    zone << "+zone=" << this->UTMZone;
+    this->UTMString = zone.str();
+    // WARNING: Dont let the string stream pass out of scope until
+    // we finish initialization
+    utmparams << this->UTMString << " ";
+    if (initial_lat < 0)
+    {
+      utmparams << "+south ";
+    }
+
+    utmparams << "+ellps=WGS84 ";
+    utmparams << "+units=m ";
+    utmparams << "+no_defs ";
+    pj_utm = pj_init_plus(utmparams.str().c_str());
+  }
+
+  bool ShouldWarnOnWeirdGPSData;
+  projPJ pj_utm;
+  int UTMZone;
+  std::string UTMString;
 };
 }
 
@@ -100,7 +219,6 @@ public:
   vtkInternal()
   {
     this->Reader = 0;
-    this->UTMZone = -1;
     this->Offset[0] = 0.0;
     this->Offset[1] = 0.0;
     this->Offset[2] = 0.0;
@@ -108,14 +226,11 @@ public:
   }
 
   int ProcessHDLPacket(const unsigned char* data, unsigned int bytes, PositionPacket& position);
-  std::vector<std::string> ParseSentance(const std::string& sentance);
 
   void InterpolateGPS(
     vtkPoints* points, vtkDataArray* gpsTime, vtkDataArray* times, vtkDataArray* heading);
 
   vtkPacketFileReader* Reader;
-  int UTMZone;
-  std::string UTMString;
   double Offset[3];
 
   vtkNew<vtkVelodyneTransformInterpolator> Interp;
@@ -182,28 +297,15 @@ int vtkVelodyneHDLPositionReader::vtkInternal::ProcessHDLPacket(
 
   memcpy(&position.tohTimestamp, data + 14 + 3 * 8 + 160, 4);
 
-  std::copy(data + 14 + 8 + 8 + 8 + 160 + 4 + 4, data + 14 + 8 + 8 + 8 + 160 + 4 + 4 + 72,
-    position.sentance);
-  position.sentance[72] = '\0';
+  const int sentence_start =  14 + 8 + 8 + 8 + 160 + 4 + 4;
+  std::copy(data + sentence_start,
+            data + sentence_start + 306,
+            position.sentance);
+  // protection to terminate the string in case the sentence does not fit in the
+  // 306 bytes.
+  position.sentance[305] = '\0';
 
   return 1;
-}
-
-//-----------------------------------------------------------------------------
-std::vector<std::string> vtkVelodyneHDLPositionReader::vtkInternal::ParseSentance(
-  const std::string& sentance)
-{
-  std::stringstream sstr(sentance);
-  std::string token;
-
-  std::vector<std::string> result;
-
-  while (std::getline(sstr, token, ','))
-  {
-    result.push_back(token);
-  }
-
-  return result;
 }
 
 //-----------------------------------------------------------------------------
@@ -249,26 +351,13 @@ void vtkVelodyneHDLPositionReader::vtkInternal::InterpolateGPS(
   double timeOffset = 0.0;
 
   assert(times->GetNumberOfTuples() == gpsTime->GetNumberOfTuples());
-  unsigned int lastGPS = 0;
 
+  double lastGPS = 0.0;
   for (vtkIdType i = 0, k = times->GetNumberOfTuples(); i < k; ++i)
   {
-    const unsigned int currGPS = gpsTime->GetTuple1(i);
+    const double currGPS = gpsTime->GetTuple1(i);
     if (currGPS != lastGPS)
     {
-      if (currGPS < lastGPS)
-      {
-        // time of day has wrapped; increment time offset
-        timeOffset += 24.0 * 3600.0;
-      }
-      lastGPS = currGPS;
-
-      // Compute time in seconds from decimal-encoded time
-      const int hours = currGPS / 10000;
-      const int minutes = (currGPS / 100) % 100;
-      const int seconds = currGPS % 100;
-      const double convertedtime = ((3600 * hours) + (60.0 * minutes) + seconds) + timeOffset;
-
       // Get position and heading
       double pos[3];
       points->GetPoint(i, pos);
@@ -310,12 +399,12 @@ void vtkVelodyneHDLPositionReader::vtkInternal::InterpolateGPS(
       transformVehiculeWorld->Modified();
 
       // Add the transform to the interpolator
-      this->Interp->AddTransform(convertedtime, transformVehiculeWorld.GetPointer());
+      this->Interp->AddTransform(currGPS, transformVehiculeWorld.GetPointer());
 
       // Compute heading vector for interpolation
       double ha = heading * DEG_TO_RAD;
       double hv[2] = { cos(ha), sin(ha) };
-      headingInterpolator->AddTuple(convertedtime, hv);
+      headingInterpolator->AddTuple(currGPS, hv);
     }
   }
 }
@@ -326,6 +415,7 @@ vtkStandardNewMacro(vtkVelodyneHDLPositionReader);
 //-----------------------------------------------------------------------------
 vtkVelodyneHDLPositionReader::vtkVelodyneHDLPositionReader()
 {
+  this->UseGPGGASentences = false;
   this->Internal = new vtkInternal;
   this->SetNumberOfInputPorts(0);
   this->SetNumberOfOutputPorts(1);
@@ -355,42 +445,6 @@ void vtkVelodyneHDLPositionReader::SetFileName(const std::string& filename)
   this->Modified();
 }
 
-namespace
-{
-
-int LatLongToZone(double lat, double lon)
-{
-  double longTemp = (lon + 180) - static_cast<int>((lon + 180) / 360) * 360 - 180;
-
-  int zone = static_cast<int>((longTemp + 180) / 6) + 1;
-  if (lat >= 56.0 && lat < 64.0 && longTemp >= 3.0 && longTemp < 12.0)
-  {
-    zone = 32;
-  }
-
-  if (lat >= 72.0 && lat < 84)
-  {
-    if (longTemp >= 0.0 && longTemp < 9.0)
-    {
-      zone = 31;
-    }
-    else if (longTemp >= 9.0 && longTemp < 21.0)
-    {
-      zone = 33;
-    }
-    else if (longTemp >= 21.0 && longTemp < 33.0)
-    {
-      zone = 35;
-    }
-    else if (longTemp >= 33.0 && longTemp < 42.0)
-    {
-      zone = 37;
-    }
-  }
-
-  return zone;
-}
-}
 
 //-----------------------------------------------------------------------------
 int vtkVelodyneHDLPositionReader::RequestData(
@@ -404,7 +458,6 @@ int vtkVelodyneHDLPositionReader::RequestData(
     return 0;
   }
 
-  this->Internal->UTMZone = -1;
 
   vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
   vtkSmartPointer<vtkCellArray> cells = vtkSmartPointer<vtkCellArray>::New();
@@ -453,17 +506,19 @@ int vtkVelodyneHDLPositionReader::RequestData(
   unsigned int dataLength;
   double timeSinceStart;
 
-  projPJ pj_utm = NULL;
-  // PROJ *pj_latlong;
-  // const char *latlonargs[4] = {"+proj=longlat", "+ellps=WGS84",
-  //                              "+datum=WGS84",  "+no_defs" };
-
-  // // Modern compilers and old proj4 api are at war here
-  // pj_latlong = proj_init(4, const_cast<char**>(latlonargs));
-  // assert(pj_latlong);
+  UTMProjector proj(this->ShouldWarnOnWeirdGPSData);
 
   this->Open();
   vtkIdType pointcount = 0;
+
+  bool hasLastGPSUpdateTime = false;
+  double lastGPSUpdateTime = 0.0;
+  double GPSTimeOffset = 0.0;
+  double convertedGPSUpdateTime = 0.0;
+
+  bool hasLastLidarUpdateTime = false;
+  double lastLidarUpdateTime = 0.0;
+  double lidarTimeOffset = 0.0;
 
   while (this->Internal->Reader->NextPacket(data, dataLength, timeSinceStart))
   {
@@ -493,61 +548,89 @@ int vtkVelodyneHDLPositionReader::RequestData(
     {
       NMEAParser parser;
       NMEALocation parsedNMEA;
-      if (!parser.ParseLocation(position.sentance, parsedNMEA))
+      parsedNMEA.Init();
+      std::string NMEASentence = std::string(position.sentance);
+      boost::trim_right(NMEASentence);
+      std::vector<std::string> NMEAwords = parser.SplitWords(NMEASentence);
+      if (!parser.ChecksumValid(NMEASentence))
+      {
+        vtkGenericWarningMacro("NMEA sentence: "
+                               << "<" << NMEASentence << ">"
+                               << "has invalid checksum");
+        // TODO: should we skip or should we expect lazy NMEA implementers ?
+      }
+
+      if ((this->UseGPGGASentences && !parser.IsGPGGA(NMEAwords))
+          || (!this->UseGPGGASentences && !parser.IsGPRMC(NMEAwords)))
+      {
+        continue; // not the NMEA sentence we are interested in, skipping
+      }
+
+      if (!(parser.IsGPGGA(NMEAwords) && parser.ParseGPGGA(NMEAwords, parsedNMEA)
+         || (parser.IsGPRMC(NMEAwords) && parser.ParseGPRMC(NMEAwords, parsedNMEA))))
       {
         vtkGenericWarningMacro("Failed to parse NMEA sentence: "
-                               << position.sentance);
+                               << "<" << NMEASentence << ">");
+        continue; // skipping this PositionPacket
       }
 
-      if (this->Internal->UTMZone < 0)
-      {
-        assert(!pj_utm);
-        this->Internal->UTMZone = LatLongToZone(parsedNMEA.Lat, parsedNMEA.Long);
-        std::stringstream utmparams;
-        utmparams << "+proj=utm ";
-        std::stringstream zone;
-        zone << "+zone=" << this->Internal->UTMZone;
-        this->Internal->UTMString = zone.str();
-        // WARNING: Dont let the string stream pass out of scope until
-        // we finish initialization
-        utmparams << this->Internal->UTMString << " ";
-        if (parsedNMEA.Lat < 0)
-        {
-          utmparams << "+south ";
-        }
-
-        utmparams << "+ellps=WGS84 ";
-        utmparams << "+units=m ";
-        utmparams << "+no_defs ";
-        pj_utm = pj_init_plus(utmparams.str().c_str());
-      }
-
-      assert(pj_utm);
-      // Need to convert decimal to minutes
-
-      // PROJ_XY xy;
-      // xy.x = lon * DEG_TO_RAD;
-      // xy.y = lat * DEG_TO_RAD;
-
-      projUV lp;
-      lp.u = DEG_TO_RAD * parsedNMEA.Long;
-      lp.v = DEG_TO_RAD * parsedNMEA.Lat;
-
-      projUV xy;
-      xy = pj_fwd(lp, pj_utm);
-      if (pj_utm->ctx->last_errno != 0 && this->ShouldWarnOnWeirdGPSData)
-      {
-        vtkGenericWarningMacro("Error : WGS84 projection failed, this will create a GPS error. "
-                               "Please check the latitude and longitude inputs");
-      }
-
-      x = xy.u;
-      y = xy.v;
-      z = 0.0;
       lat = parsedNMEA.Lat;
       lon = parsedNMEA.Long;
-      heading = parsedNMEA.TrackAngle;
+      x = 0.0;
+      y = 0.0;
+      proj.Project(lat, lon, x, y);
+      z = 0.0;
+      // If sentence is GPGGA,  we have a chance to get an altitude
+      if (parser.IsGPGGA(NMEAwords))
+      {
+        if (parsedNMEA.HasAltitude)
+        {
+          if (parsedNMEA.HasGeoidalSeparation)
+          {
+            // setting z to Height above ellipsoid
+            // (coherent with setting 'datum=WGS84' in proj4)
+            z = parsedNMEA.Altitude + parsedNMEA.GeoidalSeparation;
+          }
+          else
+          {
+            // Two possibilities: either Altitude is actually height above
+            // ellipsoid, or it is effectively height above local MSL.
+            // In this case we could need something better than this
+            // (such as a look up table for geoid separation like GeographicLib)
+            z = parsedNMEA.Altitude;
+          }
+        }
+        else
+        {
+          z = 0.0;
+        }
+      }
+
+      if (parsedNMEA.HasTrackAngle)
+      {
+        heading = parsedNMEA.TrackAngle;
+      }
+      else
+      {
+	heading = 0.0;
+      }
+
       gpsUpdateTime = parsedNMEA.UTCSecondsOfDay;
+      if (!hasLastGPSUpdateTime)
+      {
+        hasLastGPSUpdateTime = true;
+        lastGPSUpdateTime = gpsUpdateTime;
+      }
+      else
+      {
+        if (gpsUpdateTime - lastGPSUpdateTime < - 12.0 * 3600.0)
+        {
+          // tod wrap detected
+          GPSTimeOffset += 24.0 * 3600.0;
+        }
+      }
+
+      convertedGPSUpdateTime = gpsUpdateTime + GPSTimeOffset;
     }
 
     if (pointcount == 0)
@@ -562,10 +645,24 @@ int vtkVelodyneHDLPositionReader::RequestData(
     points->InsertNextPoint(x, y, z);
     lats->InsertNextValue(lat);
     lons->InsertNextValue(lon);
-    gpsTime->InsertNextValue(gpsUpdateTime);
+    gpsTime->InsertNextValue(convertedGPSUpdateTime);
     polyIds->InsertNextId(pointcount);
 
-    times->InsertNextValue(position.tohTimestamp);
+    if (!hasLastLidarUpdateTime)
+    {
+      hasLastLidarUpdateTime = true;
+      lastLidarUpdateTime = position.tohTimestamp;
+    }
+    else
+    {
+      if (position.tohTimestamp - lastLidarUpdateTime < 0.5 * 3600.0)
+      {
+        // tod wrap detected
+        lidarTimeOffset += 3600.0;
+      }
+    }
+    double convertedLidarUpdateTime = position.tohTimestamp + lidarTimeOffset;
+    times->InsertNextValue(convertedLidarUpdateTime);
 
     dataVectors["gyro1"]->InsertNextValue(position.gyro[0] * GYRO_SCALE);
     dataVectors["gyro2"]->InsertNextValue(position.gyro[1] * GYRO_SCALE);
@@ -607,11 +704,6 @@ int vtkVelodyneHDLPositionReader::RequestData(
     output->GetPointData()->AddArray(it->second);
   }
 
-  if (pj_utm)
-  {
-    pj_free(pj_utm);
-  }
-
   return 1;
 }
 
@@ -633,6 +725,12 @@ void vtkVelodyneHDLPositionReader::PrintSelf(ostream& os, vtkIndent indent)
 int vtkVelodyneHDLPositionReader::CanReadFile(const char* fname)
 {
   return 1;
+}
+
+//-----------------------------------------------------------------------------
+void vtkVelodyneHDLPositionReader::SetUseGPGGASentences(bool useGPGGASentences)
+{
+  this->UseGPGGASentences = useGPGGASentences;
 }
 
 //-----------------------------------------------------------------------------
