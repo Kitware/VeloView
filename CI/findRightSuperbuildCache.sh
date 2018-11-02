@@ -35,6 +35,9 @@ START_TIME=$SECONDS
 
 # check for the right superbuild
 path=${OS}/${CI_COMMIT_REF}
+
+echo "The builboot is now trying to find a superbuild on the server for this specific branch."
+
 # found the right superbuild
 superbuild_cache=$(~/mc find superbuild --name ${path}"-1")
 while [ "$superbuild_cache" == "" ]
