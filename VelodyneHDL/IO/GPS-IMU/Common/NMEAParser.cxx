@@ -6,6 +6,8 @@
 #include <stdexcept>
 #include <limits>
 
+#include <vtkMath.h>
+
 // Silence one "unused variable" warning https://stackoverflow.com/q/1486904/
 #define UNUSED(expr) do { (void)(expr); } while (0)
 
@@ -20,7 +22,7 @@ namespace {
       double integral_part;
       std::modf(read, &integral_part);
       double fractional_part = read - integral_part;
-      int HHMMSS = static_cast<int>(std::round(integral_part));
+      int HHMMSS = static_cast<int>(vtkMath::Round(integral_part));
       int SS = HHMMSS % 100;
       int MM = ((HHMMSS - SS) % 10000) / 100;
       int HH = (HHMMSS - SS - 100 * MM) / 10000;

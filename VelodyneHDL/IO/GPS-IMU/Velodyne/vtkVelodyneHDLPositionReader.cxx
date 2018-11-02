@@ -206,7 +206,7 @@ class UTMProjector
   }
 
   bool ShouldWarnOnWeirdGPSData;
-  projPJ pj_utm = nullptr;
+  projPJ pj_utm;
   int UTMZone;
   std::string UTMString;
 };
