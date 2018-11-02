@@ -155,13 +155,7 @@ vtkSmartPointer<vtkPolyData> vtkLidarKITTIDataSetReader::GetFrame(int frameNumbe
 
       double radius = sqrt(x*x + y*y + z*z);
 
-      // crop points which belong to the vehicle
-      if (radius < 4.0)
-      {
-        continue;
-      }
-
-      double azimut = 180 / vtkMath::Pi() * std::atan2(pt->y,pt->x);
+      double azimut = 180 / vtkMath::Pi() * std::atan2(pt->x,pt->y) + 180.0;
       if(old_azimut < 0 && azimut >= 0)
       {
         laser_id++;
