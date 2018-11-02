@@ -145,27 +145,14 @@
     <addaction name="actionVeloViewDeveloperGuide"/>
     <addaction name="actionResetConfigurationFile"/>
    </widget>
-   <widget class="QMenu" name="menuToolbar">
+   <widget class="QMenu" name="menuViews">
     <property name="title">
-     <string>Toolbars</string>
+     <string>Views</string>
     </property>
-    <addaction name="actionBasic_Controls"/>
-    <addaction name="actionColor_Controls"/>
-    <addaction name="actionView_Controls"/>
-    <addaction name="actionPlayback_Controls"/>
-    <addaction name="actionGeolocation_Controls"/>
-   </widget>
-   <widget class="QMenu" name="menuView">
-    <property name="title">
-     <string>View</string>
-    </property>
-    <addaction name="actionShowPipelineBrowser"/>
-    <addaction name="actionShowPropertiesPanel"/>
    </widget>
    <addaction name="menu_File"/>
    <addaction name="menuTools"/>
-   <addaction name="menuToolbar"/>
-   <addaction name="menuView"/>
+   <addaction name="menuViews"/>
    <addaction name="menuHelp"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
@@ -272,7 +259,7 @@
    <attribute name="dockWidgetArea">
     <number>2</number>
    </attribute>
-   <widget class="pqPipelineBrowserWidget" name="dockWidgetContents"/>
+   <widget class="pqPipelineBrowserWidget" name="pipelineBrowser"/>
   </widget>
   <widget class="QDockWidget" name="propertiesPanelDock">
    <property name="features">
@@ -284,7 +271,43 @@
    <attribute name="dockWidgetArea">
     <number>2</number>
    </attribute>
-   <widget class="pqPropertiesPanel" name="dockWidgetContents_2"/>
+   <widget class="pqPropertiesPanel" name="propertiesPanel"/>
+  </widget>
+  <widget class="QDockWidget" name="spreadSheetDock">
+   <property name="windowTitle">
+    <string>SpreadSheet</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>2</number>
+   </attribute>
+   <widget class="QWidget" name="spreadSheet"/>
+  </widget>
+  <widget class="QDockWidget" name="memoryInspectorDock">
+   <property name="windowTitle">
+    <string>Memory Inspector</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>2</number>
+   </attribute>
+   <widget class="pqMemoryInspectorPanel" name="memoryInspectorPanel"/>
+  </widget>
+  <widget class="QDockWidget" name="informationDock">
+   <property name="windowTitle">
+    <string>Information</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>1</number>
+   </attribute>
+   <widget class="pqProxyInformationWidget" name="proxyInformationWidget"/>
+  </widget>
+  <widget class="QDockWidget" name="overheadViewDock">
+   <property name="windowTitle">
+    <string>Overhead View</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>2</number>
+   </attribute>
+   <widget class="QWidget" name="overheadView"/>
   </widget>
   <action name="actionE_xit">
    <property name="text">
@@ -1164,6 +1187,18 @@
    <class>pqPropertiesPanel</class>
    <extends>QWidget</extends>
    <header>pqPropertiesPanel.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>pqProxyInformationWidget</class>
+   <extends>QWidget</extends>
+   <header>pqProxyInformationWidget.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>pqMemoryInspectorPanel</class>
+   <extends>QWidget</extends>
+   <header>pqMemoryInspectorPanel.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>
