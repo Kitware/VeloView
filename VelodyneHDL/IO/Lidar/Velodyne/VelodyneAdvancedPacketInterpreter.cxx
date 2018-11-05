@@ -138,6 +138,10 @@ static uint8_t const SET_BITS_IN_BYTE[0x100] = {
 };
 
 //------------------------------------------------------------------------------
+//! @brief The number of bits in a byte.
+static uint8_t const BITS_PER_BYTE = sizeof(SET_BITS_IN_BYTE[0]);
+
+//------------------------------------------------------------------------------
 // Typedefs and enums.
 //
 // Use explicit enumerations to avoid all possible confusion that might arise
@@ -232,18 +236,62 @@ DEFINE_ENUM(
 // Convenience functions.
 //------------------------------------------------------------------------------
 /*!
-  * @brief
-  * Convert degrees to radians.
-  *
-  * @param[in] degrees
-  * The input value in degrees.
-  *
-  * @return
-  * The input value converted to radians.
+  * @brief     Convert degrees to radians.
+  * @param[in] degrees The input value in degrees.
+  * @return    The input value converted to radians.
   */
 inline double degreesToRadians(double degrees)
 {
   return (degrees * vtkMath::Pi()) / 180.0;
+}
+
+//----------------------------------------------------------------------------
+/*!
+ * @brief     Get the index of a bit in a bitmask.
+ * @tparam    T    The input and return types.
+ * @param[in] mask The mask of set bits.
+ * @param[in] bit  A value with a single set bit the index of which to
+ *                 determine.
+ *
+ * The distances and intensities included in the packet are indicated by
+ * bitmasks. Included values are ordered by their corresponding bit in the mask.
+ * The index of a value in a list is therefore equal to the number of set
+ * preceding bits.
+ */
+template <typename T>
+T indexOfBit(T value, T bit)
+{
+  T precedingBits = (bit - 1) & value;
+  // Count the bits set before the target bit. This will be the index of the set
+  // bit.
+  if (sizeof(T) > BITS_PER_BYTE)
+  {
+    T byteMask = (1 << BITS_PER_BYTE) - 1;
+    T index = 0;
+    while(precedingBits)
+    {
+      index += SET_BITS_IN_BYTE[(precedingBits & byteMask)];
+      precedingBits >>= BITS_PER_BYTE;
+    }
+    return index;
+  }
+  else
+  {
+    return SET_BITS_IN_BYTE[precedingBits];
+  }
+}
+
+//----------------------------------------------------------------------------
+/*!
+ * @brief     Return the first set bit in a value.
+ * @param[in] x The value.
+ * @return    A value with the first set bit.
+ */
+template <typename T>
+inline
+T firstSetBit(T x)
+{
+  return (x - (x & (x - 1)));
 }
 
 //----------------------------------------------------------------------------
@@ -275,10 +323,8 @@ void setFromBytes(
 //------------------------------------------------------------------------------
 /*!
  * @brief      Set a target value from a range of bits in another value.
- *
  * @tparam     TS The source value type.
  * @tparam     TD The destination value type.
- *
  * @param[in]  source      The source value from which to set the destination
  *                         value.
  * @param[in]  offset      The offset of the least significant bit.
@@ -360,11 +406,10 @@ public:
   /*!
    * @brief Mark the beginning of a block to enabled automatic word alignment
    *        when it ends.
+   * @param[in] wordSize The word size on which to align the block.
    *
    * This should be called before any values are read from the block. When all
    * values have been read, call EndBlock().
-   *
-   * @param[in] wordSize The word size on which to align the block.
    */
   void BeginBlock(size_t wordSize = BYTES_PER_HEADER_WORD)
   {
@@ -401,7 +446,16 @@ public:
     this->Index = this->blockData.Index + length;
   }
   //@}
-
+  
+  /*!
+   * @brief Reset the index to the beginning of the current block and remove it.
+   */
+  void ResetBlock()
+  {
+    auto blockData = this->Blocks.pop_back();
+    this->Index = blockData.Index;
+  }
+  
   //! @brief Get the number of bytes remaining from the current index to the end
   //         of the data as defined by the length.
   size_t GetRemainingLength()
@@ -434,18 +488,15 @@ public:
   }
 
   /*!
-   * @brief Set values from bit sequences that do not align with bytes.
-   *
-   * This is a wrapper around SetFromBits with automatic deduction of the
-   * smallest type required to hold the number of bytes to process.
-   *
+   * @brief  Set values from bit sequences that do not align with bytes.
    * @tparam numberOfBytes   The number of bytes to consume from the input data.
    *                         Values larger than 4 are not supported.
    * @tparam PassthroughArgs All arguments to pass through to SetFromBits.
    *
-   * @param[in,out] passthroughArgs All remaining arguments.
+   * This is a wrapper around SetFromBits with automatic deduction of the
+   * smallest type required to hold the number of bytes to process.
    */
-
+	// TODO: add insert to fail if numberOfBytes is greater than 8
   template <uint8_t numberOfBytes, typename... PassthroughArgs>
   void SetFromBits(PassthroughArgs... passthroughArgs)
   {
@@ -576,6 +627,7 @@ public:
   //! @brief Get the number of distances in each firing group.
   uint8_t GetDistanceCount const ()
   {
+    // The "mask" is actually a count if IsDsetMask is false.
     auto mask = this->GetDsetMask();
     return (this->IsDsetMask()) ? SET_BITS_IN_BYTE[mask] : mask;
 
@@ -1243,8 +1295,27 @@ void VelodyneAdvancedPacketInterpreter::ProcessPacket(unsigned char const * data
     return;
   }
 
-  auto pseq = payload.GetHeader().GetPseq();
-  auto iset = payload.GetHeader().GetIset();
+
+  PayloadHeader payloadHeader = payload.GetHeader();
+  auto pseq = payloadHeader.GetPseq();
+  auto iset = payloadHeader.GetIset();
+
+  // TODO: make this configurable via the user interface
+  uint8_t distanceIndex;
+  DistanceType distanceType;
+  if (payloadHeader.IsDsetMask())
+  {
+    auto dsetMask = payloadHeader.GetDsetMask();
+    distanceType = firstSetBit(dsetMask);
+    distanceIndex = indexOfBit(dsetMask, distanceType);
+  }
+  else
+  {
+    distanceIndex = 0;
+    distanceType = DSET_FIRST;
+
+  }
+  auto distanceTypeString = toString(distanceType);
 
   for (auto firingGroup : payload.GetFiringGroups())
   {
@@ -1287,50 +1358,46 @@ void VelodyneAdvancedPacketInterpreter::ProcessPacket(unsigned char const * data
       auto statusString = ToString(status);
 
 
+      // Only one distance type is displayed but there are multiple here.
+      auto firingReturn = firing.GetReturns[distanceIndex];
+      double distance = firingReturn.GetDistance();
+
       // TODO
-      // The distance to display must be selected here. Currently this just uses
-      // the first return.
-      for (auto firingReturn : firing.GetReturns())
-      {
-        double distance = firingReturn.GetDistance();
+      // No information has been received yet concerning how to actually
+      // determine the distance from the returns.
+      double x = distance * cosTheta * sinPhi;
+      double y = distance * sinTheta * sinPhi;
+      double z = distance * cosphi;
 
-        // TODO
-        // No information has been received yet concerning how to actually
-        // determine the distance from the returns.
-        double x = distance * cosTheta * sinPhi;
-        double y = distance * sinTheta * sinPhi;
-        double z = distance * cosphi;
+      // TODO
+      // Determine which information is relevent and update accordingly.
+      this->Points->InsertNextPoint({x,y,z});
+      this->INFO_Xs->InsertNextValue(x);
+      this->INFO_Ys->InsertNextValue(y);
+      this->INFO_Zs->InsertNextValue(z);
 
-        // TODO
-        // Determine which information is relevent and update accordingly.
-        this->Points->InsertNextPoint({x,y,z});
-        this->MD_ComponentsX->InsertNextValue(x);
-        this->MD_ComponentsY->InsertNextValue(y);
-        this->MD_ComponentsZ->InsertNextValue(z);
-        this->MD_Pseqs->InsertNextValue(pseq);
-        this->MD_ChannelNumbers->InsertNextValue(channelNumber);
-        this->MD_FiringModes->InsertNextValue(firingModeString);
-        this->MD_Powers->InsertNextValue(power);
-        this->MD_Noises->InsertNextValue(noise);
-        this->MD_Statuses->InsertNextValue(statusString);
+      // TODO Replace these with the angles for the sensor after calibration.
+      this->INFO_VerticalAngles->InsertNextValue(verticalAngle);
+      this->INFO_Azimuths->InsertNextValue(azimuth);
 
-        // TODO
-        // Define distanceTypeString.
-        this->MD_Distances->InsertNextValue(distanceTypeString);
+      this->INFO_Pseqs->InsertNextValue(pseq);
+      this->INFO_ChannelNumbers->InsertNextValue(channelNumber);
+      this->INFO_FiringModeStrings->InsertNextValue(firingModeString);
+      this->INFO_Powers->InsertNextValue(power);
+      this->INFO_Noises->InsertNextValue(noise);
+      this->INFO_StatusStrings->InsertNextValue(statusString);
+      this->INFO_DistanceTypeStrings->InsertNextValue(distanceTypeString);
 
 //! @brief Convenience macro for setting intensity values
 #define INSERT_INTENSITY(my_array, iset_flag) \
-        this->MD_ ## my_array->InsertNextVaue((iset & (ISET_ ## iset_flag)) ? firingReturn.GetIntensity((ISET_ ## iset_flag)) : 0);
+      this->INFO_ ## my_array->InsertNextVaue((iset & (ISET_ ## iset_flag)) ? firingReturn.GetIntensity((ISET_ ## iset_flag)) : -1);
 
-        // Add additional values here when ISET is expanded in future versions.
-        INSERT_INTENSITY(Reflectivities, REFLECTIVITY)
-        INSERT_INTENSITY(Intensities, INTENSITY)
-        INSERT_INTENSITY(Confidences, CONFIDENCE)
+      // TODO: Make the inclusion of these columns fully optionally at runtime.
 
-        // TODO
-        // Remove this once the desired distance is correctly selected.
-        break;
-      }
+      // Add additional values here when ISET is expanded in future versions.
+      INSERT_INTENSITY(Reflectivities, REFLECTIVITY)
+      INSERT_INTENSITY(Intensities, INTENSITY)
+      INSERT_INTENSITY(Confidences, CONFIDENCE)
     }
   }
 }
@@ -1354,6 +1421,62 @@ bool VelodyneAdvancedPacketInterpreter::IsLidarPacket(unsigned char const * data
   //
 }
 
+//----------------------------------------------------------------------------
+/*!
+ * @brief         Initialize an array.
+ * @tparam        T                The type of the array. This is templated so
+ *                                 that the caller does not need to consider the
+ *                                 type, which may change with the
+ *                                 specification.
+ * @param[in,out] array            The input array.
+ * @param[in]     numberOfElements The number of elements that the array must be
+ *                                 able to hold after initialization.
+ */
+template <typename T>
+inline
+void InitializeDataArray(
+  T & array,
+  char const * name,
+  vtkIdType numberOfElements
+)
+{
+  array = T::New();
+  array->Allocate(numberOfElements);
+  array->SetName(name);
+}
+
+//----------------------------------------------------------------------------
+/*!
+ * @brief         Initialize an array for datapoint attributes and add it to the
+ *                polydata.
+ * @tparam        T                The type of the array. This is templated so
+ *                                 that the caller does not need to consider the
+ *                                 type, which may change with the
+ *                                 specification.
+ * @param[in,out] array            The input array.
+ * @param[in]     numberOfElements The number of elements that the array must be
+ *                                 able to hold after initialization.
+ * @param[out]    polyData         The polydata instance to which the array
+ *                                 should be added.
+ * 
+ * This is just a convencience wrapper around InitializeDataArray.
+ */
+template <typename T>
+inline
+void InitializeDataArrayForPolyData(
+  T & array,
+  char const * name,
+  vtkIdType numberOfElements,
+  vtkPolyData * polyData
+)
+{
+  InitializeDataArray(array, name, numberOfElements);
+  if (polyData)
+  {
+    polyData->GetPointData()->AddArray(array);
+  }
+}
+
 //------------------------------------------------------------------------------
 vtkSmartPointer<vtkPolyData> VelodyneAdvancedPacketInterpreter::CreateNewEmptyFrame(vtkIdType numberOfPoints)
 {
@@ -1363,22 +1486,14 @@ vtkSmartPointer<vtkPolyData> VelodyneAdvancedPacketInterpreter::CreateNewEmptyFr
   vtkNew<vtkPoints> points;
   points->SetDataTypeToFloat();
   // The frame size must be large enough to contain the requested number of
-  // poins.
+  // points.
   this->FrameSize = std::max(
     this->FrameSize,
     static_cast<decltype(this->FrameSize)>(numberOfPoints)
   );
-  points->Allocate(this->FrameSize);
   if (this->FrameSize > 0)
   {
-
-    // Align the packet data to the word size to padding if present.
-    auto finalIndex = packetData.GetIndex();
-    auto wordRemainder = (finalIndex - initialIndex) % BYTES_PER_HEADER_WORD;
-    if (wordRemainder > 0)
-    {
-      packetData.SetIndex(finalIndex + (BYTES_PER_HEADER_WORD - wordRemainder));
-    }
+    points->Allocate(this->FrameSize);
     points->SetNumberOfPoints(numberOfPoints);
   }
 
@@ -1399,30 +1514,40 @@ vtkSmartPointer<vtkPolyData> VelodyneAdvancedPacketInterpreter::CreateNewEmptyFr
   // Use a template here to make this section of code type-agnostic. The types
   // of the different datapoint attributes may change in the future with
   // evolving packet specifications.
-  InitializeDataArrayForPolyData(this->ComponentsX, "X", numberOfPoints, polyData);
-  InitializeDataArrayForPolyData(this->ComponentsY, "Y", numberOfPoints, polyData);
-  InitializeDataArrayForPolyData(this->ComponentsZ, "Z", numberOfPoints, polyData);
-  InitializeDataArrayForPolyData(this->SpotRows, "row", numberOfPoints, polyData);
-  InitializeDataArrayForPolyData(this->SpotColumns, "column", numberOfPoints, polyData);
-  InitializeDataArrayForPolyData(this->Timestamps, "timestamp", numberOfPoints, polyData);
-  InitializeDataArrayForPolyData(this->TOFs, "tof", numberOfPoints, polyData);
-  InitializeDataArrayForPolyData(this->Reflectivities, "reflectivity", numberOfPoints, polyData);
-#ifdef ADD_OPSYS_EXTRA_INFO
-  InitializeDataArrayForPolyData(this->RealTOFs, "real_tof", numberOfPoints, polyData);
-  InitializeDataArrayForPolyData(this->Radii, "radius", numberOfPoints, polyData);
-#endif // ADD_OPSYS_EXTRA_INFO
 
-  // Idem for the frame indices.
-  InitializeDataArrayForPolyData(this->FrameIndices, "frame_index", numberOfPoints, polyData);
+// Convencience macro
+#define INIT_INFO_ARR(arr_name, disp_name) \
+  InitializeDataArrayForPolyData(this->INFO_ ## arr_name, disp_name, numberOfPoints, polyData);
+
+  INIT_INFO_ARR(Xs                  , "X")
+  INIT_INFO_ARR(Ys                  , "Y")
+  INIT_INFO_ARR(Zs                  , "Z")
+  INIT_INFO_ARR(Azimuths            , "Azimuth")
+  INIT_INFO_ARR(VerticalAngles      , "Vertical Angle")
+  INIT_INFO_ARR(DistanceTypeStrings , "Distance Type")
+  INIT_INFO_ARR(FiringModeStrings   , "FiringMode")
+  INIT_INFO_ARR(StatusStrings       , "Status")
+  INIT_INFO_ARR(Intensities         , "Intensity")
+  INIT_INFO_ARR(Confidences         , "Confidence")
+  INIT_INFO_ARR(Reflectivities      , "Reflectivity")
+  INIT_INFO_ARR(ChannelNumbers      , "Logical Channel Number")
+  INIT_INFO_ARR(Powers              , "Power")
+  INIT_INFO_ARR(Noises              , "Noise")
+  INIT_INFO_ARR(Pseqs               , "Packet Sequence Number")
 
   return polyData;
 }
 
 //------------------------------------------------------------------------------
 // TODO: Revisit this if the frequency still needs to be calculated here.
-// bool VelodyneAdvancedPacketInterpreter::SplitFrame(bool force)
-// {
-// }
+bool VelodyneAdvancedPacketInterpreter::SplitFrame(bool force)
+{
+  this->FrameSize = std::max(
+    this->FrameSize,
+    static_cast<decltype(this->FrameSize)>(this->Points->size())
+  );
+  return this->LidarPacketInterpretor::SplitFrame(force);
+}
 
 //------------------------------------------------------------------------------
 // void VelodyneAdvancedPacketInterpreter::ResetCurrentFrame()

@@ -19,6 +19,7 @@ class VelodyneAdvancedPacketInterpreter : public LidarPacketInterpreter
 {
 private:
   FrameTracker CurrentFrameTracker;
+  size_t FrameSize = 0;
 
 public:
   VelodyneAdvancedPacketInterpreter();
@@ -39,22 +40,25 @@ public:
   void PreProcessPacket(unsigned char const * data, unsigned int dataLength, bool &isNewFrame, int &framePositionInPacket) override;
 
   vtkSmartPointer<vtkPoints> Points;
-  vtkSmartPointer<vtkDoubleArray> PointsX;
-  vtkSmartPointer<vtkDoubleArray> PointsY;
-  vtkSmartPointer<vtkDoubleArray> PointsZ;
-  vtkSmartPointer<vtkUnsignedCharArray> Intensity;
-  vtkSmartPointer<vtkUnsignedCharArray> LaserId;
-  vtkSmartPointer<vtkUnsignedShortArray> Azimuth;
-  vtkSmartPointer<vtkDoubleArray> Distance;
-  vtkSmartPointer<vtkUnsignedShortArray> DistanceRaw;
-  vtkSmartPointer<vtkDoubleArray> Timestamp;
-  vtkSmartPointer<vtkDoubleArray> VerticalAngle;
-  vtkSmartPointer<vtkUnsignedIntArray> RawTime;
-  vtkSmartPointer<vtkIntArray> IntensityFlag;
-  vtkSmartPointer<vtkIntArray> DistanceFlag;
-  vtkSmartPointer<vtkUnsignedIntArray> Flags;
-  vtkSmartPointer<vtkIdTypeArray> DualReturnMatching;
-  vtkSmartPointer<vtkDoubleArray> SelectedDualReturn;
+
+  vtkSmartPointer<vtkDoubleArray>         INFO_Xs;
+  vtkSmartPointer<vtkDoubleArray>         INFO_Ys;
+  vtkSmartPointer<vtkDoubleArray>         INFO_Zs;
+  vtkSmarkPointer<vtkDoubleArray>         INFO_Azimuths;
+  vtkSmarkPointer<vtkDoubleArray>         INFO_VerticalAngles;
+
+  vtkSmartPointer<vtkIntArray>            INFO_Confidences;
+  vtkSmartPointer<vtkIntArray>            INFO_Intensities;
+  vtkSmartPointer<vtkIntArray>            INFO_Reflectivities;
+  
+  vtkSmartPointer<vtkStringArray>         INFO_DistanceTypeStrings;
+  vtkSmartPointer<vtkStringArray>         INFO_FiringModeStrings;
+  vtkSmartPointer<vtkStringArray>         INFO_StatusStrings;
+
+  vtkSmartPointer<vtkUnsignedCharArray>   INFO_ChannelNumbers;
+  vtkSmartPointer<vtkUnsignedCharArray>   INFO_Noises;
+  vtkSmartPointer<vtkUnsignedCharArray>   INFO_Powers;
+  vtkSmartPointer<vtkUnsignedIntArray>    INFO_Pseqs;
 };
 
 #endif // VELODYNE_ADVANCED_PACKET_INTERPRETOR_H
