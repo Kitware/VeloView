@@ -1099,6 +1099,12 @@ public:
     auto dataLength = this->FiringPtr->FiringGroupPtr->PayloadPtr->GetHeader().GetNumberOfBytesPerFiringReturn();
     packetDataHandle.CopyBytes(this->Data, dataLength);
   }
+
+  FiringReturn & operator=(FiringReturn const & other)
+  {
+    this->FiringPtr = other.FiringPtr;
+    this->Data = other.Data;
+  }
 };
 
 //------------------------------------------------------------------------------
@@ -1151,6 +1157,7 @@ public:
 
   Firing & operator=(Firing const & other)
   {
+    this->FiringGroupPtr = other.FiringGroupPtr;
     this->Header = other.Header;
     this->Returns = other.Returns;
     for (auto retrn : this->Returns)
@@ -1221,6 +1228,7 @@ public:
 
   FiringGroup & operator=(FiringGroup const & other)
   {
+    this->PayloadPtr = other.PayloadPtr;
     this->Header = other.Header;
     this->Firings = other.Firings;
     for (auto firing : this->Firings)
