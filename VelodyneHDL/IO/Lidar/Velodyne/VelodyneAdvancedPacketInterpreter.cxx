@@ -378,7 +378,8 @@ void setFromBits(TS & source, uint8_t offset, uint8_t number, TD & destination)
  * methods to set a value from a single byte, several bytes, or single- and
  * multi-byte ranges of bits.
  */
-template <size_t WordSize = BYTES_PER_HEADER_WORD>
+//template <size_t WordSize = BYTES_PER_HEADER_WORD>
+template <size_t WordSize>
 class PacketDataHandle
 {
 private:
@@ -702,7 +703,7 @@ public:
    * @brief         Construct a PayloadHeader.
    * @param[in,out] packetDataHandle The packet data from which to parse the header.
    */
-  PayloadHeader(PacketDataHandle<> & packetDataHandle)
+  PayloadHeader(PacketDataHandle<BYTES_PER_HEADER_WORD> & packetDataHandle)
   {
     // For word alignment.
     packetDataHandle.BeginBlock();
@@ -789,7 +790,7 @@ public:
    * @param[in,out] i    The offset to the start of the header. The offset will
    *                     be advanced as the data is consumed.
    */
-  ExtensionHeader(PacketDataHandle<> & packetDataHandle)
+  ExtensionHeader(PacketDataHandle<BYTES_PER_HEADER_WORD> & packetDataHandle)
   {
     packetDataHandle.SetFromByte(this->Hlen);
 
@@ -901,7 +902,7 @@ public:
    * @param[in,out] i    The offset to the start of the header. The offset will
    *                     be advanced as the data is consumed.
    */
-  FiringGroupHeader(PacketDataHandle<> & packetDataHandle)
+  FiringGroupHeader(PacketDataHandle<BYTES_PER_HEADER_WORD> & packetDataHandle)
   {
     packetDataHandle.SetFromBytes(this->Toffs);
     packetDataHandle.SetFromBits<1>(
@@ -968,7 +969,7 @@ public:
    * @param[in,out] i    The offset to the start of the header. The offset will
    *                     be advanced as the data is consumed.
    */
-  FiringHeader(PacketDataHandle<> & packetDataHandle)
+  FiringHeader(PacketDataHandle<BYTES_PER_HEADER_WORD> & packetDataHandle)
   {
     packetDataHandle.SetFromByte(this->Lcn);
     packetDataHandle.SetFromBits<1>(
@@ -1079,7 +1080,7 @@ public:
     return this->operator[]<T>(i);
   }
 
-  FiringReturn(Firing<loadData> const & firing, PacketDataHandle<> & packetDataHandle)
+  FiringReturn(Firing<loadData> const & firing, PacketDataHandle<BYTES_PER_HEADER_WORD> & packetDataHandle)
     : FiringRef {firing}
   {
     auto dataLength = this->FiringRef.FiringGroupRef.PayloadRef.GetHeader().GetNumberOfBytesPerFiringReturn();
@@ -1115,7 +1116,7 @@ public:
   //! @brief Reference to this firing's group.
   FiringGroup<loadData> const & FiringGroupRef;
 
-  Firing(FiringGroup<loadData> const & firingGroup, PacketDataHandle<> & packetDataHandle)
+  Firing(FiringGroup<loadData> const & firingGroup, PacketDataHandle<BYTES_PER_HEADER_WORD> & packetDataHandle)
     : Header {packetDataHandle}
     , FiringGroupRef {firingGroup}
   {
@@ -1171,7 +1172,7 @@ public:
    * @param[in]     dataLength The byte length of the packet data.
    * @param[in,out] i          The offset to the data.
    */
-  FiringGroup(Payload<loadData> const & payload, PacketDataHandle<> & packetDataHandle)
+  FiringGroup(Payload<loadData> const & payload, PacketDataHandle<BYTES_PER_HEADER_WORD> & packetDataHandle)
     : PayloadRef {payload}
   {
     // For word alignment.
@@ -1296,7 +1297,7 @@ public:
     }
   }
 
-  Payload(PacketDataHandle<> & packetDataHandle)
+  Payload(PacketDataHandle<BYTES_PER_HEADER_WORD> & packetDataHandle)
     : Header {packetDataHandle}
   {
     // Check for extension headers.
@@ -1356,7 +1357,7 @@ void VelodyneAdvancedPacketInterpreter::ProcessPacket(unsigned char const * data
 {
   // TODO: check how to handle startPosition
   // PacketDataHandle<> packetDataHandle = PacketDataHandle(data + startPosition, dataLength - startPosition, 0);
-  PacketDataHandle<> packetDataHandle = PacketDataHandle<>(data, dataLength, 0);
+  PacketDataHandle<BYTES_PER_HEADER_WORD> packetDataHandle = PacketDataHandle<BYTES_PER_HEADER_WORD>(data, dataLength, 0);
   Payload<true> payload {packetDataHandle};
 
   // The packet classes throw length errors if the packet does not contain the
@@ -1498,7 +1499,7 @@ bool VelodyneAdvancedPacketInterpreter::IsLidarPacket(unsigned char const * data
   // TODO
   // Determine the best way to check if a packet contains lidar data. Currently
   // this just checks that the packet data contains a plausible payload header.
-  PacketDataHandle<> packetDataHandle = PacketDataHandle<BYTES_PER_HEADER_WORD>(data, dataLength, 0);
+  PacketDataHandle<BYTES_PER_HEADER_WORD> packetDataHandle = PacketDataHandle<BYTES_PER_HEADER_WORD>(data, dataLength, 0);
   try
   {
     PayloadHeader payloadHeader = PayloadHeader(packetDataHandle);
@@ -1649,7 +1650,7 @@ void VelodyneAdvancedPacketInterpreter::ResetCurrentFrame()
 //------------------------------------------------------------------------------
 void VelodyneAdvancedPacketInterpreter::PreProcessPacket(unsigned char const * data, unsigned int dataLength, bool & isNewFrame, int & framePositionInPacket)
 {
-  PacketDataHandle<> packetDataHandle = PacketDataHandle<>(data, dataLength, 0);
+  PacketDataHandle<BYTES_PER_HEADER_WORD> packetDataHandle = PacketDataHandle<BYTES_PER_HEADER_WORD>(data, dataLength, 0);
   Payload<false> payload = Payload<false>(packetDataHandle);
   std::vector<size_t> newFrameBoundaries {0};
 
