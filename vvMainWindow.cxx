@@ -260,6 +260,14 @@ private:
     window->tabifyDockWidget(this->Ui.spreadSheetDock, this->Ui.informationDock);
     window->tabifyDockWidget(this->Ui.spreadSheetDock, this->Ui.memoryInspectorDock);
 
+    // hide docker by default
+    this->Ui.pipelineBrowserDock->hide();
+    this->Ui.propertiesPanelDock->hide();
+    this->Ui.colorMapEditorDock->hide();
+    this->Ui.spreadSheetDock->hide();
+    this->Ui.informationDock->hide();
+    this->Ui.memoryInspectorDock->hide();
+
     // Setup the View menu. This must be setup after all toolbars and dockwidgets
     // have been created.
     pqParaViewMenuBuilders::buildViewMenu(*this->Ui.menuViews, *window);
