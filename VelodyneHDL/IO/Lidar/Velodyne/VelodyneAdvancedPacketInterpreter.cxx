@@ -1230,10 +1230,11 @@ public:
   {
     this->PayloadPtr = other.PayloadPtr;
     this->Header = other.Header;
-    this->Firings = other.Firings;
-    for (auto firing : this->Firings)
+    // this->Firings = other.Firings;
+    for (auto firing : other.Firings)
     {
-      firing.FiringGroupPtr = this;
+      this->Firings.push_back(firing);
+      this->Firings.back().FiringGroupPtr = this;
     }
   }
 };
