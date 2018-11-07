@@ -1574,7 +1574,7 @@ void InitializeDataArrayForPolyData(
 }
 
 //------------------------------------------------------------------------------
-vtkSmartPointer<vtkPolyData> VelodyneAdvancedPacketInterpreter::CreateNewEmptyFrame(vtkIdType numberOfPoints)
+vtkSmartPointer<vtkPolyData> VelodyneAdvancedPacketInterpreter::CreateNewEmptyFrame(vtkIdType numberOfPoints, vtkIdType prereservedNumberOfPoints)
 {
   vtkSmartPointer<vtkPolyData> polyData = vtkSmartPointer<vtkPolyData>::New();
 
