@@ -706,6 +706,7 @@ public:
   PayloadHeader(PacketDataHandle<BYTES_PER_HEADER_WORD> & packetDataHandle)
   {
     // For word alignment.
+    DEBUG_MSG("Payload Header: " << +this->Ver << ", " << +this->Hlen)
     packetDataHandle.BeginBlock();
     packetDataHandle.SetFromBits<1>(
       4, 4, this->Ver,
@@ -1194,6 +1195,12 @@ public:
     // For word alignment.
     packetDataHandle.EndBlock();
   }
+
+  FiringGroup & operator=(FiringGroup const & other)
+  {
+    this->Header = other.Header();
+    this->Firings = other.Firings;
+  }
 };
 
 //------------------------------------------------------------------------------
@@ -1312,7 +1319,7 @@ public:
     // The rest of the data should be filled with firing groups.
     while (packetDataHandle.GetRemainingLength() > 0)
     {
-      FiringGroup<loadData> firingGroup = FiringGroup<loadData>((* this), packetDataHandle);
+      FiringGroup<loadData> firingGroup((* this), packetDataHandle);
       this->FiringGroups.push_back(firingGroup);
     }
   }
