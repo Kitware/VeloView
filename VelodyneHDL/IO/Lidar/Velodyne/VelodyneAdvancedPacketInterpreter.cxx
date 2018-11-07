@@ -1392,7 +1392,7 @@ void VelodyneAdvancedPacketInterpreter::ProcessPacket(unsigned char const * data
   PacketDataHandle<BYTES_PER_HEADER_WORD> packetDataHandle = PacketDataHandle<BYTES_PER_HEADER_WORD>(data, dataLength, 0);
 
   Payload<true> payload {packetDataHandle};
-
+/*
   // The packet classes throw length errors if the packet does not contain the
   // expected length.
   try
@@ -1408,6 +1408,7 @@ void VelodyneAdvancedPacketInterpreter::ProcessPacket(unsigned char const * data
   {
     return;
   }
+*/
 
 
   PayloadHeader payloadHeader = payload.GetHeader();
