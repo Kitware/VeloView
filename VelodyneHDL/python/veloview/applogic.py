@@ -2413,10 +2413,10 @@ def fastRendererChanged():
     source = getReader() or getSensor()
     rep = smp.Show(source)
 
-    if app.actions['actionEnableFastRenderering'].isChecked():
-        rep.Respresentation = 'Point Cloud'
+    if app.actions['actionFastRenderer'].isChecked():
+        rep.Representation = 'Point Cloud'
     else:
-        rep.Respresentation = 'Surface'
+        rep.Representation = 'Surface'
 
     # Workaround to force the refresh for all the views
     seekForward()
