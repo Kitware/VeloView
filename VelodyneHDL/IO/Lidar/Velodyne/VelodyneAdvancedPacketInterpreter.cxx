@@ -1230,12 +1230,12 @@ public:
   {
     this->PayloadPtr = other.PayloadPtr;
     this->Header = other.Header;
-    // this->Firings = other.Firings;
-    for (auto firing : other.Firings)
-    {
-      this->Firings.push_back(firing);
-      this->Firings.back().FiringGroupPtr = this;
-    }
+    this->Firings = other.Firings;
+    // for (auto firing : other.Firings)
+    // {
+    //   this->Firings.push_back(firing);
+    //   this->Firings.back().FiringGroupPtr = this;
+    // }
   }
 };
 
@@ -1695,7 +1695,7 @@ void VelodyneAdvancedPacketInterpreter::PreProcessPacket(unsigned char const * d
 {
   PacketDataHandle<BYTES_PER_HEADER_WORD> packetDataHandle = PacketDataHandle<BYTES_PER_HEADER_WORD>(data, dataLength, 0);
   Payload<false> payload = Payload<false>(packetDataHandle);
-  std::vector<size_t> newFrameBoundaries {0};
+  std::vector<size_t> newFrameBoundaries;
 
   // TODO
   // Review how this is supposed to work. A packet contains a single payload so
