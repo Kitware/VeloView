@@ -1122,10 +1122,10 @@ private:
   //! @brief Firing header.
   FiringHeader Header;
 
+public:
   //! @brief Returns in this firing.
   std::vector<FiringReturn<loadData>> Returns;
 
-public:
   //@{
   //! @brief Getters.
   GET_CONST_REF(Header);
@@ -1182,10 +1182,10 @@ private:
   //! @brief Firing group header.
   FiringGroupHeader Header;
 
+public:
   //! @brief Firings.
   std::vector<Firing<loadData>> Firings;
 
-public:
   //@{
   //! @brief Getters.
   GET_CONST_REF(Header);
@@ -1303,10 +1303,10 @@ private:
   //! @brief Variable number of extension headers.
   std::vector<ExtensionHeader<loadData>> ExtensionHeaders;
 
+public:
   //! @brief Variable number of firing groups.
   std::vector<FiringGroup<loadData>> FiringGroups;
 
-public:
   //@{
   //! @brief Getters.
   GET_CONST_REF(Header);
@@ -1444,7 +1444,7 @@ void VelodyneAdvancedPacketInterpreter::ProcessPacket(unsigned char const * data
   }
   auto distanceTypeString = toString(distanceType);
 
-  for (auto firingGroup : payload.GetFiringGroups())
+  for (auto firingGroup : payload.FiringGroups)
   {
     // Detect frame changes in firing groups.
     FrameTracker frameTracker = FrameTracker(firingGroup);
@@ -1461,7 +1461,7 @@ void VelodyneAdvancedPacketInterpreter::ProcessPacket(unsigned char const * data
     // double verticalAngle = firingGroup.GetVdfl();
     auto azimuth = firingGroupHeader.GetAzm();
 
-    auto firings = firingGroup.GetFirings();
+    auto firings = firingGroup.Firings;
     size_t numberOfFirings = firings.size();
 
     for (size_t i = 0; i < numberOfFirings; ++i)
@@ -1491,7 +1491,7 @@ void VelodyneAdvancedPacketInterpreter::ProcessPacket(unsigned char const * data
 
       // Only one distance type is displayed but there may be multiple in the
       // packet.
-      auto firingReturn = firing.GetReturns()[distanceIndex];
+      auto firingReturn = firing.Returns[distanceIndex];
       double distance;
 
       double position[3];
