@@ -568,7 +568,7 @@ public:
    */
   void CopyBytes(std::vector<uint8_t> & data, size_t length)
   {
-    data.reserve(length);
+    data.resize(length);
     std::memcpy(data.data(), this->Data + this->Index, length);
     this->Index += length;
   }
