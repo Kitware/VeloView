@@ -718,7 +718,6 @@ public:
   PayloadHeader(PacketDataHandle<BYTES_PER_HEADER_WORD> & packetDataHandle)
   {
     // For word alignment.
-    DEBUG_MSG("here")
     packetDataHandle.BeginBlock();
     packetDataHandle.SetFromBits<1>(
       4, 4, this->Ver,
@@ -728,6 +727,7 @@ public:
     // Use GetHlen() to get the count in bytes.
     if (this->GetHlen() > packetDataHandle.GetRemainingLength())
     {
+      packetDataHandle.ResetBlock();
       throw std::length_error("data does not contain enough bytes for payload header");
     }
 
@@ -1029,13 +1029,13 @@ public:
   //@}
 
   //! @brief Reference to this return's firing.
-  Firing<loadData> const & FiringRef;
+  Firing<loadData> const * FiringPtr;
 
   //! @brief Templated subscript operator for accessing distance and intensities.
   template <typename T>
   T operator[](const int i) const
   {
-    PayloadHeader const & payloadHeader = this->FiringRef.FiringGroupRef.PayloadRef.GetHeader();
+    PayloadHeader const & payloadHeader = this->FiringPtr->FiringGroupPtr->PayloadPtr->GetHeader();
     // Range check.
     if (i < 0 || i >= payloadHeader.GetIntensityCount())
     {
@@ -1071,7 +1071,7 @@ public:
   {
     // Check that the value is actually present otherwise the calculate index
     // will yield a different value or end up out of range.
-    if (! (this->FiringRef.FiringGroupRef.PayloadRef.GetHeader().GetIset() & type))
+    if (! (this->FiringPtr->FiringGroupPtr->PayloadPtr->GetHeader().GetIset() & type))
     {
       throw std::out_of_range("requested intensity type is not in the intensity set");
     }
@@ -1087,16 +1087,16 @@ public:
     if (mask)
     {
       mask--;
-      PayloadHeader const & payloadHeader = this->FiringRef.FiringGroupRef.PayloadRef.GetHeader();
+      PayloadHeader const & payloadHeader = this->FiringPtr->FiringGroupPtr->PayloadPtr->GetHeader();
       i += SET_BITS_IN_BYTE[payloadHeader.GetIset() & mask];
     }
     return this->operator[]<T>(i);
   }
 
   FiringReturn(Firing<loadData> const & firing, PacketDataHandle<BYTES_PER_HEADER_WORD> & packetDataHandle)
-    : FiringRef {firing}
+    : FiringPtr (& firing)
   {
-    auto dataLength = this->FiringRef.FiringGroupRef.PayloadRef.GetHeader().GetNumberOfBytesPerFiringReturn();
+    auto dataLength = this->FiringPtr->FiringGroupPtr->PayloadPtr->GetHeader().GetNumberOfBytesPerFiringReturn();
     packetDataHandle.CopyBytes(this->Data, dataLength);
   }
 };
@@ -1127,15 +1127,15 @@ public:
   //@}
 
   //! @brief Reference to this firing's group.
-  FiringGroup<loadData> const & FiringGroupRef;
+  FiringGroup<loadData> const * FiringGroupPtr;
 
   Firing(FiringGroup<loadData> const & firingGroup, PacketDataHandle<BYTES_PER_HEADER_WORD> & packetDataHandle)
-    : Header {packetDataHandle}
-    , FiringGroupRef {firingGroup}
+    : Header (packetDataHandle)
+    , FiringGroupPtr (& firingGroup)
   {
     if (loadData)
     {
-      auto dcount = this->FiringGroupRef.PayloadRef.GetHeader().GetDistanceCount();
+      auto dcount = this->FiringGroupPtr->PayloadPtr->GetHeader().GetDistanceCount();
       this->Returns.reserve(dcount);
       for (decltype(dcount) j = 0; j < dcount; ++j)
       {
@@ -1144,8 +1144,18 @@ public:
     }
     else
     {
-      auto bytesPerFiring = this->FiringGroupRef.PayloadRef.GetHeader().GetNumberOfBytesPerFiring();
+      auto bytesPerFiring = this->FiringGroupPtr->PayloadPtr->GetHeader().GetNumberOfBytesPerFiring();
       packetDataHandle.SkipBytes(bytesPerFiring);
+    }
+  }
+
+  Firing & operator=(Firing const & other)
+  {
+    this->Header = other.Header;
+    this->Returns = other.Returns;
+    for (auto retrn : this->Returns)
+    {
+      retrn.FiringPtr = this;
     }
   }
 };
@@ -1176,7 +1186,7 @@ public:
   //@}
 
   //! @brief Reference to the payload containing this firing group.
-  Payload<loadData> const & PayloadRef;
+  Payload<loadData> const * PayloadPtr;
 
   /*!
    * @param[in]     payload    The payload that contains this firing group.
@@ -1185,18 +1195,16 @@ public:
    * @param[in,out] i          The offset to the data.
    */
   FiringGroup(Payload<loadData> const & payload, PacketDataHandle<BYTES_PER_HEADER_WORD> & packetDataHandle)
-    : PayloadRef {payload}
+    : PayloadPtr (& payload)
   {
     // For word alignment.
-    DEBUG_MSG("here")
     packetDataHandle.BeginBlock();
 
     // Group headers are padded to 32-bit boundaries. Use GLEN to advance the
     // index correctly.
-    DEBUG_MSG("here")
     packetDataHandle.BeginBlock();
     this->Header = FiringGroupHeader(packetDataHandle);
-    packetDataHandle.EndBlock(this->PayloadRef.GetHeader().GetGlen());
+    packetDataHandle.EndBlock(this->PayloadPtr->GetHeader().GetGlen());
 
     auto fcnt = this->Header.GetFcnt();
     this->Firings.reserve(fcnt);
@@ -1213,8 +1221,12 @@ public:
 
   FiringGroup & operator=(FiringGroup const & other)
   {
-    this->Header = other.Header();
+    this->Header = other.Header;
     this->Firings = other.Firings;
+    for (auto firing : this->Firings)
+    {
+      firing.FiringGroupPtr = this;
+    }
   }
 };
 
@@ -1378,24 +1390,24 @@ void VelodyneAdvancedPacketInterpreter::ProcessPacket(unsigned char const * data
   // TODO: check how to handle startPosition
   // PacketDataHandle packetDataHandle = PacketDataHandle(data + startPosition, dataLength - startPosition, 0);
   PacketDataHandle<BYTES_PER_HEADER_WORD> packetDataHandle = PacketDataHandle<BYTES_PER_HEADER_WORD>(data, dataLength, 0);
+
   Payload<true> payload {packetDataHandle};
 
-    payload = Payload<true>(packetDataHandle);
   // The packet classes throw length errors if the packet does not contain the
   // expected length.
-  // try
-  // {
-  //   payload = Payload<true>(packetDataHandle);
-  // }
-  // // Length errors are thrown if the packet data does not conform to the
-  // // expected lengths. Returning here is basically the same thing as returning
-  // // at the start of this function if  IsLidarPacket() returns false. The
-  // // difference is that here the full data is checked instead of just the
-  // // header.
-  // catch (std::length_error const & e)
-  // {
-  //   return;
-  // }
+  try
+  {
+    payload = Payload<true>(packetDataHandle);
+  }
+  // Length errors are thrown if the packet data does not conform to the
+  // expected lengths. Returning here is basically the same thing as returning
+  // at the start of this function if  IsLidarPacket() returns false. The
+  // difference is that here the full data is checked instead of just the
+  // header.
+  catch (std::length_error const & e)
+  {
+    return;
+  }
 
 
   PayloadHeader payloadHeader = payload.GetHeader();
