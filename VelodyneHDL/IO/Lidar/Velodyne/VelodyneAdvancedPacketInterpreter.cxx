@@ -16,6 +16,9 @@ using namespace DataPacketFixedLength;
 
 #include <cstring>
 
+#include <iostream>
+#define DEBUG_MSG(msg) std::cout << "DEBUG:" << msg << "[" << __LINE__ << "]" << std::endl;
+
 //------------------------------------------------------------------------------
 // General macros constants.
 //------------------------------------------------------------------------------
@@ -357,13 +360,13 @@ void setFromBits(TS & source, uint8_t offset, uint8_t number, TD & destination)
  *          destination.
  * @todo    Check if this has any noticeable performance overhead.
  */
-template <typename TS, typename TD, typename ... RemainingArgs>
-inline
-void setFromBits(TS & source, uint8_t offset, uint8_t number, TD & destination, RemainingArgs ... remainingArgs)
-{
-  setFromBits(source, offset, number, destination);
-  setFromBits(source, remainingArgs...);
-}
+// template <typename TS, typename TD, typename ... RemainingArgs>
+// inline
+// void setFromBits(TS & source, uint8_t offset, uint8_t number, TD & destination, RemainingArgs ... remainingArgs)
+// {
+//   setFromBits(source, offset, number, destination);
+//   setFromBits(source, remainingArgs...);
+// }
 
 //------------------------------------------------------------------------------
 // Packetdata
@@ -502,8 +505,13 @@ public:
    * smallest type required to hold the number of bytes to process.
    */
 	// TODO: add insert to fail if numberOfBytes is greater than 8
-  template <uint8_t numberOfBytes, typename ... PassthroughArgs>
-  void SetFromBits(PassthroughArgs ... passthroughArgs)
+  // template <uint8_t numberOfBytes, typename ... PassthroughArgs>
+  // void SetFromBits(PassthroughArgs ... passthroughArgs)
+  template <uint8_t numberOfBytes, typename TD1, typename TD2>
+  void SetFromBits(
+    uint8_t offset1, uint8_t number1, TD1 & destination1,
+    uint8_t offset2, uint8_t number2, TD2 & destination2
+  )
   {
     // Select a placeholder type large enough to hold the required value. All
     // bits are counted from the least significant bit so bits in the padding
@@ -520,7 +528,36 @@ public:
     >::type placeholder;
 
     this->SetFromBytes(placeholder, numberOfBytes);
-    setFromBits(placeholder, passthroughArgs...);
+    // setFromBits(placeholder, passthroughArgs...);
+    setFromBits(placeholder, offset1, number1, destination1);
+    setFromBits(placeholder, offset2, number2, destination2);
+  }
+  template <uint8_t numberOfBytes, typename TD1, typename TD2, typename TD3>
+  void SetFromBits(
+    uint8_t offset1, uint8_t number1, TD1 & destination1,
+    uint8_t offset2, uint8_t number2, TD2 & destination2,
+    uint8_t offset3, uint8_t number3, TD3 & destination3
+  )
+  {
+    // Select a placeholder type large enough to hold the required value. All
+    // bits are counted from the least significant bit so bits in the padding
+    // byte(s), if any, will be ignored.
+    static_assert(numberOfBytes > 0 && numberOfBytes <= sizeof(uint64_t), "SetFromBits: numberOfBytes template parameter must be at least 1 and at most sizeof(uint64_t).");
+    typename std::conditional<
+      (numberOfBytes == 1),
+      uint8_t,
+      typename std::conditional<
+        (numberOfBytes == 2),
+        uint16_t,
+        typename std::conditional<(numberOfBytes <= 4), uint32_t, uint64_t>::type
+      >::type
+    >::type placeholder;
+
+    this->SetFromBytes(placeholder, numberOfBytes);
+    // setFromBits(placeholder, passthroughArgs...);
+    setFromBits(placeholder, offset1, number1, destination1);
+    setFromBits(placeholder, offset2, number2, destination2);
+    setFromBits(placeholder, offset3, number3, destination3);
   }
 
   /*!
@@ -559,19 +596,19 @@ class PayloadHeader
 {
 private:
   //! @brief Protocol version.
-  uint8_t Ver : 4;
+  uint8_t Ver ; //: 4;
 
   //! @brief Header length (min: 6)
-  uint8_t Hlen : 4;
+  uint8_t Hlen ; //: 4;
 
   //! @brief Next header type.
   uint8_t Nxhdr;
 
   //! @brief Firing group header length.
-  uint8_t Glen : 4;
+  uint8_t Glen ; //: 4;
 
   //! @brief Firing header length.
-  uint8_t Flen : 4;
+  uint8_t Flen ; //: 4;
 
   //! @brief Model Identification Code
   uint8_t Mic;
@@ -669,10 +706,14 @@ public:
   {
     // For word alignment.
     packetDataHandle.BeginBlock();
+    this->Ver = 7;
+    this->Hlen = 5;
     packetDataHandle.SetFromBits<1>(
       4, 4, this->Ver,
       0, 4, this->Hlen
     );
+    DEBUG_MSG("Payload Header: " << +this->Ver << ", " << +this->Hlen)
+    DEBUG_MSG("  first byte: " << +packetDataHandle.GetData()[0])
 
     // Use GetHlen() to get the count in bytes.
     if (this->GetHlen() > packetDataHandle.GetRemainingLength())
@@ -685,12 +726,15 @@ public:
       4, 4, this->Glen,
       0, 4, this->Flen
     );
+    DEBUG_MSG("  " << +this->Glen << ", " << +this->Flen)
     packetDataHandle.SetFromByte(this->Mic);
     packetDataHandle.SetFromByte(this->Tstat);
     packetDataHandle.SetFromByte(this->Dset);
     packetDataHandle.SetFromByte(this->Iset);
     packetDataHandle.SetFromBytes(this->Tref);
     packetDataHandle.SetFromBytes(this->Pseq);
+    DEBUG_MSG("  " << toString(this->GetMic()) << ", " << +this->Pseq)
+    DEBUG_MSG("  DSET: " << +this->GetDset())
     // For word alignment.
     packetDataHandle.EndBlock(this->GetHlen());
   }
@@ -788,14 +832,14 @@ private:
   uint16_t Toffs;
 
   //! @brief (FCNT + 1) is the number of Firings in the Firing Group.
-  uint8_t Fcnt : 5;
+  uint8_t Fcnt ; //: 5;
 
   /*!
    * @brief
    * (FSPN + 1) is the count (span) of co-channels fired simultaneously in the
    * Firing Group.
    */
-  uint8_t Fspn : 3;
+  uint8_t Fspn ; //: 3;
 
   /*!
    * @brief Unsigned time fraction delay between co-channel firings.
@@ -813,13 +857,13 @@ private:
   uint8_t Fdly;
 
   //! @brief Horizontal direction , 0: Clockwise, 1: Counter-clockwise (1 bit)
-  uint8_t Hdir : 1;
+  uint8_t Hdir ; //: 1;
 
   //! @brief Vertical direction , 0: Upward, 1: Downward (1 bit)
-  uint8_t Vdir : 1;
+  uint8_t Vdir ; //: 1;
 
   //! @brief Vertical deflection angle (0.01 degree increments) [0..16383]
-  uint16_t Vdfl : 14;
+  uint16_t Vdfl ; //: 14;
 
   //! @brief Azimuth (0.01 degree increments) [0..35999]
   uint16_t Azm;
@@ -893,10 +937,10 @@ private:
   uint8_t Lcn;
 
   //! @brief Firing mode.
-  uint8_t Fm : 4;
+  uint8_t Fm ; //: 4;
 
   //! @brief Power level.
-  uint8_t Pwr : 4;
+  uint8_t Pwr ; //: 4;
 
   //! @brief Noise factor.
   uint8_t Nf;
