@@ -1037,7 +1037,7 @@ public:
   {
     PayloadHeader const & payloadHeader = this->FiringPtr->FiringGroupPtr->PayloadPtr->GetHeader();
     // Range check.
-    if (i < 0 || i >= payloadHeader.GetIntensityCount())
+    if (i < 0 || i > payloadHeader.GetIntensityCount())
     {
       throw std::out_of_range("requested intensity is out of range of current set");
     }
@@ -1341,6 +1341,7 @@ public:
   Payload(PacketDataHandle<BYTES_PER_HEADER_WORD> & packetDataHandle)
     : Header {packetDataHandle}
   {
+    this->FiringGroups.reserve(128);
     // Check for extension headers.
     auto nxhdr = this->Header.GetNxhdr();
     while (nxhdr != 0)
@@ -1357,6 +1358,15 @@ public:
     {
       FiringGroup<loadData> firingGroup((* this), packetDataHandle);
       this->FiringGroups.push_back(firingGroup);
+    }
+    //finalize the pointers
+    for(auto &fg:this->FiringGroups){
+      for(auto &f:fg.Firings){
+        f.FiringGroupPtr = &fg;
+        for(auto & r:f.Returns){
+          r.FiringPtr = &f;
+        }
+       }
     }
   }
 };
@@ -1444,7 +1454,7 @@ void VelodyneAdvancedPacketInterpreter::ProcessPacket(unsigned char const * data
   }
   auto distanceTypeString = toString(distanceType);
 
-  for (auto firingGroup : payload.FiringGroups)
+  for (auto & firingGroup : payload.FiringGroups)
   {
     // Detect frame changes in firing groups.
     FrameTracker frameTracker = FrameTracker(firingGroup);
@@ -1458,7 +1468,7 @@ void VelodyneAdvancedPacketInterpreter::ProcessPacket(unsigned char const * data
     auto timeFractionOffset = firingGroupHeader.GetToffs(); 
     auto coChannelSpan = firingGroupHeader.GetFspn();
     auto coChannelTimeFractionDelay = firingGroupHeader.GetFdly();
-    // double verticalAngle = firingGroup.GetVdfl();
+    double verticalAngle = 0 ;//firingGroup.GetVdfl();
     auto azimuth = firingGroupHeader.GetAzm();
 
     auto firings = firingGroup.Firings;
@@ -1472,7 +1482,7 @@ void VelodyneAdvancedPacketInterpreter::ProcessPacket(unsigned char const * data
       // using the channe number?).
       uint32_t channelTimeFractionOffset = timeFractionOffset + (coChannelTimeFractionDelay * (i / coChannelSpan));
 
-      auto firing = firings[i];
+      auto & firing =  firings[i];
       auto firingHeader = firing.GetHeader();
       auto channelNumber = firingHeader.GetLcn();
 
@@ -1491,14 +1501,14 @@ void VelodyneAdvancedPacketInterpreter::ProcessPacket(unsigned char const * data
 
       // Only one distance type is displayed but there may be multiple in the
       // packet.
-      auto firingReturn = firing.Returns[distanceIndex];
+      auto & firingReturn = firing.Returns[distanceIndex];
       double distance;
 
       double position[3];
       this->ComputeCorrectedValues(
           azimuth, 
           firingReturn,
-          i,
+          channelNumber,
           position
       );
 
@@ -1516,15 +1526,16 @@ void VelodyneAdvancedPacketInterpreter::ProcessPacket(unsigned char const * data
       this->INFO_Pseqs->InsertNextValue(pseq);
       this->INFO_ChannelNumbers->InsertNextValue(channelNumber);
       this->INFO_TimeFractionOffsets->InsertNextValue(channelTimeFractionOffset);
-      this->INFO_FiringModeStrings->InsertNextValue(firingModeString);
+     // this->INFO_FiringModeStrings->InsertNextValue(firingModeString);
       this->INFO_Powers->InsertNextValue(power);
       this->INFO_Noises->InsertNextValue(noise);
-      this->INFO_StatusStrings->InsertNextValue(statusString);
-      this->INFO_DistanceTypeStrings->InsertNextValue(distanceTypeString);
+      this->INFO_VerticalAngles->InsertNextValue(verticalAngle + this->laser_corrections_[channelNumber].verticalCorrection);
+    //  this->INFO_StatusStrings->InsertNextValue(statusString);
+   //   this->INFO_DistanceTypeStrings->InsertNextValue(distanceTypeString);
 
 //! @brief Convenience macro for setting intensity values
 #define INSERT_INTENSITY(my_array, iset_flag) \
-      this->INFO_ ## my_array->InsertNextValue((iset & (ISET_ ## iset_flag)) ? firingReturn.GetIntensity<uint32_t>((ISET_ ## iset_flag)) : -1);
+      this->INFO_ ## my_array->InsertNextValue((iset & (ISET_ ## iset_flag)) ? firingReturn.GetIntensity<uint32_t>((ISET_ ## iset_flag)) : 0);
 
       // TODO: Make the inclusion of these columns fully optionally at runtime.
 
@@ -1657,10 +1668,10 @@ vtkSmartPointer<vtkPolyData> VelodyneAdvancedPacketInterpreter::CreateNewEmptyFr
   INIT_INFO_ARR(Ys                   , "Y")
   INIT_INFO_ARR(Zs                   , "Z")
   INIT_INFO_ARR(Azimuths             , "Azimuth")
-  INIT_INFO_ARR(VerticalAngles       , "Vertical Angle")
+  INIT_INFO_ARR(VerticalAngles       , "Vertical Angle")/*
   INIT_INFO_ARR(DistanceTypeStrings  , "Distance Type")
   INIT_INFO_ARR(FiringModeStrings    , "FiringMode")
-  INIT_INFO_ARR(StatusStrings        , "Status")
+  INIT_INFO_ARR(StatusStrings        , "Status")*/
   INIT_INFO_ARR(Intensities          , "Intensity")
   INIT_INFO_ARR(Confidences          , "Confidence")
   INIT_INFO_ARR(Reflectivities       , "Reflectivity")
@@ -1957,9 +1968,8 @@ void VelodyneAdvancedPacketInterpreter::LoadCalibration(const std::string& filen
 
 //-----------------------------------------------------------------------------
 template <typename T>
-void VelodyneAdvancedPacketInterpreter::ComputeCorrectedValues(
-  T const azimuth,
-  FiringReturn<true> const firingReturn,
+void VelodyneAdvancedPacketInterpreter::ComputeCorrectedValues(T const azimuth,
+  const FiringReturn<true> & firingReturn,
   size_t const correctionIndex,
   double pos[3]
 )

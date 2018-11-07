@@ -57,11 +57,11 @@ public:
   vtkSmartPointer<vtkIntArray>            INFO_Confidences;
   vtkSmartPointer<vtkIntArray>            INFO_Intensities;
   vtkSmartPointer<vtkIntArray>            INFO_Reflectivities;
-  
+  /*
   vtkSmartPointer<vtkStringArray>         INFO_DistanceTypeStrings;
   vtkSmartPointer<vtkStringArray>         INFO_FiringModeStrings;
   vtkSmartPointer<vtkStringArray>         INFO_StatusStrings;
-
+*/
   vtkSmartPointer<vtkUnsignedCharArray>   INFO_ChannelNumbers;
   vtkSmartPointer<vtkUnsignedCharArray>   INFO_Noises;
   vtkSmartPointer<vtkUnsignedCharArray>   INFO_Powers;
@@ -78,7 +78,7 @@ private:
   template <typename T>
   void ComputeCorrectedValues(
     T const azimuth,
-    FiringReturn<true> const firingReturn,
+    FiringReturn<true> const & firingReturn,
     size_t const correctionIndex,
     double pos[3]
   );
