@@ -17,7 +17,7 @@ using namespace DataPacketFixedLength;
 #include <cstring>
 
 #include <iostream>
-#define DEBUG_MSG(msg) std::cout << "DEBUG:" << msg << "[" << __LINE__ << "]" << std::endl;
+#define DEBUG_MSG(msg) std::cout << "DEBUG:" << msg << " [" << __LINE__ << "] " << packetDataHandle.GetIndex() << " / " << packetDataHandle.GetLength()<< std::endl;
 
 //------------------------------------------------------------------------------
 // General macros constants.
@@ -707,8 +707,6 @@ public:
   {
     // For word alignment.
     packetDataHandle.BeginBlock();
-    this->Ver = 7;
-    this->Hlen = 5;
     packetDataHandle.SetFromBits<1>(
       4, 4, this->Ver,
       0, 4, this->Hlen
@@ -1026,7 +1024,7 @@ public:
   Firing<loadData> const & FiringRef;
 
   //! @brief Templated subscript operator for accessing distance and intensities.
-  template <typename T = uint32_t>
+  template <typename T>
   T operator[](const int i) const
   {
     PayloadHeader const & payloadHeader = this->FiringRef.FiringGroupRef.PayloadRef.GetHeader();
@@ -1043,17 +1041,17 @@ public:
   }
 
   //! @brief Get the distance from this firing.
-  template <typename T = uint32_t>
+  template <typename T>
   T GetDistance() const { return this->operator[]<T>(0); }
 
   // Default return type is 32-bit because the type may be either 16 or 24 bit.
 
   //! @brief Get an intensity from this firing by index.
-  template <typename T = uint32_t>
+  template <typename T>
   T GetIntensity(const int i) const { return this->operator[]<T>(i+1); }
 
   //! @brief Get an intensity from this firing by type.
-  template <typename T = uint32_t>
+  template <typename T>
   T GetIntensity(IntensityType type) const
   {
     // Check that the value is actually present otherwise the calculate index
@@ -1356,7 +1354,7 @@ VelodyneAdvancedPacketInterpreter::~VelodyneAdvancedPacketInterpreter()
 void VelodyneAdvancedPacketInterpreter::ProcessPacket(unsigned char const * data, unsigned int dataLength, int startPosition)
 {
   // TODO: check how to handle startPosition
-  // PacketDataHandle<> packetDataHandle = PacketDataHandle(data + startPosition, dataLength - startPosition, 0);
+  // PacketDataHandle packetDataHandle = PacketDataHandle(data + startPosition, dataLength - startPosition, 0);
   PacketDataHandle<BYTES_PER_HEADER_WORD> packetDataHandle = PacketDataHandle<BYTES_PER_HEADER_WORD>(data, dataLength, 0);
   Payload<true> payload {packetDataHandle};
 
@@ -1481,7 +1479,7 @@ void VelodyneAdvancedPacketInterpreter::ProcessPacket(unsigned char const * data
 
 //! @brief Convenience macro for setting intensity values
 #define INSERT_INTENSITY(my_array, iset_flag) \
-      this->INFO_ ## my_array->InsertNextValue((iset & (ISET_ ## iset_flag)) ? firingReturn.GetIntensity<>((ISET_ ## iset_flag)) : -1);
+      this->INFO_ ## my_array->InsertNextValue((iset & (ISET_ ## iset_flag)) ? firingReturn.GetIntensity<uint32_t>((ISET_ ## iset_flag)) : -1);
 
       // TODO: Make the inclusion of these columns fully optionally at runtime.
 
@@ -1921,7 +1919,7 @@ void VelodyneAdvancedPacketInterpreter::ComputeCorrectedValues(
   double pos[3]
 )
 {
-  double distance = firingReturn.GetDistance<>();
+  double distance = firingReturn.GetDistance<uint32_t>();
   double cosAzimuth, sinAzimuth;
   HDLLaserCorrection * correction = & (this->laser_corrections_[correctionIndex]);
 
