@@ -17,8 +17,8 @@
 
 #include <iomanip>
 #include <iostream>
-#include <unordered_map>
 #include <stdio.h>
+#include <unordered_map>
 #include <vector>
 #ifdef _MSC_VER
 #include <boost/cstdint.hpp>
@@ -33,13 +33,15 @@ namespace DataPacketFixedLength
 
 static const int HDL_NUM_ROT_ANGLES = 36001;
 static const int HDL_LASER_PER_FIRING = 32;
-static const int HDL_MAX_NUM_LASERS = 64;
+static const int HDL_MAX_NUM_LASERS = 128;
 static const int HDL_FIRING_PER_PKT = 12;
 
 enum HDLBlock
 {
   BLOCK_0_TO_31 = 0xeeff,
   BLOCK_32_TO_63 = 0xddff,
+  BLOCK_64_TO_95 = 0xccff,
+  BLOCK_96_TO_127 = 0xbbff,
 };
 
 enum SensorType
@@ -52,27 +54,31 @@ enum SensorType
 
   // Work around : this is not defined by any specification
   // But it is usefull to define
-  HDL64 = 0xa0, // decimal: 160
+  HDL64 = 0xa0,  // decimal: 160
+  VLS128 = 0xa1, // decimal: 161
 };
 
 static inline std::string SensorTypeToString(SensorType type)
 {
-    switch (type) {
-      case SensorType::HDL32E:
-        return "HDL-32E";
-      case SensorType::VLP16:
-        return "VLP-16";
-      case SensorType::VLP32AB:
-        return "VLP-32AB";
-      case SensorType::VLP16HiRes:
-        return "VLP-16 Hi-Res";
-      case SensorType::VLP32C:
-        return "VLP-32C";
-      case SensorType::HDL64:
-        return "HDL-64";
-      default:
-        return "Unkown";
-      }
+  switch (type)
+  {
+    case SensorType::HDL32E:
+      return "HDL-32E";
+    case SensorType::VLP16:
+      return "VLP-16";
+    case SensorType::VLP32AB:
+      return "VLP-32AB";
+    case SensorType::VLP16HiRes:
+      return "VLP-16 Hi-Res";
+    case SensorType::VLP32C:
+      return "VLP-32C";
+    case SensorType::HDL64:
+      return "HDL-64";
+    case SensorType::VLS128:
+      return "VLS-128";
+    default:
+      return "Unkown";
+  }
   /*
   std::unordered_map<SensorType, std::string> toStringMap;
   toStringMap[SensorType::HDL32E] = "HDL-32E";
@@ -81,6 +87,7 @@ static inline std::string SensorTypeToString(SensorType type)
   toStringMap[SensorType::VLP16HiRes] = "VLP-16 Hi-Res";
   toStringMap[SensorType::VLP32C] = "VLP-32C";
   toStringMap[SensorType::HDL64] = "HDL-64";
+  toStringMap[SensorType::VLS128] = "VLS-128";
   return toStringMap[type];
   */
 }
@@ -98,6 +105,8 @@ static inline int num_laser(SensorType sensorType)
     case VLP16:
     case VLP16HiRes:
       return 16;
+    case VLS128:
+      return 128;
     default:
       return 0;
   }
@@ -112,16 +121,17 @@ enum DualReturnSensorMode
 
 static inline std::string DualReturnSensorModeToString(DualReturnSensorMode type)
 {
-    switch (type) {
-      case DualReturnSensorMode::STRONGEST_RETURN:
-        return "STRONGEST RETURN";
-      case DualReturnSensorMode::LAST_RETURN:
-        return "LAST RETURN";
-      case DualReturnSensorMode::DUAL_RETURN:
-        return "DUAL RETURN";
-      default:
-        return "Unkown";
-      }
+  switch (type)
+  {
+    case DualReturnSensorMode::STRONGEST_RETURN:
+      return "STRONGEST RETURN";
+    case DualReturnSensorMode::LAST_RETURN:
+      return "LAST RETURN";
+    case DualReturnSensorMode::DUAL_RETURN:
+      return "DUAL RETURN";
+    default:
+      return "Unkown";
+  }
   /*
   std::unordered_map<DualReturnSensorMode, std::string> toStringMap;
   toStringMap[DualReturnSensorMode::STRONGEST_RETURN] = "STRONGEST RETURN";
@@ -188,12 +198,22 @@ struct HDLDataPacket
       dataPacket->firingData[0].blockIdentifier == BLOCK_32_TO_63);
   }
 
-  inline bool isHDL64() const { return firingData[1].isUpperBlock(); }
-
-  inline bool isDualModeReturn() const { return isDualModeReturn(isHDL64()); }
-  inline bool isDualModeReturn(const bool isHDL64) const
+  inline bool isHDL64() const
   {
-    if (isHDL64)
+    return firingData[1].blockIdentifier == BLOCK_32_TO_63 &&
+      firingData[2].blockIdentifier == BLOCK_0_TO_31;
+  }
+
+  inline bool isVLS128() const
+  {
+    return (factoryField2 == VLS128 && !isHDL64());
+  }
+
+  inline bool isDualModeReturn() const
+  {
+    if (isVLS128())
+      return isDualModeReturnVLS128();
+    if (isHDL64())
       return isDualModeReturnHDL64();
     else
       return isDualModeReturn16Or32();
@@ -206,18 +226,21 @@ struct HDLDataPacket
   {
     return firingData[2].rotationalPosition == firingData[0].rotationalPosition;
   }
-  inline bool isDualReturnFiringBlock(const int firingBlock)
+  inline bool isDualModeReturnVLS128() const { return factoryField1 == DUAL_RETURN; }
+
+  inline bool isDualReturnFiringBlock(const int firingBlock) const
   {
+    if (isVLS128())
+      return isDualModeReturnVLS128() && isDualBlockOfDualPacket128(firingBlock);
     if (isHDL64())
       return isDualModeReturnHDL64() && isDualBlockOfDualPacket64(firingBlock);
     else
       return isDualModeReturn16Or32() && isDualBlockOfDualPacket16Or32(firingBlock);
   }
 
-  inline static bool isDualBlockOfDualPacket(const bool isHDL64, const int firingBlock)
+  inline static bool isDualBlockOfDualPacket128(const int firingBlock)
   {
-    return isHDL64 ? isDualBlockOfDualPacket64(firingBlock)
-                   : isDualBlockOfDualPacket16Or32(firingBlock);
+    return (firingBlock % 2 == 1);
   }
   inline static bool isDualBlockOfDualPacket64(const int firingBlock)
   {
@@ -226,6 +249,26 @@ struct HDLDataPacket
   inline static bool isDualBlockOfDualPacket16Or32(const int firingBlock)
   {
     return (firingBlock % 2 == 1);
+  }
+
+  inline int getRotationalDiffForVLS128(int firingBlock) const
+  {
+    if (static_cast<DualReturnSensorMode>(factoryField1) == DUAL_RETURN)
+    {
+      if (firingBlock > 6)
+        firingBlock = 6;
+      return static_cast<int>((36000 + firingData[firingBlock + 2].rotationalPosition -
+                                firingData[firingBlock].rotationalPosition) %
+        36000);
+    }
+    else
+    {
+      if (firingBlock % 4 == 3)
+        firingBlock--;
+      return static_cast<int>((36000 + firingData[firingBlock + 1].rotationalPosition -
+                                firingData[firingBlock].rotationalPosition) %
+        36000);
+    }
   }
 };
 

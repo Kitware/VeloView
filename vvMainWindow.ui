@@ -91,6 +91,7 @@
       <string>Processing Options</string>
      </property>
      <addaction name="actionCorrectIntensityValues"/>
+     <addaction name="actionFastRenderer"/>
      <addaction name="actionIgnoreZeroDistances"/>
      <addaction name="actionIntraFiringAdjust"/>
      <addaction name="actionIgnoreEmptyFrames"/>
@@ -1135,7 +1136,18 @@
     <string>Ctrl+Shift+P</string>
    </property>
   </action>
-  <action name="actionBirdEyeViewSnap">
+<action name="actionFastRenderer">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Apply VLS-128 Fast Renderering</string>
+   </property>
+  </action>
+<action name="actionBirdEyeViewSnap">
    <property name="icon">
     <iconset resource="vvResources.qrc">
      <normaloff>:/vvResources/Icons/camera_logo.png</normaloff>:/vvResources/Icons/camera_logo.png</iconset>

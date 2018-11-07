@@ -59,7 +59,8 @@ LidarPacketInterpreter::~LidarPacketInterpreter()
 //-----------------------------------------------------------------------------
 bool LidarPacketInterpreter::SplitFrame(bool force)
 {
-  if (this->IgnoreEmptyFrames && this->CurrentFrame->GetNumberOfPoints() == 0 && !force)
+  const vtkIdType nPtsOfCurrentDataset= this->CurrentFrame->GetNumberOfPoints();
+  if (this->IgnoreEmptyFrames && (nPtsOfCurrentDataset == 0) && !force)
   {
     return false;
   }
@@ -74,7 +75,7 @@ bool LidarPacketInterpreter::SplitFrame(bool force)
   // split the frame
   this->Frames.push_back(this->CurrentFrame);
   // create a new frame
-  this->CurrentFrame = this->CreateNewEmptyFrame(0);
+  this->CurrentFrame = this->CreateNewEmptyFrame(0, nPtsOfCurrentDataset);
 
   return true;
 }

@@ -240,6 +240,9 @@ add_paraview_plugin(${VV_PLUGIN_LIBRARY} "1.0"
   REQUIRED_ON_SERVER)
 target_include_directories(${VV_PLUGIN_LIBRARY} PRIVATE ${plugin_include_dirs})
 target_link_libraries(${VV_PLUGIN_LIBRARY} LINK_PUBLIC ${deps})
+if(WIN32)
+  target_compile_definitions(${VV_PLUGIN_LIBRARY} PRIVATE -DWIN32)
+endif(WIN32)
 
 #-----------------------------------------------------------------------------
 # Build PacketFileSender target which enable to playback a recorded pcap on the network

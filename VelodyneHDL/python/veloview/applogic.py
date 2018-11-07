@@ -38,6 +38,15 @@ _repCache = {}
 
 SAMPLE_PROCESSING_MODE = False
 
+def vtkGetFileNameFromPluginName(pluginName):
+  import os
+  if os.name == "nt":
+    return pluginName + ".dll";
+  elif sys.platform == "darwin":
+    return "lib" + pluginName + ".dylib";
+  else:
+    return "lib" + pluginName + ".so";
+
 def cachedGetRepresentation(src, view):
     try:
         return _repCache[(src, view)]
@@ -82,6 +91,8 @@ class AppLogic(object):
         self.laserSelectionDialog = None
 
         self.gridProperties = None
+
+        smp.LoadPlugin(vtkGetFileNameFromPluginName('PointCloudPlugin'))
 
     def setupTimers(self):
         self.playTimer = QtCore.QTimer()
@@ -458,8 +469,11 @@ def openSensor():
     onCropReturns(False) # Dont show the dialog just restore settings
     onLaserSelection(False)
 
-    rep = smp.Show(sensor)
-    rep.InterpolateScalarsBeforeMapping = 0
+#    rep = smp.Show(sensor)
+#    rep.InterpolateScalarsBeforeMapping = 0
+#    if app.sensor.GetClientSideObject().GetNumberOfChannels() == 128:
+#        rep.Representation = 'Point Cloud'
+#        rep.ColorArrayName = 'intensity'
 
     if SAMPLE_PROCESSING_MODE:
         prep = smp.Show(processor)
@@ -470,6 +484,7 @@ def openSensor():
 
     app.actions['actionShowRPM'].enabled = True
     app.actions['actionCorrectIntensityValues'].enabled = True
+    app.actions['actionFastRenderer'].enabled = True
 
     #Auto adjustment of the grid size with the distance resolution
     app.DistanceResolutionM = sensor.GetClientSideObject().GetDistanceResolutionM()
@@ -611,7 +626,12 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
     smp.SetActiveView(app.mainView)
 
     rep.InterpolateScalarsBeforeMapping = 0
-    setDefaultLookupTables(reader)
+
+#    rep = smp.Show(reader)
+#    if app.reader.GetClientSideObject().GetNumberOfChannels() == 128:
+
+#        rep.ColorArrayName = 'intensity'
+#    #setDefaultLookupTables(reader)
     colorByIntensity(reader)
 
     initializeRPMText()
@@ -636,6 +656,7 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
 
     app.actions['actionShowRPM'].enabled = True
     app.actions['actionCorrectIntensityValues'].enabled = True
+    app.actions['actionFastRenderer'].enabled = True
 
     #Auto adjustment of the grid size with the distance resolution
     app.DistanceResolutionM = reader.GetClientSideObject().GetDistanceResolutionM()
@@ -1201,6 +1222,7 @@ def close():
     app.actions['actionDualReturnIntensityHigh'].enabled = False
     app.actions['actionDualReturnIntensityLow'].enabled = False
     app.actions['actionCorrectIntensityValues'].enabled = False
+    app.actions['actionFastRenderer'].enabled = False
 
 
 def seekForward():
@@ -2003,7 +2025,7 @@ def onGridProperties():
 
 
 def onLaserSelection(show = True):
-    nchannels = 64
+    nchannels = 128
     oldmask = [1] * nchannels
     reader = getReader()
     sensor = getSensor()
@@ -2384,6 +2406,22 @@ def geolocationChanged(setting):
     updatePosition()
     smp.Render(view=app.mainView)
 
+def fastRendererChanged():
+    """ Enable/Disable fast rendering by using the point cloud representation (currently only for VLS-128)
+    this representation hardcode the color map and their LookUpTable, which improve execution speed significantly """
+
+    source = getReader() or getSensor()
+    rep = smp.Show(source)
+
+    if app.actions['actionEnableFastRenderering'].isChecked():
+        rep.Respresentation = 'Point Cloud'
+    else:
+        rep.Respresentation = 'Surface'
+
+    # Workaround to force the refresh for all the views
+    seekForward()
+    seekBackward()
+
 def intensitiesCorrectedChanged():
     lidar = getLidar()
     if lidar:
@@ -2450,6 +2488,7 @@ def setupActions():
     app.actions['actionShowRPM'].connect('triggered()', toggleRPM)
     app.actions['actionEnableCrashAnalysis'].connect('triggered()',toggleCrashAnalysis)
     app.actions['actionCorrectIntensityValues'].connect('triggered()',intensitiesCorrectedChanged)
+    app.actions['actionFastRenderer'].connect('triggered()',fastRendererChanged)
     app.actions['actionSelectDualReturn'].connect('triggered()',toggleSelectDualReturn)
     app.actions['actionSelectDualReturn2'].connect('triggered()',toggleSelectDualReturn)
     app.actions['actionRansacPlaneFitting'].connect('triggered()', toggleRansacPlaneFitting)
