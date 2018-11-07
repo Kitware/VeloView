@@ -4,29 +4,38 @@
 #include <vtkPointData.h>
 #include <vtkDoubleArray.h>
 
+#include <boost/property_tree/xml_parser.hpp>
+#include <boost/property_tree/ptree.hpp>
+#include <boost/foreach.hpp>
+
+#include "vtkDataPacket.h"
+using namespace DataPacketFixedLength;
+
 #include <type_traits>
 #include <boost/preprocessor.hpp>
 
+#include <cstring>
+
 //------------------------------------------------------------------------------
-// Macros.
+// General macros constants.
 //------------------------------------------------------------------------------
 //! @brief Lengths in the headers are given in units of 32-bit words.
-#define BYTES_PER_HEADER_WORD 4u;
+#define BYTES_PER_HEADER_WORD 4u
 
 //------------------------------------------------------------------------------
 // Accessor macros.
 //------------------------------------------------------------------------------
 //! @brief Simple getter for uninterpretted values.
-#define GET_RAW(attr) decltype(auto) Get ## attr const { return this->attr; }
+#define GET_RAW(attr) decltype(attr) Get ## attr () const { return this->attr; }
 
 //! @brief Get a const reference.
-#define GET_CONST_REF(attr) auto const & Get ## attr const { return this->attr; }
+#define GET_CONST_REF(attr) decltype(attr) const & Get ## attr () const { return this->attr; }
 
 //! @brief Getter for enum values that are stored as raw values internally.
-#define GET_ENUM(enumtype, attr) type Get ## attr const { return to ## enumtype(this->attr); }
+#define GET_ENUM(enumtype, attr) enumtype Get ## attr () const { return to ## enumtype (this->attr); }
 
 //! @brief Get a header length in bytes.
-#define GET_LENGTH(attr) decltype(auto) Get ** attr const { return this->attr * BYTES_PER_HEADER_WORD; }
+#define GET_LENGTH(attr) size_t Get ## attr () const { return (this->attr * BYTES_PER_HEADER_WORD); }
 
 //------------------------------------------------------------------------------
 // Enum macros.
@@ -127,13 +136,13 @@
 //------------------------------------------------------------------------------
 //! @brief Lookup table for the number of set bits in a byte.
 static uint8_t const SET_BITS_IN_BYTE[0x100] = {
-  0, 1, 1, 2,   1, 2, 2, 3,   1, 2, 2, 3,   2, 3, 3, 4,   1, 2, 2, 3,   2, 3, 3, 4,   2, 3, 3, 4,   3, 4, 4, 5
-  1, 2, 2, 3,   2, 3, 3, 4,   2, 3, 3, 4,   3, 4, 4, 5,   2, 3, 3, 4,   3, 4, 4, 5,   3, 4, 4, 5,   4, 5, 5, 6
-  1, 2, 2, 3,   2, 3, 3, 4,   2, 3, 3, 4,   3, 4, 4, 5,   2, 3, 3, 4,   3, 4, 4, 5,   3, 4, 4, 5,   4, 5, 5, 6
-  2, 3, 3, 4,   3, 4, 4, 5,   3, 4, 4, 5,   4, 5, 5, 6,   3, 4, 4, 5,   4, 5, 5, 6,   4, 5, 5, 6,   5, 6, 6, 7
-  1, 2, 2, 3,   2, 3, 3, 4,   2, 3, 3, 4,   3, 4, 4, 5,   2, 3, 3, 4,   3, 4, 4, 5,   3, 4, 4, 5,   4, 5, 5, 6
-  2, 3, 3, 4,   3, 4, 4, 5,   3, 4, 4, 5,   4, 5, 5, 6,   3, 4, 4, 5,   4, 5, 5, 6,   4, 5, 5, 6,   5, 6, 6, 7
-  2, 3, 3, 4,   3, 4, 4, 5,   3, 4, 4, 5,   4, 5, 5, 6,   3, 4, 4, 5,   4, 5, 5, 6,   4, 5, 5, 6,   5, 6, 6, 7
+  0, 1, 1, 2,   1, 2, 2, 3,   1, 2, 2, 3,   2, 3, 3, 4,   1, 2, 2, 3,   2, 3, 3, 4,   2, 3, 3, 4,   3, 4, 4, 5,
+  1, 2, 2, 3,   2, 3, 3, 4,   2, 3, 3, 4,   3, 4, 4, 5,   2, 3, 3, 4,   3, 4, 4, 5,   3, 4, 4, 5,   4, 5, 5, 6,
+  1, 2, 2, 3,   2, 3, 3, 4,   2, 3, 3, 4,   3, 4, 4, 5,   2, 3, 3, 4,   3, 4, 4, 5,   3, 4, 4, 5,   4, 5, 5, 6,
+  2, 3, 3, 4,   3, 4, 4, 5,   3, 4, 4, 5,   4, 5, 5, 6,   3, 4, 4, 5,   4, 5, 5, 6,   4, 5, 5, 6,   5, 6, 6, 7,
+  1, 2, 2, 3,   2, 3, 3, 4,   2, 3, 3, 4,   3, 4, 4, 5,   2, 3, 3, 4,   3, 4, 4, 5,   3, 4, 4, 5,   4, 5, 5, 6,
+  2, 3, 3, 4,   3, 4, 4, 5,   3, 4, 4, 5,   4, 5, 5, 6,   3, 4, 4, 5,   4, 5, 5, 6,   4, 5, 5, 6,   5, 6, 6, 7,
+  2, 3, 3, 4,   3, 4, 4, 5,   3, 4, 4, 5,   4, 5, 5, 6,   3, 4, 4, 5,   4, 5, 5, 6,   4, 5, 5, 6,   5, 6, 6, 7,
   3, 4, 4, 5,   4, 5, 5, 6,   4, 5, 5, 6,   5, 6, 6, 7,   4, 5, 5, 6,   5, 6, 6, 7,   5, 6, 6, 7,   6, 7, 7, 8
 };
 
@@ -158,8 +167,9 @@ DEFINE_ENUM(
   ((VLP16    , 1))
   ((VLP16_HD , 2))
   ((VLP32A   , 3))
-  ((VLP32B   , 4)) ,
-  RESERVED)
+  ((VLP32B   , 4)),
+  RESERVED
+)
 
 //------------------------------------------------------------------------------
 //! @brief Horizontal direction of Lidar.
@@ -167,29 +177,29 @@ DEFINE_ENUM(
   HorizontalDirection,
   HDIR_,
   ((CLOCKWISE         , 0))
-  ((COUNTER_CLOCKWISE , 1))
-  HD_CLOCKWISE
+  ((COUNTER_CLOCKWISE , 1)),
+  CLOCKWISE
 )
 
 //------------------------------------------------------------------------------
 //! @brief Vertical direction of Lidar.
 DEFINE_ENUM(
   VerticalDirection,
-  VDIR_
+  VDIR_,
   ((UP   , 0))
-  ((DOWN , 1))
-  VD_UP
+  ((DOWN , 1)),
+  UP
 )
 
 //------------------------------------------------------------------------------
 //! @brief Firing mode.
 DEFINE_ENUM(
   FiringMode,
-  FM_
+  FM_,
   ((PASSIVE  , 0))
   ((NORMAL   , 1))
   ((RESERVED , 2))
-  ((INDEX    , 15))
+  ((INDEX    , 15)),
   RESERVED
 )
 
@@ -201,7 +211,7 @@ DEFINE_ENUM(
   ((OBSTRUCTION_DETECTED , 0))
   ((FAULT_DETECTED       , 1))
   ((POWER_NOT_PERFECT    , 2))
-  ((RESERVED             , 3))
+  ((RESERVED             , 3)),
   RESERVED
 )
 
@@ -214,9 +224,9 @@ DEFINE_ENUM(
   ((REFLECTIVITY , (0u)))
   ((INTENSITY    , (1u << 0)))
   ((CONFIDENCE   , (1u << 1)))
-  ((RESERVED     , (1u << 2)))
+  ((RESERVED     , (1u << 2))),
   RESERVED
-}
+  )
 
 //------------------------------------------------------------------------------
 //! @brief Mask format to specify values in returned distance set.
@@ -228,9 +238,9 @@ DEFINE_ENUM(
   ((STRONGEST        , (1u << 0)))
   ((SECOND_STRONGEST , (1u << 1)))
   ((LAST             , (1u << 2)))
-  ((RESERVED         , (1u << )))
+  ((RESERVED         , (1u << 3))),
   RESERVED
-}
+)
 
 //------------------------------------------------------------------------------
 // Convenience functions.
@@ -258,10 +268,11 @@ inline double degreesToRadians(double degrees)
  * The index of a value in a list is therefore equal to the number of set
  * preceding bits.
  */
-template <typename T>
-T indexOfBit(T value, T bit)
+template <typename T, typename S>
+T indexOfBit(T value, S bit)
 {
-  T precedingBits = (bit - 1) & value;
+  T castBit = static_cast<T>(bit);
+  T precedingBits = (castBit - 1) & value;
   // Count the bits set before the target bit. This will be the index of the set
   // bit.
   if (sizeof(T) > BITS_PER_BYTE)
@@ -309,7 +320,7 @@ void setFromBytes(
   uint8_t const * bytes,
   IndexT & index,
   ValueT & value,
-  size_t numberOfBytes = sizeof(T)
+  size_t numberOfBytes = sizeof(ValueT)
 )
 {
   IndexT stop = index + numberOfBytes;
@@ -335,8 +346,8 @@ template <typename TS, typename TD>
 inline
 void setFromBits(TS & source, uint8_t offset, uint8_t number, TD & destination)
 {
-  T const mask = (1 << number) - 1;
-  target = (value >> offset) & mask;
+  TS const mask = (static_cast<TS>(1) << number) - 1;
+  destination = (source >> offset) & mask;
 }
 
 /*!
@@ -346,28 +357,12 @@ void setFromBits(TS & source, uint8_t offset, uint8_t number, TD & destination)
  *          destination.
  * @todo    Check if this has any noticeable performance overhead.
  */
-template <typename TS, typename TD, typename... RemainingArgs>
+template <typename TS, typename TD, typename ... RemainingArgs>
 inline
-void setFromBits(TS & source, uint8_t offset, uint8_t number, TD & destination, RemainingArgs... remainingArgs)
+void setFromBits(TS & source, uint8_t offset, uint8_t number, TD & destination, RemainingArgs ... remainingArgs)
 {
   setFromBits(source, offset, number, destination);
-  setFromBits(source, remainingArgs);
-}
-
-//------------------------------------------------------------------------------
-// BlockData
-//------------------------------------------------------------------------------
-//! @brief Data used to track word-aligned blocks in the packet data.
-struct BlockData
-{
-public:
-  size_t Index;
-  size_t WordSize;
-
-  BlockData(size_t index, size_t wordSize)
-    : Index = index, WordSize = wordSize
-  {
-  }
+  setFromBits(source, remainingArgs...);
 }
 
 //------------------------------------------------------------------------------
@@ -380,7 +375,8 @@ public:
  * methods to set a value from a single byte, several bytes, or single- and
  * multi-byte ranges of bits.
  */
-class PacketData
+template <size_t WordSize = BYTES_PER_HEADER_WORD>
+class PacketDataHandle
 {
 private:
   //! @brief The raw data.
@@ -393,7 +389,7 @@ private:
   size_t Index;
 
   //! @brief Tracked data for aligning blocks on word limits.
-  std::vector<BlockData> Blocks;
+  std::vector<size_t> BlockStartIndices;
 
 public:
   //@{
@@ -403,6 +399,11 @@ public:
   GET_RAW(Index);
   //@}
 
+  PacketDataHandle(decltype(Data) data, decltype(Length) length, decltype(Index) index)
+    : Data {data}, Length {length}, Index {index}
+  {
+  }
+
   /*!
    * @brief Mark the beginning of a block to enabled automatic word alignment
    *        when it ends.
@@ -411,9 +412,9 @@ public:
    * This should be called before any values are read from the block. When all
    * values have been read, call EndBlock().
    */
-  void BeginBlock(size_t wordSize = BYTES_PER_HEADER_WORD)
+  void BeginBlock()
   {
-    this->Blocks.push_back(BlockData(this->Index, wordSize));
+    this->BlockStartIndices.push_back(this->Index);
   }
 
   //@{
@@ -429,21 +430,23 @@ public:
    */
   void EndBlock()
   {
-    auto blockData = this->Blocks.pop_back();
-    auto wordRemainder = (this->Index - blockData.Index) % blockData.WordSize;
+    size_t blockStartIndex = this->BlockStartIndices.back();
+    this->BlockStartIndices.pop_back();
+    auto wordRemainder = (this->Index - blockStartIndex) % WordSize;
     if (wordRemainder > 0)
     {
-      this->Index += (blockData.WordSize - wordRemainder);
+      this->Index += (WordSize - wordRemainder);
     }
   }
   void EndBlock(size_t length)
   {
-    auto blockData = this->Blocks.pop_back();
-    if ((this->Index - blockData.Index) > length)
+    size_t blockStartIndex = this->BlockStartIndices.back();
+    this->BlockStartIndices.pop_back();
+    if ((this->Index - blockStartIndex) > length)
     {
-      raise std::length_error("EndBlock(): block size length is less than the number of consumed bytes since BeginBlock() was called");
+      throw std::length_error("EndBlock(): block size length is less than the number of consumed bytes since BeginBlock() was called");
     }
-    this->Index = this->blockData.Index + length;
+    this->Index = blockStartIndex + length;
   }
   //@}
   
@@ -452,15 +455,16 @@ public:
    */
   void ResetBlock()
   {
-    auto blockData = this->Blocks.pop_back();
-    this->Index = blockData.Index;
+    size_t blockStartIndex = this->BlockStartIndices.back();
+    this->BlockStartIndices.pop_back();
+    this->Index = blockStartIndex;
   }
   
   //! @brief Get the number of bytes remaining from the current index to the end
   //         of the data as defined by the length.
   size_t GetRemainingLength()
   {
-    return (this->Length > this-Index) ? (this->Length - this->Index) : 0;
+    return (this->Length > this->Index) ? (this->Length - this->Index) : 0;
   }
 
   /*!
@@ -490,31 +494,33 @@ public:
   /*!
    * @brief  Set values from bit sequences that do not align with bytes.
    * @tparam numberOfBytes   The number of bytes to consume from the input data.
-   *                         Values larger than 4 are not supported.
+   *                         This must be at least 1. Values larger than the
+   *                         size of uint86_t are not supported.
    * @tparam PassthroughArgs All arguments to pass through to SetFromBits.
-   *
+   * 
    * This is a wrapper around SetFromBits with automatic deduction of the
    * smallest type required to hold the number of bytes to process.
    */
 	// TODO: add insert to fail if numberOfBytes is greater than 8
-  template <uint8_t numberOfBytes, typename... PassthroughArgs>
-  void SetFromBits(PassthroughArgs... passthroughArgs)
+  template <uint8_t numberOfBytes, typename ... PassthroughArgs>
+  void SetFromBits(PassthroughArgs ... passthroughArgs)
   {
     // Select a placeholder type large enough to hold the required value. All
     // bits are counted from the least significant bit so bits in the padding
     // byte(s), if any, will be ignored.
+    static_assert(numberOfBytes > 0 && numberOfBytes <= sizeof(uint64_t), "SetFromBits: numberOfBytes template parameter must be at least 1 and at most sizeof(uint64_t).");
     typename std::conditional<
       (numberOfBytes == 1),
       uint8_t,
       typename std::conditional<
         (numberOfBytes == 2),
         uint16_t,
-        typename std::conditional<(numberOfBytes <= 4), uint32_t, uint64_t>:: type
+        typename std::conditional<(numberOfBytes <= 4), uint32_t, uint64_t>::type
       >::type
     >::type placeholder;
 
     this->SetFromBytes(placeholder, numberOfBytes);
-    SetFromBits(placeholder, passthroughArgs);
+    setFromBits(placeholder, passthroughArgs...);
   }
 
   /*!
@@ -525,7 +531,7 @@ public:
   void CopyBytes(std::vector<uint8_t> & data, size_t length)
   {
     data.reserve(length);
-    std::memcpy(data.(), this->Data[this->Index], length);
+    std::memcpy(data.data(), this->Data + this->Index, length);
     this->Index += length;
   }
 
@@ -537,7 +543,7 @@ public:
   {
     this->Index += length;
   }
-}
+};
 
 //------------------------------------------------------------------------------
 // PayloadHeader
@@ -602,30 +608,30 @@ public:
   GET_RAW(Dset)
   GET_RAW(Iset)
   GET_RAW(Tref)
-  GET_RAW(Pset)
+  GET_RAW(Pseq)
   //@}
 
 
   //! @brief The number of bytes per value in a return.
-  uint8_t GetDsetEncodingSizeInBytes const ()
+  uint8_t GetDsetEncodingSizeInBytes() const
   {
     return ((this->Dset & (1 << 7)) ? 3 : 2);
   }
 
   //! @brief True if the distance set includes a mask, false if a count.
-  bool IsDsetMask const ()
+  bool IsDsetMask() const
   {
     return ! (this->Dset & (1 << 6));
   }
 
   //! @brief The mask or count, depending on the return value of isDsetMask.
-  uint8_t GetDsetMask const ()
+  uint8_t GetDsetMask() const
   {
     return (this->Dset & ((1 << 6) - 1));
   }
 
   //! @brief Get the number of distances in each firing group.
-  uint8_t GetDistanceCount const ()
+  uint8_t GetDistanceCount() const
   {
     // The "mask" is actually a count if IsDsetMask is false.
     auto mask = this->GetDsetMask();
@@ -634,21 +640,21 @@ public:
   }
 
   //! @brief Get the number of intensities in each firing.
-  uint8_t GetIntensityCount const ()
+  uint8_t GetIntensityCount() const
   {
     return SET_BITS_IN_BYTE[this->Iset];
   }
 
   //! @brief The the number of bytes per firing return.
-  size_t GetNumberOfBytesPerFiringReturn const ()
+  size_t GetNumberOfBytesPerFiringReturn() const
   {
     size_t icount = this->GetIntensityCount();
-    size_t bytesPerValue = this->.GetBytesPerDistance();
+    size_t bytesPerValue = this->GetDsetEncodingSizeInBytes();
     return icount * bytesPerValue;
   }
 
   //! @brief The the number of bytes per firing.
-  size_t GetNumberOfBytesPerFiring const ()
+  size_t GetNumberOfBytesPerFiring() const
   {
     size_t dcount = this->GetDistanceCount();
     size_t bytesPerReturn = this->GetNumberOfBytesPerFiringReturn();
@@ -657,38 +663,38 @@ public:
 
   /*!
    * @brief         Construct a PayloadHeader.
-   * @param[in,out] packetData The packet data from which to parse the header.
+   * @param[in,out] packetDataHandle The packet data from which to parse the header.
    */
-  PayloadHeader(PacketData & packetData)
+  PayloadHeader(PacketDataHandle<> & packetDataHandle)
   {
     // For word alignment.
-    packetData.BeginBlock();
-    packetData.SetFromBits<1>(
+    packetDataHandle.BeginBlock();
+    packetDataHandle.SetFromBits<1>(
       4, 4, this->Ver,
       0, 4, this->Hlen
     );
 
     // Use GetHlen() to get the count in bytes.
-    if (this->GetHlen() > packetData.GetRemainingLength())
+    if (this->GetHlen() > packetDataHandle.GetRemainingLength())
     {
-      raise std::length_error("data does not contain enough bytes for header");
+      throw std::length_error("data does not contain enough bytes for header");
     }
 
-    packetData.SetFromByte(this->Nxhdr);
-    packetData.SetFromBits<1>(
+    packetDataHandle.SetFromByte(this->Nxhdr);
+    packetDataHandle.SetFromBits<1>(
       4, 4, this->Glen,
       0, 4, this->Flen
     );
-    packetData.SetFromByte(this->Mic);
-    packetData.SetFromByte(this->Tstat);
-    packetData.SetFromByte(this->Dset);
-    packetData.SetFromByte(this->Iset);
-    packetData.SetFromBytes(this->Tref);
-    packetData.SetFromBytes(this->Pseq);
+    packetDataHandle.SetFromByte(this->Mic);
+    packetDataHandle.SetFromByte(this->Tstat);
+    packetDataHandle.SetFromByte(this->Dset);
+    packetDataHandle.SetFromByte(this->Iset);
+    packetDataHandle.SetFromBytes(this->Tref);
+    packetDataHandle.SetFromBytes(this->Pseq);
     // For word alignment.
-    packetData.EndBlock(this->GetHlen());
+    packetDataHandle.EndBlock(this->GetHlen());
   }
-}
+};
 
 
 //------------------------------------------------------------------------------
@@ -707,7 +713,7 @@ class ExtensionHeader
 {
 private:
   //! @brief The length of the extension header.
-  uint8_t HLen;
+  uint8_t Hlen;
 
   //! @brief Nxhdr The next header type (same as PayloadHeader).
   uint8_t Nxhdr;
@@ -739,31 +745,31 @@ public:
    * @param[in,out] i    The offset to the start of the header. The offset will
    *                     be advanced as the data is consumed.
    */
-  ExtensionHeader(PacketData & packetData)
+  ExtensionHeader(PacketDataHandle<> & packetDataHandle)
   {
-    packetData.SetFromByte(this->Hlen);
+    packetDataHandle.SetFromByte(this->Hlen);
 
     auto hlen = this->GetHlen();
-    if (hlen > packetData.GetRemainingLength())
+    if (hlen > packetDataHandle.GetRemainingLength())
     {
-      raise std::length_error("data does not contain enough bytes for header");
+      throw std::length_error("data does not contain enough bytes for header");
     }
 
-    packetData.SetFromByte(this->Nxhdr);
+    packetDataHandle.SetFromByte(this->Nxhdr);
 
-    auto dataLen = hlen - (sizeof(Hlen) + sizeof(Nxhdr));
+    auto dataLen = hlen - (sizeof(this->Hlen) + sizeof(this->Nxhdr));
 
     // Only copy the data if the template parameter requests it.
     if (loadData)
     {
-      packetData.CopyBytes(this->Data, dataLen);
+      packetDataHandle.CopyBytes(this->Data, dataLen);
     }
     else
     {
-      packetData.SkipBytes(dataLen);
+      packetDataHandle.SkipBytes(dataLen);
     }
   }
-}
+};
 
 //------------------------------------------------------------------------------
 // FiringGroupHeader
@@ -825,41 +831,52 @@ public:
    *
    * - TOFFS is returned in nanoseconds.
    * - HDIR and VDIR are returned as their respective enums.
-   * - VDFL and AZM are returned in degrees.
+   * - VDFL and AZM are returned as an integral number of hundredths of degrees.
    */
 
   // Cast to 32-bit required to hold all values.
-  uint32_t GetToffs const { return static_cast<uint32_t>(this->Toffs) * 64u; }
-  uint8_t GetFcnt const { return this->Fcnt + 1; }
-  uint8_t GetFspn const { return this->Fspn + 1; }
+  uint32_t GetToffs() const { return static_cast<uint32_t>(this->Toffs) * 64u; }
+  uint8_t GetFcnt() const { return this->Fcnt + 1; }
+  uint8_t GetFspn() const { return this->Fspn + 1; }
   GET_RAW(Fdly)
-  GET_ENUM(HorizontalDirection, Hdir);
-  GET_ENUM(VerticalDirection, Vdir);
-  double GetVdfl const { return this->Vdfl * 0.01; }
-  double GetAzm const { return this->Azm * 0.01; }
+  GET_ENUM(HorizontalDirection, Hdir)
+  GET_ENUM(VerticalDirection, Vdir)
+  GET_RAW(Vdfl)
+  GET_RAW(Azm)
+  //@}
+
+  //@{
+  //! @brief Convenience accessors to get angles in degrees.
+  double GetVerticalDeflection() const { return this->Vdfl * 0.01; }
+  double GetAzimuth() const { return this->Azm * 0.01; }
   //@}
 
   /*!
-   * @brief Construct a FiringGroupHeader.
-   * @param[in] data The packet data.
-   * @param[in,out] i
-   *   The offset to the start of the header. The offset will be advanced as the
-   *   data is consumed.
+   * @brief         Construct a FiringGroupHeader.
+   * @param[in]     data The packet data.
+   * @param[in,out] i    The offset to the start of the header. The offset will
+   *                     be advanced as the data is consumed.
    */
-  FiringGroupHeader(PacketData & packetData)
+  FiringGroupHeader(PacketDataHandle<> & packetDataHandle)
   {
-    packetData.SetFromBytes(this->Toffs);
-    packetData.SetFromBits<1>(
+    packetDataHandle.SetFromBytes(this->Toffs);
+    packetDataHandle.SetFromBits<1>(
       3, 5, this->Fcnt,
       0, 3, this->Fspn
     );
-    packetData.SetFromByte(this->Fdly);
-    packetData.SetFromBits<2>(
+    packetDataHandle.SetFromByte(this->Fdly);
+    packetDataHandle.SetFromBits<2>(
       15,  1, this->Hdir,
       14,  1, this->Vdir,
        0, 14, this->Vdfl
     );
-    packetData.SetFromBytes(this->Azm);
+    packetDataHandle.SetFromBytes(this->Azm);
+  }
+
+  // A default constructor is required when member initialization is not
+  // possible.
+  FiringGroupHeader()
+  {
   }
 };
 
@@ -902,45 +919,57 @@ public:
   //@}
 
   /*!
-   * @brief Construct a FiringGroupHeader.
-   * @param[in] data The packet data.
-   * @param[in,out] i
-   *   The offset to the start of the header. The offset will be advanced as the
-   *   data is consumed.
+   * @brief         Construct a FiringGroupHeader.
+   * @param[in]     data The packet data.
+   * @param[in,out] i    The offset to the start of the header. The offset will
+   *                     be advanced as the data is consumed.
    */
-  FiringHeader(PacketData & packetData)
+  FiringHeader(PacketDataHandle<> & packetDataHandle)
   {
-    packetData.SetFromByte(this->Lcn);
-    packetData.SetFromBits<1>(
+    packetDataHandle.SetFromByte(this->Lcn);
+    packetDataHandle.SetFromBits<1>(
       4, 4, this->Fm,
       0, 4, this->Pwr
     );
-    packetData.SetFromByte(this->Nf);
-    packetData.SetFromByte(this->Stat);
+    packetDataHandle.SetFromByte(this->Nf);
+    packetDataHandle.SetFromByte(this->Stat);
   }
+};
 
+
+// Forward declarations
+template <bool loadData>
+class Firing;
+
+template <bool loadData>
+class FiringGroup;
+
+template <bool loadData>
+class Payload;
 
 //------------------------------------------------------------------------------
 // FiringReturn
 //------------------------------------------------------------------------------
 /*!
- * @brief Firing return of the VLP Advanced data packet format.
- *
+ * @brief  Firing return of the VLP Advanced data packet format.
+ * @tparam loadData If true, load firing data, otherwise skip it via
+ *                  packetDataHandle.SkipBytes
+ * @todo   Consider using polymorphic types to avoid wasted space.
+ * 
  * The values in this struct may be encoded in the packet with 16 or 24 bits.
  * The size is determined at runtime by parsing the payload headers so a
  * template cannot be used here. The current implementation uses types large
  * enough to hold all possible values.
- *
- * @todo Consider using polymorphic types to avoid wasted space.
  */
 // This class is not templated with "loadData" because it makes no sense to
 // create an empty FiringReturn (it's basically just a wrapper around a vector
 // with some bit-fiddling to access the return values).
+template <bool loadData>
 class FiringReturn
 {
 private:
   //! @brief The packed data with the return values.
-  std:vector<uint8_t> Data;
+  std::vector<uint8_t> Data;
 
 public:
   //@{
@@ -949,37 +978,42 @@ public:
   //@}
 
   //! @brief Reference to this return's firing.
-  Firing const & MyFiring;
+  Firing<loadData> const & FiringRef;
 
   //! @brief Templated subscript operator for accessing distance and intensities.
-  template <typename T>
-  T operator[](const int i)
+  template <typename T = uint32_t>
+  T operator[](const int i) const
   {
+    PayloadHeader const & payloadHeader = this->FiringRef.FiringGroupRef.PayloadRef.GetHeader();
     // Range check.
-    if (i < 0 || i >= this->MyFiring.MyFiringGroup.MyPayload.GetHeader().GetIntensityCount())
+    if (i < 0 || i >= payloadHeader.GetIntensityCount())
     {
       throw std::out_of_range("requested intensity is out of range of current set");
     }
     T value;
-    auto index = i * this->BytesPerValue;
-    setFromBytes(this->Data, index, value, this->BytesPerValue);
+    auto bytesPerValue = payloadHeader.GetNumberOfBytesPerFiring();
+    auto index = i * bytesPerValue;
+    setFromBytes(this->Data.data(), index, value, bytesPerValue);
     return value;
   }
 
   //! @brief Get the distance from this firing.
-  template <typename T>
-  T GetDistance() { return this->operator[]<T>(0); }
+  template <typename T = uint32_t>
+  T GetDistance() const { return this->operator[]<T>(0); }
+
+  // Default return type is 32-bit because the type may be either 16 or 24 bit.
 
   //! @brief Get an intensity from this firing by index.
-  template <typename T>
-  T GetIntensity(const int i) { return this->operator[]<T>(i+1); }
+  template <typename T = uint32_t>
+  T GetIntensity(const int i) const { return this->operator[]<T>(i+1); }
 
   //! @brief Get an intensity from this firing by type.
-  template <typename T>
-  T GetIntensity(IntensityType type) {
+  template <typename T = uint32_t>
+  T GetIntensity(IntensityType type) const
+  {
     // Check that the value is actually present otherwise the calculate index
     // will yield a different value or end up out of range.
-    if (! (this->MyFiring.MyFiringGroup.MyPayload.GetHeader().GetIset() & type))
+    if (! (this->FiringRef.FiringGroupRef.PayloadRef.GetHeader().GetIset() & type))
     {
       throw std::out_of_range("requested intensity type is not in the intensity set");
     }
@@ -995,16 +1029,17 @@ public:
     if (mask)
     {
       mask--;
-      i += SET_BITS_IN_BYTE[this->Iset & mask];
+      PayloadHeader const & payloadHeader = this->FiringRef.FiringGroupRef.PayloadRef.GetHeader();
+      i += SET_BITS_IN_BYTE[payloadHeader.GetIset() & mask];
     }
     return this->operator[]<T>(i);
   }
 
-  FiringReturn(Firing const & firing, PacketData & packetData)
-    : FiringRef = firing
+  FiringReturn(Firing<loadData> const & firing, PacketDataHandle<> & packetDataHandle)
+    : FiringRef {firing}
   {
-    auto dataLength = this->MyFiring.MyFiringGroup.MyPayload.GetHeader().GetNumberOfBytesPerFiringReturn();
-    packetData.CopyBytes(this->Data, dataLength);
+    auto dataLength = this->FiringRef.FiringGroupRef.PayloadRef.GetHeader().GetNumberOfBytesPerFiringReturn();
+    packetDataHandle.CopyBytes(this->Data, dataLength);
   }
 };
 
@@ -1014,7 +1049,7 @@ public:
 /*!
  * @brief  Parse and optionally load data from a firing.
  * @tparam loadData If true, load firing data, otherwise skip it via
- *                  packetData.SkipBytes
+ *                  packetDataHandle.SkipBytes
  */
 template <bool loadData>
 class Firing
@@ -1034,31 +1069,29 @@ public:
   //@}
 
   //! @brief Reference to this firing's group.
-  FiringGroup<loadData> const & MyFiringGroup;
+  FiringGroup<loadData> const & FiringGroupRef;
 
-  Firing(FiringGroup const & firingGroup, PacketData & packetData)
-    : MyFiringGroup = firingGroup
+  Firing(FiringGroup<loadData> const & firingGroup, PacketDataHandle<> & packetDataHandle)
+    : Header {packetDataHandle}
+    , FiringGroupRef {firingGroup}
   {
-    this->Header = FiringHeader(packetData);
-
-
     if (loadData)
     {
-      auto dcount = this->MyFiringGroup.MyPayload.GetHeader().GetDistanceCount();
-      this->returns.reserve(dcount);
+      auto dcount = this->FiringGroupRef.PayloadRef.GetHeader().GetDistanceCount();
+      this->Returns.reserve(dcount);
       for (decltype(dcount) j = 0; j < dcount; ++j)
       {
-        FiringReturn<loadData> firingReturn = FiringReturn<loadData>((* this), packetData);
-        this->returns.push_back(firingReturn);
+        FiringReturn<loadData> firingReturn = FiringReturn<loadData>((* this), packetDataHandle);
+        this->Returns.push_back(firingReturn);
       }
     }
     else
     {
-      auto bytesPerFiring = this->MyFiringGroup.MyPayload.GetHeader().GetNumberOfBytesPerFiring();
-      packetData.SkipBytes(bytesPerFiring);
+      auto bytesPerFiring = this->FiringGroupRef.PayloadRef.GetHeader().GetNumberOfBytesPerFiring();
+      packetDataHandle.SkipBytes(bytesPerFiring);
     }
   }
-}
+};
 
 //------------------------------------------------------------------------------
 // FiringGroup
@@ -1076,7 +1109,7 @@ private:
   FiringGroupHeader Header;
 
   //! @brief Firings.
-  std::vector<Firing<loadData>> Firings {0};
+  std::vector<Firing<loadData>> Firings;
 
 public:
   //@{
@@ -1086,118 +1119,39 @@ public:
   //@}
 
   //! @brief Reference to the payload containing this firing group.
-  Payload<loadData> const & MyPayload;
+  Payload<loadData> const & PayloadRef;
 
   /*!
-   * @param[in]     payload   The payload that contains this firing group.
+   * @param[in]     payload    The payload that contains this firing group.
    * @param[in]     data       Pointer to the packet bytes.
    * @param[in]     dataLength The byte length of the packet data.
    * @param[in,out] i          The offset to the data.
    */
-  FiringGroup(Payload<loadData> const & payload, PacketData & packetData)
-    : MyPayload = payload
+  FiringGroup(Payload<loadData> const & payload, PacketDataHandle<> & packetDataHandle)
+    : PayloadRef {payload}
   {
     // For word alignment.
-    packetData.BeginBlock();
+    packetDataHandle.BeginBlock();
 
     // Group headers are padded to 32-bit boundaries. Use GLEN to advance the
     // index correctly.
-    auto glen = this->MyPayload->GetGlen();
-    packetData.BeginBlock();
-    this->Header = FiringGroupHeader(packetData);
-    packetData.EndBlock(this->MyPayload.GetGlen());
+    packetDataHandle.BeginBlock();
+    this->Header = FiringGroupHeader(packetDataHandle);
+    packetDataHandle.EndBlock(this->PayloadRef.GetHeader().GetGlen());
 
-    auto fcnt = this->header.GetFcnt();
+    auto fcnt = this->Header.GetFcnt();
     this->Firings.reserve(fcnt);
 
     for (decltype(fcnt) j = 0; j < fcnt; ++j)
     {
-      Firing<loadData> firing = Firing<loadData>((* this), packetData);
+      Firing<loadData> firing = Firing<loadData>((* this), packetDataHandle);
       this->Firings.push_back(firing);
     }
 
     // For word alignment.
-    packetData.EndBlock();
+    packetDataHandle.EndBlock();
   }
-}
-
-//------------------------------------------------------------------------------
-// Payload
-//------------------------------------------------------------------------------
-/*!
- * @brief  Parse and optionally load data from the payload.
- * @tparam loadData If true, load all data, otherwise only load metadata (e.g.
- *                  firing group headers, extension headers).
- */
-
-template <bool loadData>
-class Payload
-{
-private:
-  //! @brief Payload header.
-  PayloadHeader Header;
-
-  //! @brief Variable number of extension headers.
-  std::vector<ExtensionHeader<loadData>> ExtensionHeaders {0};
-
-  //! @brief Variable number of firing groups.
-  std::vector<FiringGroup<loadData>> FiringGroups {0};
-
-public:
-  //@{
-  //! @brief Getters.
-  GET_CONST_REF(Header);
-  GET_CONST_REF(ExtensionHeaders);
-  GET_CONST_REF(FiringGroups);
-  //@}
-
-
-  /*!
-   * @brief Detect frame boundaries between firing groups.
-   *
-   * VeloView requires some concept of a frame. The current approach is to
-   * detect the azimuth crossing zero but this will likely need to be changed in
-   * the future.
-   *
-   * @param[out] newFrameBoundaries The indices of firing groups that start a
-   *                                new frame will be pushed onto this vector.
-   */
-  void DetectFrames(FrameTracker & CurrentFrameTracker, std::vector<size_t> & newFrameBoundaries)
-  {
-    for (size_t i = 0; i < this->FiringGroups.size(); ++i)
-    {
-      FrameTracker frameTracker(this->FiringGroups[i]);
-      if (this->CurrentFrameTracker.IsNewFrame(frameTracker))
-      {
-        newFrameBoundaries.push_back(i);
-      }
-      this->CurrentFrameTracker = frameTracker;
-    }
-  }
-
-  Payload(PacketData & packetData)
-  {
-    this->header = PayloadHeader(packetData);
-
-    // Check for extension headers.
-    auto nxhdr = this->header.GetNxhdr();
-    while (nxhdr != 0)
-    {
-      // The extension header automatically adjusts its length to end on a
-      // 32-bit boundary so padding need not be handled here.
-      ExtensionHeader<loadData> extensionHeader = ExtensionHeader<loadData>((* this), packetData);
-      this->ExtensionHeaders.push_back(extensionHeader);
-      nxhdr = extensionHeader.GetNxhdr();
-    }
-
-    // The rest of the data should be filled with firing groups.
-    while (i < dataLength)
-    {
-      FiringGroup<loadData> firingGroup = FiringGroup<loadData>((* this), packetData);
-      this->FiringGroups.push_back(firingGroup);
-    }
-  }
-}
+};
 
 //------------------------------------------------------------------------------
 // FrameTracker
@@ -1221,9 +1175,17 @@ public:
   FrameTracker()
   {
   }
-  FrameTracker(FiringGroup & firingGroup)
+
+  template <bool loadData>
+  FrameTracker(FiringGroup<loadData> & firingGroup)
   {
     this->Azm = firingGroup.GetHeader().GetAzm();
+  }
+
+  FrameTracker & operator=(FrameTracker const & other)
+  {
+    this->Azm = other.Azm;
+    return (* this);
   }
 
   /*!
@@ -1232,10 +1194,86 @@ public:
    */
   bool IsNewFrame(FrameTracker const & frameTracker)
   {
-    return (std::abs(this->Azm - frameTracker) > 180.0)
+    return (std::abs(this->Azm - frameTracker.Azm) > 180.0);
   }
-}
+};
 
+//------------------------------------------------------------------------------
+// Payload
+//------------------------------------------------------------------------------
+/*!
+ * @brief  Parse and optionally load data from the payload.
+ * @tparam loadData If true, load all data, otherwise only load metadata (e.g.
+ *                  firing group headers, extension headers).
+ */
+
+template <bool loadData>
+class Payload
+{
+private:
+  //! @brief Payload header.
+  PayloadHeader Header;
+
+  //! @brief Variable number of extension headers.
+  std::vector<ExtensionHeader<loadData>> ExtensionHeaders;
+
+  //! @brief Variable number of firing groups.
+  std::vector<FiringGroup<loadData>> FiringGroups;
+
+public:
+  //@{
+  //! @brief Getters.
+  GET_CONST_REF(Header);
+  GET_CONST_REF(ExtensionHeaders);
+  GET_CONST_REF(FiringGroups);
+  //@}
+
+
+  /*!
+   * @brief Detect frame boundaries between firing groups.
+   *
+   * VeloView requires some concept of a frame. The current approach is to
+   * detect the azimuth crossing zero but this will likely need to be changed in
+   * the future.
+   *
+   * @param[out] newFrameBoundaries The indices of firing groups that start a
+   *                                new frame will be pushed onto this vector.
+   */
+  void DetectFrames(FrameTracker & currentFrameTracker, std::vector<size_t> & newFrameBoundaries)
+  {
+    for (size_t i = 0; i < this->FiringGroups.size(); ++i)
+    {
+      FrameTracker frameTracker = FrameTracker(this->FiringGroups[i]);
+      if (currentFrameTracker.IsNewFrame(frameTracker))
+      {
+        newFrameBoundaries.push_back(i);
+      }
+      currentFrameTracker = frameTracker;
+    }
+  }
+
+  Payload(PacketDataHandle<> & packetDataHandle)
+    : Header {packetDataHandle}
+  {
+    // Check for extension headers.
+    auto nxhdr = this->Header.GetNxhdr();
+    while (nxhdr != 0)
+    {
+      // The extension header automatically adjusts its length to end on a
+      // 32-bit boundary so padding need not be handled here.
+      ExtensionHeader<loadData> extensionHeader = ExtensionHeader<loadData>(packetDataHandle);
+      this->ExtensionHeaders.push_back(extensionHeader);
+      nxhdr = extensionHeader.GetNxhdr();
+    }
+
+    // The rest of the data should be filled with firing groups.
+    while (packetDataHandle.GetRemainingLength() > 0)
+    {
+      FiringGroup<loadData> firingGroup = FiringGroup<loadData>((* this), packetDataHandle);
+      this->FiringGroups.push_back(firingGroup);
+    }
+  }
+};
 
 
 
@@ -1258,34 +1296,32 @@ public:
 //------------------------------------------------------------------------------
 VelodyneAdvancedPacketInterpreter::VelodyneAdvancedPacketInterpreter()
 {
+	this->Init();
+  this->DistanceResolutionM = 0.002;
+  this->CurrentFrameTracker = new FrameTracker();
 }
 
 //------------------------------------------------------------------------------
 VelodyneAdvancedPacketInterpreter::~VelodyneAdvancedPacketInterpreter()
 {
-}
-
-//------------------------------------------------------------------------------
-VelodyneAdvancedPacketInterpreter::LoadCalibration(std::string const & filename)
-{
-  // TODO
+  delete this->CurrentFrameTracker;
 }
 
 //------------------------------------------------------------------------------
 void VelodyneAdvancedPacketInterpreter::ProcessPacket(unsigned char const * data, unsigned int dataLength, int startPosition)
 {
   // TODO: check how to handle startPosition
-  // PacketData packetData = PacketData(data + startPosition, dataLength - startPosition, 0);
-  PacketData packetData = PacketData(data, dataLength, 0);
-  Payload payload;
+  // PacketDataHandle<> packetDataHandle = PacketDataHandle(data + startPosition, dataLength - startPosition, 0);
+  PacketDataHandle<> packetDataHandle = PacketDataHandle<>(data, dataLength, 0);
+  Payload<true> payload {packetDataHandle};
 
   // The packet classes throw length errors if the packet does not contain the
   // expected length.
   try
   {
-    payload = Payload<true>(packetData);
+    payload = Payload<true>(packetDataHandle);
   }
-  // Length errors are raised if the packet data does not conform to the
+  // Length errors are thrown if the packet data does not conform to the
   // expected lengths. Returning here is basically the same thing as returning
   // at the start of this function if  IsLidarPacket() returns false. The
   // difference is that here the full data is checked instead of just the
@@ -1300,13 +1336,16 @@ void VelodyneAdvancedPacketInterpreter::ProcessPacket(unsigned char const * data
   auto pseq = payloadHeader.GetPseq();
   auto iset = payloadHeader.GetIset();
 
+  // 64-bit PTP truncated format.
+  auto timeRef = payloadHeader.GetTref();
+
   // TODO: make this configurable via the user interface
   uint8_t distanceIndex;
   DistanceType distanceType;
   if (payloadHeader.IsDsetMask())
   {
     auto dsetMask = payloadHeader.GetDsetMask();
-    distanceType = firstSetBit(dsetMask);
+    distanceType = toDistanceType(firstSetBit(dsetMask));
     distanceIndex = indexOfBit(dsetMask, distanceType);
   }
   else
@@ -1321,67 +1360,74 @@ void VelodyneAdvancedPacketInterpreter::ProcessPacket(unsigned char const * data
   {
     // Detect frame changes in firing groups.
     FrameTracker frameTracker = FrameTracker(firingGroup);
-    if (this->CurrentFrameTracker.IsNewFrame(frameTracker))
+    if (this->CurrentFrameTracker->IsNewFrame(frameTracker))
     {
       this->SplitFrame();
     }
-    this->CurrentFrameTracker = frameTracker;
+    (* (this->CurrentFrameTracker)) = frameTracker;
 
-    auto timeFractionOffset = firingGroup.GetToffs(); 
-    auto coChannelTimeFractionDelay = firingGroup.GetFdly();
-    double verticalAngle = firingGroup.GetVdfl();
-    double azimuth = firingGroup.GetAzm();
+    auto firingGroupHeader = firingGroup.GetHeader();
+    auto timeFractionOffset = firingGroupHeader.GetToffs(); 
+    auto coChannelSpan = firingGroupHeader.GetFspn();
+    auto coChannelTimeFractionDelay = firingGroupHeader.GetFdly();
+    // double verticalAngle = firingGroup.GetVdfl();
+    auto azimuth = firingGroupHeader.GetAzm();
 
-    // TODO
-    // This is just placeholder guesswork. Check how the data needs to be handled.
-    double phi = degreesToRadians(verticalAngle);
-    double theta = degreesToRadians(azimuth);
-    double cosPhi = std::cos(phi);
-    double sinPhi = std::sin(phi);
-    double cosTheta = std::cos(theta);
-    double sinTheta = std::sin(theta);
+    auto firings = firingGroup.GetFirings();
+    size_t numberOfFirings = firings.size();
 
-    for (auto firing : firingGroup.GetFirings())
+    for (size_t i = 0; i < numberOfFirings; ++i)
     {
-      auto channelNumber = firing.GetLCN();
+      // TODO
+      // This assumes that the spans are returned in order in the firing group.
+      // Check that this is the case. If not, determine how to handle this (by
+      // using the channe number?).
+      uint32_t channelTimeFractionOffset = timeFractionOffset + (coChannelTimeFractionDelay * (i / coChannelSpan));
+
+      auto firing = firings[i];
+      auto firingHeader = firing.GetHeader();
+      auto channelNumber = firingHeader.GetLcn();
 
       // The firing mode is an enum so we need to convert it to a human-readable
       // string.
-      auto firingMode = firing.GetFM();
-      auto firingModeString = ToString(firingMode);
+      auto firingMode = firingHeader.GetFm();
+      auto firingModeString = toString(firingMode);
 
-      auto power = firing.GetPwr();
-      auto noise = firing.GetNf();
+      auto power = firingHeader.GetPwr();
+      auto noise = firingHeader.GetNf();
 
       // Status is also an enum and requires a string conversion.
-      auto status = firing.GetStat();
-      auto statusString = ToString(status);
+      auto status = firingHeader.GetStat();
+      auto statusString = toString(status);
 
 
-      // Only one distance type is displayed but there are multiple here.
-      auto firingReturn = firing.GetReturns[distanceIndex];
-      double distance = firingReturn.GetDistance();
+      // Only one distance type is displayed but there may be multiple in the
+      // packet.
+      auto firingReturn = firing.GetReturns()[distanceIndex];
+      double distance;
 
-      // TODO
-      // No information has been received yet concerning how to actually
-      // determine the distance from the returns.
-      double x = distance * cosTheta * sinPhi;
-      double y = distance * sinTheta * sinPhi;
-      double z = distance * cosphi;
+      double position[3];
+      this->ComputeCorrectedValues(
+          azimuth, 
+          firingReturn,
+          i,
+          position
+      );
 
       // TODO
       // Determine which information is relevent and update accordingly.
-      this->Points->InsertNextPoint({x,y,z});
-      this->INFO_Xs->InsertNextValue(x);
-      this->INFO_Ys->InsertNextValue(y);
-      this->INFO_Zs->InsertNextValue(z);
+      this->Points->InsertNextPoint(position);
+      this->INFO_Xs->InsertNextValue(position[0]);
+      this->INFO_Ys->InsertNextValue(position[1]);
+      this->INFO_Zs->InsertNextValue(position[2]);
 
       // TODO Replace these with the angles for the sensor after calibration.
-      this->INFO_VerticalAngles->InsertNextValue(verticalAngle);
+      // this->INFO_VerticalAngles->InsertNextValue(verticalAngle);
       this->INFO_Azimuths->InsertNextValue(azimuth);
 
       this->INFO_Pseqs->InsertNextValue(pseq);
       this->INFO_ChannelNumbers->InsertNextValue(channelNumber);
+      this->INFO_TimeFractionOffsets->InsertNextValue(channelTimeFractionOffset);
       this->INFO_FiringModeStrings->InsertNextValue(firingModeString);
       this->INFO_Powers->InsertNextValue(power);
       this->INFO_Noises->InsertNextValue(noise);
@@ -1390,7 +1436,7 @@ void VelodyneAdvancedPacketInterpreter::ProcessPacket(unsigned char const * data
 
 //! @brief Convenience macro for setting intensity values
 #define INSERT_INTENSITY(my_array, iset_flag) \
-      this->INFO_ ## my_array->InsertNextVaue((iset & (ISET_ ## iset_flag)) ? firingReturn.GetIntensity((ISET_ ## iset_flag)) : -1);
+      this->INFO_ ## my_array->InsertNextValue((iset & (ISET_ ## iset_flag)) ? firingReturn.GetIntensity<>((ISET_ ## iset_flag)) : -1);
 
       // TODO: Make the inclusion of these columns fully optionally at runtime.
 
@@ -1408,10 +1454,10 @@ bool VelodyneAdvancedPacketInterpreter::IsLidarPacket(unsigned char const * data
   // TODO
   // Determine the best way to check if a packet contains lidar data. Currently
   // this just checks that the packet data contains a plausible payload header.
-  PacketData packetData = PacketData(data, dataLength, 0);
+  PacketDataHandle<> packetDataHandle = PacketDataHandle<BYTES_PER_HEADER_WORD>(data, dataLength, 0);
   try
   {
-    PayloadHeader payloadHeader = PayloadHeader(packetData);
+    PayloadHeader payloadHeader = PayloadHeader(packetDataHandle);
     return true;
   }
   catch (std::length_error const & e)
@@ -1519,21 +1565,22 @@ vtkSmartPointer<vtkPolyData> VelodyneAdvancedPacketInterpreter::CreateNewEmptyFr
 #define INIT_INFO_ARR(arr_name, disp_name) \
   InitializeDataArrayForPolyData(this->INFO_ ## arr_name, disp_name, numberOfPoints, polyData);
 
-  INIT_INFO_ARR(Xs                  , "X")
-  INIT_INFO_ARR(Ys                  , "Y")
-  INIT_INFO_ARR(Zs                  , "Z")
-  INIT_INFO_ARR(Azimuths            , "Azimuth")
-  INIT_INFO_ARR(VerticalAngles      , "Vertical Angle")
-  INIT_INFO_ARR(DistanceTypeStrings , "Distance Type")
-  INIT_INFO_ARR(FiringModeStrings   , "FiringMode")
-  INIT_INFO_ARR(StatusStrings       , "Status")
-  INIT_INFO_ARR(Intensities         , "Intensity")
-  INIT_INFO_ARR(Confidences         , "Confidence")
-  INIT_INFO_ARR(Reflectivities      , "Reflectivity")
-  INIT_INFO_ARR(ChannelNumbers      , "Logical Channel Number")
-  INIT_INFO_ARR(Powers              , "Power")
-  INIT_INFO_ARR(Noises              , "Noise")
-  INIT_INFO_ARR(Pseqs               , "Packet Sequence Number")
+  INIT_INFO_ARR(Xs                   , "X")
+  INIT_INFO_ARR(Ys                   , "Y")
+  INIT_INFO_ARR(Zs                   , "Z")
+  INIT_INFO_ARR(Azimuths             , "Azimuth")
+  INIT_INFO_ARR(VerticalAngles       , "Vertical Angle")
+  INIT_INFO_ARR(DistanceTypeStrings  , "Distance Type")
+  INIT_INFO_ARR(FiringModeStrings    , "FiringMode")
+  INIT_INFO_ARR(StatusStrings        , "Status")
+  INIT_INFO_ARR(Intensities          , "Intensity")
+  INIT_INFO_ARR(Confidences          , "Confidence")
+  INIT_INFO_ARR(Reflectivities       , "Reflectivity")
+  INIT_INFO_ARR(ChannelNumbers       , "Logical Channel Number")
+  INIT_INFO_ARR(TimeFractionOffsets  , "Time Fraction Offset")
+  INIT_INFO_ARR(Powers               , "Power")
+  INIT_INFO_ARR(Noises               , "Noise")
+  INIT_INFO_ARR(Pseqs                , "Packet Sequence Number")
 
   return polyData;
 }
@@ -1544,21 +1591,22 @@ bool VelodyneAdvancedPacketInterpreter::SplitFrame(bool force)
 {
   this->FrameSize = std::max(
     this->FrameSize,
-    static_cast<decltype(this->FrameSize)>(this->Points->size())
+    static_cast<decltype(this->FrameSize)>(this->Points->GetNumberOfPoints())
   );
-  return this->LidarPacketInterpretor::SplitFrame(force);
+  return this->LidarPacketInterpreter::SplitFrame(force);
 }
 
 //------------------------------------------------------------------------------
-// void VelodyneAdvancedPacketInterpreter::ResetCurrentFrame()
-// {
-// }
+void VelodyneAdvancedPacketInterpreter::ResetCurrentFrame()
+{
+  this->CurrentFrame = this->CreateNewEmptyFrame(0);
+}
 
 //------------------------------------------------------------------------------
 void VelodyneAdvancedPacketInterpreter::PreProcessPacket(unsigned char const * data, unsigned int dataLength, bool & isNewFrame, int & framePositionInPacket)
 {
-  PacketData packetData = PacketData(data, dataLength, 0);
-  PayloadHeader packetHeader = PayloadHeader<false>(packetData);
+  PacketDataHandle<> packetDataHandle = PacketDataHandle<>(data, dataLength, 0);
+  Payload<false> payload = Payload<false>(packetDataHandle);
   std::vector<size_t> newFrameBoundaries {0};
 
   // TODO
@@ -1567,8 +1615,301 @@ void VelodyneAdvancedPacketInterpreter::PreProcessPacket(unsigned char const * d
   // theoretically be included in a single payload depending on how frames are
   // determined. If the function limits this to one then perhaps we are losing
   // frame data here.
-  packetHeader.DetectFrames(this->CurrentFrameTracker, newFrameBoundaries);
+  payload.DetectFrames((* (this->CurrentFrameTracker)), newFrameBoundaries);
   isNewFrame = (newFrameBoundaries.size() > 0);
   framePositionInPacket = 0;
+}
+
+
+
+
+
+
+
+
+//-----------------------------------------------------------------------------
+// Code from the legacy packet format interpreter.
+//-----------------------------------------------------------------------------
+void VelodyneAdvancedPacketInterpreter::InitTrigonometricTables()
+{
+  if (cos_lookup_table_.size() == 0 || sin_lookup_table_.size() == 0)
+  {
+    cos_lookup_table_.resize(HDL_NUM_ROT_ANGLES);
+    sin_lookup_table_.resize(HDL_NUM_ROT_ANGLES);
+    for (unsigned int i = 0; i < HDL_NUM_ROT_ANGLES; i++)
+    {
+      double rad = degreesToRadians(i / 100.0);
+      cos_lookup_table_[i] = std::cos(rad);
+      sin_lookup_table_[i] = std::sin(rad);
+    }
+  }
+}
+
+//-----------------------------------------------------------------------------
+void VelodyneAdvancedPacketInterpreter::PrecomputeCorrectionCosSin()
+{
+
+  for (int i = 0; i < HDL_MAX_NUM_LASERS; i++)
+  {
+    HDLLaserCorrection& correction = laser_corrections_[i];
+    correction.cosVertCorrection = std::cos(degreesToRadians(correction.verticalCorrection));
+    correction.sinVertCorrection = std::sin(degreesToRadians(correction.verticalCorrection));
+    correction.cosRotationalCorrection =
+      std::cos(degreesToRadians(correction.rotationalCorrection));
+    correction.sinRotationalCorrection =
+      std::sin(degreesToRadians(correction.rotationalCorrection));
+    correction.sinVertOffsetCorrection =
+      correction.verticalOffsetCorrection * correction.sinVertCorrection;
+    correction.cosVertOffsetCorrection =
+      correction.verticalOffsetCorrection * correction.cosVertCorrection;
+  }
+}
+
+//-----------------------------------------------------------------------------
+void VelodyneAdvancedPacketInterpreter::Init()
+{
+  this->InitTrigonometricTables();
+  // this->SensorTransform->Identity()
+  this->ResetCurrentFrame();
+}
+
+//-----------------------------------------------------------------------------
+void VelodyneAdvancedPacketInterpreter::LoadCalibration(const std::string& filename)
+{
+  boost::property_tree::ptree pt;
+  try
+  {
+    read_xml(filename, pt, boost::property_tree::xml_parser::trim_whitespace);
+  }
+  catch (boost::exception const&)
+  {
+    vtkGenericWarningMacro(
+      "LoadCalibration: error reading calibration file: " << filename);
+    return;
+  }
+  // Read distLSB if provided
+  BOOST_FOREACH (boost::property_tree::ptree::value_type& v, pt.get_child("boost_serialization.DB"))
+  {
+    if (v.first == "distLSB_")
+    { // Stored in cm in xml
+      DistanceResolutionM = atof(v.second.data().c_str()) / 100.0;
+    }
+  }
+
+  int i, j;
+  i = 0;
+  BOOST_FOREACH (
+    boost::property_tree::ptree::value_type& p, pt.get_child("boost_serialization.DB.colors_"))
+  {
+    if (p.first == "item")
+    {
+      j = 0;
+      BOOST_FOREACH (boost::property_tree::ptree::value_type& v, p.second.get_child("rgb"))
+        if (v.first == "item")
+        {
+          std::stringstream ss;
+          double val;
+          ss << v.second.data();
+          ss >> val;
+
+          XMLColorTable[i][j] = val;
+          j++;
+        }
+      i++;
+    }
+  }
+
+  int enabledCount = 0;
+  BOOST_FOREACH (
+    boost::property_tree::ptree::value_type& v, pt.get_child("boost_serialization.DB.enabled_"))
+  {
+    std::stringstream ss;
+    if (v.first == "item")
+    {
+      ss << v.second.data();
+      int test = 0;
+      ss >> test;
+      if (!ss.fail() && test == 1)
+      {
+        enabledCount++;
+      }
+    }
+  }
+  this->CalibrationReportedNumLasers = enabledCount;
+
+  // Getting min & max intensities from XML
+  int laserId = 0;
+  int minIntensity[HDL_MAX_NUM_LASERS], maxIntensity[HDL_MAX_NUM_LASERS];
+  BOOST_FOREACH (boost::property_tree::ptree::value_type& v,
+    pt.get_child("boost_serialization.DB.minIntensity_"))
+  {
+    std::stringstream ss;
+    if (v.first == "item")
+    {
+      ss << v.second.data();
+      ss >> minIntensity[laserId];
+      laserId++;
+    }
+  }
+
+  laserId = 0;
+  BOOST_FOREACH (boost::property_tree::ptree::value_type& v,
+    pt.get_child("boost_serialization.DB.maxIntensity_"))
+  {
+    std::stringstream ss;
+    if (v.first == "item")
+    {
+      ss << v.second.data();
+      ss >> maxIntensity[laserId];
+      laserId++;
+    }
+  }
+
+  BOOST_FOREACH (
+    boost::property_tree::ptree::value_type& v, pt.get_child("boost_serialization.DB.points_"))
+  {
+    if (v.first == "item")
+    {
+      boost::property_tree::ptree points = v.second;
+      BOOST_FOREACH (boost::property_tree::ptree::value_type& px, points)
+      {
+        if (px.first == "px")
+        {
+          boost::property_tree::ptree calibrationData = px.second;
+          int index = -1;
+          HDLLaserCorrection xmlData;
+
+          BOOST_FOREACH (boost::property_tree::ptree::value_type& item, calibrationData)
+          {
+            if (item.first == "id_")
+              index = atoi(item.second.data().c_str());
+            if (item.first == "rotCorrection_")
+              xmlData.rotationalCorrection = atof(item.second.data().c_str());
+            if (item.first == "vertCorrection_")
+              xmlData.verticalCorrection = atof(item.second.data().c_str());
+            if (item.first == "distCorrection_")
+              xmlData.distanceCorrection = atof(item.second.data().c_str());
+            if (item.first == "distCorrectionX_")
+              xmlData.distanceCorrectionX = atof(item.second.data().c_str());
+            if (item.first == "distCorrectionY_")
+              xmlData.distanceCorrectionY = atof(item.second.data().c_str());
+            if (item.first == "vertOffsetCorrection_")
+              xmlData.verticalOffsetCorrection = atof(item.second.data().c_str());
+            if (item.first == "horizOffsetCorrection_")
+              xmlData.horizontalOffsetCorrection = atof(item.second.data().c_str());
+            if (item.first == "focalDistance_")
+              xmlData.focalDistance = atof(item.second.data().c_str());
+            if (item.first == "focalSlope_")
+              xmlData.focalSlope = atof(item.second.data().c_str());
+            if (item.first == "closeSlope_")
+              xmlData.closeSlope = atof(item.second.data().c_str());
+          }
+          if (index != -1 && index < HDL_MAX_NUM_LASERS)
+          {
+            laser_corrections_[index] = xmlData;
+            // Angles are already stored in degrees in xml
+            // Distances are stored in centimeters in xml, and we store meters.
+            laser_corrections_[index].distanceCorrection /= 100.0;
+            laser_corrections_[index].distanceCorrectionX /= 100.0;
+            laser_corrections_[index].distanceCorrectionY /= 100.0;
+            laser_corrections_[index].verticalOffsetCorrection /= 100.0;
+            laser_corrections_[index].horizontalOffsetCorrection /= 100.0;
+            laser_corrections_[index].focalDistance /= 100.0;
+            laser_corrections_[index].focalSlope /= 100.0;
+            laser_corrections_[index].closeSlope /= 100.0;
+            if (laser_corrections_[index].closeSlope == 0.0)
+              laser_corrections_[index].closeSlope = laser_corrections_[index].focalSlope;
+            laser_corrections_[index].minIntensity = minIntensity[index];
+            laser_corrections_[index].maxIntensity = maxIntensity[index];
+          }
+        }
+      }
+    }
+  }
+
+  int idx = 0;
+  BOOST_FOREACH (boost::property_tree::ptree::value_type& v,
+    pt.get_child("boost_serialization.DB.minIntensity_"))
+  {
+    std::stringstream ss;
+    if (v.first == "item")
+    {
+      ss << v.second.data();
+      int intensity = 0;
+      ss >> intensity;
+      if (!ss.fail() && idx < HDL_MAX_NUM_LASERS)
+      {
+        laser_corrections_[idx].minIntensity = intensity;
+      }
+      idx++;
+    }
+  }
+
+  idx = 0;
+  BOOST_FOREACH (boost::property_tree::ptree::value_type& v,
+    pt.get_child("boost_serialization.DB.maxIntensity_"))
+  {
+    std::stringstream ss;
+    if (v.first == "item")
+    {
+      ss << v.second.data();
+      int intensity = 0;
+      ss >> intensity;
+      if (!ss.fail() && idx < HDL_MAX_NUM_LASERS)
+      {
+        laser_corrections_[idx].maxIntensity = intensity;
+      }
+      idx++;
+    }
+  }
+
+  PrecomputeCorrectionCosSin();
+  this->IsCalibrated = true;
+}
+
+//-----------------------------------------------------------------------------
+template <typename T>
+void VelodyneAdvancedPacketInterpreter::ComputeCorrectedValues(
+  T const azimuth,
+  FiringReturn<true> const firingReturn,
+  size_t const correctionIndex,
+  double pos[3]
+)
+{
+  double distance = firingReturn.GetDistance<>();
+  double cosAzimuth, sinAzimuth;
+  HDLLaserCorrection * correction = & (this->laser_corrections_[correctionIndex]);
+
+
+  if (correction->rotationalCorrection == 0)
+  {
+    cosAzimuth = this->cos_lookup_table_[azimuth];
+    sinAzimuth = this->sin_lookup_table_[azimuth];
+  }
+  else
+  {
+    // realAzimuth = azimuth/100 - rotationalCorrection
+    // cos(a-b) = cos(a)*cos(b) + sin(a)*sin(b)
+    // sin(a-b) = sin(a)*cos(b) - cos(a)*sin(b)
+    cosAzimuth =
+      this->cos_lookup_table_[azimuth] * correction->cosRotationalCorrection +
+      this->sin_lookup_table_[azimuth] * correction->sinRotationalCorrection;
+    sinAzimuth =
+      this->sin_lookup_table_[azimuth] * correction->cosRotationalCorrection -
+      this->cos_lookup_table_[azimuth] * correction->sinRotationalCorrection;
+  }
+  // Compute the distance in the xy plane (w/o accounting for rotation)
+  /**the new term of 'vert_offset * sin_vert_angle'
+   * was added to the expression due to the mathemathical
+   * model we used.
+   */
+  double distanceMRaw = distance * this->DistanceResolutionM;
+  double distanceM = distanceMRaw + correction->distanceCorrection;
+  double xyDistance =
+    distanceM * correction->cosVertCorrection - correction->sinVertOffsetCorrection;
+
+  pos[0] = xyDistance * sinAzimuth - correction->horizontalOffsetCorrection * cosAzimuth;
+  pos[1] = xyDistance * cosAzimuth + correction->horizontalOffsetCorrection * sinAzimuth;
+  pos[2] = distanceM * correction->sinVertCorrection + correction->verticalOffsetCorrection;
 }
 
