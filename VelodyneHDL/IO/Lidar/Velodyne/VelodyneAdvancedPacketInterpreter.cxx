@@ -17,7 +17,7 @@ using namespace DataPacketFixedLength;
 #include <cstring>
 
 #include <iostream>
-#define DEBUG_MSG(msg) std::cout << "DEBUG:" << msg << " [" << __LINE__ << "] " << packetDataHandle.GetIndex() << " / " << packetDataHandle.GetLength()<< std::endl;
+#define DEBUG_MSG(msg) std::cout << "DEBUG:" << msg << " [" << __LINE__ << "] " << std::endl;
 
 //------------------------------------------------------------------------------
 // General macros constants.
@@ -330,7 +330,7 @@ void setFromBytes(
   value = bytes[index++];
   while (index < stop)
   {
-    value = bytes[index++] + (value * (1 << sizeof(uint8_t)));
+    value =  (value * (static_cast<ValueT>(1) << 8)) + bytes[index++];
   }
 }
 
@@ -581,6 +581,18 @@ public:
   {
     this->Index += length;
   }
+
+
+  // TODO: remove
+  void PrintBytes(size_t length)
+  {
+    std::cout << std::hex;
+    for (size_t i = 0; i < length; ++i)
+    {
+      std::cout << +(this->Data[this->Index + i]) << " ";
+    }
+    std::cout << std::dec << std::endl;
+  }
 };
 
 //------------------------------------------------------------------------------
@@ -621,7 +633,7 @@ private:
   uint8_t Dset;
 
   //! @brief Intensity set.
-  uint8_t Iset;
+  uint16_t Iset;
 
   //! @brief Time reference.
   uint64_t Tref;
@@ -651,7 +663,7 @@ public:
 
 
   //! @brief The number of bytes per value in a return.
-  uint8_t GetDsetEncodingSizeInBytes() const
+  uint8_t GetDistanceSizeInBytes() const
   {
     return ((this->Dset & (1 << 7)) ? 3 : 2);
   }
@@ -686,9 +698,9 @@ public:
   //! @brief The the number of bytes per firing return.
   size_t GetNumberOfBytesPerFiringReturn() const
   {
+    size_t bytesPerDistance = this->GetDistanceSizeInBytes();
     size_t icount = this->GetIntensityCount();
-    size_t bytesPerValue = this->GetDsetEncodingSizeInBytes();
-    return icount * bytesPerValue;
+    return bytesPerDistance + icount;
   }
 
   //! @brief The the number of bytes per firing.
@@ -706,19 +718,17 @@ public:
   PayloadHeader(PacketDataHandle<BYTES_PER_HEADER_WORD> & packetDataHandle)
   {
     // For word alignment.
-    DEBUG_MSG("Payload Header: " << +this->Ver << ", " << +this->Hlen)
+    DEBUG_MSG("here")
     packetDataHandle.BeginBlock();
     packetDataHandle.SetFromBits<1>(
       4, 4, this->Ver,
       0, 4, this->Hlen
     );
-    DEBUG_MSG("Payload Header: " << +this->Ver << ", " << +this->Hlen)
-    DEBUG_MSG("  first byte: " << +packetDataHandle.GetData()[0])
 
     // Use GetHlen() to get the count in bytes.
     if (this->GetHlen() > packetDataHandle.GetRemainingLength())
     {
-      throw std::length_error("data does not contain enough bytes for header");
+      throw std::length_error("data does not contain enough bytes for payload header");
     }
 
     packetDataHandle.SetFromByte(this->Nxhdr);
@@ -726,15 +736,12 @@ public:
       4, 4, this->Glen,
       0, 4, this->Flen
     );
-    DEBUG_MSG("  " << +this->Glen << ", " << +this->Flen)
     packetDataHandle.SetFromByte(this->Mic);
     packetDataHandle.SetFromByte(this->Tstat);
     packetDataHandle.SetFromByte(this->Dset);
-    packetDataHandle.SetFromByte(this->Iset);
+    packetDataHandle.SetFromBytes(this->Iset);
     packetDataHandle.SetFromBytes(this->Tref);
     packetDataHandle.SetFromBytes(this->Pseq);
-    DEBUG_MSG("  " << toString(this->GetMic()) << ", " << +this->Pseq)
-    DEBUG_MSG("  DSET: " << +this->GetDset())
     // For word alignment.
     packetDataHandle.EndBlock(this->GetHlen());
   }
@@ -796,7 +803,7 @@ public:
     auto hlen = this->GetHlen();
     if (hlen > packetDataHandle.GetRemainingLength())
     {
-      throw std::length_error("data does not contain enough bytes for header");
+      throw std::length_error("data does not contain enough bytes for extension header");
     }
 
     packetDataHandle.SetFromByte(this->Nxhdr);
@@ -1034,11 +1041,18 @@ public:
     {
       throw std::out_of_range("requested intensity is out of range of current set");
     }
-    T value;
-    auto bytesPerValue = payloadHeader.GetNumberOfBytesPerFiring();
-    auto index = i * bytesPerValue;
-    setFromBytes(this->Data.data(), index, value, bytesPerValue);
-    return value;
+    auto bytesPerDistance = payloadHeader.GetDistanceSizeInBytes();
+    if (i == 0)
+    {
+      T value;
+      auto index = i;
+      setFromBytes(this->Data.data(), index, value, bytesPerDistance);
+      return value;
+    }
+    else
+    {
+      return this->Data[bytesPerDistance + (i - 1)];
+    }
   }
 
   //! @brief Get the distance from this firing.
@@ -1125,8 +1139,7 @@ public:
       this->Returns.reserve(dcount);
       for (decltype(dcount) j = 0; j < dcount; ++j)
       {
-        FiringReturn<loadData> firingReturn = FiringReturn<loadData>((* this), packetDataHandle);
-        this->Returns.push_back(firingReturn);
+        this->Returns.push_back(FiringReturn<loadData>((* this), packetDataHandle));
       }
     }
     else
@@ -1175,10 +1188,12 @@ public:
     : PayloadRef {payload}
   {
     // For word alignment.
+    DEBUG_MSG("here")
     packetDataHandle.BeginBlock();
 
     // Group headers are padded to 32-bit boundaries. Use GLEN to advance the
     // index correctly.
+    DEBUG_MSG("here")
     packetDataHandle.BeginBlock();
     this->Header = FiringGroupHeader(packetDataHandle);
     packetDataHandle.EndBlock(this->PayloadRef.GetHeader().GetGlen());
@@ -1365,21 +1380,22 @@ void VelodyneAdvancedPacketInterpreter::ProcessPacket(unsigned char const * data
   PacketDataHandle<BYTES_PER_HEADER_WORD> packetDataHandle = PacketDataHandle<BYTES_PER_HEADER_WORD>(data, dataLength, 0);
   Payload<true> payload {packetDataHandle};
 
+    payload = Payload<true>(packetDataHandle);
   // The packet classes throw length errors if the packet does not contain the
   // expected length.
-  try
-  {
-    payload = Payload<true>(packetDataHandle);
-  }
-  // Length errors are thrown if the packet data does not conform to the
-  // expected lengths. Returning here is basically the same thing as returning
-  // at the start of this function if  IsLidarPacket() returns false. The
-  // difference is that here the full data is checked instead of just the
-  // header.
-  catch (std::length_error const & e)
-  {
-    return;
-  }
+  // try
+  // {
+  //   payload = Payload<true>(packetDataHandle);
+  // }
+  // // Length errors are thrown if the packet data does not conform to the
+  // // expected lengths. Returning here is basically the same thing as returning
+  // // at the start of this function if  IsLidarPacket() returns false. The
+  // // difference is that here the full data is checked instead of just the
+  // // header.
+  // catch (std::length_error const & e)
+  // {
+  //   return;
+  // }
 
 
   PayloadHeader payloadHeader = payload.GetHeader();
