@@ -2662,15 +2662,15 @@ def onIgnoreEmptyFrames():
     # Apply it to the current source if any
     lidar = getLidar()
 
-    if ldiar:
-        source.GetClientSideObject().SetIgnoreEmptyFrames(ignoreEmptyFrames)
+    if lidar:
+        lidar.GetClientSideObject().SetIgnoreEmptyFrames(ignoreEmptyFrames)
         reloadCurrentFrame()
 
 
 def reloadCurrentFrame():
     lidar = getLidar()
     if lidar:
-        lidar.DummyProperty = not source.DummyProperty
+        lidar.DummyProperty = not lidar.DummyProperty
         smp.Render()
         smp.Render(getSpreadSheetViewProxy())
     updateUIwithNewFrame()
