@@ -13,11 +13,12 @@ using namespace DataPacketFixedLength;
 
 #include <type_traits>
 #include <boost/preprocessor.hpp>
+#include <boost/predef/detail/endian_compat.h>
+#include <boost/endian/arithmetic.hpp>
 
 #include <cstring>
 
 #include <iostream>
-#define DEBUG_MSG(msg) std::cout << "DEBUG:" << msg << " [" << __LINE__ << "] " << std::endl;
 
 //------------------------------------------------------------------------------
 // General macros constants.
@@ -430,7 +431,7 @@ public:
    * be set to the next word boundary. An argument is interpretted as the block
    * length in bytes and the index is advanced from the start of the block by
    * this value. An error will be thrown if the length is shorter than the
-   * number of consumed bytes since BeginBlock() was called. 
+   * number of consumed bytes since BeginBlock() was called.
    */
   void EndBlock()
   {
@@ -453,7 +454,7 @@ public:
     this->Index = blockStartIndex + length;
   }
   //@}
-  
+
   /*!
    * @brief Reset the index to the beginning of the current block and remove it.
    */
@@ -463,7 +464,7 @@ public:
     this->BlockStartIndices.pop_back();
     this->Index = blockStartIndex;
   }
-  
+
   //! @brief Get the number of bytes remaining from the current index to the end
   //         of the data as defined by the length.
   size_t GetRemainingLength()
@@ -501,7 +502,7 @@ public:
    *                         This must be at least 1. Values larger than the
    *                         size of uint86_t are not supported.
    * @tparam PassthroughArgs All arguments to pass through to SetFromBits.
-   * 
+   *
    * This is a wrapper around SetFromBits with automatic deduction of the
    * smallest type required to hold the number of bytes to process.
    */
@@ -605,41 +606,56 @@ public:
  * firing group header consists of 4 32-bit words. The raw values are converted
  * to counts with the BYTES_PER_HEADER_WORD constant.
  */
+#pragma pack(push, 1)
 class PayloadHeader
 {
 private:
-  //! @brief Protocol version.
-  uint8_t Ver ; //: 4;
-
-  //! @brief Header length (min: 6)
-  uint8_t Hlen ; //: 4;
-
-  //! @brief Next header type.
+  //@{
+  /*!
+   * @brief Private members.
+   *
+   * Ver   : Protocol version.
+   * Hlen  : Header length (min: 5)
+   * Nxdhr : Next header type.
+   * Glen  : Firing group header length.
+   * Flen  : Firing header length.
+   * Mic   : Model Identification Code
+   * Tstat : Time status (TBD).
+   * Dset  : Distance set.
+   * Iset  : Intensity set.
+   * Tref  : Time reference.
+   * Pset  : Payload sequence number.
+   */
+#ifdef BOOST_BIG_ENDIAN
+  uint8_t Ver : 4;
+  uint8_t Hlen : 4;
   uint8_t Nxhdr;
-
-  //! @brief Firing group header length.
-  uint8_t Glen ; //: 4;
-
-  //! @brief Firing header length.
-  uint8_t Flen ; //: 4;
-
-  //! @brief Model Identification Code
+  uint8_t Glen : 4;
+  uint8_t Flen : 4;
   uint8_t Mic;
-
-  //! @brief Time status (TBD).
   uint8_t Tstat;
-
-  //! @brief Distance set.
-  uint8_t Dset;
-
-  //! @brief Intensity set.
+  uint8_t DsetMask : 6;
+  uint8_t DsetFormat : 1;
+  uint8_t DsetEncodingSize : 1;
   uint16_t Iset;
-
-  //! @brief Time reference.
   uint64_t Tref;
-
-  //! @brief Payload sequence number.
   uint32_t Pseq;
+#else
+  uint8_t Hlen : 4;
+  uint8_t Ver : 4;
+  uint8_t Nxhdr;
+  uint8_t Flen : 4;
+  uint8_t Glen : 4;
+  uint8_t Mic;
+  uint8_t Tstat;
+  uint8_t DsetEncodingSize : 1;
+  uint8_t DsetFormat : 1;
+  uint8_t DsetMask : 6;
+  boost::endian::big_uint16_t Iset;
+  boost::endian::big_uint64_t Tref;
+  boost::endian::big_uint32_t Pseq;
+#endif
+  //@}
 
 public:
   //@{
@@ -655,7 +671,9 @@ public:
   GET_LENGTH(Flen)
   GET_ENUM(ModelIdentificationCode, Mic);
   GET_RAW(Tstat)
-  GET_RAW(Dset)
+  GET_RAW(DsetMask)
+  GET_RAW(DsetFormat)
+  GET_RAW(DsetEncodingSize)
   GET_RAW(Iset)
   GET_RAW(Tref)
   GET_RAW(Pseq)
@@ -665,19 +683,13 @@ public:
   //! @brief The number of bytes per value in a return.
   uint8_t GetDistanceSizeInBytes() const
   {
-    return ((this->Dset & (1 << 7)) ? 3 : 2);
+    return (this->DsetEncodingSize ? 3 : 2);
   }
 
   //! @brief True if the distance set includes a mask, false if a count.
   bool IsDsetMask() const
   {
-    return ! (this->Dset & (1 << 6));
-  }
-
-  //! @brief The mask or count, depending on the return value of isDsetMask.
-  uint8_t GetDsetMask() const
-  {
-    return (this->Dset & ((1 << 6) - 1));
+    return (! this->DsetFormat);
   }
 
   //! @brief Get the number of distances in each firing group.
@@ -704,48 +716,19 @@ public:
   }
 
   //! @brief The the number of bytes per firing.
-  size_t GetNumberOfBytesPerFiring() const
+  size_t GetNumberOfDataBytesPerFiring() const
   {
     size_t dcount = this->GetDistanceCount();
     size_t bytesPerReturn = this->GetNumberOfBytesPerFiringReturn();
     return dcount * bytesPerReturn;
   }
 
-  /*!
-   * @brief         Construct a PayloadHeader.
-   * @param[in,out] packetDataHandle The packet data from which to parse the header.
-   */
-  PayloadHeader(PacketDataHandle<BYTES_PER_HEADER_WORD> & packetDataHandle)
+  size_t GetNumberOfBytesPerFiring() const
   {
-    // For word alignment.
-    packetDataHandle.BeginBlock();
-    packetDataHandle.SetFromBits<1>(
-      4, 4, this->Ver,
-      0, 4, this->Hlen
-    );
-
-    // Use GetHlen() to get the count in bytes.
-    if (this->GetHlen() > packetDataHandle.GetRemainingLength())
-    {
-      packetDataHandle.ResetBlock();
-      throw std::length_error("data does not contain enough bytes for payload header");
-    }
-
-    packetDataHandle.SetFromByte(this->Nxhdr);
-    packetDataHandle.SetFromBits<1>(
-      4, 4, this->Glen,
-      0, 4, this->Flen
-    );
-    packetDataHandle.SetFromByte(this->Mic);
-    packetDataHandle.SetFromByte(this->Tstat);
-    packetDataHandle.SetFromByte(this->Dset);
-    packetDataHandle.SetFromBytes(this->Iset);
-    packetDataHandle.SetFromBytes(this->Tref);
-    packetDataHandle.SetFromBytes(this->Pseq);
-    // For word alignment.
-    packetDataHandle.EndBlock(this->GetHlen());
+    return this->GetNumberOfDataBytesPerFiring() + this->GetFlen();
   }
 };
+#pragma pack(pop)
 
 
 //------------------------------------------------------------------------------
@@ -756,10 +739,8 @@ public:
  *
  * This should be subclassed to handle different types of extensions as
  * specified by the NXHDR field of the payload header.
- * 
- * @tparam loadData If true, load the extension data, otherwise skip it.
  */
-template <bool loadData>
+#pragma pack(push, 1)
 class ExtensionHeader
 {
 private:
@@ -776,7 +757,7 @@ private:
     * extension-specific and determined by the NXHDR value of the previous
     * header (either the payload header or a preceding extension header).
     */
-  std::vector<uint8_t> Data;
+  uint8_t const * Data;
 
 public:
   //@{
@@ -787,40 +768,10 @@ public:
    */
   GET_LENGTH(Hlen)
   GET_RAW(Nxhdr)
-  GET_CONST_REF(Data)
+  GET_RAW(Data)
   //@}
-
-  /*!
-   * @brief         Construct a ExtensionHeader.
-   * @param[in]     data The packet data.
-   * @param[in,out] i    The offset to the start of the header. The offset will
-   *                     be advanced as the data is consumed.
-   */
-  ExtensionHeader(PacketDataHandle<BYTES_PER_HEADER_WORD> & packetDataHandle)
-  {
-    packetDataHandle.SetFromByte(this->Hlen);
-
-    auto hlen = this->GetHlen();
-    if (hlen > packetDataHandle.GetRemainingLength())
-    {
-      throw std::length_error("data does not contain enough bytes for extension header");
-    }
-
-    packetDataHandle.SetFromByte(this->Nxhdr);
-
-    auto dataLen = hlen - (sizeof(this->Hlen) + sizeof(this->Nxhdr));
-
-    // Only copy the data if the template parameter requests it.
-    if (loadData)
-    {
-      packetDataHandle.CopyBytes(this->Data, dataLen);
-    }
-    else
-    {
-      packetDataHandle.SkipBytes(dataLen);
-    }
-  }
 };
+#pragma pack(pop)
 
 //------------------------------------------------------------------------------
 // FiringGroupHeader
@@ -828,53 +779,64 @@ public:
 /*!
  * @brief Firing group header of the VLP Advanced data packet format.
  */
+#pragma pack(push, 1)
 class FiringGroupHeader
 {
 private:
+  //@{
   /*!
-   * @brief
+   * @brief Private members.
+   *
+   * Toffs:
    * Unsigned time fraction offset from payload timestamp to firing time
    * of the Firing Group in units of 64 ns.
+   *
+   * Fcnt:
+   *   (FSPN + 1) is the count (span) of co-channels fired simultaneously in the
+   *   Firing Group.
+   *
+   * Fdly:
+   *   If FDLY is zero, all channels in the Firing Group were fired
+   *   simultaneously and the FSPN value may be ignored as there is no need to
+   *   calculate a per-channel time offset.
+   *
+   *   If FDLY is non-zero, the channels were fired in co-channel groups
+   *   separated by FDLY. The span of each co-channel group is (FSPN+1). For a
+   *   rolling firing where each channel is fired separately, FSPN is 0. For a
+   *   rolling firing where two channels are fired together FSPN is 1. For a
+   *   rolling fireing where eight channels are fired together FSPN is 7.
+   *
+   * Hdir:
+   *   Horizontal direction , 0: Clockwise, 1: Counter-clockwise (1 bit)
+   *
+   * Vdir:
+   *   Vertical direction , 0: Upward, 1: Downward (1 bit)
+   *
+   * Vdfl:
+   *   Vertical deflection angle (0.01 degree increments) [0..16383]
+   *
+   * Azm:
+   *   Azimuth (0.01 degree increments) [0..35999]
    */
+#ifdef BOOST_BIG_ENDIAN
   uint16_t Toffs;
-
-  //! @brief (FCNT + 1) is the number of Firings in the Firing Group.
-  uint8_t Fcnt ; //: 5;
-
-  /*!
-   * @brief
-   * (FSPN + 1) is the count (span) of co-channels fired simultaneously in the
-   * Firing Group.
-   */
-  uint8_t Fspn ; //: 3;
-
-  /*!
-   * @brief Unsigned time fraction delay between co-channel firings.
-   *
-   * If FDLY is zero, all channels in the Firing Group were fired simultaneously
-   * and the FSPN value may be ignored as there is no need to calculate a
-   * per-channel time offset.
-   *
-   * If FDLY is non-zero, the channels were fired in co-channel groups separated
-   * by FDLY. The span of each co-channel group is (FSPN+1). For a rolling
-   * firing where each channel is fired separately, FSPN is 0. For a rolling
-   * firing where two channels are fired together FSPN is 1. For a rolling
-   * fireing where eight channels are fired together FSPN is 7.
-   */
+  uint8_t Fcnt : 5;
+  uint8_t Fspn : 3;
   uint8_t Fdly;
-
-  //! @brief Horizontal direction , 0: Clockwise, 1: Counter-clockwise (1 bit)
-  uint8_t Hdir ; //: 1;
-
-  //! @brief Vertical direction , 0: Upward, 1: Downward (1 bit)
-  uint8_t Vdir ; //: 1;
-
-  //! @brief Vertical deflection angle (0.01 degree increments) [0..16383]
-  uint16_t Vdfl ; //: 14;
-
-  //! @brief Azimuth (0.01 degree increments) [0..35999]
+  uint8_t Hdir : 1;
+  uint8_t Vdir : 1;
+  uint16_t Vdfl : 14;
   uint16_t Azm;
-
+#else
+  boost::endian::big_uint16_t Toffs;
+  uint8_t Fspn : 3;
+  uint8_t Fcnt : 5;
+  uint8_t Fdly;
+  uint8_t Hdir : 1;
+  uint8_t Vdir : 1;
+  uint16_t Vdfl : 14;
+  boost::endian::big_uint16_t Azm;
+#endif
 public:
   //@{
   /*!
@@ -901,35 +863,8 @@ public:
   double GetVerticalDeflection() const { return this->Vdfl * 0.01; }
   double GetAzimuth() const { return this->Azm * 0.01; }
   //@}
-
-  /*!
-   * @brief         Construct a FiringGroupHeader.
-   * @param[in]     data The packet data.
-   * @param[in,out] i    The offset to the start of the header. The offset will
-   *                     be advanced as the data is consumed.
-   */
-  FiringGroupHeader(PacketDataHandle<BYTES_PER_HEADER_WORD> & packetDataHandle)
-  {
-    packetDataHandle.SetFromBytes(this->Toffs);
-    packetDataHandle.SetFromBits<1>(
-      3, 5, this->Fcnt,
-      0, 3, this->Fspn
-    );
-    packetDataHandle.SetFromByte(this->Fdly);
-    packetDataHandle.SetFromBits<2>(
-      15,  1, this->Hdir,
-      14,  1, this->Vdir,
-       0, 14, this->Vdfl
-    );
-    packetDataHandle.SetFromBytes(this->Azm);
-  }
-
-  // A default constructor is required when member initialization is not
-  // possible.
-  FiringGroupHeader()
-  {
-  }
 };
+#pragma pack(pop)
 
 //------------------------------------------------------------------------------
 // FiringHeader
@@ -937,23 +872,35 @@ public:
 /*!
  * @brief Firing header of the VLP Advanced data packet format.
  */
+#pragma pack(push, 1)
 class FiringHeader
 {
 private:
-  //! @brief Logical channel number.
+  //@{
+  /*!
+   * @brief Private members.
+   *
+   * Lcn  : Logical channel number.
+   * Fm   : Firing mode.
+   * Pwr  : Power level.
+   * Nf   : Noise factor.
+   * Stat : Channel status flag.
+   */
+  //@}
+
+#ifdef BOOST_BIG_ENDIAN
   uint8_t Lcn;
-
-  //! @brief Firing mode.
-  uint8_t Fm ; //: 4;
-
-  //! @brief Power level.
-  uint8_t Pwr ; //: 4;
-
-  //! @brief Noise factor.
+  uint8_t Fm : 4;
+  uint8_t Pwr : 4;
   uint8_t Nf;
-
-  //! @brief Channel status flags.
   uint8_t Stat;
+#else
+  uint8_t Lcn;
+  uint8_t Pwr : 4;
+  uint8_t Fm : 4;
+  uint8_t Nf;
+  uint8_t Stat;
+#endif
 
 public:
   //@{
@@ -968,59 +915,28 @@ public:
   GET_RAW(Nf)
   GET_ENUM(ChannelStatus, Stat)
   //@}
-
-  /*!
-   * @brief         Construct a FiringGroupHeader.
-   * @param[in]     data The packet data.
-   * @param[in,out] i    The offset to the start of the header. The offset will
-   *                     be advanced as the data is consumed.
-   */
-  FiringHeader(PacketDataHandle<BYTES_PER_HEADER_WORD> & packetDataHandle)
-  {
-    packetDataHandle.SetFromByte(this->Lcn);
-    packetDataHandle.SetFromBits<1>(
-      4, 4, this->Fm,
-      0, 4, this->Pwr
-    );
-    packetDataHandle.SetFromByte(this->Nf);
-    packetDataHandle.SetFromByte(this->Stat);
-  }
 };
+#pragma pack(pop)
 
-
-// Forward declarations
-template <bool loadData>
-class Firing;
-
-template <bool loadData>
-class FiringGroup;
-
-template <bool loadData>
-class Payload;
 
 //------------------------------------------------------------------------------
 // FiringReturn
 //------------------------------------------------------------------------------
 /*!
  * @brief  Firing return of the VLP Advanced data packet format.
- * @tparam loadData If true, load firing data, otherwise skip it via
- *                  packetDataHandle.SkipBytes
  * @todo   Consider using polymorphic types to avoid wasted space.
- * 
+ *
  * The values in this struct may be encoded in the packet with 16 or 24 bits.
  * The size is determined at runtime by parsing the payload headers so a
  * template cannot be used here. The current implementation uses types large
  * enough to hold all possible values.
  */
-// This class is not templated with "loadData" because it makes no sense to
-// create an empty FiringReturn (it's basically just a wrapper around a vector
-// with some bit-fiddling to access the return values).
-template <bool loadData>
+#pragma pack(push, 1)
 class FiringReturn
 {
 private:
   //! @brief The packed data with the return values.
-  std::vector<uint8_t> Data;
+  uint8_t const * Data;
 
 public:
   //@{
@@ -1028,56 +944,36 @@ public:
   GET_CONST_REF(Data);
   //@}
 
-  //! @brief Reference to this return's firing.
-  Firing<loadData> const * FiringPtr;
-
-  //! @brief Templated subscript operator for accessing distance and intensities.
-  template <typename T>
-  T operator[](const int i) const
-  {
-    PayloadHeader const & payloadHeader = this->FiringPtr->FiringGroupPtr->PayloadPtr->GetHeader();
-    // Range check.
-    if (i < 0 || i > payloadHeader.GetIntensityCount())
-    {
-      throw std::out_of_range("requested intensity is out of range of current set");
-    }
-    auto bytesPerDistance = payloadHeader.GetDistanceSizeInBytes();
-    if (i == 0)
-    {
-      T value;
-      auto index = i;
-      setFromBytes(this->Data.data(), index, value, bytesPerDistance);
-      return value;
-    }
-    else
-    {
-      return this->Data[bytesPerDistance + (i - 1)];
-    }
-  }
-
   //! @brief Get the distance from this firing.
   template <typename T>
-  T GetDistance() const { return this->operator[]<T>(0); }
+  T GetDistance(uint8_t bytesPerDistance) const {
+    T distance = this->Data[0];
+    for (size_t i = 1; ++i; i < bytesPerDistance)
+    {
+      distance = (distance * 0x100) + this->Data[i];
+    }
+    return distance;
+  }
 
   // Default return type is 32-bit because the type may be either 16 or 24 bit.
 
   //! @brief Get an intensity from this firing by index.
   template <typename T>
-  T GetIntensity(const int i) const { return this->operator[]<T>(i+1); }
+  T GetIntensity(uint8_t bytesPerDistance, uint8_t i) const {
+    return this->Data[bytesPerDistance + i];
+  }
 
   //! @brief Get an intensity from this firing by type.
   template <typename T>
-  T GetIntensity(IntensityType type) const
+  T GetIntensity(uint8_t bytesPerDistance, uint8_t iset, IntensityType type) const
   {
-    // Check that the value is actually present otherwise the calculate index
+    // Check that the value is actually present otherwise the calculated index
     // will yield a different value or end up out of range.
-    if (! (this->FiringPtr->FiringGroupPtr->PayloadPtr->GetHeader().GetIset() & type))
+    if (! (iset & type))
     {
       throw std::out_of_range("requested intensity type is not in the intensity set");
     }
-
-    // Start at 1 to skip distance.
-    int i = 1;
+    uint8_t i = 0;
 
     // Count the number of bits set before the requested one. `mask` constains a
     // single set bit. By decrementing the value, we obtain a mask over all
@@ -1087,157 +983,13 @@ public:
     if (mask)
     {
       mask--;
-      PayloadHeader const & payloadHeader = this->FiringPtr->FiringGroupPtr->PayloadPtr->GetHeader();
-      i += SET_BITS_IN_BYTE[payloadHeader.GetIset() & mask];
+      i += SET_BITS_IN_BYTE[iset & mask];
     }
-    return this->operator[]<T>(i);
+    return this->Data[bytesPerDistance + i];
   }
 
-  FiringReturn(Firing<loadData> const & firing, PacketDataHandle<BYTES_PER_HEADER_WORD> & packetDataHandle)
-    : FiringPtr (& firing)
-  {
-    auto dataLength = this->FiringPtr->FiringGroupPtr->PayloadPtr->GetHeader().GetNumberOfBytesPerFiringReturn();
-    packetDataHandle.CopyBytes(this->Data, dataLength);
-  }
-
-  FiringReturn & operator=(FiringReturn const & other)
-  {
-    this->FiringPtr = other.FiringPtr;
-    this->Data = other.Data;
-  }
 };
-
-//------------------------------------------------------------------------------
-// Firing
-//------------------------------------------------------------------------------
-/*!
- * @brief  Parse and optionally load data from a firing.
- * @tparam loadData If true, load firing data, otherwise skip it via
- *                  packetDataHandle.SkipBytes
- */
-template <bool loadData>
-class Firing
-{
-private:
-  //! @brief Firing header.
-  FiringHeader Header;
-
-public:
-  //! @brief Returns in this firing.
-  std::vector<FiringReturn<loadData>> Returns;
-
-  //@{
-  //! @brief Getters.
-  GET_CONST_REF(Header);
-  GET_CONST_REF(Returns);
-  //@}
-
-  //! @brief Reference to this firing's group.
-  FiringGroup<loadData> const * FiringGroupPtr;
-
-  Firing(FiringGroup<loadData> const & firingGroup, PacketDataHandle<BYTES_PER_HEADER_WORD> & packetDataHandle)
-    : Header (packetDataHandle)
-    , FiringGroupPtr (& firingGroup)
-  {
-    if (loadData)
-    {
-      auto dcount = this->FiringGroupPtr->PayloadPtr->GetHeader().GetDistanceCount();
-      this->Returns.reserve(dcount);
-      for (decltype(dcount) j = 0; j < dcount; ++j)
-      {
-        this->Returns.push_back(FiringReturn<loadData>((* this), packetDataHandle));
-      }
-    }
-    else
-    {
-      auto bytesPerFiring = this->FiringGroupPtr->PayloadPtr->GetHeader().GetNumberOfBytesPerFiring();
-      packetDataHandle.SkipBytes(bytesPerFiring);
-    }
-  }
-
-  Firing & operator=(Firing const & other)
-  {
-    this->FiringGroupPtr = other.FiringGroupPtr;
-    this->Header = other.Header;
-    this->Returns = other.Returns;
-    for (auto retrn : this->Returns)
-    {
-      retrn.FiringPtr = this;
-    }
-  }
-};
-
-//------------------------------------------------------------------------------
-// FiringGroup
-//------------------------------------------------------------------------------
-/*!
- * @brief  Parse and optionally load data from a firing group.
- * @tparam loadData If true, load all firing data, otherwise only load firing
- *                  headers while skipping over return values.
- */
-template <bool loadData>
-class FiringGroup
-{
-private:
-  //! @brief Firing group header.
-  FiringGroupHeader Header;
-
-public:
-  //! @brief Firings.
-  std::vector<Firing<loadData>> Firings;
-
-  //@{
-  //! @brief Getters.
-  GET_CONST_REF(Header);
-  GET_CONST_REF(Firings);
-  //@}
-
-  //! @brief Reference to the payload containing this firing group.
-  Payload<loadData> const * PayloadPtr;
-
-  /*!
-   * @param[in]     payload    The payload that contains this firing group.
-   * @param[in]     data       Pointer to the packet bytes.
-   * @param[in]     dataLength The byte length of the packet data.
-   * @param[in,out] i          The offset to the data.
-   */
-  FiringGroup(Payload<loadData> const & payload, PacketDataHandle<BYTES_PER_HEADER_WORD> & packetDataHandle)
-    : PayloadPtr (& payload)
-  {
-    // For word alignment.
-    packetDataHandle.BeginBlock();
-
-    // Group headers are padded to 32-bit boundaries. Use GLEN to advance the
-    // index correctly.
-    packetDataHandle.BeginBlock();
-    this->Header = FiringGroupHeader(packetDataHandle);
-    packetDataHandle.EndBlock(this->PayloadPtr->GetHeader().GetGlen());
-
-    auto fcnt = this->Header.GetFcnt();
-    this->Firings.reserve(fcnt);
-
-    for (decltype(fcnt) j = 0; j < fcnt; ++j)
-    {
-      Firing<loadData> firing = Firing<loadData>((* this), packetDataHandle);
-      this->Firings.push_back(firing);
-    }
-
-    // For word alignment.
-    packetDataHandle.EndBlock();
-  }
-
-  FiringGroup & operator=(FiringGroup const & other)
-  {
-    this->PayloadPtr = other.PayloadPtr;
-    this->Header = other.Header;
-    this->Firings = other.Firings;
-    // for (auto firing : other.Firings)
-    // {
-    //   this->Firings.push_back(firing);
-    //   this->Firings.back().FiringGroupPtr = this;
-    // }
-  }
-};
+#pragma pack(pop)
 
 //------------------------------------------------------------------------------
 // FrameTracker
@@ -1250,138 +1002,35 @@ public:
 class FrameTracker
 {
 private:
-  // HorizontalDirection Hdir = HD_UP;
-  // VerticalDirection Vdir = VD_CLOCKWISE;
   // Set default values to something that will detect the first frame as a new
   // frame.
-  // double Vdfl = -500.0;
-  double  Azm;
+  int32_t DefaultAzm = -50000;
+  int32_t Azm = DefaultAzm;
 
 public:
   FrameTracker()
   {
-    this->Azm = -500.0;
-  }
-
-  template <bool loadData>
-  FrameTracker(FiringGroup<loadData> & firingGroup)
-  {
-    this->Azm = firingGroup.GetHeader().GetAzm();
-  }
-
-  FrameTracker & operator=(FrameTracker const & other)
-  {
-    this->Azm = other.Azm;
-    return (* this);
+    this->Reset();
   }
 
   /*!
-   * @brief Returns true if the passed FrameTracker appears to be a new frame.
-   * @todo  Consider better approaches to delimiting frames.
+   * @brief      Update the frame tracker.
+   * @param[in]  firingGroupHeader The firing group header to inspect for frame
+   *                               changes.
+   * @param[out] isNewFrame        Set to true if a new frame is detected.
    */
-  bool IsNewFrame(FrameTracker const & frameTracker)
+  void Update(FiringGroupHeader const * const firingGroupHeader, bool & isNewFrame)
   {
-    return (std::abs(this->Azm - frameTracker.Azm) > 180.0);
+    auto azm = firingGroupHeader->GetAzm();
+    isNewFrame = (std::abs(azm - this->Azm) > 18000);
+    this->Azm = azm;
   }
-  void reset()
+  //! @brief Reset frame detection.
+  void Reset()
   {
-    this->Azm = -500.0;
+    this->Azm = DefaultAzm;
   }
 };
-
-//------------------------------------------------------------------------------
-// Payload
-//------------------------------------------------------------------------------
-/*!
- * @brief  Parse and optionally load data from the payload.
- * @tparam loadData If true, load all data, otherwise only load metadata (e.g.
- *                  firing group headers, extension headers).
- */
-
-template <bool loadData>
-class Payload
-{
-private:
-  //! @brief Payload header.
-  PayloadHeader Header;
-
-  //! @brief Variable number of extension headers.
-  std::vector<ExtensionHeader<loadData>> ExtensionHeaders;
-
-public:
-  //! @brief Variable number of firing groups.
-  std::vector<FiringGroup<loadData>> FiringGroups;
-
-  //@{
-  //! @brief Getters.
-  GET_CONST_REF(Header);
-  GET_CONST_REF(ExtensionHeaders);
-  GET_CONST_REF(FiringGroups);
-  //@}
-
-
-  /*!
-   * @brief Detect frame boundaries between firing groups.
-   *
-   * VeloView requires some concept of a frame. The current approach is to
-   * detect the azimuth crossing zero but this will likely need to be changed in
-   * the future.
-   *
-   * @param[out] newFrameBoundaries The indices of firing groups that start a
-   *                                new frame will be pushed onto this vector.
-   */
-  void DetectFrames(FrameTracker & currentFrameTracker, std::vector<size_t> & newFrameBoundaries
-                    , int & framePositionInPacket)
-  {
-    for (size_t i = 0; i < this->FiringGroups.size(); ++i)
-    {
-      FrameTracker frameTracker(this->FiringGroups[i]);
-      if (currentFrameTracker.IsNewFrame(frameTracker))
-      {
-        newFrameBoundaries.push_back(i);
-        framePositionInPacket = i;
-        currentFrameTracker = frameTracker;
-        return;
-      }
-      currentFrameTracker = frameTracker;
-    }
-  }
-
-  Payload(PacketDataHandle<BYTES_PER_HEADER_WORD> & packetDataHandle)
-    : Header (packetDataHandle)
-  {
-    this->FiringGroups.reserve(128);
-    // Check for extension headers.
-    auto nxhdr = this->Header.GetNxhdr();
-    while (nxhdr != 0)
-    {
-      // The extension header automatically adjusts its length to end on a
-      // 32-bit boundary so padding need not be handled here.
-      ExtensionHeader<loadData> extensionHeader = ExtensionHeader<loadData>(packetDataHandle);
-      this->ExtensionHeaders.push_back(extensionHeader);
-      nxhdr = extensionHeader.GetNxhdr();
-    }
-
-    // The rest of the data should be filled with firing groups.
-    while (packetDataHandle.GetRemainingLength() > 0)
-    {
-      FiringGroup<loadData> firingGroup((* this), packetDataHandle);
-      this->FiringGroups.push_back(firingGroup);
-    }
-    //finalize the pointers
-    for(auto &fg:this->FiringGroups){
-      for(auto &f:fg.Firings){
-        f.FiringGroupPtr = &fg;
-        for(auto & r:f.Returns){
-          r.FiringPtr = &f;
-        }
-       }
-    }
-  }
-};
-
-
-
 
 
 
@@ -1429,42 +1078,35 @@ VelodyneAdvancedPacketInterpreter::~VelodyneAdvancedPacketInterpreter()
 //------------------------------------------------------------------------------
 void VelodyneAdvancedPacketInterpreter::ProcessPacket(unsigned char const * data, unsigned int dataLength, int startPosition)
 {
-  // TODO: check how to handle startPosition
-  // PacketDataHandle packetDataHandle = PacketDataHandle(data + startPosition, dataLength - startPosition, 0);
-  PacketDataHandle<BYTES_PER_HEADER_WORD> packetDataHandle = PacketDataHandle<BYTES_PER_HEADER_WORD>(data, dataLength, 0);
-  Payload<true> payload (packetDataHandle);
-/*
-  // The packet classes throw length errors if the packet does not contain the
-  // expected length.
-  try
-  {
-    payload = Payload<true>(packetDataHandle);
-  }
-  // Length errors are thrown if the packet data does not conform to the
-  // expected lengths. Returning here is basically the same thing as returning
-  // at the start of this function if  IsLidarPacket() returns false. The
-  // difference is that here the full data is checked instead of just the
-  // header.
-  catch (std::length_error const & e)
+  decltype(dataLength) index = 0;
+
+  PayloadHeader const * payloadHeader = reinterpret_cast<PayloadHeader const *>(data+index);
+  auto hlen = payloadHeader->GetHlen();
+  if (hlen > dataLength)
   {
     return;
   }
-*/
+  index += hlen;
 
+  // Skip optional extension headers.
+  auto nxhdr = payloadHeader->GetNxhdr();
+  while (nxhdr != 0)
+  {
+    ExtensionHeader const * extensionHeader = reinterpret_cast<ExtensionHeader const *>(data+index);
+    index += extensionHeader->GetHlen();
+    nxhdr = extensionHeader->GetNxhdr();
+  }
 
-  PayloadHeader payloadHeader = payload.GetHeader();
-  auto pseq = payloadHeader.GetPseq();
-  auto iset = payloadHeader.GetIset();
-
+  auto pseq = payloadHeader->GetPseq();
+  auto iset = payloadHeader->GetIset();
   // 64-bit PTP truncated format.
-  auto timeRef = payloadHeader.GetTref();
-
+  auto timeRef = payloadHeader->GetTref();
   // TODO: make this configurable via the user interface
   uint8_t distanceIndex;
   DistanceType distanceType;
-  if (payloadHeader.IsDsetMask())
+  if (payloadHeader->IsDsetMask())
   {
-    auto dsetMask = payloadHeader.GetDsetMask();
+    auto dsetMask = payloadHeader->GetDsetMask();
     distanceType = toDistanceType(firstSetBit(dsetMask));
     distanceIndex = indexOfBit(dsetMask, distanceType);
   }
@@ -1476,26 +1118,31 @@ void VelodyneAdvancedPacketInterpreter::ProcessPacket(unsigned char const * data
   }
   auto distanceTypeString = toString(distanceType);
 
-  for (auto i = startPosition; i<payload.FiringGroups.size();++i)
+  size_t numberOfBytesPerFiringGroupHeader = payloadHeader->GetGlen();
+  size_t numberOfBytesPerFiringHeader = payloadHeader->GetFlen();
+  size_t numberOfBytesPerFiringReturn = payloadHeader->GetNumberOfBytesPerFiringReturn();
+  size_t distanceCount = payloadHeader->GetDistanceCount();
+  size_t distanceSize = payloadHeader->GetDistanceSizeInBytes();
+
+  // Loop through firing groups until a frame shift is detected.
+  while (index < dataLength)
   {
-    auto & firingGroup = payload.FiringGroups[i];
-    // Detect frame changes in firing groups.
-    FrameTracker frameTracker = FrameTracker(firingGroup);
-    if (this->CurrentFrameTracker->IsNewFrame(frameTracker))
+    FiringGroupHeader const * firingGroupHeader = reinterpret_cast<FiringGroupHeader const *>(data+index);
+    index += numberOfBytesPerFiringGroupHeader;
+
+    bool isNewFrame = false;
+    this->CurrentFrameTracker->Update(firingGroupHeader, isNewFrame);
+    if (isNewFrame)
     {
       this->SplitFrame();
     }
-    (* (this->CurrentFrameTracker)) = frameTracker;
 
-    auto firingGroupHeader = firingGroup.GetHeader();
-    auto timeFractionOffset = firingGroupHeader.GetToffs(); 
-    auto coChannelSpan = firingGroupHeader.GetFspn();
-    auto coChannelTimeFractionDelay = firingGroupHeader.GetFdly();
-    double verticalAngle = 0 ;//firingGroup.GetVdfl();
-    auto azimuth = firingGroupHeader.GetAzm();
-
-    auto firings = firingGroup.Firings;
-    size_t numberOfFirings = firings.size();
+    auto timeFractionOffset = firingGroupHeader->GetToffs();
+    auto coChannelSpan = firingGroupHeader->GetFspn();
+    auto coChannelTimeFractionDelay = firingGroupHeader->GetFdly();
+    auto verticalAngle = firingGroupHeader->GetVdfl();
+    auto azimuth = firingGroupHeader->GetAzm();
+    auto numberOfFirings = firingGroupHeader->GetFcnt();
 
     for (size_t i = 0; i < numberOfFirings; ++i)
     {
@@ -1505,10 +1152,10 @@ void VelodyneAdvancedPacketInterpreter::ProcessPacket(unsigned char const * data
       // using the channe number?).
       uint32_t channelTimeFractionOffset = timeFractionOffset + (coChannelTimeFractionDelay * (i / coChannelSpan));
 
-      auto & firing =  firings[i];
-      auto firingHeader = firing.GetHeader();
-      auto channelNumber = firingHeader.GetLcn();
+      FiringHeader const * firingHeader = reinterpret_cast<FiringHeader const *>(data+index);
+      index += numberOfBytesPerFiringHeader;
 
+      auto channelNumber = firingHeader->GetLcn();
       // only process point when the laser is selected
       if (!this->LaserSelection[static_cast<int>(channelNumber)])
       {
@@ -1517,21 +1164,23 @@ void VelodyneAdvancedPacketInterpreter::ProcessPacket(unsigned char const * data
 
       // The firing mode is an enum so we need to convert it to a human-readable
       // string.
-      auto firingMode = firingHeader.GetFm();
+      auto firingMode = firingHeader->GetFm();
       auto firingModeString = toString(firingMode);
-
-      auto power = firingHeader.GetPwr();
-      auto noise = firingHeader.GetNf();
-
+      auto power = firingHeader->GetPwr();
+      auto noise = firingHeader->GetNf();
       // Status is also an enum and requires a string conversion.
-      auto status = firingHeader.GetStat();
+      auto status = firingHeader->GetStat();
       auto statusString = toString(status);
 
 
       // Only one distance type is displayed but there may be multiple in the
-      // packet.
-      auto & firingReturn = firing.Returns[distanceIndex];
-      auto distance = firingReturn.GetDistance<uint32_t>();
+      // packet. Skip to it, reinterpret, then move the index to the next
+      // header.
+      index += distanceIndex * numberOfBytesPerFiringReturn;
+      FiringReturn const * firingReturn = reinterpret_cast<FiringReturn const *>(data+index);
+      index += (distanceCount - distanceIndex) * numberOfBytesPerFiringReturn;
+
+      uint32_t distance = firingReturn->GetDistance<uint32_t>(distanceSize);
       if (this->IgnoreZeroDistances && distance == 0)
       {
         continue;
@@ -1539,10 +1188,10 @@ void VelodyneAdvancedPacketInterpreter::ProcessPacket(unsigned char const * data
 
       double position[3];
       this->ComputeCorrectedValues(
-          azimuth, 
-          firingReturn,
-          channelNumber,
-          position
+        azimuth,
+        channelNumber,
+        position,
+        distance
       );
 
       // check if the point should be crop out or not
@@ -1573,10 +1222,14 @@ void VelodyneAdvancedPacketInterpreter::ProcessPacket(unsigned char const * data
    //   this->INFO_DistanceTypeStrings->InsertNextValue(distanceTypeString);
 
 //! @brief Convenience macro for setting intensity values
-#define INSERT_INTENSITY(my_array, iset_flag) \
-      this->INFO_ ## my_array->InsertNextValue((iset & (ISET_ ## iset_flag)) ? firingReturn.GetIntensity<uint32_t>((ISET_ ## iset_flag)) : 0);
+#define INSERT_INTENSITY(my_array, iset_flag)                                          \
+      this->INFO_ ## my_array->InsertNextValue(                                        \
+        (iset & (ISET_ ## iset_flag)) ?                                                \
+        firingReturn->GetIntensity<uint32_t>(distanceSize, iset, (ISET_ ## iset_flag)) \
+        : 0                                                                            \
+      );
 
-      // TODO: Make the inclusion of these columns fully optionally at runtime.
+      // TODO: Make the inclusion of these columns fully optional at runtime.
 
       // Add additional values here when ISET is expanded in future versions.
       INSERT_INTENSITY(Reflectivities, REFLECTIVITY)
@@ -1589,20 +1242,15 @@ void VelodyneAdvancedPacketInterpreter::ProcessPacket(unsigned char const * data
 //------------------------------------------------------------------------------
 bool VelodyneAdvancedPacketInterpreter::IsLidarPacket(unsigned char const * data, unsigned int dataLength)
 {
-  // TODO
-  // Determine the best way to check if a packet contains lidar data. Currently
-  // this just checks that the packet data contains a plausible payload header.
-  PacketDataHandle<BYTES_PER_HEADER_WORD> packetDataHandle = PacketDataHandle<BYTES_PER_HEADER_WORD>(data, dataLength, 0);
-  try
-  {
-    PayloadHeader payloadHeader = PayloadHeader(packetDataHandle);
-    return true;
-  }
-  catch (std::length_error const & e)
-  {
-    return false;
-  }
-  //
+  /*
+   * TODO
+   * This needs to be improved to avoid false positives. One idea is to expand
+   * this to check that there is at least 1 plausible firing group by skipping
+   * over optional extension headers and then checking the expected length of
+   * the first firing group against the remaining length of the data.
+   */
+  PayloadHeader const * payloadHeader = reinterpret_cast<PayloadHeader const *>(data);
+  return (payloadHeader->GetHlen() <= dataLength);
 }
 
 //----------------------------------------------------------------------------
@@ -1642,7 +1290,7 @@ void InitializeDataArray(
  *                                 able to hold after initialization.
  * @param[out]    polyData         The polydata instance to which the array
  *                                 should be added.
- * 
+ *
  * This is just a convencience wrapper around InitializeDataArray.
  */
 template <typename T>
@@ -1739,26 +1387,62 @@ bool VelodyneAdvancedPacketInterpreter::SplitFrame(bool force)
 void VelodyneAdvancedPacketInterpreter::ResetCurrentFrame()
 {
   this->CurrentFrame = this->CreateNewEmptyFrame(0);
-  this->CurrentFrameTracker->reset();
+  this->CurrentFrameTracker->Reset();
   this->Frames.clear();
 }
 
 //------------------------------------------------------------------------------
 void VelodyneAdvancedPacketInterpreter::PreProcessPacket(unsigned char const * data, unsigned int dataLength, bool & isNewFrame, int & framePositionInPacket)
 {
-  PacketDataHandle<BYTES_PER_HEADER_WORD> packetDataHandle = PacketDataHandle<BYTES_PER_HEADER_WORD>(data, dataLength, 0);
-  Payload<false>  payload(packetDataHandle);
-  std::vector<size_t> newFrameBoundaries;
+  decltype(dataLength) index = 0;
 
-  // TODO
-  // Review how this is supposed to work. A packet contains a single payload so
-  // it's not possible to jump directly to a new frame, and several frames could
-  // theoretically be included in a single payload depending on how frames are
-  // determined. If the function limits this to one then perhaps we are losing
-  // frame data here.
-  payload.DetectFrames((* (this->CurrentFrameTracker)), newFrameBoundaries, framePositionInPacket);
-  isNewFrame = (newFrameBoundaries.size() > 0);
+  PayloadHeader const * payloadHeader = reinterpret_cast<PayloadHeader const *>(data+index);
+  auto hlen = payloadHeader->GetHlen();
+  if (hlen > dataLength)
+  {
+    return;
+  }
+  index += hlen;
+
+  // Skip optional extension headers.
+  auto nxhdr = payloadHeader->GetNxhdr();
+  while (nxhdr != 0)
+  {
+    ExtensionHeader const * extensionHeader = reinterpret_cast<ExtensionHeader const *>(data+index);
+    index += extensionHeader->GetHlen();
+    nxhdr = extensionHeader->GetNxhdr();
+  }
+
+  // Loop through firing groups until a frame shift is detected.
+  size_t numberOfBytesPerFiringGroupHeader = payloadHeader->GetGlen();
+  size_t numberOfBytesPerFiring = payloadHeader->GetNumberOfBytesPerFiring();
+  isNewFrame = false;
+  while (index < dataLength)
+  {
+    FiringGroupHeader const * firingGroupHeader = reinterpret_cast<FiringGroupHeader const *>(data+index);
+    this->CurrentFrameTracker->Update(firingGroupHeader, isNewFrame);
+    if (isNewFrame)
+    {
+      framePositionInPacket = index;
+      return;
+    }
+    index +=
+      (numberOfBytesPerFiring * firingGroupHeader->GetFcnt()) +
+      numberOfBytesPerFiringGroupHeader;
+  }
 }
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -2008,14 +1692,14 @@ void VelodyneAdvancedPacketInterpreter::LoadCalibration(const std::string& filen
 }
 
 //-----------------------------------------------------------------------------
-template <typename T>
-void VelodyneAdvancedPacketInterpreter::ComputeCorrectedValues(T const azimuth,
-  const FiringReturn<true> & firingReturn,
+template <typename TAzm, typename TDist>
+void VelodyneAdvancedPacketInterpreter::ComputeCorrectedValues(
+  TAzm const azimuth,
   size_t const correctionIndex,
-  double pos[3]
+  double pos[3],
+  TDist & distance
 )
 {
-  double distance = firingReturn.GetDistance<uint32_t>();
   double cosAzimuth, sinAzimuth;
   HDLLaserCorrection * correction = & (this->laser_corrections_[correctionIndex]);
 

@@ -16,9 +16,6 @@ using namespace DataPacketFixedLength;
 // Forward declaration.
 class FrameTracker;
 
-template <bool loadData>
-class FiringReturn;
-
 //------------------------------------------------------------------------------
 class VelodyneAdvancedPacketInterpreter : public LidarPacketInterpreter
 {
@@ -55,9 +52,9 @@ public:
 
   // Currently using signed instead of unsigned ints so that -1 can be used to
   // indicate that the value was not included in the return.
-  vtkSmartPointer<vtkIntArray>            INFO_Confidences;
-  vtkSmartPointer<vtkIntArray>            INFO_Intensities;
-  vtkSmartPointer<vtkIntArray>            INFO_Reflectivities;
+  vtkSmartPointer<vtkUnsignedIntArray>            INFO_Confidences;
+  vtkSmartPointer<vtkUnsignedIntArray>            INFO_Intensities;
+  vtkSmartPointer<vtkUnsignedIntArray>            INFO_Reflectivities;
   /*
   vtkSmartPointer<vtkStringArray>         INFO_DistanceTypeStrings;
   vtkSmartPointer<vtkStringArray>         INFO_FiringModeStrings;
@@ -76,12 +73,12 @@ private:
 	void Init();
 	void InitTrigonometricTables();
   void PrecomputeCorrectionCosSin();
-  template <typename T>
+  template <typename TAzm, typename TDist>
   void ComputeCorrectedValues(
-    T const azimuth,
-    FiringReturn<true> const & firingReturn,
+    TAzm const azimuth,
     size_t const correctionIndex,
-    double pos[3]
+    double pos[3],
+    TDist & distance 
   );
 
 public:
