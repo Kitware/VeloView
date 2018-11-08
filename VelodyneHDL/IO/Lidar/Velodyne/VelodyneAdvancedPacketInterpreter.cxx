@@ -1510,7 +1510,7 @@ void VelodyneAdvancedPacketInterpreter::ProcessPacket(unsigned char const * data
       auto channelNumber = firingHeader.GetLcn();
 
       // only process point when the laser is selected
-      if (this->LaserSelection[static_cast<int>(channelNumber)])
+      if (!this->LaserSelection[static_cast<int>(channelNumber)])
       {
         continue;
       }
