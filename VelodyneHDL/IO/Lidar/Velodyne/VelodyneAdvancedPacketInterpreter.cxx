@@ -1524,7 +1524,11 @@ void VelodyneAdvancedPacketInterpreter::ProcessPacket(unsigned char const * data
       // Only one distance type is displayed but there may be multiple in the
       // packet.
       auto & firingReturn = firing.Returns[distanceIndex];
-      double distance;
+      auto distance = firingReturn.GetDistance<uint32_t>();
+      if (this->IgnoreZeroDistances and distance == 0)
+      {
+        continue;
+      }
 
       double position[3];
       this->ComputeCorrectedValues(
@@ -1544,6 +1548,7 @@ void VelodyneAdvancedPacketInterpreter::ProcessPacket(unsigned char const * data
       // TODO Replace these with the angles for the sensor after calibration.
       // this->INFO_VerticalAngles->InsertNextValue(verticalAngle);
       this->INFO_Azimuths->InsertNextValue(azimuth);
+      this->INFO_Distances->InsertNextValue(distance);
 
       this->INFO_Pseqs->InsertNextValue(pseq);
       this->INFO_ChannelNumbers->InsertNextValue(channelNumber);
@@ -1689,6 +1694,7 @@ vtkSmartPointer<vtkPolyData> VelodyneAdvancedPacketInterpreter::CreateNewEmptyFr
   INIT_INFO_ARR(Xs                   , "X")
   INIT_INFO_ARR(Ys                   , "Y")
   INIT_INFO_ARR(Zs                   , "Z")
+  INIT_INFO_ARR(Distances            , "Distance")
   INIT_INFO_ARR(Azimuths             , "Azimuth")
   INIT_INFO_ARR(VerticalAngles       , "Vertical Angle")/*
   INIT_INFO_ARR(DistanceTypeStrings  , "Distance Type")

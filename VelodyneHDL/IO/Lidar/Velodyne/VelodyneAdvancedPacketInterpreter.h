@@ -49,6 +49,7 @@ public:
   vtkSmartPointer<vtkDoubleArray>         INFO_Xs;
   vtkSmartPointer<vtkDoubleArray>         INFO_Ys;
   vtkSmartPointer<vtkDoubleArray>         INFO_Zs;
+  vtkSmartPointer<vtkUnsignedIntArray>    INFO_Distances;
   vtkSmartPointer<vtkDoubleArray>         INFO_Azimuths;
   vtkSmartPointer<vtkDoubleArray>         INFO_VerticalAngles;
 
