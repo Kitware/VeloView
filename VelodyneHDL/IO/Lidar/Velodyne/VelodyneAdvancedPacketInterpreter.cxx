@@ -1402,10 +1402,10 @@ public:
 VelodyneAdvancedPacketInterpreter::VelodyneAdvancedPacketInterpreter()
 {
   this->CurrentFrameTracker = new FrameTracker();
-	this->Init();
+  this->FrameSize = 0;
+  this->Init();
   this->DistanceResolutionM = 0.002;
 
-  this->FrameSize = 0;
   this->ReportedFactoryField1 = 0;
   this->ReportedFactoryField2 = 0;
   this->OutputPacketProcessingDebugInfo = false;
