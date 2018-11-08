@@ -1417,6 +1417,7 @@ VelodyneAdvancedPacketInterpreter::VelodyneAdvancedPacketInterpreter()
   this->HasDualReturn = false;
   this->ShouldAddDualReturnArray = false;
   this->WantIntensityCorrection = false;
+  this->LaserSelection.resize(HDL_MAX_NUM_LASERS, true);
 }
 
 //------------------------------------------------------------------------------
@@ -1507,6 +1508,12 @@ void VelodyneAdvancedPacketInterpreter::ProcessPacket(unsigned char const * data
       auto & firing =  firings[i];
       auto firingHeader = firing.GetHeader();
       auto channelNumber = firingHeader.GetLcn();
+
+      // only process point when the laser is selected
+      if (this->LaserSelection[static_cast<int>(channelNumber)])
+      {
+        continue;
+      }
 
       // The firing mode is an enum so we need to convert it to a human-readable
       // string.
