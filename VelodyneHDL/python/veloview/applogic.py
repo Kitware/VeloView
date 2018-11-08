@@ -465,7 +465,7 @@ def openSensor():
     onCropReturns(False) # Dont show the dialog just restore settings
     onLaserSelection(False)
 
-#    rep = smp.Show(sensor)
+    rep = smp.Show(sensor)
 #    rep.InterpolateScalarsBeforeMapping = 0
 #    if app.sensor.GetClientSideObject().GetNumberOfChannels() == 128:
 #        rep.Representation = 'Point Cloud'
