@@ -404,7 +404,7 @@ public:
   //@}
 
   PacketDataHandle(decltype(Data) data, decltype(Length) length, decltype(Index) index)
-    : Data {data}, Length {length}, Index {index}
+    : Data (data), Length (length), Index (index)
   {
   }
 
@@ -1255,11 +1255,12 @@ private:
   // Set default values to something that will detect the first frame as a new
   // frame.
   // double Vdfl = -500.0;
-  double  Azm = -500.0;
+  double  Azm;
 
 public:
   FrameTracker()
   {
+    this->Azm = -500.0;
   }
 
   template <bool loadData>
@@ -1347,7 +1348,7 @@ public:
   }
 
   Payload(PacketDataHandle<BYTES_PER_HEADER_WORD> & packetDataHandle)
-    : Header {packetDataHandle}
+    : Header (packetDataHandle)
   {
     this->FiringGroups.reserve(128);
     // Check for extension headers.
@@ -1403,6 +1404,19 @@ VelodyneAdvancedPacketInterpreter::VelodyneAdvancedPacketInterpreter()
   this->CurrentFrameTracker = new FrameTracker();
 	this->Init();
   this->DistanceResolutionM = 0.002;
+
+  this->FrameSize = 0;
+  this->ReportedFactoryField1 = 0;
+  this->ReportedFactoryField2 = 0;
+  this->OutputPacketProcessingDebugInfo = false;
+  this->UseIntraFiringAdjustment = false;
+  this->DualReturnFilter = 0;
+  this->FiringsSkip = 0;
+  this->IsCorrectionFromLiveStream = false;
+  this->IsHDL64Data = false;
+  this->HasDualReturn = false;
+  this->ShouldAddDualReturnArray = false;
+  this->WantIntensityCorrection = false;
 }
 
 //------------------------------------------------------------------------------
@@ -1417,8 +1431,7 @@ void VelodyneAdvancedPacketInterpreter::ProcessPacket(unsigned char const * data
   // TODO: check how to handle startPosition
   // PacketDataHandle packetDataHandle = PacketDataHandle(data + startPosition, dataLength - startPosition, 0);
   PacketDataHandle<BYTES_PER_HEADER_WORD> packetDataHandle = PacketDataHandle<BYTES_PER_HEADER_WORD>(data, dataLength, 0);
-
-  Payload<true> payload {packetDataHandle};
+  Payload<true> payload (packetDataHandle);
 /*
   // The packet classes throw length errors if the packet does not contain the
   // expected length.

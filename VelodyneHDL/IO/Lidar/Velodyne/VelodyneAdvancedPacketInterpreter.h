@@ -24,7 +24,7 @@ class VelodyneAdvancedPacketInterpreter : public LidarPacketInterpreter
 {
 private:
   FrameTracker * CurrentFrameTracker;
-  size_t FrameSize = 0;
+  size_t FrameSize;
 
 public:
   VelodyneAdvancedPacketInterpreter();
@@ -90,17 +90,17 @@ public:
   double XMLColorTable[HDL_MAX_NUM_LASERS][3];
   // bool IsCorrectionFromLiveStream;
   
-  uint8_t ReportedFactoryField1 = 0;
-  uint8_t ReportedFactoryField2 = 0;
-  bool OutputPacketProcessingDebugInfo = false;
-  bool UseIntraFiringAdjustment = false;
-  unsigned int DualReturnFilter = 0;
-  int FiringsSkip = 0;
-  bool IsCorrectionFromLiveStream = false;
-  bool IsHDL64Data = false;
-  bool HasDualReturn = false;
-  bool ShouldAddDualReturnArray = false;
-  bool WantIntensityCorrection = false;
+  uint8_t ReportedFactoryField1 ;
+  uint8_t ReportedFactoryField2 ;
+  bool OutputPacketProcessingDebugInfo ;
+  bool UseIntraFiringAdjustment;
+  unsigned int DualReturnFilter ;
+  int FiringsSkip;
+  bool IsCorrectionFromLiveStream ;
+  bool IsHDL64Data ;
+  bool HasDualReturn ;
+  bool ShouldAddDualReturnArray;
+  bool WantIntensityCorrection;
 };
 
 #endif // VELODYNE_ADVANCED_PACKET_INTERPRETOR_H
