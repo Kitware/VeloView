@@ -1545,6 +1545,12 @@ void VelodyneAdvancedPacketInterpreter::ProcessPacket(unsigned char const * data
           position
       );
 
+      // check if the point should be crop out or not
+      if (this->shouldBeCroppedOut(position, static_cast<double>(azimuth) / 100.0))
+      {
+        continue;
+      }
+
       // TODO
       // Determine which information is relevent and update accordingly.
       this->Points->InsertNextPoint(position);
