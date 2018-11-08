@@ -1282,6 +1282,10 @@ public:
   {
     return (std::abs(this->Azm - frameTracker.Azm) > 180.0);
   }
+  void reset()
+  {
+    this->Azm = -500.0;
+  }
 };
 
 //------------------------------------------------------------------------------
@@ -1325,14 +1329,18 @@ public:
    * @param[out] newFrameBoundaries The indices of firing groups that start a
    *                                new frame will be pushed onto this vector.
    */
-  void DetectFrames(FrameTracker & currentFrameTracker, std::vector<size_t> & newFrameBoundaries)
+  void DetectFrames(FrameTracker & currentFrameTracker, std::vector<size_t> & newFrameBoundaries
+                    , int & framePositionInPacket)
   {
     for (size_t i = 0; i < this->FiringGroups.size(); ++i)
     {
-      FrameTracker frameTracker = FrameTracker(this->FiringGroups[i]);
+      FrameTracker frameTracker(this->FiringGroups[i]);
       if (currentFrameTracker.IsNewFrame(frameTracker))
       {
         newFrameBoundaries.push_back(i);
+        framePositionInPacket = i;
+        currentFrameTracker = frameTracker;
+        return;
       }
       currentFrameTracker = frameTracker;
     }
@@ -1392,9 +1400,9 @@ public:
 //------------------------------------------------------------------------------
 VelodyneAdvancedPacketInterpreter::VelodyneAdvancedPacketInterpreter()
 {
+  this->CurrentFrameTracker = new FrameTracker();
 	this->Init();
   this->DistanceResolutionM = 0.002;
-  this->CurrentFrameTracker = new FrameTracker();
 }
 
 //------------------------------------------------------------------------------
@@ -1454,8 +1462,9 @@ void VelodyneAdvancedPacketInterpreter::ProcessPacket(unsigned char const * data
   }
   auto distanceTypeString = toString(distanceType);
 
-  for (auto & firingGroup : payload.FiringGroups)
+  for (auto i = startPosition; i<payload.FiringGroups.size();++i)
   {
+    auto & firingGroup = payload.FiringGroups[i];
     // Detect frame changes in firing groups.
     FrameTracker frameTracker = FrameTracker(firingGroup);
     if (this->CurrentFrameTracker->IsNewFrame(frameTracker))
@@ -1699,13 +1708,15 @@ bool VelodyneAdvancedPacketInterpreter::SplitFrame(bool force)
 void VelodyneAdvancedPacketInterpreter::ResetCurrentFrame()
 {
   this->CurrentFrame = this->CreateNewEmptyFrame(0);
+  this->CurrentFrameTracker->reset();
+  this->Frames.clear();
 }
 
 //------------------------------------------------------------------------------
 void VelodyneAdvancedPacketInterpreter::PreProcessPacket(unsigned char const * data, unsigned int dataLength, bool & isNewFrame, int & framePositionInPacket)
 {
   PacketDataHandle<BYTES_PER_HEADER_WORD> packetDataHandle = PacketDataHandle<BYTES_PER_HEADER_WORD>(data, dataLength, 0);
-  Payload<false> payload = Payload<false>(packetDataHandle);
+  Payload<false>  payload(packetDataHandle);
   std::vector<size_t> newFrameBoundaries;
 
   // TODO
@@ -1714,9 +1725,8 @@ void VelodyneAdvancedPacketInterpreter::PreProcessPacket(unsigned char const * d
   // theoretically be included in a single payload depending on how frames are
   // determined. If the function limits this to one then perhaps we are losing
   // frame data here.
-  payload.DetectFrames((* (this->CurrentFrameTracker)), newFrameBoundaries);
+  payload.DetectFrames((* (this->CurrentFrameTracker)), newFrameBoundaries, framePositionInPacket);
   isNewFrame = (newFrameBoundaries.size() > 0);
-  framePositionInPacket = 0;
 }
 
 
