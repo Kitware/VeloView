@@ -27,10 +27,33 @@ using namespace DataPacketFixedLength;
 #define BYTES_PER_HEADER_WORD 4u
 
 //------------------------------------------------------------------------------
+// Type Conversion Structs
+//------------------------------------------------------------------------------
+// Private members are stored using boost endian arithmetic types. To make these
+// transparent, getters return native values. Create structs to handle the
+// conversions in the getters.
+template <typename T>
+struct AsNative
+{
+  typedef T type;
+};
+
+#define DECLARE_BIG_TO_NATIVE(typ)            \
+  template <>                                 \
+  struct AsNative<boost::endian::big_ ## typ> \
+  {                                           \
+    typedef typ type;                \
+  };
+
+DECLARE_BIG_TO_NATIVE(uint16_t)
+DECLARE_BIG_TO_NATIVE(uint32_t)
+DECLARE_BIG_TO_NATIVE(uint64_t)
+
+//------------------------------------------------------------------------------
 // Accessor macros.
 //------------------------------------------------------------------------------
-//! @brief Simple getter for uninterpretted values.
-#define GET_RAW(attr) decltype(attr) Get ## attr () const { return this->attr; }
+//! @brief Simple getter for uninterpretted values that returns native types.
+#define GET_RAW(attr) typename AsNative<decltype(attr)>::type Get ## attr () const { return this->attr; }
 
 //! @brief Get a const reference.
 #define GET_CONST_REF(attr) decltype(attr) const & Get ## attr () const { return this->attr; }
@@ -40,6 +63,8 @@ using namespace DataPacketFixedLength;
 
 //! @brief Get a header length in bytes.
 #define GET_LENGTH(attr) size_t Get ## attr () const { return (this->attr * BYTES_PER_HEADER_WORD); }
+
+
 
 //------------------------------------------------------------------------------
 // Enum macros.
@@ -832,9 +857,11 @@ private:
   uint8_t Fspn : 3;
   uint8_t Fcnt : 5;
   uint8_t Fdly;
-  uint8_t Hdir : 1;
-  uint8_t Vdir : 1;
+  // TODO Handle endianness of multibyte bit fields.
+  // boost::endian::big_uint16_t Vdfl : 14;
   uint16_t Vdfl : 14;
+  uint8_t Vdir : 1;
+  uint8_t Hdir : 1;
   boost::endian::big_uint16_t Azm;
 #endif
 public:
@@ -948,7 +975,7 @@ public:
   template <typename T>
   T GetDistance(uint8_t bytesPerDistance) const {
     T distance = this->Data[0];
-    for (size_t i = 1; ++i; i < bytesPerDistance)
+    for (size_t i = 1; i < bytesPerDistance; ++i)
     {
       distance = (distance * 0x100) + this->Data[i];
     }
@@ -988,6 +1015,7 @@ public:
     return this->Data[bytesPerDistance + i];
   }
 
+  FiringReturn(uint8_t const * data) : Data (data) {};
 };
 #pragma pack(pop)
 
@@ -1177,10 +1205,10 @@ void VelodyneAdvancedPacketInterpreter::ProcessPacket(unsigned char const * data
       // packet. Skip to it, reinterpret, then move the index to the next
       // header.
       index += distanceIndex * numberOfBytesPerFiringReturn;
-      FiringReturn const * firingReturn = reinterpret_cast<FiringReturn const *>(data+index);
+      FiringReturn firingReturn(data+index);
       index += (distanceCount - distanceIndex) * numberOfBytesPerFiringReturn;
-
-      uint32_t distance = firingReturn->GetDistance<uint32_t>(distanceSize);
+      
+      uint32_t distance = firingReturn.GetDistance<uint32_t>(distanceSize);
       if (this->IgnoreZeroDistances && distance == 0)
       {
         continue;
@@ -1225,7 +1253,7 @@ void VelodyneAdvancedPacketInterpreter::ProcessPacket(unsigned char const * data
 #define INSERT_INTENSITY(my_array, iset_flag)                                          \
       this->INFO_ ## my_array->InsertNextValue(                                        \
         (iset & (ISET_ ## iset_flag)) ?                                                \
-        firingReturn->GetIntensity<uint32_t>(distanceSize, iset, (ISET_ ## iset_flag)) \
+        firingReturn.GetIntensity<uint32_t>(distanceSize, iset, (ISET_ ## iset_flag)) \
         : 0                                                                            \
       );
 
