@@ -28,6 +28,9 @@ using namespace DataPacketFixedLength;
 //! @brief Lengths in the headers are given in units of 32-bit words.
 #define BYTES_PER_HEADER_WORD 4u
 
+//! @brief Get the first set bit of an integral value.
+#define FIRST_SET_BIT(n) (n - (n & (n-1)))
+
 //------------------------------------------------------------------------------
 // Type Conversion Structs
 //------------------------------------------------------------------------------
@@ -1141,31 +1144,54 @@ void VelodyneAdvancedPacketInterpreter::ProcessPacket(unsigned char const * data
 
   auto pseq = payloadHeader->GetPseq();
   auto iset = payloadHeader->GetIset();
+  auto dsetMask = payloadHeader->GetDsetMask();
+  auto isDsetMask = payloadHeader->IsDsetMask();
+
   // 64-bit PTP truncated format.
   auto timeRef = payloadHeader->GetTref();
-  // TODO: make this configurable via the user interface
-  uint8_t distanceIndex;
-  DistanceType distanceType;
-  if (payloadHeader->IsDsetMask())
-  {
-    auto dsetMask = payloadHeader->GetDsetMask();
-    distanceType = toDistanceType(firstSetBit(dsetMask));
-    distanceIndex = indexOfBit(dsetMask, distanceType);
-  }
-  else
-  {
-    distanceIndex = 0;
-    distanceType = DSET_FIRST;
-
-  }
-  auto distanceTypeString = toString(distanceType);
 
   size_t numberOfBytesPerFiringGroupHeader = payloadHeader->GetGlen();
   size_t numberOfBytesPerFiringHeader = payloadHeader->GetFlen();
   size_t numberOfBytesPerFiringReturn = payloadHeader->GetNumberOfBytesPerFiringReturn();
   size_t numberOfBytesPerFiring = payloadHeader->GetNumberOfBytesPerFiring();
-  size_t distanceCount = payloadHeader->GetDistanceCount();
-  size_t distanceSize = payloadHeader->GetDistanceSizeInBytes();
+  uint8_t distanceCount = payloadHeader->GetDistanceCount();
+  uint8_t distanceSize = payloadHeader->GetDistanceSizeInBytes();
+  uint8_t distanceIndex;
+
+  // The included distance types are specified by a bit mask (if DSET included
+  // it), for example 0110 indicates the presence of distance type 0100 and
+  // 0010. To display this information, we need to retrieve the type below in
+  // the firing loop. To avoid redundant bit calculations to retrieve the nth
+  // bit from the mask, we can define a vector that we can easily index below
+  // instead. The order of the distance types is determined by their bit values
+  // in the mask per the standard so this is safe.
+
+  // To do this, we start with the DSET mask and determine the value of the
+  // first set bit. This is the distance type of the first distance. We then
+  // remove that bit from the mask by subtraction and proceed to the next bit
+  // and repeat. The values are stored successively so that they can be indexed
+  // below.
+  decltype(dsetMask) dsetRemainingMask = dsetMask;
+  decltype(dsetMask) dsetBit;
+  std::vector<decltype(dsetMask)> distanceTypes;
+  for (distanceIndex = 0; distanceIndex < distanceCount; ++ distanceIndex)
+  {
+    if (isDsetMask)
+    {
+      dsetBit = FIRST_SET_BIT(dsetRemainingMask);
+      distanceTypes.push_back(dsetBit);
+      dsetRemainingMask -= dsetBit;
+    }
+    // DSET may specify a count instead of a mask, in which case the distance
+    // types are not specified. Use 0 in that case, which has no meaning in this
+    // context.
+    else
+    {
+      distanceTypes.push_back(0);
+    }
+  }
+
+
 
   // Loop through firing groups until a frame shift is detected. The number of
   // firings in each group is variable so we need to step through all of them to
@@ -1177,7 +1203,7 @@ void VelodyneAdvancedPacketInterpreter::ProcessPacket(unsigned char const * data
     index += numberOfBytesPerFiringGroupHeader;
 
     // Skip the firings and jump to the next firing group header.
-    if (loopCount < startPosition)
+    if ((loopCount++) < startPosition)
     {
       index += numberOfBytesPerFiring * firingGroupHeader->GetFcnt();
       continue;
@@ -1194,7 +1220,9 @@ void VelodyneAdvancedPacketInterpreter::ProcessPacket(unsigned char const * data
     auto coChannelSpan = firingGroupHeader->GetFspn();
     auto coChannelTimeFractionDelay = firingGroupHeader->GetFdly();
     auto verticalAngle = firingGroupHeader->GetVdfl();
+    double verticalAngleInDegrees = firingGroupHeader->GetVerticalDeflection();
     auto azimuth = firingGroupHeader->GetAzm();
+    double azimuthInDegrees = firingGroupHeader->GetAzimuth();
     auto numberOfFirings = firingGroupHeader->GetFcnt();
 
     for (size_t i = 0; i < numberOfFirings; ++i)
@@ -1215,79 +1243,79 @@ void VelodyneAdvancedPacketInterpreter::ProcessPacket(unsigned char const * data
         continue;
       }
 
-      // The firing mode is an enum so we need to convert it to a human-readable
-      // string.
       auto firingMode = firingHeader->GetFm();
-      auto firingModeString = toString(firingMode);
+      // auto firingModeString = toString(firingMode);
       auto power = firingHeader->GetPwr();
       auto noise = firingHeader->GetNf();
       // Status is also an enum and requires a string conversion.
       auto status = firingHeader->GetStat();
       auto statusString = toString(status);
 
+      double correctedVerticalAngle = verticalAngleInDegrees + this->laser_corrections_[channelNumber].verticalCorrection;
 
-      // Only one distance type is displayed but there may be multiple in the
-      // packet. Skip to it, reinterpret, then move the index to the next
-      // header.
-      index += distanceIndex * numberOfBytesPerFiringReturn;
-      FiringReturn firingReturn(data+index);
-      index += (distanceCount - distanceIndex) * numberOfBytesPerFiringReturn;
-
-      uint32_t distance = firingReturn.GetDistance<uint32_t>(distanceSize);
-      if (this->IgnoreZeroDistances && distance == 0)
+      for (distanceIndex = 0; distanceIndex < distanceCount; ++distanceIndex)
       {
-        continue;
+        FiringReturn firingReturn(data+index);
+        index += numberOfBytesPerFiringReturn;
+
+        uint32_t distance = firingReturn.GetDistance<uint32_t>(distanceSize);
+        if (this->IgnoreZeroDistances && distance == 0)
+        {
+          continue;
+        }
+
+        double position[3];
+        this->ComputeCorrectedValues(
+          azimuth,
+          channelNumber,
+          position,
+          distance
+        );
+
+        // Check if the point should be cropped out.
+        if (this->shouldBeCroppedOut(position, azimuthInDegrees))
+        {
+          continue;
+        }
+
+        // TODO
+        // Determine which information is relevent and update accordingly.
+        this->Points->InsertNextPoint(position);
+        this->INFO_Xs->InsertNextValue(position[0]);
+        this->INFO_Ys->InsertNextValue(position[1]);
+        this->INFO_Zs->InsertNextValue(position[2]);
+
+        this->INFO_Azimuths->InsertNextValue(azimuthInDegrees);
+        this->INFO_Distances->InsertNextValue(distance);
+
+        this->INFO_DistanceTypes->InsertNextValue(distanceTypes[distanceIndex]);
+        //
+
+        this->INFO_Pseqs->InsertNextValue(pseq);
+        this->INFO_ChannelNumbers->InsertNextValue(channelNumber);
+        this->INFO_TimeFractionOffsets->InsertNextValue(channelTimeFractionOffset);
+      // this->INFO_FiringModeStrings->InsertNextValue(firingModeString);
+        this->INFO_Powers->InsertNextValue(power);
+        this->INFO_Noises->InsertNextValue(noise);
+        this->INFO_VerticalAngles->InsertNextValue(correctedVerticalAngle);
+      //  this->INFO_StatusStrings->InsertNextValue(statusString);
+    //   this->INFO_DistanceTypeStrings->InsertNextValue(distanceTypeString);
+
+  //! @brief Convenience macro for setting intensity values
+#define INSERT_INTENSITY(my_array, iset_flag)                                           \
+        this->INFO_ ## my_array->InsertNextValue(                                       \
+          (iset & (ISET_ ## iset_flag)) ?                                               \
+          firingReturn.GetIntensity<uint32_t>(distanceSize, iset, (ISET_ ## iset_flag)) \
+          : 0                                                                           \
+        );
+
+        // TODO: Make the inclusion of these columns fully optional at runtime.
+
+        // Add additional values here when ISET is expanded in future versions.
+        INSERT_INTENSITY(Reflectivities, REFLECTIVITY)
+        INSERT_INTENSITY(Intensities, INTENSITY)
+        INSERT_INTENSITY(Confidences, CONFIDENCE)
       }
-
-      double position[3];
-      this->ComputeCorrectedValues(
-        azimuth,
-        channelNumber,
-        position,
-        distance
-      );
-
-      // check if the point should be crop out or not
-      if (this->shouldBeCroppedOut(position, static_cast<double>(azimuth) / 100.0))
-      {
-        continue;
-      }
-
-      // TODO
-      // Determine which information is relevent and update accordingly.
-      this->Points->InsertNextPoint(position);
-      this->INFO_Xs->InsertNextValue(position[0]);
-      this->INFO_Ys->InsertNextValue(position[1]);
-      this->INFO_Zs->InsertNextValue(position[2]);
-
-      this->INFO_Azimuths->InsertNextValue(static_cast<double>(azimuth) / 100.0);
-      this->INFO_Distances->InsertNextValue(distance);
-      //
-
-      this->INFO_Pseqs->InsertNextValue(pseq);
-      this->INFO_ChannelNumbers->InsertNextValue(channelNumber);
-      this->INFO_TimeFractionOffsets->InsertNextValue(channelTimeFractionOffset);
-     // this->INFO_FiringModeStrings->InsertNextValue(firingModeString);
-      this->INFO_Powers->InsertNextValue(power);
-      this->INFO_Noises->InsertNextValue(noise);
-      this->INFO_VerticalAngles->InsertNextValue(static_cast<double>(verticalAngle)/100.0 + this->laser_corrections_[channelNumber].verticalCorrection);
-    //  this->INFO_StatusStrings->InsertNextValue(statusString);
-   //   this->INFO_DistanceTypeStrings->InsertNextValue(distanceTypeString);
-
-//! @brief Convenience macro for setting intensity values
-#define INSERT_INTENSITY(my_array, iset_flag)                                          \
-      this->INFO_ ## my_array->InsertNextValue(                                        \
-        (iset & (ISET_ ## iset_flag)) ?                                                \
-        firingReturn.GetIntensity<uint32_t>(distanceSize, iset, (ISET_ ## iset_flag)) \
-        : 0                                                                            \
-      );
-
-      // TODO: Make the inclusion of these columns fully optional at runtime.
-
-      // Add additional values here when ISET is expanded in future versions.
-      INSERT_INTENSITY(Reflectivities, REFLECTIVITY)
-      INSERT_INTENSITY(Intensities, INTENSITY)
-      INSERT_INTENSITY(Confidences, CONFIDENCE)
     }
   }
 }
@@ -1408,6 +1436,7 @@ vtkSmartPointer<vtkPolyData> VelodyneAdvancedPacketInterpreter::CreateNewEmptyFr
   INIT_INFO_ARR(Ys                   , "Y")
   INIT_INFO_ARR(Zs                   , "Z")
   INIT_INFO_ARR(Distances            , "Distance")
+  INIT_INFO_ARR(DistanceTypes        , "Distance Type")
   INIT_INFO_ARR(Azimuths             , "Azimuth")
   INIT_INFO_ARR(VerticalAngles       , "Vertical Angle")/*
   INIT_INFO_ARR(DistanceTypeStrings  , "Distance Type")

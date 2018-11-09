@@ -52,14 +52,15 @@ public:
 
   // Currently using signed instead of unsigned ints so that -1 can be used to
   // indicate that the value was not included in the return.
-  vtkSmartPointer<vtkUnsignedIntArray>            INFO_Confidences;
-  vtkSmartPointer<vtkUnsignedIntArray>            INFO_Intensities;
-  vtkSmartPointer<vtkUnsignedIntArray>            INFO_Reflectivities;
+  vtkSmartPointer<vtkUnsignedIntArray>    INFO_Confidences;
+  vtkSmartPointer<vtkUnsignedIntArray>    INFO_Intensities;
+  vtkSmartPointer<vtkUnsignedIntArray>    INFO_Reflectivities;
   /*
   vtkSmartPointer<vtkStringArray>         INFO_DistanceTypeStrings;
   vtkSmartPointer<vtkStringArray>         INFO_FiringModeStrings;
   vtkSmartPointer<vtkStringArray>         INFO_StatusStrings;
 */
+  vtkSmartPointer<vtkUnsignedCharArray>   INFO_DistanceTypes;
   vtkSmartPointer<vtkUnsignedCharArray>   INFO_ChannelNumbers;
   vtkSmartPointer<vtkUnsignedCharArray>   INFO_Noises;
   vtkSmartPointer<vtkUnsignedCharArray>   INFO_Powers;
