@@ -55,7 +55,10 @@ DECLARE_BIG_TO_NATIVE(uint64_t)
 // Accessor macros.
 //------------------------------------------------------------------------------
 //! @brief Simple getter for uninterpretted values that returns native types.
-#define GET_RAW(attr) typename AsNative<decltype(attr)>::type Get ## attr () const { return this->attr; }
+// #define GET_RAW(attr) typename AsNative<decltype(attr)>::type Get ## attr () const { return this->attr; }
+#define GET_RAW(attr) decltype(attr) Get ## attr () const { return this->attr; }
+
+#define GET_NATIVE_UINT(n, attr) uint ## n ##_t Get ## attr () const { return this->attr; }
 
 //! @brief Get a const reference.
 #define GET_CONST_REF(attr) decltype(attr) const & Get ## attr () const { return this->attr; }
@@ -701,9 +704,9 @@ public:
   GET_RAW(DsetMask)
   GET_RAW(DsetFormat)
   GET_RAW(DsetEncodingSize)
-  GET_RAW(Iset)
-  GET_RAW(Tref)
-  GET_RAW(Pseq)
+  GET_NATIVE_UINT(16, Iset)
+  GET_NATIVE_UINT(64, Tref)
+  GET_NATIVE_UINT(32, Pseq)
   //@}
 
 
@@ -884,7 +887,7 @@ public:
   GET_ENUM(HorizontalDirection, Hdir)
   GET_ENUM(VerticalDirection, Vdir)
   GET_RAW(Vdfl)
-  GET_RAW(Azm)
+  GET_NATIVE_UINT(16, Azm)
   //@}
 
   //@{
