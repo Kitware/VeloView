@@ -20,6 +20,8 @@ using namespace DataPacketFixedLength;
 
 #include <iostream>
 
+//#define DEBUG_MSG(msg) std::cout << msg << "[" << __LINE__ << "]" << std::endl;
+
 //------------------------------------------------------------------------------
 // General macros constants.
 //------------------------------------------------------------------------------
@@ -659,9 +661,9 @@ private:
   uint8_t Flen : 4;
   uint8_t Mic;
   uint8_t Tstat;
-  uint8_t DsetMask : 6;
-  uint8_t DsetFormat : 1;
   uint8_t DsetEncodingSize : 1;
+  uint8_t DsetFormat : 1;
+  uint8_t DsetMask : 6;
   uint16_t Iset;
   uint64_t Tref;
   uint32_t Pseq;
@@ -673,9 +675,9 @@ private:
   uint8_t Glen : 4;
   uint8_t Mic;
   uint8_t Tstat;
-  uint8_t DsetEncodingSize : 1;
-  uint8_t DsetFormat : 1;
   uint8_t DsetMask : 6;
+  uint8_t DsetFormat : 1;
+  uint8_t DsetEncodingSize : 1;
   boost::endian::big_uint16_t Iset;
   boost::endian::big_uint64_t Tref;
   boost::endian::big_uint32_t Pseq;
