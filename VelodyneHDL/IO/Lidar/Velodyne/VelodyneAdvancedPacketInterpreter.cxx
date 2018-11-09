@@ -976,7 +976,16 @@ public:
   GET_CONST_REF(Data);
   //@}
 
-  //! @brief Get the distance from this firing.
+  /*!
+   * @brief Get the distance from this firing.
+   *
+   * The distance is encoded in a variable number of bytes (2-3). To avoid
+   * dealing with conditional template parameters, we parse the value
+   * byte-by-byte.
+   *
+   * The Advanced Packet Format specification states that all multibyte values
+   * are in Big Endian (network) byte order.
+   */
   template <typename T>
   T GetDistance(uint8_t bytesPerDistance) const {
     T distance = this->Data[0];
