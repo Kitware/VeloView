@@ -1151,14 +1151,25 @@ void VelodyneAdvancedPacketInterpreter::ProcessPacket(unsigned char const * data
   size_t numberOfBytesPerFiringGroupHeader = payloadHeader->GetGlen();
   size_t numberOfBytesPerFiringHeader = payloadHeader->GetFlen();
   size_t numberOfBytesPerFiringReturn = payloadHeader->GetNumberOfBytesPerFiringReturn();
+  size_t numberOfBytesPerFiring = payloadHeader->GetNumberOfBytesPerFiring();
   size_t distanceCount = payloadHeader->GetDistanceCount();
   size_t distanceSize = payloadHeader->GetDistanceSizeInBytes();
 
-  // Loop through firing groups until a frame shift is detected.
+  // Loop through firing groups until a frame shift is detected. The number of
+  // firings in each group is variable so we need to step through all of them to
+  // get to the startPosition calculated by PreProcessPacket.
+  size_t loopCount = 0;
   while (index < dataLength)
   {
     FiringGroupHeader const * firingGroupHeader = reinterpret_cast<FiringGroupHeader const *>(data+index);
     index += numberOfBytesPerFiringGroupHeader;
+
+    // Skip the firings and jump to the next firing group header.
+    if (loopCount < startPosition)
+    {
+      index += numberOfBytesPerFiring * firingGroupHeader->GetFcnt();
+      continue;
+    }
 
     bool isNewFrame = false;
     this->CurrentFrameTracker->Update(firingGroupHeader, isNewFrame);
@@ -1209,7 +1220,7 @@ void VelodyneAdvancedPacketInterpreter::ProcessPacket(unsigned char const * data
       index += distanceIndex * numberOfBytesPerFiringReturn;
       FiringReturn firingReturn(data+index);
       index += (distanceCount - distanceIndex) * numberOfBytesPerFiringReturn;
-      
+
       uint32_t distance = firingReturn.GetDistance<uint32_t>(distanceSize);
       if (this->IgnoreZeroDistances && distance == 0)
       {
@@ -1238,7 +1249,7 @@ void VelodyneAdvancedPacketInterpreter::ProcessPacket(unsigned char const * data
       this->INFO_Zs->InsertNextValue(position[2]);
 
       this->INFO_Azimuths->InsertNextValue(static_cast<double>(azimuth) / 100.0);
-      this->INFO_Distances->InsertNextValue(distance); 
+      this->INFO_Distances->InsertNextValue(distance);
       //
 
       this->INFO_Pseqs->InsertNextValue(pseq);
@@ -1422,7 +1433,12 @@ void VelodyneAdvancedPacketInterpreter::ResetCurrentFrame()
 }
 
 //------------------------------------------------------------------------------
-void VelodyneAdvancedPacketInterpreter::PreProcessPacket(unsigned char const * data, unsigned int dataLength, bool & isNewFrame, int & framePositionInPacket)
+void VelodyneAdvancedPacketInterpreter::PreProcessPacket(
+  unsigned char const * data,
+  unsigned int dataLength,
+  bool & isNewFrame,
+  int & framePositionInPacket
+)
 {
   decltype(dataLength) index = 0;
 
