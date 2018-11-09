@@ -1532,7 +1532,7 @@ void VelodyneAdvancedPacketInterpreter::ProcessPacket(unsigned char const * data
       // packet.
       auto & firingReturn = firing.Returns[distanceIndex];
       auto distance = firingReturn.GetDistance<uint32_t>();
-      if (this->IgnoreZeroDistances and distance == 0)
+      if (this->IgnoreZeroDistances && distance == 0)
       {
         continue;
       }
@@ -1558,10 +1558,9 @@ void VelodyneAdvancedPacketInterpreter::ProcessPacket(unsigned char const * data
       this->INFO_Ys->InsertNextValue(position[1]);
       this->INFO_Zs->InsertNextValue(position[2]);
 
-      // TODO Replace these with the angles for the sensor after calibration.
-      // this->INFO_VerticalAngles->InsertNextValue(verticalAngle);
-      this->INFO_Azimuths->InsertNextValue(azimuth);
-      this->INFO_Distances->InsertNextValue(distance);
+      this->INFO_Azimuths->InsertNextValue(static_cast<double>(azimuth) / 100.0);
+      this->INFO_Distances->InsertNextValue(distance); 
+      //
 
       this->INFO_Pseqs->InsertNextValue(pseq);
       this->INFO_ChannelNumbers->InsertNextValue(channelNumber);
@@ -1569,7 +1568,7 @@ void VelodyneAdvancedPacketInterpreter::ProcessPacket(unsigned char const * data
      // this->INFO_FiringModeStrings->InsertNextValue(firingModeString);
       this->INFO_Powers->InsertNextValue(power);
       this->INFO_Noises->InsertNextValue(noise);
-      this->INFO_VerticalAngles->InsertNextValue(verticalAngle + this->laser_corrections_[channelNumber].verticalCorrection);
+      this->INFO_VerticalAngles->InsertNextValue(static_cast<double>(verticalAngle)/100.0 + this->laser_corrections_[channelNumber].verticalCorrection);
     //  this->INFO_StatusStrings->InsertNextValue(statusString);
    //   this->INFO_DistanceTypeStrings->InsertNextValue(distanceTypeString);
 
