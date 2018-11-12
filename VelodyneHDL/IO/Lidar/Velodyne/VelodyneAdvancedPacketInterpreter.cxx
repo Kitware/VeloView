@@ -936,7 +936,7 @@ void VelodyneAdvancedPacketInterpreter::ProcessPacket(unsigned char const * data
       auto noise = firingHeader->GetNf();
       // Status is also an enum and requires a string conversion.
       auto status = firingHeader->GetStat();
-      auto statusString = toString(status);
+      // auto statusString = toString(status);
 
       double correctedVerticalAngle = verticalAngleInDegrees + this->laser_corrections_[channelNumber].verticalCorrection;
 
