@@ -67,7 +67,7 @@ DECLARE_BIG_TO_NATIVE(uint64_t)
 #define GET_CONST_REF(attr) decltype(attr) const & Get ## attr () const { return this->attr; }
 
 //! @brief Getter for enum values that are stored as raw values internally.
-#define GET_ENUM(enumtype, attr) enumtype Get ## attr () const { return to ## enumtype (this->attr); }
+#define GET_ENUM(enumtype, attr) enumtype Get ## attr () const { return to ## enumtype (static_cast<uint8_t>(this->attr)); }
 
 //! @brief Get a header length in bytes.
 #define GET_LENGTH(attr) size_t Get ## attr () const { return (this->attr * BYTES_PER_HEADER_WORD); }
@@ -112,7 +112,7 @@ DECLARE_BIG_TO_NATIVE(uint64_t)
 //! @brief Macro for defining enum string conversions.
 #define DEFINE_ENUM_TO_STRING(name, prefix, enumerators)                                \
   inline                                                                                \
-  char const * toString(name x)                                                         \
+  char const * toString(name const x)                                                         \
   {                                                                                     \
     switch(x)                                                                           \
     {                                                                                   \
@@ -135,7 +135,7 @@ DECLARE_BIG_TO_NATIVE(uint64_t)
 #define DEFINE_VALUE_TO_ENUM(name, prefix, enumerators, default_value) \
   template <typename T>                                                \
   inline                                                               \
-  name to ## name(T x)                                                 \
+  name to ## name(T const x)                                                 \
   {                                                                    \
     switch(x)                                                          \
     {                                                                  \
@@ -343,6 +343,25 @@ T firstSetBit(T x)
 }
 
 //------------------------------------------------------------------------------
+/*!
+ * @brief      Set a target value from a range of bits in another value.
+ * @tparam     TS The source value type.
+ * @tparam     TD The destination value type.
+ * @param[in]  source      The source value from which to set the destination
+ *                         value.
+ * @param[in]  offset      The offset of the least significant bit.
+ * @param[in]  number      The number of bits to set.
+ * @return     The value.
+ */
+template <typename T>
+inline
+T bitRangeValue(T const & source, uint8_t offset, uint8_t number)
+{
+  T const mask = (static_cast<T>(1) << number) - 1;
+  return (source >> offset) & mask;
+}
+
+//------------------------------------------------------------------------------
 // PayloadHeader
 //------------------------------------------------------------------------------
 /*!
@@ -372,35 +391,15 @@ private:
    * Tref  : Time reference.
    * Pset  : Payload sequence number.
    */
-#ifdef BOOST_BIG_ENDIAN
-  uint8_t Ver : 4;
-  uint8_t Hlen : 4;
-  uint8_t Nxhdr;
-  uint8_t Glen : 4;
-  uint8_t Flen : 4;
-  uint8_t Mic;
-  uint8_t Tstat;
-  uint8_t DsetEncodingSize : 1;
-  uint8_t DsetFormat : 1;
-  uint8_t DsetMask : 6;
-  uint16_t Iset;
-  uint64_t Tref;
-  uint32_t Pseq;
-#else
-  uint8_t Hlen : 4;
-  uint8_t Ver : 4;
-  uint8_t Nxhdr;
-  uint8_t Flen : 4;
-  uint8_t Glen : 4;
-  uint8_t Mic;
-  uint8_t Tstat;
-  uint8_t DsetMask : 6;
-  uint8_t DsetFormat : 1;
-  uint8_t DsetEncodingSize : 1;
+  boost::endian::big_uint8_t VerHlen;
+  boost::endian::big_uint8_t Nxhdr;
+  boost::endian::big_uint8_t GlenFlen;
+  boost::endian::big_uint8_t Mic;
+  boost::endian::big_uint8_t Tstat;
+  boost::endian::big_uint8_t Dset;
   boost::endian::big_uint16_t Iset;
   boost::endian::big_uint64_t Tref;
   boost::endian::big_uint32_t Pseq;
-#endif
   //@}
 
 public:
@@ -410,32 +409,29 @@ public:
    *
    * HLEN, GLEN and FLEN are returned in bytes, not the number of 32-bit words.
    */
-  GET_RAW(Ver)
-  GET_LENGTH(Hlen)
-  GET_RAW(Nxhdr)
-  GET_LENGTH(Glen)
-  GET_LENGTH(Flen)
+  uint8_t GetVer() const  { return bitRangeValue<uint8_t>(this->VerHlen, 4, 4); }
+  uint8_t GetHlen() const { return bitRangeValue<uint8_t>(this->VerHlen, 0, 4) * BYTES_PER_HEADER_WORD; }
+  GET_NATIVE_UINT(8, Nxhdr)
+  uint8_t GetGlen() const { return bitRangeValue<uint8_t>(this->GlenFlen, 4, 4) * BYTES_PER_HEADER_WORD; }
+  uint8_t GetFlen() const { return bitRangeValue<uint8_t>(this->GlenFlen, 0, 4) * BYTES_PER_HEADER_WORD; }
   GET_ENUM(ModelIdentificationCode, Mic);
-  GET_RAW(Tstat)
-  GET_RAW(DsetMask)
-  GET_RAW(DsetFormat)
-  GET_RAW(DsetEncodingSize)
+  GET_NATIVE_UINT(8, Tstat)
+  GET_NATIVE_UINT(8, Dset)
   GET_NATIVE_UINT(16, Iset)
   GET_NATIVE_UINT(64, Tref)
   GET_NATIVE_UINT(32, Pseq)
   //@}
 
+  //! @brief Get the DSET mask (or the count if DSET is not a mask).
+  uint8_t GetDsetMask() const { return bitRangeValue<uint8_t>(this->Dset, 0, 6); }
 
   //! @brief The number of bytes per value in a return.
-  uint8_t GetDistanceSizeInBytes() const
-  {
-    return (this->DsetEncodingSize ? 3 : 2);
-  }
+  uint8_t GetDistanceSizeInBytes() const { return (bitRangeValue<uint8_t>(this->Dset, 9, 1) ? 3 : 2); }
 
   //! @brief True if the distance set includes a mask, false if a count.
   bool IsDsetMask() const
   {
-    return (! this->DsetFormat);
+    return (! bitRangeValue<uint8_t>(this->Dset, 6, 1));
   }
 
   //! @brief Get the number of distances in each firing group.
@@ -491,10 +487,10 @@ class ExtensionHeader
 {
 private:
   //! @brief The length of the extension header.
-  uint8_t Hlen;
+  boost::endian::big_uint8_t Hlen;
 
   //! @brief Nxhdr The next header type (same as PayloadHeader).
-  uint8_t Nxhdr;
+  boost::endian::big_uint8_t Nxhdr;
 
   /*!
     * @brief Extension header data value.
@@ -503,7 +499,7 @@ private:
     * extension-specific and determined by the NXHDR value of the previous
     * header (either the payload header or a preceding extension header).
     */
-  uint8_t const * Data;
+  boost::endian::big_uint8_t const * Data;
 
 public:
   //@{
@@ -513,7 +509,7 @@ public:
    * HLEN is returned in bytes, not the number of 32-bit words.
    */
   GET_LENGTH(Hlen)
-  GET_RAW(Nxhdr)
+  GET_NATIVE_UINT(8, Nxhdr)
   GET_RAW(Data)
   //@}
 };
@@ -564,27 +560,11 @@ private:
    * Azm:
    *   Azimuth (0.01 degree increments) [0..35999]
    */
-#ifdef BOOST_BIG_ENDIAN
-  uint16_t Toffs;
-  uint8_t Fcnt : 5;
-  uint8_t Fspn : 3;
-  uint8_t Fdly;
-  uint8_t Hdir : 1;
-  uint8_t Vdir : 1;
-  uint16_t Vdfl : 14;
-  uint16_t Azm;
-#else
   boost::endian::big_uint16_t Toffs;
-  uint8_t Fspn : 3;
-  uint8_t Fcnt : 5;
-  uint8_t Fdly;
-  // TODO Handle endianness of multibyte bit fields.
-  // boost::endian::big_uint16_t Vdfl : 14;
-  uint16_t Vdfl : 14;
-  uint8_t Vdir : 1;
-  uint8_t Hdir : 1;
+  boost::endian::big_uint8_t FcntFspn;
+  boost::endian::big_uint8_t Fdly;
+  boost::endian::big_uint16_t HdirVdirVdfl;
   boost::endian::big_uint16_t Azm;
-#endif
 public:
   //@{
   /*!
@@ -597,18 +577,18 @@ public:
 
   // Cast to 32-bit required to hold all values.
   uint32_t GetToffs() const { return static_cast<uint32_t>(this->Toffs) * 64u; }
-  uint8_t GetFcnt() const { return this->Fcnt + 1; }
-  uint8_t GetFspn() const { return this->Fspn + 1; }
-  GET_RAW(Fdly)
-  GET_ENUM(HorizontalDirection, Hdir)
-  GET_ENUM(VerticalDirection, Vdir)
-  GET_RAW(Vdfl)
+  uint8_t GetFcnt()   const { return bitRangeValue<uint8_t>(this->FcntFspn, 3, 5) + 1; }
+  uint8_t GetFspn()   const { return bitRangeValue<uint8_t>(this->FcntFspn, 0, 3) + 1; }
+  GET_NATIVE_UINT(8, Fdly)
+  HorizontalDirection GetHdir() const { return toHorizontalDirection(bitRangeValue<uint16_t>(this->HdirVdirVdfl, 15, 1)); }
+  VerticalDirection GetVdir() const { return toVerticalDirection(bitRangeValue<uint16_t>(this->HdirVdirVdfl, 14, 1)); }
+  uint16_t GetVdfl() const { return bitRangeValue<uint16_t>(this->HdirVdirVdfl, 0, 14); }
   GET_NATIVE_UINT(16, Azm)
   //@}
 
   //@{
   //! @brief Convenience accessors to get angles in degrees.
-  double GetVerticalDeflection() const { return this->Vdfl * 0.01; }
+  double GetVerticalDeflection() const { return this->GetVdfl() * 0.01; }
   double GetAzimuth() const { return this->Azm * 0.01; }
   //@}
 };
@@ -636,19 +616,10 @@ private:
    */
   //@}
 
-#ifdef BOOST_BIG_ENDIAN
-  uint8_t Lcn;
-  uint8_t Fm : 4;
-  uint8_t Pwr : 4;
-  uint8_t Nf;
-  uint8_t Stat;
-#else
-  uint8_t Lcn;
-  uint8_t Pwr : 4;
-  uint8_t Fm : 4;
-  uint8_t Nf;
-  uint8_t Stat;
-#endif
+ boost::endian::big_uint8_t Lcn;
+ boost::endian::big_uint8_t FmPwr;
+ boost::endian::big_uint8_t Nf;
+ boost::endian::big_uint8_t Stat;
 
 public:
   //@{
@@ -657,10 +628,10 @@ public:
    *
    * FM and STAT are returned as their respective enums.
    */
-  GET_RAW(Lcn)
-  GET_ENUM(FiringMode, Fm)
-  GET_RAW(Pwr)
-  GET_RAW(Nf)
+  GET_NATIVE_UINT(8, Lcn)
+  FiringMode GetFm()  const { return toFiringMode(bitRangeValue<uint8_t>(this->FmPwr, 4, 4)); }
+  uint8_t GetPwr() const { return bitRangeValue<uint8_t>(this->FmPwr, 0, 4); }
+  GET_NATIVE_UINT(8, Nf)
   GET_ENUM(ChannelStatus, Stat)
   //@}
 };
@@ -728,7 +699,9 @@ public:
     // will yield a different value or end up out of range.
     if (! (iset & type))
     {
-      throw std::out_of_range("requested intensity type is not in the intensity set");
+      // TODO: properly handle this exception
+      return 0;
+      // throw std::out_of_range("requested intensity type is not in the intensity set");
     }
     uint8_t i = 0;
 
