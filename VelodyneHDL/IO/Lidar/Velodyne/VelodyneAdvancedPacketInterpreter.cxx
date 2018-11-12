@@ -1049,8 +1049,8 @@ class FrameTracker
 private:
   // Set default values to something that will detect the first frame as a new
   // frame.
-  int32_t DefaultAzm = -50000;
-  int32_t Azm = DefaultAzm;
+  int32_t DefaultAzm;
+  int32_t Azm;
 
 public:
   FrameTracker()
@@ -1073,6 +1073,7 @@ public:
   //! @brief Reset frame detection.
   void Reset()
   {
+    this->DefaultAzm = -50000;
     this->Azm = DefaultAzm;
   }
 };
