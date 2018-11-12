@@ -391,12 +391,12 @@ private:
    * Tref  : Time reference.
    * Pset  : Payload sequence number.
    */
-  boost::endian::big_uint8_t VerHlen;
-  boost::endian::big_uint8_t Nxhdr;
-  boost::endian::big_uint8_t GlenFlen;
-  boost::endian::big_uint8_t Mic;
-  boost::endian::big_uint8_t Tstat;
-  boost::endian::big_uint8_t Dset;
+  uint8_t VerHlen;
+  uint8_t Nxhdr;
+  uint8_t GlenFlen;
+  uint8_t Mic;
+  uint8_t Tstat;
+  uint8_t Dset;
   boost::endian::big_uint16_t Iset;
   boost::endian::big_uint64_t Tref;
   boost::endian::big_uint32_t Pseq;
@@ -411,12 +411,12 @@ public:
    */
   uint8_t GetVer() const  { return bitRangeValue<uint8_t>(this->VerHlen, 4, 4); }
   uint8_t GetHlen() const { return bitRangeValue<uint8_t>(this->VerHlen, 0, 4) * BYTES_PER_HEADER_WORD; }
-  GET_NATIVE_UINT(8, Nxhdr)
+  GET_RAW(Nxhdr)
   uint8_t GetGlen() const { return bitRangeValue<uint8_t>(this->GlenFlen, 4, 4) * BYTES_PER_HEADER_WORD; }
   uint8_t GetFlen() const { return bitRangeValue<uint8_t>(this->GlenFlen, 0, 4) * BYTES_PER_HEADER_WORD; }
   GET_ENUM(ModelIdentificationCode, Mic);
-  GET_NATIVE_UINT(8, Tstat)
-  GET_NATIVE_UINT(8, Dset)
+  GET_RAW(Tstat)
+  GET_RAW(Dset)
   GET_NATIVE_UINT(16, Iset)
   GET_NATIVE_UINT(64, Tref)
   GET_NATIVE_UINT(32, Pseq)
@@ -487,10 +487,10 @@ class ExtensionHeader
 {
 private:
   //! @brief The length of the extension header.
-  boost::endian::big_uint8_t Hlen;
+  uint8_t Hlen;
 
   //! @brief Nxhdr The next header type (same as PayloadHeader).
-  boost::endian::big_uint8_t Nxhdr;
+  uint8_t Nxhdr;
 
   /*!
     * @brief Extension header data value.
@@ -499,7 +499,7 @@ private:
     * extension-specific and determined by the NXHDR value of the previous
     * header (either the payload header or a preceding extension header).
     */
-  boost::endian::big_uint8_t const * Data;
+  uint8_t const * Data;
 
 public:
   //@{
@@ -509,7 +509,7 @@ public:
    * HLEN is returned in bytes, not the number of 32-bit words.
    */
   GET_LENGTH(Hlen)
-  GET_NATIVE_UINT(8, Nxhdr)
+  GET_RAW(Nxhdr)
   GET_RAW(Data)
   //@}
 };
@@ -561,8 +561,8 @@ private:
    *   Azimuth (0.01 degree increments) [0..35999]
    */
   boost::endian::big_uint16_t Toffs;
-  boost::endian::big_uint8_t FcntFspn;
-  boost::endian::big_uint8_t Fdly;
+  uint8_t FcntFspn;
+  uint8_t Fdly;
   boost::endian::big_uint16_t HdirVdirVdfl;
   boost::endian::big_uint16_t Azm;
 public:
@@ -579,7 +579,7 @@ public:
   uint32_t GetToffs() const { return static_cast<uint32_t>(this->Toffs) * 64u; }
   uint8_t GetFcnt()   const { return bitRangeValue<uint8_t>(this->FcntFspn, 3, 5) + 1; }
   uint8_t GetFspn()   const { return bitRangeValue<uint8_t>(this->FcntFspn, 0, 3) + 1; }
-  GET_NATIVE_UINT(8, Fdly)
+  GET_RAW(Fdly)
   HorizontalDirection GetHdir() const { return toHorizontalDirection(bitRangeValue<uint16_t>(this->HdirVdirVdfl, 15, 1)); }
   VerticalDirection GetVdir() const { return toVerticalDirection(bitRangeValue<uint16_t>(this->HdirVdirVdfl, 14, 1)); }
   uint16_t GetVdfl() const { return bitRangeValue<uint16_t>(this->HdirVdirVdfl, 0, 14); }
@@ -616,10 +616,10 @@ private:
    */
   //@}
 
- boost::endian::big_uint8_t Lcn;
- boost::endian::big_uint8_t FmPwr;
- boost::endian::big_uint8_t Nf;
- boost::endian::big_uint8_t Stat;
+ uint8_t Lcn;
+ uint8_t FmPwr;
+ uint8_t Nf;
+ uint8_t Stat;
 
 public:
   //@{
@@ -628,10 +628,10 @@ public:
    *
    * FM and STAT are returned as their respective enums.
    */
-  GET_NATIVE_UINT(8, Lcn)
+  GET_RAW(Lcn)
   FiringMode GetFm()  const { return toFiringMode(bitRangeValue<uint8_t>(this->FmPwr, 4, 4)); }
   uint8_t GetPwr() const { return bitRangeValue<uint8_t>(this->FmPwr, 0, 4); }
-  GET_NATIVE_UINT(8, Nf)
+  GET_RAW(Nf)
   GET_ENUM(ChannelStatus, Stat)
   //@}
 };
