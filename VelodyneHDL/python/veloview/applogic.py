@@ -63,7 +63,6 @@ class AppLogic(object):
         self.seekPlayDirection = 1
         self.seekPlay = False
         self.targetFps = 30
-        self.renderIsPending = False
         self.createStatusBarWidgets()
         self.setupTimers()
 
@@ -103,9 +102,6 @@ class AppLogic(object):
         self.seekTimer.setSingleShot(True)
         self.seekTimer.connect('timeout()', seekPressTimeout)
 
-        self.renderTimer = QtCore.QTimer()
-        self.renderTimer.setSingleShot(True)
-        self.renderTimer.connect('timeout()', forceRender)
 
     def createStatusBarWidgets(self):
 
@@ -1477,6 +1473,7 @@ def onPlayTimer():
         # the standard fps
         if getSensor():
             targetPlaybackFps = defaultFps
+            print("hello")
 
         fpsDelayMilliseconds = int(1000.0 / targetPlaybackFps)
         elapsedMilliseconds = int((vtk.vtkTimerLog.GetUniversalTime() - startTime)*1000.0)
@@ -1975,17 +1972,6 @@ def updateSliderTimeRange():
             widget.setPageStep(10)
         widget.setValue(frame)
         widget.setEnabled(getNumberOfTimesteps())
-
-
-def scheduleRender():
-    if not app.renderIsPending:
-        app.renderIsPending = True
-        app.renderTimer.start(33)
-
-
-def forceRender():
-    smp.Render()
-    app.renderIsPending = False
 
 
 def onTimeSliderChanged(frame):
