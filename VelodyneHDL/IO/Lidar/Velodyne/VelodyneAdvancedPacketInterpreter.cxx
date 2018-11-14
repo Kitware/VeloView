@@ -22,6 +22,7 @@ using namespace DataPacketFixedLength;
 
 //#define DEBUG_MSG(msg) std::cout << msg << "[" << __LINE__ << "]" << std::endl;
 
+
 //------------------------------------------------------------------------------
 // General macros constants.
 //------------------------------------------------------------------------------
@@ -878,8 +879,6 @@ void VelodyneAdvancedPacketInterpreter::ProcessPacket(unsigned char const * data
     }
   }
 
-
-
   // Loop through firing groups until a frame shift is detected. The number of
   // firings in each group is variable so we need to step through all of them to
   // get to the startPosition calculated by PreProcessPacket.
@@ -1042,6 +1041,10 @@ void InitializeDataArray(
 {
   array = T::New();
   array->Allocate(numberOfElements);
+  // if (numberOfElements > 0)
+  // {
+  //   array->SetNumberOfTuples(numberOfElements);
+  // }
   array->SetName(name);
 }
 
@@ -1094,7 +1097,7 @@ vtkSmartPointer<vtkPolyData> VelodyneAdvancedPacketInterpreter::CreateNewEmptyFr
   if (this->FrameSize > 0)
   {
     points->Allocate(this->FrameSize);
-    points->SetNumberOfPoints(numberOfPoints);
+    // points->SetNumberOfPoints(numberOfPoints);
   }
 
   // Same name as vtkVelodyneHDLReader.
