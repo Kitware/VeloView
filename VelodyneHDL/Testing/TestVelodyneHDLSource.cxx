@@ -76,7 +76,7 @@ int main(int argc, char* argv[])
     vvPacketSender sender(pcapFileName, destinationIp, dataPort);
     boost::this_thread::sleep(boost::posix_time::microseconds(1000));
     sender.pumpPacket();
-    while (!sender.done())
+    while (!sender.IsDone())
     {
       sender.pumpPacket();
       boost::this_thread::sleep(boost::posix_time::microseconds(1000));
@@ -108,7 +108,7 @@ int main(int argc, char* argv[])
       boost::this_thread::sleep(boost::posix_time::microseconds(1000));
       sender.pumpPacket();
 
-      while (!sender.done())
+      while (!sender.IsDone())
       {
         sender.pumpPacket();
         boost::this_thread::sleep(boost::posix_time::microseconds(1000));

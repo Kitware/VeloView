@@ -15,6 +15,11 @@
 #include <string>
 #include <vtkSystemIncludes.h>
 
+#include "vtkPacketFileReader.h"
+
+#include <boost/asio.hpp>
+#include <boost/thread/thread.hpp>
+
 class vtkPacketFileReader;
 
 class VTK_EXPORT vvPacketSender
@@ -24,11 +29,34 @@ public:
     int lidarport = 2368, int positionport = 8308);
   ~vvPacketSender();
 
-  int pumpPacket();
-  bool done() const;
-  size_t packetCount() const;
+  /**
+   * @brief pumpPacket
+   * @return the timestamp of the packet send
+   */
+  double pumpPacket();
+
+  /**
+   * @copydoc Done
+   */
+  bool IsDone() const;
+
+  /**
+   * @brief PacketCount return the number of packet already send
+   */
+  size_t GetPacketCount() const;
 
 private:
-  class vvInternal;
-  vvInternal* Internal;
+  boost::asio::ip::udp::socket* LIDARSocket;
+  boost::asio::ip::udp::endpoint LIDAREndpoint;
+
+  boost::asio::ip::udp::socket* PositionSocket;
+  boost::asio::ip::udp::endpoint PositionEndpoint;
+
+  boost::asio::io_service IOService;
+
+  vtkPacketFileReader* PacketReader;
+  //! Indicate if the end of the pcap file has been reach
+  bool Done;
+  //! Number of packet already send
+  size_t PacketCount;
 };

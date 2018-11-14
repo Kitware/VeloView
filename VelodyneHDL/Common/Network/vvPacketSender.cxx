@@ -13,125 +13,88 @@
 // limitations under the License.
 
 #include "vvPacketSender.h"
-#include "vtkDataPacket.h"
-#include "vtkPacketFileReader.h"
-
-#include <boost/asio.hpp>
-#include <boost/thread/thread.hpp>
-
-using namespace DataPacketFixedLength;
-
-//-----------------------------------------------------------------------------
-class vvPacketSender::vvInternal
-{
-public:
-  vvInternal(std::string destinationIp, int lidarPort, int positionPort)
-    : LIDARSocket(0)
-    , PositionSocket(0)
-    , PacketReader(0)
-    , Done(false)
-    , lastTimestamp(0)
-    , PacketCount(0)
-    , LIDAREndpoint(boost::asio::ip::address_v4::from_string(destinationIp), lidarPort)
-    , PositionEndpoint(boost::asio::ip::address_v4::from_string(destinationIp), positionPort)
-  {
-  }
-
-  boost::asio::ip::udp::socket* LIDARSocket;
-  boost::asio::ip::udp::socket* PositionSocket;
-
-  vtkPacketFileReader* PacketReader;
-  bool Done;
-  unsigned int lastTimestamp;
-  size_t PacketCount;
-  boost::asio::ip::udp::endpoint LIDAREndpoint;
-  boost::asio::ip::udp::endpoint PositionEndpoint;
-  boost::asio::io_service IOService;
-};
 
 //-----------------------------------------------------------------------------
 vvPacketSender::vvPacketSender(
   std::string pcapfile, std::string destinationIp, int lidarPort, int positionPort)
-  : Internal(new vvPacketSender::vvInternal(destinationIp, lidarPort, positionPort))
+  : LIDARSocket(0)
+  , LIDAREndpoint(boost::asio::ip::address_v4::from_string(destinationIp), lidarPort)
+  , PositionSocket(0)
+  , PositionEndpoint(boost::asio::ip::address_v4::from_string(destinationIp), positionPort)
+  , PacketReader(0)
+  , Done(false)
+  , PacketCount(0)
 {
-  this->Internal->PacketReader = new vtkPacketFileReader;
-  this->Internal->PacketReader->Open(pcapfile);
-  if (!this->Internal->PacketReader->IsOpen())
+  this->PacketReader = new vtkPacketFileReader;
+  this->PacketReader->Open(pcapfile);
+  if (!this->PacketReader->IsOpen())
   {
     throw std::runtime_error("Unable to open packet file");
   }
 
-  this->Internal->LIDARSocket = new boost::asio::ip::udp::socket(this->Internal->IOService);
-  this->Internal->LIDARSocket->open(this->Internal->LIDAREndpoint.protocol());
-  this->Internal->LIDARSocket->set_option(boost::asio::ip::udp::socket::reuse_address(true));
+  this->LIDARSocket = new boost::asio::ip::udp::socket(this->IOService);
+  this->LIDARSocket->open(this->LIDAREndpoint.protocol());
+  this->LIDARSocket->set_option(boost::asio::ip::udp::socket::reuse_address(true));
   // Allow to send the packet on the same machine
-  this->Internal->LIDARSocket->set_option(boost::asio::ip::multicast::enable_loopback(true));
+  this->LIDARSocket->set_option(boost::asio::ip::multicast::enable_loopback(true));
 
-  this->Internal->PositionSocket = new boost::asio::ip::udp::socket(this->Internal->IOService);
-  this->Internal->PositionSocket->open(this->Internal->PositionEndpoint.protocol());
-  this->Internal->PositionSocket->set_option(boost::asio::ip::udp::socket::reuse_address(true));
+  this->PositionSocket = new boost::asio::ip::udp::socket(this->IOService);
+  this->PositionSocket->open(this->PositionEndpoint.protocol());
+  this->PositionSocket->set_option(boost::asio::ip::udp::socket::reuse_address(true));
   // Allow to send the packet on the same machine
-  this->Internal->PositionSocket->set_option(boost::asio::ip::multicast::enable_loopback(true));
+  this->PositionSocket->set_option(boost::asio::ip::multicast::enable_loopback(true));
 }
 
 //-----------------------------------------------------------------------------
 vvPacketSender::~vvPacketSender()
 {
-  delete this->Internal->LIDARSocket;
-  delete this->Internal->PositionSocket;
-  delete this->Internal;
+  delete this->LIDARSocket;
+  delete this->PositionSocket;
 }
 
 //-----------------------------------------------------------------------------
-int vvPacketSender::pumpPacket()
+double vvPacketSender::pumpPacket()
 {
-  if (this->Internal->Done)
+  if (this->Done)
   {
     return std::numeric_limits<int>::max();
   }
 
+  // some return value
   const unsigned char* data = 0;
   unsigned int dataLength = 0;
   double timeSinceStart = 0;
-  int timeDiff = 0;
-  if (!this->Internal->PacketReader->NextPacket(data, dataLength, timeSinceStart))
+
+  // Get the next packet
+  if (!this->PacketReader->NextPacket(data, dataLength, timeSinceStart))
   {
-    this->Internal->Done = true;
+    this->Done = true;
     return timeSinceStart;
   }
 
   // Position packet
   if ((dataLength == 512))
   {
-    this->Internal->PositionSocket->send_to(
-      boost::asio::buffer(data, dataLength), this->Internal->PositionEndpoint);
+    this->PositionSocket->send_to(
+      boost::asio::buffer(data, dataLength), this->PositionEndpoint);
   }
-
-  // Recurse until we get to the right kind of packet
-  else
-  // if (dataLength == 1206)
+  else // Lidar packet
   {
-    const HDLDataPacket* dataPacket = reinterpret_cast<const HDLDataPacket*>(data);
-    timeDiff =
-      static_cast<int>(dataPacket->gpsTimestamp) - static_cast<int>(this->Internal->lastTimestamp);
-    this->Internal->lastTimestamp = dataPacket->gpsTimestamp;
-    ++this->Internal->PacketCount;
-
-    this->Internal->LIDARSocket->send_to(
-      boost::asio::buffer(data, dataLength), this->Internal->LIDAREndpoint);
+    this->LIDARSocket->send_to(
+      boost::asio::buffer(data, dataLength), this->LIDAREndpoint);
   }
-
-  return timeDiff;
+  this->PacketCount++;
+  return timeSinceStart;
 }
 
 //-----------------------------------------------------------------------------
-size_t vvPacketSender::packetCount() const
+size_t vvPacketSender::GetPacketCount() const
 {
-  return this->Internal->PacketCount;
+  return this->PacketCount;
 }
 
 //-----------------------------------------------------------------------------
-bool vvPacketSender::done() const
+bool vvPacketSender::IsDone() const
 {
-  return this->Internal->Done;
+  return this->Done;
 }
