@@ -399,6 +399,9 @@
    <property name="text">
     <string>Sensor &amp;Stream...</string>
    </property>
+   <property name="shortcut">
+    <string>Ctrl+K</string>
+   </property>
   </action>
   <action name="actionChoose_Calibration_File">
    <property name="icon">
