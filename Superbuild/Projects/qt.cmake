@@ -84,3 +84,16 @@ if ((VV_BUILD_ARCHITECTURE EQUAL 32) AND UNIX AND (NOT APPLE))
     DEPENDEES patch
     DEPENDERS configure)
 endif()
+
+# fix https://bugreports.qt.io/browse/QTBUG-5774 see also the links available there.
+# this fix is required when building Qt4 from the Superbuild without having Qt4
+# packages installed in you distribution
+# this fix does the same things as:
+# https://gitlab.kitware.com/paraview/common-superbuild/blob/master/projects/qt4.common.cmake#L5
+# this fix requires bash and a CMAKE_MAKE_PROGRAM to be "make"
+if (UNIX AND (NOT APPLE))
+  add_external_project_step(qt-fix-lucene-link
+    COMMAND bash -c "cd <SOURCE_DIR>/../qt-build && make -j4 install"
+    DEPENDEES configure
+    DEPENDERS build)
+endif()
