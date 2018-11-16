@@ -73,6 +73,11 @@ echo "Using superbuild cache: ${superbuild_cache}"
 # download and unzip the superbuild
 mkdir cache
 $MC cp --recursive "$superbuild_cache" cache
-unzip -q cache/*
+
+if file cache/* | grep -i bzip2; then
+    tar zxvf cache/*
+else
+    unzip -q cache/*
+fi
 
 echo "Getting the superbuild cache took " $(($SECONDS - $START_TIME)) "s"
