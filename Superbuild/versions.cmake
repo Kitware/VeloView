@@ -38,9 +38,9 @@ superbuild_set_revision(boost
   URL "https://sourceforge.net/projects/boost/files/boost/1.63.0/boost_1_63_0.tar.gz"
   URL_MD5 7b493c08bc9557bbde7e29091f28b605)
 
-superbuild_set_revision(eigen
+add_revision(eigen
   GIT_REPOSITORY https://github.com/eigenteam/eigen-git-mirror.git
-  GIT_TAG 3.2.10)
+  GIT_TAG 3.3.0)
 
 superbuild_set_revision(liblas
   URL     "http://www.paraview.org/files/dependencies/libLAS-1.8.1.tar.bz2"
