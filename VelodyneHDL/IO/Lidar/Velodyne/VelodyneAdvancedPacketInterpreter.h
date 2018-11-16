@@ -21,7 +21,15 @@ class VelodyneAdvancedPacketInterpreter : public LidarPacketInterpreter
 {
 private:
   FrameTracker * CurrentFrameTracker;
-  size_t FrameSize;
+
+  size_t MaxFrameSize;
+  void UpdateMaxFrameSize(size_t frameSize)
+  {
+    if (frameSize > this->MaxFrameSize)
+    {
+      this->MaxFrameSize = frameSize;
+    }
+  }
 
 public:
   VelodyneAdvancedPacketInterpreter();
@@ -79,7 +87,7 @@ private:
     TAzm const azimuth,
     size_t const correctionIndex,
     double pos[3],
-    TDist & distance 
+    TDist & distance
   );
 
 public:
@@ -88,7 +96,7 @@ public:
   HDLLaserCorrection laser_corrections_[HDL_MAX_NUM_LASERS];
   double XMLColorTable[HDL_MAX_NUM_LASERS][3];
   // bool IsCorrectionFromLiveStream;
-  
+
   uint8_t ReportedFactoryField1 ;
   uint8_t ReportedFactoryField2 ;
   bool OutputPacketProcessingDebugInfo ;

@@ -784,7 +784,7 @@ public:
 VelodyneAdvancedPacketInterpreter::VelodyneAdvancedPacketInterpreter()
 {
   this->CurrentFrameTracker = new FrameTracker();
-  this->FrameSize = 0;
+  this->MaxFrameSize = 0;
   this->Init();
   this->DistanceResolutionM = 0.002;
 
@@ -1022,34 +1022,6 @@ bool VelodyneAdvancedPacketInterpreter::IsLidarPacket(unsigned char const * data
 
 //----------------------------------------------------------------------------
 /*!
- * @brief         Initialize an array.
- * @tparam        T                The type of the array. This is templated so
- *                                 that the caller does not need to consider the
- *                                 type, which may change with the
- *                                 specification.
- * @param[in,out] array            The input array.
- * @param[in]     numberOfElements The number of elements that the array must be
- *                                 able to hold after initialization.
- */
-template <typename T>
-inline
-void InitializeDataArray(
-  T & array,
-  char const * name,
-  vtkIdType numberOfElements
-)
-{
-  array = T::New();
-  array->Allocate(numberOfElements);
-  // if (numberOfElements > 0)
-  // {
-  //   array->SetNumberOfTuples(numberOfElements);
-  // }
-  array->SetName(name);
-}
-
-//----------------------------------------------------------------------------
-/*!
  * @brief         Initialize an array for datapoint attributes and add it to the
  *                polydata.
  * @tparam        T                The type of the array. This is templated so
@@ -1061,8 +1033,6 @@ void InitializeDataArray(
  *                                 able to hold after initialization.
  * @param[out]    polyData         The polydata instance to which the array
  *                                 should be added.
- *
- * This is just a convencience wrapper around InitializeDataArray.
  */
 template <typename T>
 inline
@@ -1073,11 +1043,14 @@ void InitializeDataArrayForPolyData(
   vtkPolyData * polyData
 )
 {
-  InitializeDataArray(array, name, numberOfElements);
-  if (polyData)
-  {
-    polyData->GetPointData()->AddArray(array);
-  }
+  array = T::New();
+  array->Allocate(numberOfElements);
+  // if (numberOfElements > 0)
+  // {
+  // array->SetNumberOfTuples(numberOfElements);
+  // }
+  array->SetName(name);
+  polyData->GetPointData()->AddArray(array);
 }
 
 //------------------------------------------------------------------------------
@@ -1090,13 +1063,10 @@ vtkSmartPointer<vtkPolyData> VelodyneAdvancedPacketInterpreter::CreateNewEmptyFr
   points->SetDataTypeToFloat();
   // The frame size must be large enough to contain the requested number of
   // points.
-  this->FrameSize = std::max(
-    this->FrameSize,
-    static_cast<decltype(this->FrameSize)>(numberOfPoints)
-  );
-  if (this->FrameSize > 0)
+  this->UpdateMaxFrameSize(numberOfPoints);
+  if (this->MaxFrameSize > 0)
   {
-    points->Allocate(this->FrameSize);
+    points->Allocate(this->MaxFrameSize);
     // points->SetNumberOfPoints(numberOfPoints);
   }
 
@@ -1120,7 +1090,7 @@ vtkSmartPointer<vtkPolyData> VelodyneAdvancedPacketInterpreter::CreateNewEmptyFr
 
 // Convencience macro
 #define INIT_INFO_ARR(arr_name, disp_name) \
-  InitializeDataArrayForPolyData(this->INFO_ ## arr_name, disp_name, numberOfPoints, polyData);
+  InitializeDataArrayForPolyData(this->INFO_ ## arr_name, disp_name, this->MaxFrameSize, polyData);
 
   INIT_INFO_ARR(Xs                   , "X")
   INIT_INFO_ARR(Ys                   , "Y")
@@ -1148,10 +1118,7 @@ vtkSmartPointer<vtkPolyData> VelodyneAdvancedPacketInterpreter::CreateNewEmptyFr
 // TODO: Revisit this if the frequency still needs to be calculated here.
 bool VelodyneAdvancedPacketInterpreter::SplitFrame(bool force)
 {
-  this->FrameSize = std::max(
-    this->FrameSize,
-    static_cast<decltype(this->FrameSize)>(this->Points->GetNumberOfPoints())
-  );
+  this->UpdateMaxFrameSize(this->Points->GetNumberOfPoints());
   return this->LidarPacketInterpreter::SplitFrame(force);
 }
 
