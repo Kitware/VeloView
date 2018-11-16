@@ -5,6 +5,8 @@ variables:
   cmake_option_USE_SYSTEM_python: "True"
   cmake_option_CMAKE_BUILD_TYPE: "Release"
 
+  slash_separator: "/"
+
 # this are the 4 stage of the continuous integration, the stage are executed one after another
 stages:
   - superbuild
@@ -16,7 +18,7 @@ stages:
 # enable to reuse the same code inside multiple jobs. Please see YAML specification
 # for more information
 .default-cache: &default-cache
-  key: ${OS}-${CI_COMMIT_REF_NAME}
+  key: ${OS}${slash_separator}${CI_COMMIT_REF_NAME}
   paths:
     - Superbuild-build
 
