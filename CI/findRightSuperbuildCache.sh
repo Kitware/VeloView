@@ -41,8 +41,7 @@ path="${OS}/${CI_COMMIT_REF}"
 echo "The builboot is now trying to find a superbuild on the server for this specific branch."
 
 function cache_exist {
-    path="$1"
-    if echo $($MC find superbuild "$path") | grep -i Error; then
+    if echo $($MC find superbuild "$1" 2>&1) | grep -i Error; then
         return 1 # does not exists, return false
     else
 	return 0
