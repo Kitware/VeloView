@@ -1473,7 +1473,6 @@ def onPlayTimer():
         # the standard fps
         if getSensor():
             targetPlaybackFps = defaultFps
-            print("hello")
 
         fpsDelayMilliseconds = int(1000.0 / targetPlaybackFps)
         elapsedMilliseconds = int((vtk.vtkTimerLog.GetUniversalTime() - startTime)*1000.0)
