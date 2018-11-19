@@ -150,7 +150,7 @@ int main(int argc, char* argv[])
           std::cout << std::fixed
                     << std::right << std::setw(OUTPUT_WIDTH) << nbPacketSended
                     << std::fixed << std::right << std::setw(OUTPUT_WIDTH) << secondSinceStart
-                    << std::defaultfloat << std::right << std::setw(OUTPUT_WIDTH)
+                    << std::right << std::setw(OUTPUT_WIDTH)
                     << static_cast<double>(nbPacketSended) /  secondSinceStart
                     << std::right << std::setw(OUTPUT_WIDTH) << time_delay
                     << std::endl;
