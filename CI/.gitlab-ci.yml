@@ -198,7 +198,6 @@ ubuntu14.04.5_package_schedule:
     # configure & generate
     - cmake -DCMAKE_BUILD_TYPE:STRING=${cmake_option_CMAKE_BUILD_TYPE}
       -DENABLE_veloview:BOOL=${cmake_option_ENABLE_veloview}
-      -DUSE_SYSTEM_qt:BOOL=ON
       -DCMAKE_OSX_ARCHITECTURES:STRING=${cmake_option_CMAKE_OSX_ARCHITECTURES}
       -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING=${cmake_option_CMAKE_OSX_DEPLOYMENT_TARGET}
       -DCMAKE_OSX_SYSROOT:STRING=${cmake_option_CMAKE_OSX_SYSROOT}
