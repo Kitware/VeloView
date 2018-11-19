@@ -53,6 +53,8 @@
 #include <QProgressDialog>
 #include <QTimer>
 
+#include <sstream>
+
 //-----------------------------------------------------------------------------
 class pqVelodyneManager::pqInternal
 {
@@ -191,14 +193,15 @@ void pqVelodyneManager::onEnableCrashAnalysis(bool crashAnalysisEnabled)
 }
 
 //-----------------------------------------------------------------------------
-void pqVelodyneManager::onResetCalibrationFile()
+void pqVelodyneManager::onResetDefaultSettings()
 {
   QMessageBox messageBox;
   messageBox.setIcon(QMessageBox::Warning);
-  messageBox.setText(
-    "This action will reset VeloView settings. "
-    "Some settings will need VeloView to restart to be completly reset."
-    " Every unsaved change will be lost. Are you sure you want to reset VeloView settings?");
+  std::stringstream ss;
+  ss << "This action will reset " << SOFTWARE_NAME << " settings. "
+     << "Some settings will need " << SOFTWARE_NAME << " to restart to be completly reset. "
+     << "Every unsaved change will be lost. Are you sure you want to reset " << SOFTWARE_NAME << " settings?";
+  messageBox.setText(ss.str().c_str());
   messageBox.setStandardButtons(QMessageBox::Cancel | QMessageBox::Ok);
 
   if (messageBox.exec() == QMessageBox::Ok)

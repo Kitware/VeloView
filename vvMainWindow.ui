@@ -132,7 +132,7 @@
     <property name="title">
      <string>Help</string>
     </property>
-    <action name="actionResetConfigurationFile">
+    <action name="actionResetDefaultSettings">
      <property name="text">
       <string>Reset Veloview settings</string>
      </property>
@@ -144,7 +144,7 @@
     <addaction name="separator"/>
     <addaction name="actionVeloViewUserGuide"/>
     <addaction name="actionVeloViewDeveloperGuide"/>
-    <addaction name="actionResetConfigurationFile"/>
+    <addaction name="actionResetDefaultSettings"/>
    </widget>
    <widget class="QMenu" name="menuViews">
     <property name="title">
