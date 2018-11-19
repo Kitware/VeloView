@@ -12,13 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-cmake_minimum_required(VERSION 2.8.8 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.1 FATAL_ERROR)
 include("SoftwareInformation/branding.cmake")
 project(VeloView)
 
-if (UNIX)
-  SET(CMAKE_CXX_FLAGS "-std=c++0x")
-endif(UNIX)
+set (CMAKE_CXX_STANDARD 11)
 
 # Disallow in-source build
 if ("${VeloView_SOURCE_DIR}"  STREQUAL "${VeloView_BINARY_DIR}")
