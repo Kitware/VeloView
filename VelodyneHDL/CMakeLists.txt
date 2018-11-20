@@ -77,9 +77,9 @@ include_directories(${SYSTEM_OPTION} ${EIGEN_INCLUDE_DIR})
 #--------------------------------------
 # Boost dependency
 #--------------------------------------
-if(WIN32)
+if(WIN32 OR APPLE)
   set(Boost_USE_STATIC_LIBS ON)
-endif(WIN32)
+endif(WIN32 OR APPLE)
 set(Boost_USE_MULTITHREADED ON)
 # the expected behavior of find_package when  used wiht REQUIRED and OPTIONAL_COMPONENTS
 # it not the one expected, as it also required the optional component...
