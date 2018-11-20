@@ -29,7 +29,7 @@ elseif (APPLE)
   set (patch_command
        PATCH_COMMAND /usr/bin/find . -name "*.pro" -exec sed -i -e "s:/Developer/SDKs/:.*:g" {} +)
   add_external_project_step(qt-patch-osx
-    COMMAND git apply --whitespace=fix ${SuperBuild_PROJECTS_DIR}/patches/qt.elcapitan-macossdk.patch
+    COMMAND patch -p1 < ${SuperBuild_PROJECTS_DIR}/patches/qt.elcapitan-macossdk.patch
     WORKING_DIRECTORY <SOURCE_DIR>
     DEPENDEES patch
     DEPENDERS configure)

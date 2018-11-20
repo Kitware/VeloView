@@ -5,6 +5,11 @@ variables:
   cmake_option_USE_SYSTEM_python: "True"
   cmake_option_CMAKE_BUILD_TYPE: "Release"
 
+  # options specific to macOS builds
+  cmake_option_CMAKE_OSX_ARCHITECTURES: "x86_64"
+  cmake_option_CMAKE_OSX_DEPLOYMENT_TARGET: "10.12"
+  cmake_option_CMAKE_OSX_SYSROOT: "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.12.sdk"
+
   slash_separator: "/"
 
 # this are the 4 stage of the continuous integration, the stage are executed one after another
@@ -27,18 +32,13 @@ stages:
     <<: *default-cache
     policy: push
 
-.pull-cache: &pull-cache
-  cache:
-    <<: *default-cache
-    policy: pull
-
 ################################################################################
 ### anchor jobs for linux, they will be used accros multiple other jobs
 ### WARNING do not declare variable as they will overwrite all other variable!!!
 ################################################################################
 
-.linux_get_superbuild:
-  script: &linux_get_superbuild
+.unix_get_superbuild:
+  script: &unix_get_superbuild
     - chmod +x CI/findRightSuperbuildCache.sh
     - CI/findRightSuperbuildCache.sh ${OS} ${CI_COMMIT_REF_NAME} ${MINIO_CACHE_SERVER_ADDRESS} ${MINIO_CACHE_SERVER_ACCESS_KEY} ${MINIO_CACHE_SERVER_SECRET_KEY}
 
@@ -70,7 +70,7 @@ stages:
 
 .linux_build: &linux_build
   stage: build
-  before_script: *linux_get_superbuild
+  before_script: *unix_get_superbuild
   script:
     - cd Superbuild-build/
     - make veloview -j8
@@ -81,7 +81,7 @@ stages:
 
 .linux_test: &linux_test
   stage: test
-  before_script: *linux_get_superbuild
+  before_script: *unix_get_superbuild
   script:
     # get test data and baseline
     # DO NOT use gilab-ci variable GIT_SUBMODULE_STRATEGY !!!
@@ -96,7 +96,7 @@ stages:
 
 .linux_package: &linux_package
   stage: package
-  before_script: *linux_get_superbuild
+  before_script: *unix_get_superbuild
   script:
     - cd Superbuild-build
     - make package -j8
@@ -179,3 +179,118 @@ ubuntu14.04.5_test:
 ubuntu14.04.5_package_schedule:
   <<: *ubuntu_14_04_5
   <<: *linux_package_schedule
+
+################################################################################
+### anchor jobs for OSX, they will be used accros multiple other jobs
+################################################################################
+# Currently the OSX job are executed in a sheel runner, every folder that is create remain
+.OSX_superbuild: &OSX_superbuild
+  stage: superbuild
+  script:
+    # prepare directory
+    - mkdir Superbuild-build/
+    - cd Superbuild-build/
+    # configure & generate
+    - cmake -DCMAKE_BUILD_TYPE:STRING=${cmake_option_CMAKE_BUILD_TYPE}
+      -DENABLE_veloview:BOOL=${cmake_option_ENABLE_veloview}
+      -DCMAKE_OSX_ARCHITECTURES:STRING=${cmake_option_CMAKE_OSX_ARCHITECTURES}
+      -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING=${cmake_option_CMAKE_OSX_DEPLOYMENT_TARGET}
+      -DCMAKE_OSX_SYSROOT:STRING=${cmake_option_CMAKE_OSX_SYSROOT}
+      ${CI_PROJECT_DIR}/Superbuild
+    # compile
+    - make -j8
+    # remove Veloview
+    - rm -rf veloview/
+    # upload superbuild, Apple's Zip Utility, which I guess is use by gilab-ci
+    # produce corrupted file for large file, so we need to upload the cache manually 
+    - cd ..
+    - echo "compressing and uploading Superbuild. This take some time..."
+    - tar jcf archive Superbuild-build/
+    - ~/mc config host add superbuild ${MINIO_CACHE_SERVER_ADDRESS} ${MINIO_CACHE_SERVER_ACCESS_KEY} ${MINIO_CACHE_SERVER_SECRET_KEY}
+    - ~/mc cp archive superbuild/runner/minio/project/808/${cache_patch}/${OS}/${CI_COMMIT_REF_NAME}-1
+
+.OSX_superbuild_manual: &OSX_superbuild_manual
+  when: manual
+  <<: *OSX_superbuild
+
+.OSX_superbuild_schedule: &OSX_superbuild_schedule
+  <<: *OSX_superbuild
+  only:
+    - schedules
+
+.OSX_build: &OSX_build
+  stage: build
+  before_script: *unix_get_superbuild
+  script:
+    - cd Superbuild-build/
+    - make veloview -j8
+  artifacts:
+    paths:
+     - Superbuild-build/veloview
+    expire_in: 1 hr
+
+.OSX_test: &OSX_test
+  stage: test
+  before_script: *unix_get_superbuild
+  script:
+    - echo "test "
+
+.OSX_package: &OSX_package
+  stage: package
+  before_script: *unix_get_superbuild
+  dependencies: []
+  script:
+    - cd Superbuild-build
+    - make package -j8
+
+.OSX_package_manual: &OSX_package_manual
+  when: manual
+  <<: *OSX_package
+  artifacts:
+    name: ${CI_JOB_NAME}
+    paths:
+     - Superbuild-build/*.dmg
+    expire_in: 1 hr
+
+.OSX_package_schedule: &OSX_package_schedule
+  <<: *OSX_package
+  artifacts:
+    name: ${CI_JOB_NAME}-nightly
+    paths:
+     - Superbuild-build/*.dmg
+    expire_in: 1 day
+  only:
+    - schedules
+
+#-------------------------------------------------------------------------------
+# jobs for OSX ElCapitan
+#-------------------------------------------------------------------------------
+.OSX_ElCapitan: &OSX_ElCapitan
+  tags:
+    - OSX_ElCapitan
+  variables:
+    OS: OSX_ElCapitan
+
+OSX_ElCapitan_superbuild_manual:
+  <<: *OSX_ElCapitan
+  <<: *OSX_superbuild_manual
+
+OSX_ElCapitan_superbuild_schedule:
+  <<: *OSX_ElCapitan
+  <<: *OSX_superbuild_schedule
+
+OSX_ElCapitan_build:
+  <<: *OSX_ElCapitan
+  <<: *OSX_build
+
+OSX_ElCapitan_test:
+  <<: *OSX_ElCapitan
+  <<: *OSX_test
+
+OSX_ElCapitan_package_manual:
+  <<: *OSX_ElCapitan
+  <<: *OSX_package_manual
+
+OSX_ElCapitan_package_schedule:
+  <<: *OSX_ElCapitan
+  <<: *OSX_package_schedule
