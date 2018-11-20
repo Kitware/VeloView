@@ -363,6 +363,63 @@ T bitRangeValue(T const & source, uint8_t offset, uint8_t number)
 }
 
 //------------------------------------------------------------------------------
+/*!
+  * @brief         Safely perform a reinterpret cast on a header.
+  * @tparam        T          The header type.
+  * @param[in]     data       A pointer to the input data to cast.
+  * @param[in]     dataLength The length of the data.
+  * @param[in]     index      The index of the start of the data.
+  * @return        Returns a null pointer if any validity check fails.
+  *
+  * This checks that the data meets the minimum required length before
+  * reinterpret_cast'ing the data to avoid segfaults. After the cast, the
+  * internal consistency of the casted object is also checked.
+  */
+template <typename T>
+inline
+T const * reinterpret_cast_with_checks(
+  uint8_t const * data,
+  size_t dataLength,
+  size_t index
+)
+{
+  if (index > dataLength)
+  {
+    return nullptr;
+  }
+  data += index;
+  dataLength -= index;
+  // Check that there are enough bytes to safely interpret the header.
+  if (dataLength < T::MinimumRequiredLength())
+  {
+    return nullptr;
+  }
+  T const * objectPtr = reinterpret_cast<T const *>(data);
+  if (! objectPtr->IsValid())
+  {
+    return nullptr;
+  }
+  return objectPtr;
+}
+
+//------------------------------------------------------------------------------
+/*!
+ * @brief Advance the index by a header's HLEN if there is enough data,
+ *        otherwise return.
+ */
+#define ADVANCE_INDEX_BY_HLEN_OR_RETURN(dataLength, index, objectPtr) \
+  auto hlen = objectPtr->GetHlen();                                   \
+  if (hlen > (dataLength - index))                                    \
+  {                                                                   \
+    return;                                                           \
+  }                                                                   \
+  else                                                                \
+  {                                                                   \
+    index += hlen;                                                    \
+  }
+
+
+//------------------------------------------------------------------------------
 // PayloadHeader
 //------------------------------------------------------------------------------
 /*!
@@ -447,7 +504,14 @@ public:
   //! @brief Get the number of intensities in each firing.
   uint8_t GetIntensityCount() const
   {
-    return SET_BITS_IN_BYTE[this->Iset];
+    if (this->GetDset() == 0)
+    {
+      return 0;
+    }
+    else
+    {
+      return SET_BITS_IN_BYTE[this->Iset];
+    }
   }
 
   //! @brief The the number of bytes per firing return.
@@ -458,7 +522,7 @@ public:
     return bytesPerDistance + icount;
   }
 
-  //! @brief The the number of bytes per firing.
+  //! @brief The number of bytes of data per firing.
   size_t GetNumberOfDataBytesPerFiring() const
   {
     size_t dcount = this->GetDistanceCount();
@@ -466,9 +530,29 @@ public:
     return dcount * bytesPerReturn;
   }
 
+  //! @brief The total number of bytes per firing (header + data).
   size_t GetNumberOfBytesPerFiring() const
   {
     return this->GetNumberOfDataBytesPerFiring() + this->GetFlen();
+  }
+
+  /*!
+   * @brief Returns true if the packet header appears to be a valid version 1
+   *        header.
+   */
+  inline
+  bool IsValid() const
+  {
+    return
+      (this->GetVer()  == 1) &&
+      (this->GetHlen() >= 5) &&
+      (this->GetGlen() >= 2);
+  }
+
+  //! @brief Get the minimum required length of this header, in bytes.
+  static size_t MinimumRequiredLength()
+  {
+    return 20;
   }
 };
 #pragma pack(pop)
@@ -513,6 +597,20 @@ public:
   GET_RAW(Nxhdr)
   GET_RAW(Data)
   //@}
+
+  //! @brief Get the minimum required length of this header, in bytes.
+  static size_t MinimumRequiredLength()
+  {
+    return 2;
+  }
+
+  //! @brief Check if this extension header appears to be valid.
+  inline
+  bool IsValid() const
+  {
+    // Empty extension headers make no sense so consider them invalid.
+    return (this->GetHlen() > 2);
+  }
 };
 #pragma pack(pop)
 
@@ -531,12 +629,15 @@ private:
    * @brief Private members.
    *
    * Toffs:
-   * Unsigned time fraction offset from payload timestamp to firing time
-   * of the Firing Group in units of 64 ns.
+   *   Unsigned time fraction offset from payload timestamp to firing time of
+   *   the Firing Group in units of 64 ns.
    *
-   * Fcnt:
-   *   (FSPN + 1) is the count (span) of co-channels fired simultaneously in the
-   *   Firing Group.
+   * FcntFspn:
+   *   The first five most significant bits are FCNT, where (FCNT+1) is the
+   *   number of firings in the firing group.
+   *
+   *   The first three least significant bits are FSPN, where (FSPN + 1) is the
+   *   count (span) of co-channels fired simultaneously in the Firing Group.
    *
    * Fdly:
    *   If FDLY is zero, all channels in the Firing Group were fired
@@ -592,6 +693,19 @@ public:
   double GetVerticalDeflection() const { return this->GetVdfl() * 0.01; }
   double GetAzimuth() const { return this->Azm * 0.01; }
   //@}
+
+  //! @brief Get the minimum required length of this header, in bytes.
+  static size_t MinimumRequiredLength()
+  {
+    return 8;
+  }
+
+  //! @brief True if the firing group appears to be valid.
+  inline
+  bool IsValid() const
+  {
+    return (this->GetFcnt() > 0);
+  }
 };
 #pragma pack(pop)
 
@@ -635,9 +749,21 @@ public:
   GET_RAW(Nf)
   GET_ENUM(ChannelStatus, Stat)
   //@}
+
+  //! @brief Get the minimum required length of this header, in bytes.
+  static size_t MinimumRequiredLength()
+  {
+    return 4;
+  }
+
+  //! @brief True if the firing head appears to be valid.
+  inline
+  bool IsValid() const
+  {
+    return true;
+  }
 };
 #pragma pack(pop)
-
 
 //------------------------------------------------------------------------------
 // FiringReturn
@@ -812,23 +938,24 @@ VelodyneAdvancedPacketInterpreter::~VelodyneAdvancedPacketInterpreter()
 void VelodyneAdvancedPacketInterpreter::ProcessPacket(unsigned char const * data, unsigned int dataLength, int startPosition)
 {
   decltype(dataLength) index = 0;
-
-  PayloadHeader const * payloadHeader = reinterpret_cast<PayloadHeader const *>(data+index);
-  auto hlen = payloadHeader->GetHlen();
-  if (hlen > dataLength)
+  PayloadHeader const * payloadHeader = reinterpret_cast_with_checks<PayloadHeader>(data, dataLength, index);
+  if (payloadHeader == nullptr)
   {
     return;
   }
-  index += hlen;
+  ADVANCE_INDEX_BY_HLEN_OR_RETURN(dataLength, index, payloadHeader)
 
-  // Skip optional extension headers.
-  auto nxhdr = payloadHeader->GetNxhdr();
-  while (nxhdr != 0)
+  uint8_t distanceCount = payloadHeader->GetDistanceCount();
+
+  // A valid distance count may be 0, in which case there are no returns
+  // included in the firing and thus there is nothing to do.
+  if (distanceCount == 0)
   {
-    ExtensionHeader const * extensionHeader = reinterpret_cast<ExtensionHeader const *>(data+index);
-    index += extensionHeader->GetHlen();
-    nxhdr = extensionHeader->GetNxhdr();
+    return;
   }
+
+  uint8_t distanceSize = payloadHeader->GetDistanceSizeInBytes();
+  uint8_t distanceIndex;
 
   auto pseq = payloadHeader->GetPseq();
   auto iset = payloadHeader->GetIset();
@@ -842,9 +969,20 @@ void VelodyneAdvancedPacketInterpreter::ProcessPacket(unsigned char const * data
   size_t numberOfBytesPerFiringHeader = payloadHeader->GetFlen();
   size_t numberOfBytesPerFiringReturn = payloadHeader->GetNumberOfBytesPerFiringReturn();
   size_t numberOfBytesPerFiring = payloadHeader->GetNumberOfBytesPerFiring();
-  uint8_t distanceCount = payloadHeader->GetDistanceCount();
-  uint8_t distanceSize = payloadHeader->GetDistanceSizeInBytes();
-  uint8_t distanceIndex;
+
+  // Skip optional extension headers.
+  auto nxhdr = payloadHeader->GetNxhdr();
+  while (nxhdr != 0)
+  {
+    ExtensionHeader const * extensionHeader = reinterpret_cast_with_checks<ExtensionHeader>(data, dataLength, index);
+    if (extensionHeader == nullptr)
+    {
+      return;
+    }
+    ADVANCE_INDEX_BY_HLEN_OR_RETURN(dataLength, index, extensionHeader)
+    nxhdr = extensionHeader->GetNxhdr();
+  }
+
 
   // The included distance types are specified by a bit mask (if DSET included
   // it), for example 0110 indicates the presence of distance type 0100 and
@@ -885,7 +1023,13 @@ void VelodyneAdvancedPacketInterpreter::ProcessPacket(unsigned char const * data
   size_t loopCount = 0;
   while (index < dataLength)
   {
-    FiringGroupHeader const * firingGroupHeader = reinterpret_cast<FiringGroupHeader const *>(data+index);
+    FiringGroupHeader const * firingGroupHeader = reinterpret_cast_with_checks<FiringGroupHeader>(data, dataLength, index);
+    if (firingGroupHeader == nullptr)
+    {
+      return;
+    }
+    // The payload header checks above ensure that this value is non-zero and
+    // that the loop will therefore eventually terminate.
     index += numberOfBytesPerFiringGroupHeader;
 
     // Skip the firings and jump to the next firing group header.
@@ -919,7 +1063,11 @@ void VelodyneAdvancedPacketInterpreter::ProcessPacket(unsigned char const * data
       // using the channe number?).
       uint32_t channelTimeFractionOffset = timeFractionOffset + (coChannelTimeFractionDelay * (i / coChannelSpan));
 
-      FiringHeader const * firingHeader = reinterpret_cast<FiringHeader const *>(data+index);
+      FiringHeader const * firingHeader = reinterpret_cast_with_checks<FiringHeader>(data, dataLength, index);
+      if (firingHeader == nullptr)
+      {
+        return;
+      }
       index += numberOfBytesPerFiringHeader;
 
       auto channelNumber = firingHeader->GetLcn();
@@ -1009,15 +1157,8 @@ void VelodyneAdvancedPacketInterpreter::ProcessPacket(unsigned char const * data
 //------------------------------------------------------------------------------
 bool VelodyneAdvancedPacketInterpreter::IsLidarPacket(unsigned char const * data, unsigned int dataLength)
 {
-  /*
-   * TODO
-   * This needs to be improved to avoid false positives. One idea is to expand
-   * this to check that there is at least 1 plausible firing group by skipping
-   * over optional extension headers and then checking the expected length of
-   * the first firing group against the remaining length of the data.
-   */
-  PayloadHeader const * payloadHeader = reinterpret_cast<PayloadHeader const *>(data);
-  return (payloadHeader->GetHlen() <= dataLength);
+  PayloadHeader const * payloadHeader = reinterpret_cast_with_checks<PayloadHeader>(data, dataLength, 0);
+  return ((payloadHeader != nullptr) && (payloadHeader->GetHlen() <= dataLength));
 }
 
 //----------------------------------------------------------------------------
@@ -1138,22 +1279,27 @@ void VelodyneAdvancedPacketInterpreter::PreProcessPacket(
   int & framePositionInPacket
 )
 {
-  decltype(dataLength) index = 0;
+  isNewFrame = false;
+  framePositionInPacket = 0;
 
-  PayloadHeader const * payloadHeader = reinterpret_cast<PayloadHeader const *>(data+index);
-  auto hlen = payloadHeader->GetHlen();
-  if (hlen > dataLength)
+  decltype(dataLength) index = 0;
+  PayloadHeader const * payloadHeader = reinterpret_cast_with_checks<PayloadHeader>(data, dataLength, index);
+  if ((payloadHeader == nullptr) || (payloadHeader->GetDistanceCount() == 0))
   {
     return;
   }
-  index += hlen;
+  ADVANCE_INDEX_BY_HLEN_OR_RETURN(dataLength, index, payloadHeader)
 
   // Skip optional extension headers.
   auto nxhdr = payloadHeader->GetNxhdr();
   while (nxhdr != 0)
   {
-    ExtensionHeader const * extensionHeader = reinterpret_cast<ExtensionHeader const *>(data+index);
-    index += extensionHeader->GetHlen();
+    ExtensionHeader const * extensionHeader = reinterpret_cast_with_checks<ExtensionHeader>(data, dataLength, index);
+    if (extensionHeader == nullptr)
+    {
+      return;
+    }
+    ADVANCE_INDEX_BY_HLEN_OR_RETURN(dataLength, index, extensionHeader)
     nxhdr = extensionHeader->GetNxhdr();
   }
 
@@ -1163,7 +1309,13 @@ void VelodyneAdvancedPacketInterpreter::PreProcessPacket(
   isNewFrame = false;
   while (index < dataLength)
   {
-    FiringGroupHeader const * firingGroupHeader = reinterpret_cast<FiringGroupHeader const *>(data+index);
+    FiringGroupHeader const * firingGroupHeader = reinterpret_cast_with_checks<FiringGroupHeader>(data, dataLength, index);
+    if (firingGroupHeader == nullptr)
+    {
+      return;
+    }
+    // The payload header checks above ensure that this value is non-zero and
+    // that the loop will therefore eventually terminate.
     this->CurrentFrameTracker->Update(firingGroupHeader, isNewFrame);
     if (isNewFrame)
     {

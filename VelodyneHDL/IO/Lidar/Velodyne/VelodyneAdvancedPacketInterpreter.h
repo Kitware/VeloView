@@ -22,7 +22,13 @@ class VelodyneAdvancedPacketInterpreter : public LidarPacketInterpreter
 private:
   FrameTracker * CurrentFrameTracker;
 
+  //! @brief The maximum frame size seen so far.
   size_t MaxFrameSize;
+
+  /*!
+   * @brief     Update the maximum frame size.
+   * @param[in] frameSize The currently requested frame size.
+   */
   void UpdateMaxFrameSize(size_t frameSize)
   {
     if (frameSize > this->MaxFrameSize)
