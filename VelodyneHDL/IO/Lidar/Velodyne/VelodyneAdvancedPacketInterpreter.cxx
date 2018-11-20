@@ -20,14 +20,11 @@ using namespace DataPacketFixedLength;
 
 #include <iostream>
 
-//#define DEBUG_MSG(msg) std::cout << msg << "[" << __LINE__ << "]" << std::endl;
-
-
 //------------------------------------------------------------------------------
 // General macros constants.
 //------------------------------------------------------------------------------
 //! @brief Lengths in the headers are given in units of 32-bit words.
-#define BYTES_PER_HEADER_WORD 4u
+#define VAPI_BYTES_PER_HEADER_WORD 4u
 
 //! @brief Get the first set bit of an integral value.
 #define FIRST_SET_BIT(n) (n - (n & (n-1)))
@@ -38,40 +35,50 @@ using namespace DataPacketFixedLength;
 // Private members are stored using boost endian arithmetic types. To make these
 // transparent, getters return native values. Create structs to handle the
 // conversions in the getters.
+//
+// These are currently unused due to non-compliance with C++11 on our Windows
+// matchine. When Windows is updated, the VAPI_GET_NATIVE_UINT macro below can
+// be removed and the VAPI_GET_RAW macro's return type can be updated to
+// "AsNative<decltype(attr)>::type".
 template <typename T>
 struct AsNative
 {
   typedef T type;
 };
 
-#define DECLARE_BIG_TO_NATIVE(typ)            \
+
+#define VAPI_DECLARE_BIG_TO_NATIVE(typ)       \
   template <>                                 \
   struct AsNative<boost::endian::big_ ## typ> \
   {                                           \
-    typedef typ type;                \
+    typedef typ type;                         \
   };
 
-DECLARE_BIG_TO_NATIVE(uint16_t)
-DECLARE_BIG_TO_NATIVE(uint32_t)
-DECLARE_BIG_TO_NATIVE(uint64_t)
+VAPI_DECLARE_BIG_TO_NATIVE(uint16_t)
+VAPI_DECLARE_BIG_TO_NATIVE(uint32_t)
+VAPI_DECLARE_BIG_TO_NATIVE(uint64_t)
 
 //------------------------------------------------------------------------------
 // Accessor macros.
 //------------------------------------------------------------------------------
 //! @brief Simple getter for uninterpretted values that returns native types.
-// #define GET_RAW(attr) typename AsNative<decltype(attr)>::type Get ## attr () const { return this->attr; }
-#define GET_RAW(attr) decltype(attr) Get ## attr () const { return this->attr; }
+// #define VAPI_GET_RAW(attr) typename AsNative<decltype(attr)>::type Get ## attr () const { return this->attr; }
+#define VAPI_GET_RAW(attr) decltype(attr) Get ## attr () const { return this->attr; }
 
-#define GET_NATIVE_UINT(n, attr) uint ## n ##_t Get ## attr () const { return this->attr; }
+//! @brief Get native unsigned integers.
+// TODO
+// Remove this once we can use AsNative in the return type of VAPI_GET_RAW. See
+// notes above about using AsNative.
+#define VAPI_GET_NATIVE_UINT(n, attr) uint ## n ##_t Get ## attr () const { return this->attr; }
 
 //! @brief Get a const reference.
-#define GET_CONST_REF(attr) decltype(attr) const & Get ## attr () const { return this->attr; }
+#define VAPI_GET_CONST_REF(attr) decltype(attr) const & Get ## attr () const { return this->attr; }
 
 //! @brief Getter for enum values that are stored as raw values internally.
-#define GET_ENUM(enumtype, attr) enumtype Get ## attr () const { return to ## enumtype (static_cast<uint8_t>(this->attr)); }
+#define VAPI_GET_ENUM(enumtype, attr) enumtype Get ## attr () const { return to ## enumtype (static_cast<uint8_t>(this->attr)); }
 
 //! @brief Get a header length in bytes.
-#define GET_LENGTH(attr) size_t Get ## attr () const { return (this->attr * BYTES_PER_HEADER_WORD); }
+#define VAPI_GET_LENGTH(attr) size_t Get ## attr () const { return (this->attr * VAPI_BYTES_PER_HEADER_WORD); }
 
 
 
@@ -113,7 +120,7 @@ DECLARE_BIG_TO_NATIVE(uint64_t)
 //! @brief Macro for defining enum string conversions.
 #define DEFINE_ENUM_TO_STRING(name, prefix, enumerators)                                \
   inline                                                                                \
-  char const * toString(name const x)                                                         \
+  char const * toString(name const x)                                                   \
   {                                                                                     \
     switch(x)                                                                           \
     {                                                                                   \
@@ -136,7 +143,7 @@ DECLARE_BIG_TO_NATIVE(uint64_t)
 #define DEFINE_VALUE_TO_ENUM(name, prefix, enumerators, default_value) \
   template <typename T>                                                \
   inline                                                               \
-  name to ## name(T const x)                                                 \
+  name to ## name(T const x)                                           \
   {                                                                    \
     switch(x)                                                          \
     {                                                                  \
@@ -166,8 +173,44 @@ DECLARE_BIG_TO_NATIVE(uint64_t)
   DEFINE_ENUM_TO_STRING(name, prefix, enumerators)               \
   DEFINE_VALUE_TO_ENUM(name, prefix, enumerators, default_value)
 
+//------------------------------------------------------------------------------
+// Info array macros.
+//------------------------------------------------------------------------------
+//! @ brief List of field macros for using in other macros.
+#define VAPI_INFO_ARRAYS \
+	(Xs)                    \
+	(Ys)                    \
+	(Zs)                    \
+	(Distances)             \
+	(Azimuths)              \
+	(VerticalAngles)        \
+	(Confidences)           \
+	(Intensities)           \
+	(Reflectivities)        \
+	(DistanceTypes)         \
+	(ChannelNumbers)        \
+	(Noises)                \
+	(Powers)                \
+	(Pseqs)                 \
+	(TimeFractionOffsets)
 
+//! @brief Wrapper around BOOST_PP_CAT for use with BOOST_PP_SEQ_TRANSFORM.
+#define VAPI_ADD_PREFIX(index, prefix, elem) BOOST_PP_CAT(prefix, elem)
 
+//! @brief The field array names prefixed with "this->INFO_".
+#define VAPI_INFO_ARRAY_MEMBERS \
+	BOOST_PP_SEQ_TRANSFORM(VAPI_ADD_PREFIX, this->INFO_, VAPI_INFO_ARRAYS)
+
+/*!
+ * @brief     Expand a macro with the given data for each field array.
+ * @param[in] action The macro to expand. It must accept 3 arguments. The first
+ *                   is the index of the array in VAPI_INFO_ARRAYS, the second
+ *                   is the data and the third is the array name.
+ * @param[in] data   Any data to pass through as the second argument to
+ *                   "action".
+ */
+#define VAPI_FOREACH_INFO_ARRAY(action, data) \
+    BOOST_PP_SEQ_FOR_EACH(action, data, VAPI_INFO_ARRAY_MEMBERS)
 
 //------------------------------------------------------------------------------
 // Global constants.
@@ -377,7 +420,7 @@ T bitRangeValue(T const & source, uint8_t offset, uint8_t number)
   */
 template <typename T>
 inline
-T const * reinterpret_cast_with_checks(
+T const * reinterpretCastWithChecks(
   uint8_t const * data,
   size_t dataLength,
   size_t index
@@ -427,7 +470,7 @@ T const * reinterpret_cast_with_checks(
  *
  * All lengths count 32-bit words, e.g. a Glen value of 4 indicates that the
  * firing group header consists of 4 32-bit words. The raw values are converted
- * to counts with the BYTES_PER_HEADER_WORD constant.
+ * to counts with the VAPI_BYTES_PER_HEADER_WORD constant.
  */
 #pragma pack(push, 1)
 class PayloadHeader
@@ -468,16 +511,16 @@ public:
    * HLEN, GLEN and FLEN are returned in bytes, not the number of 32-bit words.
    */
   uint8_t GetVer() const  { return bitRangeValue<uint8_t>(this->VerHlen, 4, 4); }
-  uint8_t GetHlen() const { return bitRangeValue<uint8_t>(this->VerHlen, 0, 4) * BYTES_PER_HEADER_WORD; }
-  GET_RAW(Nxhdr)
-  uint8_t GetGlen() const { return bitRangeValue<uint8_t>(this->GlenFlen, 4, 4) * BYTES_PER_HEADER_WORD; }
-  uint8_t GetFlen() const { return bitRangeValue<uint8_t>(this->GlenFlen, 0, 4) * BYTES_PER_HEADER_WORD; }
-  GET_ENUM(ModelIdentificationCode, Mic);
-  GET_RAW(Tstat)
-  GET_RAW(Dset)
-  GET_NATIVE_UINT(16, Iset)
-  GET_NATIVE_UINT(64, Tref)
-  GET_NATIVE_UINT(32, Pseq)
+  uint8_t GetHlen() const { return bitRangeValue<uint8_t>(this->VerHlen, 0, 4) * VAPI_BYTES_PER_HEADER_WORD; }
+  VAPI_GET_RAW(Nxhdr)
+  uint8_t GetGlen() const { return bitRangeValue<uint8_t>(this->GlenFlen, 4, 4) * VAPI_BYTES_PER_HEADER_WORD; }
+  uint8_t GetFlen() const { return bitRangeValue<uint8_t>(this->GlenFlen, 0, 4) * VAPI_BYTES_PER_HEADER_WORD; }
+  VAPI_GET_ENUM(ModelIdentificationCode, Mic);
+  VAPI_GET_RAW(Tstat)
+  VAPI_GET_RAW(Dset)
+  VAPI_GET_NATIVE_UINT(16, Iset)
+  VAPI_GET_NATIVE_UINT(64, Tref)
+  VAPI_GET_NATIVE_UINT(32, Pseq)
   //@}
 
   //! @brief Get the DSET mask (or the count if DSET is not a mask).
@@ -554,6 +597,16 @@ public:
   {
     return 20;
   }
+
+  //! @brief An upper bound for the maximum number of data points in a packet.
+  static size_t MaximumNumberOfPointsPerPacket()
+  {
+    // Max packet size divided by minimum distance size. The true max is less
+    // than this due to packet and payload headers and other data, but this is
+    // just to get an upper bound. An exact value will not avoid the final
+    // resize before pushing the PolyData.
+    return 0x10000 / 2;
+  }
 };
 #pragma pack(pop)
 
@@ -593,9 +646,9 @@ public:
    *
    * HLEN is returned in bytes, not the number of 32-bit words.
    */
-  GET_LENGTH(Hlen)
-  GET_RAW(Nxhdr)
-  GET_RAW(Data)
+  VAPI_GET_LENGTH(Hlen)
+  VAPI_GET_RAW(Nxhdr)
+  VAPI_GET_RAW(Data)
   //@}
 
   //! @brief Get the minimum required length of this header, in bytes.
@@ -681,11 +734,11 @@ public:
   uint32_t GetToffs() const { return static_cast<uint32_t>(this->Toffs) * 64u; }
   uint8_t GetFcnt()   const { return bitRangeValue<uint8_t>(this->FcntFspn, 3, 5) + 1; }
   uint8_t GetFspn()   const { return bitRangeValue<uint8_t>(this->FcntFspn, 0, 3) + 1; }
-  GET_RAW(Fdly)
+  VAPI_GET_RAW(Fdly)
   HorizontalDirection GetHdir() const { return toHorizontalDirection(bitRangeValue<uint16_t>(this->HdirVdirVdfl, 15, 1)); }
   VerticalDirection GetVdir() const { return toVerticalDirection(bitRangeValue<uint16_t>(this->HdirVdirVdfl, 14, 1)); }
   uint16_t GetVdfl() const { return bitRangeValue<uint16_t>(this->HdirVdirVdfl, 0, 14); }
-  GET_NATIVE_UINT(16, Azm)
+  VAPI_GET_NATIVE_UINT(16, Azm)
   //@}
 
   //@{
@@ -743,11 +796,11 @@ public:
    *
    * FM and STAT are returned as their respective enums.
    */
-  GET_RAW(Lcn)
+  VAPI_GET_RAW(Lcn)
   FiringMode GetFm()  const { return toFiringMode(bitRangeValue<uint8_t>(this->FmPwr, 4, 4)); }
   uint8_t GetPwr() const { return bitRangeValue<uint8_t>(this->FmPwr, 0, 4); }
-  GET_RAW(Nf)
-  GET_ENUM(ChannelStatus, Stat)
+  VAPI_GET_RAW(Nf)
+  VAPI_GET_ENUM(ChannelStatus, Stat)
   //@}
 
   //! @brief Get the minimum required length of this header, in bytes.
@@ -787,7 +840,7 @@ private:
 public:
   //@{
   //! @brief Getters.
-  GET_CONST_REF(Data);
+  VAPI_GET_CONST_REF(Data);
   //@}
 
   /*!
@@ -910,7 +963,8 @@ public:
 VelodyneAdvancedPacketInterpreter::VelodyneAdvancedPacketInterpreter()
 {
   this->CurrentFrameTracker = new FrameTracker();
-  this->MaxFrameSize = 0;
+  this->MaxFrameSize = PayloadHeader::MaximumNumberOfPointsPerPacket();
+  this->NumberOfPointsInCurrentFrame = 0;
   this->Init();
   this->DistanceResolutionM = 0.002;
 
@@ -938,7 +992,7 @@ VelodyneAdvancedPacketInterpreter::~VelodyneAdvancedPacketInterpreter()
 void VelodyneAdvancedPacketInterpreter::ProcessPacket(unsigned char const * data, unsigned int dataLength, int startPosition)
 {
   decltype(dataLength) index = 0;
-  PayloadHeader const * payloadHeader = reinterpret_cast_with_checks<PayloadHeader>(data, dataLength, index);
+  PayloadHeader const * payloadHeader = reinterpretCastWithChecks<PayloadHeader>(data, dataLength, index);
   if (payloadHeader == nullptr)
   {
     return;
@@ -974,7 +1028,7 @@ void VelodyneAdvancedPacketInterpreter::ProcessPacket(unsigned char const * data
   auto nxhdr = payloadHeader->GetNxhdr();
   while (nxhdr != 0)
   {
-    ExtensionHeader const * extensionHeader = reinterpret_cast_with_checks<ExtensionHeader>(data, dataLength, index);
+    ExtensionHeader const * extensionHeader = reinterpretCastWithChecks<ExtensionHeader>(data, dataLength, index);
     if (extensionHeader == nullptr)
     {
       return;
@@ -1017,13 +1071,22 @@ void VelodyneAdvancedPacketInterpreter::ProcessPacket(unsigned char const * data
     }
   }
 
+  // Resize the arrays if necessary.
+  size_t currentArraySize = this->Points->GetNumberOfPoints();
+  size_t safeArraySize = this->NumberOfPointsInCurrentFrame + payloadHeader->MaximumNumberOfPointsPerPacket();
+  if (currentArraySize < safeArraySize)
+  {
+    this->UpdateMaxFrameSize(safeArraySize);
+    this->SetNumberOfItems(safeArraySize);
+  }
+
   // Loop through firing groups until a frame shift is detected. The number of
   // firings in each group is variable so we need to step through all of them to
   // get to the startPosition calculated by PreProcessPacket.
   size_t loopCount = 0;
   while (index < dataLength)
   {
-    FiringGroupHeader const * firingGroupHeader = reinterpret_cast_with_checks<FiringGroupHeader>(data, dataLength, index);
+    FiringGroupHeader const * firingGroupHeader = reinterpretCastWithChecks<FiringGroupHeader>(data, dataLength, index);
     if (firingGroupHeader == nullptr)
     {
       return;
@@ -1063,7 +1126,7 @@ void VelodyneAdvancedPacketInterpreter::ProcessPacket(unsigned char const * data
       // using the channe number?).
       uint32_t channelTimeFractionOffset = timeFractionOffset + (coChannelTimeFractionDelay * (i / coChannelSpan));
 
-      FiringHeader const * firingHeader = reinterpret_cast_with_checks<FiringHeader>(data, dataLength, index);
+      FiringHeader const * firingHeader = reinterpretCastWithChecks<FiringHeader>(data, dataLength, index);
       if (firingHeader == nullptr)
       {
         return;
@@ -1112,32 +1175,29 @@ void VelodyneAdvancedPacketInterpreter::ProcessPacket(unsigned char const * data
           continue;
         }
 
-        // TODO
-        // Determine which information is relevent and update accordingly.
-        this->Points->InsertNextPoint(position);
-        this->INFO_Xs->InsertNextValue(position[0]);
-        this->INFO_Ys->InsertNextValue(position[1]);
-        this->INFO_Zs->InsertNextValue(position[2]);
+        auto arrayIndex = this->NumberOfPointsInCurrentFrame++;
+        this->Points->SetPoint(arrayIndex, position);
 
-        this->INFO_Azimuths->InsertNextValue(azimuthInDegrees);
-        this->INFO_Distances->InsertNextValue(distance);
+//! @brief Convencience macro for setting info array values.
+#define VAPI_SET_VALUE(my_array, value) \
+        this->INFO_ ## my_array->SetValue(arrayIndex, value);
 
-        this->INFO_DistanceTypes->InsertNextValue(distanceTypes[distanceIndex]);
-        //
-
-        this->INFO_Pseqs->InsertNextValue(pseq);
-        this->INFO_ChannelNumbers->InsertNextValue(channelNumber);
-        this->INFO_TimeFractionOffsets->InsertNextValue(channelTimeFractionOffset);
-      // this->INFO_FiringModeStrings->InsertNextValue(firingModeString);
-        this->INFO_Powers->InsertNextValue(power);
-        this->INFO_Noises->InsertNextValue(noise);
-        this->INFO_VerticalAngles->InsertNextValue(correctedVerticalAngle);
-      //  this->INFO_StatusStrings->InsertNextValue(statusString);
-    //   this->INFO_DistanceTypeStrings->InsertNextValue(distanceTypeString);
+        VAPI_SET_VALUE(Xs                  , position[0])
+        VAPI_SET_VALUE(Ys                  , position[1])
+        VAPI_SET_VALUE(Zs                  , position[2])
+        VAPI_SET_VALUE(Azimuths            , azimuthInDegrees)
+        VAPI_SET_VALUE(Distances           , distance)
+        VAPI_SET_VALUE(DistanceTypes       , distanceTypes[distanceIndex])
+        VAPI_SET_VALUE(Pseqs               , pseq)
+        VAPI_SET_VALUE(ChannelNumbers      , channelNumber)
+        VAPI_SET_VALUE(TimeFractionOffsets , channelTimeFractionOffset)
+        VAPI_SET_VALUE(Powers              , power)
+        VAPI_SET_VALUE(Noises              , noise)
+        VAPI_SET_VALUE(VerticalAngles      , correctedVerticalAngle)
 
   //! @brief Convenience macro for setting intensity values
-#define INSERT_INTENSITY(my_array, iset_flag)                                           \
-        this->INFO_ ## my_array->InsertNextValue(                                       \
+#define VAPI_INSERT_INTENSITY(my_array, iset_flag)                                           \
+        this->INFO_ ## my_array->SetValue(arrayIndex,                                   \
           (iset & (ISET_ ## iset_flag)) ?                                               \
           firingReturn.GetIntensity<uint32_t>(distanceSize, iset, (ISET_ ## iset_flag)) \
           : 0                                                                           \
@@ -1146,9 +1206,9 @@ void VelodyneAdvancedPacketInterpreter::ProcessPacket(unsigned char const * data
         // TODO: Make the inclusion of these columns fully optional at runtime.
 
         // Add additional values here when ISET is expanded in future versions.
-        INSERT_INTENSITY(Reflectivities, REFLECTIVITY)
-        INSERT_INTENSITY(Intensities, INTENSITY)
-        INSERT_INTENSITY(Confidences, CONFIDENCE)
+        VAPI_INSERT_INTENSITY(Reflectivities , REFLECTIVITY)
+        VAPI_INSERT_INTENSITY(Intensities    , INTENSITY)
+        VAPI_INSERT_INTENSITY(Confidences    , CONFIDENCE)
       }
     }
   }
@@ -1157,14 +1217,14 @@ void VelodyneAdvancedPacketInterpreter::ProcessPacket(unsigned char const * data
 //------------------------------------------------------------------------------
 bool VelodyneAdvancedPacketInterpreter::IsLidarPacket(unsigned char const * data, unsigned int dataLength)
 {
-  PayloadHeader const * payloadHeader = reinterpret_cast_with_checks<PayloadHeader>(data, dataLength, 0);
+  PayloadHeader const * payloadHeader = reinterpretCastWithChecks<PayloadHeader>(data, dataLength, 0);
   return ((payloadHeader != nullptr) && (payloadHeader->GetHlen() <= dataLength));
 }
 
 //----------------------------------------------------------------------------
 /*!
  * @brief         Initialize an array for datapoint attributes and add it to the
- *                polydata.
+ *                polyData.
  * @tparam        T                The type of the array. This is templated so
  *                                 that the caller does not need to consider the
  *                                 type, which may change with the
@@ -1172,7 +1232,7 @@ bool VelodyneAdvancedPacketInterpreter::IsLidarPacket(unsigned char const * data
  * @param[in,out] array            The input array.
  * @param[in]     numberOfElements The number of elements that the array must be
  *                                 able to hold after initialization.
- * @param[out]    polyData         The polydata instance to which the array
+ * @param[out]    polyData         The PolyData instance to which the array
  *                                 should be added.
  */
 template <typename T>
@@ -1185,10 +1245,10 @@ void InitializeDataArrayForPolyData(
 )
 {
   array = T::New();
-  array->Allocate(numberOfElements);
+  // array->Allocate(numberOfElements);
   // if (numberOfElements > 0)
   // {
-  // array->SetNumberOfTuples(numberOfElements);
+  array->SetNumberOfValues(numberOfElements);
   // }
   array->SetName(name);
   polyData->GetPointData()->AddArray(array);
@@ -1205,11 +1265,11 @@ vtkSmartPointer<vtkPolyData> VelodyneAdvancedPacketInterpreter::CreateNewEmptyFr
   // The frame size must be large enough to contain the requested number of
   // points.
   this->UpdateMaxFrameSize(numberOfPoints);
-  if (this->MaxFrameSize > 0)
-  {
-    points->Allocate(this->MaxFrameSize);
-    // points->SetNumberOfPoints(numberOfPoints);
-  }
+  // if (this->MaxFrameSize > 0)
+  // {
+    // points->Allocate(this->MaxFrameSize);
+  points->SetNumberOfPoints(this->MaxFrameSize);
+  // }
 
   // Same name as vtkVelodyneHDLReader.
   // TODO
@@ -1217,50 +1277,81 @@ vtkSmartPointer<vtkPolyData> VelodyneAdvancedPacketInterpreter::CreateNewEmptyFr
   // should be common to all subclasses.
   points->GetData()->SetName("Points_m_XYZ");
 
-  // Point the polydata to the points.
+  // Point the polyData to the points.
   polyData->SetPoints(points.GetPointer());
 
   // Replace the old points.
   this->Points = points.GetPointer();
 
   // Replace and initialize all of the associated data arrays.
-  //
-  // Use a template here to make this section of code type-agnostic. The types
-  // of the different datapoint attributes may change in the future with
-  // evolving packet specifications.
 
-// Convencience macro
-#define INIT_INFO_ARR(arr_name, disp_name) \
+//! @brief Convencience macro for initializing info arrays.
+#define VAPI_INIT_INFO_ARR(arr_name, disp_name) \
   InitializeDataArrayForPolyData(this->INFO_ ## arr_name, disp_name, this->MaxFrameSize, polyData);
 
-  INIT_INFO_ARR(Xs                   , "X")
-  INIT_INFO_ARR(Ys                   , "Y")
-  INIT_INFO_ARR(Zs                   , "Z")
-  INIT_INFO_ARR(Distances            , "Distance")
-  INIT_INFO_ARR(DistanceTypes        , "Distance Type")
-  INIT_INFO_ARR(Azimuths             , "Azimuth")
-  INIT_INFO_ARR(VerticalAngles       , "Vertical Angle")/*
-  INIT_INFO_ARR(DistanceTypeStrings  , "Distance Type")
-  INIT_INFO_ARR(FiringModeStrings    , "FiringMode")
-  INIT_INFO_ARR(StatusStrings        , "Status")*/
-  INIT_INFO_ARR(Intensities          , "Intensity")
-  INIT_INFO_ARR(Confidences          , "Confidence")
-  INIT_INFO_ARR(Reflectivities       , "Reflectivity")
-  INIT_INFO_ARR(ChannelNumbers       , "Logical Channel Number")
-  INIT_INFO_ARR(TimeFractionOffsets  , "Time Fraction Offset")
-  INIT_INFO_ARR(Powers               , "Power")
-  INIT_INFO_ARR(Noises               , "Noise")
-  INIT_INFO_ARR(Pseqs                , "Packet Sequence Number")
+  VAPI_INIT_INFO_ARR(Xs                   , "X")
+  VAPI_INIT_INFO_ARR(Ys                   , "Y")
+  VAPI_INIT_INFO_ARR(Zs                   , "Z")
+  VAPI_INIT_INFO_ARR(Distances            , "Distance")
+  VAPI_INIT_INFO_ARR(DistanceTypes        , "Distance Type")
+  VAPI_INIT_INFO_ARR(Azimuths             , "Azimuth")
+  VAPI_INIT_INFO_ARR(VerticalAngles       , "Vertical Angle")/*
+  VAPI_INIT_INFO_ARR(DistanceTypeStrings  , "Distance Type")
+  VAPI_INIT_INFO_ARR(FiringModeStrings    , "FiringMode")
+  VAPI_INIT_INFO_ARR(StatusStrings        , "Status")*/
+  VAPI_INIT_INFO_ARR(Intensities          , "Intensity")
+  VAPI_INIT_INFO_ARR(Confidences          , "Confidence")
+  VAPI_INIT_INFO_ARR(Reflectivities       , "Reflectivity")
+  VAPI_INIT_INFO_ARR(ChannelNumbers       , "Logical Channel Number")
+  VAPI_INIT_INFO_ARR(TimeFractionOffsets  , "Time Fraction Offset")
+  VAPI_INIT_INFO_ARR(Powers               , "Power")
+  VAPI_INIT_INFO_ARR(Noises               , "Noise")
+  VAPI_INIT_INFO_ARR(Pseqs                , "Packet Sequence Number")
 
+  this->NumberOfPointsInCurrentFrame = 0;
   return polyData;
 }
+
+//------------------------------------------------------------------------------
+// vtkSmartPointer<vtkPolyData> VelodyneAdvancedPacketInterpreter::PreparePolyData()
+// {
+//   vtkSmartPointer<vtkPolyData> polyData = vtkSmartPointer<vtkPolyData>::New();
+//   polyData->SetPoints(this->Points);
+//   auto pointData = polyData->GetPointData();
+//
+// #define VAPI_ADD_ARRAY(index, data, array) \
+//   pointData->AddArray(array);
+//
+//   // "data" is an unused placeholder
+//   VAPI_FOREACH_INFO_ARRAY(VAPI_ADD_ARRAY, data)
+//
+//   return polyData;
+// }
 
 //------------------------------------------------------------------------------
 // TODO: Revisit this if the frequency still needs to be calculated here.
 bool VelodyneAdvancedPacketInterpreter::SplitFrame(bool force)
 {
-  this->UpdateMaxFrameSize(this->Points->GetNumberOfPoints());
-  return this->LidarPacketInterpreter::SplitFrame(force);
+  auto numberOfAllocatedPoints = this->Points->GetNumberOfPoints();
+  this->UpdateMaxFrameSize(numberOfAllocatedPoints);
+
+  // Update the MaxId to the current number of points.
+  this->SetNumberOfItems(this->NumberOfPointsInCurrentFrame);
+  // this->CurrentFrame->Modified();
+  bool wasSplit = this->LidarPacketInterpreter::SplitFrame(force);
+  // If the frame was split then CreateNewEmptyDataFrame was called and the
+  // array sizes have already been adjusted.
+  if (wasSplit)
+  {
+    this->NumberOfPointsInCurrentFrame = 0;
+  }
+  // If the frame was not split, we need to update the MaxId to allow for
+  // further insertions.
+  else
+  {
+    this->SetNumberOfItems(numberOfAllocatedPoints);
+  }
+  return wasSplit;
 }
 
 //------------------------------------------------------------------------------
@@ -1283,7 +1374,7 @@ void VelodyneAdvancedPacketInterpreter::PreProcessPacket(
   framePositionInPacket = 0;
 
   decltype(dataLength) index = 0;
-  PayloadHeader const * payloadHeader = reinterpret_cast_with_checks<PayloadHeader>(data, dataLength, index);
+  PayloadHeader const * payloadHeader = reinterpretCastWithChecks<PayloadHeader>(data, dataLength, index);
   if ((payloadHeader == nullptr) || (payloadHeader->GetDistanceCount() == 0))
   {
     return;
@@ -1294,7 +1385,7 @@ void VelodyneAdvancedPacketInterpreter::PreProcessPacket(
   auto nxhdr = payloadHeader->GetNxhdr();
   while (nxhdr != 0)
   {
-    ExtensionHeader const * extensionHeader = reinterpret_cast_with_checks<ExtensionHeader>(data, dataLength, index);
+    ExtensionHeader const * extensionHeader = reinterpretCastWithChecks<ExtensionHeader>(data, dataLength, index);
     if (extensionHeader == nullptr)
     {
       return;
@@ -1309,7 +1400,7 @@ void VelodyneAdvancedPacketInterpreter::PreProcessPacket(
   isNewFrame = false;
   while (index < dataLength)
   {
-    FiringGroupHeader const * firingGroupHeader = reinterpret_cast_with_checks<FiringGroupHeader>(data, dataLength, index);
+    FiringGroupHeader const * firingGroupHeader = reinterpretCastWithChecks<FiringGroupHeader>(data, dataLength, index);
     if (firingGroupHeader == nullptr)
     {
       return;
@@ -1630,5 +1721,40 @@ void VelodyneAdvancedPacketInterpreter::ComputeCorrectedValues(
   pos[0] = xyDistance * sinAzimuth - correction->horizontalOffsetCorrection * cosAzimuth;
   pos[1] = xyDistance * cosAzimuth + correction->horizontalOffsetCorrection * sinAzimuth;
   pos[2] = distanceM * correction->sinVertCorrection + correction->verticalOffsetCorrection;
+}
+
+//-----------------------------------------------------------------------------
+// Macro-based methods.
+//-----------------------------------------------------------------------------
+void VelodyneAdvancedPacketInterpreter::ResizeArrays(size_t newSize)
+{
+  this->Points->Resize(newSize);
+
+#define VAPI_RESIZE(index, data, array) \
+  array->Resize(newSize);
+
+  // "data" is an unused placeholder
+  VAPI_FOREACH_INFO_ARRAY(VAPI_RESIZE, data)
+}
+//-----------------------------------------------------------------------------
+void VelodyneAdvancedPacketInterpreter::SetNumberOfItems(size_t numberOfItems)
+{
+  // if (numberOfItems == 0)
+  // {
+    // this->ResizeArrays(0);
+    // return;
+  // } else
+  if (numberOfItems > this->Points->GetNumberOfPoints())
+  {
+    this->ResizeArrays(numberOfItems);
+  }
+
+  this->Points->SetNumberOfPoints(numberOfItems);
+
+#define VAPI_SET_NUMBER_OF_VALUES(index, data, array) \
+  array->SetNumberOfValues(numberOfItems); \
+
+  // "data" is an unused placeholder
+  VAPI_FOREACH_INFO_ARRAY(VAPI_SET_NUMBER_OF_VALUES, data)
 }
 

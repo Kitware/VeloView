@@ -4,13 +4,15 @@
 #include "LidarPacketInterpreter.h"
 #include <vtkUnsignedCharArray.h>
 #include <vtkUnsignedIntArray.h>
-#include <vtkStringArray.h>
+#include <vtkDoubleArray.h>
 
 #include <memory>
 #include <limits>
 
 #include "vtkDataPacket.h"
 using namespace DataPacketFixedLength;
+
+#define DEBUG_MSG(msg) std::cout << msg << " [line " << __LINE__ << "]" << std::endl;
 
 //------------------------------------------------------------------------------
 // Forward declaration.
@@ -19,6 +21,7 @@ class FrameTracker;
 //------------------------------------------------------------------------------
 class VelodyneAdvancedPacketInterpreter : public LidarPacketInterpreter
 {
+//------------------------------------------------------------------------------
 private:
   FrameTracker * CurrentFrameTracker;
 
@@ -37,6 +40,32 @@ private:
     }
   }
 
+  //! @brief The number of points in the current frame.
+  size_t NumberOfPointsInCurrentFrame;
+
+  //! @brief Add the point and field arrays to a new polydata.
+  // vtkSmartPointer<vtkPolyData> PreparePolyData();
+
+  /*!
+   * @brief     Resize the point and metadata arrays.
+   * @param[in] newSize The new size of the arrays.
+   *
+   * This preserves data if the array is resized.
+   */
+  void ResizeArrays(size_t newSize);
+
+  /*!
+   * @brief     Set the number of items in the arrays.
+   * @param[in] newSize The number of items to set.
+   * 
+   * This does not preserve data if the number of points requires the allocation
+   * of additional memory but it is safe to call after a resize. If there is
+   * enough storage, the VTK code will only update the MaxId trait, which is not
+   * settable otherwise.
+   */
+  void SetNumberOfItems(size_t numberOfItems);
+
+//------------------------------------------------------------------------------
 public:
   VelodyneAdvancedPacketInterpreter();
   ~VelodyneAdvancedPacketInterpreter();
@@ -56,6 +85,9 @@ public:
   void PreProcessPacket(unsigned char const * data, unsigned int dataLength, bool &isNewFrame, int &framePositionInPacket) override;
 
   vtkSmartPointer<vtkPoints> Points;
+
+  // Update VAPI_FIELD_ARRAYS and CreateNewEmptyFrame whenever an array is
+  // added or removed.
 
   vtkSmartPointer<vtkDoubleArray>         INFO_Xs;
   vtkSmartPointer<vtkDoubleArray>         INFO_Ys;
