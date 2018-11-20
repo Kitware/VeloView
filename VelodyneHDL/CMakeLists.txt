@@ -155,6 +155,7 @@ list(APPEND servermanager_sources
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/BirdEyeViewSnap/vtkBirdEyeViewSnap.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/ProcessingSample/vtkProcessingSample.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/Ransac/vtkRansacPlaneModel.cxx
+  ${CMAKE_CURRENT_SOURCE_DIR}/Filter/TrailingFrame/vtkTrailingFrame.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/Source/Grid/vtkVelodyneHDLGridSource.cxx
   )
 
@@ -168,6 +169,7 @@ list(APPEND servermanager_xml
   xml/MotionDetector.xml
   xml/BirdEyeViewSnap.xml
   xml/RansacPlaneModel.xml
+  xml/TrailingFrame.xml
   xml/ProcessingSample.xml
   xml/VelodyneHDLGridSource.xml
   )
@@ -222,6 +224,7 @@ set(plugin_include_dirs
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/BirdEyeViewSnap
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/OldPlaneFitter
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/Ransac
+  ${CMAKE_CURRENT_SOURCE_DIR}/Filter/TrailingFrame
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/ProcessingSample
   ${CMAKE_CURRENT_SOURCE_DIR}/Source/Grid
   )
