@@ -32,11 +32,6 @@ stages:
     <<: *default-cache
     policy: push
 
-.pull-cache: &pull-cache
-  cache:
-    <<: *default-cache
-    policy: pull
-
 ################################################################################
 ### anchor jobs for linux, they will be used accros multiple other jobs
 ### WARNING do not declare variable as they will overwrite all other variable!!!
@@ -209,10 +204,10 @@ ubuntu14.04.5_package_schedule:
     # upload superbuild, Apple's Zip Utility, which I guess is use by gilab-ci
     # produce corrupted file for large file, so we need to upload the cache manually 
     - cd ..
-    - tar jcvf archive Superbuild-build/
+    - echo "compressing and uploading Superbuild. This take some time..."
+    - tar jcf archive Superbuild-build/
     - ~/mc config host add superbuild ${MINIO_CACHE_SERVER_ADDRESS} ${MINIO_CACHE_SERVER_ACCESS_KEY} ${MINIO_CACHE_SERVER_SECRET_KEY}
     - ~/mc cp archive superbuild/runner/minio/project/808/${cache_patch}/${OS}/${CI_COMMIT_REF_NAME}-1
-  # <<: *push-cache
 
 .OSX_superbuild_manual: &OSX_superbuild_manual
   when: manual

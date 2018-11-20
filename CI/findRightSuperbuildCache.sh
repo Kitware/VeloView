@@ -69,13 +69,13 @@ while ! cache_exist "$superbuild_cache"; do
 done
 
 echo "Using superbuild cache: ${superbuild_cache}"
-
+echo "Downloading and uncompressing the Superbuild. This take some time..."
 # download and unzip the superbuild
 mkdir cache
 $MC cp --recursive "$superbuild_cache" cache
 
 if file cache/* | grep -i bzip2; then
-    tar zxvf cache/*
+    tar zxf cache/*
 else
     unzip -q cache/*
 fi
