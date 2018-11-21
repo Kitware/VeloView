@@ -327,8 +327,8 @@ private:
     connect(this->Ui.actionEnableCrashAnalysis, SIGNAL(toggled(bool)),
       pqVelodyneManager::instance(), SLOT(onEnableCrashAnalysis(bool)));
 
-    connect(this->Ui.actionResetConfigurationFile, SIGNAL(triggered()),
-      pqVelodyneManager::instance(), SLOT(onResetCalibrationFile()));
+    connect(this->Ui.actionResetDefaultSettings, SIGNAL(triggered()),
+      pqVelodyneManager::instance(), SLOT(onResetDefaultSettings()));
 
     connect(this->Ui.actionShowErrorDialog, SIGNAL(triggered()), pqApplicationCore::instance(),
       SLOT(showOutputWindow()));
@@ -350,13 +350,13 @@ vvMainWindow::vvMainWindow()
   std::stringstream ss;
   ss << "Reset " << SOFTWARE_NAME << " settings";
   QString text = QString(ss.str().c_str());
-  this->Internals->Ui.actionResetConfigurationFile->setText(text);
+  this->Internals->Ui.actionResetDefaultSettings->setText(text);
   ss.str("");
   ss.clear();
 
   ss << "This will reset all " << SOFTWARE_NAME << " settings by default";
   text = QString(ss.str().c_str());
-  this->Internals->Ui.actionResetConfigurationFile->setIconText(text);
+  this->Internals->Ui.actionResetDefaultSettings->setIconText(text);
   ss.str("");
   ss.clear();
 
