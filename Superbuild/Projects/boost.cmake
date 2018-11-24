@@ -6,11 +6,24 @@ if (APPLE)
   message(STATUS "${boost_osx_opts}")
  #macosx-version=${CMAKE_OSX_DEPLOYMENT_TARGET} macosx-version-min=${CMAKE_OSX_DEPLOYMENT_TARGET}")
 endif(APPLE)
+
+
 add_external_project_or_use_system(boost
   BUILD_IN_SOURCE 1
+
   CONFIGURE_COMMAND
-    <SOURCE_DIR>/bootstrap.sh ${boost_toolset} --prefix=<INSTALL_DIR>
-                              --with-libraries=date_time,thread,regex,system,program_options,filesystem,iostreams,chrono
-  BUILD_COMMAND <SOURCE_DIR>/bjam address-model=${VV_BUILD_ARCHITECTURE} threading=multi --with-regex --with-system --with-date_time --with-program_options --with-iostreams --with-filesystem --with-thread --with-chrono ${boost_osx_opts}  --prefix=<INSTALL_DIR> install
+    <SOURCE_DIR>/bootstrap.sh
+    ${boost_toolset}
+    --prefix=<INSTALL_DIR>
+    --with-libraries=mpi,date_time,thread,regex,system,program_options,filesystem,iostreams,chrono,serialization
+
+  BUILD_COMMAND
+  <SOURCE_DIR>/bjam
+    address-model=${VV_BUILD_ARCHITECTURE}
+    threading=multi
+    ${boost_osx_opts}
+    --mmacosx-version-minprefix=<INSTALL_DIR>
+    install
+
   INSTALL_COMMAND ""
 )
