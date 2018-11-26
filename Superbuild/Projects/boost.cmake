@@ -15,12 +15,13 @@ add_external_project_or_use_system(boost
     <SOURCE_DIR>/bootstrap.sh
     ${boost_toolset}
     --prefix=<INSTALL_DIR>
-    --with-libraries=mpi,date_time,thread,regex,system,program_options,filesystem,iostreams,chrono,serialization
+    --with-libraries=date_time,thread,regex,system,program_options,filesystem,iostreams,chrono,serialization
 
   BUILD_COMMAND
   <SOURCE_DIR>/bjam
     address-model=${VV_BUILD_ARCHITECTURE}
     threading=multi
+    --with-regex --with-system --with-date_time --with-program_options --with-iostreams --with-filesystem --with-thread --with-chrono --with-serialization
     ${boost_osx_opts}
     --mmacosx-version-minprefix=<INSTALL_DIR>
     install
