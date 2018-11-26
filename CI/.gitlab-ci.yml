@@ -2,7 +2,7 @@
 variables:
   # cmake superbuild option
   cmake_option_ENABLE_veloview: "True"
-  cmake_option_USE_SYSTEM_python: "True"
+  cmake_option_USE_SYSTEM_python: "False"
   cmake_option_CMAKE_BUILD_TYPE: "Release"
 
   # options specific to macOS builds
@@ -52,6 +52,7 @@ stages:
     - cmake -DCMAKE_BUILD_TYPE:STRING=${cmake_option_CMAKE_BUILD_TYPE}
       -DENABLE_veloview:BOOL=${cmake_option_ENABLE_veloview}
       -DUSE_SYSTEM_python:BOOL=${cmake_option_USE_SYSTEM_python}
+      -DENABLE_pcl:BOOL="True"
       ${CI_PROJECT_DIR}/Superbuild
     # compile
     - make -j8
@@ -196,6 +197,7 @@ ubuntu14.04.5_package_schedule:
       -DCMAKE_OSX_ARCHITECTURES:STRING=${cmake_option_CMAKE_OSX_ARCHITECTURES}
       -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING=${cmake_option_CMAKE_OSX_DEPLOYMENT_TARGET}
       -DCMAKE_OSX_SYSROOT:STRING=${cmake_option_CMAKE_OSX_SYSROOT}
+      -DENABLE_pcl:BOOL="True"
       ${CI_PROJECT_DIR}/Superbuild
     # compile
     - make -j8
