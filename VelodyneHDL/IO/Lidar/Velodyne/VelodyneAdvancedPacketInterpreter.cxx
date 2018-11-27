@@ -29,6 +29,9 @@ using namespace DataPacketFixedLength;
 //! @brief Get the first set bit of an integral value.
 #define FIRST_SET_BIT(n) (n - (n & (n-1)))
 
+//! @brief Memory step size array memory allocation.
+#define MEM_STEP_SIZE 0x40000u
+
 //------------------------------------------------------------------------------
 // Type Conversion Structs
 //------------------------------------------------------------------------------
@@ -963,7 +966,8 @@ public:
 VelodyneAdvancedPacketInterpreter::VelodyneAdvancedPacketInterpreter()
 {
   this->CurrentFrameTracker = new FrameTracker();
-  this->MaxFrameSize = PayloadHeader::MaximumNumberOfPointsPerPacket();
+  this->MaxFrameSize = MEM_STEP_SIZE;
+  this->CurrentArraySize = 0;
   this->NumberOfPointsInCurrentFrame = 0;
   this->Init();
   this->DistanceResolutionM = 0.002;
@@ -1076,7 +1080,6 @@ void VelodyneAdvancedPacketInterpreter::ProcessPacket(unsigned char const * data
   size_t safeArraySize = this->NumberOfPointsInCurrentFrame + payloadHeader->MaximumNumberOfPointsPerPacket();
   if (currentArraySize < safeArraySize)
   {
-    this->UpdateMaxFrameSize(safeArraySize);
     this->SetNumberOfItems(safeArraySize);
   }
 
@@ -1245,11 +1248,7 @@ void InitializeDataArrayForPolyData(
 )
 {
   array = T::New();
-  // array->Allocate(numberOfElements);
-  // if (numberOfElements > 0)
-  // {
   array->SetNumberOfValues(numberOfElements);
-  // }
   array->SetName(name);
   polyData->GetPointData()->AddArray(array);
 }
@@ -1259,29 +1258,20 @@ vtkSmartPointer<vtkPolyData> VelodyneAdvancedPacketInterpreter::CreateNewEmptyFr
 {
   vtkSmartPointer<vtkPolyData> polyData = vtkSmartPointer<vtkPolyData>::New();
 
+  this->UpdateMaxFrameSize(numberOfPoints);
+
   // Points.
   vtkNew<vtkPoints> points;
   points->SetDataTypeToFloat();
-  // The frame size must be large enough to contain the requested number of
-  // points.
-  this->UpdateMaxFrameSize(numberOfPoints);
-  // if (this->MaxFrameSize > 0)
-  // {
-    // points->Allocate(this->MaxFrameSize);
   points->SetNumberOfPoints(this->MaxFrameSize);
-  // }
-
   // Same name as vtkVelodyneHDLReader.
-  // TODO
-  // Define the name as a static constant member of the parent class if it
-  // should be common to all subclasses.
   points->GetData()->SetName("Points_m_XYZ");
-
-  // Point the polyData to the points.
-  polyData->SetPoints(points.GetPointer());
 
   // Replace the old points.
   this->Points = points.GetPointer();
+
+  // Point the polyData to the points.
+  polyData->SetPoints(points.GetPointer());
 
   // Replace and initialize all of the associated data arrays.
 
@@ -1309,6 +1299,7 @@ vtkSmartPointer<vtkPolyData> VelodyneAdvancedPacketInterpreter::CreateNewEmptyFr
   VAPI_INIT_INFO_ARR(Pseqs                , "Packet Sequence Number")
 
   this->NumberOfPointsInCurrentFrame = 0;
+  this->CurrentArraySize = numberOfPoints;
   return polyData;
 }
 
@@ -1333,21 +1324,14 @@ vtkSmartPointer<vtkPolyData> VelodyneAdvancedPacketInterpreter::CreateNewEmptyFr
 bool VelodyneAdvancedPacketInterpreter::SplitFrame(bool force)
 {
   auto numberOfAllocatedPoints = this->Points->GetNumberOfPoints();
-  this->UpdateMaxFrameSize(numberOfAllocatedPoints);
-
   // Update the MaxId to the current number of points.
   this->SetNumberOfItems(this->NumberOfPointsInCurrentFrame);
   // this->CurrentFrame->Modified();
   bool wasSplit = this->LidarPacketInterpreter::SplitFrame(force);
   // If the frame was split then CreateNewEmptyDataFrame was called and the
-  // array sizes have already been adjusted.
-  if (wasSplit)
-  {
-    this->NumberOfPointsInCurrentFrame = 0;
-  }
-  // If the frame was not split, we need to update the MaxId to allow for
-  // further insertions.
-  else
+  // array sizes have already been adjusted. If not, we need to reset the MaxId
+  // to allow for further insertions.
+  if (! wasSplit)
   {
     this->SetNumberOfItems(numberOfAllocatedPoints);
   }
@@ -1724,10 +1708,27 @@ void VelodyneAdvancedPacketInterpreter::ComputeCorrectedValues(
 }
 
 //-----------------------------------------------------------------------------
+void VelodyneAdvancedPacketInterpreter::UpdateMaxFrameSize(size_t frameSize)
+{
+  if (frameSize > this->MaxFrameSize)
+  {
+    size_t difference = frameSize - this->MaxFrameSize;
+    this->MaxFrameSize += ((difference + (MEM_STEP_SIZE - 1)) / MEM_STEP_SIZE) * MEM_STEP_SIZE;
+  }
+}
+
+//-----------------------------------------------------------------------------
 // Macro-based methods.
 //-----------------------------------------------------------------------------
-void VelodyneAdvancedPacketInterpreter::ResizeArrays(size_t newSize)
+void VelodyneAdvancedPacketInterpreter::ResizeArrays()
 {
+  size_t newSize = this->MaxFrameSize;
+  size_t currentSize = this->CurrentArraySize;
+  if (newSize <= currentSize)
+  {
+    return;
+  }
+
   this->Points->Resize(newSize);
 
 #define VAPI_RESIZE(index, data, array) \
@@ -1735,18 +1736,16 @@ void VelodyneAdvancedPacketInterpreter::ResizeArrays(size_t newSize)
 
   // "data" is an unused placeholder
   VAPI_FOREACH_INFO_ARRAY(VAPI_RESIZE, data)
+
+  this->CurrentArraySize = newSize;
 }
 //-----------------------------------------------------------------------------
 void VelodyneAdvancedPacketInterpreter::SetNumberOfItems(size_t numberOfItems)
 {
-  // if (numberOfItems == 0)
-  // {
-    // this->ResizeArrays(0);
-    // return;
-  // } else
+  this->UpdateMaxFrameSize(numberOfItems);
   if (numberOfItems > this->Points->GetNumberOfPoints())
   {
-    this->ResizeArrays(numberOfItems);
+    this->ResizeArrays();
   }
 
   this->Points->SetNumberOfPoints(numberOfItems);

@@ -12,7 +12,7 @@
 #include "vtkDataPacket.h"
 using namespace DataPacketFixedLength;
 
-#define DEBUG_MSG(msg) std::cout << msg << " [line " << __LINE__ << "]" << std::endl;
+// #define DEBUG_MSG(msg) std::cout << msg << " [line " << __LINE__ << "]" << std::endl;
 
 //------------------------------------------------------------------------------
 // Forward declaration.
@@ -32,13 +32,10 @@ private:
    * @brief     Update the maximum frame size.
    * @param[in] frameSize The currently requested frame size.
    */
-  void UpdateMaxFrameSize(size_t frameSize)
-  {
-    if (frameSize > this->MaxFrameSize)
-    {
-      this->MaxFrameSize = frameSize;
-    }
-  }
+  void UpdateMaxFrameSize(size_t frameSize);
+
+  //! @brief The current allocated array size.
+  size_t CurrentArraySize;
 
   //! @brief The number of points in the current frame.
   size_t NumberOfPointsInCurrentFrame;
@@ -46,22 +43,15 @@ private:
   //! @brief Add the point and field arrays to a new polydata.
   // vtkSmartPointer<vtkPolyData> PreparePolyData();
 
-  /*!
-   * @brief     Resize the point and metadata arrays.
-   * @param[in] newSize The new size of the arrays.
-   *
-   * This preserves data if the array is resized.
-   */
-  void ResizeArrays(size_t newSize);
+  //! @brief Resize the point and metadata arrays to the current max frame size.
+  void ResizeArrays();
 
   /*!
    * @brief     Set the number of items in the arrays.
    * @param[in] newSize The number of items to set.
    * 
-   * This does not preserve data if the number of points requires the allocation
-   * of additional memory but it is safe to call after a resize. If there is
-   * enough storage, the VTK code will only update the MaxId trait, which is not
-   * settable otherwise.
+   * If the number of points is greater than the current number of points,
+   * ResizeArrays will be called first to ensure that points are preserved.
    */
   void SetNumberOfItems(size_t numberOfItems);
 
