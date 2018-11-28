@@ -15,8 +15,7 @@
 
 #include "vtkLASFileWriter.h"
 #include "vtkPVConfig.h" //  needed for PARAVIEW_VERSION
-#include "vtkVelodyneHDLReader.h"
-#include "Common/vtkVelodyneTransformInterpolator.h"
+#include "vtkLidarReader.h"
 #include "vvPythonQtDecorators.h"
 
 #include <pqActiveObjects.h>
@@ -228,7 +227,7 @@ void pqVelodyneManager::saveFramesToPCAP(
     return;
   }
 
-  vtkVelodyneHDLReader* reader = vtkVelodyneHDLReader::SafeDownCast(proxy->GetClientSideObject());
+  vtkLidarReader* reader = vtkLidarReader::SafeDownCast(proxy->GetClientSideObject());
   if (!reader)
   {
     return;
@@ -240,7 +239,7 @@ void pqVelodyneManager::saveFramesToPCAP(
 }
 
 //-----------------------------------------------------------------------------
-void pqVelodyneManager::saveFramesToLAS(vtkVelodyneHDLReader* reader, vtkPolyData* position,
+void pqVelodyneManager::saveFramesToLAS(vtkLidarReader* reader, vtkPolyData* position,
   int startFrame, int endFrame, const QString& filename, int positionMode)
 {
   if (!reader || (positionMode > 0 && !position))
@@ -269,9 +268,6 @@ void pqVelodyneManager::saveFramesToLAS(vtkVelodyneHDLReader* reader, vtkPolyDat
   // georeferenced data
   if (positionMode > 0)
   {
-    // Set minimum and maximum time range
-    vtkVelodyneTransformInterpolator* const interp = reader->GetInterpolator();
-    writer.SetTimeRange(interp->GetMinimumT(), interp->GetMaximumT());
 
     // Georeferenced data
     if (positionMode > 1)

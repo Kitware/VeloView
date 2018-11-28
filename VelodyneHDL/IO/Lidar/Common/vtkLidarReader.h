@@ -26,6 +26,7 @@ class vtkLidarReaderInternal;
 class VTK_EXPORT vtkLidarReader : public vtkLidarProvider
 {
 public:
+  static vtkLidarReader* New();
   vtkTypeMacro(vtkLidarReader, vtkLidarProvider)
   void PrintSelf(ostream& os, vtkIndent indent);
 
@@ -37,7 +38,12 @@ public:
 
   int GetNumberOfFrames() override;
 
-  vtkSmartPointer<vtkPolyData> GetFrame(int frameNumber, int wantedNumberOfTrailingFrames) override;
+
+  /**
+   * @brief GetFrame returns the requested frame
+   * @param frameNumber beteween 0 and vtkLidarReader::GetNumberOfFrames()
+   */
+  virtual vtkSmartPointer<vtkPolyData> GetFrame(int frameNumber);
 
   /**
    * @copydoc vtkLidarReaderInternal::Open()
@@ -67,16 +73,16 @@ protected:
   ~vtkLidarReader();
 
   int RequestData(vtkInformation* request,
-                          vtkInformationVector** inputVector,
-                          vtkInformationVector* outputVector);
+                  vtkInformationVector** inputVector,
+                  vtkInformationVector* outputVector) override;
 
-  int RequestInformation(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
+  int RequestInformation(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
 
 
 private:
   vtkLidarReaderInternal* Internal;
-  vtkLidarReader(const vtkLidarReader&); // not implemented
-  void operator=(const vtkLidarReader&); // not implemented
+  vtkLidarReader(const vtkLidarReader&) = delete;
+  void operator=(const vtkLidarReader&) = delete;
 };
 
 #endif // VTKLIDARREADER_H

@@ -1,0 +1,62 @@
+<ServerManagerConfiguration>
+  <ProxyGroup name="LidarPacketInterpreter">
+
+    <SourceProxy name="VelodynePacketInterpreter"
+               class="vtkVelodynePacketInterpreter"
+               label="Velodyne Interpreter"
+               base_proxygroup="base_LidarPacketInterpreter_g"
+               base_proxyname="base_LidarPacketInterpreter">
+
+      <IntVectorProperty
+        name="DualReturnFilter"
+        animateable="0"
+        command="SetDualReturnFilter"
+        default_values="0"
+        number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          Filter mask for dual return
+        </Documentation>
+      </IntVectorProperty>
+
+      <IntVectorProperty
+        name="Correct Intensity"
+        animateable="0"
+        command="SetWantIntensityCorrection"
+        default_values="0"
+        number_of_elements="1">
+        <BooleanDomain name="bool" />
+      </IntVectorProperty>
+
+      <IntVectorProperty
+        name="UseIntraFiringAdjustment"
+        animateable="0"
+        command="SetUseIntraFiringAdjustment"
+        default_values="0"
+        number_of_elements="1">
+        <BooleanDomain name="bool" />
+      </IntVectorProperty>
+
+      <IntVectorProperty
+        name="FiringsSkip"
+        label="Firings Skip"
+        animateable="0"
+        command="SetFiringsSkip"
+        default_values="0"
+        number_of_elements="1"        >
+        <IntRangeDomain name="range" min="0" max="12"/>
+        <Documentation>
+          The number of firings to skip.
+        </Documentation>
+      </IntVectorProperty>
+
+      <PropertyGroup label="Velodyne Specific">
+        <Property name="DualReturnFilter" />
+        <Property name="UseIntraFiringAdjustment" />
+        <Property name="Correct Intensity" />
+        <Property name="FiringsSkip" />
+      </PropertyGroup>
+
+    </SourceProxy>
+  </ProxyGroup>
+</ServerManagerConfiguration>

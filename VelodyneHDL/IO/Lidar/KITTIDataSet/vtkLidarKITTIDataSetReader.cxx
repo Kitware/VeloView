@@ -52,15 +52,6 @@ typedef struct point {
 //-----------------------------------------------------------------------------
 vtkStandardNewMacro(vtkLidarKITTIDataSetReader)
 
-//-----------------------------------------------------------------------------
-vtkLidarKITTIDataSetReader::vtkLidarKITTIDataSetReader()
-  : FileName(""),
-    NumberOfTrailingFrames(0),
-    NbrLaser(64)
-{
-
-}
-
 //----------------------------------------------------------------------------
 void vtkLidarKITTIDataSetReader::SetFileName(const std::string &filename)
 {
@@ -97,7 +88,7 @@ std::string vtkLidarKITTIDataSetReader::GetSensorInformation()
 }
 
 //-----------------------------------------------------------------------------
-vtkSmartPointer<vtkPolyData> vtkLidarKITTIDataSetReader::GetFrame(int frameNumber, int wantedNumberOfTrailingFrames)
+vtkSmartPointer<vtkPolyData> vtkLidarKITTIDataSetReader::GetFrame(int frameNumber)
 {
   // create a new empty frame
   vtkSmartPointer<vtkPolyData> poly = vtkSmartPointer<vtkPolyData>::New();
@@ -119,7 +110,7 @@ vtkSmartPointer<vtkPolyData> vtkLidarKITTIDataSetReader::GetFrame(int frameNumbe
   vtkSmartPointer<vtkDoubleArray> timestamp = CreateDataArray<vtkDoubleArray>("timestamp", poly);
   vtkSmartPointer<vtkDoubleArray> adjustedTime = CreateDataArray<vtkDoubleArray>("adjustedtime", poly);
 
-  int startFrame = std::max(0, frameNumber - wantedNumberOfTrailingFrames);
+  int startFrame = std::max(0, frameNumber);
   for (int i = startFrame; i <= frameNumber; i++)
   {
     // produce path to the required .bin file
@@ -215,7 +206,7 @@ int vtkLidarKITTIDataSetReader::RequestData(vtkInformation* vtkNotUsed(request),
                                                    << this->GetNumberOfFrames() << " datasets.");
     return 0;
   }
-  output->ShallowCopy(GetFrame(timestep, this->NumberOfTrailingFrames));
+  output->ShallowCopy(GetFrame(timestep));
   return 1;
 }
 
@@ -244,10 +235,4 @@ int vtkLidarKITTIDataSetReader::RequestInformation(vtkInformation* vtkNotUsed(re
     info->Remove(vtkStreamingDemandDrivenPipeline::TIME_RANGE());
   }
   return 1;
-}
-
-//-----------------------------------------------------------------------------
-int vtkLidarKITTIDataSetReader::GetNumberOfChannels()
-{
-  return this->NbrLaser;
 }

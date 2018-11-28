@@ -89,7 +89,7 @@ public slots:
     pqVelodyneManager::saveFramesToPCAP(arg0, arg1, arg2, arg3);
   }
 
-  void static_pqVelodyneManager_saveFramesToLAS(vtkVelodyneHDLReader* arg0, vtkPolyData* arg1,
+  void static_pqVelodyneManager_saveFramesToLAS(vtkLidarReader* arg0, vtkPolyData* arg1,
     int arg2, int arg3, const QString& arg4, int arg5)
   {
     pqVelodyneManager::saveFramesToLAS(arg0, arg1, arg2, arg3, arg4, arg5);

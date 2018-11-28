@@ -19,35 +19,27 @@
 #include <vtkNew.h>
 #include <vtkSmartPointer.h>
 #include <vtkTable.h>
-#include <vtkTransform.h>
 #include <vtkPolyData.h>
+#include <vtkAlgorithm.h>
 
-//! @todo this class should be thread save and need to implement Getter/Setter with a mutex
-//! @todo make Getter and Setter for Transform and Interpolator
-//! @todo use emun for croping mode
-#define SetMacro(name,type) \
-void Set##name (type _arg) \
-  { \
-  if (this->name != _arg) \
-    { \
-    this->name = _arg; \
-    } \
-  }
+class vtkTransform;
 
-#define GetMacro(name,type) \
-type Get##name () { \
-  return this->name; \
-  }
-
-class vtkVelodyneTransformInterpolator;
-class pcap_pkthdr;
-
-class LidarPacketInterpreter
+class VTK_EXPORT  vtkLidarPacketInterpreter : public vtkAlgorithm
 {
 public:
+  vtkTypeMacro(vtkLidarPacketInterpreter, vtkAlgorithm)
+  void PrintSelf(ostream& os, vtkIndent indent) {}
 
-  LidarPacketInterpreter();
-  virtual ~LidarPacketInterpreter();
+  /**
+   * @brief The CropModeEnum enum to select the cropping mode
+   */
+  enum CROP_MODE
+  {
+    None = 0,       /*!< 0 */
+    Cartesian = 1,  /*!< 1 */
+    Spherical = 2,  /*!< 2 */
+    Cylindric = 3,  /*!< 3 */
+  };
 
   /**
    * @brief LoadCalibration read a provided calibration file to initialize the sensor's
@@ -129,58 +121,61 @@ public:
    */
   void ClearAllFramesAvailable() { this->Frames.clear(); }
 
-  GetMacro(NumberOfTrailingFrames, int)
-  SetMacro(NumberOfTrailingFrames, int)
+  /**
+   * @brief GetSensorInformation return information to display to the user
+   * @return
+   */
+  virtual std::string GetSensorInformation() = 0;
 
-  GetMacro(SplitCounter, int)
-  SetMacro(SplitCounter, int)
+  virtual int GetNumberOfChannels() { return this->CalibrationReportedNumLasers; }
 
-  GetMacro(CalibrationFileName, std::string)
-  SetMacro(CalibrationFileName, std::string)
+  vtkGetMacro(CalibrationFileName, std::string)
+  vtkSetMacro(CalibrationFileName, std::string)
 
-  GetMacro(CalibrationReportedNumLasers, int)
-  SetMacro(CalibrationReportedNumLasers, int)
+  vtkGetMacro(CalibrationReportedNumLasers, int)
+  vtkSetMacro(CalibrationReportedNumLasers, int)
 
-  GetMacro(IsCalibrated, bool)
-  SetMacro(IsCalibrated, bool)
+  vtkGetMacro(IsCalibrated, bool)
+  vtkSetMacro(IsCalibrated, bool)
 
-  GetMacro(TimeOffset, double)
-  SetMacro(TimeOffset, double)
+  vtkGetMacro(TimeOffset, double)
+  vtkSetMacro(TimeOffset, double)
 
-  GetMacro(LaserSelection, std::vector<bool>)
-  SetMacro(LaserSelection, std::vector<bool>)
+  /**
+   * @copydoc LidarPacketInterpreter::LaserSelection
+   */
+  virtual void SetLaserSelection(const bool* v) { this->LaserSelection = std::vector<bool>(v, v + this->CalibrationReportedNumLasers); }
+  virtual void GetLaserSelection(bool* v) { std::copy(this->LaserSelection.begin(), this->LaserSelection.end(), v);}
+  virtual void SetLaserSelection(const std::vector<bool>& v) { this->LaserSelection = v; }
+  virtual std::vector<bool> GetLaserSelection() const { return this->LaserSelection; }
 
-  GetMacro(DistanceResolutionM, double)
-  SetMacro(DistanceResolutionM, double)
+  vtkGetMacro(DistanceResolutionM, double)
+  vtkSetMacro(DistanceResolutionM, double)
 
-  GetMacro(Frequency, double)
-  SetMacro(Frequency, double)
+  vtkGetMacro(Frequency, double)
+  vtkSetMacro(Frequency, double)
 
-  GetMacro(IgnoreZeroDistances, bool)
-  SetMacro(IgnoreZeroDistances, bool)
+  vtkGetMacro(IgnoreZeroDistances, bool)
+  vtkSetMacro(IgnoreZeroDistances, bool)
 
-  GetMacro(IgnoreEmptyFrames, bool)
-  SetMacro(IgnoreEmptyFrames, bool)
+  vtkGetMacro(IgnoreEmptyFrames, bool)
+  vtkSetMacro(IgnoreEmptyFrames, bool)
 
-  GetMacro(ApplyTransform, bool)
-  SetMacro(ApplyTransform, bool)
+  vtkGetMacro(ApplyTransform, bool)
+  vtkSetMacro(ApplyTransform, bool)
 
-//  GetMacro(SensorTransform, vtkSmartPointer<vtkTransform>)
-//  SetMacro(SensorTransform, vtkSmartPointer<vtkTransform>)
+  vtkGetObjectMacro(SensorTransform, vtkTransform)
+  virtual void SetSensorTransform(vtkTransform *);
 
-//  GetMacro(Interp, vtkSmartPointer<vtkVelodyneTransformInterpolator>)
-//  SetMacro(Interp, vtkSmartPointer<vtkVelodyneTransformInterpolator>)
+  vtkGetMacro(CropMode, int)
+  vtkSetMacro(CropMode, int)
 
-  GetMacro(CropMode, int /*vtkLidarProvider::CropModeEnum*/)
-  SetMacro(CropMode, int /*vtkLidarProvider::CropModeEnum*/)
+  vtkGetMacro(CropOutside, bool)
+  vtkSetMacro(CropOutside, bool)
 
-  GetMacro(CropReturns, bool)
-  SetMacro(CropReturns, bool)
+  vtkSetVector6Macro(CropRegion, double)
 
-  GetMacro(CropOutside, bool)
-  SetMacro(CropOutside, bool)
-
-  void SetCropRegion(double region[6]);
+  vtkMTimeType GetMTime() override;
 
 protected:
   /**
@@ -197,76 +192,66 @@ protected:
   //! Frame under construction
   vtkSmartPointer<vtkPolyData> CurrentFrame;
 
-  //! Number of previous frames to display with the current frame (concatenation of frames)
-  int NumberOfTrailingFrames;
-
-  //! Indicate when the frame should be split, this mecamism is used to handle trailing frame
-  int SplitCounter;
-
   //! File containing all calibration information
-  std::string CalibrationFileName;
+  std::string CalibrationFileName = "";
 
   ///! Calibration data store in a table
   vtkNew<vtkTable> CalibrationData;
 
   //! Number of laser which can be shoot at the same time or at least in dt < epsilon
-  int CalibrationReportedNumLasers;
+  int CalibrationReportedNumLasers = -1;
 
   //! Indicate if the sensor is calibrated or has been succesfully calibrated
-  bool IsCalibrated;
+  bool IsCalibrated = false;
 
   //! TimeOffset in seconds relative to the system clock
-  double TimeOffset;
+  double TimeOffset = 0.;
 
   //! Indicate for each laser if the points obtained by this specific laser
   //! should process/display (true) or ignore (false)
   std::vector<bool> LaserSelection;
 
   //! Laser distance resolution (quantum) which also correspond to the points precision
-  double DistanceResolutionM;
+  double DistanceResolutionM = 0;
 
   //! Frequency at which a new frame is obtain. It can be constant or variable
   //! depending on the lidar. Note that it is note necessarily expressed in Hz, in case of
   //! rotational lidar, this correspond to the RPM (Rotation Per Minute).
-  double Frequency;
+  double Frequency = 0;
 
   //! Process/skip points with a zero value distance.
   //! These points correspond to a missing return or a too close return.
-  bool IgnoreZeroDistances;
+  bool IgnoreZeroDistances = true;
 
   //! Proccess/skip frame with 0 points
-  bool IgnoreEmptyFrames;
+  bool IgnoreEmptyFrames = false;
 
   //! Indicate if the vtkLidarProvider::SensorTransform is apply
-  bool ApplyTransform;
+  bool ApplyTransform = false;
 
-public:
   //! Fixed transform to apply to the Lidar points.
-  //! This transform is always applied before the transform calculated by the interpolator
-  //! as it is used to move the frame from the Lidar's coordinate system to another
-  //! coordinate system such as that of the GPS/IMU sensor.
-  vtkNew<vtkTransform> SensorTransform;
+  vtkTransform* SensorTransform = nullptr;
 
-  //! Interpolator used to get a transform for each frame timestamp, this transform
-  //! is always applied after the sensor transform.
-  vtkSmartPointer<vtkVelodyneTransformInterpolator> Interp;
-protected:
   //! Indicate which cropping mode should be used.
-  /*vtkLidarProvider::CropModeEnum*/int CropMode;
-
-  //! enable/disable cropping
-  bool CropReturns;
+  int CropMode = CROP_MODE::None;
 
   //! If true, the region outside of the area defined by CropRegion is cropped/removed.
   //! If false, the region within the area is cropped/removed.
-  bool CropOutside;
+  bool CropOutside = false;
 
   //! Depending on the :CropingMode select this can have different meaning:
   //! - vtkLidarProvider::CropModeEnum::Cartesian it correspond to [X_min, X_max, Y_min, Y_max, Z_min, Z_max]
   //! - vtkLidarProvider::CropModeEnum::Spherical it correspond to [R_min, R_max, THETA_min, THETA_max, PHI_min, PHI_max]
   //! - vtkLidarProvider::CropModeEnum::Spherical -> Note implemented yet
   //! all distance are in cm and all angle are in degree
-  double CropRegion[6];
+  double CropRegion[6] = {0,0,0,0,0,0};
+
+  vtkLidarPacketInterpreter() = default;
+  virtual ~vtkLidarPacketInterpreter() = default;
+
+private:
+  vtkLidarPacketInterpreter(const vtkLidarPacketInterpreter&) = delete;
+  void operator=(const vtkLidarPacketInterpreter&) = delete;
 
 };
 
