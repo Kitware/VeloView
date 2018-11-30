@@ -1743,48 +1743,23 @@ def toggleSelectDualReturn():
         "frame has no dual returns.")
         return
 
-    #Get the polyData which contains all points
-    allFrame = source.GetClientSideObject().GetOutput()
-    nPoints = allFrame.GetNumberOfPoints()
-
     #Get the selected Points
     selectedPoints = source.GetSelectionOutput(0)
     polyData = selectedPoints.GetClientSideObject().GetOutput()
-    idArray = polyData.GetPointData().GetArray('dual_return_matching')
-    nSelectedpoints = polyData.GetNumberOfPoints()
+    nSelectedPoints = polyData.GetNumberOfPoints()
 
-    #Select the dual return of each selected points which have a dual return
-    if nSelectedpoints >0 :
-        #create a temporary array to make a query selection
-        array = range(0,nPoints)
-
-        #fill the temporary array
-        for i in range (nPoints):
-            array[i] = -1
-
-        #Add the dualId in the temporary array
-        for i in range(nSelectedpoints):
-            dualId = idArray.GetValue(i)
-            if dualId >=0:
-                array[dualId] = 1
-
-        #Add the temporary array to the source
-        getLidarPacketInterpreter().SetSelectedPointsWithDualReturn(array,nPoints)
-        getLidarPacketInterpreter().SetShouldAddDualReturnArray(True)
-        reloadCurrentFrame()
-
-        query = 'dualReturn_of_selectedPoints>0'
-        smp.SelectPoints(query,source)
-        smp.Render()
-        #Tell the source the selection is made
-        #source.GetClientSideObject().SetShouldAddDualReturnArray(False)
-        #Remove the query
-        query = ''
-    #Select all the points which have a dual return if no points are selected
-    else :
-        query = 'dual_return_matching>-1'
-        smp.SelectPoints(query)
-        smp.Render()
+    if nSelectedPoints > 0:
+        idArray = polyData.GetPointData().GetArray('dual_return_matching')
+        # It should be possible to filter -1 from the idArray and then just use
+        # np.in1d below, but doing so generates errors (either an invalid
+        # expression, even when handling the case of an empty array, or an
+        # invalid non-mask return value.
+        selectedDualIds = set(str(int(idArray.GetValue(i))) for i in range(nSelectedPoints))
+        query = 'np.logical_and(dual_return_matching > -1, np.in1d(id, [{}]))'.format(','.join(selectedDualIds))
+    else:
+        query = 'dual_return_matching > -1'
+    smp.SelectPoints(query)
+    smp.Render()
 
 
 def toggleCrashAnalysis():
