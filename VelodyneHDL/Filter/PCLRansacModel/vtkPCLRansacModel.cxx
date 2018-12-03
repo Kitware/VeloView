@@ -35,39 +35,27 @@
 // pcl includes
 #include <pcl/point_types.h>
 #include <pcl/sample_consensus/ransac.h>
-#include <pcl/sample_consensus/sac_model_plane.h>
+#include <pcl/sample_consensus/sac_model_circle.h>
+#include <pcl/sample_consensus/sac_model_circle3d.h>
+#include <pcl/sample_consensus/sac_model_cone.h>
+#include <pcl/sample_consensus/sac_model_cylinder.h>
 #include <pcl/sample_consensus/sac_model_sphere.h>
+#include <pcl/sample_consensus/sac_model_line.h>
+#include <pcl/sample_consensus/sac_model_plane.h>
 
 // Implementation of the New function
 vtkStandardNewMacro(vtkPCLRansacModel);
 
-class vtkPCLRansacModel::vtkInternal
-{
-public:
-
-  vtkInternal()
-  {
-    this->DistanceThreshold = 0.35; // 20cm
-  }
-
-  ~vtkInternal()
-  {
-  }
-
-  // Threshold to determine if
-  // a point is an inlier or outlier
-  double DistanceThreshold;
-};
-
 //----------------------------------------------------------------------------
 vtkPCLRansacModel::vtkPCLRansacModel()
 {
-  this->Internal = new vtkInternal;
+
 }
 
 //----------------------------------------------------------------------------
 vtkPCLRansacModel::~vtkPCLRansacModel()
 {
+
 }
 
 //-----------------------------------------------------------------------------
@@ -90,13 +78,55 @@ int vtkPCLRansacModel::RequestData(vtkInformation *vtkNotUsed(request),
   // inliers's index according to the model and threshold
   std::vector<int> inliers;
 
-  // instanciate the model
-  pcl::SampleConsensusModelPlane<pcl::PointXYZ>::Ptr
-    modelPlane(new pcl::SampleConsensusModelPlane<pcl::PointXYZ> (pointCloud));
+  // instantiate the model
+  pcl::SampleConsensusModel<pcl::PointXYZ>::Ptr RANSACModel;
+
+  switch (ModelType) {
+
+    case vtkPCLRansacModel::Circle2D:
+      RANSACModel = pcl::SampleConsensusModel<pcl::PointXYZ>::Ptr(
+            new pcl::SampleConsensusModelCircle2D<pcl::PointXYZ> (pointCloud));
+      break;
+
+    case vtkPCLRansacModel::Circle3D:
+      RANSACModel = pcl::SampleConsensusModel<pcl::PointXYZ>::Ptr(
+            new pcl::SampleConsensusModelCircle3D<pcl::PointXYZ> (pointCloud));
+      break;
+
+// The Cone Model and the Cylinder Model require to compute the normal, so this is not wrap
+//    case vtkPCLRansacModel::Cone:
+//      RANSACModel = pcl::SampleConsensusModel<pcl::PointXYZ>::Ptr(
+//            new pcl::SampleConsensusModelCone<pcl::PointXYZ, pcl::Normal> (pointCloud));
+//      break;
+
+//    case vtkPCLRansacModel::Cylinder:
+//      RANSACModel = pcl::SampleConsensusModel<pcl::PointXYZ>::Ptr(
+//            new pcl::SampleConsensusModelCylinder<pcl::PointXYZ, pcl::Normal> (pointCloud));
+//      break;
+
+    case vtkPCLRansacModel::Shpere:
+      RANSACModel = pcl::SampleConsensusModel<pcl::PointXYZ>::Ptr(
+            new pcl::SampleConsensusModelSphere<pcl::PointXYZ> (pointCloud));
+      break;
+
+    case vtkPCLRansacModel::Line:
+      RANSACModel = pcl::SampleConsensusModel<pcl::PointXYZ>::Ptr(
+            new pcl::SampleConsensusModelLine<pcl::PointXYZ> (pointCloud));
+      break;
+
+    case vtkPCLRansacModel::Plane:
+      RANSACModel = pcl::SampleConsensusModel<pcl::PointXYZ>::Ptr(
+            new pcl::SampleConsensusModelLine<pcl::PointXYZ> (pointCloud));
+      break;
+
+    default:
+      cerr << "No model : " << ModelType << endl;
+      break;
+  }
 
   // Instanciate and launch the random consensus
-  pcl::RandomSampleConsensus<pcl::PointXYZ> ransac (modelPlane);
-  ransac.setDistanceThreshold (this->Internal->DistanceThreshold);
+  pcl::RandomSampleConsensus<pcl::PointXYZ> ransac (RANSACModel);
+  ransac.setDistanceThreshold (this->DistanceThreshold);
   ransac.computeModel(); // compute ransac
   ransac.getInliers(inliers); // get inlier list
   std::cout << "Inliers size : " << inliers.size() << std::endl;
