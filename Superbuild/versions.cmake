@@ -15,7 +15,7 @@ superbuild_set_revision(pythonqt
 set(PARAVIEW_VERSION 5.4)
 superbuild_set_revision(paraview
   GIT_REPOSITORY https://gitlab.kitware.com/bjacquet/paraview.git
-  GIT_TAG origin/5.4CustomForVeloview)
+  GIT_TAG origin/5.4CustomForVeloview-withPointCloudRepPlugin)
 
 superbuild_set_revision(veloview
     SOURCE_DIR ${CMAKE_SOURCE_DIR}/..
