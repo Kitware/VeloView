@@ -91,7 +91,7 @@ class AppLogic(object):
 
         self.gridProperties = None
 
-        smp.LoadPlugin(vtkGetFileNameFromPluginName('PointCloudPlugin'))
+        # smp.LoadPlugin(vtkGetFileNameFromPluginName('PointCloudPlugin'))
 
     def setupTimers(self):
         self.playTimer = QtCore.QTimer()

@@ -159,6 +159,7 @@ qt5_wrap_cpp(moc_source_files
   vvColorToolbar.h
   vvMainWindow.h
   vvToggleSpreadSheetReaction.h
+  vvLoadDataReaction.h
   )
 
 qt5_wrap_ui(ui_source_files

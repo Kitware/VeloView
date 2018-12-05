@@ -131,10 +131,10 @@ if(PARAVIEW_BUILD_QT_GUI)
     ${moc_srcs}
     ${ui_srcs}
     ${resource_srcs}
-    vvCalibrationDialog.cxx
-    vvCropReturnsDialog.cxx
-    vvLaserSelectionDialog.cxx
-    vvSelectFramesDialog.cxx
+    Ui/vvCalibrationDialog.cxx
+    Ui/vvCropReturnsDialog.cxx
+    Ui/vvLaserSelectionDialog.cxx
+    Ui/vvSelectFramesDialog.cxx
     ctk/ctkPimpl.h
     ctk/ctkCoreExport.h
     ctk/ctkRangeSlider.cpp
