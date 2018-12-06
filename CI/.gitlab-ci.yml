@@ -39,14 +39,18 @@ stages:
 
 .unix_get_superbuild:
   script: &unix_get_superbuild
-    - chmod +x CI/findRightSuperbuildCache.sh
-    - CI/findRightSuperbuildCache.sh ${OS} ${CI_COMMIT_REF_NAME} ${MINIO_CACHE_SERVER_ADDRESS} ${MINIO_CACHE_SERVER_ACCESS_KEY} ${MINIO_CACHE_SERVER_SECRET_KEY}
+    - cd ..
+    - chmod +x ${CI_PROJECT_DIR}/CI/findRightSuperbuildCache.sh
+    - ${CI_PROJECT_DIR}/CI/findRightSuperbuildCache.sh ${OS} ${CI_COMMIT_REF_NAME} ${MINIO_CACHE_SERVER_ADDRESS} ${MINIO_CACHE_SERVER_ACCESS_KEY} ${MINIO_CACHE_SERVER_SECRET_KEY}
+    # create a symbolic link 
+    - ln -s ../Superbuild-build Superbuild-build 
 
 .linux_superbuild: &linux_superbuild
   stage: superbuild
   script:
     - git submodule update --init Superbuild/common-superbuild
     # prepare directory
+    - cd ..
     - mkdir Superbuild-build/
     - cd Superbuild-build/
     # configure & generate
@@ -56,10 +60,12 @@ stages:
     - make -j8
     # remove Veloview
     - rm -rf veloview/
+    # create a symbolic link
+    - ln -s ../Superbuild-build Superbuild-build 
   <<: *push-cache
 
 .linux_superbuild_manual: &linux_superbuild_manual
-  when: manual
+  # when: manual
   <<: *linux_superbuild
 
 .linux_superbuild_schedule: &linux_superbuild_schedule
@@ -101,7 +107,7 @@ stages:
     - make package -j8
 
 .linux_package_manual: &linux_package_manual
-  when: manual
+  # when: manual
   <<: *linux_package
   artifacts:
     name: ${CI_JOB_NAME}
@@ -187,6 +193,7 @@ ubuntu14.04.5_package_schedule:
   stage: superbuild
   script:
     - git submodule update --init Superbuild/common-superbuild
+    - cd ..
     # prepare directory
     - mkdir Superbuild-build/
     - cd Superbuild-build/
@@ -207,7 +214,7 @@ ubuntu14.04.5_package_schedule:
     - ~/mc cp archive superbuild/runner/minio/project/808/${cache_patch}/${OS}/${CI_COMMIT_REF_NAME}-1
 
 .OSX_superbuild_manual: &OSX_superbuild_manual
-  when: manual
+  # when: manual
   <<: *OSX_superbuild
 
 .OSX_superbuild_schedule: &OSX_superbuild_schedule
@@ -241,7 +248,7 @@ ubuntu14.04.5_package_schedule:
     - make package -j8
 
 .OSX_package_manual: &OSX_package_manual
-  when: manual
+  # when: manual
   <<: *OSX_package
   artifacts:
     name: ${CI_JOB_NAME}
