@@ -45,13 +45,12 @@ stages:
 .linux_superbuild: &linux_superbuild
   stage: superbuild
   script:
+    - git submodule update --init Superbuild/common-superbuild
     # prepare directory
     - mkdir Superbuild-build/
     - cd Superbuild-build/
     # configure & generate
     - cmake -DCMAKE_BUILD_TYPE:STRING=${cmake_option_CMAKE_BUILD_TYPE}
-      -DENABLE_veloview:BOOL=${cmake_option_ENABLE_veloview}
-      -DUSE_SYSTEM_python:BOOL=${cmake_option_USE_SYSTEM_python}
       ${CI_PROJECT_DIR}/Superbuild
     # compile
     - make -j8
@@ -187,15 +186,13 @@ ubuntu14.04.5_package_schedule:
 .OSX_superbuild: &OSX_superbuild
   stage: superbuild
   script:
+    - git submodule update --init Superbuild/common-superbuild
     # prepare directory
     - mkdir Superbuild-build/
     - cd Superbuild-build/
     # configure & generate
     - cmake -DCMAKE_BUILD_TYPE:STRING=${cmake_option_CMAKE_BUILD_TYPE}
-      -DENABLE_veloview:BOOL=${cmake_option_ENABLE_veloview}
-      -DCMAKE_OSX_ARCHITECTURES:STRING=${cmake_option_CMAKE_OSX_ARCHITECTURES}
-      -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING=${cmake_option_CMAKE_OSX_DEPLOYMENT_TARGET}
-      -DCMAKE_OSX_SYSROOT:STRING=${cmake_option_CMAKE_OSX_SYSROOT}
+      -DCMAKE_OSX_SDK:STRING=macosx10.12
       ${CI_PROJECT_DIR}/Superbuild
     # compile
     - make -j8
