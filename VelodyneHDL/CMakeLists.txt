@@ -264,7 +264,7 @@ endif(WIN32)
 
 add_executable(PacketFileSender StandAloneTools/PacketFileSender.cxx)
 target_include_directories(PacketFileSender PRIVATE Common/Network)
-target_link_libraries(PacketFileSender LINK_PUBLIC ${VV_PLUGIN_LIBRARY})
+target_link_libraries(PacketFileSender LINK_PUBLIC ${VV_PLUGIN_LIBRARY} ${ALL_BOOST_LIBRARIES})
 
 #-----------------------------------------------------------------------------
 # As we don't want our paraview pluging to have a dependancies to PythonQt we
