@@ -194,7 +194,9 @@ ubuntu14.04.5_package_schedule:
   script:
     - git submodule update --init Superbuild/common-superbuild
     - cd ..
-    # prepare directory
+    # prepare directory, on OSX as we use the shell executor we need to remove
+    # the old directory
+    - rm -rf Superbuild-build/
     - mkdir Superbuild-build/
     - cd Superbuild-build/
     # configure & generate
