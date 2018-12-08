@@ -35,37 +35,47 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <QToolBar>
 
 class vvPlayerControlsController;
+class pqAnimationScene;
+class vtkSMProxy;
 
-/// This class is greatly inspired from the paraview class pqVCRToolbar.
-/// vvPlayerControlsToolbar is the toolbar with VCR controls.
-/// Simply instantiate this and put it in your application UI file or
-/// QMainWindow to use it.
+/// This class is a mixed of pqVCRToolbar and pqTimAnimationWidget
+///
 class vvPlayerControlsToolbar : public QToolBar
 {
   Q_OBJECT
-  typedef QToolBar Superclass;
+  Q_PROPERTY(double timeValue READ timeValue WRITE setTimeValue NOTIFY timeValueChanged)
+  Q_PROPERTY(int timeStepCount READ timeStepCount WRITE setTimeStepCount)
 public:
-  vvPlayerControlsToolbar(const QString& title, QWidget* parentObject=0)
-    : Superclass(title, parentObject)
-    {
-    this->constructor();
-    }
-  vvPlayerControlsToolbar(QWidget* parentObject=0)
-    : Superclass(parentObject)
-    {
-    this->constructor();
-    }
+  vvPlayerControlsToolbar(QWidget* parentObject=0);
   ~vvPlayerControlsToolbar();
 
+public slots:
+  /// Get/set the current time value.
+  void setTimeValue(double time);
+  double timeValue() const;
+
+  /// Get/set the number of timesteps.
+  void setTimeStepCount(int count);
+  int timeStepCount() const;
+
 protected slots:
-  void setTimeRanges(double, double);
   void onPlaying(bool);
+  void onSpeedChanged();
+  void setAnimationScene(pqAnimationScene*);
+  void PressSlider();
+  void ReleaseSlider();
+  void setTimeStep(int);
+
+signals:
+  void speedChange(double);
+  void dummySignal();
+  void timeValueChanged();
 
 private:
   Q_DISABLE_COPY(vvPlayerControlsToolbar)
 
   void constructor();
-
+  vtkSMProxy* timeKeeper() const;
   class pqInternals;
   pqInternals* UI;
 

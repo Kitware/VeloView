@@ -53,6 +53,8 @@ public:
   vvPlayerControlsController(QObject* parent = 0);
   virtual ~vvPlayerControlsController();
 
+  pqAnimationScene* getAnimationScene();
+
 signals:
   void timestepChanged();
 
@@ -95,6 +97,7 @@ public slots:
   void onPlay();
   void onPause();
   void onLoop(bool checked);
+  void onSpeedChange(double speed);
 
 protected slots:
   void onTick();
@@ -107,6 +110,8 @@ private:
   void operator=(const vvPlayerControlsController&); // Not implemented.
 
   QPointer<pqAnimationScene> Scene;
+  double speed;
+  double duration;
 };
 
 #endif // VVPLAYERCONTROLSCONTROLLER_H

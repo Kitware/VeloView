@@ -38,6 +38,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "vtkSMTrace.h"
 
 // Qt includes.
+#include <QPointer>
 #include <QtDebug>
 #include <QApplication>
 
@@ -48,14 +49,33 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqPipelineSource.h"
 #include "pqSMAdaptor.h"
 #include "pqUndoStack.h"
+#include "vtkAnimationScene.h"
+
+namespace {
+void SetProperty(QPointer<pqAnimationScene> scene, const char* property, int value)
+{
+  dynamic_cast<vtkSMIntVectorProperty*>
+      (scene->getProxy()->GetProperty(property))->SetElements1(value);
+  scene->getProxy()->UpdateProperty(property);
+}
+}
+
 //-----------------------------------------------------------------------------
-vvPlayerControlsController::vvPlayerControlsController(QObject* _parent/*=null*/) : QObject(_parent)
+vvPlayerControlsController::vvPlayerControlsController(QObject* _parent/*=null*/)
+  : QObject(_parent),
+    speed(1),
+    duration(0)
 {
 }
 
 //-----------------------------------------------------------------------------
 vvPlayerControlsController::~vvPlayerControlsController()
 {
+}
+
+//-----------------------------------------------------------------------------
+pqAnimationScene *vvPlayerControlsController::getAnimationScene() {
+  return this->Scene.data();
 }
 
 //-----------------------------------------------------------------------------
@@ -97,6 +117,7 @@ void vvPlayerControlsController::onTimeRangesChanged()
     {
     QPair<double, double> range = this->Scene->getClockTimeRange();
     emit this->timeRanges(range.first, range.second);
+    this->duration = range.second - range.first;
     }
 }
 
@@ -114,6 +135,17 @@ void vvPlayerControlsController::onPlay()
   SM_SCOPED_TRACE(CallMethod)
     .arg(this->Scene->getProxy())
     .arg("Play");
+
+  if (speed != 0)
+  {
+    SetProperty(this->Scene, "Duration", this->duration / this->speed);
+    SetProperty(this->Scene, "PlayMode", vtkAnimationScene::PLAYMODE_REALTIME);
+  }
+  else
+  {
+    // there is no enum for mode 2...
+    SetProperty(this->Scene, "PlayMode", 2);
+  }
 
   this->Scene->getProxy()->InvokeCommand("Play");
 
@@ -175,6 +207,7 @@ void vvPlayerControlsController::onPause()
     return;
     }
   this->Scene->getProxy()->InvokeCommand("Stop");
+  SetProperty(this->Scene, "PlayMode", 2);
 }
 
 //-----------------------------------------------------------------------------
@@ -192,6 +225,7 @@ void vvPlayerControlsController::onFirstFrame()
 void vvPlayerControlsController::onPreviousFrame()
 {
   emit this->beginNonUndoableChanges();
+  SetProperty(this->Scene, "Duration", this->duration);
   this->Scene->getProxy()->InvokeCommand("GoToPrevious");
   SM_SCOPED_TRACE(CallMethod)
     .arg(this->Scene->getProxy())
@@ -203,6 +237,7 @@ void vvPlayerControlsController::onPreviousFrame()
 void vvPlayerControlsController::onNextFrame()
 {
   emit this->beginNonUndoableChanges();
+  SetProperty(this->Scene, "Duration", this->duration);
   this->Scene->getProxy()->InvokeCommand("GoToNext");
   SM_SCOPED_TRACE(CallMethod)
     .arg(this->Scene->getProxy())
@@ -219,5 +254,12 @@ void vvPlayerControlsController::onLastFrame()
     .arg(this->Scene->getProxy())
     .arg("GoToLast");
   emit this->endNonUndoableChanges();
+}
+
+//-----------------------------------------------------------------------------
+void vvPlayerControlsController::onSpeedChange(double speed)
+{
+  this->speed = speed;
+  this->onPause();
 }
 

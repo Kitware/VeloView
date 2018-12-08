@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>205</width>
+    <width>298</width>
     <height>39</height>
    </rect>
   </property>
@@ -20,9 +20,6 @@
    <bool>true</bool>
   </property>
   <action name="actionPlay">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
    <property name="enabled">
     <bool>true</bool>
    </property>
@@ -32,6 +29,9 @@
    </property>
    <property name="text">
     <string>&amp;Play</string>
+   </property>
+   <property name="shortcut">
+    <string>Space</string>
    </property>
   </action>
   <action name="actionPreviousFrame">
@@ -44,6 +44,9 @@
    </property>
    <property name="text">
     <string>Pre&amp;vious Frame</string>
+   </property>
+   <property name="shortcut">
+    <string>Left</string>
    </property>
    <property name="PV_MUST_BE_MASTER" stdset="0">
     <bool>true</bool>
@@ -60,6 +63,9 @@
    <property name="text">
     <string>&amp;First Frame</string>
    </property>
+   <property name="shortcut">
+    <string>Ctrl+Left</string>
+   </property>
   </action>
   <action name="actionNextFrame">
    <property name="enabled">
@@ -72,6 +78,9 @@
    <property name="text">
     <string>&amp;Next Frame</string>
    </property>
+   <property name="shortcut">
+    <string>Right</string>
+   </property>
   </action>
   <action name="actionLastFrame">
    <property name="enabled">
@@ -83,6 +92,9 @@
    </property>
    <property name="text">
     <string>&amp;Last Frame</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Right</string>
    </property>
   </action>
   <action name="actionLoop">
