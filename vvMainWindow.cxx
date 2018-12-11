@@ -65,6 +65,8 @@
 #include <vtkPVPlugin.h>
 #include <vtkSMPropertyHelper.h>
 
+#include <pqLiveSourceBehavior.h>
+
 #include <QLabel>
 #include <QSplitter>
 #include <QToolBar>
@@ -134,6 +136,8 @@ private:
     new pqAutoLoadPluginXMLBehavior(window);
     new pqDataTimeStepBehavior(window);
     new pqCommandLineOptionsBehavior(window);
+    new pqLiveSourceBehavior(window);
+
     pqApplyBehavior* applyBehaviors = new pqApplyBehavior(window);
 
     // Check if the settings are well formed i.e. if an OriginalMainWindow

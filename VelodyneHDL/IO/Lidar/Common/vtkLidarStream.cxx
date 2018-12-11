@@ -164,6 +164,12 @@ void vtkLidarStream::SetIsCrashAnalysing(const bool value)
   this->Internal->Network->IsCrashAnalysing = value;
 }
 
+bool vtkLidarStream::GetNeedsUpdate()
+{
+  Poll();
+  return true;
+}
+
 //----------------------------------------------------------------------------
 void vtkLidarStream::Start()
 {
