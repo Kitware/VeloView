@@ -11,3 +11,11 @@ superbuild_add_project(veloview
     -DCMAKE_CXX_STANDARD:STRING=${CMAKE_CXX_STANDARD}
     -Dqt_version:STRING=${qt_version}
 )
+
+if (WIN32)
+  # These options are useful to use Boost as a dynamic library.
+  # Boost_USE_STATIC_LIBS is off by default, but sometimes that is not sufficient
+  # on windows (especially with MSVC ?)
+  superbuild_append_flags(cxx_flags "-DBOOST_ALL_NO_LIB" PROJECT_ONLY)
+  superbuild_append_flags(cxx_flags "-DBOOST_ALL_DYN" PROJECT_ONLY)
+endif()

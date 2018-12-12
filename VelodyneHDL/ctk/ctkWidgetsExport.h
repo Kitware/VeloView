@@ -10,7 +10,7 @@
 
 #include <QtGlobal>
 
-#if defined(Q_OS_WIN) || defined(Q_OS_SYMBIAN)
+#if defined(Q_OS_SYMBIAN)
 #  if defined(CTKWidgets_EXPORTS)
 #    define CTK_WIDGETS_EXPORT Q_DECL_EXPORT
 #  else

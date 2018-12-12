@@ -9,7 +9,7 @@
 # endif()
 
 superbuild_set_revision(pythonqt
-  GIT_REPOSITORY git://github.com/commontk/PythonQt.git
+  GIT_REPOSITORY http://github.com/commontk/PythonQt.git
   GIT_TAG patched-8)
 
 set(PARAVIEW_VERSION 5.4)
@@ -23,7 +23,7 @@ superbuild_set_revision(veloview
 
 if (WIN32)
   superbuild_set_revision(pcap
-    GIT_REPOSITORY git://github.com/patmarion/winpcap.git
+    GIT_REPOSITORY http://github.com/patmarion/winpcap.git
     GIT_TAG master)
 else()
   superbuild_set_revision(pcap

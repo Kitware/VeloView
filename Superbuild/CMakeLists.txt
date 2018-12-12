@@ -95,6 +95,7 @@ endif()
 # skiped module as defined in paraview superbuild.
 # One difference: pythonQt needs Multimedia so we don't skip it.
 set(qt5_skip_modules
+  qtspeech
   qtconnectivity
   qtgamepad
   qtlocation

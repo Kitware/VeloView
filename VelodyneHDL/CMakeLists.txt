@@ -79,7 +79,7 @@ include_directories(${SYSTEM_OPTION} ${EIGEN_INCLUDE_DIR})
 #--------------------------------------
 # Boost dependency
 #--------------------------------------
-if(WIN32 OR APPLE)
+if(APPLE)
   set(Boost_USE_STATIC_LIBS ON)
 endif(WIN32 OR APPLE)
 set(Boost_USE_MULTITHREADED ON)
@@ -255,7 +255,9 @@ add_paraview_plugin(${VV_PLUGIN_LIBRARY} "1.0"
 target_include_directories(${VV_PLUGIN_LIBRARY} PRIVATE ${plugin_include_dirs})
 target_link_libraries(${VV_PLUGIN_LIBRARY} LINK_PUBLIC ${deps})
 if(WIN32)
-  target_compile_definitions(${VV_PLUGIN_LIBRARY} PRIVATE -DWIN32)
+  # -DBOOST_PROGRAM_OPTIONS_DYN_LINK is necessary to use boost as a dynamic library
+  # more about it here: https://svn.boost.org/trac10/ticket/13326
+  target_compile_definitions(${VV_PLUGIN_LIBRARY} PRIVATE -DWIN32 -DBOOST_PROGRAM_OPTIONS_DYN_LINK=1)
 endif(WIN32)
 
 #-----------------------------------------------------------------------------
@@ -265,6 +267,9 @@ endif(WIN32)
 add_executable(PacketFileSender StandAloneTools/PacketFileSender.cxx)
 target_include_directories(PacketFileSender PRIVATE Common/Network)
 target_link_libraries(PacketFileSender LINK_PUBLIC ${VV_PLUGIN_LIBRARY} ${ALL_BOOST_LIBRARIES})
+if(WIN32)
+  target_compile_definitions(PacketFileSender PRIVATE -DWIN32 -DBOOST_PROGRAM_OPTIONS_DYN_LINK=1)
+endif(WIN32)
 
 #-----------------------------------------------------------------------------
 # As we don't want our paraview pluging to have a dependancies to PythonQt we
