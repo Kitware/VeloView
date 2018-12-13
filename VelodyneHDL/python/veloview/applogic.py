@@ -1644,9 +1644,6 @@ def setupStatusBar():
     statusBar.addWidget(app.sensorInformationLabel)
 
 
-def setActionIcon(actionName, iconPath):
-    app.actions[actionName].setIcon(QtGui.QIcon(QtGui.QPixmap(iconPath)))
-
 def onGridProperties():
     if gridAdjustmentDialog.showDialog(getMainWindow(), app.grid, app.gridProperties):
         rep = smp.Show(app.grid, None)
@@ -2071,6 +2068,11 @@ def setupActions():
     for a in actions:
         app.actions[a.objectName] = a
 
+    app.actions['actionRecord'] = QtGui.QAction( \
+      QtGui.QIcon(QtGui.QPixmap(':/VelodyneHDLPlugin/media-record.png')), \
+      "actionRecord",\
+      mW)
+
     app.actions['actionIgnoreZeroDistances'].connect('triggered()', onIgnoreZeroDistances)
     app.actions['actionIntraFiringAdjust'].connect('triggered()', onIntraFiringAdjust)
     app.actions['actionIgnoreEmptyFrames'].connect('triggered()', onIgnoreEmptyFrames)
@@ -2155,8 +2157,9 @@ def setupActions():
     app.geolocationToolBar = geolocationToolBar
     
     # Setup and add the playback speed control toolbar
-    timeToolBar = mW.findChild('QToolBar','playbackToolbar')
+    timeToolBar = mW.findChild('QToolBar','Player Control')
 
+    timeToolBar.addAction(app.actions['actionRecord'])
     spinBoxLabel = QtGui.QLabel('TF:')
     spinBoxLabel.toolTip = "Number of trailing frames"
     timeToolBar.addWidget(spinBoxLabel)
