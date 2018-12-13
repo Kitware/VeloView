@@ -33,6 +33,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "ui_vvPlayerControlsToolbar.h"
 
+#include <limits>
+
 #include <QLabel>
 #include <QComboBox>
 #include <QSlider>
@@ -336,6 +338,9 @@ void vvPlayerControlsToolbar::setTimeStepCount(int value)
     QString("First Frame (%1)").arg(0));
   this->UI->actionLastFrame->setToolTip(
     QString("Last Frame (%1)").arg(value));
+
+  double time = vtkSMTimeKeeperProxy::GetLowerBoundTimeStep(this->timeKeeper(), std::numeric_limits<double>::max());
+  this->UI->timeSpinBox->setMaximum(time);
 }
 
 //-----------------------------------------------------------------------------
