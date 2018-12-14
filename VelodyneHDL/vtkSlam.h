@@ -565,6 +565,32 @@ private:
   // i.e the list of transforms computed
   std::vector<Eigen::Matrix<double, 6, 1> > TworldList;
 
+  // To recover the ego-motion we have to minimize the function
+  // f(R, T) = sum(d(point, line)^2) + sum(d(point, plane)^2). In both
+  // case the distance between the point and the line / plane can be
+  // writen (R*X+T - P).t * A * (R*X+T - P). Where X is the key point
+  // P is a point on the line / plane. A = (n*n.t) for a plane with n
+  // being the normal and A = (I - n*n.t)^2 for a line with n being
+  // a director vector of the line
+  // - Avalues will store the A matrix
+  // - Pvalues will store the P points
+  // - Xvalues will store the W points
+  // - residualCoefficient will attenuate the distance function for outliers
+  // - TimeValues store the time acquisition
+  std::vector<Eigen::Matrix<double, 3, 3> > Avalues;
+  std::vector<Eigen::Matrix<double, 3, 1> > Pvalues;
+  std::vector<Eigen::Matrix<double, 3, 1> > Xvalues;
+  std::vector<double> RadiusIncertitude;
+  std::vector<double> residualCoefficient;
+  std::vector<double> TimeValues;
+
+  // Histogram of the ICP matching rejection causes
+  std::vector<double> MatchRejectionHistogramPlane;
+  std::vector<double> MatchRejectionHistogramLine;
+  std::vector<double> MatchRejectionHistogramBlob;
+  int NrejectionCauses;
+  void ResetDistanceParameters();
+
   // external sensor (GPS, IMU, Camera SLAM, ...) to be
   // use to aid the SLAM algorithm. Note that without any
   // information about the variance / covariance of the measured
@@ -574,6 +600,10 @@ private:
   double VelocityNormCov;
   bool shouldBeRawTime;
   double CurrentTime;
+
+  // Display information about the keypoints - neighborhood
+  // mathching rejections
+  void RejectionInformationDisplay();
 
   // Add a default point to the trajectories
   void AddDefaultPoint(double x, double y, double z, double rx, double ry, double rz, double t);
@@ -628,40 +658,22 @@ private:
   // Transform the input point already undistort into Tworld.
   void TransformToWorld(Point& p, Eigen::Matrix<double, 6, 1>& T);
 
-  // From the input point p, find the nearest edge line from
-  // the previous point cloud keypoints
-  void FindEdgeLineMatch(Point p, pcl::KdTreeFLANN<Point>::Ptr kdtreePreviousEdges,
-                         std::vector<int>& matchEdgeIndex1, std::vector<int>& matchEdgeIndex2, int currentEdgeIndex,
-                         Eigen::Matrix<double, 3, 3> R, Eigen::Matrix<double, 3, 1> dT);
-
-  // From the input point p, find the nearest plane from the
-  // previous point cloud keypoints that match the input point
-  void FindPlaneMatch(Point p, pcl::KdTreeFLANN<Point>::Ptr kdtreePreviousPlanes,
-                      std::vector<int>& matchPlaneIndex1, std::vector<int>& matchPlaneIndex2,
-                      std::vector<int>& matchPlaneIndex3, int currentPlaneIndex,
-                      Eigen::Matrix<double, 3, 3> R, Eigen::Matrix<double, 3, 1> dT);
-
-  // From the line / plane match of the current keypoint, compute
-  // the parameters of the distance function. The distance function is
-  // (R*X+T - P).t * A * (R*X+T - P). These functions will compute the
-  // parameters P and A.
-  void ComputeLineDistanceParameters(std::vector<int>& matchEdgeIndex1, std::vector<int>& matchEdgeIndex2, unsigned int edgeIndex);
-  void ComputePlaneDistanceParameters(std::vector<int>& matchPlaneIndex1, std::vector<int>& matchPlaneIndex2, std::vector<int>& matchPlaneIndex3, unsigned int planarIndex);
-
-  // More accurate but slower
-  void ComputeLineDistanceParametersAccurate(pcl::KdTreeFLANN<Point>::Ptr kdtreePreviousEdges, Eigen::Matrix<double, 3, 3>& R,
+  // Match the current keypoint with its neighborhood in the map / previous
+  // frames. From this match we compute the point-to-neighborhood distance
+  // function: 
+  // (R * X + T - P).t * A * (R * X + T - P)
+  // Where P is the mean point of the neighborhood and A is the symmetric
+  // variance-covariance matrix encoding the shape of the neighborhood
+  int ComputeLineDistanceParameters(pcl::KdTreeFLANN<Point>::Ptr kdtreePreviousEdges, Eigen::Matrix<double, 3, 3>& R,
                                              Eigen::Matrix<double, 3, 1>& dT, Point p, std::string step);
-  void ComputePlaneDistanceParametersAccurate(pcl::KdTreeFLANN<Point>::Ptr kdtreePreviousPlanes, Eigen::Matrix<double, 3, 3>& R,
+  int ComputePlaneDistanceParameters(pcl::KdTreeFLANN<Point>::Ptr kdtreePreviousPlanes, Eigen::Matrix<double, 3, 3>& R,
                                               Eigen::Matrix<double, 3, 1>& dT, Point p, std::string step);
-  void ComputeBlobsDistanceParametersAccurate(pcl::KdTreeFLANN<Point>::Ptr kdtreePreviousBlobs, Eigen::Matrix<double, 3, 3>& R,
+  int ComputeBlobsDistanceParameters(pcl::KdTreeFLANN<Point>::Ptr kdtreePreviousBlobs, Eigen::Matrix<double, 3, 3>& R,
                                               Eigen::Matrix<double, 3, 1>& dT, Point p, std::string step);
 
   // we want to minimize F(R,T) = sum(fi(R,T)^2)
   // for a given i; fi is called a residual value and
   // the jacobian of fi is called the residual jacobian
-  void ComputeResidualValues(std::vector<Eigen::Matrix<double, 3, 3> >& vA, std::vector<Eigen::Matrix<double, 3, 1> >& vX,
-                             std::vector<Eigen::Matrix<double, 3, 1> >& vP, std::vector<double>& vS,
-                             Eigen::Matrix<double, 3, 3>& R, Eigen::Matrix<double, 3, 1>& dT, Eigen::MatrixXd& residuals);
   void ComputeResidualJacobians(std::vector<Eigen::Matrix<double, 3, 3> >& vA, std::vector<Eigen::Matrix<double, 3, 1> >& vX,
                                 std::vector<Eigen::Matrix<double, 3, 1> >& vP, std::vector<double> vS,
                                 Eigen::Matrix<double, 6, 1>& T, Eigen::MatrixXd& residualsJacobians);
@@ -671,14 +683,12 @@ private:
   // of the velodyne's lidar sensor
   void GetEgoMotionLineSpecificNeighbor(std::vector<int>& nearestValid, std::vector<float>& nearestValidDist,
                                         unsigned int nearestSearch, pcl::KdTreeFLANN<Point>::Ptr kdtreePreviousEdges, Point p);
-  void GetEgoMotionPlaneSpecificNeighbor();
 
   // Instead of taking the k-nearest neighbors in the mapping
   // step we will take specific neighbor using a sample consensus
   // model
   void GetMappingLineSpecificNeigbbor(std::vector<int>& nearestValid, std::vector<float>& nearestValidDist, double maxDistInlier,
                                         unsigned int nearestSearch, pcl::KdTreeFLANN<Point>::Ptr kdtreePreviousEdges, Point p);
-  void GetMappingPlaneSpecificNeigbbor();
 
   // All points of the current frame has been
   // acquired at a different timestamp. The goal
@@ -725,27 +735,6 @@ private:
   // using the current keypoints expressed in the
   // world reference frame coordinate system
   void UpdateMapsUsingTworld();
-
-  // To recover the ego-motion we have to minimize the function
-  // f(R, T) = sum(d(point, line)^2) + sum(d(point, plane)^2). In both
-  // case the distance between the point and the line / plane can be
-  // writen (R*X+T - P).t * A * (R*X+T - P). Where X is the key point
-  // P is a point on the line / plane. A = (n*n.t) for a plane with n
-  // being the normal and A = (I - n*n.t)^2 for a line with n being
-  // a director vector of the line
-  // - Avalues will store the A matrix
-  // - Pvalues will store the P points
-  // - Xvalues will store the W points
-  // - OutlierDistScale will attenuate the distance function for outliers
-  // - TimeValues store the time acquisition
-  std::vector<Eigen::Matrix<double, 3, 3> > Avalues;
-  std::vector<Eigen::Matrix<double, 3, 1> > Pvalues;
-  std::vector<Eigen::Matrix<double, 3, 1> > Xvalues;
-  std::vector<double> RadiusIncertitude;
-  std::vector<double> OutlierDistScale;
-  std::vector<double> TimeValues;
-  void ResetDistanceParameters();
-
 
   // Display infos
   template<typename T, typename Tvtk>
