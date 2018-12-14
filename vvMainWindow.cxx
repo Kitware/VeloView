@@ -61,8 +61,11 @@
 #include <pqVelodyneManager.h>
 #include <pqParaViewMenuBuilders.h>
 #include <pqTabbedMultiViewWidget.h>
+#include <pqSetName.h>
 #include <vtkPVPlugin.h>
 #include <vtkSMPropertyHelper.h>
+
+#include <pqLiveSourceBehavior.h>
 
 #include <QLabel>
 #include <QSplitter>
@@ -77,6 +80,7 @@
 #include <sstream>
 
 #include "vvConfig.h"
+#include "vvPlayerControlsToolbar.h"
 
 // Declare the plugin to load.
 PV_PLUGIN_IMPORT_INIT(VelodyneHDLPlugin);
@@ -112,6 +116,10 @@ private:
   {
     pqApplicationCore* core = pqApplicationCore::instance();
 
+    // need to be created before the first scene
+    QToolBar* vcrToolbar = new vvPlayerControlsToolbar(window)
+      << pqSetName("Player Control");
+
     // Register ParaView interfaces.
     pqInterfaceTracker* pgm = core->interfaceTracker();
     //    pgm->addInterface(new pqStandardViewModules(pgm));
@@ -126,7 +134,10 @@ private:
     //    new pqDefaultViewBehavior(window);
     new pqCrashRecoveryBehavior(window);
     new pqAutoLoadPluginXMLBehavior(window);
+    new pqDataTimeStepBehavior(window);
     new pqCommandLineOptionsBehavior(window);
+    new pqLiveSourceBehavior(window);
+
     pqApplyBehavior* applyBehaviors = new pqApplyBehavior(window);
 
     // Check if the settings are well formed i.e. if an OriginalMainWindow
@@ -267,6 +278,9 @@ private:
     this->Ui.spreadSheetDock->hide();
     this->Ui.informationDock->hide();
     this->Ui.memoryInspectorDock->hide();
+
+    // create toolbar
+    window->addToolBar(Qt::TopToolBarArea, vcrToolbar);
 
     // Setup the View menu. This must be setup after all toolbars and dockwidgets
     // have been created.
