@@ -197,17 +197,10 @@
    <attribute name="toolBarBreak">
     <bool>true</bool>
    </attribute>
-   <addaction name="actionReset_Camera"/>
    <addaction name="actionToggleProjection"/>
    <addaction name="actionMeasure"/>
    <addaction name="actionPlaneFit"/>
    <addaction name="separator"/>
-   <addaction name="actionSetViewXPlus"/>
-   <addaction name="actionSetViewXMinus"/>
-   <addaction name="actionSetViewYPlus"/>
-   <addaction name="actionSetViewYMinus"/>
-   <addaction name="actionSetViewZPlus"/>
-   <addaction name="actionSetViewZMinus"/>
   </widget>
   <widget class="QToolBar" name="geolocationToolbar">
    <property name="windowTitle">
@@ -406,18 +399,6 @@
     <string>F8</string>
    </property>
   </action>
-  <action name="actionReset_Camera">
-   <property name="icon">
-    <iconset resource="vvResources.qrc">
-     <normaloff>:/vvResources/Icons/pqResetCamera32.png</normaloff>:/vvResources/Icons/pqResetCamera32.png</iconset>
-   </property>
-   <property name="text">
-    <string>Reset Camera</string>
-   </property>
-   <property name="shortcut">
-    <string>R</string>
-   </property>
-  </action>
   <action name="actionClose">
    <property name="text">
     <string>&amp;Close Data</string>
@@ -554,78 +535,6 @@
    </property>
    <property name="toolTip">
     <string>Toggle between projective and orthogonal view</string>
-   </property>
-  </action>
-  <action name="actionSetViewXPlus">
-   <property name="icon">
-    <iconset resource="vvResources.qrc">
-     <normaloff>:/vvResources/Icons/pqXPlus32.png</normaloff>:/vvResources/Icons/pqXPlus32.png</iconset>
-   </property>
-   <property name="text">
-    <string>setViewXPlus</string>
-   </property>
-   <property name="toolTip">
-    <string>Set view direction to +X</string>
-   </property>
-  </action>
-  <action name="actionSetViewXMinus">
-   <property name="icon">
-    <iconset resource="vvResources.qrc">
-     <normaloff>:/vvResources/Icons/pqXMinus32.png</normaloff>:/vvResources/Icons/pqXMinus32.png</iconset>
-   </property>
-   <property name="text">
-    <string>setViewXMinus</string>
-   </property>
-   <property name="toolTip">
-    <string>Set view direction to -X</string>
-   </property>
-  </action>
-  <action name="actionSetViewYPlus">
-   <property name="icon">
-    <iconset resource="vvResources.qrc">
-     <normaloff>:/vvResources/Icons/pqYPlus32.png</normaloff>:/vvResources/Icons/pqYPlus32.png</iconset>
-   </property>
-   <property name="text">
-    <string>setViewYPlus</string>
-   </property>
-   <property name="toolTip">
-    <string>Set view direction to +Y</string>
-   </property>
-  </action>
-  <action name="actionSetViewYMinus">
-   <property name="icon">
-    <iconset resource="vvResources.qrc">
-     <normaloff>:/vvResources/Icons/pqYMinus32.png</normaloff>:/vvResources/Icons/pqYMinus32.png</iconset>
-   </property>
-   <property name="text">
-    <string>setViewYMinus</string>
-   </property>
-   <property name="toolTip">
-    <string>Set view direction to -Y</string>
-   </property>
-  </action>
-  <action name="actionSetViewZPlus">
-   <property name="icon">
-    <iconset resource="vvResources.qrc">
-     <normaloff>:/vvResources/Icons/pqZPlus32.png</normaloff>:/vvResources/Icons/pqZPlus32.png</iconset>
-   </property>
-   <property name="text">
-    <string>setViewZPlus</string>
-   </property>
-   <property name="toolTip">
-    <string>Set view direction to +Z</string>
-   </property>
-  </action>
-  <action name="actionSetViewZMinus">
-   <property name="icon">
-    <iconset resource="vvResources.qrc">
-     <normaloff>:/vvResources/Icons/pqZMinus32.png</normaloff>:/vvResources/Icons/pqZMinus32.png</iconset>
-   </property>
-   <property name="text">
-    <string>setViewZMinus</string>
-   </property>
-   <property name="toolTip">
-    <string>Set view direction to -Z</string>
    </property>
   </action>
   <action name="actionVeloViewUserGuide">

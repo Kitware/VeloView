@@ -64,7 +64,8 @@
 #include <pqSetName.h>
 #include <vtkPVPlugin.h>
 #include <vtkSMPropertyHelper.h>
-
+#include "pqAxesToolbar.h"
+#include "pqCameraToolbar.h"
 #include <pqLiveSourceBehavior.h>
 
 #include <QLabel>
@@ -119,6 +120,15 @@ private:
     // need to be created before the first scene
     QToolBar* vcrToolbar = new vvPlayerControlsToolbar(window)
       << pqSetName("Player Control");
+    window->addToolBar(Qt::TopToolBarArea, vcrToolbar);
+
+    QToolBar* cameraToolbar = new pqCameraToolbar(window)
+      << pqSetName("cameraToolbar");
+    window->addToolBar(Qt::TopToolBarArea, cameraToolbar);
+
+    QToolBar* axesToolbar = new pqAxesToolbar(window)
+      << pqSetName("axesToolbar");
+    window->addToolBar(Qt::TopToolBarArea, axesToolbar);
 
     // Register ParaView interfaces.
     pqInterfaceTracker* pgm = core->interfaceTracker();
@@ -279,21 +289,18 @@ private:
     this->Ui.informationDock->hide();
     this->Ui.memoryInspectorDock->hide();
 
-    // create toolbar
-    window->addToolBar(Qt::TopToolBarArea, vcrToolbar);
-
     // Setup the View menu. This must be setup after all toolbars and dockwidgets
     // have been created.
     pqParaViewMenuBuilders::buildViewMenu(*this->Ui.menuViews, *window);
 
     if (ENABLE_DEV_MODE_UI_VAR)
     {
-      /// If you want to automatically add toolbars for sources as requested in the
+      /// If you want to automatically add a menu for sources as requested in the
       /// configuration pass in a non-null main window.
       QMenu* sourceMenu = window->menuBar()->addMenu(tr("&Sources"));
       pqParaViewMenuBuilders::buildSourcesMenu(*sourceMenu, nullptr);
 
-      /// If you want to automatically add toolbars for filters as requested in the
+      /// If you want to automatically add a menu for filters as requested in the
       /// configuration pass in a non-null main window.
       QMenu* filterMenu = window->menuBar()->addMenu(tr("&Filters"));
       pqParaViewMenuBuilders:: buildFiltersMenu(*filterMenu, nullptr);
