@@ -416,6 +416,8 @@ private:
   // The undistortion will improve the accuracy but
   // the computation speed will decrease
   bool Undistortion;
+  vtkSmartPointer<vtkVelodyneTransformInterpolator> EgoMotionInterpolator;
+  vtkSmartPointer<vtkVelodyneTransformInterpolator> MappingInterpolator;
 
   // Size of the leafs in the voxel grid filter
   // used by the local maps
@@ -656,7 +658,7 @@ private:
   void Mapping();
 
   // Transform the input point already undistort into Tworld.
-  void TransformToWorld(Point& p, Eigen::Matrix<double, 6, 1>& T);
+  void TransformToWorld(Point& p);
 
   // Match the current keypoint with its neighborhood in the map / previous
   // frames. From this match we compute the point-to-neighborhood distance
@@ -700,14 +702,7 @@ private:
   // at time t0. The referential at time of acquisition t is estimated
   // using the constant velocity hypothesis and the provided sensor
   // position estimation
-  void ExpressPointInOtherReferencial(Point& p, vtkSmartPointer<vtkVelodyneTransformInterpolator> undistortionInterp);
-
-  // Express the keypoints into the referential of the sensor
-  // at time t1. The referential at time of acquisition t is estimated
-  // using the constant velocity hypothesis and the provided sensor
-  // position estimation
-  void ExpressKeypointsInEndFrameRefMapping();
-  void ExpressKeypointsInEndFrameRefEgoMotion();
+  void ExpressPointInOtherReferencial(Point& p, vtkSmartPointer<vtkVelodyneTransformInterpolator> transform);
 
   // Initialize the undistortion interpolator
   // for the EgoMotion part it is just an interpolation
