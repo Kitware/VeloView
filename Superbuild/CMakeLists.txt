@@ -3,7 +3,29 @@ cmake_minimum_required(VERSION 2.8.8)
 project(VeloViewSuperBuild)
 set (SuperBuild_CMAKE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/CMake")
 set (SuperBuild_PROJECTS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/Projects")
-set (SuperBuild_BINARY_DIR ${VeloViewSuperBuild_BINARY_DIR})
+set (SuperBuild_BINARY_DIR ${VeloViewSuperBuild_BINARY_DIR}) # required to do FindPackage(ParaView) inside Veloview's CMakeLists
+
+macro (superbuild_setup_variables)
+  include(SuperbuildVersionMacros)
+  # if (paraview_SOURCE_SELECTION STREQUAL "git")
+  #   # Assuming master; just use the latest version, but let the user set their
+  #   # own version in case it is actually a branch from some other version.
+  #   set(PARAVIEW_VERSION_DEFAULT "5.5.0"
+  #     CACHE STRING "The default version of ParaView to use if it cannot be detected")
+  #   mark_as_advanced(PARAVIEW_VERSION_DEFAULT)
+  #   set(paraview_default_version "${PARAVIEW_VERSION_DEFAULT}")
+  # elseif (paraview_SOURCE_SELECTION STREQUAL "source")
+  #   # If it is a git repo, we'll get it that way, otherwise we will look at the
+  #   # `version.txt` in the checkout.
+  #   set(paraview_default_version "")
+  # else ()
+  #   # The selection is the version number; use it.
+  #   set(paraview_default_version "${paraview_SOURCE_SELECTION}")
+  # endif()
+  # superbuild_set_version_variables(paraview "${paraview_default_version}" "paraview-version.cmake" "version.txt")
+  # set(paraview_version "${paraview_version_major}.${paraview_version_minor}")
+  set(paraview_version "5.4")
+endmacro ()
 
 #------------------------------------------------------------------------------
 # Set a default build type if none was specified
@@ -55,7 +77,6 @@ function (superbuild_find_projects var)
     pythonqt
     qt5
     veloview
-    veloview.bundle
     zlib
     )
 
@@ -91,6 +112,49 @@ if (WIN32)
     mark_as_advanced(DEVENV_PATH NMAKE_PATH)
   endif()
 endif()
+
+function (superbuild_add_packaging)
+  if (WIN32)
+    set(generators
+      ZIP
+      NSIS)
+  elseif (APPLE)
+    set(generators
+      DragNDrop)
+  else ()
+    set(generators
+      TGZ
+      TXZ)
+  endif ()
+  list(GET generators 0 default_generator)
+
+  if (USE_SYSTEM_qt5)
+    list(APPEND superbuild_export_variables
+      Qt5_DIR)
+  endif ()
+
+  # pass some variables that are required for packaging step:
+  list(APPEND superbuild_export_variables
+    PARAVIEW_VERSION
+    package_suffix
+    )
+
+  set(default_package veloview)
+  foreach (generator IN LISTS generators)
+      superbuild_add_extra_package_test(veloview "${generator}"
+      LABELS  "VeloView" # does not have to be ${SOFTWARE_NAME} I think
+      TIMEOUT 6400)
+  endforeach ()
+
+  if (default_package)
+    superbuild_enable_install_target("${default_package}/${default_generator}")
+  endif ()
+endfunction ()
+
+function (superbuild_add_tests)
+  # TODO: add existing tests
+  # add_subdirectory("${CMAKE_SOURCE_DIR}/tests" "${CMAKE_BINARY_DIR}/tests")
+endfunction ()
 
 # skiped module as defined in paraview superbuild.
 # One difference: pythonQt needs Multimedia so we don't skip it.
