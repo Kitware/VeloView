@@ -40,7 +40,7 @@ public:
 
   bool IsLidarPacket(unsigned char const * data, unsigned int dataLength) override;
 
-  vtkSmartPointer<vtkPolyData> CreateNewEmptyFrame(vtkIdType numberOfPoints) override;
+  vtkSmartPointer<vtkPolyData> CreateNewEmptyFrame(vtkIdType numberOfPoints, vtkIdType prereservedNumberOfPoints = 60000) override;
 
   void ResetCurrentFrame() override;
 
@@ -109,6 +109,7 @@ public:
   SensorType ReportedSensor;
   DualReturnSensorMode ReportedSensorReturnMode;
   bool IsHDL64Data;
+  bool IsVLS128;
   uint8_t ReportedFactoryField1;
   uint8_t ReportedFactoryField2;
 

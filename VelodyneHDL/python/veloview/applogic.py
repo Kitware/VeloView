@@ -39,6 +39,15 @@ _repCache = {}
 
 SAMPLE_PROCESSING_MODE = False
 
+def vtkGetFileNameFromPluginName(pluginName):
+  import os
+  if os.name == "nt":
+    return pluginName + ".dll";
+  elif sys.platform == "darwin":
+    return "lib" + pluginName + ".dylib";
+  else:
+    return "lib" + pluginName + ".so";
+
 def cachedGetRepresentation(src, view):
     try:
         return _repCache[(src, view)]
@@ -50,14 +59,7 @@ def cachedGetRepresentation(src, view):
 class AppLogic(object):
 
     def __init__(self):
-        self.playing = False
-        self.playDirection = 1
-        self.seekPlayDirection = 1
-        self.seekPlay = False
-        self.targetFps = 30
-        self.renderIsPending = False
         self.createStatusBarWidgets()
-        self.setupTimers()
 
         self.mousePressed = False
 
@@ -89,18 +91,8 @@ class AppLogic(object):
 
         self.gridProperties = None
 
-    def setupTimers(self):
-        self.playTimer = QtCore.QTimer()
-        self.playTimer.setSingleShot(True)
-        self.playTimer.connect('timeout()', onPlayTimer)
+        smp.LoadPlugin(vtkGetFileNameFromPluginName('PointCloudPlugin'))
 
-        self.seekTimer = QtCore.QTimer()
-        self.seekTimer.setSingleShot(True)
-        self.seekTimer.connect('timeout()', seekPressTimeout)
-
-        self.renderTimer = QtCore.QTimer()
-        self.renderTimer.setSingleShot(True)
-        self.renderTimer.connect('timeout()', forceRender)
 
     def createStatusBarWidgets(self):
 
@@ -113,22 +105,6 @@ class AppLogic(object):
         self.timeLabel = QtGui.QLabel()
         self.sensorInformationLabel = QtGui.QLabel()
 
-
-class IconPaths(object):
-
-    trailingFrames = ':/VelodyneHDLPlugin/trailingframes.png'
-    play = ':/VelodyneHDLPlugin/media-playback-start.png'
-    pause =':/VelodyneHDLPlugin/media-playback-pause.png'
-    seekForward = ':/VelodyneHDLPlugin/media-seek-forward.png'
-    seekForward2x = ':/VelodyneHDLPlugin/media-seek-forward-2x.png'
-    seekForwardHalfx = ':/VelodyneHDLPlugin/media-seek-forward-0.5x.png'
-    seekForwardQuarterx = ':/VelodyneHDLPlugin/media-seek-forward-0.25x.png'
-    seekForward3x = ':/VelodyneHDLPlugin/media-seek-forward-3x.png'
-    seekBackward = ':/VelodyneHDLPlugin/media-seek-backward.png'
-    seekBackward2x = ':/VelodyneHDLPlugin/media-seek-backward-2x.png'
-    seekBackward3x = ':/VelodyneHDLPlugin/media-seek-backward-3x.png'
-    seekBackwardHalfx = ':/VelodyneHDLPlugin/media-seek-backward-0.5x.png'
-    seekBackwardQuarterx = ':/VelodyneHDLPlugin/media-seek-backward-0.25x.png'
 
 class GridProperties:
 
@@ -184,8 +160,6 @@ def openData(filename):
     app.reader = reader
     app.filenameLabel.setText('File: %s' % os.path.basename(filename))
 
-    updateSliderTimeRange()
-    enablePlaybackActions()
     enableSaveActions()
     addRecentFile(filename)
     app.actions['actionSavePCAP'].setEnabled(False)
@@ -198,8 +172,6 @@ def openData(filename):
     app.actions['actionDualReturnIntensityHigh'].enabled = True
     app.actions['actionDualReturnIntensityLow'].enabled = True
     app.actions['actionShowRPM'].enabled = True
-
-    resetCamera()
 
 
 def planeFit():
@@ -435,7 +407,7 @@ def openSensor():
 
     initializeRPMText()
 
-    sensor = smp.VelodyneHDLStream(guiName='Data', CalibrationFile=calibrationFile, CacheSize=100)
+    sensor = smp.VelodyneHDLStream(guiName='Data', CalibrationFile=calibrationFile, CacheSize=1)
     sensor.GetClientSideObject().SetLIDARPort(LIDARPort)
     sensor.GetClientSideObject().EnableGPSListening(True)
     sensor.GetClientSideObject().SetGPSPort(GPSPort)
@@ -460,14 +432,16 @@ def openSensor():
     app.sensor = sensor
     app.colorByInitialized = False
     app.filenameLabel.setText('Live sensor stream (Port:'+str(LIDARPort)+')' )
-    enablePlaybackActions()
     enableSaveActions()
 
     onCropReturns(False) # Dont show the dialog just restore settings
     onLaserSelection(False)
 
     rep = smp.Show(sensor)
-    rep.InterpolateScalarsBeforeMapping = 0
+#    rep.InterpolateScalarsBeforeMapping = 0
+#    if app.sensor.GetClientSideObject().GetNumberOfChannels() == 128:
+#        rep.Representation = 'Point Cloud'
+#        rep.ColorArrayName = 'intensity'
 
     if SAMPLE_PROCESSING_MODE:
         prep = smp.Show(processor)
@@ -478,13 +452,12 @@ def openSensor():
 
     app.actions['actionShowRPM'].enabled = True
     app.actions['actionCorrectIntensityValues'].enabled = True
+    app.actions['actionFastRenderer'].enabled = True
 
     #Auto adjustment of the grid size with the distance resolution
     app.DistanceResolutionM = sensor.GetClientSideObject().GetDistanceResolutionM()
     app.actions['actionMeasurement_Grid'].setChecked(True)
     showMeasurementGrid()
-
-    play()
 
     # Always enable dual return mode selection. A warning will be raised if
     # there's no dual return on the current frame later on
@@ -628,15 +601,18 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
     smp.SetActiveView(app.mainView)
 
     rep.InterpolateScalarsBeforeMapping = 0
-    setDefaultLookupTables(reader)
+
+#    rep = smp.Show(reader)
+#    if app.reader.GetClientSideObject().GetNumberOfChannels() == 128:
+
+#        rep.ColorArrayName = 'intensity'
+#    #setDefaultLookupTables(reader)
     colorByIntensity(reader)
 
     initializeRPMText()
 
     showSourceInSpreadSheet(reader)
 
-    updateSliderTimeRange()
-    enablePlaybackActions()
     enableSaveActions()
     addRecentFile(filename)
     app.actions['actionRecord'].setEnabled(False)
@@ -656,6 +632,7 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
 
     app.actions['actionShowRPM'].enabled = True
     app.actions['actionCorrectIntensityValues'].enabled = True
+    app.actions['actionFastRenderer'].enabled = True
 
     #Auto adjustment of the grid size with the distance resolution
     app.DistanceResolutionM = reader.GetClientSideObject().GetDistanceResolutionM()
@@ -665,7 +642,6 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
 
     smp.SetActiveSource(reader)
     updatePosition()
-    resetCamera()
     updateUIwithNewFrame()
 
 
@@ -1209,7 +1185,6 @@ def close():
     app.gridProperties.LineWidth = app.grid.LineWidth
     app.gridProperties.Color = app.grid.Color
 
-    stop()
     hideRuler()
     unloadData()
     smp.Render(app.overheadView)
@@ -1226,8 +1201,6 @@ def close():
     app.filenameLabel.setText('')
     app.statusLabel.setText('')
     app.timeLabel.setText('')
-    updateSliderTimeRange()
-    disablePlaybackActions()
     disableSaveActions()
     app.actions['actionRecord'].setChecked(False)
     app.actions['actionDualReturnModeDual'].setChecked(True)
@@ -1242,92 +1215,7 @@ def close():
     app.actions['actionDualReturnIntensityHigh'].enabled = False
     app.actions['actionDualReturnIntensityLow'].enabled = False
     app.actions['actionCorrectIntensityValues'].enabled = False
-
-
-def seekForward():
-
-    if app.playing:
-        if app.playDirection < 0 or app.playDirection == 5:
-            app.playDirection = 0
-        app.playDirection += 1
-        updateSeekButtons()
-
-    else:
-        gotoNext()
-
-
-def seekBackward():
-
-    if app.playing:
-        if app.playDirection > 0 or app.playDirection == -5:
-            app.playDirection = 0
-        app.playDirection -= 1
-        updateSeekButtons()
-
-    else:
-        gotoPrevious()
-
-
-def seekPressTimeout():
-    app.seekPlay = True
-    onPlayTimer()
-
-
-def seekForwardPressed():
-    app.seekPlayDirection = 1
-    if not app.playing:
-        app.seekTimer.start(500)
-
-
-def seekForwardReleased():
-    app.seekTimer.stop()
-    app.seekPlay = False
-
-
-def seekBackwardPressed():
-    app.seekPlayDirection = -1
-    if not app.playing:
-        app.seekTimer.start(500)
-
-
-def seekBackwardReleased():
-    seekForwardReleased()
-
-
-def updateSeekButtons():
-
-    icons = {
-              -5 : IconPaths.seekBackwardQuarterx,
-              -4 : IconPaths.seekBackwardHalfx,
-              -3 : IconPaths.seekBackward3x,
-              -2 : IconPaths.seekBackward2x,
-              -1 : IconPaths.seekBackward,
-               1 : IconPaths.seekForward,
-               2 : IconPaths.seekForward2x,
-               3 : IconPaths.seekForward3x,
-               4 : IconPaths.seekForwardHalfx,
-               5 : IconPaths.seekForwardQuarterx,
-            }
-
-    setActionIcon('actionSeek_Backward', icons[app.playDirection] if app.playDirection < 0 else IconPaths.seekBackward)
-    setActionIcon('actionSeek_Forward', icons[app.playDirection] if app.playDirection > 0 else IconPaths.seekForward)
-
-    fpsMap = {-5:5, 5:5, -4:11, 4:11}
-    fpsDefault = 30
-    app.targetFps = fpsMap.get(app.playDirection, fpsDefault)
-
-
-def setPlaybackActionsEnabled(enabled):
-    for action in ('Play', 'Record', 'Seek_Forward', 'Seek_Backward', 'Go_To_Start', 'Go_To_End'):
-        app.actions['action'+action].setEnabled(enabled)
-
-
-def enablePlaybackActions():
-    setPlaybackActionsEnabled(True)
-
-
-def disablePlaybackActions():
-    setPlaybackActionsEnabled(False)
+    app.actions['actionFastRenderer'].enabled = False
 
 
 def _setSaveActionsEnabled(enabled):
@@ -1434,131 +1322,6 @@ def getNumberOfTimesteps():
     return getTimeKeeper().getNumberOfTimeStepValues()
 
 
-def togglePlay():
-    setPlayMode(not app.playing)
-
-def play():
-    setPlayMode(True)
-
-
-def stop():
-    setPlayMode(False)
-
-
-def onPlayTimer():
-
-    if app.playing or app.seekPlay:
-
-        startTime = vtk.vtkTimerLog.GetUniversalTime()
-
-        playbackTick()
-
-        rpmArray = None
-        targetPlaybackFps = app.targetFps
-        defaultRPM = 600
-        defaultFps = 200
-        currentFrameOriginalFps = defaultRPM / 60
-        # if the rpm is below this value, we consider
-        # that the computation has failed
-        minimalRPM = 10
-
-        # if we are in playback mode, compute the targetFps
-        # using the rpm of the current frame
-        if getReader():
-            if app.actions['actionStreamSlam'].isChecked():
-                setTransformMode(0)
-                slam.stream()
-                setTransformMode(1)
-
-            # Get the computed rpm of the current frame
-            rpmArray = getReader().GetClientSideObject().GetOutput().GetFieldData().GetArray('RotationPerMinute')
-
-            # If the rpm is available
-            if rpmArray:
-                rpm = rpmArray.GetTuple1(0)
-                if rpm > minimalRPM:
-                    currentFrameOriginalFps = rpm / 60
-
-            # Get the playback speed multiplier
-            playbackSpeed = str(app.PlaybackSpeed.currentText)
-
-            canConvertToFloat = True
-            try:
-                float(playbackSpeed)
-            except ValueError:
-                canConvertToFloat = False
-
-            # if the speed multiplier is set to default, we
-            # use the default target fps. Otherwise, we apply
-            # the multiplier to the current frame real fps
-            if (playbackSpeed == 'default') or (not canConvertToFloat):
-                targetPlaybackFps = defaultFps
-            else:
-                speedMultiplier = float(playbackSpeed)
-                targetPlaybackFps = speedMultiplier * currentFrameOriginalFps
-
-        # if we are in live mode, we want to read the frames using
-        # the standard fps
-        if getSensor():
-            targetPlaybackFps = defaultFps
-
-        fpsDelayMilliseconds = int(1000.0 / targetPlaybackFps)
-        elapsedMilliseconds = int((vtk.vtkTimerLog.GetUniversalTime() - startTime)*1000.0)
-
-        if elapsedMilliseconds > 0:
-            fps = 1000.0/elapsedMilliseconds
-            app.fps[0] += fps
-            app.fps[1] += 1
-
-        waitMilliseconds = fpsDelayMilliseconds - elapsedMilliseconds
-        app.playTimer.start(max(waitMilliseconds,0))
-
-
-def setPlayMode(mode):
-
-    if not getLidar():
-        return
-
-    app.playing = mode
-
-    if mode:
-        startStream()
-        setActionIcon('actionPlay', IconPaths.pause)
-        app.playTimer.start(33)
-        if app.scene.AnimationTime == app.scene.EndTime:
-            app.scene.AnimationTime = app.scene.StartTime
-
-    else:
-        stopStream()
-        setActionIcon('actionPlay', IconPaths.play)
-        app.playDirection = 1
-        updateSeekButtons()
-
-
-def gotoStart():
-    pollSource()
-    app.scene.GoToFirst()
-    updatePosition()
-
-
-def gotoEnd():
-    pollSource()
-    app.scene.GoToLast()
-    updatePosition()
-
-
-def gotoNext():
-    pollSource()
-    app.scene.GoToNext()
-    updatePosition()
-
-
-def gotoPrevious():
-    pollSource()
-    app.scene.GoToPrevious()
-    updatePosition()
-
-
 def updatePosition():
     reader = getReader()
     pos = getPosition()
@@ -1595,54 +1358,6 @@ def updatePosition():
             rep.Orientation = currentTransform.GetOrientation()
 
     showRPM()
-
-
-def playbackTick():
-
-    sensor = getSensor()
-    reader = getReader()
-    view = smp.GetActiveView()
-
-    if sensor is not None:
-        timesteps = getCurrentTimesteps()
-        if not timesteps:
-            return
-
-        if view.ViewTime == timesteps[-1]:
-            return
-
-        if not app.colorByInitialized:
-            sensor.UpdatePipeline()
-            if colorByIntensity(sensor):
-                app.colorByInitialized = True
-                resetCamera()
-
-        app.scene.GoToLast()
-
-    elif reader is not None:
-
-        numberOfTimesteps = getNumberOfTimesteps()
-        if not numberOfTimesteps:
-            return
-
-        step = app.seekPlayDirection if app.seekPlay else app.playDirection
-        stepMap = {4:1, 5:1, -4:-1, -5:-1}
-        step = stepMap.get(step, step)
-        newTime = app.scene.AnimationTime + step
-
-        if app.actions['actionLoop'].isChecked():
-            newTime = newTime % numberOfTimesteps
-        else:
-            newTime = max(app.scene.StartTime, min(newTime, app.scene.EndTime))
-
-            # stop playback when it reaches the first or last timestep
-            if newTime in (app.scene.StartTime, app.scene.EndTime):
-                stop()
-
-        app.scene.AnimationTime = newTime
-        # TODO: For sensor as well?
-        updatePosition()
-
 
 def unloadData():
     _repCache.clear()
@@ -1740,38 +1455,6 @@ def onCropReturns(show = True):
         lidar.CropRegion = [p1.x(), p2.x(), p1.y(), p2.y(), p1.z(), p2.z()]
         if show:
             smp.Render()
-
-def resetCamera():
-
-
-    def subtract(a, b):
-        result = range(3)
-        vtk.vtkMath.Subtract(a, b, result)
-        return result
-
-    def cross(a, b):
-        result = range(3)
-        vtk.vtkMath.Cross(a, b, result)
-        return result
-
-    view = smp.GetActiveView()
-
-    foc = list(view.CenterOfRotation)
-    pos = list(view.CameraPosition)
-
-    viewDirection = subtract(foc, pos)
-
-    view.CameraPosition = subtract([0, 0, 0], viewDirection)
-    view.CameraFocalPoint = [0, 0, 0]
-    view.CenterOfRotation = [0, 0, 0]
-
-    vtk.vtkMath.Normalize(viewDirection)
-
-    perp = cross(viewDirection, [0, 0, 1])
-    viewUp = cross(perp, viewDirection)
-    view.CameraViewUp = viewUp
-
-    view.StillRender()
 
 
 def resetCameraToBirdsEyeView(view=None):
@@ -1897,18 +1580,15 @@ def start():
     resetCameraToForwardView()
 
     setupActions()
-    disablePlaybackActions()
     disableSaveActions()
     app.actions['actionSelectDualReturn'].setEnabled(False)
     app.actions['actionLaunchSlam'].setEnabled(False)
     app.actions['actionStreamSlam'].enabled = False
     app.actions['actionMeasure'].setEnabled(view.CameraParallelProjection)
     setupStatusBar()
-    setupTimeSliderWidget()
     hideColorByComponent()
     restoreNativeFileDialogsAction()
     updateRecentFiles()
-    getTimeKeeper().connect('timeChanged()', onTimeChanged)
 
     initializeRPMText()
 
@@ -1933,10 +1613,6 @@ def getPVSettings():
 
 def getTimeKeeper():
     return getPVApplicationCore().getActiveServer().getTimeKeeper()
-
-
-def getPlaybackToolBar():
-    return findQObjectByName(getMainWindow().children(), 'playbackToolbar')
 
 
 def quit():
@@ -1965,59 +1641,6 @@ def onFiringsSkipChanged(pr):
         smp.Render()
         smp.Render(getSpreadSheetViewProxy())
 
-def setupTimeSliderWidget():
-
-    frame = QtGui.QWidget()
-    layout = QtGui.QHBoxLayout(frame)
-    spinBox = QtGui.QSpinBox()
-    spinBox.setMinimum(0)
-    spinBox.setMaximum(100)
-    spinBox.setValue(0)
-    slider = QtGui.QSlider(QtCore.Qt.Horizontal)
-    slider.setMaximumWidth(160)
-    slider.connect('valueChanged(int)', onTimeSliderChanged)
-    spinBox.connect('valueChanged(int)', onTimeSliderChanged)
-    slider.setEnabled(False)
-    spinBox.setEnabled(False)
-    layout.addWidget(slider)
-    layout.addWidget(spinBox)
-    layout.addStretch()
-
-    toolbar = getPlaybackToolBar()
-    toolbar.addWidget(frame)
-    app.timeSlider = slider
-    app.timeSpinBox = spinBox
-
-
-def updateSliderTimeRange():
-    frame = int(app.scene.AnimationTime)
-    lastFrame = int(app.scene.EndTime)
-
-    for widget in (app.timeSlider, app.timeSpinBox):
-        widget.setMinimum(0)
-        widget.setMaximum(lastFrame)
-        widget.setSingleStep(1)
-        if hasattr(widget, 'setPageStep'):
-            widget.setPageStep(10)
-        widget.setValue(frame)
-        widget.setEnabled(getNumberOfTimesteps())
-
-
-def scheduleRender():
-    if not app.renderIsPending:
-        app.renderIsPending = True
-        app.renderTimer.start(33)
-
-
-def forceRender():
-    smp.Render()
-    app.renderIsPending = False
-
-
-def onTimeSliderChanged(frame):
-    app.scene.AnimationTime = frame
-    updatePosition()
-
 
 def setupStatusBar():
 
@@ -2029,18 +1652,6 @@ def setupStatusBar():
     statusBar.addWidget(app.sensorInformationLabel)
 
 
-def setActionIcon(actionName, iconPath):
-    app.actions[actionName].setIcon(QtGui.QIcon(QtGui.QPixmap(iconPath)))
-
-
-def onTimeChanged():
-    frame = int(getTimeKeeper().getTime())
-    for widget in (app.timeSlider, app.timeSpinBox):
-        widget.blockSignals(True)
-        widget.setValue(frame)
-        widget.blockSignals(False)
-    updateUIwithNewFrame()
-
 def onGridProperties():
     if gridAdjustmentDialog.showDialog(getMainWindow(), app.grid, app.gridProperties):
         rep = smp.Show(app.grid, None)
@@ -2051,7 +1662,7 @@ def onGridProperties():
 
 
 def onLaserSelection(show = True):
-    nchannels = 64
+    nchannels = 128
     oldmask = [1] * nchannels
     reader = getReader()
     sensor = getSensor()
@@ -2440,53 +2051,6 @@ def toggleMotionDetection():
     motionDetector = smp.MotionDetector(reader)
     motionDetector.UpdatePipeline()
 
-def setViewTo(axis,sign):
-    view = smp.GetActiveView()
-    viewUp = view.CameraViewUp
-    position = view.CameraPosition
-
-    norm = math.sqrt(math.pow(position[0],2) + math.pow(position[1],2) + math.pow(position[2],2))
-
-    if axis == 'X':
-        view.CameraViewUp = [0,0,1]
-        view.CameraPosition = [-1*sign*norm,0,0]
-    elif axis == 'Y':
-        view.CameraViewUp = [0,0,1]
-        view.CameraPosition = [0,-1*sign*norm,0]
-    elif axis == 'Z':
-        view.CameraViewUp = [0,1,0]
-        view.CameraPosition = [0,0,-1*sign*norm]
-
-    view.CameraFocalPoint = [0,0,0]
-    view.CenterOfRotation = [0,0,0]
-
-    view.ResetCamera()
-    smp.Render()
-
-
-def setViewToXPlus():
-    setViewTo('X',1)
-
-
-def setViewToXMinus():
-    setViewTo('X',-1)
-
-
-def setViewToYPlus():
-    setViewTo('Y',1)
-
-
-def setViewToYMinus():
-    setViewTo('Y',-1)
-
-
-def setViewToZPlus():
-    setViewTo('Z',1)
-
-
-def setViewToZMinus():
-    setViewTo('Z',-1)
-
 def setFilterToDual():
     setFilterTo(0)
 
@@ -2546,13 +2110,27 @@ def geolocationChanged(setting):
     updatePosition()
     smp.Render(view=app.mainView)
 
+def fastRendererChanged():
+    """ Enable/Disable fast rendering by using the point cloud representation (currently only for VLS-128)
+    this representation hardcode the color map and their LookUpTable, which improve execution speed significantly """
+
+    source = getReader() or getSensor()
+    rep = smp.Show(source)
+
+    if app.actions['actionFastRenderer'].isChecked():
+        rep.Representation = 'Point Cloud'
+    else:
+        rep.Representation = 'Surface'
+
+    # Workaround to force the refresh for all the views
+    # todo
+
 def intensitiesCorrectedChanged():
     lidar = getLidar()
     if lidar:
         lidar.GetClientSideObject().SetIntensitiesCorrected(app.actions['actionCorrectIntensityValues'].isChecked())
     # Workaround to force the refresh for all the views
-    seekForward()
-    seekBackward()
+    # todo
 
 
 def setupActions():
@@ -2565,6 +2143,11 @@ def setupActions():
     for a in actions:
         app.actions[a.objectName] = a
 
+    app.actions['actionRecord'] = QtGui.QAction( \
+      QtGui.QIcon(QtGui.QPixmap(':/VelodyneHDLPlugin/media-record.png')), \
+      "actionRecord",\
+      mW)
+
     app.actions['actionIgnoreZeroDistances'].connect('triggered()', onIgnoreZeroDistances)
     app.actions['actionIntraFiringAdjust'].connect('triggered()', onIntraFiringAdjust)
     app.actions['actionIgnoreEmptyFrames'].connect('triggered()', onIgnoreEmptyFrames)
@@ -2572,7 +2155,6 @@ def setupActions():
     app.actions['actionPlaneFit'].connect('triggered()', planeFit)
 
     app.actions['actionClose'].connect('triggered()', close)
-    app.actions['actionPlay'].connect('triggered()', togglePlay)
     app.actions['actionRecord'].connect('triggered()', onRecord)
     app.actions['actionSaveCSV'].connect('triggered()', onSaveCSV)
     app.actions['actionSavePositionCSV'].connect('triggered()', onSavePosition)
@@ -2580,15 +2162,10 @@ def setupActions():
     app.actions['actionSavePCAP'].connect('triggered()', onSavePCAP)
     app.actions['actionSaveScreenshot'].connect('triggered()', onSaveScreenshot)
     app.actions['actionExport_To_KiwiViewer'].connect('triggered()', onKiwiViewerExport)
-    app.actions['actionReset_Camera'].connect('triggered()', resetCamera)
     app.actions['actionGrid_Properties'].connect('triggered()', onGridProperties)
     app.actions['actionLaserSelection'].connect('triggered()', onLaserSelection)
     app.actions['actionChoose_Calibration_File'].connect('triggered()', onChooseCalibrationFile)
     app.actions['actionCropReturns'].connect('triggered()', onCropReturns)
-    app.actions['actionSeek_Forward'].connect('triggered()', seekForward)
-    app.actions['actionSeek_Backward'].connect('triggered()', seekBackward)
-    app.actions['actionGo_To_End'].connect('triggered()', gotoEnd)
-    app.actions['actionGo_To_Start'].connect('triggered()', gotoStart)
     app.actions['actionNative_File_Dialogs'].connect('triggered()', onNativeFileDialogsAction)
     app.actions['actionAbout_VeloView'].connect('triggered()', onAbout)
     app.actions['actionVeloViewDeveloperGuide'].connect('triggered()', onDeveloperGuide)
@@ -2596,13 +2173,6 @@ def setupActions():
 
     app.actions['actionToggleProjection'].connect('triggered()', toggleProjectionType)
     app.actions['actionMeasure'].connect('triggered()', toggleRulerContext)
-
-    app.actions['actionSetViewXPlus'].connect('triggered()', setViewToXPlus)
-    app.actions['actionSetViewXMinus'].connect('triggered()', setViewToXMinus)
-    app.actions['actionSetViewYPlus'].connect('triggered()', setViewToYPlus)
-    app.actions['actionSetViewYMinus'].connect('triggered()', setViewToYMinus)
-    app.actions['actionSetViewZPlus'].connect('triggered()', setViewToZPlus)
-    app.actions['actionSetViewZMinus'].connect('triggered()', setViewToZMinus)
 
     app.actions['actionDualReturnModeDual'].connect('triggered()', setFilterToDual)
     app.actions['actionDualReturnDistanceNear'].connect('triggered()', setFilterToDistanceNear)
@@ -2612,6 +2182,7 @@ def setupActions():
     app.actions['actionShowRPM'].connect('triggered()', toggleRPM)
     app.actions['actionEnableCrashAnalysis'].connect('triggered()',toggleCrashAnalysis)
     app.actions['actionCorrectIntensityValues'].connect('triggered()',intensitiesCorrectedChanged)
+    app.actions['actionFastRenderer'].connect('triggered()',fastRendererChanged)
     app.actions['actionSelectDualReturn'].connect('triggered()',toggleSelectDualReturn)
     app.actions['actionSelectDualReturn2'].connect('triggered()',toggleSelectDualReturn)
 
@@ -2662,28 +2233,9 @@ def setupActions():
     app.geolocationToolBar = geolocationToolBar
     
     # Setup and add the playback speed control toolbar
-    timeToolBar = mW.findChild('QToolBar','playbackToolbar')
+    timeToolBar = mW.findChild('QToolBar','Player Control')
 
-    PlaybackSpeedLabel = QtGui.QLabel('Speed: x')
-    PlaybackSpeedLabel.setObjectName('PlaybackSpeedLabel')
-    timeToolBar.addWidget(PlaybackSpeedLabel)
-    
-    PlaybackSpeedComboBox = QtGui.QComboBox()
-    PlaybackSpeedComboBox.setObjectName('PlaybackSpeedCombobox')
-    PlaybackSpeedComboBox.toolTip = "Playback speed multiplier"
-    PlaybackSpeedComboBox.addItem("0.1")
-    PlaybackSpeedComboBox.addItem("0.5")
-    PlaybackSpeedComboBox.addItem("1")
-    PlaybackSpeedComboBox.addItem("1.5")
-    PlaybackSpeedComboBox.addItem("2")
-    PlaybackSpeedComboBox.addItem("4")
-    PlaybackSpeedComboBox.addItem("8")
-    PlaybackSpeedComboBox.addItem("16")
-    PlaybackSpeedComboBox.addItem("default")
-    PlaybackSpeedComboBox.setCurrentIndex(PlaybackSpeedComboBox.count - 1)
-    timeToolBar.addWidget(PlaybackSpeedComboBox)
-    app.PlaybackSpeed = PlaybackSpeedComboBox
-    
+    timeToolBar.addAction(app.actions['actionRecord'])
     spinBoxLabel = QtGui.QLabel('TF:')
     spinBoxLabel.toolTip = "Number of trailing frames"
     timeToolBar.addWidget(spinBoxLabel)
@@ -2712,16 +2264,6 @@ def setupActions():
     app.actions['actionFiringsSkipSelector'] = timeToolBar.addWidget(FiringsSkipBox)
     app.actions['actionFiringsSkipSelector'].setVisible(True)
 
-    buttons = {}
-    for button in getPlaybackToolBar().findChildren('QToolButton'):
-        buttons[button.text] = button
-
-    buttons['Seek Forward'].connect('pressed()', seekForwardPressed)
-    buttons['Seek Forward'].connect('released()', seekForwardReleased)
-
-    buttons['Seek Backward'].connect('pressed()', seekBackwardPressed)
-    buttons['Seek Backward'].connect('released()', seekBackwardReleased)
-
     displayWidget = getMainWindow().findChild('vvColorToolbar').findChild('pqDisplayColorWidget')
     displayWidget.connect('arraySelectionChanged ()',adjustScalarBarRangeLabelFormat)
     app.actions['actionScalarBarVisibility'].connect('triggered()',adjustScalarBarRangeLabelFormat)
@@ -2729,7 +2271,6 @@ def setupActions():
     app.MainToolbar = getMainWindow().findChild('QToolBar','toolBar')
     app.ColorToolbar = getMainWindow().findChild('QToolBar','colorToolBar')
     app.PlaybackToolbar = timeToolBar
-    app.ViewToolbar = getMainWindow().findChild('QToolBar','viewSettings')
     app.GeolocationToolbar = getMainWindow().findChild('QToolBar','geolocationToolbar')
 
 
@@ -2808,15 +2349,15 @@ def onIgnoreEmptyFrames():
     # Apply it to the current source if any
     lidar = getLidar()
 
-    if ldiar:
-        source.GetClientSideObject().SetIgnoreEmptyFrames(ignoreEmptyFrames)
+    if lidar:
+        lidar.GetClientSideObject().SetIgnoreEmptyFrames(ignoreEmptyFrames)
         reloadCurrentFrame()
 
 
 def reloadCurrentFrame():
     lidar = getLidar()
     if lidar:
-        lidar.DummyProperty = not source.DummyProperty
+        lidar.DummyProperty = not lidar.DummyProperty
         smp.Render()
         smp.Render(getSpreadSheetViewProxy())
     updateUIwithNewFrame()

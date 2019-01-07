@@ -24,7 +24,7 @@
      <x>0</x>
      <y>0</y>
      <width>1070</width>
-     <height>20</height>
+     <height>25</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -92,6 +92,7 @@
       <string>Processing Options</string>
      </property>
      <addaction name="actionCorrectIntensityValues"/>
+     <addaction name="actionFastRenderer"/>
      <addaction name="actionIgnoreZeroDistances"/>
      <addaction name="actionIntraFiringAdjust"/>
      <addaction name="actionIgnoreEmptyFrames"/>
@@ -123,8 +124,6 @@
     <addaction name="actionMergeTransforms"/>
     <addaction name="menuProcessing_Options"/>
     <addaction name="separator"/>
-    <addaction name="actionPlay"/>
-    <addaction name="actionRecord"/>
     <addaction name="separator"/>
     <addaction name="actionPython_Console"/>
     <addaction name="actionShowErrorDialog"/>
@@ -138,7 +137,7 @@
     <property name="title">
      <string>Help</string>
     </property>
-    <action name="actionResetConfigurationFile">
+    <action name="actionResetDefaultSettings">
      <property name="text">
       <string>Reset Veloview settings</string>
      </property>
@@ -150,29 +149,16 @@
     <addaction name="separator"/>
     <addaction name="actionVeloViewUserGuide"/>
     <addaction name="actionVeloViewDeveloperGuide"/>
-    <addaction name="actionResetConfigurationFile"/>
+    <addaction name="actionResetDefaultSettings"/>
    </widget>
-   <widget class="QMenu" name="menuToolbar">
+   <widget class="QMenu" name="menuViews">
     <property name="title">
-     <string>Toolbars</string>
+     <string>Views</string>
     </property>
-    <addaction name="actionBasic_Controls"/>
-    <addaction name="actionColor_Controls"/>
-    <addaction name="actionView_Controls"/>
-    <addaction name="actionPlayback_Controls"/>
-    <addaction name="actionGeolocation_Controls"/>
-   </widget>
-   <widget class="QMenu" name="menuView">
-    <property name="title">
-     <string>View</string>
-    </property>
-    <addaction name="actionShowPipelineBrowser"/>
-    <addaction name="actionShowPropertiesPanel"/>
    </widget>
    <addaction name="menu_File"/>
    <addaction name="menuTools"/>
-   <addaction name="menuToolbar"/>
-   <addaction name="menuView"/>
+   <addaction name="menuViews"/>
    <addaction name="menuHelp"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
@@ -208,24 +194,6 @@
     <bool>false</bool>
    </attribute>
   </widget>
-  <widget class="QToolBar" name="playbackToolbar">
-   <property name="windowTitle">
-    <string>Playback Controls</string>
-   </property>
-   <attribute name="toolBarArea">
-    <enum>TopToolBarArea</enum>
-   </attribute>
-   <attribute name="toolBarBreak">
-    <bool>false</bool>
-   </attribute>
-   <addaction name="actionGo_To_Start"/>
-   <addaction name="actionSeek_Backward"/>
-   <addaction name="actionPlay"/>
-   <addaction name="actionSeek_Forward"/>
-   <addaction name="actionGo_To_End"/>
-   <addaction name="actionLoop"/>
-   <addaction name="actionRecord"/>
-  </widget>
   <widget class="QToolBar" name="viewSettings">
    <property name="windowTitle">
     <string>View Controls</string>
@@ -236,17 +204,10 @@
    <attribute name="toolBarBreak">
     <bool>true</bool>
    </attribute>
-   <addaction name="actionReset_Camera"/>
    <addaction name="actionToggleProjection"/>
    <addaction name="actionMeasure"/>
    <addaction name="actionPlaneFit"/>
    <addaction name="separator"/>
-   <addaction name="actionSetViewXPlus"/>
-   <addaction name="actionSetViewXMinus"/>
-   <addaction name="actionSetViewYPlus"/>
-   <addaction name="actionSetViewYMinus"/>
-   <addaction name="actionSetViewZPlus"/>
-   <addaction name="actionSetViewZMinus"/>
   </widget>
   <widget class="QToolBar" name="geolocationToolbar">
    <property name="windowTitle">
@@ -280,7 +241,7 @@
    <attribute name="dockWidgetArea">
     <number>2</number>
    </attribute>
-   <widget class="pqPipelineBrowserWidget" name="dockWidgetContents"/>
+   <widget class="pqPipelineBrowserWidget" name="pipelineBrowser"/>
   </widget>
   <widget class="QDockWidget" name="propertiesPanelDock">
    <property name="features">
@@ -292,7 +253,43 @@
    <attribute name="dockWidgetArea">
     <number>2</number>
    </attribute>
-   <widget class="pqPropertiesPanel" name="dockWidgetContents_2"/>
+   <widget class="pqPropertiesPanel" name="propertiesPanel"/>
+  </widget>
+  <widget class="QDockWidget" name="spreadSheetDock">
+   <property name="windowTitle">
+    <string>SpreadSheet</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>2</number>
+   </attribute>
+   <widget class="QWidget" name="spreadSheet"/>
+  </widget>
+  <widget class="QDockWidget" name="memoryInspectorDock">
+   <property name="windowTitle">
+    <string>Memory Inspector</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>2</number>
+   </attribute>
+   <widget class="pqMemoryInspectorPanel" name="memoryInspectorPanel"/>
+  </widget>
+  <widget class="QDockWidget" name="informationDock">
+   <property name="windowTitle">
+    <string>Information</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>1</number>
+   </attribute>
+   <widget class="pqProxyInformationWidget" name="proxyInformationWidget"/>
+  </widget>
+  <widget class="QDockWidget" name="overheadViewDock">
+   <property name="windowTitle">
+    <string>Overhead View</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>2</number>
+   </attribute>
+   <widget class="QWidget" name="overheadView"/>
   </widget>
   <action name="actionE_xit">
    <property name="text">
@@ -307,7 +304,7 @@
   </action>
   <action name="actionOpenPcap">
    <property name="icon">
-    <iconset resource="VelodyneHDL/images/resources.qrc">
+    <iconset>
      <normaloff>:/VelodyneHDLPlugin/WiresharkDoc-128.png</normaloff>:/VelodyneHDLPlugin/WiresharkDoc-128.png</iconset>
    </property>
    <property name="text">
@@ -370,7 +367,7 @@
   </action>
   <action name="actionOpen_Sensor_Stream">
    <property name="icon">
-    <iconset resource="VelodyneHDL/images/resources.qrc">
+    <iconset>
      <normaloff>:/VelodyneHDLPlugin/velodyne_hdl.png</normaloff>:/VelodyneHDLPlugin/velodyne_hdl.png</iconset>
    </property>
    <property name="text">
@@ -379,61 +376,16 @@
   </action>
   <action name="actionChoose_Calibration_File">
    <property name="icon">
-    <iconset resource="VelodyneHDL/images/resources.qrc">
+    <iconset>
      <normaloff>:/VelodyneHDLPlugin/calibrate.png</normaloff>:/VelodyneHDLPlugin/calibrate.png</iconset>
    </property>
    <property name="text">
     <string>Choose &amp;Calibration File...</string>
    </property>
   </action>
-  <action name="actionSeek_Backward">
-   <property name="icon">
-    <iconset resource="VelodyneHDL/images/resources.qrc">
-     <normaloff>:/VelodyneHDLPlugin/media-seek-backward.png</normaloff>:/VelodyneHDLPlugin/media-seek-backward.png</iconset>
-   </property>
-   <property name="text">
-    <string>Seek Backward</string>
-   </property>
-   <property name="toolTip">
-    <string>Seek Backward</string>
-   </property>
-   <property name="shortcut">
-    <string>Left</string>
-   </property>
-  </action>
-  <action name="actionPlay">
-   <property name="icon">
-    <iconset resource="VelodyneHDL/images/resources.qrc">
-     <normaloff>:/VelodyneHDLPlugin/media-playback-start.png</normaloff>:/VelodyneHDLPlugin/media-playback-start.png</iconset>
-   </property>
-   <property name="text">
-    <string>Play</string>
-   </property>
-   <property name="toolTip">
-    <string>Play</string>
-   </property>
-   <property name="shortcut">
-    <string>Space</string>
-   </property>
-  </action>
-  <action name="actionSeek_Forward">
-   <property name="icon">
-    <iconset resource="VelodyneHDL/images/resources.qrc">
-     <normaloff>:/VelodyneHDLPlugin/media-seek-forward.png</normaloff>:/VelodyneHDLPlugin/media-seek-forward.png</iconset>
-   </property>
-   <property name="text">
-    <string>Seek Forward</string>
-   </property>
-   <property name="toolTip">
-    <string>Seek Forward</string>
-   </property>
-   <property name="shortcut">
-    <string>Right</string>
-   </property>
-  </action>
   <action name="actionPause">
    <property name="icon">
-    <iconset resource="VelodyneHDL/images/resources.qrc">
+    <iconset>
      <normaloff>:/VelodyneHDLPlugin/media-playback-pause.png</normaloff>:/VelodyneHDLPlugin/media-playback-pause.png</iconset>
    </property>
    <property name="text">
@@ -441,18 +393,6 @@
    </property>
    <property name="shortcut">
     <string>Space</string>
-   </property>
-  </action>
-  <action name="actionRecord">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="icon">
-    <iconset resource="VelodyneHDL/images/resources.qrc">
-     <normaloff>:/VelodyneHDLPlugin/media-record.png</normaloff>:/VelodyneHDLPlugin/media-record.png</iconset>
-   </property>
-   <property name="text">
-    <string>Record</string>
    </property>
   </action>
   <action name="actionPython_Console">
@@ -465,18 +405,6 @@
    </property>
    <property name="shortcut">
     <string>F8</string>
-   </property>
-  </action>
-  <action name="actionReset_Camera">
-   <property name="icon">
-    <iconset resource="vvResources.qrc">
-     <normaloff>:/vvResources/Icons/pqResetCamera32.png</normaloff>:/vvResources/Icons/pqResetCamera32.png</iconset>
-   </property>
-   <property name="text">
-    <string>Reset Camera</string>
-   </property>
-   <property name="shortcut">
-    <string>R</string>
    </property>
   </action>
   <action name="actionClose">
@@ -504,24 +432,6 @@
     <string>Ctrl+G</string>
    </property>
   </action>
-  <action name="actionGo_To_Start">
-   <property name="icon">
-    <iconset resource="VelodyneHDL/images/resources.qrc">
-     <normaloff>:/VelodyneHDLPlugin/media-skip-backward.png</normaloff>:/VelodyneHDLPlugin/media-skip-backward.png</iconset>
-   </property>
-   <property name="text">
-    <string>Go To Start</string>
-   </property>
-  </action>
-  <action name="actionGo_To_End">
-   <property name="icon">
-    <iconset resource="VelodyneHDL/images/resources.qrc">
-     <normaloff>:/VelodyneHDLPlugin/media-skip-forward.png</normaloff>:/VelodyneHDLPlugin/media-skip-forward.png</iconset>
-   </property>
-   <property name="text">
-    <string>Go To End</string>
-   </property>
-  </action>
   <action name="actionSaveScreenshot">
    <property name="text">
     <string>Save &amp;Screenshot...</string>
@@ -529,28 +439,16 @@
   </action>
   <action name="actionSaveCSV">
    <property name="icon">
-    <iconset resource="VelodyneHDL/images/resources.qrc">
+    <iconset>
      <normaloff>:/VelodyneHDLPlugin/csv.png</normaloff>:/VelodyneHDLPlugin/csv.png</iconset>
    </property>
    <property name="text">
     <string>Save &amp;CSV...</string>
    </property>
   </action>
-  <action name="actionLoop">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="icon">
-    <iconset resource="VelodyneHDL/images/resources.qrc">
-     <normaloff>:/VelodyneHDLPlugin/media-loop.png</normaloff>:/VelodyneHDLPlugin/media-loop.png</iconset>
-   </property>
-   <property name="text">
-    <string>Loop</string>
-   </property>
-  </action>
   <action name="actionExport_To_KiwiViewer">
    <property name="icon">
-    <iconset resource="VelodyneHDL/images/resources.qrc">
+    <iconset>
      <normaloff>:/VelodyneHDLPlugin/kiwi_200.png</normaloff>:/VelodyneHDLPlugin/kiwi_200.png</iconset>
    </property>
    <property name="text">
@@ -567,7 +465,7 @@
   </action>
   <action name="actionSavePCAP">
    <property name="icon">
-    <iconset resource="VelodyneHDL/images/resources.qrc">
+    <iconset>
      <normaloff>:/VelodyneHDLPlugin/WiresharkDoc-128.png</normaloff>:/VelodyneHDLPlugin/WiresharkDoc-128.png</iconset>
    </property>
    <property name="text">
@@ -645,78 +543,6 @@
    </property>
    <property name="toolTip">
     <string>Toggle between projective and orthogonal view</string>
-   </property>
-  </action>
-  <action name="actionSetViewXPlus">
-   <property name="icon">
-    <iconset resource="vvResources.qrc">
-     <normaloff>:/vvResources/Icons/pqXPlus32.png</normaloff>:/vvResources/Icons/pqXPlus32.png</iconset>
-   </property>
-   <property name="text">
-    <string>setViewXPlus</string>
-   </property>
-   <property name="toolTip">
-    <string>Set view direction to +X</string>
-   </property>
-  </action>
-  <action name="actionSetViewXMinus">
-   <property name="icon">
-    <iconset resource="vvResources.qrc">
-     <normaloff>:/vvResources/Icons/pqXMinus32.png</normaloff>:/vvResources/Icons/pqXMinus32.png</iconset>
-   </property>
-   <property name="text">
-    <string>setViewXMinus</string>
-   </property>
-   <property name="toolTip">
-    <string>Set view direction to -X</string>
-   </property>
-  </action>
-  <action name="actionSetViewYPlus">
-   <property name="icon">
-    <iconset resource="vvResources.qrc">
-     <normaloff>:/vvResources/Icons/pqYPlus32.png</normaloff>:/vvResources/Icons/pqYPlus32.png</iconset>
-   </property>
-   <property name="text">
-    <string>setViewYPlus</string>
-   </property>
-   <property name="toolTip">
-    <string>Set view direction to +Y</string>
-   </property>
-  </action>
-  <action name="actionSetViewYMinus">
-   <property name="icon">
-    <iconset resource="vvResources.qrc">
-     <normaloff>:/vvResources/Icons/pqYMinus32.png</normaloff>:/vvResources/Icons/pqYMinus32.png</iconset>
-   </property>
-   <property name="text">
-    <string>setViewYMinus</string>
-   </property>
-   <property name="toolTip">
-    <string>Set view direction to -Y</string>
-   </property>
-  </action>
-  <action name="actionSetViewZPlus">
-   <property name="icon">
-    <iconset resource="vvResources.qrc">
-     <normaloff>:/vvResources/Icons/pqZPlus32.png</normaloff>:/vvResources/Icons/pqZPlus32.png</iconset>
-   </property>
-   <property name="text">
-    <string>setViewZPlus</string>
-   </property>
-   <property name="toolTip">
-    <string>Set view direction to +Z</string>
-   </property>
-  </action>
-  <action name="actionSetViewZMinus">
-   <property name="icon">
-    <iconset resource="vvResources.qrc">
-     <normaloff>:/vvResources/Icons/pqZMinus32.png</normaloff>:/vvResources/Icons/pqZMinus32.png</iconset>
-   </property>
-   <property name="text">
-    <string>setViewZMinus</string>
-   </property>
-   <property name="toolTip">
-    <string>Set view direction to -Z</string>
    </property>
   </action>
   <action name="actionVeloViewUserGuide">
@@ -815,7 +641,7 @@
   </action>
   <action name="actionSaveLAS">
    <property name="icon">
-    <iconset resource="VelodyneHDL/images/resources.qrc">
+    <iconset>
      <normaloff>:/VelodyneHDLPlugin/las.png</normaloff>:/VelodyneHDLPlugin/las.png</iconset>
    </property>
    <property name="text">
@@ -827,7 +653,7 @@
   </action>
   <action name="actionOpenApplanix">
    <property name="icon">
-    <iconset resource="VelodyneHDL/images/resources.qrc">
+    <iconset>
      <normaloff>:/VelodyneHDLPlugin/gps.png</normaloff>:/VelodyneHDLPlugin/gps.png</iconset>
    </property>
    <property name="text">
@@ -839,7 +665,7 @@
   </action>
   <action name="actionCropReturns">
    <property name="icon">
-    <iconset resource="VelodyneHDL/images/resources.qrc">
+    <iconset>
      <normaloff>:/VelodyneHDLPlugin/crop.png</normaloff>:/VelodyneHDLPlugin/crop.png</iconset>
    </property>
    <property name="text">
@@ -1163,17 +989,6 @@
     <string>Camera Controls</string>
    </property>
   </action>
-  <action name="actionPlayback_Controls">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="checked">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Playback Controls</string>
-   </property>
-  </action>
   <action name="actionGeolocation_Controls">
    <property name="checkable">
     <bool>true</bool>
@@ -1205,6 +1020,17 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+Shift+P</string>
+   </property>
+  </action>
+  <action name="actionFastRenderer">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Apply VLS-128 Fast Renderering</string>
    </property>
   </action>
   <action name="actionBirdEyeViewSnap">
@@ -1271,6 +1097,18 @@
    <class>pqPropertiesPanel</class>
    <extends>QWidget</extends>
    <header>pqPropertiesPanel.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>pqProxyInformationWidget</class>
+   <extends>QWidget</extends>
+   <header>pqProxyInformationWidget.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>pqMemoryInspectorPanel</class>
+   <extends>QWidget</extends>
+   <header>pqMemoryInspectorPanel.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

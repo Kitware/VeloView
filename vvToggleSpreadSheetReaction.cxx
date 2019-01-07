@@ -57,4 +57,5 @@ void vvToggleSpreadSheetReaction::onToggleSpreadsheet()
 {
   this->Docker->setVisible(this->Action->isChecked());
   this->View->widget()->setVisible(this->Action->isChecked());
+  this->View->widget()->parentWidget()->setVisible(this->Action->isChecked());
 }

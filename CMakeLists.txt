@@ -12,13 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-cmake_minimum_required(VERSION 2.8.8 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.1 FATAL_ERROR)
 include("SoftwareInformation/branding.cmake")
 project(VeloView)
 
-if (UNIX)
-  SET(CMAKE_CXX_FLAGS "-std=c++0x")
-endif(UNIX)
+set (CMAKE_CXX_STANDARD 11)
 
 # Disallow in-source build
 if ("${VeloView_SOURCE_DIR}"  STREQUAL "${VeloView_BINARY_DIR}")
@@ -63,6 +61,20 @@ if(BUILD_DOC)
     message("Doxygen need to be installed to generate the doxygen documentation")
   endif (DOXYGEN_FOUND)
 endif()
+
+#-------------------------------------------------------------------------------
+# Developper Mode UI option
+option(ENABLE_DEV_MODE_UI "Enable advance feature" OFF)
+
+set (ENABLE_DEV_MODE_UI_VAR false)
+if (ENABLE_DEV_MODE_UI)
+  set (ENABLE_DEV_MODE_UI_VAR true)
+endif()
+
+# generate the configuration file
+configure_file(vvConfig.h.in vvConfig.h)
+# needed as the vvconfig file will be generate in the build directory
+include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 #-------------------------------------------------------------------------------
 set (VeloView_CMAKE_DIR "${VeloView_SOURCE_DIR}/CMake")
@@ -141,6 +153,8 @@ set (source_files
   vvColorToolbar.cxx
   vvToggleSpreadSheetReaction.cxx
   vvLoadDataReaction.cxx
+  vvPlayerControlsToolbar.cxx
+  vvPlayerControlsController.cxx
   )
 
 qt4_wrap_cpp(moc_source_files
@@ -148,12 +162,15 @@ qt4_wrap_cpp(moc_source_files
   vvMainWindow.h
   vvToggleSpreadSheetReaction.h
   vvLoadDataReaction.h
+  vvPlayerControlsToolbar.h
+  vvPlayerControlsController.h
   )
 
 qt4_wrap_ui(ui_source_files
   vvColorToolbar.ui
   vvMainWindow.ui
   vvAboutDialog.ui
+  vvPlayerControlsToolbar.ui
   )
 
 qt4_add_resources(rcs_source_files
@@ -218,6 +235,9 @@ build_paraview_client(${SOFTWARE_NAME}
     ${moc_source_files}
     ${ui_source_files}
     ${rcs_source_files}
+  GUI_CONFIGURATION_XMLS
+    ${CMAKE_CURRENT_SOURCE_DIR}/vvSources.xml
+    ${CMAKE_CURRENT_SOURCE_DIR}/vvFilters.xml
   INSTALL_BIN_DIR ${VV_INSTALL_RUNTIME_DIR}
   INSTALL_LIB_DIR ${VV_INSTALL_LIBRARY_DIR}
 )

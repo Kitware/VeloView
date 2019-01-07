@@ -1,6 +1,6 @@
 add_external_project(pcl
   DEPENDS flann eigen boost png zlib qhull
-  
+
   CMAKE_ARGS
   -DCMAKE_CXX_STANDARD=11
   -DCMAKE_CXX_STANDARD_REQUIRED=true
@@ -24,5 +24,5 @@ add_external_project(pcl
   -DWITH_PXCAPI:BOOL=OFF
   -DWITH_MPI:BOOL=OFF
   -DWITH_CUDA:BOOL=OFF
-  -DWITH_DOCS:BOOL=OFF 
-  ) 
+  -DWITH_DOCS:BOOL=OFF
+  )

@@ -16,6 +16,10 @@ struct NMEALocation;
 class NMEAParser
 {
 public:
+  std::vector<std::string> SplitWords(const std::string& sentence);
+  bool IsGPGLL(const std::vector<std::string>& w);
+  bool IsGPGGA(const std::vector<std::string>& w);
+  bool IsGPRMC(const std::vector<std::string>& w);
   /** @name ParseLocation functions
    * @brief Parse a NMEA 0183 sentence that provides a location
    * @param sentence must be a string starting with $GP{RMC,GGA,GLL}
@@ -27,6 +31,9 @@ public:
    * If false is returned, do not use the struct location.
    */
   ///@{
+  bool ParseGPRMC(const std::vector<std::string>& w, NMEALocation& location);
+  bool ParseGPGGA(const std::vector<std::string>& w, NMEALocation& location);
+  bool ParseGPGLL(const std::vector<std::string>& w, NMEALocation& location);
   bool ParseLocation(const char* sentence, NMEALocation& location);
   bool ParseLocation(const std::string& sentence, NMEALocation& location);
   ///@}
@@ -44,11 +51,6 @@ public:
   bool ChecksumValid(const std::string& sentence);
   unsigned int ReadChecksum(const std::string& sentence);
   unsigned int ComputeChecksum(const std::string& sentence);
-
-private:
-  bool ParseGPRMC(const std::vector<std::string>& w, NMEALocation& location);
-  bool ParseGPGGA(const std::vector<std::string>& w, NMEALocation& location);
-  bool ParseGPGLL(const std::vector<std::string>& w, NMEALocation& location);
 };
 
 /**
@@ -62,7 +64,7 @@ private:
  *     - a GPRMC record requires the field validity to be "A",
  * We also require the fields: UTC seconds of day, latitude and longitude.
  *
- * - UTC seconds of day (between 0 and 86400 - 1, int)
+ * - UTC seconds of day (looping counter, between 0 and 86400, double)
  * - latitude (double)
  * - longitude (double)
  *
@@ -118,7 +120,7 @@ public:
   bool Valid;
   double Lat;
   double Long;
-  int UTCSecondsOfDay;
+  double UTCSecondsOfDay;
   bool HasAltitude;
   double Altitude;
   bool HasGeoidalSeparation;

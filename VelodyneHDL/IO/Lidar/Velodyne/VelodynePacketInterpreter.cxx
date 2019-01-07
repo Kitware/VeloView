@@ -26,13 +26,15 @@ using namespace DataPacketFixedLength;
 //{
 //! @todo this method are actually usefull for every Interpreter and should go to the top
 template<typename T>
-vtkSmartPointer<T> CreateDataArray(const char* name, vtkIdType np, vtkPolyData* pd)
+vtkSmartPointer<T> CreateDataArray(const char* name, vtkIdType np, vtkIdType prereserved_np, vtkPolyData* pd)
 {
   vtkSmartPointer<T> array = vtkSmartPointer<T>::New();
-  array->Allocate(60000);
+  array->Allocate(prereserved_np);
   array->SetName(name);
-  array->SetNumberOfTuples(np);
-
+  if (np > 0)
+  {
+    array->SetNumberOfTuples(np);
+  }
   if (pd)
   {
     pd->GetPointData()->AddArray(array);
@@ -205,6 +207,20 @@ double HDL64EAdjustTimeStamp(int firingblock, int dsr, const bool isDualReturnMo
       TimeOffsetMicroSec[(dsrReversed % 4)] + (dsrReversed / 4) * TimeOffsetMicroSec[3];
   }
 }
+
+//-----------------------------------------------------------------------------
+double VLS128AdjustTimeStamp(int firingblock, int dsr, const bool isDualReturnMode)
+{
+  if (!isDualReturnMode)
+  {
+    return 13.0 * (firingblock) + (dsr / 4) * 1.4;
+  }
+  else
+  {
+    return 13.0 * (firingblock / 2) + (dsr / 4) * 1.4;
+  }
+}
+
 
 //-----------------------------------------------------------------------------
 class FramingState
@@ -696,13 +712,14 @@ void VelodynePacketInterpreter::ProcessPacket(unsigned char const * data, unsign
 
   int firingBlock = startPosition;
 
-  // Compute the total azimuth advanced during one full firing block
+  bool isVLS128 = dataPacket->isVLS128();
+  // Compute the list of total azimuth advanced during one full firing block
   std::vector<int> diffs(HDL_FIRING_PER_PKT - 1);
   for (int i = 0; i < HDL_FIRING_PER_PKT - 1; ++i)
   {
-    int localDiff = (36000 + dataPacket->firingData[i + 1].rotationalPosition -
+    int localDiff = (36000 + 18000 + dataPacket->firingData[i + 1].rotationalPosition -
                       dataPacket->firingData[i].rotationalPosition) %
-      36000;
+      36000 - 18000;
     diffs[i] = localDiff;
   }
 
@@ -720,10 +737,15 @@ void VelodynePacketInterpreter::ProcessPacket(unsigned char const * data, unsign
   {
     azimuthDiff = diffs[HDL_FIRING_PER_PKT - 2];
   }
+  else if (isVLS128)
+  {
+    azimuthDiff = diffs[HDL_FIRING_PER_PKT - 1];
+  }
+
   // assert(azimuthDiff > 0);
 
   // Add DualReturn-specific arrays if newly detected dual return packet
-  if (dataPacket->isDualModeReturn(this->IsHDL64Data) && !this->HasDualReturn)
+  if (dataPacket->isDualModeReturn() && !this->HasDualReturn)
   {
     this->HasDualReturn = true;
     this->CurrentFrame->GetPointData()->AddArray(this->DistanceFlag.GetPointer());
@@ -738,8 +760,17 @@ void VelodynePacketInterpreter::ProcessPacket(unsigned char const * data, unsign
     int multiBlockLaserIdOffset =
         (firingData->blockIdentifier == BLOCK_0_TO_31)  ?  0 :(
         (firingData->blockIdentifier == BLOCK_32_TO_63) ? 32 :(
-                                                           0));
+        (firingData->blockIdentifier == BLOCK_64_TO_95) ? 64 :(
+        (firingData->blockIdentifier == BLOCK_96_TO_127)? 96 :(
+                                                           0))));
     // clang-format on
+
+    // Skip dummy blocks of VLS-128 dual mode last 4 blocks
+    if (isVLS128 && (firingData->blockIdentifier == 0 || firingData->blockIdentifier == 0xFFFF))
+    {
+      continue;
+    }
+
 
     if (this->CurrentFrameState->hasChangedWithValue(*firingData))
     {
@@ -747,13 +778,17 @@ void VelodynePacketInterpreter::ProcessPacket(unsigned char const * data, unsign
       this->LastTimestamp = std::numeric_limits<unsigned int>::max();
     }
 
+    if (isVLS128)
+    {
+      azimuthDiff = dataPacket->getRotationalDiffForVLS128(firingBlock);
+    }
+
     // Skip this firing every PointSkip
     if (this->FiringsSkip == 0 || firingBlock % (this->FiringsSkip + 1) == 0)
     {
       this->ProcessFiring(firingData, multiBlockLaserIdOffset, firingBlock, azimuthDiff, timestamp,
-        rawtime,
-        this->HasDualReturn && dataPacket->isDualBlockOfDualPacket(this->IsHDL64Data, firingBlock),
-        this->HasDualReturn, geotransform.GetPointer());
+        rawtime, dataPacket->isDualReturnFiringBlock(firingBlock), dataPacket->isDualModeReturn(),
+        geotransform.GetPointer());
     }
   }
 }
@@ -775,7 +810,7 @@ bool VelodynePacketInterpreter::IsLidarPacket(unsigned char const * data, unsign
 //-----------------------------------------------------------------------------
 void VelodynePacketInterpreter::ProcessFiring(const HDLFiringData *firingData, int firingBlockLaserOffset, int firingBlock, int azimuthDiff, double timestamp, unsigned int rawtime, bool isThisFiringDualReturnData, bool isDualReturnPacket, vtkTransform *geotransform)
 {
-  // Non dual return piece of a dual return packet: init last point of laser
+  // First return block of a dual return packet: init last point of laser
   if (!isThisFiringDualReturnData &&
     (!this->IsHDL64Data || (this->IsHDL64Data && ((firingBlock % 4) == 0))))
   {
@@ -818,6 +853,14 @@ void VelodynePacketInterpreter::ProcessFiring(const HDLFiringData *firingData, i
       double blockdsr0 = 0, nextblockdsr0 = 1;
       switch (this->CalibrationReportedNumLasers)
       {
+        case 128:
+        {
+          timestampadjustment = VLS128AdjustTimeStamp(firingBlock, dsr, isDualReturnPacket);
+          nextblockdsr0 = VLS128AdjustTimeStamp(
+            firingBlock + (isDualReturnPacket ? 8 : 4), 0, isDualReturnPacket);
+          blockdsr0 = VLS128AdjustTimeStamp(firingBlock, 0, isDualReturnPacket);
+          break;
+        }
         case 64:
         {
           timestampadjustment = -HDL64EAdjustTimeStamp(firingBlock, dsr, isDualReturnPacket);
@@ -835,7 +878,7 @@ void VelodynePacketInterpreter::ProcessFiring(const HDLFiringData *firingData, i
               firingBlock + (isDualReturnPacket ? 2 : 1), 0, isDualReturnPacket);
             blockdsr0 = VLP32AdjustTimeStamp(firingBlock, 0, isDualReturnPacket);
           }
-          else if (this->ReportedSensor == HDL32E)
+          else
           {
             timestampadjustment = HDL32AdjustTimeStamp(firingBlock, dsr, isDualReturnPacket);
             nextblockdsr0 = HDL32AdjustTimeStamp(
@@ -1240,38 +1283,45 @@ bool VelodynePacketInterpreter::HDL64LoadCorrectionsFromStreamData()
 }
 
 //-----------------------------------------------------------------------------
-vtkSmartPointer<vtkPolyData> VelodynePacketInterpreter::CreateNewEmptyFrame(vtkIdType numberOfPoints)
+vtkSmartPointer<vtkPolyData> VelodynePacketInterpreter::CreateNewEmptyFrame(vtkIdType numberOfPoints, vtkIdType prereservedNumberOfPoints)
 {
+  const int defaultPrereservedNumberOfPointsPerFrame = 60000;
+  // prereserve for 50% points more than actually received in previous frame
+  prereservedNumberOfPoints = std::max(static_cast<int>(prereservedNumberOfPoints * 1.5), defaultPrereservedNumberOfPointsPerFrame);
+
   vtkSmartPointer<vtkPolyData> polyData = vtkSmartPointer<vtkPolyData>::New();
 
   // points
   vtkNew<vtkPoints> points;
   points->SetDataTypeToFloat();
-  points->Allocate(60000);
-  points->SetNumberOfPoints(numberOfPoints);
+  points->Allocate(prereservedNumberOfPoints);
+  if (numberOfPoints > 0 )
+  {
+    points->SetNumberOfPoints(numberOfPoints);
+  }
   points->GetData()->SetName("Points_m_XYZ");
   polyData->SetPoints(points.GetPointer());
 //  polyData->SetVerts(NewVertexCells(numberOfPoints));
 
   // intensity
   this->Points = points.GetPointer();
-  this->PointsX = CreateDataArray<vtkDoubleArray>("X", numberOfPoints, polyData);
-  this->PointsY = CreateDataArray<vtkDoubleArray>("Y", numberOfPoints, polyData);
-  this->PointsZ = CreateDataArray<vtkDoubleArray>("Z", numberOfPoints, polyData);
-  this->Intensity = CreateDataArray<vtkUnsignedCharArray>("intensity", numberOfPoints, polyData);
-  this->LaserId = CreateDataArray<vtkUnsignedCharArray>("laser_id", numberOfPoints, polyData);
-  this->Azimuth = CreateDataArray<vtkUnsignedShortArray>("azimuth", numberOfPoints, polyData);
-  this->Distance = CreateDataArray<vtkDoubleArray>("distance_m", numberOfPoints, polyData);
+  this->PointsX = CreateDataArray<vtkDoubleArray>("X", numberOfPoints, prereservedNumberOfPoints, polyData);
+  this->PointsY = CreateDataArray<vtkDoubleArray>("Y", numberOfPoints, prereservedNumberOfPoints, polyData);
+  this->PointsZ = CreateDataArray<vtkDoubleArray>("Z", numberOfPoints, prereservedNumberOfPoints, polyData);
+  this->Intensity = CreateDataArray<vtkUnsignedCharArray>("intensity", numberOfPoints, prereservedNumberOfPoints, polyData);
+  this->LaserId = CreateDataArray<vtkUnsignedCharArray>("laser_id", numberOfPoints, prereservedNumberOfPoints, polyData);
+  this->Azimuth = CreateDataArray<vtkUnsignedShortArray>("azimuth", numberOfPoints, prereservedNumberOfPoints, polyData);
+  this->Distance = CreateDataArray<vtkDoubleArray>("distance_m", numberOfPoints, prereservedNumberOfPoints, polyData);
   this->DistanceRaw =
-    CreateDataArray<vtkUnsignedShortArray>("distance_raw", numberOfPoints, polyData);
-  this->Timestamp = CreateDataArray<vtkDoubleArray>("adjustedtime", numberOfPoints, polyData);
-  this->RawTime = CreateDataArray<vtkUnsignedIntArray>("timestamp", numberOfPoints, polyData);
-  this->DistanceFlag = CreateDataArray<vtkIntArray>("dual_distance", numberOfPoints, 0);
-  this->IntensityFlag = CreateDataArray<vtkIntArray>("dual_intensity", numberOfPoints, 0);
-  this->Flags = CreateDataArray<vtkUnsignedIntArray>("dual_flags", numberOfPoints, 0);
+    CreateDataArray<vtkUnsignedShortArray>("distance_raw", numberOfPoints, prereservedNumberOfPoints, polyData);
+  this->Timestamp = CreateDataArray<vtkDoubleArray>("adjustedtime", numberOfPoints, prereservedNumberOfPoints, polyData);
+  this->RawTime = CreateDataArray<vtkUnsignedIntArray>("timestamp", numberOfPoints, prereservedNumberOfPoints, polyData);
+  this->DistanceFlag = CreateDataArray<vtkIntArray>("dual_distance", numberOfPoints, prereservedNumberOfPoints, nullptr);
+  this->IntensityFlag = CreateDataArray<vtkIntArray>("dual_intensity", numberOfPoints, prereservedNumberOfPoints, nullptr);
+  this->Flags = CreateDataArray<vtkUnsignedIntArray>("dual_flags", numberOfPoints, prereservedNumberOfPoints, nullptr);
   this->DualReturnMatching =
-    CreateDataArray<vtkIdTypeArray>("dual_return_matching", numberOfPoints, 0);
-  this->VerticalAngle = CreateDataArray<vtkDoubleArray>("vertical_angle", numberOfPoints, polyData);
+    CreateDataArray<vtkIdTypeArray>("dual_return_matching", numberOfPoints, prereservedNumberOfPoints, nullptr);
+  this->VerticalAngle = CreateDataArray<vtkDoubleArray>("vertical_angle", numberOfPoints, prereservedNumberOfPoints, polyData);
 
   // FieldData : RPM
   vtkSmartPointer<vtkDoubleArray> rpmData = vtkSmartPointer<vtkDoubleArray>::New();
@@ -1324,6 +1374,7 @@ void VelodynePacketInterpreter::ResetCurrentFrame()
   this->rollingCalibrationData->clear();
   this->HasDualReturn = false;
   this->IsHDL64Data = false;
+  this->IsVLS128 = false;
   this->Frames.clear();
   this->CurrentFrame = this->CreateNewEmptyFrame(0);
 
@@ -1360,11 +1411,22 @@ void VelodynePacketInterpreter::PreProcessPacket(unsigned char const * data, uns
   //      printf("missed %d packets\n",  static_cast<int>(floor((timeDiff/553.0) + 0.5)));
   //      }
 
+
+
+  this->IsHDL64Data |= dataPacket->isHDL64();
+
+  this->IsVLS128 = dataPacket->isVLS128();
+
   for (int i = 0; i < HDL_FIRING_PER_PKT; ++i)
   {
     const HDLFiringData& firingData = dataPacket->firingData[i];
 
-    this->IsHDL64Data |= (firingData.blockIdentifier == BLOCK_32_TO_63);
+
+    // Skip dummy blocks of VLS-128 dual mode last 4 blocks
+    if (IsVLS128 && (firingData.blockIdentifier == 0 || firingData.blockIdentifier == 0xFFFF))
+    {
+      continue;
+    }
 
     // Test if at least one laser has a positive distance
     if (this->IgnoreZeroDistances)

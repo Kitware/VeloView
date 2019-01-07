@@ -91,6 +91,12 @@ public:
   bool GetIsCrashAnalysing();
   void SetIsCrashAnalysing(const bool);
 
+  /**
+   * @brief GetNeedsUpdate
+   * @return true if a new frame is ready
+   */
+  bool GetNeedsUpdate();
+
 protected:
   vtkLidarStream();
   ~vtkLidarStream();

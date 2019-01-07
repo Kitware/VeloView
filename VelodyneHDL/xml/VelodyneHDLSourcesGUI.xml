@@ -1,6 +1,0 @@
-<ParaViewSources>
-  <Category name="Velodyne Lidar" menu_label="&amp;Velodyne Lidar">
-    <Source name="VelodyneHDLSource" />
-    <Source name="VelodyneHDLGridSource" />
-  </Category>
-</ParaViewSources>

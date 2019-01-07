@@ -27,7 +27,6 @@
 
 #include "vvMainWindow.h"
 #include "ui_vvMainWindow.h"
-
 #include "vvLoadDataReaction.h"
 #include "vvToggleSpreadSheetReaction.h"
 
@@ -42,6 +41,7 @@
 #include <pqCrashRecoveryBehavior.h>
 #include <pqDataTimeStepBehavior.h>
 #include <pqDefaultViewBehavior.h>
+#include <pqApplyBehavior.h>
 #include <pqInterfaceTracker.h>
 #include <pqObjectBuilder.h>
 #include <pqPersistentMainWindowStateBehavior.h>
@@ -49,6 +49,8 @@
 #include <pqQtMessageHandlerBehavior.h>
 #include <pqRenderView.h>
 #include <pqRenderViewSelectionReaction.h>
+#include <pqDeleteReaction.h>
+#include <pqHelpReaction.h>
 #include <pqServer.h>
 #include <pqSettings.h>
 #include <pqSpreadSheetView.h>
@@ -58,19 +60,31 @@
 #include <pqStandardViewFrameActionsImplementation.h>
 #include <pqVelodyneManager.h>
 #include <pqXYChartView.h>
+#include <pqParaViewMenuBuilders.h>
+#include <pqTabbedMultiViewWidget.h>
+#include <pqSetName.h>
 #include <vtkPVPlugin.h>
 #include <vtkSMPropertyHelper.h>
+#include "pqAxesToolbar.h"
+#include "pqCameraToolbar.h"
+#include <pqLiveSourceBehavior.h>
 
 #include <QDockWidget>
 #include <QLabel>
 #include <QSplitter>
 #include <QToolBar>
-#include <qdockwidget.h>
+#include <QShortcut>
+#include <QDockWidget>
+#include <QMenuBar>
+#include <QMenu>
 
 #include <cassert>
 #include <iostream>
 #include <sstream>
 #include <vector>
+
+#include "vvConfig.h"
+#include "vvPlayerControlsToolbar.h"
 
 // Declare the plugin to load.
 PV_PLUGIN_IMPORT_INIT(VelodyneHDLPlugin);
@@ -144,6 +158,19 @@ private:
   {
     pqApplicationCore* core = pqApplicationCore::instance();
 
+    // need to be created before the first scene
+    QToolBar* vcrToolbar = new vvPlayerControlsToolbar(window)
+      << pqSetName("Player Control");
+    window->addToolBar(Qt::TopToolBarArea, vcrToolbar);
+
+    QToolBar* cameraToolbar = new pqCameraToolbar(window)
+      << pqSetName("cameraToolbar");
+    window->addToolBar(Qt::TopToolBarArea, cameraToolbar);
+
+    QToolBar* axesToolbar = new pqAxesToolbar(window)
+      << pqSetName("axesToolbar");
+    window->addToolBar(Qt::TopToolBarArea, axesToolbar);
+
     // Register ParaView interfaces.
     pqInterfaceTracker* pgm = core->interfaceTracker();
     //    pgm->addInterface(new pqStandardViewModules(pgm));
@@ -158,7 +185,11 @@ private:
     //    new pqDefaultViewBehavior(window);
     new pqCrashRecoveryBehavior(window);
     new pqAutoLoadPluginXMLBehavior(window);
+    new pqDataTimeStepBehavior(window);
     new pqCommandLineOptionsBehavior(window);
+    new pqLiveSourceBehavior(window);
+
+    pqApplyBehavior* applyBehaviors = new pqApplyBehavior(window);
 
     // Check if the settings are well formed i.e. if an OriginalMainWindow
     // state was previously saved. If not, we don't want to automatically
@@ -220,7 +251,34 @@ private:
 
     vtkSMPropertyHelper(renderviewsettings, "ResolveCoincidentTopology").Set(0);
 
+    // Create a overhead view
+    pqView* overheadView = builder->createView(pqRenderView::renderViewType(), server);
+    overheadView->getProxy()->UpdateVTKObjects();
+    this->Ui.overheadViewDock->setWidget(overheadView->widget());
+    new vvToggleSpreadSheetReaction(this->Ui.actionOverheadView, overheadView);
+
+    // create SpreadSheet
+    pqSpreadSheetView* spreadsheetView = qobject_cast<pqSpreadSheetView*>
+        (builder->createView(pqSpreadSheetView::spreadsheetViewType(), server));
+    assert(spreadsheetView);
+    this->Ui.spreadSheetDock->setWidget(spreadsheetView->widget());
+    spreadsheetView->getProxy()->UpdateVTKObjects();
+    new vvToggleSpreadSheetReaction(this->Ui.actionSpreadsheet, spreadsheetView);
+    pqSpreadSheetViewDecorator* dec = new pqSpreadSheetViewDecorator(spreadsheetView);
+    dec->setPrecision(3);
+    dec->setFixedRepresentation(true);
+
     // Create a default view.
+    // Due to our old version of paraview, it's not possible to create a view in
+    // detachedFromLayout mode. This feature was introduce by paraview 5.2.
+    // So we need to create the pqTabbedMultiViewWidget after creating all other view but
+    // before creating the main view, in order to have the main view in the pqTabbedMultiViewWidget.
+    // This is because all view created are register by the pqTabbedMultiViewWidget.
+    if (ENABLE_DEV_MODE_UI_VAR)
+    {
+      pqTabbedMultiViewWidget* mv = new pqTabbedMultiViewWidget;
+      window->setCentralWidget(mv);
+    }
     pqRenderView* view =
       qobject_cast<pqRenderView*>(builder->createView(pqRenderView::renderViewType(), server));
     assert(view);
@@ -232,6 +290,62 @@ private:
     // MultiSamples doesn't work, we need to set that up before registering the proxy.
     // vtkSMPropertyHelper(view->getProxy(),"MultiSamples").Set(1);
     view->getProxy()->UpdateVTKObjects();
+   if (!ENABLE_DEV_MODE_UI_VAR)
+   {
+     window->setCentralWidget(view->widget());
+   }
+
+    // properties panel
+    // connect apply button
+    applyBehaviors->registerPanel(this->Ui.propertiesPanel);
+    // Enable help from the properties panel.
+    QObject::connect(this->Ui.propertiesPanelDock->widget(),
+      SIGNAL(helpRequested(const QString&, const QString&)),
+      window, SLOT(showHelpForProxy(const QString&, const QString&)));
+
+    /// hook delete to pqDeleteReaction.
+    QAction* tempDeleteAction = new QAction(window);
+    pqDeleteReaction* handler = new pqDeleteReaction(tempDeleteAction);
+    handler->connect(this->Ui.propertiesPanelDock->widget(),
+      SIGNAL(deleteRequested(pqPipelineSource*)),
+      SLOT(deleteSource(pqPipelineSource*)));
+
+    // specify how corner are occupied by the dockable widget
+    window->setCorner(Qt::TopLeftCorner, Qt::LeftDockWidgetArea);
+    window->setCorner(Qt::BottomLeftCorner, Qt::LeftDockWidgetArea);
+    window->setCorner(Qt::TopRightCorner, Qt::RightDockWidgetArea);
+    window->setCorner(Qt::BottomRightCorner, Qt::RightDockWidgetArea);
+
+    // organize dockable widget in tab
+    window->setTabPosition(Qt::LeftDockWidgetArea, QTabWidget::North);
+    window->tabifyDockWidget(this->Ui.propertiesPanelDock, this->Ui.colorMapEditorDock);
+    window->tabifyDockWidget(this->Ui.spreadSheetDock, this->Ui.informationDock);
+    window->tabifyDockWidget(this->Ui.spreadSheetDock, this->Ui.memoryInspectorDock);
+
+    // hide docker by default
+    this->Ui.pipelineBrowserDock->hide();
+    this->Ui.propertiesPanelDock->hide();
+    this->Ui.colorMapEditorDock->hide();
+    this->Ui.spreadSheetDock->hide();
+    this->Ui.informationDock->hide();
+    this->Ui.memoryInspectorDock->hide();
+
+    // Setup the View menu. This must be setup after all toolbars and dockwidgets
+    // have been created.
+    pqParaViewMenuBuilders::buildViewMenu(*this->Ui.menuViews, *window);
+
+    if (ENABLE_DEV_MODE_UI_VAR)
+    {
+      /// If you want to automatically add a menu for sources as requested in the
+      /// configuration pass in a non-null main window.
+      QMenu* sourceMenu = window->menuBar()->addMenu(tr("&Sources"));
+      pqParaViewMenuBuilders::buildSourcesMenu(*sourceMenu, nullptr);
+
+      /// If you want to automatically add a menu for filters as requested in the
+      /// configuration pass in a non-null main window.
+      QMenu* filterMenu = window->menuBar()->addMenu(tr("&Filters"));
+      pqParaViewMenuBuilders:: buildFiltersMenu(*filterMenu, nullptr);
+    }
 
     // Create a horizontal splitter as the central widget, add views to splitter
     QSplitter* splitter = new QSplitter(Qt::Horizontal);
@@ -255,6 +369,10 @@ private:
     dec->setPrecision(3);
     dec->setFixedRepresentation(true);
 
+    // add 'ctrl+space' shortcut for quickLaunch
+    QShortcut *ctrlSpace = new QShortcut(Qt::CTRL + Qt::Key_Space, window);
+    QObject::connect(ctrlSpace, SIGNAL(activated()), pqApplicationCore::instance(), SLOT(quickLaunch()));
+
     QDockWidget* dock = this->AddDockView(window, "OverHead", overheadView->widget());
     new vvToggleSpreadSheetReaction(this->Ui.actionOverheadView, overheadView, dock);
 
@@ -267,6 +385,7 @@ private:
     pqActiveObjects::instance().setActiveView(view);
   }
 
+  //-----------------------------------------------------------------------------
   void setupUi(vvMainWindow* window)
   {
     new pqRenderViewSelectionReaction(this->Ui.actionSelect_Visible_Points, this->MainView,
@@ -301,23 +420,11 @@ private:
     connect(this->Ui.actionEnableCrashAnalysis, SIGNAL(toggled(bool)),
       pqVelodyneManager::instance(), SLOT(onEnableCrashAnalysis(bool)));
 
-    connect(this->Ui.actionResetConfigurationFile, SIGNAL(triggered()),
-      pqVelodyneManager::instance(), SLOT(onResetCalibrationFile()));
+    connect(this->Ui.actionResetDefaultSettings, SIGNAL(triggered()),
+      pqVelodyneManager::instance(), SLOT(onResetDefaultSettings()));
 
     connect(this->Ui.actionShowErrorDialog, SIGNAL(triggered()), pqApplicationCore::instance(),
       SLOT(showOutputWindow()));
-
-    // handle connection for the Toolbar Menu
-    connect(this->Ui.menuToolbar, SIGNAL(aboutToShow()), window, SLOT(UpdateToolBarMenu()));
-    connect(this->Ui.actionBasic_Controls, SIGNAL(triggered()), window, SLOT(switchToolBarVisibility()));
-    connect(this->Ui.actionColor_Controls, SIGNAL(triggered()), window, SLOT(switchToolBarVisibility()));
-    connect(this->Ui.actionView_Controls, SIGNAL(triggered()), window, SLOT(switchToolBarVisibility()));
-    connect(this->Ui.actionPlayback_Controls, SIGNAL(triggered()), window, SLOT(switchToolBarVisibility()));
-    connect(this->Ui.actionGeolocation_Controls, SIGNAL(triggered()), window, SLOT(switchToolBarVisibility()));
-    // handle connection for View Menu
-    connect(this->Ui.menuView, SIGNAL(aboutToShow()), window, SLOT(UpdateViewMenu()));
-    connect(this->Ui.actionShowPipelineBrowser, SIGNAL(triggered()), window, SLOT(onSwitchPipelineBrowserVisibility()));
-    connect(this->Ui.actionShowPropertiesPanel, SIGNAL(triggered()), window, SLOT(onSwitchPropertiesPanelVisibility()));
   }
 };
 
@@ -325,9 +432,6 @@ private:
 vvMainWindow::vvMainWindow()
   : Internals(new vvMainWindow::pqInternals(this))
 {
-  //  this->tabifyDockWidget(
-  //    this->Internal->colorMapEditorDock,
-  //    this->Internal->memoryInspectorDock);
   pqApplicationCore::instance()->registerManager(
     "COLOR_EDITOR_PANEL", this->Internals->Ui.colorMapEditorDock);
   this->Internals->Ui.colorMapEditorDock->hide();
@@ -339,13 +443,13 @@ vvMainWindow::vvMainWindow()
   std::stringstream ss;
   ss << "Reset " << SOFTWARE_NAME << " settings";
   QString text = QString(ss.str().c_str());
-  this->Internals->Ui.actionResetConfigurationFile->setText(text);
+  this->Internals->Ui.actionResetDefaultSettings->setText(text);
   ss.str("");
   ss.clear();
 
   ss << "This will reset all " << SOFTWARE_NAME << " settings by default";
   text = QString(ss.str().c_str());
-  this->Internals->Ui.actionResetConfigurationFile->setIconText(text);
+  this->Internals->Ui.actionResetDefaultSettings->setIconText(text);
   ss.str("");
   ss.clear();
 
@@ -375,76 +479,8 @@ vvMainWindow::~vvMainWindow()
 }
 
 //-----------------------------------------------------------------------------
-void vvMainWindow::switchToolBarVisibility()
+void vvMainWindow::showHelpForProxy(const QString& groupname, const
+  QString& proxyname)
 {
-  // check how send the signal
-  QObject* obj = QObject::sender();
-  QToolBar* tb = nullptr;
-  if (obj == this->Internals->Ui.actionBasic_Controls)
-  {
-    tb = this->Internals->Ui.toolBar;
-  }
-  else if (obj == this->Internals->Ui.actionColor_Controls)
-  {
-    tb = this->Internals->Ui.colorToolBar;
-  }
-  else if (obj == this->Internals->Ui.actionView_Controls)
-  {
-    tb = this->Internals->Ui.viewSettings;
-  }
-  else if (obj == this->Internals->Ui.actionPlayback_Controls)
-  {
-    tb = this->Internals->Ui.playbackToolbar;
-  }
-  else if (obj == this->Internals->Ui.actionGeolocation_Controls)
-  {
-    tb = this->Internals->Ui.geolocationToolbar;
-  }
-  // switch visibility state
-  tb->setVisible(!tb->isVisible());
-  //
-  QAction* act = dynamic_cast<QAction*> (obj);
-  if (act != nullptr)
-  {
-     act->setChecked(tb->isVisible());
-  }
-}
-
-//-----------------------------------------------------------------------------
-void vvMainWindow::UpdateToolBarMenu()
-{
-  this->Internals->Ui.actionBasic_Controls->setChecked(this->Internals->Ui.toolBar->isVisible());
-  this->Internals->Ui.actionColor_Controls->setChecked(this->Internals->Ui.colorToolBar->isVisible());
-  this->Internals->Ui.actionView_Controls->setChecked(this->Internals->Ui.viewSettings->isVisible());
-  this->Internals->Ui.actionPlayback_Controls->setChecked(this->Internals->Ui.playbackToolbar->isVisible());
-  this->Internals->Ui.actionGeolocation_Controls->setChecked(this->Internals->Ui.geolocationToolbar->isVisible());
-}
-
-//-----------------------------------------------------------------------------
-void vvMainWindow::onSwitchPipelineBrowserVisibility()
-{
-  // Change visibility
-  QDockWidget* dock = this->Internals->Ui.pipelineBrowserDock;
-  dock->setVisible(!dock->isVisible());
-
-  // Switch action isChecked status
-  this->Internals->Ui.actionShowPipelineBrowser->setChecked(dock->isVisible());
-}
-
-//-----------------------------------------------------------------------------
-void vvMainWindow::onSwitchPropertiesPanelVisibility()
-{
-  // Change visibility
-  QDockWidget* dock = this->Internals->Ui.propertiesPanelDock;
-  dock->setVisible(!dock->isVisible());
-
-  // Switch action isChecked status
-  this->Internals->Ui.actionShowPropertiesPanel->setChecked(dock->isVisible());
-}
-
-//-----------------------------------------------------------------------------
-void vvMainWindow::UpdateViewMenu()
-{
-  this->Internals->Ui.actionShowPropertiesPanel->setChecked(this->Internals->Ui.propertiesPanelDock->isVisible());
-  this->Internals->Ui.actionShowPipelineBrowser->setChecked(this->Internals->Ui.pipelineBrowserDock->isVisible());
+  pqHelpReaction::showProxyHelp(groupname, proxyname);
 }

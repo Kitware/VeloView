@@ -56,6 +56,16 @@ public:
   //
   int CanReadFile(const char* fname);
 
+  // Default is false (disabled)
+  // If disabled, only GPRMC sentences will be used, they do not provide altitude
+  // so z = 0 is used.
+  // If enabled, GPRMC sentences will be ignored and GPGGA sentences will be
+  // used.
+  // If available, the altitude used will be the height above the ellipsoid,
+  // because that is what was used as datum when projecting.
+  // (could be changed to height above geoid).
+  void SetUseGPGGASentences(bool useGPGGASentences);
+
   vtkVelodyneTransformInterpolator* GetInterpolator();
 
 protected:
@@ -76,6 +86,7 @@ protected:
 
 private:
   bool ShouldWarnOnWeirdGPSData;
+  bool UseGPGGASentences;
   vtkVelodyneHDLPositionReader(const vtkVelodyneHDLPositionReader&);
   void operator=(const vtkVelodyneHDLPositionReader&);
 };

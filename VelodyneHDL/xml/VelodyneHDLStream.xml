@@ -144,6 +144,10 @@
         <SimpleIntInformationHelper />
       </IntVectorProperty>
 
+      <Hints>
+        <LiveSource />
+      </Hints>
+
    </SourceProxy>
   </ProxyGroup>
 </ServerManagerConfiguration>

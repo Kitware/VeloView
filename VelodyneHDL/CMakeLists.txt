@@ -1,5 +1,5 @@
 project(VelodyneHDLPlugin)
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.1 FATAL_ERROR)
 
 #-----------------------------------------------------------------------------
 # Temporary Fix
@@ -75,15 +75,25 @@ find_package(Eigen REQUIRED)
 include_directories(${SYSTEM_OPTION} ${EIGEN_INCLUDE_DIR})
 
 #--------------------------------------
+# PCL dependency
+#--------------------------------------
+option(ENABLE_PCL OFF "Required for pcl filter and other filter like the slam filter")
+if (ENABLE_PCL)
+  find_package(PCL REQUIRED)
+  include_directories(${SYSTEM_OPTION} ${PCL_INCLUDE_DIRS})
+  add_definitions(${PCL_DEFINITIONS})
+endif(ENABLE_PCL)
+
+#--------------------------------------
 # Boost dependency
 #--------------------------------------
-if(WIN32)
+if(WIN32 OR APPLE)
   set(Boost_USE_STATIC_LIBS ON)
-endif(WIN32)
+endif(WIN32 OR APPLE)
 set(Boost_USE_MULTITHREADED ON)
 # the expected behavior of find_package when  used wiht REQUIRED and OPTIONAL_COMPONENTS
 # it not the one expected, as it also required the optional component...
-find_package(Boost REQUIRED COMPONENTS system thread chrono regex date_time filesystem)
+find_package(Boost REQUIRED COMPONENTS system thread chrono regex date_time filesystem program_options)
 include_directories(${SYSTEM_OPTION} ${Boost_INCLUDE_DIRS})
 set(ALL_BOOST_LIBRARIES ${Boost_LIBRARIES})
 find_package(Boost OPTIONAL_COMPONENTS atomic timer)
@@ -173,12 +183,17 @@ list(APPEND servermanager_sources
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/BirdEyeViewSnap/vtkBirdEyeViewSnap.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/ProcessingSample/vtkProcessingSample.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/Ransac/vtkRansacPlaneModel.cxx
+  ${CMAKE_CURRENT_SOURCE_DIR}/Filter/TrailingFrame/vtkTrailingFrame.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/Source/Grid/vtkVelodyneHDLGridSource.cxx
-  ${CMAKE_CURRENT_SOURCE_DIR}/vtkPCLRansacModel.cxx
-  ${CMAKE_CURRENT_SOURCE_DIR}/vtkSlam.cxx
-  ${CMAKE_CURRENT_SOURCE_DIR}/vtkSensorTransformFusion.cxx
-
 )
+
+if (ENABLE_PCL)
+  list(APPEND servermanager_sources
+    ${CMAKE_CURRENT_SOURCE_DIR}/Filter/PCLRansacModel/vtkPCLRansacModel.cxx
+    ${CMAKE_CURRENT_SOURCE_DIR}/vtkSlam.cxx
+    ${CMAKE_CURRENT_SOURCE_DIR}/vtkSensorTransformFusion.cxx
+    )
+endif(ENABLE_PCL)
 
 # xml file that describe the proxy of the wrap sources in paraview
 list(APPEND servermanager_xml
@@ -190,12 +205,19 @@ list(APPEND servermanager_xml
   xml/ApplanixPositionReader.xml
   xml/MotionDetector.xml
   xml/BirdEyeViewSnap.xml
+  xml/RansacPlaneModel.xml
+  xml/TrailingFrame.xml
   xml/ProcessingSample.xml
   xml/SLAM.xml
   xml/SensorTransformFusion.xml
   xml/RansacPlaneModel.xml
   xml/VelodyneHDLGridSource.xml
   )
+if (ENABLE_PCL)
+  list(APPEND servermanager_xml
+    xml/PCLRansacModel.xml
+    )
+endif(ENABLE_PCL)
 
 # other source code than won't be wrap by paraview but are needed to create the plugin
 # We make the distinction on that inherit from vtkObject as this one will be also wrap
@@ -224,6 +246,11 @@ set(sources_which_do_not_inherit_from_vtkObject
   ${CMAKE_CURRENT_SOURCE_DIR}/vtkPCLConversions.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/${interpolator_pach_until_vtk_update}
   )
+if (ENABLE_PCL)
+  list(APPEND sources_which_do_not_inherit_from_vtkObject
+    ${CMAKE_CURRENT_SOURCE_DIR}/Common/vtkPCLConversions.cxx
+    )
+endif(ENABLE_PCL)
 
 
 # plugin dependencies
@@ -235,6 +262,9 @@ list(APPEND deps
   ${PCL_LIBRARIES}
   ${CERES_LIBRARIES}
   )
+if (ENABLE_PCL)
+  list(APPEND deps ${PCL_LIBRARIES})
+endif(ENABLE_PCL)
 
 # folder where to look for header file
 set(plugin_include_dirs
@@ -251,7 +281,9 @@ set(plugin_include_dirs
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/BirdEyeViewSnap
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/OldPlaneFitter
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/Ransac
+  ${CMAKE_CURRENT_SOURCE_DIR}/Filter/TrailingFrame
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/ProcessingSample
+  ${CMAKE_CURRENT_SOURCE_DIR}/Filter/PCLRansacModel
   ${CMAKE_CURRENT_SOURCE_DIR}/Source/Grid
   )
 
@@ -269,6 +301,9 @@ add_paraview_plugin(${VV_PLUGIN_LIBRARY} "1.0"
   REQUIRED_ON_SERVER)
 target_include_directories(${VV_PLUGIN_LIBRARY} PRIVATE ${plugin_include_dirs})
 target_link_libraries(${VV_PLUGIN_LIBRARY} LINK_PUBLIC ${deps})
+if(WIN32)
+  target_compile_definitions(${VV_PLUGIN_LIBRARY} PRIVATE -DWIN32)
+endif(WIN32)
 
 #-----------------------------------------------------------------------------
 # Build PacketFileSender target which enable to playback a recorded pcap on the network

@@ -79,7 +79,7 @@ public:
    * space. No CellArray should be created as it can be create once the frame is ready.
    * @param numberOfPoints indicate the space to allocate @todo change the meaning
    */
-  virtual vtkSmartPointer<vtkPolyData> CreateNewEmptyFrame(vtkIdType numberOfPoints) = 0;
+  virtual vtkSmartPointer<vtkPolyData> CreateNewEmptyFrame(vtkIdType numberOfPoints, vtkIdType prereservedNumberOfPoints = 0) = 0;
 
   /**
    * @brief PreProcessPacket is use to construct the frame index and get some corretion
