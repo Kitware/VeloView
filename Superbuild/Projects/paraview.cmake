@@ -2,6 +2,7 @@ add_external_project(paraview
   DEPENDS qt python pythonqt
 
   CMAKE_ARGS
+    -DCMAKE_CXX_STANDARD=11
     -DBUILD_SHARED_LIBS:BOOL=ON
     -DBUILD_TESTING:BOOL=OFF
     -DPARAVIEW_BUILD_QT_GUI:BOOL=ON
