@@ -167,8 +167,6 @@ def openData(filename):
     app.actions['actionDualReturnIntensityLow'].enabled = True
     app.actions['actionShowRPM'].enabled = True
 
-    resetCamera()
-
 
 def planeFit():
     planefit.fitPlane()
@@ -624,7 +622,6 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
 
     smp.SetActiveSource(reader)
     updatePosition()
-    resetCamera()
     updateUIwithNewFrame()
 
 
@@ -1418,38 +1415,6 @@ def onCropReturns(show = True):
         if show:
             smp.Render()
 
-def resetCamera():
-
-
-    def subtract(a, b):
-        result = range(3)
-        vtk.vtkMath.Subtract(a, b, result)
-        return result
-
-    def cross(a, b):
-        result = range(3)
-        vtk.vtkMath.Cross(a, b, result)
-        return result
-
-    view = smp.GetActiveView()
-
-    foc = list(view.CenterOfRotation)
-    pos = list(view.CameraPosition)
-
-    viewDirection = subtract(foc, pos)
-
-    view.CameraPosition = subtract([0, 0, 0], viewDirection)
-    view.CameraFocalPoint = [0, 0, 0]
-    view.CenterOfRotation = [0, 0, 0]
-
-    vtk.vtkMath.Normalize(viewDirection)
-
-    perp = cross(viewDirection, [0, 0, 1])
-    viewUp = cross(perp, viewDirection)
-    view.CameraViewUp = viewUp
-
-    view.StillRender()
-
 
 def resetCameraToBirdsEyeView(view=None):
 
@@ -1929,53 +1894,6 @@ def toggleMotionDetection():
     motionDetector = smp.MotionDetector(reader)
     motionDetector.UpdatePipeline()
 
-def setViewTo(axis,sign):
-    view = smp.GetActiveView()
-    viewUp = view.CameraViewUp
-    position = view.CameraPosition
-
-    norm = math.sqrt(math.pow(position[0],2) + math.pow(position[1],2) + math.pow(position[2],2))
-
-    if axis == 'X':
-        view.CameraViewUp = [0,0,1]
-        view.CameraPosition = [-1*sign*norm,0,0]
-    elif axis == 'Y':
-        view.CameraViewUp = [0,0,1]
-        view.CameraPosition = [0,-1*sign*norm,0]
-    elif axis == 'Z':
-        view.CameraViewUp = [0,1,0]
-        view.CameraPosition = [0,0,-1*sign*norm]
-
-    view.CameraFocalPoint = [0,0,0]
-    view.CenterOfRotation = [0,0,0]
-
-    view.ResetCamera()
-    smp.Render()
-
-
-def setViewToXPlus():
-    setViewTo('X',1)
-
-
-def setViewToXMinus():
-    setViewTo('X',-1)
-
-
-def setViewToYPlus():
-    setViewTo('Y',1)
-
-
-def setViewToYMinus():
-    setViewTo('Y',-1)
-
-
-def setViewToZPlus():
-    setViewTo('Z',1)
-
-
-def setViewToZMinus():
-    setViewTo('Z',-1)
-
 def setFilterToDual():
     setFilterTo(0)
 
@@ -2087,7 +2005,6 @@ def setupActions():
     app.actions['actionSavePCAP'].connect('triggered()', onSavePCAP)
     app.actions['actionSaveScreenshot'].connect('triggered()', onSaveScreenshot)
     app.actions['actionExport_To_KiwiViewer'].connect('triggered()', onKiwiViewerExport)
-    app.actions['actionReset_Camera'].connect('triggered()', resetCamera)
     app.actions['actionGrid_Properties'].connect('triggered()', onGridProperties)
     app.actions['actionLaserSelection'].connect('triggered()', onLaserSelection)
     app.actions['actionChoose_Calibration_File'].connect('triggered()', onChooseCalibrationFile)
@@ -2099,13 +2016,6 @@ def setupActions():
 
     app.actions['actionToggleProjection'].connect('triggered()', toggleProjectionType)
     app.actions['actionMeasure'].connect('triggered()', toggleRulerContext)
-
-    app.actions['actionSetViewXPlus'].connect('triggered()', setViewToXPlus)
-    app.actions['actionSetViewXMinus'].connect('triggered()', setViewToXMinus)
-    app.actions['actionSetViewYPlus'].connect('triggered()', setViewToYPlus)
-    app.actions['actionSetViewYMinus'].connect('triggered()', setViewToYMinus)
-    app.actions['actionSetViewZPlus'].connect('triggered()', setViewToZPlus)
-    app.actions['actionSetViewZMinus'].connect('triggered()', setViewToZMinus)
 
     app.actions['actionDualReturnModeDual'].connect('triggered()', setFilterToDual)
     app.actions['actionDualReturnDistanceNear'].connect('triggered()', setFilterToDistanceNear)
@@ -2195,7 +2105,6 @@ def setupActions():
     app.MainToolbar = getMainWindow().findChild('QToolBar','toolBar')
     app.ColorToolbar = getMainWindow().findChild('QToolBar','colorToolBar')
     app.PlaybackToolbar = timeToolBar
-    app.ViewToolbar = getMainWindow().findChild('QToolBar','viewSettings')
     app.GeolocationToolbar = getMainWindow().findChild('QToolBar','geolocationToolbar')
 
 
