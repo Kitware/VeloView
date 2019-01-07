@@ -8,4 +8,7 @@ add_external_project(veloview
     -DEIGEN_INCLUDE_DIR:PATH=<INSTALL_DIR>/include/eigen3
     -DPYTHONQT_DIR:PATH=<INSTALL_DIR>
     -DVTK_DIR:PATH=${SuperBuild_BINARY_DIR}/paraview/src/paraview-build/VTK
+    -DBOOST_ROOT:PATH=<INSTALL_DIR>
+    -DBOOST_LIBRARYDIR:PATH=<INSTALL_DIR>/lib
+    -DPCL_DIR:PATH=<INSTALL_DIR>/share/pcl-1.8/
 )
