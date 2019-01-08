@@ -352,48 +352,12 @@ void vtkVelodyneHDLPositionReader::vtkInternal::InterpolateGPS(
 
   assert(times->GetNumberOfTuples() == gpsTime->GetNumberOfTuples());
 
-  double lastGPSTime = 0;
-  bool shouldWarnTimeShift = true;
-
   double lastGPS = 0.0;
   for (vtkIdType i = 0, k = times->GetNumberOfTuples(); i < k; ++i)
   {
-    const double currGPSTime = gpsTime->GetTuple1(i);
-    const unsigned int currGPSTime_int = static_cast<unsigned int>(currGPSTime);
-
-    if (currGPSTime != lastGPSTime)
+    const double currGPS = gpsTime->GetTuple1(i);
+    if (currGPS != lastGPS)
     {
-      if (currGPSTime < lastGPSTime)
-      {
-        // time of day has wrapped; increment time offset
-        timeOffset += 24.0 * 3600.0;
-      }
-      lastGPSTime = currGPSTime;
-
-      // Compute time in seconds from decimal-encoded time
-      const int hours = currGPSTime_int / 10000;
-      const int minutes = (currGPSTime_int / 100) % 100;
-      const int seconds = currGPSTime_int % 100;
-      const double fraction_seconds = currGPSTime - static_cast<double>(currGPSTime_int);
-      const double convertedtime = ((3600 * hours) + (60.0 * minutes) + seconds + fraction_seconds) + timeOffset;
-
-      // check that the sensor internal time
-      // and the the GPS time are equal modulo
-      // an hours = 3600 seconds
-      const double sensorInternalTime = times->GetTuple1(i) * 1e-6;
-      const double timeDiff = std::abs(convertedtime - sensorInternalTime);
-      const unsigned int timeDiffInt = static_cast<unsigned int>(timeDiff);
-      if ((timeDiffInt % 3600 != 0) && shouldWarnTimeShift)
-      {
-        double timeshift = std::min(3600.0 - static_cast<double>(timeDiffInt % 3600), static_cast<double>(timeDiffInt % 3600));
-        std::stringstream ss;
-        ss << "Unconsistent timeshift between sensor internal time and gps time" << std::endl;
-        ss << "timeshift: " << (int)timeshift << "s sensor internal time: " << sensorInternalTime
-           << "s gps time: " << convertedtime << "s" << std::endl;
-        vtkGenericWarningMacro(<< ss.str());
-        shouldWarnTimeShift = false;
-      }
-
       // Get position and heading
       double pos[3];
       points->GetPoint(i, pos);
@@ -435,12 +399,12 @@ void vtkVelodyneHDLPositionReader::vtkInternal::InterpolateGPS(
       transformVehiculeWorld->Modified();
 
       // Add the transform to the interpolator
-      this->Interp->AddTransform(currGPSTime, transformVehiculeWorld.GetPointer());
+      this->Interp->AddTransform(currGPS, transformVehiculeWorld.GetPointer());
 
       // Compute heading vector for interpolation
       double ha = heading * DEG_TO_RAD;
       double hv[2] = { cos(ha), sin(ha) };
-      headingInterpolator->AddTuple(currGPSTime, hv);
+      headingInterpolator->AddTuple(currGPS, hv);
     }
   }
 }
@@ -511,9 +475,6 @@ int vtkVelodyneHDLPositionReader::RequestData(
 
   vtkSmartPointer<vtkDoubleArray> gpsTime = vtkSmartPointer<vtkDoubleArray>::New();
   gpsTime->SetName("gpstime");
-
-  vtkNew<vtkIntArray> zoneData;
-  zoneData->SetName("zone");
 
   typedef std::map<std::string, vtkSmartPointer<vtkDoubleArray> > VecMap;
   VecMap dataVectors;
@@ -738,7 +699,6 @@ int vtkVelodyneHDLPositionReader::RequestData(
   output->GetPointData()->AddArray(lons);
   output->GetPointData()->AddArray(gpsTime);
   output->GetPointData()->AddArray(times);
-  output->GetFieldData()->AddArray(zoneData.GetPointer());
   for (VecMap::iterator it = dataVectors.begin(); it != dataVectors.end(); ++it)
   {
     output->GetPointData()->AddArray(it->second);

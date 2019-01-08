@@ -13,23 +13,17 @@
 // limitations under the License.
 #include "vvToggleSpreadSheetReaction.h"
 
-#include <pqApplicationCore.h>
-#include <pqSettings.h>
 #include <pqSpreadSheetView.h>
 #include <pqSpreadSheetViewModel.h>
 #include <pqView.h>
 
 #include <iostream>
 
-#include <QDockWidget>
-
 //-----------------------------------------------------------------------------
-vvToggleSpreadSheetReaction::vvToggleSpreadSheetReaction(
-  QAction* action, pqView* view, QDockWidget* docker)
+vvToggleSpreadSheetReaction::vvToggleSpreadSheetReaction(QAction* action, pqView* view)
   : Superclass(action)
   , Action(action)
   , View(view)
-  , Docker(docker)
 {
   // Hidding the XYZ grouped coordinates column by default
   if (this->View->inherits("pqSpreadSheetView"))
@@ -41,21 +35,17 @@ vvToggleSpreadSheetReaction::vvToggleSpreadSheetReaction(
   }
 
   QObject::connect(this->Action, SIGNAL(triggered()), this, SLOT(onToggleSpreadsheet()));
-  pqSettings* const settings(pqApplicationCore::instance()->settings());
-  action->setChecked(settings->value(action->objectName()).toBool());
+
+  this->onToggleSpreadsheet();
 }
 
 //-----------------------------------------------------------------------------
 vvToggleSpreadSheetReaction::~vvToggleSpreadSheetReaction()
 {
-  pqSettings* const settings(pqApplicationCore::instance()->settings());
-  settings->setValue(this->Action->objectName(), this->Action->isChecked());
 }
 
 //-----------------------------------------------------------------------------
 void vvToggleSpreadSheetReaction::onToggleSpreadsheet()
 {
-  this->Docker->setVisible(this->Action->isChecked());
-  this->View->widget()->setVisible(this->Action->isChecked());
   this->View->widget()->parentWidget()->setVisible(this->Action->isChecked());
 }

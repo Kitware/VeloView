@@ -77,7 +77,7 @@ include_directories(${SYSTEM_OPTION} ${EIGEN_INCLUDE_DIR})
 #--------------------------------------
 # PCL dependency
 #--------------------------------------
-option(ENABLE_PCL OFF "Required for pcl filter and other filter like the slam filter")
+option(ENABLE_PCL OFF "PCL will be required for filters using pcl (PCLRansacFilter, Slam, ...)")
 if (ENABLE_PCL)
   find_package(PCL REQUIRED)
   include_directories(${SYSTEM_OPTION} ${PCL_INCLUDE_DIRS})
@@ -101,17 +101,13 @@ include_directories(${SYSTEM_OPTION} ${Boost_INCLUDE_DIRS})
 list(APPEND ALL_BOOST_LIBRARIES ${Boost_LIBRARIES})
 
 #--------------------------------------
-# pcl dependency
+# Ceres dependency
 #--------------------------------------
-find_package(PCL REQUIRED)
-include_directories(${SYSTEM_OPTION} ${PCL_INCLUDE_DIRS})
-add_definitions(${PCL_DEFINITIONS})
-
-#--------------------------------------
-# ceres dependency
-#--------------------------------------
-find_package(CERES REQUIRED)
-include_directories(${SYSTEM_OPTION} ${CERES_INCLUDE_DIRS})
+option(ENABLE_Ceres OFF "Ceres is required for filters using non-linear least square optimization (Slam, autocalibration, ...)")
+if (ENABLE_Ceres)
+  find_package(Ceres REQUIRED)
+  include_directories(${SYSTEM_OPTION} ${CERES_INCLUDE_DIRS})
+endif(ENABLE_Ceres)
 
 #-----------------------------------------------------------------------------
 # Build Paraview Plugin
@@ -185,15 +181,20 @@ list(APPEND servermanager_sources
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/Ransac/vtkRansacPlaneModel.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/TrailingFrame/vtkTrailingFrame.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/Source/Grid/vtkVelodyneHDLGridSource.cxx
-)
+  )
 
 if (ENABLE_PCL)
   list(APPEND servermanager_sources
     ${CMAKE_CURRENT_SOURCE_DIR}/Filter/PCLRansacModel/vtkPCLRansacModel.cxx
-    ${CMAKE_CURRENT_SOURCE_DIR}/vtkSlam.cxx
-    ${CMAKE_CURRENT_SOURCE_DIR}/vtkSensorTransformFusion.cxx
     )
 endif(ENABLE_PCL)
+if (ENABLE_PCL AND ENABLE_Ceres)
+  list(APPEND servermanager_sources
+    ${CMAKE_CURRENT_SOURCE_DIR}/Filter/Slam/vtkSlam.cxx
+    ${CMAKE_CURRENT_SOURCE_DIR}/Filter/TransformFusion/vtkSensorTransformFusion.cxx
+    )
+endif(ENABLE_PCL AND ENABLE_Ceres)
+
 
 # xml file that describe the proxy of the wrap sources in paraview
 list(APPEND servermanager_xml
@@ -208,16 +209,20 @@ list(APPEND servermanager_xml
   xml/RansacPlaneModel.xml
   xml/TrailingFrame.xml
   xml/ProcessingSample.xml
-  xml/SLAM.xml
-  xml/SensorTransformFusion.xml
-  xml/RansacPlaneModel.xml
   xml/VelodyneHDLGridSource.xml
   )
+
 if (ENABLE_PCL)
   list(APPEND servermanager_xml
     xml/PCLRansacModel.xml
     )
 endif(ENABLE_PCL)
+if (ENABLE_PCL AND ENABLE_Ceres)
+  list(APPEND servermanager_xml
+    xml/Slam.xml
+    xml/SensorTransformFusion.xml
+    )
+endif(ENABLE_PCL AND ENABLE_Ceres)
 
 # other source code than won't be wrap by paraview but are needed to create the plugin
 # We make the distinction on that inherit from vtkObject as this one will be also wrap
@@ -228,7 +233,6 @@ set(sources_which_inherit_from_vtkObject
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/Lidar/Common/vtkLidarReader.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/Lidar/Common/vtkLidarStream.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/OldPlaneFitter/vtkPlaneFitter.cxx
-  ${CMAKE_CURRENT_SOURCE_DIR}/vtkPCLRansacModel.cxx
 )
 set(sources_which_do_not_inherit_from_vtkObject
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/Lidar/Common/LidarPacketInterpreter.cxx
@@ -243,7 +247,6 @@ set(sources_which_do_not_inherit_from_vtkObject
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/MotionDetector/vtkSphericalMap.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/Common/Network/vtkPacketFileWriter.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/Common/Network/vvPacketSender.cxx
-  ${CMAKE_CURRENT_SOURCE_DIR}/vtkPCLConversions.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/${interpolator_pach_until_vtk_update}
   )
 if (ENABLE_PCL)
@@ -262,9 +265,13 @@ list(APPEND deps
   ${PCL_LIBRARIES}
   ${CERES_LIBRARIES}
   )
+
 if (ENABLE_PCL)
   list(APPEND deps ${PCL_LIBRARIES})
 endif(ENABLE_PCL)
+if (ENABLE_Ceres)
+  list(APPEND deps ${CERES_LIBRARIES})
+endif(ENABLE_Ceres)
 
 # folder where to look for header file
 set(plugin_include_dirs
@@ -284,6 +291,8 @@ set(plugin_include_dirs
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/TrailingFrame
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/ProcessingSample
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/PCLRansacModel
+  ${CMAKE_CURRENT_SOURCE_DIR}/Filter/TransformFusion
+  ${CMAKE_CURRENT_SOURCE_DIR}/Filter/Slam
   ${CMAKE_CURRENT_SOURCE_DIR}/Source/Grid
   )
 

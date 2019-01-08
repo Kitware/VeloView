@@ -216,9 +216,8 @@ void vtkLASFileWriter::SetOrigin(int gcs, double easting, double northing, doubl
     vtkGenericWarningMacro("Header can't be changed once the writer is instanciated");
     return;
   }
-  // Set internal UTM offset
-  Eigen::Vector3d origin(northing, easting, height);
 
+  Eigen::Vector3d origin(northing, easting, height);
   this->Internal->Origin = origin;
 
   // Convert offset to output GCS, if a geoconversion is set up
@@ -238,13 +237,13 @@ void vtkLASFileWriter::SetOrigin(int gcs, double easting, double northing, doubl
 
   // Update header
   this->Internal->header.SetOffset(origin[0], origin[1], origin[2]);
-
   try
   {
     liblas::SpatialReference srs;
     std::ostringstream ss;
     ss << "EPSG:" << gcs;
     srs.SetFromUserInput(ss.str());
+    std::cout << srs << std::endl;
     this->Internal->header.SetSRS(srs);
   }
   catch (std::logic_error)

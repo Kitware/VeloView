@@ -59,17 +59,14 @@
 #include <pqStandardPropertyWidgetInterface.h>
 #include <pqStandardViewFrameActionsImplementation.h>
 #include <pqVelodyneManager.h>
-#include <pqXYChartView.h>
 #include <pqParaViewMenuBuilders.h>
 #include <pqTabbedMultiViewWidget.h>
 #include <pqSetName.h>
 #include <vtkPVPlugin.h>
 #include <vtkSMPropertyHelper.h>
-#include "pqAxesToolbar.h"
-#include "pqCameraToolbar.h"
+
 #include <pqLiveSourceBehavior.h>
 
-#include <QDockWidget>
 #include <QLabel>
 #include <QSplitter>
 #include <QToolBar>
@@ -81,7 +78,6 @@
 #include <cassert>
 #include <iostream>
 #include <sstream>
-#include <vector>
 
 #include "vvConfig.h"
 #include "vvPlayerControlsToolbar.h"
@@ -112,46 +108,8 @@ public:
     window->raise();
     window->activateWindow();
   }
-  void CreateDockChartView(vvMainWindow* window, const char* objectNameWithoutSpace)
-  {
-    pqObjectBuilder* builder = pqApplicationCore::instance()->getObjectBuilder();
-    pqServer* server = pqActiveObjects::instance().activeServer();
-
-    pqView* chartView = builder->createView(pqXYChartView::XYChartViewType(), server);
-    chartView->getProxy()->UpdateVTKObjects();
-    chartView->widget()->setMinimumSize(400, 200);
-
-    QDockWidget* dock = this->AddDockView(window, objectNameWithoutSpace, chartView->widget());
-    new vvToggleSpreadSheetReaction(this->Ui.actionChartView, chartView, dock);
-  }
-  QDockWidget* AddDockView(vvMainWindow* window, const char* objectName, QWidget* viewToDisplay)
-  {
-    QDockWidget* dock = new QDockWidget(window);
-    this->DockViews.push_back(dock);
-
-    // Keep in mind, we prefix Qt name of the dock widgets by "dock", it makes search
-    // easier.
-    QString prefixedObjectName("dock");
-    prefixedObjectName += objectName;
-    dock->setObjectName(prefixedObjectName);
-
-    // We let them live to the right to simulate the old VeloView behavior.
-    dock->setAllowedAreas(Qt::RightDockWidgetArea);
-    window->addDockWidget(Qt::RightDockWidgetArea, dock);
-
-    dock->setVisible(false);
-    dock->setWidget(viewToDisplay);
-    dock->setWindowTitle(objectName);
-
-    // It avoids user to close it manually by clicking on the cross, and come close
-    // to the old VeloView behavior
-    dock->setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable);
-    return dock;
-  }
-
   Ui::vvMainWindow Ui;
   pqRenderView* MainView;
-  std::vector<QDockWidget*> DockViews;
 
 private:
   void paraviewInit(vvMainWindow* window)
@@ -161,15 +119,6 @@ private:
     // need to be created before the first scene
     QToolBar* vcrToolbar = new vvPlayerControlsToolbar(window)
       << pqSetName("Player Control");
-    window->addToolBar(Qt::TopToolBarArea, vcrToolbar);
-
-    QToolBar* cameraToolbar = new pqCameraToolbar(window)
-      << pqSetName("cameraToolbar");
-    window->addToolBar(Qt::TopToolBarArea, cameraToolbar);
-
-    QToolBar* axesToolbar = new pqAxesToolbar(window)
-      << pqSetName("axesToolbar");
-    window->addToolBar(Qt::TopToolBarArea, axesToolbar);
 
     // Register ParaView interfaces.
     pqInterfaceTracker* pgm = core->interfaceTracker();
@@ -330,57 +279,29 @@ private:
     this->Ui.informationDock->hide();
     this->Ui.memoryInspectorDock->hide();
 
+    // create toolbar
+    window->addToolBar(Qt::TopToolBarArea, vcrToolbar);
+
     // Setup the View menu. This must be setup after all toolbars and dockwidgets
     // have been created.
     pqParaViewMenuBuilders::buildViewMenu(*this->Ui.menuViews, *window);
 
     if (ENABLE_DEV_MODE_UI_VAR)
     {
-      /// If you want to automatically add a menu for sources as requested in the
+      /// If you want to automatically add toolbars for sources as requested in the
       /// configuration pass in a non-null main window.
       QMenu* sourceMenu = window->menuBar()->addMenu(tr("&Sources"));
       pqParaViewMenuBuilders::buildSourcesMenu(*sourceMenu, nullptr);
 
-      /// If you want to automatically add a menu for filters as requested in the
+      /// If you want to automatically add toolbars for filters as requested in the
       /// configuration pass in a non-null main window.
       QMenu* filterMenu = window->menuBar()->addMenu(tr("&Filters"));
       pqParaViewMenuBuilders:: buildFiltersMenu(*filterMenu, nullptr);
     }
 
-    // Create a horizontal splitter as the central widget, add views to splitter
-    QSplitter* splitter = new QSplitter(Qt::Horizontal);
-    window->setCentralWidget(splitter);
-
-    // Add the main widget to the left
-    splitter->addWidget(view->widget());
-
-    pqView* overheadView = builder->createView(pqRenderView::renderViewType(), server);
-    overheadView->getProxy()->UpdateVTKObjects();
-    overheadView->widget()->setMinimumSize(400, 200);
-    // TODO: These sizes should not be absolute things
-    // overheadView->SetInteractionMode("2D");
-
-    pqView* spreadsheetView = builder->createView(pqSpreadSheetView::spreadsheetViewType(), server);
-    spreadsheetView->getProxy()->UpdateVTKObjects();
-    assert(spreadsheetView);
-    spreadsheetView->widget()->setMinimumSize(400, 200);
-    pqSpreadSheetView* ssview = qobject_cast<pqSpreadSheetView*>(spreadsheetView);
-    pqSpreadSheetViewDecorator* dec = new pqSpreadSheetViewDecorator(ssview);
-    dec->setPrecision(3);
-    dec->setFixedRepresentation(true);
-
-    // add 'ctrl+space' shortcut for quickLaunch
-    QShortcut *ctrlSpace = new QShortcut(Qt::CTRL + Qt::Key_Space, window);
-    QObject::connect(ctrlSpace, SIGNAL(activated()), pqApplicationCore::instance(), SLOT(quickLaunch()));
-
-    QDockWidget* dock = this->AddDockView(window, "OverHead", overheadView->widget());
-    new vvToggleSpreadSheetReaction(this->Ui.actionOverheadView, overheadView, dock);
-
-    dock = this->AddDockView(window, "SpreadSheet", spreadsheetView->widget());
-    new vvToggleSpreadSheetReaction(this->Ui.actionSpreadsheet, spreadsheetView, dock);
-
-    this->CreateDockChartView(window, "Slam_XYZ");
-    this->CreateDockChartView(window, "Slam_PitchRollYaw");
+      // add 'ctrl+space' shortcut for quickLaunch
+      QShortcut *ctrlSpace = new QShortcut(Qt::CTRL + Qt::Key_Space, window);
+      QObject::connect(ctrlSpace, SIGNAL(activated()), pqApplicationCore::instance(), SLOT(quickLaunch()));
 
     pqActiveObjects::instance().setActiveView(view);
   }
@@ -473,7 +394,6 @@ vvMainWindow::vvMainWindow()
 //-----------------------------------------------------------------------------
 vvMainWindow::~vvMainWindow()
 {
-  this->Internals->Ui.colorMapEditorDock->close();
   delete this->Internals;
   this->Internals = NULL;
 }

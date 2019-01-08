@@ -37,6 +37,7 @@ public:
   Q_INVOKABLE double gpsYaw() const;
   Q_INVOKABLE double gpsRoll() const;
   Q_INVOKABLE double gpsPitch() const;
+
   Q_INVOKABLE double gpsX() const;
   Q_INVOKABLE double gpsY() const;
   Q_INVOKABLE double gpsZ() const;

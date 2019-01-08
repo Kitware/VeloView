@@ -3,7 +3,6 @@
 #include "vtkVelodyneTransformInterpolator.h"
 
 #include <boost/filesystem.hpp>
-#include <boost/algorithm/string.hpp>
 #include <sstream>
 
 //-----------------------------------------------------------------------------
@@ -133,54 +132,3 @@ vtkLidarProvider::~vtkLidarProvider()
     delete this->Interpreter;
   }
 }
-
-void vtkLidarProvider::SetGpsTransform(vtkTransform* t)
-{
-  if (t)
-  {
-    this->Interpreter->GpsTransform->SetMatrix(t->GetMatrix());
-  }
-  else
-  {
-    this->Interpreter->GpsTransform->Identity();
-  }
-  this->Modified();
-}
-
-//-----------------------------------------------------------------------------
-void vtkLidarProvider::AddTransform(double rx, double ry, double rz, double tx, double ty, double tz, double time)
-{
-  // All the result obtained was with ZXY but it should be ZYX
-  // at the end, let's try with ZYX and make some test
-  vtkNew<vtkTransform> mappingTransform;
-  mappingTransform->PostMultiply();
-
-  // Passage from L(t_current) to L(t_begin) first frame
-  // Application of the SLAM result
-  mappingTransform->RotateX(rx);
-  mappingTransform->RotateY(ry);
-  mappingTransform->RotateZ(rz);
-  double pos[3] = {tx,ty,tz};
-  mappingTransform->Translate(pos);
-  this->Interpreter->Interp->AddTransform(time, mappingTransform.GetPointer());
-  this->Interpreter->Interp->Modified();
-}
-
-//-----------------------------------------------------------------------------
-void vtkLidarProvider::CreateLinearInterpolator()
-{
-  // Initialize the interpolator
-  this->Interpreter->Interp = vtkSmartPointer<vtkVelodyneTransformInterpolator>::New();
-  this->Interpreter->Interp->SetInterpolationTypeToLinear();
-  this->Interpreter->SetApplyTransform(false);
-}
-
-//-----------------------------------------------------------------------------
-void vtkLidarProvider::CreateNearestInterpolator()
-{
-  // Initialize the interpolator
-  this->Interpreter->Interp = vtkSmartPointer<vtkVelodyneTransformInterpolator>::New();
-  this->Interpreter->Interp->SetInterpolationTypeToNearestLowBounded();
-  this->Interpreter->SetApplyTransform(false);
-}
-

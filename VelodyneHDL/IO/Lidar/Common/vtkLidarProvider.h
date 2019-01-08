@@ -102,7 +102,6 @@ public:
    * to return. Negative numbers are invalid.
    */
   virtual vtkSmartPointer<vtkPolyData> GetFrame(int frameNumber, int wantedNumberOfTrailingFrame = 0) = 0;
-  virtual vtkPolyData* GetFramePointer(int frameNumber, int wantedNumberOfTrailingFrame = 0) = 0;
 
   /**
    * @brief GetNumberOfFrames return the number of available frames
@@ -214,13 +213,6 @@ public:
    * @todo set how to remove this methode as it is a workaround
    */
   void SetDummyProperty(int);
-
-  void SetGpsTransform(vtkTransform* t);
-  void CreateLinearInterpolator();
-  void CreateNearestInterpolator();
-
-  // SLAM transforms related
-  void AddTransform(double rx, double ry, double rz, double tx, double ty, double tz, double time);
 
   friend class vtkLidarReaderInternal;
   friend class vtkLidarStreamInternal;

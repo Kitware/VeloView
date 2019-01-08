@@ -29,7 +29,6 @@ public:
   int GetNumberOfFrames() override;
 
   vtkSmartPointer<vtkPolyData> GetFrame(int frameNumber, int wantedNumberOfTrailingFrames = 0) override;
-  vtkPolyData* GetFramePointer(int frameNumber, int wantedNumberOfTrailingFrame = 0) override { return nullptr; };
 
   void Poll();
 

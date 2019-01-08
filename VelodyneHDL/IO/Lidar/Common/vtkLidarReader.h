@@ -38,7 +38,6 @@ public:
   int GetNumberOfFrames() override;
 
   vtkSmartPointer<vtkPolyData> GetFrame(int frameNumber, int wantedNumberOfTrailingFrames) override;
-  vtkPolyData* GetFramePointer(int frameNumber, int wantedNumberOfTrailingFrames) override;
 
   /**
    * @copydoc vtkLidarReaderInternal::Open()

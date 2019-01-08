@@ -235,7 +235,6 @@ public:
   //! is always applied after the sensor transform.
   vtkSmartPointer<vtkVelodyneTransformInterpolator> Interp;
 
-  vtkNew<vtkTransform> GpsTransform;
 protected:
   //! Indicate which cropping mode should be used.
   /*vtkLidarProvider::CropModeEnum*/int CropMode;

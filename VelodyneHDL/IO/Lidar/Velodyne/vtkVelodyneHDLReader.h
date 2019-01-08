@@ -93,8 +93,6 @@ public:
   void SetSelectedPointsWithDualReturn(double* data, int Npoints);
   void SetShouldAddDualReturnArray(bool input);
 
-  void GetLaserIdMapping(int* output) const;
-
 private:
   vtkInternal* Internal;
   VelodynePacketInterpreter* Interpreter;

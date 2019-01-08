@@ -122,27 +122,17 @@ set (CM_PROJECTS_ALL)
 
 # Include all optional projects. These are the ones user can pick and choose.
 # Some of these allow using system libraries too.
-#Plug-in PCL
-#if (WIN32) # Only available for windows for now
+
+# PCL
 include(pcl)
-#endif()
+include(flann)
+include(zlib)
+include(png)
+include(qhull)
 
-# If pcl has been enabled, include flann, zlib, png and qhull
-if (pcl_ENABLED)
-    message("PCL enabled, you will have to enable flann, zlib, png and qhull")
-    message("Notice that pcl can only be build in Release mode")
-    include(flann)
-    include(zlib)
-    include(png)
-    include(qhull)
-endif()
-
-# If ceres has been enabled, include glog
+# Ceres
 include(ceres)
-if (ceres_ENABLED)
-    message("CERES enabled, you will have to enable glog and eigen")
-    include(glog)
-endif()
+include(glog)
 
 #Veloview
 include(qt)
@@ -160,13 +150,3 @@ process_dependencies()
 if (veloview_ENABLED)
   include(veloview.bundle OPTIONAL)
 endif()
-
-# force boost.mpi to be build and install (needed by pcl)
-if (UNIX AND pcl_ENABLED AND boost_ENABLED)
-  add_custom_command(
-    TARGET boost
-    POST_BUILD
-    COMMAND ${CMAKE_SOURCE_DIR}/Projects/unix/boostMPI.sh
-      )
-endif()
-

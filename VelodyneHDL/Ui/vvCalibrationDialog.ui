@@ -541,7 +541,7 @@
         <item row="4" column="0">
          <widget class="QLabel" name="GpsYawLabel">
           <property name="text">
-           <string>Yaw (rz)</string>
+           <string>Yaw</string>
           </property>
          </widget>
         </item>

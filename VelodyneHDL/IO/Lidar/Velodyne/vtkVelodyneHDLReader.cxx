@@ -164,25 +164,6 @@ void vtkVelodyneHDLReader::GetLaserCorrections(double verticalCorrection[HDL_MAX
 }
 
 //-----------------------------------------------------------------------------
-void vtkVelodyneHDLReader::GetLaserIdMapping(int* output) const
-{
-  int nbChannel = this->Interpreter->GetCalibrationReportedNumLasers();
-  std::vector<std::pair<int, int> > laserIdMapping(nbChannel);
-  for (int i = 0; i < nbChannel; ++i)
-  {
-    laserIdMapping[i].second = static_cast<int>(i);
-    laserIdMapping[i].first = this->Interpreter->laser_corrections_[i].verticalCorrection;
-  }
-  std::sort(laserIdMapping.begin(), laserIdMapping.end());
-
-  for (int i = 0; i < nbChannel; i++)
-  {
-    output[2 * i] = laserIdMapping[i].first;
-    output[2 * i + 1] = laserIdMapping[i].second;
-  }
-}
-
-//-----------------------------------------------------------------------------
 void vtkVelodyneHDLReader::GetXMLColorTable(double XMLColorTable[4 * HDL_MAX_NUM_LASERS])
 {
   for (int i = 0; i < HDL_MAX_NUM_LASERS; ++i)

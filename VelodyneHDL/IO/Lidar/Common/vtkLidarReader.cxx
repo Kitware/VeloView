@@ -245,12 +245,6 @@ vtkSmartPointer<vtkPolyData> vtkLidarReader::GetFrame(int frameNumber, int wante
 }
 
 //-----------------------------------------------------------------------------
-vtkPolyData* vtkLidarReader::GetFramePointer(int frameNumber, int wantedNumberOfTrailingFrames)
-{
-  return this->GetFrame(frameNumber, wantedNumberOfTrailingFrames).Get();
-}
-
-//-----------------------------------------------------------------------------
 void vtkLidarReader::Open()
 {
   return this->Internal->Open();
