@@ -460,6 +460,7 @@ def openSensor():
     app.actions['actionDualReturnDistanceFar'].enabled = True
     app.actions['actionDualReturnIntensityHigh'].enabled = True
     app.actions['actionDualReturnIntensityLow'].enabled = True
+    app.actions['actionRecord'].enabled = True
 
 
 def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrationUIArgs=None):
@@ -1205,8 +1206,7 @@ def recordFile(filename):
         stopStream()
         sensor.OutputFile = filename
         app.statusLabel.setText('  Recording file: %s.' % os.path.basename(filename))
-        if app.playing:
-            startStream()
+        startStream()
 
 
 def onRecord():
@@ -1224,6 +1224,7 @@ def onRecord():
             return
 
         recordFile(fileName)
+    recordAction.setChecked(recordAction.isChecked())
 
 
 def stopRecording():
@@ -1233,8 +1234,7 @@ def stopRecording():
     if sensor:
         stopStream()
         sensor.OutputFile = ''
-        if app.playing:
-            startStream()
+        startStream()
 
 
 def startStream():
@@ -2072,6 +2072,7 @@ def setupActions():
       QtGui.QIcon(QtGui.QPixmap(':/VelodyneHDLPlugin/media-record.png')), \
       "actionRecord",\
       mW)
+    app.actions['actionRecord'].setCheckable(True)
 
     app.actions['actionIgnoreZeroDistances'].connect('triggered()', onIgnoreZeroDistances)
     app.actions['actionIntraFiringAdjust'].connect('triggered()', onIntraFiringAdjust)
