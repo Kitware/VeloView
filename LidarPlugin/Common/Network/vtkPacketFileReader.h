@@ -79,7 +79,7 @@ public:
   // 2-A packet filter is then compile to convert an high level filtering
   //  expression in a program that can be interpreted by the kernel-level filtering engine
   // 3- The compiled filter is then associate to the capture
-  bool Open(const std::string& filename)
+  bool Open(const std::string& filename, std::string filter_arg="udp")
   {
     char errbuff[PCAP_ERRBUF_SIZE];
     pcap_t* pcapFile = pcap_open_offline(filename.c_str(), errbuff);
@@ -91,7 +91,7 @@ public:
 
     bpf_program filter;
 
-    if (pcap_compile(pcapFile, &filter, "udp", 0, PCAP_NETMASK_UNKNOWN) == -1)
+    if (pcap_compile(pcapFile, &filter, filter_arg.c_str(), 0, PCAP_NETMASK_UNKNOWN) == -1)
     {
       this->LastError = pcap_geterr(pcapFile);
       return false;

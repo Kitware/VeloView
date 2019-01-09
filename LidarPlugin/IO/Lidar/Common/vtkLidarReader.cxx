@@ -13,14 +13,7 @@
 //-----------------------------------------------------------------------------
 int vtkLidarReader::ReadFrameInformation()
 {
-  vtkPacketFileReader reader;
-  if (!reader.Open(this->FileName))
-  {
-    vtkErrorMacro("Failed to open packet file: " << this->FileName << "!\n"
-                    << reader.GetLastError());
-    return 0;
-  }
-
+  this->Open();
   const unsigned char* data = 0;
   unsigned int dataLength = 0;
   bool firstIteration = true;
@@ -36,9 +29,9 @@ int vtkLidarReader::ReadFrameInformation()
   // current udp packet to process
   fpos_t lastFilePosition;
   double lastPacketNetworkTime = 0;
-  reader.GetFilePosition(&lastFilePosition);
+  this->Reader->GetFilePosition(&lastFilePosition);
 
-  while (reader.NextPacket(data, dataLength, lastPacketNetworkTime))
+  while (this->Reader->NextPacket(data, dataLength, lastPacketNetworkTime))
   {
     // This command sends a signal that can be observed from outside
     // and that is used to diplay a Qt progress dialog from Python
@@ -50,7 +43,7 @@ int vtkLidarReader::ReadFrameInformation()
     // skip it and update the file position
     if (!this->Interpreter->IsLidarPacket(data, dataLength))
     {
-      reader.GetFilePosition(&lastFilePosition);
+      this->Reader->GetFilePosition(&lastFilePosition);
       continue;
     }
 
@@ -69,7 +62,7 @@ int vtkLidarReader::ReadFrameInformation()
     this->Interpreter->PreProcessPacket(data, dataLength, lastFilePosition,
                                         lastPacketNetworkTime, &this->FrameCatalog);
 
-    reader.GetFilePosition(&lastFilePosition);
+    this->Reader->GetFilePosition(&lastFilePosition);
   }
 
   if (!this->Interpreter->GetIsCalibrated())
@@ -223,7 +216,13 @@ void vtkLidarReader::Open()
 {
   this->Close();
   this->Reader = new vtkPacketFileReader;
-  if (!this->Reader->Open(this->FileName))
+
+  std::string filterPCAP = "udp";
+  if (this->LidarPort != -1)
+  {
+    filterPCAP += " port " + std::to_string(this->LidarPort);
+  }
+  if (!this->Reader->Open(this->FileName, filterPCAP.c_str()))
   {
     vtkErrorMacro(<< "Failed to open packet file: " << this->FileName << "!\n"
                                                  << this->Reader->GetLastError())
@@ -319,6 +318,17 @@ void vtkLidarReader::SaveFrame(int startFrame, int endFrame, const std::string &
   writer.Close();
   // restore the meta data
   this->Interpreter->SetParserMetaData(storedMetaData);
+}
+
+//-----------------------------------------------------------------------------
+void vtkLidarReader::SetLidarPort(int _arg)
+{
+  if (this->LidarPort != _arg)
+  {
+    this->LidarPort = _arg;
+    this->FrameCatalog.clear();
+    this->Modified();
+  }
 }
 
 //-----------------------------------------------------------------------------

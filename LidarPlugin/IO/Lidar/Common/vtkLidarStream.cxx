@@ -75,15 +75,24 @@ void vtkLidarStream::SetForwardedIpAddress(const std::string &ipAddress)
 }
 
 //-----------------------------------------------------------------------------
-int vtkLidarStream::GetLIDARPort()
+int vtkLidarStream::GetLidarPort()
 {
   return this->Network->LIDARPort;
 }
 
 //-----------------------------------------------------------------------------
-void vtkLidarStream::SetLIDARPort(int value)
+void vtkLidarStream::SetLidarPort(int value)
 {
-  this->Network->LIDARPort = value;
+  if (this->Network->LIDARPort != value)
+  {
+    bool wasRunning = this->Network && this->Network->Thread->joinable() && this->Network->LIDARPortReceiver;
+    this->Stop();
+    this->Network->LIDARPort = value;
+    if (wasRunning)
+    {
+      this->Start();
+    }
+  }
 }
 
 //-----------------------------------------------------------------------------

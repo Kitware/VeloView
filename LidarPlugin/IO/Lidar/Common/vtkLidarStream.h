@@ -43,8 +43,8 @@ public:
   /**
    * @copydoc NetworkSource::LIDARPort
    */
-  int GetLIDARPort();
-  void SetLIDARPort(int);
+  void SetLidarPort(int) override;
+  int GetLidarPort() override;
 
   /**
    * @copydoc NetworkSource::GPSPort
