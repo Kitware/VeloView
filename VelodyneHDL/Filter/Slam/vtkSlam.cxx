@@ -709,6 +709,19 @@ private:
 int vtkSlam::RequestData(vtkInformation *vtkNotUsed(request),
 vtkInformationVector **inputVector, vtkInformationVector *outputVector)
 {
+  {
+  // force the laserIdMapping temporary for a HDL32 sensor
+  this->NLasers = 32;
+  this->LaserIdMapping.resize(this->NLasers);
+  int hdl32Mapping[32] = {0,2,4,6,8,10,12,14,16,18,20,22,24,26,28,30,1,3,5,7,9,11,13,15,17,19,21,23,25,27,29,31};
+  this->LaserIdMapping.resize(32);
+  std::copy(hdl32Mapping, hdl32Mapping + 32, this->LaserIdMapping.begin());
+  this->pclCurrentFrameByScan.resize(this->NLasers);
+  }
+
+  // Get the input
+  vtkPolyData * input = vtkPolyData::GetData(inputVector[0]->GetInformationObject(0));
+  this->AddFrame(input);
   // get info
   vtkInformation *outInfo0 = outputVector->GetInformationObject(0);
   vtkInformation *outInfo1 = outputVector->GetInformationObject(1);
@@ -900,7 +913,7 @@ void vtkSlam::PrintSelf(ostream& os, vtkIndent indent)
 //-----------------------------------------------------------------------------
 vtkSlam::vtkSlam()
 {
-  this->SetNumberOfInputPorts(0);
+  this->SetNumberOfInputPorts(1);
   this->SetNumberOfOutputPorts(6);
   this->ResetAlgorithm();
 }

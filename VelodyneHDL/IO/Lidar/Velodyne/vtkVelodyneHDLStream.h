@@ -87,6 +87,7 @@ public:
   void SetSelectedPointsWithDualReturn(double* data, int Npoints);
   void SetShouldAddDualReturnArray(bool input);
 
+
 private:
   vtkInternal* Internal;
   VelodynePacketInterpreter* Interpreter;

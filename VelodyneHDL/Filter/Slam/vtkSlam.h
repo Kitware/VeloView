@@ -99,6 +99,7 @@ void Set##prefix##_##name (const type _arg) \
 #include <pcl/kdtree/kdtree_flann.h>
 
 
+
 class vtkVelodyneTransformInterpolator;
 class RollingGrid;
 typedef pcl::PointXYZINormal Point;
@@ -229,23 +230,23 @@ public:
   void OnlyComputeKeypoints(vtkSmartPointer<vtkPolyData> newFrame);
 
   // Get/Set General
-  slamGetMacro(,DisplayMode, bool)
-  slamSetMacro(,DisplayMode, bool)
+  vtkGetMacro(DisplayMode, bool)
+  vtkSetMacro(DisplayMode, bool)
 
-  slamGetMacro(,MaxDistBetweenTwoFrames, double)
-  slamSetMacro(,MaxDistBetweenTwoFrames, double)
+  vtkGetMacro(MaxDistBetweenTwoFrames, double)
+  vtkSetMacro(MaxDistBetweenTwoFrames, double)
 
-  slamGetMacro(,AngleResolution, double)
-  slamSetMacro(,AngleResolution, double)
+  vtkGetMacro(AngleResolution, double)
+  vtkSetMacro(AngleResolution, double)
 
-  slamGetMacro(,MaxDistanceForICPMatching, double)
-  slamSetMacro(,MaxDistanceForICPMatching, double)
+  vtkGetMacro(MaxDistanceForICPMatching, double)
+  vtkSetMacro(MaxDistanceForICPMatching, double)
 
-  slamGetMacro(,FastSlam, bool)
-  slamSetMacro(,FastSlam, bool)
+  vtkGetMacro(FastSlam, bool)
+  vtkSetMacro(FastSlam, bool)
 
   void SetUndistortion(bool input);
-  slamGetMacro(,Undistortion, bool)
+  vtkGetMacro(Undistortion, bool)
   // set the motion model
   void SetMotionModel(int input);
 
@@ -288,69 +289,69 @@ public:
   slamSetMacro(_Keypoint,EdgeDepthGapThreshold, double)
 
   // Get/Set EgoMotion
-  slamGetMacro(,EgoMotionLMMaxIter, unsigned int)
-  slamSetMacro(,EgoMotionLMMaxIter, unsigned int)
+  vtkGetMacro(EgoMotionLMMaxIter, unsigned int)
+  vtkSetMacro(EgoMotionLMMaxIter, unsigned int)
 
-  slamGetMacro(,EgoMotionICPMaxIter, unsigned int)
-  slamSetMacro(,EgoMotionICPMaxIter, unsigned int)
+  vtkGetMacro(EgoMotionICPMaxIter, unsigned int)
+  vtkSetMacro(EgoMotionICPMaxIter, unsigned int)
 
-  slamGetMacro(,EgoMotionLineDistanceNbrNeighbors, unsigned int)
-  slamSetMacro(,EgoMotionLineDistanceNbrNeighbors, unsigned int)
+  vtkGetMacro(EgoMotionLineDistanceNbrNeighbors, unsigned int)
+  vtkSetMacro(EgoMotionLineDistanceNbrNeighbors, unsigned int)
 
-  slamGetMacro(,EgoMotionMinimumLineNeighborRejection, unsigned int)
-  slamSetMacro(,EgoMotionMinimumLineNeighborRejection, unsigned int)
+  vtkGetMacro(EgoMotionMinimumLineNeighborRejection, unsigned int)
+  vtkSetMacro(EgoMotionMinimumLineNeighborRejection, unsigned int)
 
-  slamGetMacro(,EgoMotionLineDistancefactor, double)
-  slamSetMacro(,EgoMotionLineDistancefactor, double)
+  vtkGetMacro(EgoMotionLineDistancefactor, double)
+  vtkSetMacro(EgoMotionLineDistancefactor, double)
 
-  slamGetMacro(,EgoMotionPlaneDistanceNbrNeighbors, unsigned int)
-  slamSetMacro(,EgoMotionPlaneDistanceNbrNeighbors, unsigned int)
+  vtkGetMacro(EgoMotionPlaneDistanceNbrNeighbors, unsigned int)
+  vtkSetMacro(EgoMotionPlaneDistanceNbrNeighbors, unsigned int)
 
-  slamGetMacro(,EgoMotionPlaneDistancefactor1, double)
-  slamSetMacro(,EgoMotionPlaneDistancefactor1, double)
+  vtkGetMacro(EgoMotionPlaneDistancefactor1, double)
+  vtkSetMacro(EgoMotionPlaneDistancefactor1, double)
 
-  slamGetMacro(,EgoMotionPlaneDistancefactor2, double)
-  slamSetMacro(,EgoMotionPlaneDistancefactor2, double)
+  vtkGetMacro(EgoMotionPlaneDistancefactor2, double)
+  vtkSetMacro(EgoMotionPlaneDistancefactor2, double)
 
-  slamGetMacro(,EgoMotionMaxLineDistance, double)
-  slamSetMacro(,EgoMotionMaxLineDistance, double)
+  vtkGetMacro(EgoMotionMaxLineDistance, double)
+  vtkSetMacro(EgoMotionMaxLineDistance, double)
 
-  slamGetMacro(,EgoMotionMaxPlaneDistance, double)
-  slamSetMacro(,EgoMotionMaxPlaneDistance, double)
+  vtkGetMacro(EgoMotionMaxPlaneDistance, double)
+  vtkSetMacro(EgoMotionMaxPlaneDistance, double)
 
   // Get/Set Mapping
-  slamGetMacro(,MappingLMMaxIter, unsigned int)
-  slamSetMacro(,MappingLMMaxIter, unsigned int)
+  vtkGetMacro(MappingLMMaxIter, unsigned int)
+  vtkSetMacro(MappingLMMaxIter, unsigned int)
 
-  slamGetMacro(,MappingICPMaxIter, unsigned int)
-  slamSetMacro(,MappingICPMaxIter, unsigned int)
+  vtkGetMacro(MappingICPMaxIter, unsigned int)
+  vtkSetMacro(MappingICPMaxIter, unsigned int)
 
-  slamGetMacro(,MappingLineDistanceNbrNeighbors, unsigned int)
-  slamSetMacro(,MappingLineDistanceNbrNeighbors, unsigned int)
+  vtkGetMacro(MappingLineDistanceNbrNeighbors, unsigned int)
+  vtkSetMacro(MappingLineDistanceNbrNeighbors, unsigned int)
 
-  slamGetMacro(,MappingMinimumLineNeighborRejection, unsigned int)
-  slamSetMacro(,MappingMinimumLineNeighborRejection, unsigned int)
+  vtkGetMacro(MappingMinimumLineNeighborRejection, unsigned int)
+  vtkSetMacro(MappingMinimumLineNeighborRejection, unsigned int)
 
-  slamGetMacro(,MappingLineDistancefactor, double)
-  slamSetMacro(,MappingLineDistancefactor, double)
+  vtkGetMacro(MappingLineDistancefactor, double)
+  vtkSetMacro(MappingLineDistancefactor, double)
 
-  slamGetMacro(,MappingPlaneDistanceNbrNeighbors, unsigned int)
-  slamSetMacro(,MappingPlaneDistanceNbrNeighbors, unsigned int)
+  vtkGetMacro(MappingPlaneDistanceNbrNeighbors, unsigned int)
+  vtkSetMacro(MappingPlaneDistanceNbrNeighbors, unsigned int)
 
-  slamGetMacro(,MappingPlaneDistancefactor1, double)
-  slamSetMacro(,MappingPlaneDistancefactor1, double)
+  vtkGetMacro(MappingPlaneDistancefactor1, double)
+  vtkSetMacro(MappingPlaneDistancefactor1, double)
 
-  slamGetMacro(,MappingPlaneDistancefactor2, double)
-  slamSetMacro(,MappingPlaneDistancefactor2, double)
+  vtkGetMacro(MappingPlaneDistancefactor2, double)
+  vtkSetMacro(MappingPlaneDistancefactor2, double)
 
-  slamGetMacro(,MappingMaxLineDistance, double)
-  slamSetMacro(,MappingMaxLineDistance, double)
+  vtkGetMacro(MappingMaxLineDistance, double)
+  vtkSetMacro(MappingMaxLineDistance, double)
 
-  slamGetMacro(,MappingMaxPlaneDistance, double)
-  slamSetMacro(,MappingMaxPlaneDistance, double)
+  vtkGetMacro(MappingMaxPlaneDistance, double)
+  vtkSetMacro(MappingMaxPlaneDistance, double)
 
-  slamGetMacro(,MappingLineMaxDistInlier, double)
-  slamSetMacro(,MappingLineMaxDistInlier, double)
+  vtkGetMacro(MappingLineMaxDistInlier, double)
+  vtkSetMacro(MappingLineMaxDistInlier, double)
 
   // Set transforms information / interpolator from an
   // external sensor (GPS, IMU, Camera SLAM, ...) to be

@@ -34,7 +34,6 @@ vvSelectFramesDialog::vvSelectFramesDialog(QWidget* p)
   this->Internal = new pqInternal;
   this->Internal->setupUi(this);
   this->Internal->FrameStart->clearFocus();
-  this->Internal->AbsoluteUtmButton->setChecked(true);
 }
 
 //-----------------------------------------------------------------------------

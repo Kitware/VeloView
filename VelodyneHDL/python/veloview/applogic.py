@@ -30,7 +30,6 @@ import kiwiviewerExporter
 import gridAdjustmentDialog
 import aboutDialog
 import planefit
-import slam
 
 from PythonQt.paraview import vvCalibrationDialog, vvCropReturnsDialog, vvSelectFramesDialog
 from VelodyneHDLPluginPython import vtkVelodyneHDLReader
@@ -77,11 +76,6 @@ class AppLogic(object):
         self.reader = None
         self.position = (None, None, None)
         self.sensor = None
-
-        self.posreaderSave = None
-
-        self.slamSave = None
-        self.PositionDataType = 0
 
         self.fps = [0,0]
 
@@ -350,13 +344,13 @@ def chooseCalibration(calibrationFilename=None):
                 vmLidar.SetElement(row, 3, qm.row(row).w())
             self.sensorTransform.SetMatrix(vmLidar)
 
-            qmGps = dialog.gpsTransform()
+            qm = dialog.gpsTransform()
             vmGps = vtk.vtkMatrix4x4()
             for row in xrange(4):
-                vmGps.SetElement(row, 0, qmGps.row(row).x())
-                vmGps.SetElement(row, 1, qmGps.row(row).y())
-                vmGps.SetElement(row, 2, qmGps.row(row).z())
-                vmGps.SetElement(row, 3, qmGps.row(row).w())
+                vmGps.SetElement(row, 0, qm.row(row).x())
+                vmGps.SetElement(row, 1, qm.row(row).y())
+                vmGps.SetElement(row, 2, qm.row(row).z())
+                vmGps.SetElement(row, 3, qm.row(row).w())
             self.gpsTransform.SetMatrix(vmGps)
 
 
@@ -394,7 +388,6 @@ def openSensor():
 
     calibrationFile = calibration.calibrationFile
     sensorTransform = calibration.sensorTransform
-    gpsTransform = calibration.gpsTransform
     LIDARPort = calibration.lidarPort
     GPSPort = calibration.gpsPort
     LIDARForwardingPort = calibration.lidarForwardingPort
@@ -417,7 +410,6 @@ def openSensor():
     sensor.GetClientSideObject().SetIsCrashAnalysing(app.EnableCrashAnalysis)
     sensor.GetClientSideObject().SetForwardedIpAddress(ipAddressForwarding)
     sensor.GetClientSideObject().SetSensorTransform(sensorTransform)
-    sensor.GetClientSideObject().SetGpsTransform(gpsTransform)
     sensor.GetClientSideObject().SetIgnoreZeroDistances(app.actions['actionIgnoreZeroDistances'].isChecked())
     sensor.GetClientSideObject().SetIntraFiringAdjust(app.actions['actionIntraFiringAdjust'].isChecked())
     sensor.GetClientSideObject().SetIgnoreEmptyFrames(app.actions['actionIgnoreEmptyFrames'].isChecked())
@@ -481,7 +473,6 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
 
     calibrationFile = calibration.calibrationFile
     sensorTransform = calibration.sensorTransform
-    gpsTransform = calibration.gpsTransform
 
     close()
 
@@ -512,15 +503,12 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
     app.filenameLabel.setText('File: %s' % os.path.basename(filename))
     onCropReturns(False) # Dont show the dialog just restore settings
 
-    #app.ransac = smp.PCLRansacModel(Input = reader)
-
     # Resetting laser selection dialog according to the opened PCAP file
     # and restoring the dialog visibility afterward
 
     restoreLaserSelectionDialog()
 
     reader.GetClientSideObject().SetSensorTransform(sensorTransform)
-    reader.GetClientSideObject().SetGpsTransform(gpsTransform)
 
     reader.GetClientSideObject().SetIgnoreZeroDistances(app.actions['actionIgnoreZeroDistances'].isChecked())
     reader.GetClientSideObject().SetIntraFiringAdjust(app.actions['actionIntraFiringAdjust'].isChecked())
@@ -560,8 +548,6 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
     tripod.ScaleFactor = 10.0
     smp.Show(tripod)
 
-    app.posreaderSave = posreader
-
     if posreader.GetClientSideObject().GetOutput().GetNumberOfPoints():
         reader.GetClientSideObject().SetInterpolator(
             posreader.GetClientSideObject().GetInterpolator())
@@ -588,9 +574,6 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
 
         app.position = (posreader, None, tripod)
         smp.Render(app.overheadView)
-
-        # Update Chart Views
-        toggleShowChart()
     else:
         if positionFilename is not None:
             QtGui.QMessageBox.warning(getMainWindow(), 'Georeferencing data invalid',
@@ -621,9 +604,6 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
     # there's no dual return on the current frame later on
     app.actions['actionSelectDualReturn'].enabled = True
     app.actions['actionSelectDualReturn2'].enabled = True
-    app.actions['actionLaunchSlam'].enabled = True
-    app.actions['actionStreamSlam'].setChecked(False)
-    app.actions['actionStreamSlam'].enabled = True
     app.actions['actionDualReturnModeDual'].enabled = True
     app.actions['actionDualReturnDistanceNear'].enabled = True
     app.actions['actionDualReturnDistanceFar'].enabled = True
@@ -803,10 +783,7 @@ def saveLASFrames(filename, first, last, transform = 0):
 
     # Check that we have a position provider
     if getPosition() is not None:
-        if getPosition().GetNumberOfOutputPorts() > 2 :
-            position = getPosition().GetClientSideObject().GetOutput(1)
-        else :
-            position = getPosition().GetClientSideObject().GetOutput()
+        position = getPosition().GetClientSideObject().GetOutput()
 
         PythonQt.paraview.pqVelodyneManager.saveFramesToLAS(
             reader, position, first, last, filename, transform)
@@ -906,22 +883,6 @@ def getSaveFileName(title, extension, defaultFileName=None):
         settings.setValue('VelodyneHDLPlugin/OpenData/DefaultDir', QtCore.QFileInfo(fileName).absoluteDir().absolutePath())
         return fileName
 
-def getOpenFileName(title, extension, defaultFileName=None):
-
-    settings = getPVSettings()
-    defaultDir = settings.value('VelodyneHDLPlugin/OpenData/DefaultDir', QtCore.QDir.homePath())
-    defaultFileName = defaultDir if not defaultFileName else os.path.join(defaultDir, defaultFileName)
-
-    nativeDialog = 0 if app.actions['actionNative_File_Dialogs'].isChecked() else QtGui.QFileDialog.DontUseNativeDialog
-
-    filters = '%s (*.%s)' % (extension, extension)
-    selectedFilter = '*.%s' % extension
-    fileName = QtGui.QFileDialog.getOpenFileName(getMainWindow(), title,
-                        defaultFileName, filters, selectedFilter, nativeDialog)
-
-    if fileName:
-        settings.setValue('VelodyneHDLPlugin/OpenData/DefaultDir', QtCore.QFileInfo(fileName).absoluteDir().absolutePath())
-        return fileName
 
 def restoreNativeFileDialogsAction():
     settings = getPVSettings()
@@ -1002,7 +963,7 @@ def onSavePosition():
 
 def onSaveLAS():
 
-    frameOptions = getFrameSelectionFromUser(framePackVisibility=True, frameTransformVisibility=True)
+    frameOptions = getFrameSelectionFromUser(framePackVisibility=True, frameTransformVisibility=False)
     if frameOptions is None:
         return
 
@@ -1207,8 +1168,6 @@ def close():
 
     app.actions['actionSelectDualReturn'].enabled = False
     app.actions['actionSelectDualReturn2'].enabled = False
-    app.actions['actionLaunchSlam'].enabled = False
-    app.actions['actionStreamSlam'].enabled = False
     app.actions['actionDualReturnModeDual'].enabled = False
     app.actions['actionDualReturnDistanceNear'].enabled = False
     app.actions['actionDualReturnDistanceFar'].enabled = False
@@ -1582,8 +1541,6 @@ def start():
     setupActions()
     disableSaveActions()
     app.actions['actionSelectDualReturn'].setEnabled(False)
-    app.actions['actionLaunchSlam'].setEnabled(False)
-    app.actions['actionStreamSlam'].enabled = False
     app.actions['actionMeasure'].setEnabled(view.CameraParallelProjection)
     setupStatusBar()
     hideColorByComponent()
@@ -1776,13 +1733,6 @@ def openRecentFile(filename):
 def getRecentFiles():
     return list(getPVSettings().value('VelodyneHDLPlugin/RecentFiles', []) or [])
 
-def getChartViewProxies():
-    chartViewProxies = list()
-    for proxy in smp.servermanager.ProxyManager():
-        if proxy.GetXMLName() == 'XYChartView':
-            chartViewProxies.append(proxy)
-
-    return chartViewProxies
 
 def updateRecentFiles():
     settings = getPVSettings()
@@ -1833,110 +1783,6 @@ def toggleRPM():
 
     smp.Render()
 
-def toggleLaunchSlam():
-    slam.launch()
-    slam.updateChartView()
-
-def toggleLaunchStreamSlam():
-    checked = app.actions['actionStreamSlam'].isChecked()
-    if checked:
-        slam.configure()
-        smp.Hide(getReader())
-    else:
-        smp.Show(getReader())
-
-def toggleLoadTransform():
-    # load the transforms in the reader
-    # interpolator
-    fileName = getOpenFileName('Load Transforms', 'csv')
-    reader = getReader()
-
-    # load the transform in a slam algorithm
-    # and display the trajectory output in the
-    # overhead view
-    tempSlam = smp.Slam()
-    tempSlam.GetClientSideObject().LoadTransforms(fileName)
-    tempSlam.GetClientSideObject().Update()
-    reader.GetClientSideObject().SetInterpolator(tempSlam.GetClientSideObject().GetInterpolator())
-    smp.Show(tempSlam[1], app.overheadView)
-    app.slamSave = tempSlam
-
-    # Set the slam as posreader
-    oldPosition = app.position
-    app.position = (tempSlam, None, oldPosition[2])
-
-    # Reset reader as active source so we can use the paraview toolbox to visualize the different array: density, ...
-    smp.SetActiveSource(getReader())
-
-def toggleExportTransform():
-    if app.slamSave is None:
-        QtGui.QMessageBox.warning(getMainWindow(), 'No transform to export', 'Could not export transform data, none was loaded or computed')
-
-    fileName = getSaveFileName('Save Transforms', 'csv')
-    app.slamSave.GetClientSideObject().ExportTransforms(fileName)
-
-def toggleMergeTransforms():
-    fileNameIMU = getOpenFileName('Load IMU transforms', 'csv')
-    if not fileNameIMU:
-        return
-
-    fileNameSlam = getOpenFileName('Load SLAM transforms', 'csv')
-    if not fileNameSlam:
-        return
-
-    sensorFusion = smp.SensorTransformFusion()
-    sensorFusion.GetClientSideObject().LoadIMUTransforms(fileNameIMU)
-    sensorFusion.GetClientSideObject().LoadSLAMTransforms(fileNameSlam)
-    sensorFusion.GetClientSideObject().MergeTransforms()
-    source = getReader();
-    source.GetClientSideObject().SetInterpolator(sensorFusion.GetClientSideObject().GetInterpolator())
-
-def toggleRegisterSlamOnGps():
-    gps = app.posreaderSave
-    slamT = app.slamSave
-
-    if slamT is None:
-        QtGui.QMessageBox.warning(getMainWindow(), 'Trajectory registration', 'SLAM data not provided')
-        return
-
-    if gps is None:
-        QtGui.QMessageBox.warning(getMainWindow(), 'Trajectory registration', 'Gps data not provided')
-        return
-
-    sensorFusion = smp.SensorTransformFusion()
-    sensorFusion.GetClientSideObject().RegisterSlamOnGps(slamT.GetClientSideObject().GetInterpolator(), gps.GetClientSideObject().GetInterpolator())
-
-    # Provide the new interpolator to the source
-    source = getReader()
-    source.GetClientSideObject().SetInterpolator(sensorFusion.GetClientSideObject().GetInterpolator())
-
-    # provide the new interpolator to the slam
-    app.slamSave.GetClientSideObject().SetInterpolator(sensorFusion.GetClientSideObject().GetInterpolator())
-
-    # Add georeferencing information to the slam
-    pc = gps.GetClientSideObject().GetOutput()
-    zone = pc.GetFieldData().GetArray("zone")
-    easting = pc.GetPointData().GetArray("easting")
-    northing = pc.GetPointData().GetArray("northing")
-    height = pc.GetPointData().GetArray("height")
-
-    if ((zone is not None) and (zone.GetNumberOfTuples()) and
-    (easting is not None) and (easting.GetNumberOfTuples()) and
-    (northing is not None) and (northing.GetNumberOfTuples()) and
-    (height is not None) and (height.GetNumberOfTuples())) :
-        easting0 = easting.GetComponent(0, 0)
-        northing0 = northing.GetComponent(0, 0)
-        height0 = height.GetComponent(0, 0)
-        utm = int(zone.GetComponent(0, 0))
-        app.slamSave.GetClientSideObject().AddGeoreferencingFieldInformation(easting0, northing0, height0, utm)
-
-    app.slamSave.GetClientSideObject().Update()
-
-    # Reset reader as active source so we can use the paraview toolbox to visualize the different array: density, ...
-    smp.SetActiveSource(getReader())
-
-    # Display Slam output in the overhead viewer
-    smp.Show(app.slamSave[1], app.overheadView)
 
 def toggleSelectDualReturn():
     # test if we are on osx os
@@ -2005,9 +1851,6 @@ def toggleSelectDualReturn():
 def toggleCrashAnalysis():
 
     app.EnableCrashAnalysis = app.actions['actionEnableCrashAnalysis'].isChecked()
-
-def toggleShowChart():
-    slam.updateChartView()
 
 def toggleRansacPlaneFitting():
     reader = getReader()
@@ -2185,15 +2028,6 @@ def setupActions():
     app.actions['actionFastRenderer'].connect('triggered()',fastRendererChanged)
     app.actions['actionSelectDualReturn'].connect('triggered()',toggleSelectDualReturn)
     app.actions['actionSelectDualReturn2'].connect('triggered()',toggleSelectDualReturn)
-
-    app.actions['actionLaunchSlam'].connect('triggered()', toggleLaunchSlam)
-    app.actions['actionStreamSlam'].connect('triggered()', toggleLaunchStreamSlam)
-    app.actions['actionChartView'].connect('triggered()',toggleShowChart)
-    app.actions['actionLoadTransform'].connect('triggered()', toggleLoadTransform)
-    app.actions['actionExportTransform'].connect('triggered()', toggleExportTransform)
-    app.actions['actionMergeTransforms'].connect('triggered()', toggleMergeTransforms)
-    app.actions['actionRegisterSlamOnGPS'].connect('triggered()', toggleRegisterSlamOnGps)
-
     app.actions['actionRansacPlaneFitting'].connect('triggered()', toggleRansacPlaneFitting)
     app.actions['actionBirdEyeViewSnap'].connect('triggered()', toggleBirdEyeViewSnap)
     app.actions['actionMotionDetection'].connect('triggered()', toggleMotionDetection)
@@ -2229,7 +2063,7 @@ def setupActions():
     geolocationToolBar.addWidget(geolocationComboBox)
 
     # Set default toolbar visibility
-    geolocationToolBar.visible = True
+    geolocationToolBar.visible = False
     app.geolocationToolBar = geolocationToolBar
     
     # Setup and add the playback speed control toolbar
@@ -2243,7 +2077,7 @@ def setupActions():
     spinBox = QtGui.QSpinBox()
     spinBox.toolTip = "Number of trailing frames"
     spinBox.setMinimum(0)
-    spinBox.setMaximum(10000)
+    spinBox.setMaximum(100)
     spinBox.connect('valueChanged(int)', onTrailingFramesChanged)
     app.trailingFramesSpinBox = spinBox
 

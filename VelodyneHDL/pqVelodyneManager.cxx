@@ -255,9 +255,6 @@ void pqVelodyneManager::saveFramesToLAS(vtkVelodyneHDLReader* reader, vtkPolyDat
     return;
   }
 
-  startFrame += 1;
-  endFrame -= 1;
-
   // initialize origin point
   double northing, easting, height;
   easting = northing = height = 0;
@@ -281,6 +278,7 @@ void pqVelodyneManager::saveFramesToLAS(vtkVelodyneHDLReader* reader, vtkPolyDat
   {
     // Set minimum and maximum time range
     vtkVelodyneTransformInterpolator* const interp = reader->GetInterpolator();
+    writer.SetTimeRange(interp->GetMinimumT(), interp->GetMaximumT());
 
     // Georeferenced data
     if (positionMode > 1)
@@ -318,10 +316,6 @@ void pqVelodyneManager::saveFramesToLAS(vtkVelodyneHDLReader* reader, vtkPolyDat
           easting = eastingData->GetComponent(0, 0);
           height = heightData->GetComponent(0, 0);
         }
-      }
-      else
-      {
-        vtkGenericWarningMacro("Geolocation export asked but no position was provided, relative position will be used instead");
       }
     }
   }
@@ -370,6 +364,7 @@ void pqVelodyneManager::saveFramesToLAS(vtkVelodyneHDLReader* reader, vtkPolyDat
 
   reader->Close();
 }
+
 //-----------------------------------------------------------------------------
 void pqVelodyneManager::setup()
 {

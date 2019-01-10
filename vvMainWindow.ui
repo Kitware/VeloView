@@ -43,7 +43,6 @@
       <string>Save &amp;As</string>
      </property>
      <addaction name="actionSavePCAP"/>
-     <addaction name="actionSaveLAS"/>
      <addaction name="actionSaveCSV"/>
      <addaction name="actionSavePositionCSV"/>
     </widget>
@@ -116,12 +115,6 @@
     <addaction name="menuDualReturnMode"/>
     <addaction name="actionSelectDualReturn"/>
     <addaction name="separator"/>
-    <addaction name="actionLaunchSlam"/>
-    <addaction name="actionStreamSlam"/>
-    <addaction name="actionLoadTransform"/>
-    <addaction name="actionExportTransform"/>
-    <addaction name="actionRegisterSlamOnGPS"/>
-    <addaction name="actionMergeTransforms"/>
     <addaction name="menuProcessing_Options"/>
     <addaction name="separator"/>
     <addaction name="separator"/>
@@ -220,7 +213,6 @@
     <bool>false</bool>
    </attribute>
    <addaction name="actionOverheadView"/>
-   <addaction name="actionChartView"/>
   </widget>
   <widget class="QDockWidget" name="colorMapEditorDock">
    <property name="windowTitle">
@@ -869,93 +861,6 @@
     <string>Ignore empty frames</string>
    </property>
   </action>
-  <action name="actionLaunchSlam">
-   <property name="icon">
-    <iconset resource="vvResources.qrc">
-     <normaloff>:/vvResources/Icons/slam.png</normaloff>:/vvResources/Icons/slam.png</iconset>
-   </property>
-   <property name="text">
-    <string>Launch Slam</string>
-   </property>
-   <property name="toolTip">
-    <string>launch slam algorithm</string>
-   </property>
-  </action>
-  <action name="actionStreamSlam">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>StreamSlam</string>
-   </property>
-   <property name="toolTip">
-    <string>Launch slam in streaming mode</string>
-    </property>
-   </action>
-  <action name="actionChartView">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="icon">
-    <iconset resource="VelodyneHDL/images/resources.qrc">
-     <normaloff>:/VelodyneHDLPlugin/csv.png</normaloff>:/VelodyneHDLPlugin/csv.png</iconset>
-   </property>
-   <property name="text">
-    <string>Chart View</string>
-   </property>
-   <property name="toolTip">
-    <string>Show the gps data in a chart view</string>
-   </property>
-  </action>
-  <action name="actionLoadTransform">
-   <property name="icon">
-    <iconset resource="VelodyneHDL/images/resources.qrc">
-     <normaloff>:/VelodyneHDLPlugin/csv.png</normaloff>:/VelodyneHDLPlugin/csv.png</iconset>
-   </property>
-   <property name="text">
-    <string>Load Transform</string>
-   </property>
-   <property name="toolTip">
-    <string>Load Transforms</string>
-   </property>
-  </action>
-  <action name="actionExportTransform">
-   <property name="icon">
-    <iconset resource="VelodyneHDL/images/resources.qrc">
-     <normaloff>:/VelodyneHDLPlugin/csv.png</normaloff>:/VelodyneHDLPlugin/csv.png</iconset>
-   </property>
-   <property name="text">
-    <string>Export Transform</string>
-   </property>
-   <property name="toolTip">
-    <string>Export Transform</string>
-   </property>
-  </action>
-  <action name="actionRecordLidarAndIMU">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="icon">
-    <iconset resource="VelodyneHDL/images/resources.qrc">
-     <normaloff>:/VelodyneHDLPlugin/record_lidar_imu.png</normaloff>:/VelodyneHDLPlugin/record_lidar_imu.png</iconset>
-   </property>
-   <property name="text">
-    <string>RecordLidarAndIMU</string>
-   </property>
-  </action>
-  <action name="actionMergeTransforms">
-    <property name="icon">
-      <iconset resource="vvResources.qrc">
-        <normaloff>:/vvResources/Icons/absolute.png</normaloff>:/vvResources/Icons/absolute.png
-      </iconset>
-    </property>
-    <property name="text">
-      <string>Merge Transforms</string>
-    </property>
-    <property name="toolTip">
-      <string>merge the transforms of different sensors</string>
-    </property>
-  </action>
   <action name="actionBasic_Controls">
    <property name="checkable">
     <bool>true</bool>
@@ -1060,18 +965,6 @@
    </property>
    <property name="text">
     <string>Motion Detection</string>
-   </property>
-  </action>
-  <action name="actionRegisterSlamOnGPS">
-   <property name="icon">
-    <iconset resource="vvResources.qrc">
-     <normaloff>:/vvResources/Icons/MergeGpsAndSlam.png</normaloff>:/vvResources/Icons/MergeGpsAndSlam.png</iconset>
-   </property>
-   <property name="text">
-    <string>Register Slam on GPS</string>
-   </property>
-   <property name="toolTip">
-    <string>Apply a isometric transformation to register the SLAM trajectory on the GPS trajectory</string>
    </property>
   </action>
  </widget>

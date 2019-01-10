@@ -119,14 +119,11 @@ endif(ENABLE_Ceres)
 # gui specific code
 if(PARAVIEW_BUILD_QT_GUI)
 
-  include_directories(${PYTHONQT_INCLUDE_DIRS})
-
   set(UI_FILES
     Ui/vvCalibrationDialog.ui
     Ui/vvCropReturnsDialog.ui
     Ui/vvLaserSelectionDialog.ui
     Ui/vvSelectFramesDialog.ui
-    Ui/vvSlamConfigurationDialog.ui
     )
 
   set(MOC_HEADERS
@@ -134,7 +131,6 @@ if(PARAVIEW_BUILD_QT_GUI)
     Ui/vvCropReturnsDialog.h
     Ui/vvLaserSelectionDialog.h
     Ui/vvSelectFramesDialog.h
-    Ui/vvSlamConfigurationDialog.h
     )
 
   set(resources
@@ -153,7 +149,6 @@ if(PARAVIEW_BUILD_QT_GUI)
     Ui/vvCropReturnsDialog.cxx
     Ui/vvLaserSelectionDialog.cxx
     Ui/vvSelectFramesDialog.cxx
-    Ui/vvSlamConfigurationDialog.cxx
     )
 
   # TODO I don"t get this dependancy is for
@@ -187,11 +182,11 @@ if (ENABLE_PCL)
   list(APPEND servermanager_sources
     ${CMAKE_CURRENT_SOURCE_DIR}/Filter/PCLRansacModel/vtkPCLRansacModel.cxx
     )
+
 endif(ENABLE_PCL)
 if (ENABLE_PCL AND ENABLE_Ceres)
   list(APPEND servermanager_sources
     ${CMAKE_CURRENT_SOURCE_DIR}/Filter/Slam/vtkSlam.cxx
-    ${CMAKE_CURRENT_SOURCE_DIR}/Filter/TransformFusion/vtkSensorTransformFusion.cxx
     )
 endif(ENABLE_PCL AND ENABLE_Ceres)
 
@@ -202,7 +197,6 @@ list(APPEND servermanager_xml
   xml/VelodyneHDLStream.xml
   xml/LidarKITTIDataSetReader.xml
   xml/VelodyneHDLPositionReader.xml
-  xml/vtkPCLRansacModel.xml
   xml/ApplanixPositionReader.xml
   xml/MotionDetector.xml
   xml/BirdEyeViewSnap.xml
@@ -217,10 +211,10 @@ if (ENABLE_PCL)
     xml/PCLRansacModel.xml
     )
 endif(ENABLE_PCL)
+
 if (ENABLE_PCL AND ENABLE_Ceres)
   list(APPEND servermanager_xml
     xml/Slam.xml
-    xml/SensorTransformFusion.xml
     )
 endif(ENABLE_PCL AND ENABLE_Ceres)
 
@@ -233,7 +227,7 @@ set(sources_which_inherit_from_vtkObject
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/Lidar/Common/vtkLidarReader.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/Lidar/Common/vtkLidarStream.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/OldPlaneFitter/vtkPlaneFitter.cxx
-)
+  )
 set(sources_which_do_not_inherit_from_vtkObject
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/Lidar/Common/LidarPacketInterpreter.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/Lidar/Common/NetworkSource.cxx
@@ -266,13 +260,6 @@ list(APPEND deps
   ${CERES_LIBRARIES}
   )
 
-if (ENABLE_PCL)
-  list(APPEND deps ${PCL_LIBRARIES})
-endif(ENABLE_PCL)
-if (ENABLE_Ceres)
-  list(APPEND deps ${CERES_LIBRARIES})
-endif(ENABLE_Ceres)
-
 # folder where to look for header file
 set(plugin_include_dirs
   ${CMAKE_CURRENT_SOURCE_DIR}/Common
@@ -291,7 +278,6 @@ set(plugin_include_dirs
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/TrailingFrame
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/ProcessingSample
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/PCLRansacModel
-  ${CMAKE_CURRENT_SOURCE_DIR}/Filter/TransformFusion
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/Slam
   ${CMAKE_CURRENT_SOURCE_DIR}/Source/Grid
   )

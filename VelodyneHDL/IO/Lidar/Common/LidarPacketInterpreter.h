@@ -234,7 +234,6 @@ public:
   //! Interpolator used to get a transform for each frame timestamp, this transform
   //! is always applied after the sensor transform.
   vtkSmartPointer<vtkVelodyneTransformInterpolator> Interp;
-
 protected:
   //! Indicate which cropping mode should be used.
   /*vtkLidarProvider::CropModeEnum*/int CropMode;
