@@ -9,10 +9,12 @@ superbuild_add_project(veloview
     -DPYTHONQT_DIR:PATH=<INSTALL_DIR>
     -DVTK_DIR:PATH=${SuperBuild_BINARY_DIR}/common-superbuild/paraview/build/VTK
     -DCMAKE_CXX_STANDARD:STRING=${CMAKE_CXX_STANDARD}
+    -DBOOST_LIBRARY_DIR_RELEASE:STRING=<INSTALL_DIR>/lib
+    -DBOOST_LIBRARY_DIR_DEBUG:STRING=<INSTALL_DIR>/lib
     -Dqt_version:STRING=${qt_version}
 )
 
-if (WIN32)
+if (WIN32 or APPLE)
   # These options are useful to use Boost as a dynamic library.
   # Boost_USE_STATIC_LIBS is off by default, but sometimes that is not sufficient
   # on windows (especially with MSVC ?)

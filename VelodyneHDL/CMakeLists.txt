@@ -79,9 +79,6 @@ include_directories(${SYSTEM_OPTION} ${EIGEN_INCLUDE_DIR})
 #--------------------------------------
 # Boost dependency
 #--------------------------------------
-if(APPLE)
-  set(Boost_USE_STATIC_LIBS ON)
-endif(WIN32 OR APPLE)
 set(Boost_USE_MULTITHREADED ON)
 # the expected behavior of find_package when  used wiht REQUIRED and OPTIONAL_COMPONENTS
 # it not the one expected, as it also required the optional component...
@@ -259,6 +256,9 @@ if(WIN32)
   # more about it here: https://svn.boost.org/trac10/ticket/13326
   target_compile_definitions(${VV_PLUGIN_LIBRARY} PRIVATE -DWIN32 -DBOOST_PROGRAM_OPTIONS_DYN_LINK=1)
 endif(WIN32)
+if (APPLE)
+  target_compile_definitions(${VV_PLUGIN_LIBRARY} PRIVATE -DBOOST_PROGRAM_OPTIONS_DYN_LINK=1)
+endif(APPLE)
 
 #-----------------------------------------------------------------------------
 # Build PacketFileSender target which enable to playback a recorded pcap on the network
