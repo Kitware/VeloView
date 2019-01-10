@@ -223,7 +223,10 @@ build_paraview_client(${SOFTWARE_NAME}
   PVMAIN_WINDOW vvMainWindow
   PVMAIN_WINDOW_INCLUDE vvMainWindow.h
   SPLASH_IMAGE "${CMAKE_CURRENT_SOURCE_DIR}/SoftwareInformation/${PARAVIEW_SPLASH_IMAGE}"
-  BUNDLE_ICON "${CMAKE_CURRENT_SOURCE_DIR}/SoftwareInformation/${PARAVIEW_BUNDLE_ICON}"
+  # right now the bundle's logo.icns file must be at the root of VeloView sources
+  # this problem is due to paraview/src/CMake/ParaViewBranding.cmake,
+  # on line: GET_FILENAME_COMPONENT(bundle_icon_file "${BPC_BUNDLE_ICON}" NAME)
+  BUNDLE_ICON "${CMAKE_CURRENT_SOURCE_DIR}/${PARAVIEW_BUNDLE_ICON}"
   APPLICATION_ICON "${CMAKE_CURRENT_SOURCE_DIR}/SoftwareInformation/${PARAVIEW_APPLICATION_ICON}"
   SOURCES
     ${source_files}

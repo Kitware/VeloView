@@ -14,7 +14,7 @@ superbuild_add_project(veloview
     -Dqt_version:STRING=${qt_version}
 )
 
-if (WIN32 or APPLE)
+if (WIN32 OR APPLE)
   # These options are useful to use Boost as a dynamic library.
   # Boost_USE_STATIC_LIBS is off by default, but sometimes that is not sufficient
   # on windows (especially with MSVC ?)
