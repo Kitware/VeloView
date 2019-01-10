@@ -399,6 +399,16 @@ private:
   std::vector<std::pair<int, int> > FromVTKtoPCLMapping;
   std::vector<std::vector<int > > FromPCLtoVTKMapping;
 
+  // Mapping between keypoints and their corresponding
+  // index in the vtk input frame
+  std::vector<std::pair<int, int> > EdgesIndex;
+  std::vector<std::pair<int, int> > PlanarIndex;
+  std::vector<std::pair<int, int> > BlobIndex;
+  std::vector<int> EdgePointRejectionEgoMotion;
+  std::vector<int> PlanarPointRejectionEgoMotion;
+  std::vector<int> EdgePointRejectionMapping;
+  std::vector<int> PlanarPointRejectionMapping;
+
   // If set to true the mapping planars keypoints used
   // will be the same than the EgoMotion one. If set to false
   // all points that are not set to invalid will be used
@@ -444,6 +454,8 @@ private:
   std::vector<std::vector<double> > Angles;
   std::vector<std::vector<double> > DepthGap;
   std::vector<std::vector<double> > BlobScore;
+  std::vector<std::vector<double> > LengthResolution;
+  std::vector<std::vector<double> > SaillantPoint;
   std::vector<std::vector<int> > IsPointValid;
   std::vector<std::vector<int> > Label;
 
@@ -477,6 +489,7 @@ private:
   double EdgeSinAngleThreshold;
   double PlaneSinAngleThreshold;
   double EdgeDepthGapThreshold;
+  double DistToLineThreshold;
 
   // The max distance allowed between two frames
   // If the distance is over this limit, the ICP
@@ -736,6 +749,7 @@ private:
   void AddVectorToPolydataPoints(const std::vector<std::vector<T>>& vec, const char* name, vtkPolyData* pd);
   void DisplayLaserIdMapping(vtkSmartPointer<vtkPolyData> input);
   void DisplayRelAdv(vtkSmartPointer<vtkPolyData> input);
+  void DisplayUsedKeypoints(vtkSmartPointer<vtkPolyData> input);
 
   // Indicate if we are in display mode or not
   // Display mode will add arrays showing some

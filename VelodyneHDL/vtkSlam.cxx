@@ -130,7 +130,12 @@ public:
   LineFitting();
 
   // Fitting using PCA
-  void FitPCA(std::vector<Eigen::Matrix<double, 3, 1> >& points);
+  bool FitPCA(std::vector<Eigen::Matrix<double, 3, 1> >& points);
+
+  // Futting using very local line and
+  // check if this local line is consistent
+  // in a more global neighborhood
+  bool FitPCAAndCheckConsistency(std::vector<Eigen::Matrix<double, 3, 1> >& points);
 
   // Poor but fast fitting using
   // extremities of the distribution
@@ -141,6 +146,7 @@ public:
   Eigen::Matrix<double, 3, 1> Position;
   Eigen::Matrix<double, 3, 3> SemiDist;
   double MaxDistance;
+  double MaxSinAngle;
 
   Eigen::Matrix<double, 3, 3> I3;
 };
@@ -151,16 +157,14 @@ LineFitting::LineFitting()
   this->I3 << 1, 0, 0,
               0, 1, 0,
               0, 0, 1;
+
+  this->MaxDistance = 0.02;
+  this->MaxSinAngle = 0.65;
 }
 
 //-----------------------------------------------------------------------------
-void LineFitting::FitPCA(std::vector<Eigen::Matrix<double, 3, 1> >& points)
+bool LineFitting::FitPCA(std::vector<Eigen::Matrix<double, 3, 1> >& points)
 {
-  Eigen::Matrix<double, 3, 3> I3;
-  I3 << 1, 0, 0,
-        0, 1, 0,
-        0, 0, 1;
-
   // Compute PCA to determine best line approximation
   // of the points distribution
   Eigen::MatrixXd data(points.size(), 3);
@@ -195,6 +199,46 @@ void LineFitting::FitPCA(std::vector<Eigen::Matrix<double, 3, 1> >& points)
   // semi-definite matrix)
   this->SemiDist = (this->I3 - this->Direction * this->Direction.transpose());
   this->SemiDist = this->SemiDist.transpose() * this->SemiDist;
+
+  bool isLineFittingAccurate = true;
+
+  // if a point of the neighborhood is too far from
+  // the fitting line we considere the neighborhood as
+  // non flat
+  for (unsigned int k = 0; k < points.size(); k++)
+  {
+    double d = std::sqrt((points[k] - this->Position).transpose() * this->SemiDist * (points[k] - this->Position));
+    if (d > this->MaxDistance)
+    {
+      isLineFittingAccurate = false;
+    }
+  }
+
+  return isLineFittingAccurate;
+}
+
+//-----------------------------------------------------------------------------
+bool LineFitting::FitPCAAndCheckConsistency(std::vector<Eigen::Matrix<double, 3, 1> >& points)
+{
+  bool isLineFittingAccurate = true;
+
+  // first check if the neighborhood is straight
+  Eigen::Matrix<double, 3, 1> U, V;
+  U = (points[1] - points[0]).normalized();
+  double sinAngle;
+  for (unsigned int index = 1; index < points.size() - 1; index++)
+  {
+    V = (points[index + 1] - points[index]).normalized();
+    sinAngle = (U.cross(V)).norm();
+    if (sinAngle > this->MaxSinAngle) // 30°
+    {
+      isLineFittingAccurate = false;
+    }
+  }
+
+  // Then fit with PCA
+  isLineFittingAccurate &= this->FitPCA(points);
+  return isLineFittingAccurate;
 }
 
 //-----------------------------------------------------------------------------
@@ -689,11 +733,14 @@ vtkInformationVector **inputVector, vtkInformationVector *outputVector)
 
   // output 0 - Current Frame
   // add all debug information if displayMode == True
-  if (DisplayMode = true && this->NbrFrameProcessed > 0)
+  if (this->DisplayMode = true && this->NbrFrameProcessed > 0)
   {
     this->DisplayLaserIdMapping(this->vtkCurrentFrame);
     this->DisplayRelAdv(this->vtkCurrentFrame);
+    this->DisplayUsedKeypoints(this->vtkCurrentFrame);
     AddVectorToPolydataPoints<double, vtkDoubleArray>(this->Angles, "angles_line", this->vtkCurrentFrame);
+    AddVectorToPolydataPoints<double, vtkDoubleArray>(this->LengthResolution, "length_resolution", this->vtkCurrentFrame);
+    AddVectorToPolydataPoints<double, vtkDoubleArray>(this->SaillantPoint, "saillant_point", this->vtkCurrentFrame);
     AddVectorToPolydataPoints<double, vtkDoubleArray>(this->DepthGap, "depth_gap", this->vtkCurrentFrame);
     AddVectorToPolydataPoints<double, vtkDoubleArray>(this->BlobScore, "blob_score", this->vtkCurrentFrame);
     AddVectorToPolydataPoints<int, vtkIntArray>(this->IsPointValid, "is_point_valid", this->vtkCurrentFrame);
@@ -922,9 +969,9 @@ void vtkSlam::PrintParameters()
 //-----------------------------------------------------------------------------
 void vtkSlam::ResetAlgorithm()
 {
-  //google::InitGoogleLogging("Slam_optimisation");
   this->DisplayMode = true; // switch to false to improve speed
-  this->NeighborWidth = 3;
+  this->NeighborWidth = 4;
+  this->DistToLineThreshold = 0.20;
   this->EgoMotionICPMaxIter = 4;
   this->MappingICPMaxIter = 3;
   this->EgoMotionLMMaxIter = 15;
@@ -932,9 +979,9 @@ void vtkSlam::ResetAlgorithm()
   this->MinDistanceToSensor = 3.0;
   this->MaxEdgePerScanLine = 200;
   this->MaxPlanarsPerScanLine = 200;
-  this->EdgeSinAngleThreshold = 0.85; // 85 degrees
-  this->PlaneSinAngleThreshold = 0.5; // 50 degrees
-  this->EdgeDepthGapThreshold = 0.02; // meters
+  this->EdgeSinAngleThreshold = 0.86; // 60 degrees
+  this->PlaneSinAngleThreshold = 0.5; // 30 degrees
+  this->EdgeDepthGapThreshold = 0.15; // 15 cm
   this->Undistortion = false; // should not undistord frame by default
   this->LeafSize = 0.6;
 
@@ -960,7 +1007,7 @@ void vtkSlam::ResetAlgorithm()
   // edges
   this->MappingLineDistanceNbrNeighbors = 15;
   this->MappingMinimumLineNeighborRejection = 5;
-  this->MappingLineMaxDistInlier = 0.3; // 30 cm
+  this->MappingLineMaxDistInlier = 0.2; // 20 cm
   this->MappingLineDistancefactor = 5.0;
   this->MappingMaxLineDistance = 0.2; // 20 cm
 
@@ -991,6 +1038,10 @@ void vtkSlam::ResetAlgorithm()
   this->FromPCLtoVTKMapping.resize(this->NLasers);
   this->Angles.clear();
   this->Angles.resize(this->NLasers);
+  this->LengthResolution.clear();
+  this->LengthResolution.resize(this->NLasers);
+  this->SaillantPoint.clear();
+  this->SaillantPoint.resize(this->NLasers);
   this->DepthGap.clear();
   this->DepthGap.resize(this->NLasers);
   this->BlobScore.clear();
@@ -1091,6 +1142,10 @@ void vtkSlam::PrepareDataForNextFrame()
   this->FromPCLtoVTKMapping.resize(this->NLasers);
   this->Angles.clear();
   this->Angles.resize(this->NLasers);
+  this->LengthResolution.clear();
+  this->LengthResolution.resize(this->NLasers);
+  this->SaillantPoint.clear();
+  this->SaillantPoint.resize(this->NLasers);
   this->DepthGap.clear();
   this->DepthGap.resize(this->NLasers);
   this->BlobScore.clear();
@@ -1174,6 +1229,59 @@ void vtkSlam::DisplayRelAdv(vtkSmartPointer<vtkPolyData> input)
     relAdvArray->InsertNextTuple1(this->pclCurrentFrameByScan[scan]->points[index].intensity);
   }
   input->GetPointData()->AddArray(relAdvArray);
+}
+
+//-----------------------------------------------------------------------------
+void vtkSlam::DisplayUsedKeypoints(vtkSmartPointer<vtkPolyData> input)
+{
+  vtkSmartPointer<vtkIntArray> edgeUsedEgoMotion = vtkSmartPointer<vtkIntArray>::New();
+  edgeUsedEgoMotion->Allocate(input->GetNumberOfPoints());
+  edgeUsedEgoMotion->SetName("Edges_Used_EgoMotion");
+
+  vtkSmartPointer<vtkIntArray> edgeUsedMapping = vtkSmartPointer<vtkIntArray>::New();
+  edgeUsedMapping->Allocate(input->GetNumberOfPoints());
+  edgeUsedMapping->SetName("Edges_Used_Mapping");
+
+  vtkSmartPointer<vtkIntArray> planarUsedEgoMotion = vtkSmartPointer<vtkIntArray>::New();
+  planarUsedEgoMotion->Allocate(input->GetNumberOfPoints());
+  planarUsedEgoMotion->SetName("Planes_Used_EgoMotion");
+
+  vtkSmartPointer<vtkIntArray> planarUsedMapping = vtkSmartPointer<vtkIntArray>::New();
+  planarUsedMapping->Allocate(input->GetNumberOfPoints());
+  planarUsedMapping->SetName("Planes_Used_Mapping");
+
+  // fill with -1 for points that are not keypoints
+  for (unsigned int k = 0; k < input->GetNumberOfPoints(); ++k)
+  {
+    edgeUsedEgoMotion->InsertNextTuple1(-1);
+    edgeUsedMapping->InsertNextTuple1(-1);
+    planarUsedEgoMotion->InsertNextTuple1(-1);
+    planarUsedMapping->InsertNextTuple1(-1);
+  }
+
+  // fill with 1 if the point is a keypoint
+  // fill with 2 if the point is a used keypoint
+  for (unsigned int k = 0; k < this->EdgesIndex.size(); ++k)
+  {
+    unsigned int scan = this->EdgesIndex[k].first;
+    unsigned int index = this->EdgesIndex[k].second;
+
+    edgeUsedEgoMotion->SetTuple1(this->FromPCLtoVTKMapping[scan][index], EdgePointRejectionEgoMotion[k]);
+    edgeUsedMapping->SetTuple1(this->FromPCLtoVTKMapping[scan][index], EdgePointRejectionMapping[k]);
+  }
+  for (unsigned int k = 0; k < this->PlanarIndex.size(); ++k)
+  {
+    unsigned int scan = this->PlanarIndex[k].first;
+    unsigned int index = this->PlanarIndex[k].second;
+
+    planarUsedEgoMotion->SetTuple1(this->FromPCLtoVTKMapping[scan][index], this->PlanarPointRejectionEgoMotion[k]);
+    planarUsedMapping->SetTuple1(this->FromPCLtoVTKMapping[scan][index], this->PlanarPointRejectionMapping[k]);
+  }
+
+  input->GetPointData()->AddArray(edgeUsedEgoMotion);
+  input->GetPointData()->AddArray(edgeUsedMapping);
+  input->GetPointData()->AddArray(planarUsedEgoMotion);
+  input->GetPointData()->AddArray(planarUsedMapping);
 }
 
 //-----------------------------------------------------------------------------
@@ -1827,9 +1935,7 @@ void vtkSlam::ConvertAndSortScanLines(vtkSmartPointer<vtkPolyData> input)
   {
     // Get information about current point
     Points->GetPoint(index, xL);
-    yL.x = xL[0];
-    yL.y = xL[1];
-    yL.z = xL[2];
+    yL.x = xL[0]; yL.y = xL[1]; yL.z = xL[2];
 
     double relAdv = (static_cast<double>(time->GetTuple1(index)) - t0) / (t1 - t0);
     unsigned int id = static_cast<int>(lasersId->GetTuple1(index));
@@ -1854,6 +1960,8 @@ void vtkSlam::ComputeKeyPoints(vtkSmartPointer<vtkPolyData> input)
     this->IsPointValid[k].resize(this->pclCurrentFrameByScan[k]->size(), 1);
     this->Label[k].resize(this->pclCurrentFrameByScan[k]->size(), 0);
     this->Angles[k].resize(this->pclCurrentFrameByScan[k]->size(),0);
+    this->LengthResolution[k].resize(this->pclCurrentFrameByScan[k]->size(),0);
+    this->SaillantPoint[k].resize(this->pclCurrentFrameByScan[k]->size(),0);
     this->DepthGap[k].resize(this->pclCurrentFrameByScan[k]->size(), 0);
     this->BlobScore[k].resize(this->pclCurrentFrameByScan[k]->size(), 0);
   }
@@ -1872,13 +1980,8 @@ void vtkSlam::ComputeKeyPoints(vtkSmartPointer<vtkPolyData> input)
 void vtkSlam::ComputeCurvature(vtkSmartPointer<vtkPolyData> input)
 {
   Point currentPoint;
-  Eigen::Matrix<double, 3, 1> X, U, V, Pleft, Pright;
-  Eigen::Matrix<double, 3, 1> Nleft, Nright, centralPoint;
-  Eigen::Matrix<double, 3, 1> dirGapLeft, dirGapRight;
-  Eigen::Matrix<double, 3, 3> Dleft, Dright;
-  double distCandidate;
-  LineFitting leftLine;
-  LineFitting rightLine;
+  Eigen::Matrix<double, 3, 1> X, centralPoint;
+  LineFitting leftLine, rightLine, farNeighborsLine;
 
   // loop over scans lines
   for (unsigned int scanLine = 0; scanLine < this->NLasers; ++scanLine)
@@ -1887,12 +1990,12 @@ void vtkSlam::ComputeCurvature(vtkSmartPointer<vtkPolyData> input)
     int Npts = this->pclCurrentFrameByScan[scanLine]->size();
 
     // if the line is almost empty, skip it
-    if (Npts < 3 * this->NeighborWidth)
+    if (Npts < 2 * this->NeighborWidth + 1)
     {
       continue;
     }
 
-    for (int index = this->NeighborWidth; index < Npts - this->NeighborWidth - 1; ++index)
+    for (int index = this->NeighborWidth; (index + this->NeighborWidth) < Npts; ++index)
     {
       // central point
       currentPoint = this->pclCurrentFrameByScan[scanLine]->points[index];
@@ -1905,8 +2008,12 @@ void vtkSlam::ComputeCurvature(vtkSmartPointer<vtkPolyData> input)
       // of the "sharpness" of the current point.
       std::vector<Eigen::Matrix<double, 3, 1> > leftNeighbor;
       std::vector<Eigen::Matrix<double, 3, 1> > rightNeighbor;
+      std::vector<Eigen::Matrix<double, 3, 1> > farNeighbors;
 
       // Fill right and left neighborhood
+      // /!\ The way the neighbors are added
+      // to the vectors matters. Especially when
+      // computing the saillancy
       for (int j = index - this->NeighborWidth; j <= index + this->NeighborWidth; ++j)
       {
         currentPoint = this->pclCurrentFrameByScan[scanLine]->points[j];
@@ -1917,106 +2024,108 @@ void vtkSlam::ComputeCurvature(vtkSmartPointer<vtkPolyData> input)
           rightNeighbor.push_back(X);
       }
 
-      // Fit line on the neighborhood
-      leftLine.FitFast(leftNeighbor);
-      rightLine.FitFast(rightNeighbor);
-
-
-      Pleft = leftLine.Position;
-      Nleft = leftLine.Direction;
-      Dleft = leftLine.SemiDist;
-
-      Pright = rightLine.Position;
-      Nright = rightLine.Direction;
-      Dright = rightLine.SemiDist;
-
+      // Fit line on the neighborhood and
       // Indicate if the left and right side
       // neighborhood of the current point is flat or not
-      bool leftFlat = true;
-      bool rightFlat = true;
+      bool leftFlat = leftLine.FitPCAAndCheckConsistency(leftNeighbor);
+      bool rightFlat = rightLine.FitPCAAndCheckConsistency(rightNeighbor);
 
       // Measurement of the gap
-      double minDistLeft = std::numeric_limits<double>::max();
-      double minDistRight = std::numeric_limits<double>::max();
-
-      // Compute the fitting line and estimate
-      // if the neighborhood is flat
-      for (int j = index - this->NeighborWidth; j <= index + this->NeighborWidth; ++j)
-      {
-        currentPoint = this->pclCurrentFrameByScan[scanLine]->points[j];
-        X << currentPoint.x, currentPoint.y, currentPoint.z;
-
-        if (j < index)
-        {
-          distCandidate = (X - centralPoint).norm() / centralPoint.norm();
-          if (distCandidate < minDistLeft)
-          {
-            minDistLeft = distCandidate;
-            dirGapLeft = (X - centralPoint).normalized();
-          }
-
-          // if a point of the neighborhood is too far from
-          // the fitting line we considere the neighborhood as
-          // non flat
-          double d = std::sqrt((X - Pleft).transpose() * Dleft * (X - Pleft));
-          if (d > 0.02)
-          {
-            leftFlat = false;
-          }
-        }
-          
-        if (j > index)
-        {
-          distCandidate = (X - centralPoint).norm() / centralPoint.norm();
-          if (distCandidate < minDistRight)
-          {
-            minDistRight = distCandidate;
-            dirGapRight = (X - centralPoint).normalized();
-          }
-
-          // if a point of the neighborhood is too far from
-          // the fitting line we considere the neighborhood as
-          // non flat
-          double d = std::sqrt((X - Pright).transpose() * Dright * (X - Pright));
-          if (d > 0.02)
-          {
-            rightFlat = false;
-          }
-        }
-      }
-
-      double dist1 = 0;
-      double dist2 = 0;
+      double dist1 = 0; double dist2 = 0;
 
       // if both neighborhood are flat we can compute
       // the angle between them as an approximation of the
       // sharpness of the current point
       if (rightFlat && leftFlat)
       {
-        this->Angles[scanLine][index] = std::abs((Nleft.cross(Nright)).norm()); // sin of angle actually
+        // We check that the current point is not too far from its
+        // neighborhood lines. This is because we don't want a point
+        // to be considered as a angles point if it is due to gap
+        dist1 = std::sqrt((centralPoint - leftLine.Position).transpose() * leftLine.SemiDist * (centralPoint - leftLine.Position));
+        dist2 = std::sqrt((centralPoint - rightLine.Position).transpose() * rightLine.SemiDist * (centralPoint - rightLine.Position));
 
-        dist1 = std::abs(dirGapLeft.cross(Nleft).norm()) * minDistLeft;
-        dist2 = std::abs(dirGapRight.cross(Nright).norm()) * minDistRight;
+        if ((dist1 < this->DistToLineThreshold) && (dist2 < this->DistToLineThreshold))
+          this->Angles[scanLine][index] = std::abs((leftLine.Direction.cross(rightLine.Direction)).norm()); // sin of angle actually
       }
       // Here one side of the neighborhood is non flat
       // Hence it is not worth to estimate the sharpness.
       // Only the gap will be considered here.
       else if (rightFlat && !leftFlat)
       {
-        dist1 = minDistLeft;
-        dist2 = std::abs(dirGapRight.cross(Nright).norm()) * minDistRight;
+        dist1 = 1000.0;
+        for (unsigned int neighIndex = 0; neighIndex < leftNeighbor.size(); ++neighIndex)
+        {
+          dist1 = std::min(dist1,
+                  std::sqrt((leftNeighbor[neighIndex] - rightLine.Position).transpose() * rightLine.SemiDist * (leftNeighbor[neighIndex] - rightLine.Position)));
+        }
+        dist1 = 0.5 * dist1;
       }
       else if (!rightFlat && leftFlat)
       {
-        dist1 = std::abs(dirGapLeft.cross(Nleft).norm()) * minDistLeft;
-        dist2 = minDistRight;
+        dist2 = 1000.0;
+        for (unsigned int neighIndex = 0; neighIndex < leftNeighbor.size(); ++neighIndex)
+        {
+          dist2 = std::min(dist2,
+                  std::sqrt((rightNeighbor[neighIndex] - leftLine.Position).transpose() * leftLine.SemiDist * (rightNeighbor[neighIndex] - leftLine.Position)));
+        }
+        dist2 = 0.5 * dist2;
       }
       else
       {
-        dist1 = 0.5 * minDistLeft; // 0.5: minor trust
-        dist2 = 0.5 * minDistRight;
+        // Compute saillant point score
+        double currDepth = centralPoint.norm();
+        unsigned int diffDepth = 0;
+        bool canLeftBeAdded = true; bool hasLeftEncounteredDepthGap = false;
+        bool canRightBeAdded = true; bool hasRightEncounteredDepthGap = false;
+
+        // The saillant point score is the distance between the current point
+        // and the points that have a depth gap with the current point
+        for (unsigned int neighIndex = 0; neighIndex < leftNeighbor.size(); ++neighIndex)
+        {
+          // Left neighborhood depth gap computation
+          if ((std::abs(leftNeighbor[leftNeighbor.size() - 1 - neighIndex].norm() - currDepth) > 1.5) && canLeftBeAdded)
+          {
+            hasLeftEncounteredDepthGap = true;
+            diffDepth++;
+            farNeighbors.push_back(leftNeighbor[neighIndex]);
+          }
+          else
+          {
+            if (hasLeftEncounteredDepthGap)
+            {
+              canLeftBeAdded = false;
+            }
+          }
+          // Right neigborhood depth gap computation
+          if ((std::abs(rightNeighbor[neighIndex].norm() - currDepth) > 1.5) && canRightBeAdded)
+          {
+            hasRightEncounteredDepthGap = true;
+            diffDepth++;
+            farNeighbors.push_back(rightNeighbor[neighIndex]);
+          }
+          else
+          {
+            if (hasRightEncounteredDepthGap)
+            {
+              canRightBeAdded = false;
+            }
+          }
+        }
+
+        // If there is enought neighbors with a big depth gap
+        // we propose to compute the saillancy of the current
+        // as the distance between the line that fits the neighbors
+        // with a depth gap and the current point
+        if (static_cast<double>(diffDepth) / (2.0 * this->NeighborWidth) > 0.5)
+        {
+          farNeighborsLine.FitPCA(farNeighbors);
+          this->SaillantPoint[scanLine][index] = std::sqrt(
+            (centralPoint - farNeighborsLine.Position).transpose() * farNeighborsLine.SemiDist * (centralPoint - farNeighborsLine.Position));
+        }
+
         this->BlobScore[scanLine][index] = 1;
       }
+
       this->DepthGap[scanLine][index] = std::max(dist1, dist2);
     }
   }
@@ -2073,7 +2182,7 @@ void vtkSlam::InvalidPointWithBadCriteria()
       double ratioExpectedLength = 10.0;
 
       // if the length between the two firing
-      // if more than n-th the expected length
+      // is more than n-th the expected length
       // it means that there is a gap. We now must
       // determine if the gap is due to the geometry of
       // the scene or if the gap is due to an occluded area
@@ -2156,9 +2265,9 @@ void vtkSlam::InvalidPointWithBadCriteria()
 //-----------------------------------------------------------------------------
 void vtkSlam::SetKeyPointsLabels(vtkSmartPointer<vtkPolyData> input)
 {
-  std::vector<std::pair<int, int> > edgesIndex;
-  std::vector<std::pair<int, int> > planarIndex;
-  std::vector<std::pair<int, int> > blobIndex;
+  this->EdgesIndex.clear(); this->EdgesIndex.resize(0);
+  this->PlanarIndex.clear(); this->PlanarIndex.resize(0);
+  this->BlobIndex.clear(); this->BlobIndex.resize(0);
 
   // loop over the scan lines
   for (unsigned int scanLine = 0; scanLine < this->NLasers; ++scanLine)
@@ -2182,11 +2291,10 @@ void vtkSlam::SetKeyPointsLabels(vtkSmartPointer<vtkPolyData> input)
     // Sort the curvature score in a decreasing order
     std::vector<size_t> sortedDepthGapIdx = sortIdx<double>(this->DepthGap[scanLine]);
     std::vector<size_t> sortedAnglesIdx = sortIdx<double>(this->Angles[scanLine]);
+    std::vector<size_t> sortedSaillancyIdx = sortIdx<double>(this->SaillantPoint[scanLine]);
     std::vector<size_t> sortedBlobScoreIdx = sortIdx<double>(this->BlobScore[scanLine]);
 
-    double depthGap = 0;
-    double sinAngle = 0;
-    double blobScore = 0;
+    double depthGap, sinAngle, blobScore, saillancy;
     int index = 0;
 
     // Edges using depth gap
@@ -2194,12 +2302,6 @@ void vtkSlam::SetKeyPointsLabels(vtkSmartPointer<vtkPolyData> input)
     {
       index = sortedDepthGapIdx[k];
       depthGap = this->DepthGap[scanLine][index];
-
-      // max keypoints reached
-      if (nbrEdgePicked >= this->MaxEdgePerScanLine)
-      {
-        break;
-      }
 
       // thresh
       if (depthGap < this->EdgeDepthGapThreshold)
@@ -2215,7 +2317,7 @@ void vtkSlam::SetKeyPointsLabels(vtkSmartPointer<vtkPolyData> input)
 
       // else indicate that the point is an edge
       this->Label[scanLine][index] = 4;
-      edgesIndex.push_back(std::pair<int, int>(scanLine, index));
+      this->EdgesIndex.push_back(std::pair<int, int>(scanLine, index));
       nbrEdgePicked++;
       //IsPointValidForPlanar[index] = 0;
 
@@ -2236,12 +2338,6 @@ void vtkSlam::SetKeyPointsLabels(vtkSmartPointer<vtkPolyData> input)
       index = sortedAnglesIdx[k];
       sinAngle = this->Angles[scanLine][index];
 
-      // max keypoints reached
-      if (nbrEdgePicked >= this->MaxEdgePerScanLine)
-      {
-        break;
-      }
-
       // thresh
       if (sinAngle < this->EdgeSinAngleThreshold)
       {
@@ -2256,7 +2352,7 @@ void vtkSlam::SetKeyPointsLabels(vtkSmartPointer<vtkPolyData> input)
 
       // else indicate that the point is an edge
       this->Label[scanLine][index] = 4;
-      edgesIndex.push_back(std::pair<int, int>(scanLine, index));
+      this->EdgesIndex.push_back(std::pair<int, int>(scanLine, index));
       nbrEdgePicked++;
       //IsPointValidForPlanar[index] = 0;
 
@@ -2271,12 +2367,47 @@ void vtkSlam::SetKeyPointsLabels(vtkSmartPointer<vtkPolyData> input)
       }
     }
 
+    // Edges using saillancy
+    for (int k = 0; k < Npts; ++k)
+    {
+      index = sortedSaillancyIdx[k];
+      saillancy = this->SaillantPoint[scanLine][index];
+
+      // thresh
+      if (saillancy < 1.5)
+      {
+        break;
+      }
+
+      // if the point is invalid continue
+      if (this->IsPointValid[scanLine][index] == 0)
+      {
+        continue;
+      }
+
+      // else indicate that the point is an edge
+      this->Label[scanLine][index] = 4;
+      this->EdgesIndex.push_back(std::pair<int, int>(scanLine, index));
+      nbrEdgePicked++;
+      //IsPointValidForPlanar[index] = 0;
+
+      // invalid its neighborhod
+      int indexBegin = index - this->NeighborWidth + 1;
+      int indexEnd = index + this->NeighborWidth - 1;
+      indexBegin = std::max(0, indexBegin);
+      indexEnd = std::min(Npts - 1, indexEnd);
+      for (int j = indexBegin; j <= indexEnd; ++j)
+      {
+        this->IsPointValid[scanLine][j] = 0;
+      }
+    }
+
     // Blobs Points
     if (!this->FastSlam)
     {
       for (int k = 0; k < Npts; k = k + 3)
       {
-        blobIndex.push_back(std::pair<int, int>(scanLine, k));
+        this->BlobIndex.push_back(std::pair<int, int>(scanLine, k));
       }
     }
 
@@ -2307,7 +2438,7 @@ void vtkSlam::SetKeyPointsLabels(vtkSmartPointer<vtkPolyData> input)
       // else indicate that the point is a planar one
       if ((this->Label[scanLine][index] != 4) && (this->Label[scanLine][index] != 3))
         this->Label[scanLine][index] = 2;
-      planarIndex.push_back(std::pair<int, int>(scanLine, index));
+      this->PlanarIndex.push_back(std::pair<int, int>(scanLine, index));
       IsPointValidForPlanar[index] = 0;
       this->IsPointValid[scanLine][index] = 0;
 
@@ -2315,8 +2446,8 @@ void vtkSlam::SetKeyPointsLabels(vtkSmartPointer<vtkPolyData> input)
       // many planar keypoints in the same region. This is
       // required because of the k-nearest search + plane
       // approximation realized in the odometry part. Indeed,
-      // if tall the planar points are on the same scan line the
-      //  problem is degenerated since all the points are distributed
+      // if all the planar points are on the same scan line the
+      // problem is degenerated since all the points are distributed
       // on a line.
       int indexBegin = index - 4;
       int indexEnd = index + 4;
@@ -2331,35 +2462,42 @@ void vtkSlam::SetKeyPointsLabels(vtkSmartPointer<vtkPolyData> input)
   }
 
   // add keypoints in increasing scan id order
-  std::sort(edgesIndex.begin(), edgesIndex.end());
-  std::sort(planarIndex.begin(), planarIndex.end());
-  std::sort(blobIndex.begin(), blobIndex.end());
+  std::sort(this->EdgesIndex.begin(), this->EdgesIndex.end());
+  std::sort(this->PlanarIndex.begin(), this->PlanarIndex.end());
+  std::sort(this->BlobIndex.begin(), this->BlobIndex.end());
 
   // fill the keypoints vectors and compute the max dist keypoints
   this->FarestKeypointDist = 0.0;
   Point p;
-  for (unsigned int k = 0; k < edgesIndex.size(); ++k)
+  for (unsigned int k = 0; k < this->EdgesIndex.size(); ++k)
   {
-    p = this->pclCurrentFrameByScan[edgesIndex[k].first]->points[edgesIndex[k].second];
+    p = this->pclCurrentFrameByScan[this->EdgesIndex[k].first]->points[this->EdgesIndex[k].second];
     this->CurrentEdgesPoints->push_back(p);
     this->FarestKeypointDist = std::max(this->FarestKeypointDist, static_cast<double>(std::sqrt(std::pow(p.x, 2) + std::pow(p.y, 2) + std::pow(p.z, 2))));
   }
-  for (unsigned int k = 0; k < planarIndex.size(); ++k)
+  for (unsigned int k = 0; k < this->PlanarIndex.size(); ++k)
   {
-    p = this->pclCurrentFrameByScan[planarIndex[k].first]->points[planarIndex[k].second];
+    p = this->pclCurrentFrameByScan[this->PlanarIndex[k].first]->points[this->PlanarIndex[k].second];
     this->CurrentPlanarsPoints->push_back(p);
     this->FarestKeypointDist = std::max(this->FarestKeypointDist, static_cast<double>(std::sqrt(std::pow(p.x, 2) + std::pow(p.y, 2) + std::pow(p.z, 2))));
   }
-  for (unsigned int k = 0; k < blobIndex.size();  ++k)
+  for (unsigned int k = 0; k < this->BlobIndex.size();  ++k)
   {
-    p = this->pclCurrentFrameByScan[blobIndex[k].first]->points[blobIndex[k].second];
+    p = this->pclCurrentFrameByScan[this->BlobIndex[k].first]->points[this->BlobIndex[k].second];
     this->CurrentBlobsPoints->push_back(p);
     this->FarestKeypointDist = std::max(this->FarestKeypointDist, static_cast<double>(std::sqrt(std::pow(p.x, 2) + std::pow(p.y, 2) + std::pow(p.z, 2))));
   }
+
+  // Initialize the IsKeypointUsed vectors
+  this->EdgePointRejectionEgoMotion.clear(); this->EdgePointRejectionEgoMotion.resize(this->CurrentEdgesPoints->size());
+  this->PlanarPointRejectionEgoMotion.clear(); this->PlanarPointRejectionEgoMotion.resize(this->CurrentPlanarsPoints->size());
+  this->EdgePointRejectionMapping.clear(); this->EdgePointRejectionMapping.resize(this->CurrentEdgesPoints->size());
+  this->PlanarPointRejectionMapping.clear(); this->PlanarPointRejectionMapping.resize(this->CurrentPlanarsPoints->size());
+
   // keypoints extraction informations
-  std::cout << "Extracted : " << this->CurrentEdgesPoints->size() << " : edges; "
-            << this->CurrentPlanarsPoints->size() << " : planes; "
-            << this->CurrentBlobsPoints->size() << " : Blobs" << std::endl;
+  std::cout << "Extracted Edges: " << this->CurrentEdgesPoints->size() << " Planars: "
+            << this->CurrentPlanarsPoints->size() << " Blobs: "
+            << this->CurrentBlobsPoints->size() << std::endl;
 }
 
 //-----------------------------------------------------------------------------
@@ -2417,6 +2555,7 @@ int vtkSlam::ComputeLineDistanceParameters(pcl::KdTreeFLANN<Point>::Ptr kdtreePr
   {
     throw "ComputeLineDistanceParameters function got invalide step parameter";
   }
+
 
   Eigen::Matrix<double, 3, 1> P0, P, n;
   Eigen::Matrix<double, 3, 3> A;
@@ -3174,6 +3313,7 @@ void vtkSlam::ComputeEgoMotion()
         // i.e A = (I - n*n.t)^2 with n being the director vector
         // and P a point of the line
         int rejectionIndex = this->ComputeLineDistanceParameters(kdtreePreviousEdges, R, T, currentPoint, "egoMotion");
+        this->EdgePointRejectionEgoMotion[edgeIndex] = rejectionIndex;
         this->MatchRejectionHistogramLine[rejectionIndex] += 1;
       }
     }
@@ -3190,6 +3330,7 @@ void vtkSlam::ComputeEgoMotion()
         // i.e A = n * n.t with n being a normal of the plane
         // and is a point of the plane
         int rejectionIndex = this->ComputePlaneDistanceParameters(kdtreePreviousPlanes, R, T, currentPoint, "egoMotion");
+        this->PlanarPointRejectionEgoMotion[planarIndex] = rejectionIndex;
         this->MatchRejectionHistogramPlane[rejectionIndex] += 1;
       }
     }
@@ -3347,6 +3488,7 @@ void vtkSlam::Mapping()
       {
         // Find the closest correspondence edge line of the current edge point
         int rejectionIndex = this->ComputeLineDistanceParameters(kdtreeEdges, R, T, currentPoint, "mapping");
+        this->EdgePointRejectionMapping[edgeIndex] = rejectionIndex;
         this->MatchRejectionHistogramLine[rejectionIndex] += 1;
         usedEdges = this->Xvalues.size();
       }
@@ -3361,6 +3503,7 @@ void vtkSlam::Mapping()
       {
         // Find the closest correspondence plane of the current planar point
         int rejectionIndex = this->ComputePlaneDistanceParameters(kdtreePlanes, R, T, currentPoint, "mapping");
+        this->PlanarPointRejectionMapping[planarIndex] = rejectionIndex;
         this->MatchRejectionHistogramPlane[rejectionIndex] += 1;
         usedPlanes = this->Xvalues.size() - usedEdges;
       }
