@@ -55,6 +55,7 @@ else()
     URL_MD5 "56e88a5aabdd1e04414985ac24f7e76c")
 endif()
 
+# General
 add_revision(boost
   URL "https://sourceforge.net/projects/boost/files/boost/1.63.0/boost_1_63_0.tar.gz"
   URL_MD5 7b493c08bc9557bbde7e29091f28b605)
@@ -63,13 +64,20 @@ add_revision(eigen
   GIT_REPOSITORY https://github.com/eigenteam/eigen-git-mirror.git
   GIT_TAG 3.2.0)
 
-#add_revision(liblas
-#  GIT_REPOSITORY git://github.com/libLAS/libLAS
-#  GIT_TAG 6e8657336ba445fcec3c9e70c2ebcd2e25af40b9)
 add_revision(liblas
   GIT_REPOSITORY git://github.com/bastienjacquet/libLAS.git
   GIT_TAG fix-windows-stdint)
+  
+ # CERES specific
+add_revision(ceres
+  GIT_REPOSITORY https://ceres-solver.googlesource.com/ceres-solver
+  GIT_TAG 1.14.0)
 
+add_revision(glog
+  GIT_REPOSITORY https://github.com/google/glog.git
+  GIT_TAG 8d7a107d68c127f3f494bb7807b796c8c5a97a82)
+
+# PCL specific
 add_revision(pcl
   GIT_REPOSITORY git://github.com/PointCloudLibrary/pcl.git
   GIT_TAG pcl-1.8.1)

@@ -122,11 +122,19 @@ set (CM_PROJECTS_ALL)
 
 # Include all optional projects. These are the ones user can pick and choose.
 # Some of these allow using system libraries too.
+
+# PCL
 include(pcl)
 include(flann)
 include(zlib)
 include(png)
 include(qhull)
+
+# Ceres
+include(ceres)
+include(glog)
+
+#Veloview
 include(qt)
 include(python)
 include(pythonqt)

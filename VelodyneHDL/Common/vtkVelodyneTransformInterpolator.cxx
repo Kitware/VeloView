@@ -22,6 +22,10 @@
 #include "vtkTransform.h"
 #include "vtkPatchVeloView/vtkVeloViewTupleInterpolator.h"
 #include <list>
+#include <vector>
+#include <set>
+#include <algorithm>
+#include <iterator>
 
 vtkStandardNewMacro(vtkVelodyneTransformInterpolator);
 
@@ -66,11 +70,51 @@ struct vtkQTransform
   }
 };
 
+class vtkQTransformComparator
+{
+public:
+  bool operator () ( const vtkQTransform& transform1,
+                     const vtkQTransform& transform2 )
+    {
+      return transform1.Time < transform2.Time;
+    }
+};
+
 // The list is arranged in increasing order in T
 class vtkTransformList : public std::list<vtkQTransform>
 {
 };
 typedef vtkTransformList::iterator TransformListIterator;
+
+//----------------------------------------------------------------------------
+std::vector<std::vector<double> > vtkVelodyneTransformInterpolator::GetTransformList()
+{
+  this->InitializeInterpolation();
+
+  std::vector<std::vector<double> > transforms;
+  // Okay, insert in sorted order
+  TransformListIterator iter = this->TransformList->begin();
+  for (TransformListIterator iter = this->TransformList->begin(); iter != this->TransformList->end(); ++iter)
+  {
+    std::vector<double> currentTransform(7, 0);
+    // time
+    currentTransform[0] = iter->Time;
+    // position
+    currentTransform[4] = iter->P[0];
+    currentTransform[5] = iter->P[1];
+    currentTransform[6] = iter->P[2];
+    // orientation
+    double A[3][3];
+    iter->Q.ToMatrix3x3(A);
+    currentTransform[1] = std::atan2(A[2][1], A[2][2]);
+    currentTransform[2] = -std::asin(A[2][0]);
+    currentTransform[3] = std::atan2(A[1][0], A[0][0]);
+
+    transforms.push_back(currentTransform);
+  }
+
+  return transforms;
+}
 
 //----------------------------------------------------------------------------
 vtkVelodyneTransformInterpolator::vtkVelodyneTransformInterpolator()
@@ -327,6 +371,20 @@ void vtkVelodyneTransformInterpolator::InitializeInterpolation()
       this->ScaleInterpolator->SetInterpolationTypeToLinear();
       this->RotationInterpolator->SetInterpolationTypeToLinear();
     }
+    else if (this->InterpolationType == INTERPOLATION_TYPE_NEAREST
+             || this->InterpolationType == INTERPOLATION_TYPE_NEAREST_LOW_BOUNDED)
+    {
+      this->PositionInterpolator->SetInterpolationTypeToLinear();
+      this->ScaleInterpolator->SetInterpolationTypeToLinear();
+      this->RotationInterpolator->SetInterpolationTypeToLinear();
+      this->TransformVector.clear();
+      this->TransformVector.resize(0);
+      std::list<vtkQTransform>::iterator transform;
+      for (transform = this->TransformList->begin(); transform != this->TransformList->end(); ++transform)
+      {
+        this->TransformVector.push_back(*transform);
+      }
+    }
     else if (this->InterpolationType == INTERPOLATION_TYPE_SPLINE)
     {
       this->PositionInterpolator->SetInterpolationTypeToSpline();
@@ -401,6 +459,13 @@ void vtkVelodyneTransformInterpolator::InterpolateTransform(double t, vtkTransfo
     return;
   }
 
+  if (this->InterpolationType == INTERPOLATION_TYPE_NEAREST
+      || this->InterpolationType == INTERPOLATION_TYPE_NEAREST_LOW_BOUNDED)
+  {
+    this->InterpolateTransformNearest(t, xform);
+    return;
+  }
+
   // Make sure the xform and this class are initialized properly
   xform->Identity();
   this->InitializeInterpolation();
@@ -429,6 +494,68 @@ void vtkVelodyneTransformInterpolator::InterpolateTransform(double t, vtkTransfo
 }
 
 //----------------------------------------------------------------------------
+void vtkVelodyneTransformInterpolator::InterpolateTransformNearest(double t,
+                                                    vtkTransform *xform)
+{
+  if (this->TransformList->empty())
+  {
+    return;
+  }
+
+  // Make sure the xform and this class are initialized properly
+  xform->Identity();
+  this->InitializeInterpolation();
+
+  if (this->TransformVector.size() < 2)
+  {
+    return;
+  }
+
+  // vtkQTransform order relation based on the Time
+  vtkQTransformComparator comparatorTimeTransform;
+
+  // Get the low bound to procees to a nearest
+  // low bounded interpolator
+  vtkQTransform transform;
+  transform.Time = t;
+  std::vector<vtkQTransform>::iterator lowerBound;
+  lowerBound = std::lower_bound(this->TransformVector.begin(), this->TransformVector.end(), transform, comparatorTimeTransform);
+
+  if (this->InterpolationType == INTERPOLATION_TYPE_NEAREST_LOW_BOUNDED)
+  {
+    // Are we before the first node? If not take the
+    // previous transform to have a low bounded nearest
+    // interpolator.
+    if (!(lowerBound == this->TransformVector.begin()))
+    {
+      lowerBound--;
+    }
+  }
+  else // i.e. this->InterpolationType == INTERPOLATION_TYPE_NEAREST
+  {
+    // Unless the lowerBound is the first one, we have to compare it with
+    // its predecessor to keep the closest in time to t.
+
+    // Because t has already been clamped,
+    // lowerBound->Time - t should be positive
+    // but adding std::abs makes the code more robust.
+    if (lowerBound != this->TransformVector.begin() &&
+        t - (lowerBound - 1)->Time <= std::abs(lowerBound->Time - t))
+    {
+      lowerBound--;
+    }
+  }
+
+  // Get the transform
+  xform->Identity();
+  xform->Translate(lowerBound->P);
+  double Q[4];
+  Q[0] = vtkMath::DegreesFromRadians(lowerBound->Q.GetRotationAngleAndAxis(Q+1));
+  xform->RotateWXYZ(Q[0],Q+1);
+  xform->Scale(lowerBound->S);
+}
+
+//----------------------------------------------------------------------------
 void vtkVelodyneTransformInterpolator::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -445,9 +572,21 @@ void vtkVelodyneTransformInterpolator::PrintSelf(ostream& os, vtkIndent indent)
   {
     os << "Spline\n";
   }
-  else // if ( this->InterpolationType == INTERPOLATION_TYPE_MANUAL )
+  else if (this->InterpolationType == INTERPOLATION_TYPE_MANUAL)
   {
     os << "Manual\n";
+  }
+  else if (this->InterpolationType == INTERPOLATION_TYPE_NEAREST)
+  {
+    os << "Nearest\n";
+  }
+  else if (this->InterpolationType == INTERPOLATION_TYPE_NEAREST_LOW_BOUNDED)
+  {
+    os << "Nearest low bounded\n";
+  }
+  else
+  {
+    os << "Unknown\n";
   }
 
   os << indent << "Position Interpolator: ";

@@ -48,6 +48,7 @@
 #define __vtkVelodyneTransformInterpolator_h
 
 #include <vtkObject.h>
+#include <vector>
 
 class vtkTransform;
 class vtkMatrix4x4;
@@ -55,6 +56,7 @@ class vtkProp3D;
 class vtkVeloViewTupleInterpolator;
 class vtkVeloViewQuaternionInterpolator;
 class vtkTransformList;
+struct vtkQTransform;
 
 class VTK_EXPORT vtkVelodyneTransformInterpolator : public vtkObject
 {
@@ -103,14 +105,20 @@ public:
   // (min,max) values, then t is clamped.
   void InterpolateTransform(double t, vtkTransform* xform);
 
+  // Description:
+  // Return the transform list
+  std::vector<std::vector<double> > GetTransformList();
+
   // BTX
   // Description:
   // Enums to control the type of interpolation to use.
   enum
   {
     INTERPOLATION_TYPE_LINEAR = 0,
-    INTERPOLATION_TYPE_SPLINE,
-    INTERPOLATION_TYPE_MANUAL
+    INTERPOLATION_TYPE_SPLINE = 1,
+    INTERPOLATION_TYPE_MANUAL = 2,
+    INTERPOLATION_TYPE_NEAREST = 3,
+    INTERPOLATION_TYPE_NEAREST_LOW_BOUNDED = 4
   };
   // ETX
 
@@ -122,11 +130,13 @@ public:
   // then the interpolators are expected to be directly manipulated and
   // this class does not forward the request for interpolation type to its
   // interpolators.
-  vtkSetClampMacro(InterpolationType, int, INTERPOLATION_TYPE_LINEAR, INTERPOLATION_TYPE_MANUAL);
+  vtkSetMacro(InterpolationType, int);
   vtkGetMacro(InterpolationType, int);
   void SetInterpolationTypeToLinear() { this->SetInterpolationType(INTERPOLATION_TYPE_LINEAR); }
   void SetInterpolationTypeToSpline() { this->SetInterpolationType(INTERPOLATION_TYPE_SPLINE); }
   void SetInterpolationTypeToManual() { this->SetInterpolationType(INTERPOLATION_TYPE_MANUAL); }
+  void SetInterpolationTypeToNearest(){ this->SetInterpolationType(INTERPOLATION_TYPE_NEAREST); }
+  void SetInterpolationTypeToNearestLowBounded(){ this->SetInterpolationType(INTERPOLATION_TYPE_NEAREST_LOW_BOUNDED); }
 
   // Description:
   // Set/Get the tuple interpolator used to interpolate the position portion
@@ -163,6 +173,7 @@ protected:
 
   // Control the interpolation type
   int InterpolationType;
+  void InterpolateTransformNearest(double t, vtkTransform *xform);
 
   // Interpolators
   vtkVeloViewTupleInterpolator* PositionInterpolator;
@@ -176,6 +187,7 @@ protected:
 
   // Keep track of inserted data
   vtkTransformList* TransformList;
+  std::vector<vtkQTransform> TransformVector;
 
 private:
   vtkVelodyneTransformInterpolator(const vtkVelodyneTransformInterpolator&); // Not implemented.
