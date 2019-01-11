@@ -54,13 +54,14 @@ stages:
     - mkdir Superbuild-build/
     - cd Superbuild-build/
     # configure & generate
-    - cmake -DCMAKE_BUILD_TYPE:STRING=${cmake_option_CMAKE_BUILD_TYPE}
+    - cmake -DCMAKE_BUILD_TYPE:STRING=${cmake_option_CMAKE_BUILD_TYPE} -DBUILD_TESTING=True -DUSE_SYSTEM_python=True
       ${CI_PROJECT_DIR}/Superbuild
     # compile
     - make -j8
     # remove Veloview
-    - rm -rf veloview/
-    # create a symbolic link
+    - rm -rf common-superbuild/veloview
+    # create a symbolic link, inside the source tree else "push" will not work
+    - cd ${CI_PROJECT_DIR}
     - ln -s ../Superbuild-build Superbuild-build 
   <<: *push-cache
 
@@ -92,7 +93,7 @@ stages:
     # DO NOT use gilab-ci variable GIT_SUBMODULE_STRATEGY !!!
     - git submodule update --init --recursive
     - cd Superbuild-build/veloview/src/veloview-build
-    - cmake -DBUILD_TESTING:BOLL=True
+    - cmake -DBUILD_TESTING:BOOL=True
       ${CI_PROJECT_DIR}
     - make -j8
     # TODO current Source related tests fails, so we skip them.
@@ -206,7 +207,7 @@ ubuntu14.04.5_package_schedule:
     # compile
     - make -j8
     # remove Veloview
-    - rm -rf veloview/
+    - rm -rf common-superbuild/veloview
     # upload superbuild, Apple's Zip Utility, which I guess is use by gilab-ci
     # produce corrupted file for large file, so we need to upload the cache manually 
     - cd ..
