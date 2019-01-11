@@ -273,26 +273,26 @@ ubuntu14.04.5_package_schedule:
   variables:
     OS: OSX_ElCapitan
 
-OSX_ElCapitan_superbuild_manual:
+.OSX_ElCapitan_superbuild_manual:
   <<: *OSX_ElCapitan
   <<: *OSX_superbuild_manual
 
-OSX_ElCapitan_superbuild_schedule:
+.OSX_ElCapitan_superbuild_schedule:
   <<: *OSX_ElCapitan
   <<: *OSX_superbuild_schedule
 
-OSX_ElCapitan_build:
+.OSX_ElCapitan_build:
   <<: *OSX_ElCapitan
   <<: *OSX_build
 
-OSX_ElCapitan_test:
+.OSX_ElCapitan_test:
   <<: *OSX_ElCapitan
   <<: *OSX_test
 
-OSX_ElCapitan_package_manual:
+.OSX_ElCapitan_package_manual:
   <<: *OSX_ElCapitan
   <<: *OSX_package_manual
 
-OSX_ElCapitan_package_schedule:
+.OSX_ElCapitan_package_schedule:
   <<: *OSX_ElCapitan
   <<: *OSX_package_schedule
