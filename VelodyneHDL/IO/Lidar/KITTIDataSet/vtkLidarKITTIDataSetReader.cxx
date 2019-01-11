@@ -55,7 +55,8 @@ vtkStandardNewMacro(vtkLidarKITTIDataSetReader)
 //-----------------------------------------------------------------------------
 vtkLidarKITTIDataSetReader::vtkLidarKITTIDataSetReader()
   : FileName(""),
-    NumberOfTrailingFrames(0)
+    NumberOfTrailingFrames(0),
+    NbrLaser(64)
 {
 
 }
@@ -117,10 +118,12 @@ vtkSmartPointer<vtkPolyData> vtkLidarKITTIDataSetReader::GetFrame(int frameNumbe
   vtkSmartPointer<vtkDoubleArray> yArray = CreateDataArray<vtkDoubleArray>("Y", poly);
   vtkSmartPointer<vtkDoubleArray> zArray = CreateDataArray<vtkDoubleArray>("Z", poly);
   vtkSmartPointer<vtkDoubleArray> intensityArray = CreateDataArray<vtkDoubleArray>("intensity", poly);
-  vtkSmartPointer<vtkDoubleArray> azimutArray = CreateDataArray<vtkDoubleArray>("azimut", poly);
+  vtkSmartPointer<vtkDoubleArray> azimutArray = CreateDataArray<vtkDoubleArray>("azimuth", poly);
   vtkSmartPointer<vtkDoubleArray> elevationArray = CreateDataArray<vtkDoubleArray>("elevation", poly);
   vtkSmartPointer<vtkDoubleArray> radiusArray = CreateDataArray<vtkDoubleArray>("radius", poly);
   vtkSmartPointer<vtkDoubleArray> idArray = CreateDataArray<vtkDoubleArray>("laser_id", poly);
+  vtkSmartPointer<vtkDoubleArray> timestamp = CreateDataArray<vtkDoubleArray>("timestamp", poly);
+  vtkSmartPointer<vtkDoubleArray> adjustedTime = CreateDataArray<vtkDoubleArray>("adjustedtime", poly);
 
   int startFrame = std::max(0, frameNumber - wantedNumberOfTrailingFrames);
   for (int i = startFrame; i <= frameNumber; i++)
@@ -138,8 +141,8 @@ vtkSmartPointer<vtkPolyData> vtkLidarKITTIDataSetReader::GetFrame(int frameNumbe
     is.seekg(0, ios::beg);
 
     // variable used to detect a laser jump
-    double old_azimut = 0;
-    int laser_id = 1;
+    double old_thetaProj = 0;
+    int laser_id = 0;
 
     // buffer used to read the points
     char buffer[16];
@@ -154,17 +157,25 @@ vtkSmartPointer<vtkPolyData> vtkLidarKITTIDataSetReader::GetFrame(int frameNumbe
       double z = pt->z;
 
       double radius = sqrt(x*x + y*y + z*z);
+      double thetaProj = 180 / vtkMath::Pi() * std::atan2(pt->y, pt->x);
+      double azimut = 180 / vtkMath::Pi() * std::atan2(pt->x, pt->y);
 
-      double azimut = 180 / vtkMath::Pi() * std::atan2(pt->x,pt->y) + 180.0;
-      if(old_azimut < 0 && azimut >= 0)
+      if (azimut < 0)
+        azimut = 360 + azimut;
+
+      if(old_thetaProj < 0 && thetaProj >= 0)
       {
         laser_id++;
-        if (laser_id > 64)
+        if (laser_id >= this->NbrLaser)
         {
-          vtkErrorMacro(<< "An error occur while parsing the frame, more than 64 laser where detected")
+          vtkErrorMacro(<< "An error occur while parsing the frame, more than 64 laser where detected. The last point won't be processed")
+          break;
         }
       }
-      double elevation = 180 / vtkMath::Pi() * std::acos(pt->z/radius);
+      double projRadius = std::sqrt(pt->x * pt->x + pt->y * pt->y);
+      double elevation = 180 / vtkMath::Pi() * std::atan2(pt->z, projRadius);
+
+      double time = azimut / 360.0;
 
       // fill the polydata
       points->InsertNextPoint(pt->x, pt->y, pt->z);
@@ -176,9 +187,11 @@ vtkSmartPointer<vtkPolyData> vtkLidarKITTIDataSetReader::GetFrame(int frameNumbe
       azimutArray->InsertNextValue(azimut);
       idArray->InsertNextValue(laser_id);
       elevationArray->InsertNextValue(elevation);
+      timestamp->InsertNextValue(time);
+      adjustedTime->InsertNextValue(time);
 
       // update old azimut
-      old_azimut = azimut;
+      old_thetaProj = thetaProj;
     }
     is.close();
   }
@@ -198,9 +211,9 @@ int vtkLidarKITTIDataSetReader::RequestData(vtkInformation* vtkNotUsed(request),
   int timestep = 0;
   if (info->Has(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP()))
   {
-    double timeRequest = info->Get(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP());
-    timestep = static_cast<int>(floor(timeRequest + 0.5));
+    timestep = info->Get(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP());
   }
+  // Because no timestep are present in the .bin file we consider that timestep = frame number.
   if (timestep < 0 || timestep >= this->GetNumberOfFrames())
   {
     vtkErrorMacro("Cannot meet timestep request: " << timestep << ".  Have "
@@ -234,4 +247,10 @@ int vtkLidarKITTIDataSetReader::RequestInformation(vtkInformation* request, vtkI
     info->Remove(vtkStreamingDemandDrivenPipeline::TIME_RANGE());
   }
   return 1;
+}
+
+//-----------------------------------------------------------------------------
+int vtkLidarKITTIDataSetReader::GetNumberOfChannels()
+{
+  return this->NbrLaser;
 }
