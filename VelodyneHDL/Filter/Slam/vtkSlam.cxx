@@ -73,6 +73,7 @@
 #include "vtkVelodyneHDLReader.h"
 #include "vtkVelodyneTransformInterpolator.h"
 #include "vtkPCLConversions.h"
+#include "vtkCostFunctions.h"
 // STD
 #include <sstream>
 #include <algorithm>
@@ -96,7 +97,6 @@
 #include <vtkPolyLine.h>
 #include <vtkSmartPointer.h>
 #include <vtkStreamingDemandDrivenPipeline.h>
-#include <vtkQuaternion.h>
 #include <vtkUnsignedCharArray.h>
 #include <vtkUnsignedShortArray.h>
 #include <vtkTransform.h>
@@ -123,72 +123,6 @@ vtkStandardNewMacro(vtkSlam);
 
 
 namespace {
-
-//-----------------------------------------------------------------------------
-struct AffineIsometryResidual
-{
-public:
-  AffineIsometryResidual(Eigen::Matrix<double, 3, 3> argA,
-                         Eigen::Matrix<double, 3, 1> argC,
-                         Eigen::Matrix<double, 3, 1> argX,
-                         double argLambda)
-  {
-    this->A = argA;
-    this->C = argC;
-    this->X = argX;
-    this->lambda = argLambda;
-  }
-
-  template <typename T>
-  bool operator()(const T* const w, T* residual) const
-  {
-    // Convert internal double matrix
-    // to a Jet matrix for auto diff calculous
-    Eigen::Matrix<T, 3, 3> Ac;
-    for (int i = 0; i < 3; ++i)
-      for (int j = 0; j < 3; ++j)
-        Ac(i, j) = T(this->A(i, j));
-
-    // store sin / cos values for this angle
-    T crx = ceres::cos(w[0]); T srx = ceres::sin(w[0]);
-    T cry = ceres::cos(w[1]); T sry = ceres::sin(w[1]);
-    T crz = ceres::cos(w[2]); T srz = ceres::sin(w[2]);
-
-    // Compute Y = R(theta) * X + T - C
-    T Yx = cry*crz*T(X(0)) + (srx*sry*crz-crx*srz)*T(X(1)) + (crx*sry*crz+srx*srz)*T(X(2)) + w[3] - T(C(0));
-    T Yy = cry*srz*T(X(0)) + (srx*sry*srz+crx*crz)*T(X(1)) + (crx*sry*srz-srx*crz)*T(X(2)) + w[4] - T(C(1));
-    T Yz = -sry*T(X(0)) + srx*cry*T(X(1)) + crx*cry*T(X(2)) + w[5] - T(C(2));
-
-    // Compute final residual value which is:
-    // Ht * A * H with H = R(theta)X + T
-    Eigen::Matrix<T, 3, 1> Y;
-    Y << Yx, Yy, Yz;
-    T squaredResidual = T(lambda) * (Y.transpose() * Ac * Y)(0);
-
-    // since t -> sqrt(t) is not differentiable
-    // in 0, we check the value of the distance
-    // infenitesimale part. If it is not finite
-    // it means that the first order derivative
-    // has been evaluated in 0
-    if (squaredResidual < T(1e-6))
-    {
-      residual[0] = T(0);
-    }
-    else
-    {
-      residual[0] = ceres::sqrt(squaredResidual);
-    }
-
-    return true;
-  }
-
-private:
-  Eigen::Matrix<double, 3, 3> A;
-  Eigen::Matrix<double, 3, 1> C;
-  Eigen::Matrix<double, 3, 1> X;
-  double lambda;
-};
-
 //-----------------------------------------------------------------------------
 class LineFitting
 {
@@ -196,7 +130,12 @@ public:
   LineFitting();
 
   // Fitting using PCA
-  void FitPCA(std::vector<Eigen::Matrix<double, 3, 1> >& points);
+  bool FitPCA(std::vector<Eigen::Matrix<double, 3, 1> >& points);
+
+  // Futting using very local line and
+  // check if this local line is consistent
+  // in a more global neighborhood
+  bool FitPCAAndCheckConsistency(std::vector<Eigen::Matrix<double, 3, 1> >& points);
 
   // Poor but fast fitting using
   // extremities of the distribution
@@ -207,6 +146,7 @@ public:
   Eigen::Matrix<double, 3, 1> Position;
   Eigen::Matrix<double, 3, 3> SemiDist;
   double MaxDistance;
+  double MaxSinAngle;
 
   Eigen::Matrix<double, 3, 3> I3;
 };
@@ -217,16 +157,14 @@ LineFitting::LineFitting()
   this->I3 << 1, 0, 0,
               0, 1, 0,
               0, 0, 1;
+
+  this->MaxDistance = 0.02;
+  this->MaxSinAngle = 0.65;
 }
 
 //-----------------------------------------------------------------------------
-void LineFitting::FitPCA(std::vector<Eigen::Matrix<double, 3, 1> >& points)
+bool LineFitting::FitPCA(std::vector<Eigen::Matrix<double, 3, 1> >& points)
 {
-  Eigen::Matrix<double, 3, 3> I3;
-  I3 << 1, 0, 0,
-        0, 1, 0,
-        0, 0, 1;
-
   // Compute PCA to determine best line approximation
   // of the points distribution
   Eigen::MatrixXd data(points.size(), 3);
@@ -261,6 +199,46 @@ void LineFitting::FitPCA(std::vector<Eigen::Matrix<double, 3, 1> >& points)
   // semi-definite matrix)
   this->SemiDist = (this->I3 - this->Direction * this->Direction.transpose());
   this->SemiDist = this->SemiDist.transpose() * this->SemiDist;
+
+  bool isLineFittingAccurate = true;
+
+  // if a point of the neighborhood is too far from
+  // the fitting line we considere the neighborhood as
+  // non flat
+  for (unsigned int k = 0; k < points.size(); k++)
+  {
+    double d = std::sqrt((points[k] - this->Position).transpose() * this->SemiDist * (points[k] - this->Position));
+    if (d > this->MaxDistance)
+    {
+      isLineFittingAccurate = false;
+    }
+  }
+
+  return isLineFittingAccurate;
+}
+
+//-----------------------------------------------------------------------------
+bool LineFitting::FitPCAAndCheckConsistency(std::vector<Eigen::Matrix<double, 3, 1> >& points)
+{
+  bool isLineFittingAccurate = true;
+
+  // first check if the neighborhood is straight
+  Eigen::Matrix<double, 3, 1> U, V;
+  U = (points[1] - points[0]).normalized();
+  double sinAngle;
+  for (unsigned int index = 1; index < points.size() - 1; index++)
+  {
+    V = (points[index + 1] - points[index]).normalized();
+    sinAngle = (U.cross(V)).norm();
+    if (sinAngle > this->MaxSinAngle) // 30°
+    {
+      isLineFittingAccurate = false;
+    }
+  }
+
+  // Then fit with PCA
+  isLineFittingAccurate &= this->FitPCA(points);
+  return isLineFittingAccurate;
 }
 
 //-----------------------------------------------------------------------------
@@ -755,11 +733,14 @@ vtkInformationVector **inputVector, vtkInformationVector *outputVector)
 
   // output 0 - Current Frame
   // add all debug information if displayMode == True
-  if (DisplayMode = true && this->NbrFrameProcessed > 0)
+  if (this->DisplayMode = true && this->NbrFrameProcessed > 0)
   {
     this->DisplayLaserIdMapping(this->vtkCurrentFrame);
     this->DisplayRelAdv(this->vtkCurrentFrame);
+    this->DisplayUsedKeypoints(this->vtkCurrentFrame);
     AddVectorToPolydataPoints<double, vtkDoubleArray>(this->Angles, "angles_line", this->vtkCurrentFrame);
+    AddVectorToPolydataPoints<double, vtkDoubleArray>(this->LengthResolution, "length_resolution", this->vtkCurrentFrame);
+    AddVectorToPolydataPoints<double, vtkDoubleArray>(this->SaillantPoint, "saillant_point", this->vtkCurrentFrame);
     AddVectorToPolydataPoints<double, vtkDoubleArray>(this->DepthGap, "depth_gap", this->vtkCurrentFrame);
     AddVectorToPolydataPoints<double, vtkDoubleArray>(this->BlobScore, "blob_score", this->vtkCurrentFrame);
     AddVectorToPolydataPoints<int, vtkIntArray>(this->IsPointValid, "is_point_valid", this->vtkCurrentFrame);
@@ -988,9 +969,9 @@ void vtkSlam::PrintParameters()
 //-----------------------------------------------------------------------------
 void vtkSlam::ResetAlgorithm()
 {
-  //google::InitGoogleLogging("Slam_optimisation");
   this->DisplayMode = true; // switch to false to improve speed
-  this->NeighborWidth = 3;
+  this->NeighborWidth = 4;
+  this->DistToLineThreshold = 0.20;
   this->EgoMotionICPMaxIter = 4;
   this->MappingICPMaxIter = 3;
   this->EgoMotionLMMaxIter = 15;
@@ -998,9 +979,9 @@ void vtkSlam::ResetAlgorithm()
   this->MinDistanceToSensor = 3.0;
   this->MaxEdgePerScanLine = 200;
   this->MaxPlanarsPerScanLine = 200;
-  this->EdgeSinAngleThreshold = 0.85; // 85 degrees
-  this->PlaneSinAngleThreshold = 0.5; // 50 degrees
-  this->EdgeDepthGapThreshold = 0.02; // meters
+  this->EdgeSinAngleThreshold = 0.86; // 60 degrees
+  this->PlaneSinAngleThreshold = 0.5; // 30 degrees
+  this->EdgeDepthGapThreshold = 0.15; // 15 cm
   this->Undistortion = false; // should not undistord frame by default
   this->LeafSize = 0.6;
 
@@ -1026,7 +1007,7 @@ void vtkSlam::ResetAlgorithm()
   // edges
   this->MappingLineDistanceNbrNeighbors = 15;
   this->MappingMinimumLineNeighborRejection = 5;
-  this->MappingLineMaxDistInlier = 0.3; // 30 cm
+  this->MappingLineMaxDistInlier = 0.2; // 20 cm
   this->MappingLineDistancefactor = 5.0;
   this->MappingMaxLineDistance = 0.2; // 20 cm
 
@@ -1057,6 +1038,10 @@ void vtkSlam::ResetAlgorithm()
   this->FromPCLtoVTKMapping.resize(this->NLasers);
   this->Angles.clear();
   this->Angles.resize(this->NLasers);
+  this->LengthResolution.clear();
+  this->LengthResolution.resize(this->NLasers);
+  this->SaillantPoint.clear();
+  this->SaillantPoint.resize(this->NLasers);
   this->DepthGap.clear();
   this->DepthGap.resize(this->NLasers);
   this->BlobScore.clear();
@@ -1157,6 +1142,10 @@ void vtkSlam::PrepareDataForNextFrame()
   this->FromPCLtoVTKMapping.resize(this->NLasers);
   this->Angles.clear();
   this->Angles.resize(this->NLasers);
+  this->LengthResolution.clear();
+  this->LengthResolution.resize(this->NLasers);
+  this->SaillantPoint.clear();
+  this->SaillantPoint.resize(this->NLasers);
   this->DepthGap.clear();
   this->DepthGap.resize(this->NLasers);
   this->BlobScore.clear();
@@ -1240,6 +1229,59 @@ void vtkSlam::DisplayRelAdv(vtkSmartPointer<vtkPolyData> input)
     relAdvArray->InsertNextTuple1(this->pclCurrentFrameByScan[scan]->points[index].intensity);
   }
   input->GetPointData()->AddArray(relAdvArray);
+}
+
+//-----------------------------------------------------------------------------
+void vtkSlam::DisplayUsedKeypoints(vtkSmartPointer<vtkPolyData> input)
+{
+  vtkSmartPointer<vtkIntArray> edgeUsedEgoMotion = vtkSmartPointer<vtkIntArray>::New();
+  edgeUsedEgoMotion->Allocate(input->GetNumberOfPoints());
+  edgeUsedEgoMotion->SetName("Edges_Used_EgoMotion");
+
+  vtkSmartPointer<vtkIntArray> edgeUsedMapping = vtkSmartPointer<vtkIntArray>::New();
+  edgeUsedMapping->Allocate(input->GetNumberOfPoints());
+  edgeUsedMapping->SetName("Edges_Used_Mapping");
+
+  vtkSmartPointer<vtkIntArray> planarUsedEgoMotion = vtkSmartPointer<vtkIntArray>::New();
+  planarUsedEgoMotion->Allocate(input->GetNumberOfPoints());
+  planarUsedEgoMotion->SetName("Planes_Used_EgoMotion");
+
+  vtkSmartPointer<vtkIntArray> planarUsedMapping = vtkSmartPointer<vtkIntArray>::New();
+  planarUsedMapping->Allocate(input->GetNumberOfPoints());
+  planarUsedMapping->SetName("Planes_Used_Mapping");
+
+  // fill with -1 for points that are not keypoints
+  for (unsigned int k = 0; k < input->GetNumberOfPoints(); ++k)
+  {
+    edgeUsedEgoMotion->InsertNextTuple1(-1);
+    edgeUsedMapping->InsertNextTuple1(-1);
+    planarUsedEgoMotion->InsertNextTuple1(-1);
+    planarUsedMapping->InsertNextTuple1(-1);
+  }
+
+  // fill with 1 if the point is a keypoint
+  // fill with 2 if the point is a used keypoint
+  for (unsigned int k = 0; k < this->EdgesIndex.size(); ++k)
+  {
+    unsigned int scan = this->EdgesIndex[k].first;
+    unsigned int index = this->EdgesIndex[k].second;
+
+    edgeUsedEgoMotion->SetTuple1(this->FromPCLtoVTKMapping[scan][index], EdgePointRejectionEgoMotion[k]);
+    edgeUsedMapping->SetTuple1(this->FromPCLtoVTKMapping[scan][index], EdgePointRejectionMapping[k]);
+  }
+  for (unsigned int k = 0; k < this->PlanarIndex.size(); ++k)
+  {
+    unsigned int scan = this->PlanarIndex[k].first;
+    unsigned int index = this->PlanarIndex[k].second;
+
+    planarUsedEgoMotion->SetTuple1(this->FromPCLtoVTKMapping[scan][index], this->PlanarPointRejectionEgoMotion[k]);
+    planarUsedMapping->SetTuple1(this->FromPCLtoVTKMapping[scan][index], this->PlanarPointRejectionMapping[k]);
+  }
+
+  input->GetPointData()->AddArray(edgeUsedEgoMotion);
+  input->GetPointData()->AddArray(edgeUsedMapping);
+  input->GetPointData()->AddArray(planarUsedEgoMotion);
+  input->GetPointData()->AddArray(planarUsedMapping);
 }
 
 //-----------------------------------------------------------------------------
@@ -1893,9 +1935,7 @@ void vtkSlam::ConvertAndSortScanLines(vtkSmartPointer<vtkPolyData> input)
   {
     // Get information about current point
     Points->GetPoint(index, xL);
-    yL.x = xL[0];
-    yL.y = xL[1];
-    yL.z = xL[2];
+    yL.x = xL[0]; yL.y = xL[1]; yL.z = xL[2];
 
     double relAdv = (static_cast<double>(time->GetTuple1(index)) - t0) / (t1 - t0);
     unsigned int id = static_cast<int>(lasersId->GetTuple1(index));
@@ -1920,6 +1960,8 @@ void vtkSlam::ComputeKeyPoints(vtkSmartPointer<vtkPolyData> input)
     this->IsPointValid[k].resize(this->pclCurrentFrameByScan[k]->size(), 1);
     this->Label[k].resize(this->pclCurrentFrameByScan[k]->size(), 0);
     this->Angles[k].resize(this->pclCurrentFrameByScan[k]->size(),0);
+    this->LengthResolution[k].resize(this->pclCurrentFrameByScan[k]->size(),0);
+    this->SaillantPoint[k].resize(this->pclCurrentFrameByScan[k]->size(),0);
     this->DepthGap[k].resize(this->pclCurrentFrameByScan[k]->size(), 0);
     this->BlobScore[k].resize(this->pclCurrentFrameByScan[k]->size(), 0);
   }
@@ -1938,13 +1980,8 @@ void vtkSlam::ComputeKeyPoints(vtkSmartPointer<vtkPolyData> input)
 void vtkSlam::ComputeCurvature(vtkSmartPointer<vtkPolyData> input)
 {
   Point currentPoint;
-  Eigen::Matrix<double, 3, 1> X, U, V, Pleft, Pright;
-  Eigen::Matrix<double, 3, 1> Nleft, Nright, centralPoint;
-  Eigen::Matrix<double, 3, 1> dirGapLeft, dirGapRight;
-  Eigen::Matrix<double, 3, 3> Dleft, Dright;
-  double distCandidate;
-  LineFitting leftLine;
-  LineFitting rightLine;
+  Eigen::Matrix<double, 3, 1> X, centralPoint;
+  LineFitting leftLine, rightLine, farNeighborsLine;
 
   // loop over scans lines
   for (unsigned int scanLine = 0; scanLine < this->NLasers; ++scanLine)
@@ -1953,12 +1990,12 @@ void vtkSlam::ComputeCurvature(vtkSmartPointer<vtkPolyData> input)
     int Npts = this->pclCurrentFrameByScan[scanLine]->size();
 
     // if the line is almost empty, skip it
-    if (Npts < 3 * this->NeighborWidth)
+    if (Npts < 2 * this->NeighborWidth + 1)
     {
       continue;
     }
 
-    for (int index = this->NeighborWidth; index < Npts - this->NeighborWidth - 1; ++index)
+    for (int index = this->NeighborWidth; (index + this->NeighborWidth) < Npts; ++index)
     {
       // central point
       currentPoint = this->pclCurrentFrameByScan[scanLine]->points[index];
@@ -1971,8 +2008,12 @@ void vtkSlam::ComputeCurvature(vtkSmartPointer<vtkPolyData> input)
       // of the "sharpness" of the current point.
       std::vector<Eigen::Matrix<double, 3, 1> > leftNeighbor;
       std::vector<Eigen::Matrix<double, 3, 1> > rightNeighbor;
+      std::vector<Eigen::Matrix<double, 3, 1> > farNeighbors;
 
       // Fill right and left neighborhood
+      // /!\ The way the neighbors are added
+      // to the vectors matters. Especially when
+      // computing the saillancy
       for (int j = index - this->NeighborWidth; j <= index + this->NeighborWidth; ++j)
       {
         currentPoint = this->pclCurrentFrameByScan[scanLine]->points[j];
@@ -1983,106 +2024,108 @@ void vtkSlam::ComputeCurvature(vtkSmartPointer<vtkPolyData> input)
           rightNeighbor.push_back(X);
       }
 
-      // Fit line on the neighborhood
-      leftLine.FitFast(leftNeighbor);
-      rightLine.FitFast(rightNeighbor);
-
-
-      Pleft = leftLine.Position;
-      Nleft = leftLine.Direction;
-      Dleft = leftLine.SemiDist;
-
-      Pright = rightLine.Position;
-      Nright = rightLine.Direction;
-      Dright = rightLine.SemiDist;
-
+      // Fit line on the neighborhood and
       // Indicate if the left and right side
       // neighborhood of the current point is flat or not
-      bool leftFlat = true;
-      bool rightFlat = true;
+      bool leftFlat = leftLine.FitPCAAndCheckConsistency(leftNeighbor);
+      bool rightFlat = rightLine.FitPCAAndCheckConsistency(rightNeighbor);
 
       // Measurement of the gap
-      double minDistLeft = std::numeric_limits<double>::max();
-      double minDistRight = std::numeric_limits<double>::max();
-
-      // Compute the fitting line and estimate
-      // if the neighborhood is flat
-      for (int j = index - this->NeighborWidth; j <= index + this->NeighborWidth; ++j)
-      {
-        currentPoint = this->pclCurrentFrameByScan[scanLine]->points[j];
-        X << currentPoint.x, currentPoint.y, currentPoint.z;
-
-        if (j < index)
-        {
-          distCandidate = (X - centralPoint).norm() / centralPoint.norm();
-          if (distCandidate < minDistLeft)
-          {
-            minDistLeft = distCandidate;
-            dirGapLeft = (X - centralPoint).normalized();
-          }
-
-          // if a point of the neighborhood is too far from
-          // the fitting line we considere the neighborhood as
-          // non flat
-          double d = std::sqrt((X - Pleft).transpose() * Dleft * (X - Pleft));
-          if (d > 0.02)
-          {
-            leftFlat = false;
-          }
-        }
-          
-        if (j > index)
-        {
-          distCandidate = (X - centralPoint).norm() / centralPoint.norm();
-          if (distCandidate < minDistRight)
-          {
-            minDistRight = distCandidate;
-            dirGapRight = (X - centralPoint).normalized();
-          }
-
-          // if a point of the neighborhood is too far from
-          // the fitting line we considere the neighborhood as
-          // non flat
-          double d = std::sqrt((X - Pright).transpose() * Dright * (X - Pright));
-          if (d > 0.02)
-          {
-            rightFlat = false;
-          }
-        }
-      }
-
-      double dist1 = 0;
-      double dist2 = 0;
+      double dist1 = 0; double dist2 = 0;
 
       // if both neighborhood are flat we can compute
       // the angle between them as an approximation of the
       // sharpness of the current point
       if (rightFlat && leftFlat)
       {
-        this->Angles[scanLine][index] = std::abs((Nleft.cross(Nright)).norm()); // sin of angle actually
+        // We check that the current point is not too far from its
+        // neighborhood lines. This is because we don't want a point
+        // to be considered as a angles point if it is due to gap
+        dist1 = std::sqrt((centralPoint - leftLine.Position).transpose() * leftLine.SemiDist * (centralPoint - leftLine.Position));
+        dist2 = std::sqrt((centralPoint - rightLine.Position).transpose() * rightLine.SemiDist * (centralPoint - rightLine.Position));
 
-        dist1 = std::abs(dirGapLeft.cross(Nleft).norm()) * minDistLeft;
-        dist2 = std::abs(dirGapRight.cross(Nright).norm()) * minDistRight;
+        if ((dist1 < this->DistToLineThreshold) && (dist2 < this->DistToLineThreshold))
+          this->Angles[scanLine][index] = std::abs((leftLine.Direction.cross(rightLine.Direction)).norm()); // sin of angle actually
       }
       // Here one side of the neighborhood is non flat
       // Hence it is not worth to estimate the sharpness.
       // Only the gap will be considered here.
       else if (rightFlat && !leftFlat)
       {
-        dist1 = minDistLeft;
-        dist2 = std::abs(dirGapRight.cross(Nright).norm()) * minDistRight;
+        dist1 = 1000.0;
+        for (unsigned int neighIndex = 0; neighIndex < leftNeighbor.size(); ++neighIndex)
+        {
+          dist1 = std::min(dist1,
+                  std::sqrt((leftNeighbor[neighIndex] - rightLine.Position).transpose() * rightLine.SemiDist * (leftNeighbor[neighIndex] - rightLine.Position)));
+        }
+        dist1 = 0.5 * dist1;
       }
       else if (!rightFlat && leftFlat)
       {
-        dist1 = std::abs(dirGapLeft.cross(Nleft).norm()) * minDistLeft;
-        dist2 = minDistRight;
+        dist2 = 1000.0;
+        for (unsigned int neighIndex = 0; neighIndex < leftNeighbor.size(); ++neighIndex)
+        {
+          dist2 = std::min(dist2,
+                  std::sqrt((rightNeighbor[neighIndex] - leftLine.Position).transpose() * leftLine.SemiDist * (rightNeighbor[neighIndex] - leftLine.Position)));
+        }
+        dist2 = 0.5 * dist2;
       }
       else
       {
-        dist1 = 0.5 * minDistLeft; // 0.5: minor trust
-        dist2 = 0.5 * minDistRight;
+        // Compute saillant point score
+        double currDepth = centralPoint.norm();
+        unsigned int diffDepth = 0;
+        bool canLeftBeAdded = true; bool hasLeftEncounteredDepthGap = false;
+        bool canRightBeAdded = true; bool hasRightEncounteredDepthGap = false;
+
+        // The saillant point score is the distance between the current point
+        // and the points that have a depth gap with the current point
+        for (unsigned int neighIndex = 0; neighIndex < leftNeighbor.size(); ++neighIndex)
+        {
+          // Left neighborhood depth gap computation
+          if ((std::abs(leftNeighbor[leftNeighbor.size() - 1 - neighIndex].norm() - currDepth) > 1.5) && canLeftBeAdded)
+          {
+            hasLeftEncounteredDepthGap = true;
+            diffDepth++;
+            farNeighbors.push_back(leftNeighbor[neighIndex]);
+          }
+          else
+          {
+            if (hasLeftEncounteredDepthGap)
+            {
+              canLeftBeAdded = false;
+            }
+          }
+          // Right neigborhood depth gap computation
+          if ((std::abs(rightNeighbor[neighIndex].norm() - currDepth) > 1.5) && canRightBeAdded)
+          {
+            hasRightEncounteredDepthGap = true;
+            diffDepth++;
+            farNeighbors.push_back(rightNeighbor[neighIndex]);
+          }
+          else
+          {
+            if (hasRightEncounteredDepthGap)
+            {
+              canRightBeAdded = false;
+            }
+          }
+        }
+
+        // If there is enought neighbors with a big depth gap
+        // we propose to compute the saillancy of the current
+        // as the distance between the line that fits the neighbors
+        // with a depth gap and the current point
+        if (static_cast<double>(diffDepth) / (2.0 * this->NeighborWidth) > 0.5)
+        {
+          farNeighborsLine.FitPCA(farNeighbors);
+          this->SaillantPoint[scanLine][index] = std::sqrt(
+            (centralPoint - farNeighborsLine.Position).transpose() * farNeighborsLine.SemiDist * (centralPoint - farNeighborsLine.Position));
+        }
+
         this->BlobScore[scanLine][index] = 1;
       }
+
       this->DepthGap[scanLine][index] = std::max(dist1, dist2);
     }
   }
@@ -2139,7 +2182,7 @@ void vtkSlam::InvalidPointWithBadCriteria()
       double ratioExpectedLength = 10.0;
 
       // if the length between the two firing
-      // if more than n-th the expected length
+      // is more than n-th the expected length
       // it means that there is a gap. We now must
       // determine if the gap is due to the geometry of
       // the scene or if the gap is due to an occluded area
@@ -2222,9 +2265,9 @@ void vtkSlam::InvalidPointWithBadCriteria()
 //-----------------------------------------------------------------------------
 void vtkSlam::SetKeyPointsLabels(vtkSmartPointer<vtkPolyData> input)
 {
-  std::vector<std::pair<int, int> > edgesIndex;
-  std::vector<std::pair<int, int> > planarIndex;
-  std::vector<std::pair<int, int> > blobIndex;
+  this->EdgesIndex.clear(); this->EdgesIndex.resize(0);
+  this->PlanarIndex.clear(); this->PlanarIndex.resize(0);
+  this->BlobIndex.clear(); this->BlobIndex.resize(0);
 
   // loop over the scan lines
   for (unsigned int scanLine = 0; scanLine < this->NLasers; ++scanLine)
@@ -2248,11 +2291,10 @@ void vtkSlam::SetKeyPointsLabels(vtkSmartPointer<vtkPolyData> input)
     // Sort the curvature score in a decreasing order
     std::vector<size_t> sortedDepthGapIdx = sortIdx<double>(this->DepthGap[scanLine]);
     std::vector<size_t> sortedAnglesIdx = sortIdx<double>(this->Angles[scanLine]);
+    std::vector<size_t> sortedSaillancyIdx = sortIdx<double>(this->SaillantPoint[scanLine]);
     std::vector<size_t> sortedBlobScoreIdx = sortIdx<double>(this->BlobScore[scanLine]);
 
-    double depthGap = 0;
-    double sinAngle = 0;
-    double blobScore = 0;
+    double depthGap, sinAngle, blobScore, saillancy;
     int index = 0;
 
     // Edges using depth gap
@@ -2260,12 +2302,6 @@ void vtkSlam::SetKeyPointsLabels(vtkSmartPointer<vtkPolyData> input)
     {
       index = sortedDepthGapIdx[k];
       depthGap = this->DepthGap[scanLine][index];
-
-      // max keypoints reached
-      if (nbrEdgePicked >= this->MaxEdgePerScanLine)
-      {
-        break;
-      }
 
       // thresh
       if (depthGap < this->EdgeDepthGapThreshold)
@@ -2281,7 +2317,7 @@ void vtkSlam::SetKeyPointsLabels(vtkSmartPointer<vtkPolyData> input)
 
       // else indicate that the point is an edge
       this->Label[scanLine][index] = 4;
-      edgesIndex.push_back(std::pair<int, int>(scanLine, index));
+      this->EdgesIndex.push_back(std::pair<int, int>(scanLine, index));
       nbrEdgePicked++;
       //IsPointValidForPlanar[index] = 0;
 
@@ -2302,12 +2338,6 @@ void vtkSlam::SetKeyPointsLabels(vtkSmartPointer<vtkPolyData> input)
       index = sortedAnglesIdx[k];
       sinAngle = this->Angles[scanLine][index];
 
-      // max keypoints reached
-      if (nbrEdgePicked >= this->MaxEdgePerScanLine)
-      {
-        break;
-      }
-
       // thresh
       if (sinAngle < this->EdgeSinAngleThreshold)
       {
@@ -2322,7 +2352,7 @@ void vtkSlam::SetKeyPointsLabels(vtkSmartPointer<vtkPolyData> input)
 
       // else indicate that the point is an edge
       this->Label[scanLine][index] = 4;
-      edgesIndex.push_back(std::pair<int, int>(scanLine, index));
+      this->EdgesIndex.push_back(std::pair<int, int>(scanLine, index));
       nbrEdgePicked++;
       //IsPointValidForPlanar[index] = 0;
 
@@ -2337,12 +2367,47 @@ void vtkSlam::SetKeyPointsLabels(vtkSmartPointer<vtkPolyData> input)
       }
     }
 
+    // Edges using saillancy
+    for (int k = 0; k < Npts; ++k)
+    {
+      index = sortedSaillancyIdx[k];
+      saillancy = this->SaillantPoint[scanLine][index];
+
+      // thresh
+      if (saillancy < 1.5)
+      {
+        break;
+      }
+
+      // if the point is invalid continue
+      if (this->IsPointValid[scanLine][index] == 0)
+      {
+        continue;
+      }
+
+      // else indicate that the point is an edge
+      this->Label[scanLine][index] = 4;
+      this->EdgesIndex.push_back(std::pair<int, int>(scanLine, index));
+      nbrEdgePicked++;
+      //IsPointValidForPlanar[index] = 0;
+
+      // invalid its neighborhod
+      int indexBegin = index - this->NeighborWidth + 1;
+      int indexEnd = index + this->NeighborWidth - 1;
+      indexBegin = std::max(0, indexBegin);
+      indexEnd = std::min(Npts - 1, indexEnd);
+      for (int j = indexBegin; j <= indexEnd; ++j)
+      {
+        this->IsPointValid[scanLine][j] = 0;
+      }
+    }
+
     // Blobs Points
     if (!this->FastSlam)
     {
       for (int k = 0; k < Npts; k = k + 3)
       {
-        blobIndex.push_back(std::pair<int, int>(scanLine, k));
+        this->BlobIndex.push_back(std::pair<int, int>(scanLine, k));
       }
     }
 
@@ -2373,7 +2438,7 @@ void vtkSlam::SetKeyPointsLabels(vtkSmartPointer<vtkPolyData> input)
       // else indicate that the point is a planar one
       if ((this->Label[scanLine][index] != 4) && (this->Label[scanLine][index] != 3))
         this->Label[scanLine][index] = 2;
-      planarIndex.push_back(std::pair<int, int>(scanLine, index));
+      this->PlanarIndex.push_back(std::pair<int, int>(scanLine, index));
       IsPointValidForPlanar[index] = 0;
       this->IsPointValid[scanLine][index] = 0;
 
@@ -2381,8 +2446,8 @@ void vtkSlam::SetKeyPointsLabels(vtkSmartPointer<vtkPolyData> input)
       // many planar keypoints in the same region. This is
       // required because of the k-nearest search + plane
       // approximation realized in the odometry part. Indeed,
-      // if tall the planar points are on the same scan line the
-      //  problem is degenerated since all the points are distributed
+      // if all the planar points are on the same scan line the
+      // problem is degenerated since all the points are distributed
       // on a line.
       int indexBegin = index - 4;
       int indexEnd = index + 4;
@@ -2397,54 +2462,68 @@ void vtkSlam::SetKeyPointsLabels(vtkSmartPointer<vtkPolyData> input)
   }
 
   // add keypoints in increasing scan id order
-  std::sort(edgesIndex.begin(), edgesIndex.end());
-  std::sort(planarIndex.begin(), planarIndex.end());
-  std::sort(blobIndex.begin(), blobIndex.end());
+  std::sort(this->EdgesIndex.begin(), this->EdgesIndex.end());
+  std::sort(this->PlanarIndex.begin(), this->PlanarIndex.end());
+  std::sort(this->BlobIndex.begin(), this->BlobIndex.end());
 
   // fill the keypoints vectors and compute the max dist keypoints
   this->FarestKeypointDist = 0.0;
   Point p;
-  for (unsigned int k = 0; k < edgesIndex.size(); ++k)
+  for (unsigned int k = 0; k < this->EdgesIndex.size(); ++k)
   {
-    p = this->pclCurrentFrameByScan[edgesIndex[k].first]->points[edgesIndex[k].second];
+    p = this->pclCurrentFrameByScan[this->EdgesIndex[k].first]->points[this->EdgesIndex[k].second];
     this->CurrentEdgesPoints->push_back(p);
     this->FarestKeypointDist = std::max(this->FarestKeypointDist, static_cast<double>(std::sqrt(std::pow(p.x, 2) + std::pow(p.y, 2) + std::pow(p.z, 2))));
   }
-  for (unsigned int k = 0; k < planarIndex.size(); ++k)
+  for (unsigned int k = 0; k < this->PlanarIndex.size(); ++k)
   {
-    p = this->pclCurrentFrameByScan[planarIndex[k].first]->points[planarIndex[k].second];
+    p = this->pclCurrentFrameByScan[this->PlanarIndex[k].first]->points[this->PlanarIndex[k].second];
     this->CurrentPlanarsPoints->push_back(p);
     this->FarestKeypointDist = std::max(this->FarestKeypointDist, static_cast<double>(std::sqrt(std::pow(p.x, 2) + std::pow(p.y, 2) + std::pow(p.z, 2))));
   }
-  for (unsigned int k = 0; k < blobIndex.size();  ++k)
+  for (unsigned int k = 0; k < this->BlobIndex.size();  ++k)
   {
-    p = this->pclCurrentFrameByScan[blobIndex[k].first]->points[blobIndex[k].second];
+    p = this->pclCurrentFrameByScan[this->BlobIndex[k].first]->points[this->BlobIndex[k].second];
     this->CurrentBlobsPoints->push_back(p);
     this->FarestKeypointDist = std::max(this->FarestKeypointDist, static_cast<double>(std::sqrt(std::pow(p.x, 2) + std::pow(p.y, 2) + std::pow(p.z, 2))));
   }
+
+  // Initialize the IsKeypointUsed vectors
+  this->EdgePointRejectionEgoMotion.clear(); this->EdgePointRejectionEgoMotion.resize(this->CurrentEdgesPoints->size());
+  this->PlanarPointRejectionEgoMotion.clear(); this->PlanarPointRejectionEgoMotion.resize(this->CurrentPlanarsPoints->size());
+  this->EdgePointRejectionMapping.clear(); this->EdgePointRejectionMapping.resize(this->CurrentEdgesPoints->size());
+  this->PlanarPointRejectionMapping.clear(); this->PlanarPointRejectionMapping.resize(this->CurrentPlanarsPoints->size());
+
   // keypoints extraction informations
-  std::cout << "Extracted : " << this->CurrentEdgesPoints->size() << " : edges; "
-            << this->CurrentPlanarsPoints->size() << " : planes; "
-            << this->CurrentBlobsPoints->size() << " : Blobs" << std::endl;
+  std::cout << "Extracted Edges: " << this->CurrentEdgesPoints->size() << " Planars: "
+            << this->CurrentPlanarsPoints->size() << " Blobs: "
+            << this->CurrentBlobsPoints->size() << std::endl;
 }
 
 //-----------------------------------------------------------------------------
-void vtkSlam::TransformToWorld(Point& p, Eigen::Matrix<double, 6, 1>& T)
+void vtkSlam::TransformToWorld(Point& p)
 {
-  // Rotation and translation and points
-  Eigen::Matrix<double, 3, 3> Rw;
-  Eigen::Matrix<double, 3, 1> Tw;
-  Eigen::Matrix<double, 3, 1> P;
+  if (this->Undistortion)
+  {
+    this->ExpressPointInOtherReferencial(p, this->MappingInterpolator);
+  }
+  else
+  {
+    // Rotation and translation and points
+    Eigen::Matrix<double, 3, 3> Rw;
+    Eigen::Matrix<double, 3, 1> Tw;
+    Eigen::Matrix<double, 3, 1> P;
 
-  Rw = GetRotationMatrix(T);
-  Tw << T(3), T(4), T(5);
-  P << p.x, p.y, p.z;
+    Rw = GetRotationMatrix(this->Tworld);
+    Tw << this->Tworld(3), this->Tworld(4), this->Tworld(5);
+    P << p.x, p.y, p.z;
 
-  P = Rw * P + Tw;
+    P = Rw * P + Tw;
 
-  p.x = P(0);
-  p.y = P(1);
-  p.z = P(2);
+    p.x = P(0);
+    p.y = P(1);
+    p.z = P(2);
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -2477,14 +2556,29 @@ int vtkSlam::ComputeLineDistanceParameters(pcl::KdTreeFLANN<Point>::Ptr kdtreePr
     throw "ComputeLineDistanceParameters function got invalide step parameter";
   }
 
+
   Eigen::Matrix<double, 3, 1> P0, P, n;
   Eigen::Matrix<double, 3, 3> A;
 
   // Transform the point using the current pose estimation
-  P << p.x, p.y, p.z;
-  P0 = P;
-  P = R * P + dT;
-  p.x = P(0); p.y = P(1); p.z = P(2);
+  P0 << p.x, p.y, p.z;
+
+  if (this->Undistortion) // linear interpolated transform
+  {
+    if (step == "egoMotion")
+    {
+      this->ExpressPointInOtherReferencial(p, this->EgoMotionInterpolator);
+    }
+    else if (step == "mapping")
+    {
+      this->ExpressPointInOtherReferencial(p, this->MappingInterpolator);
+    }
+  }
+  else // rigid transform
+  {
+    P = R * P0 + dT;
+    p.x = P(0); p.y = P(1); p.z = P(2);
+  }
   
   std::vector<int> nearestIndex;
   std::vector<float> nearestDist;
@@ -2616,6 +2710,7 @@ int vtkSlam::ComputeLineDistanceParameters(pcl::KdTreeFLANN<Point>::Ptr kdtreePr
   this->Avalues.push_back(A);
   this->Pvalues.push_back(mean);
   this->Xvalues.push_back(P0);
+  this->TimeValues.push_back(p.intensity);
   this->residualCoefficient.push_back(s);
   this->RadiusIncertitude.push_back(0.0);
   return 6;
@@ -2657,10 +2752,24 @@ int vtkSlam::ComputePlaneDistanceParameters(pcl::KdTreeFLANN<Point>::Ptr kdtreeP
   Eigen::Matrix<double, 3, 3> A;
 
   // Transform the point using the current pose estimation
-  P << p.x, p.y, p.z;
-  P0 = P;
-  P = R * P + dT;
-  p.x = P(0); p.y = P(1); p.z = P(2);
+  P0 << p.x, p.y, p.z;
+ 
+  if (this->Undistortion) // linear interpolated transform
+  {
+    if (step == "egoMotion")
+    {
+      this->ExpressPointInOtherReferencial(p, this->EgoMotionInterpolator);
+    }
+    else if (step == "mapping")
+    {
+      this->ExpressPointInOtherReferencial(p, this->MappingInterpolator);
+    }
+  }
+  else // rigid transform
+  {
+    P = R * P0 + dT;
+    p.x = P(0); p.y = P(1); p.z = P(2);
+  }
   
   std::vector<int> nearestIndex;
   std::vector<float> nearestDist;
@@ -2763,6 +2872,7 @@ int vtkSlam::ComputePlaneDistanceParameters(pcl::KdTreeFLANN<Point>::Ptr kdtreeP
   this->Pvalues.push_back(mean);
   this->Xvalues.push_back(P0);
   this->residualCoefficient.push_back(s);
+  this->TimeValues.push_back(p.intensity);
   this->RadiusIncertitude.push_back(0.0);
   return 6;
 }
@@ -3170,9 +3280,6 @@ void vtkSlam::ComputeEgoMotion()
   unsigned int usedPlanes = 0;
   Point currentPoint, transformedPoint;
 
-  // Interpolator used to undistord the frames
-  vtkSmartPointer<vtkVelodyneTransformInterpolator> undistortionInterp;
-
   // ICP - Levenberg-Marquardt loop:
   // At each step of this loop an ICP matching is performed
   // Once the keypoints matched, we estimate the the 6-DOF
@@ -3189,20 +3296,15 @@ void vtkSlam::ComputeEgoMotion()
     this->ResetDistanceParameters();
 
     // Init the undistortion interpolator
-    // if required
     if (this->Undistortion)
     {
-      undistortionInterp = this->InitUndistortionInterpolatorEgoMotion();
+      this->EgoMotionInterpolator = this->InitUndistortionInterpolatorEgoMotion();
     }
 
     // loop over edges
     for (unsigned int edgeIndex = 0; edgeIndex < this->CurrentEdgesPoints->size(); ++edgeIndex)
     {
       currentPoint = this->CurrentEdgesPoints->points[edgeIndex];
-
-      // If the undistortion
-      if (this->Undistortion)
-        this->ExpressPointInOtherReferencial(currentPoint, undistortionInterp);
 
       // Find the closest correspondence edge line of the current edge point
       if ((this->PreviousEdgesPoints->size() > 7) && (this->CurrentEdgesPoints->size() > 0))
@@ -3211,6 +3313,7 @@ void vtkSlam::ComputeEgoMotion()
         // i.e A = (I - n*n.t)^2 with n being the director vector
         // and P a point of the line
         int rejectionIndex = this->ComputeLineDistanceParameters(kdtreePreviousEdges, R, T, currentPoint, "egoMotion");
+        this->EdgePointRejectionEgoMotion[edgeIndex] = rejectionIndex;
         this->MatchRejectionHistogramLine[rejectionIndex] += 1;
       }
     }
@@ -3220,10 +3323,6 @@ void vtkSlam::ComputeEgoMotion()
     {
       currentPoint = this->CurrentPlanarsPoints->points[planarIndex];
 
-      // If the undistortion
-      if (this->Undistortion)
-        this->ExpressPointInOtherReferencial(currentPoint, undistortionInterp);
-
       // Find the closest correspondence plane of the current planar point
       if ((this->PreviousPlanarsPoints->size() > 7) && (this->CurrentPlanarsPoints->size() > 0))
       {
@@ -3231,6 +3330,7 @@ void vtkSlam::ComputeEgoMotion()
         // i.e A = n * n.t with n being a normal of the plane
         // and is a point of the plane
         int rejectionIndex = this->ComputePlaneDistanceParameters(kdtreePreviousPlanes, R, T, currentPoint, "egoMotion");
+        this->PlanarPointRejectionEgoMotion[planarIndex] = rejectionIndex;
         this->MatchRejectionHistogramPlane[rejectionIndex] += 1;
       }
     }
@@ -3253,9 +3353,22 @@ void vtkSlam::ComputeEgoMotion()
     ceres::Problem problem;
     for (unsigned int k = 0; k < Xvalues.size(); ++k)
     {
-      ceres::CostFunction* cost_function = new ceres::AutoDiffCostFunction<AffineIsometryResidual, 1, 6>(
-                                           new AffineIsometryResidual(this->Avalues[k], this->Pvalues[k], this->Xvalues[k], this->residualCoefficient[k]));
-      problem.AddResidualBlock(cost_function, new ceres::ArctanLoss(2.0), this->Trelative.data());
+      if (this->Undistortion)
+      {
+        ceres::CostFunction* cost_function = new ceres::AutoDiffCostFunction<CostFunctions::LinearDistortionResidual, 1, 6>(
+                                             new CostFunctions::LinearDistortionResidual(this->Avalues[k], this->Pvalues[k], this->Xvalues[k],
+                                                                                         Eigen::Matrix<double, 3, 1>::Zero(),
+                                                                                         Eigen::Matrix<double, 3, 3>::Identity(),
+                                                                                         this->TimeValues[k], this->residualCoefficient[k]));
+        problem.AddResidualBlock(cost_function, new ceres::ArctanLoss(2.0), this->Trelative.data());
+      }
+      else
+      {
+        ceres::CostFunction* cost_function = new ceres::AutoDiffCostFunction<CostFunctions::AffineIsometryResidual, 1, 6>(
+                                             new CostFunctions::AffineIsometryResidual(this->Avalues[k], this->Pvalues[k],
+                                                                                       this->Xvalues[k], this->residualCoefficient[k]));
+        problem.AddResidualBlock(cost_function, new ceres::ArctanLoss(2.0), this->Trelative.data());
+      }
     }
 
     ceres::Solver::Options options;
@@ -3287,15 +3400,6 @@ void vtkSlam::ComputeEgoMotion()
   static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("EgoMotion: total keypoints used"))->InsertNextValue(this->Xvalues.size());
   std::cout << "used keypoints : " << this->Xvalues.size() << std::endl;
   std::cout << "edges : " << usedEdges << " planes : " << usedPlanes << std::endl;
-
-  // Express all the acquired keypoints
-  // in the refenrtial corresponding of
-  // the sensor's referential at the time
-  // t1 of the end of the current frame
-  if (this->Undistortion)
-  {
-    this->ExpressKeypointsInEndFrameRefEgoMotion();
-  }
 
   // Integrate the relative motion
   // to the world transformation
@@ -3354,9 +3458,6 @@ void vtkSlam::Mapping()
   Point currentPoint;
   Eigen::MatrixXd estimatorCovariance(6, 6);
 
-  // Interpolator used to undistord the frames
-  vtkSmartPointer<vtkVelodyneTransformInterpolator> undistortionInterp;
-
   // ICP - Levenberg-Marquardt loop:
   // At each step of this loop an ICP matching is performed
   // Once the keypoints matched, we estimate the the 6-DOF
@@ -3367,31 +3468,27 @@ void vtkSlam::Mapping()
     // clear all keypoints matching data
     this->ResetDistanceParameters();
 
+    // Init the undistortion interpolator
+    if (this->Undistortion)
+    {
+      this->MappingInterpolator = this->InitUndistortionInterpolatorMapping();
+    }
+
     // Rotation and position at this step
     Eigen::Matrix<double, 3, 3> R = GetRotationMatrix(this->Tworld);
     Eigen::Matrix<double, 3, 1> T;
     T << this->Tworld(3), this->Tworld(4), this->Tworld(5);
-
-    // Init the undistortion interpolator
-    // if required
-    if (this->Undistortion)
-    {
-      //undistortionInterp = this->InitUndistortionInterpolatorMapping();
-    }
 
     // loop over edges
     for (unsigned int edgeIndex = 0; edgeIndex < this->CurrentEdgesPoints->size(); ++edgeIndex)
     {
       currentPoint = this->CurrentEdgesPoints->points[edgeIndex];
 
-      // If the undistortion
-      //if (this->Undistortion)
-        //this->ExpressPointInOtherReferencial(currentPoint, undistortionInterp);
-
       if (this->CurrentEdgesPoints->size() > 0 && subEdgesPointsLocalMap->points.size() > 10)
       {
         // Find the closest correspondence edge line of the current edge point
         int rejectionIndex = this->ComputeLineDistanceParameters(kdtreeEdges, R, T, currentPoint, "mapping");
+        this->EdgePointRejectionMapping[edgeIndex] = rejectionIndex;
         this->MatchRejectionHistogramLine[rejectionIndex] += 1;
         usedEdges = this->Xvalues.size();
       }
@@ -3402,14 +3499,11 @@ void vtkSlam::Mapping()
     {
       currentPoint = this->CurrentPlanarsPoints->points[planarIndex];
 
-      // If the undistortion
-      //if (this->Undistortion)
-        //this->ExpressPointInOtherReferencial(currentPoint, undistortionInterp);
-
       if (this->CurrentPlanarsPoints->size() > 0 && subPlanarPointsLocalMap->size() > 10)
       {
         // Find the closest correspondence plane of the current planar point
         int rejectionIndex = this->ComputePlaneDistanceParameters(kdtreePlanes, R, T, currentPoint, "mapping");
+        this->PlanarPointRejectionMapping[planarIndex] = rejectionIndex;
         this->MatchRejectionHistogramPlane[rejectionIndex] += 1;
         usedPlanes = this->Xvalues.size() - usedEdges;
       }
@@ -3436,6 +3530,10 @@ void vtkSlam::Mapping()
       break;
     }
 
+    // Get the previous sensor pose
+    Eigen::Matrix<double, 3, 3> R0 = GetRotationMatrix(this->PreviousTworld);
+    Eigen::Matrix<double, 3, 1> T0; T0 << this->PreviousTworld[3], this->PreviousTworld[4], this->PreviousTworld[5];
+
     // We want to estimate our 6-DOF parameters using a non
     // linear least square minimization. The non linear part
     // comes from the Euler Angle parametrization of the rotation
@@ -3444,9 +3542,22 @@ void vtkSlam::Mapping()
     ceres::Problem problem;
     for (unsigned int k = 0; k < Xvalues.size(); ++k)
     {
-      ceres::CostFunction* cost_function = new ceres::AutoDiffCostFunction<AffineIsometryResidual, 1, 6>(
-                                           new AffineIsometryResidual(this->Avalues[k], this->Pvalues[k], this->Xvalues[k], this->residualCoefficient[k]));
-      problem.AddResidualBlock(cost_function, new ceres::ArctanLoss(2.0), this->Tworld.data());
+      if (this->Undistortion)
+      {
+        ceres::CostFunction* cost_function = new ceres::AutoDiffCostFunction<CostFunctions::LinearDistortionResidual, 1, 6>(
+                                             new CostFunctions::LinearDistortionResidual(this->Avalues[k], this->Pvalues[k], this->Xvalues[k],
+                                                                                         T0,
+                                                                                         R0,
+                                                                                         this->TimeValues[k], this->residualCoefficient[k]));
+        problem.AddResidualBlock(cost_function, new ceres::ArctanLoss(2.0), this->Tworld.data());
+      }
+      else
+      {
+        ceres::CostFunction* cost_function = new ceres::AutoDiffCostFunction<CostFunctions::AffineIsometryResidual, 1, 6>(
+                                             new CostFunctions::AffineIsometryResidual(this->Avalues[k], this->Pvalues[k],
+                                                                                       this->Xvalues[k], this->residualCoefficient[k]));
+        problem.AddResidualBlock(cost_function, new ceres::ArctanLoss(2.0), this->Tworld.data());
+      }
     }
 
     ceres::Solver::Options options;
@@ -3572,12 +3683,18 @@ void vtkSlam::Mapping()
 //-----------------------------------------------------------------------------
 void vtkSlam::UpdateMapsUsingTworld()
 {
+  // Init the mapping interpolator
+  if (this->Undistortion)
+  {
+    this->MappingInterpolator = this->InitUndistortionInterpolatorMapping();
+  }
+
   // Update EdgeMap
   pcl::PointCloud<Point>::Ptr MapEdgesPoints(new pcl::PointCloud<Point>());
   for (unsigned int i = 0; i < this->CurrentEdgesPoints->size(); ++i)
   {
     MapEdgesPoints->push_back(this->CurrentEdgesPoints->at(i));
-    this->TransformToWorld(MapEdgesPoints->at(i), this->Tworld);
+    this->TransformToWorld(MapEdgesPoints->at(i));
   }
   EdgesPointsLocalMap->Roll(this->Tworld);
   EdgesPointsLocalMap->Add(MapEdgesPoints);
@@ -3587,7 +3704,7 @@ void vtkSlam::UpdateMapsUsingTworld()
   for (unsigned int i = 0; i < this->CurrentPlanarsPoints->size(); ++i)
   {
     MapPlanarsPoints->push_back(this->CurrentPlanarsPoints->at(i));
-    this->TransformToWorld(MapPlanarsPoints->at(i), this->Tworld);
+    this->TransformToWorld(MapPlanarsPoints->at(i));
   }
   PlanarPointsLocalMap->Roll(this->Tworld);
   PlanarPointsLocalMap->Add(MapPlanarsPoints);
@@ -3599,7 +3716,7 @@ void vtkSlam::UpdateMapsUsingTworld()
     for (unsigned int i = 0; i < this->pclCurrentFrame->size(); ++i)
     {
       MapBlobsPoints->push_back(this->pclCurrentFrame->at(i));
-      this->TransformToWorld(MapBlobsPoints->at(i), this->Tworld);
+      this->TransformToWorld(MapBlobsPoints->at(i));
     }
     BlobsPointsLocalMap->Roll(this->Tworld);
     BlobsPointsLocalMap->Add(MapBlobsPoints);
@@ -3627,153 +3744,6 @@ void vtkSlam::FillEgoMotionInfoArrayWithDefaultValues()
   static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("EgoMotion: planes used"))->InsertNextValue(0);
   static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("EgoMotion: blobs used"))->InsertNextValue(0);
   static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("EgoMotion: total keypoints used"))->InsertNextValue(0);
-}
-
-//-----------------------------------------------------------------------------
-void vtkSlam::ExpressKeypointsInEndFrameRefEgoMotion()
-{
-  vtkSmartPointer<vtkVelodyneTransformInterpolator> undistordInterp = vtkSmartPointer<vtkVelodyneTransformInterpolator>::New();
-  undistordInterp->SetInterpolationTypeToLinear();
-
-  // Transforms representing the passage from the
-  // referential of the sensor at time t0 resp t1
-  // to the referential of the sensor at the time 0
-  vtkNew<vtkTransform> transform0, transform1;
-
-  // transform 1 is identity
-  transform1->Identity();
-  transform1->Modified();
-  transform1->Update();
-
-  // transform 1 is the delta transform
-  // between T1 and T0
-  Eigen::Matrix<double, 3, 3> R = GetRotationMatrix(this->Trelative).transpose();
-
-  Eigen::Matrix<double, 3, 1> T;
-  T << -this->Trelative(3), -this->Trelative(4), -this->Trelative(5);
-  T = R * T;
-
-  vtkNew<vtkMatrix4x4> M;
-  for (unsigned int i = 0; i < 3; ++i)
-  {
-    for (unsigned int j = 0; j < 3; ++j)
-    {
-      M->Element[i][j] = R(i, j);
-    }
-    M->Element[i][3] = T(i);
-    M->Element[3][i] = 0;
-  }
-  M->Element[3][3] = 1.0;
-  transform0->SetMatrix(M.Get());
-  transform0->Modified();
-  transform0->Update();
-
-  // Add the transforms and update
-  undistordInterp->AddTransform(0.0, transform0.GetPointer());
-  undistordInterp->AddTransform(1.0, transform1.GetPointer());
-  undistordInterp->Modified();
-
-  Point currentPoint;
-  // transform points
-  // Edges
-  for (unsigned int k = 0; k < this->CurrentEdgesPoints->size(); ++k)
-  {
-    currentPoint = this->CurrentEdgesPoints->points[k];
-    this->ExpressPointInOtherReferencial(currentPoint, undistordInterp);
-    this->CurrentEdgesPoints->points[k] = currentPoint;
-  }
-
-  // Planes
-  for (unsigned int k = 0; k < this->CurrentPlanarsPoints->size(); ++k)
-  {
-    currentPoint = this->CurrentPlanarsPoints->points[k];
-    this->ExpressPointInOtherReferencial(currentPoint, undistordInterp);
-    this->CurrentPlanarsPoints->points[k] = currentPoint;
-  }
-
-  // Blobs
-  for (unsigned int k = 0; k < this->CurrentBlobsPoints->size(); ++k)
-  {
-    currentPoint = this->CurrentBlobsPoints->points[k];
-    this->ExpressPointInOtherReferencial(currentPoint, undistordInterp);
-    this->CurrentBlobsPoints->points[k] = currentPoint;
-  }
-}
-
-//-----------------------------------------------------------------------------
-void vtkSlam::ExpressKeypointsInEndFrameRefMapping()
-{
-  vtkSmartPointer<vtkVelodyneTransformInterpolator> undistordInterp = vtkSmartPointer<vtkVelodyneTransformInterpolator>::New();
-  undistordInterp->SetInterpolationTypeToLinear();
-
-  // Transforms representing the passage from the
-  // referential of the sensor at time t0 resp t1
-  // to the referential of the sensor at the time 0
-  vtkNew<vtkTransform> transform0, transform1;
-
-  // transform 1 is identity
-  transform1->Identity();
-  transform1->Modified();
-  transform1->Update();
-
-  // transform 1 is the delta transform
-  // between T1 and T0
-  Eigen::Matrix<double, 3, 3> R0, R1, dR;
-  R0 = GetRotationMatrix(this->PreviousTworld);
-  R1 = GetRotationMatrix(this->Tworld);
-  dR = R1.transpose() * R0;
-
-  Eigen::Matrix<double, 3, 1> dT;
-  dT << -this->Tworld(3) + this->PreviousTworld(3),
-        -this->Tworld(4) + this->PreviousTworld(4),
-        -this->Tworld(5) + this->PreviousTworld(5);
-  dT = R1.transpose() * dT;
-
-  vtkNew<vtkMatrix4x4> M;
-  for (unsigned int i = 0; i < 3; ++i)
-  {
-    for (unsigned int j = 0; j < 3; ++j)
-    {
-      M->Element[i][j] = dR(i, j);
-    }
-    M->Element[i][3] = dT(i);
-    M->Element[3][i] = 0;
-  }
-  M->Element[3][3] = 1.0;
-  transform0->SetMatrix(M.Get());
-  transform0->Modified();
-  transform0->Update();
-
-  // Add the transforms and update
-  undistordInterp->AddTransform(0.0, transform0.GetPointer());
-  undistordInterp->AddTransform(1.0, transform1.GetPointer());
-  undistordInterp->Modified();
-
-  Point currentPoint;
-  // transform points
-  // Edges
-  for (unsigned int k = 0; k < this->CurrentEdgesPoints->size(); ++k)
-  {
-    currentPoint = this->CurrentEdgesPoints->points[k];
-    this->ExpressPointInOtherReferencial(currentPoint, undistordInterp);
-    this->CurrentEdgesPoints->points[k] = currentPoint;
-  }
-
-  // Planes
-  for (unsigned int k = 0; k < this->CurrentPlanarsPoints->size(); ++k)
-  {
-    currentPoint = this->CurrentPlanarsPoints->points[k];
-    this->ExpressPointInOtherReferencial(currentPoint, undistordInterp);
-    this->CurrentPlanarsPoints->points[k] = currentPoint;
-  }
-
-  // Blobs
-  for (unsigned int k = 0; k < this->CurrentBlobsPoints->size(); ++k)
-  {
-    currentPoint = this->CurrentBlobsPoints->points[k];
-    this->ExpressPointInOtherReferencial(currentPoint, undistordInterp);
-    this->CurrentBlobsPoints->points[k] = currentPoint;
-  }
 }
 
 //-----------------------------------------------------------------------------
@@ -3834,48 +3804,37 @@ vtkSmartPointer<vtkVelodyneTransformInterpolator> vtkSlam::InitUndistortionInter
   // to the referential of the sensor at the time 0
   vtkNew<vtkTransform> transform0, transform1;
 
-  // transform 0 is identity
-  transform0->Identity();
-  transform0->Modified();
-  transform0->Update();
-
   // transform 1 is the delta transform
   // between T0 and T1
-  Eigen::Matrix<double, 3, 3> R0, R1, dR;
+  Eigen::Matrix<double, 3, 3> R0, R1;
   R0 = GetRotationMatrix(this->PreviousTworld);
   R1 = GetRotationMatrix(this->Tworld);
-  dR = R0.transpose() * R1;
 
-  Eigen::Matrix<double, 3, 1> dT;
-  dT << this->Tworld(3) - this->PreviousTworld(3),
-        this->Tworld(4) - this->PreviousTworld(4),
-        this->Tworld(5) - this->PreviousTworld(5);
-  dT = R0.transpose() * dT;
+  Eigen::Matrix<double, 3, 1> T0, T1;
+  T0 << this->PreviousTworld(3), this->PreviousTworld(4), this->PreviousTworld(5);
+  T1 << this->Tworld(3), this->Tworld(4), this->Tworld(5);
 
-  vtkNew<vtkMatrix4x4> M;
+  vtkNew<vtkMatrix4x4> M0, M1;
   for (unsigned int i = 0; i < 3; ++i)
   {
     for (unsigned int j = 0; j < 3; ++j)
     {
-      M->Element[i][j] = dR(i, j);
+      M0->Element[i][j] = R0(i, j);
+      M1->Element[i][j] = R1(i, j);
     }
-    M->Element[i][3] = dT(i);
-    M->Element[3][i] = 0;
+    M0->Element[i][3] = T0(i);
+    M0->Element[3][i] = 0;
+    M1->Element[i][3] = T1(i);
+    M1->Element[3][i] = 0;
   }
-  M->Element[3][3] = 1.0;
+  M0->Element[3][3] = 1.0;
+  M1->Element[3][3] = 1.0;
 
-  std::cout << "Delta M: " << std::endl;
-  for (unsigned int i = 0; i < 4; ++i)
-  {
-    for (unsigned int j = 0; j < 4; ++j)
-    {
-      std::cout << M->Element[i][j] << ", ";
-    }
-    std::cout << std::endl;
-  }
-  std::cout << std::endl;
+  transform0->SetMatrix(M0.Get());
+  transform0->Modified();
+  transform0->Update();
 
-  transform1->SetMatrix(M.Get());
+  transform1->SetMatrix(M1.Get());
   transform1->Modified();
   transform1->Update();
 
@@ -3888,11 +3847,11 @@ vtkSmartPointer<vtkVelodyneTransformInterpolator> vtkSlam::InitUndistortionInter
 }
 
 //-----------------------------------------------------------------------------
-void vtkSlam::ExpressPointInOtherReferencial(Point& p, vtkSmartPointer<vtkVelodyneTransformInterpolator> undistortionInterp)
+void vtkSlam::ExpressPointInOtherReferencial(Point& p, vtkSmartPointer<vtkVelodyneTransformInterpolator> transform)
 {
   // interpolate the transform
   vtkNew<vtkTransform> currTransform;
-  undistortionInterp->InterpolateTransform(p.intensity, currTransform.GetPointer());
+  transform->InterpolateTransform(p.intensity, currTransform.GetPointer());
   currTransform->Modified();
   currTransform->Update();
 

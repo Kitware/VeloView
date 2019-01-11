@@ -399,6 +399,16 @@ private:
   std::vector<std::pair<int, int> > FromVTKtoPCLMapping;
   std::vector<std::vector<int > > FromPCLtoVTKMapping;
 
+  // Mapping between keypoints and their corresponding
+  // index in the vtk input frame
+  std::vector<std::pair<int, int> > EdgesIndex;
+  std::vector<std::pair<int, int> > PlanarIndex;
+  std::vector<std::pair<int, int> > BlobIndex;
+  std::vector<int> EdgePointRejectionEgoMotion;
+  std::vector<int> PlanarPointRejectionEgoMotion;
+  std::vector<int> EdgePointRejectionMapping;
+  std::vector<int> PlanarPointRejectionMapping;
+
   // If set to true the mapping planars keypoints used
   // will be the same than the EgoMotion one. If set to false
   // all points that are not set to invalid will be used
@@ -416,6 +426,8 @@ private:
   // The undistortion will improve the accuracy but
   // the computation speed will decrease
   bool Undistortion;
+  vtkSmartPointer<vtkVelodyneTransformInterpolator> EgoMotionInterpolator;
+  vtkSmartPointer<vtkVelodyneTransformInterpolator> MappingInterpolator;
 
   // Size of the leafs in the voxel grid filter
   // used by the local maps
@@ -442,6 +454,8 @@ private:
   std::vector<std::vector<double> > Angles;
   std::vector<std::vector<double> > DepthGap;
   std::vector<std::vector<double> > BlobScore;
+  std::vector<std::vector<double> > LengthResolution;
+  std::vector<std::vector<double> > SaillantPoint;
   std::vector<std::vector<int> > IsPointValid;
   std::vector<std::vector<int> > Label;
 
@@ -475,6 +489,7 @@ private:
   double EdgeSinAngleThreshold;
   double PlaneSinAngleThreshold;
   double EdgeDepthGapThreshold;
+  double DistToLineThreshold;
 
   // The max distance allowed between two frames
   // If the distance is over this limit, the ICP
@@ -656,7 +671,7 @@ private:
   void Mapping();
 
   // Transform the input point already undistort into Tworld.
-  void TransformToWorld(Point& p, Eigen::Matrix<double, 6, 1>& T);
+  void TransformToWorld(Point& p);
 
   // Match the current keypoint with its neighborhood in the map / previous
   // frames. From this match we compute the point-to-neighborhood distance
@@ -700,14 +715,7 @@ private:
   // at time t0. The referential at time of acquisition t is estimated
   // using the constant velocity hypothesis and the provided sensor
   // position estimation
-  void ExpressPointInOtherReferencial(Point& p, vtkSmartPointer<vtkVelodyneTransformInterpolator> undistortionInterp);
-
-  // Express the keypoints into the referential of the sensor
-  // at time t1. The referential at time of acquisition t is estimated
-  // using the constant velocity hypothesis and the provided sensor
-  // position estimation
-  void ExpressKeypointsInEndFrameRefMapping();
-  void ExpressKeypointsInEndFrameRefEgoMotion();
+  void ExpressPointInOtherReferencial(Point& p, vtkSmartPointer<vtkVelodyneTransformInterpolator> transform);
 
   // Initialize the undistortion interpolator
   // for the EgoMotion part it is just an interpolation
@@ -741,6 +749,7 @@ private:
   void AddVectorToPolydataPoints(const std::vector<std::vector<T>>& vec, const char* name, vtkPolyData* pd);
   void DisplayLaserIdMapping(vtkSmartPointer<vtkPolyData> input);
   void DisplayRelAdv(vtkSmartPointer<vtkPolyData> input);
+  void DisplayUsedKeypoints(vtkSmartPointer<vtkPolyData> input);
 
   // Indicate if we are in display mode or not
   // Display mode will add arrays showing some
