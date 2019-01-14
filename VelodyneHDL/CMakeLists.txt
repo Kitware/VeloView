@@ -175,6 +175,7 @@ list(APPEND servermanager_sources
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/BirdEyeViewSnap/vtkBirdEyeViewSnap.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/ProcessingSample/vtkProcessingSample.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/Ransac/vtkRansacPlaneModel.cxx
+  ${CMAKE_CURRENT_SOURCE_DIR}/Filter/TemporalTransformsApplier/vtkTemporalTransformsApplier.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/TrailingFrame/vtkTrailingFrame.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/Source/Grid/vtkVelodyneHDLGridSource.cxx
   )
@@ -205,7 +206,8 @@ list(APPEND servermanager_xml
   xml/TrailingFrame.xml
   xml/ProcessingSample.xml
   xml/VelodyneHDLGridSource.xml
-  xml/TemporalTransformReader.xml
+  xml/TemporalTransformsReader.xml
+  xml/TemporalTransformsApplier.xml
   )
 
 if (ENABLE_PCL)
@@ -280,6 +282,7 @@ set(plugin_include_dirs
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/OldPlaneFitter
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/Ransac
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/TrailingFrame
+  ${CMAKE_CURRENT_SOURCE_DIR}/Filter/TemporalTransformsApplier
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/ProcessingSample
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/PCLRansacModel
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/Slam
