@@ -75,9 +75,15 @@ mkdir cache
 $MC cp --recursive "$superbuild_cache" cache
 
 if file cache/* | grep -i bzip2; then
-    tar zxf cache/*
+    if [ "$(uname)" == "Darwin" ]; then
+        tar zxf cache/* # on Debian, tar zxf cannot extract bzip2 archives, but it works on macOS
+    else
+	bunzip2 cache/*
+    fi
 else
     unzip -q cache/*
 fi
+
+rm cache/*
 
 echo "Getting the superbuild cache took " $(($SECONDS - $START_TIME)) "s"

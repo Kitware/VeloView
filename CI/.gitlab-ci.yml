@@ -43,6 +43,7 @@ stages:
     - chmod +x ${CI_PROJECT_DIR}/CI/findRightSuperbuildCache.sh
     - ${CI_PROJECT_DIR}/CI/findRightSuperbuildCache.sh ${OS} ${CI_COMMIT_REF_NAME} ${MINIO_CACHE_SERVER_ADDRESS} ${MINIO_CACHE_SERVER_ACCESS_KEY} ${MINIO_CACHE_SERVER_SECRET_KEY}
     # create a symbolic link 
+    - cd ${CI_PROJECT_DIR}
     - ln -s ../Superbuild-build Superbuild-build 
 
 .linux_superbuild: &linux_superbuild
@@ -54,16 +55,17 @@ stages:
     - mkdir Superbuild-build/
     - cd Superbuild-build/
     # configure & generate
-    - cmake -DCMAKE_BUILD_TYPE:STRING=${cmake_option_CMAKE_BUILD_TYPE} -DBUILD_TESTING=True -DUSE_SYSTEM_python=True
+    - cmake -DCMAKE_BUILD_TYPE:STRING=${cmake_option_CMAKE_BUILD_TYPE} -DBUILD_TESTING=True -DUSE_SYSTEM_python=True -Dqt_version=5
       ${CI_PROJECT_DIR}/Superbuild
     # compile
     - make -j8
     # remove Veloview
     - rm -rf common-superbuild/veloview
-    # create a symbolic link, inside the source tree else "push" will not work
-    - cd ${CI_PROJECT_DIR}
-    - ln -s ../Superbuild-build Superbuild-build 
-  <<: *push-cache
+    - echo "compressing and uploading Superbuild. This take some time..."
+    - cd ..
+    - tar jcf archive Superbuild-build/
+    - ~/mc config host add superbuild ${MINIO_CACHE_SERVER_ADDRESS} ${MINIO_CACHE_SERVER_ACCESS_KEY} ${MINIO_CACHE_SERVER_SECRET_KEY}
+    - ~/mc cp archive superbuild/runner/minio/project/808/${cache_patch}/${OS}/${CI_COMMIT_REF_NAME}-1
 
 .linux_superbuild_manual: &linux_superbuild_manual
   # when: manual
@@ -278,26 +280,26 @@ ubuntu14.04.5_package_schedule:
   variables:
     OS: OSX_ElCapitan
 
-OSX_ElCapitan_superbuild_manual:
+.OSX_ElCapitan_superbuild_manual:
   <<: *OSX_ElCapitan
   <<: *OSX_superbuild_manual
 
-OSX_ElCapitan_superbuild_schedule:
+.OSX_ElCapitan_superbuild_schedule:
   <<: *OSX_ElCapitan
   <<: *OSX_superbuild_schedule
 
-OSX_ElCapitan_build:
+.OSX_ElCapitan_build:
   <<: *OSX_ElCapitan
   <<: *OSX_build
 
-OSX_ElCapitan_test:
+.OSX_ElCapitan_test:
   <<: *OSX_ElCapitan
   <<: *OSX_test
 
-OSX_ElCapitan_package_manual:
+.OSX_ElCapitan_package_manual:
   <<: *OSX_ElCapitan
   <<: *OSX_package_manual
 
-OSX_ElCapitan_package_schedule:
+.OSX_ElCapitan_package_schedule:
   <<: *OSX_ElCapitan
   <<: *OSX_package_schedule
