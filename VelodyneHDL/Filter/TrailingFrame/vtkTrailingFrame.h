@@ -43,9 +43,9 @@ private:
   double PipelineTime;
   //! Index of time step corresponding to PipelineTime
   int PipelineIndex;
-  //! Time Range that should be in the cache, it's e right half-open interval : [Tstart, Tend[
+  //! Time index range that should be in the cache, it's e right half-open interval : [Tstart, Tend[
   int CacheTimeRange[2];
-  //! Last Time required from the filter to its input filter
+  //! Last Time index required from the filter to its input filter
   int LastTimeProcessedIndex;
   //! Indicate if the next time to process is after or before the last processed
   int Direction;
