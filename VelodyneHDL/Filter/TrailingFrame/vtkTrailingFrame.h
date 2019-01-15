@@ -40,15 +40,19 @@ private:
   unsigned int NumberOfTrailingFrames;
 
   //! Original pipeline time which must be restored after modifying the input filter time
-  int PipelineTime;
+  double PipelineTime;
+  //! Index of time step corresponding to PipelineTime
+  int PipelineIndex;
   //! Time Range that should be in the cache, it's e right half-open interval : [Tstart, Tend[
   int CacheTimeRange[2];
   //! Last Time required from the filter to its input filter
-  int LastTimeProcessed;
+  int LastTimeProcessedIndex;
   //! Indicate if the next time to process is after or before the last processed
   int Direction;
   //! Cache to save ouput previously produced by the filter
   vtkNew<vtkMultiBlockDataSet> Cache;
+  //! List of available time steps from the source
+  std::vector<double> TimeSteps;
 
   //! Help variable
   bool FirstFilterIteration;
