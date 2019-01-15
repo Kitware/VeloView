@@ -80,42 +80,39 @@ stages:
   stage: build
   before_script: *unix_get_superbuild
   script:
-    - cd Superbuild-build/
+    - git submodule update --init Superbuild/common-superbuild
+    - cd ../Superbuild-build/ # created by extracting cache in "unix_get_superbuild"
     - make veloview -j8
-  artifacts:
-    paths:
-     - Superbuild-build/veloview
-    expire_in: 24 hr
 
 .linux_test: &linux_test
   stage: test
-  before_script: *unix_get_superbuild
+  before_script: *unix_get_superbuild # you cannot put linux_build here
   script:
     # get test data and baseline
     # DO NOT use gilab-ci variable GIT_SUBMODULE_STRATEGY !!!
     - git submodule update --init --recursive
-    - cd Superbuild-build/veloview/src/veloview-build
-    - cmake -DBUILD_TESTING:BOOL=True
-      ${CI_PROJECT_DIR}
-    - make -j8
+    - cd ../Superbuild-build/ # created by extracting cache in "unix_get_superbuild"
+    - make veloview -j8
     # TODO current Source related tests fails, so we skip them.
     # This need to be fixed !
     - ctest -E "TestVelodyneHDLSource*" -j16
 
 .linux_package: &linux_package
   stage: package
-  before_script: *unix_get_superbuild
+  before_script: *unix_get_superbuild # you cannot put linux_build here
   script:
-    - cd Superbuild-build
-    - make package -j8
+    - git submodule update --init Superbuild/common-superbuild
+    - cd ../Superbuild-build/ # created by extracting cache in "unix_get_superbuild"
+    - make veloview -j8
+    - ctest -R cpack-veloview-TGZ -V
 
 .linux_package_manual: &linux_package_manual
-  # when: manual
+  when: manual
   <<: *linux_package
   artifacts:
     name: ${CI_JOB_NAME}
     paths:
-     - Superbuild-build/*.tar.gz
+     - Superbuild-build/*.tar.gz # Superbuild-build links to ../Superbuild-build
     expire_in: 1 hr
 
 .linux_package_schedule: &linux_package_schedule
@@ -123,7 +120,7 @@ stages:
   artifacts:
     name: ${CI_JOB_NAME}
     paths:
-     - Superbuild-build/*.tar.gz
+     - Superbuild-build/*.tar.gz # Superbuild-build links to ../Superbuild-build
     expire_in: 1 day
   only:
     - schedules
