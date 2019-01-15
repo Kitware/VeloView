@@ -174,5 +174,24 @@ int vtkTrailingFrame::RequestData(vtkInformation* request,
     this->Cache->SetBlock(0, currentFrame.GetPointer());
   }
   output->ShallowCopy(this->Cache.GetPointer());
+
+  // re-order output blocks so that:
+  //    current frame => 0
+  //    current frame - 1 => 1
+  //    current frame - 2 => 2
+  // ...
+  if (output->GetNumberOfBlocks() > 0)
+  {
+    int index = this->LastTimeProcessedIndex % (this->NumberOfTrailingFrames + 1);
+    int a = 0;
+    for (int i = index; i >= 0; i--)
+    {
+      output->SetBlock(a++, this->Cache->GetBlock(i));
+    }
+    for (int i = output->GetNumberOfBlocks() - 1; i > index; --i)
+    {
+      output->SetBlock(a++, this->Cache->GetBlock(i));
+    }
+  }
   return 1;
 }
