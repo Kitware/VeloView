@@ -78,7 +78,7 @@ if file cache/* | grep -i bzip2; then
     if [ "$(uname)" == "Darwin" ]; then
         tar zxf cache/* # on Debian, tar zxf cannot extract bzip2 archives, but it works on macOS
     else
-	bunzip2 cache/*
+	tar jxf cache/*
     fi
 else
     unzip -q cache/*
