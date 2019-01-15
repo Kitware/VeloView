@@ -68,7 +68,7 @@ stages:
     - ~/mc cp archive superbuild/runner/minio/project/808/${cache_patch}/${OS}/${CI_COMMIT_REF_NAME}-1
 
 .linux_superbuild_manual: &linux_superbuild_manual
-  # when: manual
+  when: manual
   <<: *linux_superbuild
 
 .linux_superbuild_schedule: &linux_superbuild_schedule
