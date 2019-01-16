@@ -95,9 +95,10 @@ stages:
     - git submodule update --init --recursive
     - cd ../Superbuild-build/ # created by extracting cache in "unix_get_superbuild"
     - make veloview -j8
+    # excluding packaging test targets (packaging is done later)
     # TODO current Source related tests fails, so we skip them.
     # This need to be fixed !
-    - ctest -E "TestVelodyneHDLSource*" -j16
+    - ctest -E cpack -E "TestVelodyneHDLSource*" -j16
 
 .linux_package: &linux_package
   stage: package
