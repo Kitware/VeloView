@@ -12,6 +12,9 @@ target_link_libraries(TestVelodyneHDLPositionReader VelodyneHDLPlugin)
 add_executable(TestNMEAParser TestNMEAParser.cxx TestHelpers.cxx)
 target_link_libraries(TestNMEAParser VelodyneHDLPlugin)
 
+add_executable(TestTrailingFrame TestTrailingFrame.cxx)
+target_link_libraries(TestTrailingFrame VelodyneHDLPlugin)
+
 set(sensors "HDL-64"
             "VLP-16"
             "VLP-32c")
@@ -104,4 +107,8 @@ add_test(TestVelodyneHDLPositionReader
 
 add_test(TestNMEAParser
   ${INSTALL_LOCAL_DIR}/TestNMEAParser
+)
+
+add_test(TestTrailingFrame
+  ${INSTALL_LOCAL_DIR}/TestTrailingFrame
 )
