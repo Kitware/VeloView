@@ -61,6 +61,8 @@ stages:
     - make -j8
     # remove Veloview
     - rm -rf common-superbuild/veloview
+    - echo "removing downloaded source archives"
+    - rm downloads/*
     - echo "compressing and uploading Superbuild. This take some time..."
     - cd ..
     - tar jcf archive Superbuild-build/
