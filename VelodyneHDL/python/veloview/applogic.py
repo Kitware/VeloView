@@ -1829,22 +1829,22 @@ def toggleSelectDualReturn():
     if nSelectedpoints >0 :
         #create a temporary array to make a query selection
         array = range(0,nPoints)
-        
+
         #fill the temporary array
         for i in range (nPoints):
             array[i] = -1
-        
+
         #Add the dualId in the temporary array
         for i in range(nSelectedpoints):
             dualId = idArray.GetValue(i)
             if dualId >=0:
                 array[dualId] = 1
-        
+
         #Add the temporary array to the source
         source.GetClientSideObject().SetSelectedPointsWithDualReturn(array,nPoints)
         source.GetClientSideObject().SetShouldAddDualReturnArray(True)
         reloadCurrentFrame()
-        
+
         query = 'dualReturn_of_selectedPoints>0'
         smp.SelectPoints(query,source)
         smp.Render()
@@ -1858,12 +1858,10 @@ def toggleSelectDualReturn():
         smp.SelectPoints(query)
         smp.Render()
 
-def toggleRansacPlaneFitting():
-    reader = getReader()
-    ransacPlaneFitting = smp.RansacPlaneModel(reader)
-    ransacPlaneFitting.GetClientSideObject().SetMaximumIteration(250)
-    ransacPlaneFitting.GetClientSideObject().SetThreshold(0.10)
-    ransacPlaneFitting.GetClientSideObject().SetRatioInlierRequired(0.35)
+
+def toggleCrashAnalysis():
+    app.EnableCrashAnalysis = app.actions['actionEnableCrashAnalysis'].isChecked()
+
 
 def toggleBirdEyeViewSnap():
     # Get export images filename
@@ -1875,7 +1873,7 @@ def toggleBirdEyeViewSnap():
     # Fit a plane using ransac algorithm
     reader = getReader()
     ransacPlaneFitting = smp.RansacPlaneModel(reader)
-    ransacPlaneFitting.GetClientSideObject().SetMaximumIteration(1000)
+    ransacPlaneFitting.GetClientSideObject().SetMaxRansacIteration(1000)
     ransacPlaneFitting.GetClientSideObject().SetThreshold(0.35)
     ransacPlaneFitting.GetClientSideObject().SetRatioInlierRequired(0.80)
     ransacPlaneFitting.UpdatePipeline()
@@ -2052,7 +2050,6 @@ def setupActions():
     app.actions['actionFastRenderer'].connect('triggered()',fastRendererChanged)
     app.actions['actionSelectDualReturn'].connect('triggered()',toggleSelectDualReturn)
     app.actions['actionSelectDualReturn2'].connect('triggered()',toggleSelectDualReturn)
-    app.actions['actionRansacPlaneFitting'].connect('triggered()', toggleRansacPlaneFitting)
     app.actions['actionBirdEyeViewSnap'].connect('triggered()', toggleBirdEyeViewSnap)
     app.actions['actionMotionDetection'].connect('triggered()', toggleMotionDetection)
 
@@ -2094,7 +2091,7 @@ def setupActions():
     # Set default toolbar visibility
     geolocationToolBar.visible = False
     app.geolocationToolBar = geolocationToolBar
-    
+
     # Setup and add the playback speed control toolbar
     timeToolBar = mW.findChild('QToolBar','Player Control')
 

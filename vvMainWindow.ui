@@ -100,7 +100,6 @@
      <property name="title">
       <string>others...</string>
      </property>
-     <addaction name="actionRansacPlaneFitting"/>
      <addaction name="actionBirdEyeViewSnap"/>
      <addaction name="actionMotionDetection"/>
     </widget>
@@ -949,14 +948,6 @@
    </property>
    <property name="toolTip">
     <string>Take a snapshot of the scene in a bird eye view</string>
-   </property>
-  </action>
-  <action name="actionRansacPlaneFitting">
-   <property name="text">
-    <string>Ransac Plane Fitting</string>
-   </property>
-   <property name="toolTip">
-    <string>Fit a plane to the data using ransac algorithm</string>
    </property>
   </action>
   <action name="actionMotionDetection">
