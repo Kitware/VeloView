@@ -131,6 +131,15 @@
         <SimpleIntInformationHelper />
       </IntVectorProperty>
 
+    <DoubleVectorProperty name="Time Offset"
+                          command="SetTimeOffset"
+                          default_values="0"
+                          number_of_elements="1">
+      <Documentation>
+          TimeOffset (in seconds) relative to the system clock.
+      </Documentation>
+    </DoubleVectorProperty>
+
       <Hints>
         <ReaderFactory extensions="pcap"
            file_description="Velodyne HDL Data File"/>

@@ -148,7 +148,7 @@ void vtkLidarReaderInternal::SetTimestepInformation(vtkInformation *info)
   std::vector<double> timesteps;
   for (size_t i = 0; i < numberOfTimesteps; ++i)
   {
-    timesteps.push_back( this->FilePositions[i].Time -  this->FilePositions[0].Time);
+    timesteps.push_back( this->FilePositions[i].Time + this->Lidar->GetTimeOffset());
   }
 
   if (this->FilePositions.size())
@@ -339,16 +339,17 @@ int vtkLidarReader::RequestData(vtkInformation *request, vtkInformationVector **
     timestep = info->Get(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP());
   }
 
-  if (timestep < 0 || timestep >= this->GetNumberOfFrames())
-  {
-    vtkErrorMacro("Cannot meet timestep request: " << timestep << ".  Have "
-                                                   << this->GetNumberOfFrames() << " datasets.");
-    return 0;
-  }
   // iterating over all timesteps until finding the first one with a greater time value
   // this is suboptimal
   int frameRequested = 0;
-  for (; timestep > this->Internal->FilePositions[frameRequested].Time - this->Internal->FilePositions[0].Time; frameRequested++);
+  for (; timestep > this->Internal->FilePositions[frameRequested].Time + this->GetTimeOffset(); frameRequested++);
+
+  if (frameRequested < 0 || frameRequested >= this->GetNumberOfFrames())
+  {
+    vtkErrorMacro("Cannot meet timestep request: " << frameRequested << ".  Have "
+                                                   << this->GetNumberOfFrames() << " datasets.");
+    return 0;
+  }
 
   //! @todo we should no open the pcap file everytime a frame is requested !!!
   this->Internal->Open();
