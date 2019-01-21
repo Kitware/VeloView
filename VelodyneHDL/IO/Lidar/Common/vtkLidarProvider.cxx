@@ -99,19 +99,6 @@ void vtkLidarProvider::SetSensorTransform(vtkTransform * t)
 }
 
 //-----------------------------------------------------------------------------
-vtkVelodyneTransformInterpolator *vtkLidarProvider::GetInterpolator() const
-{
-  return this->Interpreter->Interp;
-}
-
-//-----------------------------------------------------------------------------
-void vtkLidarProvider::SetInterpolator(vtkVelodyneTransformInterpolator *interpolator)
-{
-  this->Interpreter->Interp = interpolator;
-  this->Modified();
-}
-
-//-----------------------------------------------------------------------------
 void vtkLidarProvider::SetDummyProperty(int)
 {
   return this->Modified();

@@ -700,7 +700,6 @@ void VelodynePacketInterpreter::ProcessPacket(unsigned char const * data, unsign
   vtkNew<vtkTransform> geotransform;
   const unsigned int rawtime = dataPacket->gpsTimestamp;
   const double timestamp = this->ComputeTimestamp(dataPacket->gpsTimestamp);
-  this->ComputeOrientation(timestamp, static_cast<double>(rawtime), geotransform.GetPointer());
 
   // Update the rpm computation (by packets)
   this->RpmCalculator_->AddData(dataPacket, rawtime);
@@ -1006,8 +1005,8 @@ void VelodynePacketInterpreter::PushFiringData(const unsigned char laserId, cons
           this->Distance->SetValue(dualPointId, distanceM);
           this->DistanceRaw->SetValue(dualPointId, laserReturn->distance);
           this->Intensity->SetValue(dualPointId, intensity);
-          this->Timestamp->SetValue(dualPointId, timestamp);
-          this->RawTime->SetValue(dualPointId, rawtime);
+          this->Timestamp->SetValue(dualPointId, timestamp + this->TimeOffset);
+          this->RawTime->SetValue(dualPointId, rawtime + this->TimeOffset);
           this->Flags->SetValue(dualPointId, secondFlags);
           this->DistanceFlag->SetValue(dualPointId, MapDistanceFlag(secondFlags));
           this->IntensityFlag->SetValue(dualPointId, MapIntensityFlag(secondFlags));
@@ -1105,19 +1104,9 @@ double VelodynePacketInterpreter::ComputeTimestamp(unsigned int tohTime)
   {
     if (!vtkMath::IsFinite(this->TimeAdjust))
     {
-      // First adjustment; must compute adjustment number
-      if (this->Interp && this->Interp->GetNumberOfTransforms())
-      {
-        const double ts = static_cast<double>(tohTime) * 1e-6;
-        const double hours = (this->Interp->GetMinimumT() - ts) / 3600.0;
-        this->TimeAdjust = vtkMath::Round(hours) * hourInMilliseconds;
-      }
-      else
-      {
-        // Ought to warn about this, but happens when applogic is checking that
-        // we can read the file :-(
-        this->TimeAdjust = 0;
-      }
+      // Ought to warn about this, but happens when applogic is checking that
+      // we can read the file :-(
+      this->TimeAdjust = 0;
     }
     else
     {
@@ -1128,24 +1117,6 @@ double VelodynePacketInterpreter::ComputeTimestamp(unsigned int tohTime)
 
   this->LastTimestamp = tohTime;
   return static_cast<double>(tohTime) + this->TimeAdjust;
-}
-
-//-----------------------------------------------------------------------------
-void VelodynePacketInterpreter::ComputeOrientation(double adjustedTimestamp, double rawtime, vtkTransform *geotransform)
-{
-  if (this->ApplyTransform && this->Interp && this->Interp->GetNumberOfTransforms())
-  {
-    // NOTE: We store time in milliseconds, but the interpolator uses seconds,
-    //       so we need to adjust here
-    double t = adjustedTimestamp * 1e-6;
-    if (t < this->Interp->GetMinimumT() || t > this->Interp->GetMaximumT())
-      t = rawtime * 1e-6;
-    this->Interp->InterpolateTransform(t, geotransform);
-  }
-  else
-  {
-    geotransform->Identity();
-  }
 }
 
 //-----------------------------------------------------------------------------

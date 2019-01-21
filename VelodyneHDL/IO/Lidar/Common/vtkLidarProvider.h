@@ -208,12 +208,6 @@ public:
   vtkCustomSetMacro(ApplyTransform, bool)
 
   /**
-   * @copydoc LidarPacketInterpreter::Interp
-   */
-  virtual vtkVelodyneTransformInterpolator* GetInterpolator() const;
-  virtual void SetInterpolator(vtkVelodyneTransformInterpolator* interpolator);
-
-  /**
    * @brief SetDummyProperty a trick to workaround failure to wrap LaserSelection, this actually only calls Modified,
    * however for some obscure reason, doing the same from python does not have the same effect
    * @todo set how to remove this methode as it is a workaround

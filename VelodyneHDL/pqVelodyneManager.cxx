@@ -277,8 +277,8 @@ void pqVelodyneManager::saveFramesToLAS(vtkVelodyneHDLReader* reader, vtkPolyDat
   if (positionMode > 0)
   {
     // Set minimum and maximum time range
-    vtkVelodyneTransformInterpolator* const interp = reader->GetInterpolator();
-    writer.SetTimeRange(interp->GetMinimumT(), interp->GetMaximumT());
+//    vtkVelodyneTransformInterpolator* const interp = reader->GetInterpolator();
+//    writer.SetTimeRange(interp->GetMinimumT(), interp->GetMaximumT());
 
     // Georeferenced data
     if (positionMode > 1)

@@ -22,7 +22,6 @@
 #include <vtkPolyData.h>
 
 //! @todo this class should be thread save and need to implement Getter/Setter with a mutex
-//! @todo make Getter and Setter for Transform and Interpolator
 //! @todo use emun for croping mode
 #define SetMacro(name,type) \
 void Set##name (type _arg) \
@@ -38,7 +37,6 @@ type Get##name () { \
   return this->name; \
   }
 
-class vtkVelodyneTransformInterpolator;
 class pcap_pkthdr;
 
 class LidarPacketInterpreter
@@ -161,9 +159,6 @@ public:
 //  GetMacro(SensorTransform, vtkSmartPointer<vtkTransform>)
 //  SetMacro(SensorTransform, vtkSmartPointer<vtkTransform>)
 
-//  GetMacro(Interp, vtkSmartPointer<vtkVelodyneTransformInterpolator>)
-//  SetMacro(Interp, vtkSmartPointer<vtkVelodyneTransformInterpolator>)
-
   GetMacro(CropMode, int /*vtkLidarProvider::CropModeEnum*/)
   SetMacro(CropMode, int /*vtkLidarProvider::CropModeEnum*/)
 
@@ -231,15 +226,9 @@ protected:
   bool ApplyTransform;
 
 public:
-  //! Fixed transform to apply to the Lidar points.
-  //! This transform is always applied before the transform calculated by the interpolator
-  //! as it is used to move the frame from the Lidar's coordinate system to another
-  //! coordinate system such as that of the GPS/IMU sensor.
+  //! Fixed transform relative to the system referential
   vtkNew<vtkTransform> SensorTransform;
 
-  //! Interpolator used to get a transform for each frame timestamp, this transform
-  //! is always applied after the sensor transform.
-  vtkSmartPointer<vtkVelodyneTransformInterpolator> Interp;
 protected:
   //! Indicate which cropping mode should be used.
   /*vtkLidarProvider::CropModeEnum*/int CropMode;
