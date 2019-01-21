@@ -122,7 +122,6 @@
     <addaction name="actionShowErrorDialog"/>
     <addaction name="separator"/>
     <addaction name="menuDebugging"/>
-    <addaction name="actionEnableCrashAnalysis"/>
     <addaction name="separator"/>
     <addaction name="menuothers"/>
    </widget>
@@ -749,17 +748,6 @@
    </property>
    <property name="toolTip">
     <string>Display the rotations per minute</string>
-   </property>
-  </action>
-  <action name="actionEnableCrashAnalysis">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Crash Analysis</string>
-   </property>
-   <property name="toolTip">
-    <string>Enable the crash analysis</string>
    </property>
   </action>
   <action name="actionCorrectIntensityValues">

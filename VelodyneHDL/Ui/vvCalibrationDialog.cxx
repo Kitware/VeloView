@@ -62,6 +62,7 @@ public:
   void saveEnableForwarding();
   void saveAdvancedConfiguration();
   void saveForwardIpAddress();
+  void saveIsCrashAnalysing();
 
   void restoreSensorTransform();
   void restoreGpsTransform();
@@ -72,6 +73,7 @@ public:
   void restoreEnableForwarding();
   void restoreAdvancedConfiguration();
   void restoreForwardIpAddress();
+  void restoreCrashAnalysing();
 
   pqSettings* const Settings;
   QStringList BuiltInCalibrationFiles;
@@ -194,6 +196,30 @@ void vvCalibrationDialog::pqInternal::saveForwardIpAddress()
 {
   this->Settings->setValue(
     "VelodyneHDLPlugin/CalibrationFileDialog/ForwardIpAddress", this->ipAddresslineEdit->text());
+}
+
+//-----------------------------------------------------------------------------
+void vvCalibrationDialog::pqInternal::saveIsCrashAnalysing()
+{
+  // Only save the state if the crash analysing is enabled
+  if (this->CrashAnalysisCheckBox->isEnabled())
+  {
+    this->Settings->setValue(
+      "VelodyneHDLPlugin/CalibrationFileDialog/IsCrashAnalysing", this->CrashAnalysisCheckBox->isChecked());
+  }
+}
+
+//-----------------------------------------------------------------------------
+void vvCalibrationDialog::pqInternal::restoreCrashAnalysing()
+{
+  // Only restore the state if the crash analysing is enabled
+  if (this->CrashAnalysisCheckBox->isEnabled())
+  {
+    this->CrashAnalysisCheckBox->setChecked(this->Settings
+                                   ->value("VelodyneHDLPlugin/CalibrationFileDialog/IsCrashAnalysing",
+                                     this->CrashAnalysisCheckBox->isChecked())
+                                   .toBool());
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -361,6 +387,13 @@ vvCalibrationDialog::vvCalibrationDialog(QWidget* p)
   this->setDefaultConfiguration();
   QListWidgetItem* liveCalibrationItem = new QListWidgetItem();
 
+  // Without settings about the Crash Analysis option on the
+  // user's computer, we want the software to not save the log
+  // files
+  this->Internal->CrashAnalysisCheckBox->setVisible(true);
+  this->Internal->CrashAnalysisCheckBox->setEnabled(true);
+  this->Internal->CrashAnalysisCheckBox->setChecked(false);
+
   liveCalibrationItem->setText("HDL64 Live Corrections");
   liveCalibrationItem->setToolTip("Get Corrections from the data stream");
   liveCalibrationItem->setData(Qt::UserRole, "");
@@ -408,6 +441,7 @@ vvCalibrationDialog::vvCalibrationDialog(QWidget* p)
   this->Internal->restoreGPSForwardingPort();
   this->Internal->restoreLidarForwardingPort();
   this->Internal->restoreForwardIpAddress();
+  this->Internal->restoreCrashAnalysing();
   this->Internal->restoreAdvancedConfiguration();
 
   const QVariant& geometry =
@@ -481,6 +515,12 @@ QString vvCalibrationDialog::selectedCalibrationFile() const
 {
   const int row = this->Internal->ListWidget->currentRow();
   return this->Internal->ListWidget->item(row)->data(Qt::UserRole).toString();
+}
+
+//-----------------------------------------------------------------------------
+bool vvCalibrationDialog::isCrashAnalysing() const
+{
+  return this->Internal->CrashAnalysisCheckBox->isChecked();
 }
 
 //-----------------------------------------------------------------------------
@@ -685,6 +725,7 @@ void vvCalibrationDialog::accept()
   this->Internal->saveEnableForwarding();
   this->Internal->saveAdvancedConfiguration();
   this->Internal->saveForwardIpAddress();
+  this->Internal->saveIsCrashAnalysing();
   QDialog::accept();
 }
 

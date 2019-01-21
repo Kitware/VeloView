@@ -88,7 +88,7 @@ public:
    * @copydoc NetworkSource::IsCrashAnalysing
    */
   bool GetIsCrashAnalysing();
-  void SetIsCrashAnalysing(const bool);
+  void SetIsCrashAnalysing(bool value);
 
   /**
    * @brief GetNeedsUpdate

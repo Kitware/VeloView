@@ -1,9 +1,29 @@
+//=========================================================================
+//
+// Copyright 2018 Kitware, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//=========================================================================
+
+// LOCAL
 #include "NetworkSource.h"
 #include "vtkPacketFileWriter.h"
-
 #include "PacketReceiver.h"
 #include "PacketFileWriter.h"
 #include "PacketConsumer.h"
+
+#define LIDAR_PACKET_TO_STORE_CRASH_ANALYSIS 5000
+#define GPS_PACKET_TO_STORE_CRASH_ANALYSIS 5000
 
 //-----------------------------------------------------------------------------
 NetworkSource::~NetworkSource()
@@ -58,7 +78,7 @@ void NetworkSource::Start()
       this->IOService, GPSPort, ForwardedGPSPort, ForwardedIpAddress, IsForwarding, this));
   }
 
-  if (IsCrashAnalysing)
+  if (this->IsCrashAnalysing)
   {
     std::string appDir;
 
@@ -89,11 +109,11 @@ void NetworkSource::Start()
     }
 
     this->LIDARPortReceiver->EnableCrashAnalysing(
-      appDir + "LidarLastData.bin", 1206, IsCrashAnalysing);
+      appDir + "LidarLastData", LIDAR_PACKET_TO_STORE_CRASH_ANALYSIS, this->IsCrashAnalysing);
     if (this->ListenGPS)
     {
       this->PositionPortReceiver->EnableCrashAnalysing(
-        appDir + "GPSLastData.bin", 512, IsCrashAnalysing);
+        appDir + "GPSLastData", GPS_PACKET_TO_STORE_CRASH_ANALYSIS, this->IsCrashAnalysing);
     }
   }
 
@@ -104,6 +124,7 @@ void NetworkSource::Start()
   }
 }
 
+//-----------------------------------------------------------------------------
 void NetworkSource::Stop()
 {
   // Kill the receivers
