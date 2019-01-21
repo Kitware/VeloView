@@ -1,3 +1,21 @@
+//=========================================================================
+//
+// Copyright 2018 Kitware, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//=========================================================================
+
+// LOCAL
 #include "PacketReceiver.h"
 #include "NetworkSource.h"
 
@@ -51,10 +69,6 @@ PacketReceiver::PacketReceiver(boost::asio::io_service &io, int port, int forwar
 //-----------------------------------------------------------------------------
 PacketReceiver::~PacketReceiver()
 {
-  if (this->fileCrashAnalysis.is_open())
-  {
-    this->fileCrashAnalysis.close();
-  }
   this->Socket.cancel();
   this->ForwardedSocket.cancel();
   {
@@ -83,15 +97,15 @@ void PacketReceiver::StartReceive()
 }
 
 //-----------------------------------------------------------------------------
-void PacketReceiver::EnableCrashAnalysing(std::string filenameCrashAnalysis_, int bytesPerPacket_, bool isCrashAnalysing_)
+void PacketReceiver::EnableCrashAnalysing(std::string filenameCrashAnalysis_, unsigned int nbrPacketToStore_, bool isCrashAnalysing_)
 {
-  this->filenameCrashAnalysis = filenameCrashAnalysis_;
-  this->bytesPerPacket = bytesPerPacket_;
-  this->isCrashAnalysing = isCrashAnalysing_;
+  this->IsCrashAnalysing = isCrashAnalysing_;
+
   // Opening crash analysis file
-  if (isCrashAnalysing)
+  if (this->IsCrashAnalysing)
   {
-    this->fileCrashAnalysis.open(filenameCrashAnalysis.c_str(), std::ios::out | std::ios::binary);
+    this->CrashAnalysis.SetNbrPacketsToStore(nbrPacketToStore_);
+    this->CrashAnalysis.SetFilename(filenameCrashAnalysis_);
   }
 }
 
@@ -117,14 +131,10 @@ void PacketReceiver::SocketCallback(
   {
     ForwardedSocket.send_to(boost::asio::buffer(packet->c_str(), numberOfBytes), ForwardEndpoint);
   }
-  if (this->fileCrashAnalysis.is_open())
+
+  if (this->IsCrashAnalysing)
   {
-    boost::unique_lock<boost::mutex> scoped_lock(this->IsWriting);
-    this->fileCrashAnalysis.write(packet->c_str(), this->bytesPerPacket);
-    this->fileCrashAnalysis.flush();
-    std::streampos pos =
-      static_cast<std::streampos>((this->PacketCounter % NBR_PACKETS_SAVED) * this->bytesPerPacket);
-    this->fileCrashAnalysis.seekp(pos);
+    this->CrashAnalysis.AddPacket(*packet);
   }
 
   this->Parent->QueuePackets(packet);

@@ -334,6 +334,7 @@ def chooseCalibration(calibrationFilename=None):
             self.ipAddressForwarding = dialog.ipAddressForwarding()
             self.sensorTransform = vtk.vtkTransform()
             self.gpsTransform = vtk.vtkTransform()
+            self.isCrashAnalysing = dialog.isCrashAnalysing()
 
             qm = dialog.sensorTransform()
             vmLidar = vtk.vtkMatrix4x4()
@@ -407,7 +408,7 @@ def openSensor():
     sensor.GetClientSideObject().SetForwardedGPSPort(GPSForwardingPort)
     sensor.GetClientSideObject().SetForwardedLIDARPort(LIDARForwardingPort)
     sensor.GetClientSideObject().SetIsForwarding(isForwarding)
-    sensor.GetClientSideObject().SetIsCrashAnalysing(app.EnableCrashAnalysis)
+    sensor.GetClientSideObject().SetIsCrashAnalysing(calibration.isCrashAnalysing)
     sensor.GetClientSideObject().SetForwardedIpAddress(ipAddressForwarding)
     sensor.GetClientSideObject().SetSensorTransform(sensorTransform)
     sensor.GetClientSideObject().SetIgnoreZeroDistances(app.actions['actionIgnoreZeroDistances'].isChecked())
@@ -1847,11 +1848,6 @@ def toggleSelectDualReturn():
         smp.SelectPoints(query)
         smp.Render()
 
-
-def toggleCrashAnalysis():
-
-    app.EnableCrashAnalysis = app.actions['actionEnableCrashAnalysis'].isChecked()
-
 def toggleRansacPlaneFitting():
     reader = getReader()
     ransacPlaneFitting = smp.RansacPlaneModel(reader)
@@ -2024,7 +2020,6 @@ def setupActions():
     app.actions['actionDualReturnIntensityHigh'].connect('triggered()', setFilterToIntensityHigh)
     app.actions['actionDualReturnIntensityLow'].connect('triggered()', setFilterToIntensityLow)
     app.actions['actionShowRPM'].connect('triggered()', toggleRPM)
-    app.actions['actionEnableCrashAnalysis'].connect('triggered()',toggleCrashAnalysis)
     app.actions['actionCorrectIntensityValues'].connect('triggered()',intensitiesCorrectedChanged)
     app.actions['actionFastRenderer'].connect('triggered()',fastRendererChanged)
     app.actions['actionSelectDualReturn'].connect('triggered()',toggleSelectDualReturn)
@@ -2032,7 +2027,6 @@ def setupActions():
     app.actions['actionRansacPlaneFitting'].connect('triggered()', toggleRansacPlaneFitting)
     app.actions['actionBirdEyeViewSnap'].connect('triggered()', toggleBirdEyeViewSnap)
     app.actions['actionMotionDetection'].connect('triggered()', toggleMotionDetection)
-    app.EnableCrashAnalysis = app.actions['actionEnableCrashAnalysis'].isChecked()
 
     # Restore action states from settings
     settings = getPVSettings()
