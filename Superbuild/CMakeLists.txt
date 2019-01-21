@@ -5,6 +5,8 @@ set (SuperBuild_CMAKE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/CMake")
 set (SuperBuild_PROJECTS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/Projects")
 set (SuperBuild_BINARY_DIR ${VeloViewSuperBuild_BINARY_DIR}) # required to do FindPackage(ParaView) inside Veloview's CMakeLists
 
+set(qt_version 5)
+
 macro (superbuild_setup_variables)
   include(SuperbuildVersionMacros)
   # if (paraview_SOURCE_SELECTION STREQUAL "git")
