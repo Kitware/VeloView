@@ -215,6 +215,24 @@ unset(vv_installed_xml_files)
 unset(vv_configurefile_dest)
 unset(vv_installfile_dest)
 
+
+# TODO: once we use Qt built from source on Windows, remove this manual installation
+# currently: PythonQt fails to build against our own build of Qt
+if (WIN32)
+  foreach (qt5_opengl_lib IN ITEMS opengl32sw libEGL libGLESv2 libEGLd
+      Qt5Core Qt5Gui Qt5Widgets Qt5Help Qt5Network Qt5PrintSupport Qt5Sql)
+    install(
+       FILES
+      "${Qt5_DIR}/../../../bin/${qt5_opengl_lib}.dll"
+      DESTINATION
+      "bin")
+  endforeach ()
+  install(DIRECTORY "${Qt5_DIR}/../../../plugins/platforms"
+    DESTINATION "bin"
+  )
+endif ()
+
+
 # This ensure that build_paraview_client() adds an "forwarding path" to locate
 # paraview from installed location.
 set (PARAVIEW_INSTALL_LIB_DIR "lib/paraview-${PARAVIEW_VERSION_MAJOR}.${PARAVIEW_VERSION_MINOR}")
