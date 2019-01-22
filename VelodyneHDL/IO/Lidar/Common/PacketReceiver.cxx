@@ -79,6 +79,13 @@ PacketReceiver::~PacketReceiver()
       this->IsReceivingCond.wait(guard);
     }
   }
+
+  // Close and delete the logs files. So that,
+  // if a log file is present in the next session
+  // it means that the software has been closed
+  // properly (potentially a crash)
+  this->CrashAnalysis.CloseAnalyzer();
+  this->CrashAnalysis.DeleteLogFiles();
 }
 
 //-----------------------------------------------------------------------------
@@ -106,6 +113,7 @@ void PacketReceiver::EnableCrashAnalysing(std::string filenameCrashAnalysis_, un
   {
     this->CrashAnalysis.SetNbrPacketsToStore(nbrPacketToStore_);
     this->CrashAnalysis.SetFilename(filenameCrashAnalysis_);
+    this->CrashAnalysis.ArchivePreviousLogIfExist();
   }
 }
 
