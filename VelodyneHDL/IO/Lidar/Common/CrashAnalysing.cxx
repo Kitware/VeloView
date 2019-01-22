@@ -19,7 +19,10 @@
 #include "CrashAnalysing.h"
 
 // STD
+#include <ctime>
+#include <fstream>
 #include <sstream>
+#include <stdio.h>
 
 // VTK
 #include <vtkInformation.h>
@@ -71,4 +74,60 @@ void CrashAnalysisWriter::WriteLastPacket(const std::string& packet)
 
   this->Writer.WritePacket(
           reinterpret_cast<const unsigned char*>(packet.c_str()), packet.length());
+}
+
+//-----------------------------------------------------------------------------
+void CrashAnalysisWriter::CloseAnalyzer()
+{
+  if (this->Writer.IsOpen())
+  {
+    this->Writer.Close();
+    return;
+  }
+}
+
+//-----------------------------------------------------------------------------
+void CrashAnalysisWriter::DeleteLogFiles()
+{
+  std::remove((this->Filename + "0.bin").c_str());
+  std::remove((this->Filename + "1.bin").c_str());
+}
+
+//-----------------------------------------------------------------------------
+void CrashAnalysisWriter::ArchivePreviousLogIfExist()
+{
+  // check if the file exists
+  std::ifstream file1((this->Filename + "0.bin").c_str());
+  std::ifstream file2((this->Filename + "1.bin").c_str());
+
+  // Get the date and time
+  std::time_t rawtime;
+  struct std::tm * timeinfo;
+  char buffer[80];
+  std::time(&rawtime);
+  timeinfo = std::localtime(&rawtime);
+  std::strftime(buffer, sizeof(buffer), "%d_%m_%Y_%H_%M_%S", timeinfo);
+  std::string timeStr(buffer);
+
+  bool fileHasBeenRenamed = false;
+  // The file exists, rename it
+  if (file1.good())
+  {
+    file1.close();
+    std::rename((this->Filename + "0.bin").c_str(), (this->Filename + timeStr + "_0.bin").c_str());
+    fileHasBeenRenamed = true;
+  }
+  if (file2.good())
+  {
+    file2.close();
+    std::rename((this->Filename + "1.bin").c_str(), (this->Filename + timeStr + "_1.bin").c_str());
+    fileHasBeenRenamed = true;
+  }
+
+  if (fileHasBeenRenamed)
+  {
+    vtkGenericWarningMacro("We found log files in folder: " << this->Filename
+                           << " which may be due to " << SOFTWARE_NAME << " previous crash. "
+                           << "The log files have been renamed using timestamp: " << timeStr);
+  }
 }

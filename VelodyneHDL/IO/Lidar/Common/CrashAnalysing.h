@@ -44,6 +44,18 @@ public:
   // Add a packet to the crash analyzer
   void AddPacket(const std::string& packet);
 
+  // Close the pcap writer if it is opened
+  void CloseAnalyzer();
+
+  // Delete the logs files
+  void DeleteLogFiles();
+
+  // If a previous log exists it means that the
+  // stream has been quit unproperly and has potentialy
+  // crashed. We will archieve the previous log in this
+  // case
+  void ArchivePreviousLogIfExist();
+
 private:
   // Export file information
   unsigned int NbrPacketsToStore;
