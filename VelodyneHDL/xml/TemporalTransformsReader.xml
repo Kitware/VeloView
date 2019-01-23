@@ -1,0 +1,39 @@
+<ServerManagerConfiguration>
+  <ProxyGroup name="filters">
+    <SourceProxy name="TemporalTransformsReader" class="vtkTemporalTransformsReader" label="Temporal Transforms Reader">
+      <Documentation
+          short_help="Reads a csv containing a list of transforms and ouput the trajectory"
+          long_help="Reads a csv containing a list of transforms and ouput the trajectory">
+          Reads a csv containing a list of transforms and ouput the trajectory. The csv file must
+          be comptible with the following header: `time,roll,pitch,yaw,X,Y,Z`
+      </Documentation>
+
+    <StringVectorProperty
+        name="FileName"
+        label="FileName"
+        animateable="0"
+        command="SetFileName"
+        number_of_elements="1">
+        <FileListDomain name="files"/>
+        <Documentation>
+          The csv file which respect the following header "Time,Rx(Roll),Ry(Pitch),Rz(Yaw),X,Y,Z"
+        </Documentation>
+    </StringVectorProperty>
+
+    <DoubleVectorProperty name="Time Offset"
+                          command="SetTimeOffset"
+                          default_values="0"
+                          number_of_elements="1">
+      <Documentation>
+          TimeOffset (in seconds) relative to the system clock.
+      </Documentation>
+    </DoubleVectorProperty>
+
+    <Hints>
+      <ReaderFactory extensions="csv"
+         file_description="csv file that is compatible with the following header:`time,roll,pitch,yaw,X,Y,Z`"/>
+    </Hints>
+
+   </SourceProxy>
+  </ProxyGroup>
+</ServerManagerConfiguration>

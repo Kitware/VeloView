@@ -170,10 +170,12 @@ list(APPEND servermanager_sources
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/Lidar/KITTIDataSet/vtkLidarKITTIDataSetReader.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/GPS-IMU/Velodyne/vtkVelodyneHDLPositionReader.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/GPS-IMU/Applanix/vtkApplanixPositionReader.cxx
+  ${CMAKE_CURRENT_SOURCE_DIR}/IO/vtkTemporalTransformsReader.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/MotionDetector/vtkMotionDetector.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/BirdEyeViewSnap/vtkBirdEyeViewSnap.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/ProcessingSample/vtkProcessingSample.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/Ransac/vtkRansacPlaneModel.cxx
+  ${CMAKE_CURRENT_SOURCE_DIR}/Filter/TemporalTransformsApplier/vtkTemporalTransformsApplier.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/TrailingFrame/vtkTrailingFrame.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/Source/Grid/vtkVelodyneHDLGridSource.cxx
   )
@@ -204,6 +206,8 @@ list(APPEND servermanager_xml
   xml/TrailingFrame.xml
   xml/ProcessingSample.xml
   xml/VelodyneHDLGridSource.xml
+  xml/TemporalTransformsReader.xml
+  xml/TemporalTransformsApplier.xml
   )
 
 if (ENABLE_PCL)
@@ -223,6 +227,7 @@ endif(ENABLE_PCL AND ENABLE_Ceres)
 # in python later on
 set(sources_which_inherit_from_vtkObject
   ${CMAKE_CURRENT_SOURCE_DIR}/Common/vtkVelodyneTransformInterpolator.cxx
+  ${CMAKE_CURRENT_SOURCE_DIR}/Common/vtkTemporalTransforms.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/Lidar/Common/vtkLidarProvider.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/Lidar/Common/vtkLidarReader.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/Lidar/Common/vtkLidarStream.cxx
@@ -278,6 +283,7 @@ set(plugin_include_dirs
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/OldPlaneFitter
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/Ransac
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/TrailingFrame
+  ${CMAKE_CURRENT_SOURCE_DIR}/Filter/TemporalTransformsApplier
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/ProcessingSample
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/PCLRansacModel
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/Slam

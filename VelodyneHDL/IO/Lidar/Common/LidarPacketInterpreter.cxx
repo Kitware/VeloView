@@ -48,6 +48,8 @@ LidarPacketInterpreter::LidarPacketInterpreter()
   this->CropRegion[4] = 0;
   this->CropRegion[5] = 0;
   this->SplitCounter = 0;
+
+  this->TimeOffset = 0.;
 }
 
 //-----------------------------------------------------------------------------
