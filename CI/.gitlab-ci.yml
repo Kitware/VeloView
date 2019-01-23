@@ -1,14 +1,14 @@
 # this cmake variable are exposed here so schedule jobs can modify them
 variables:
   # cmake superbuild option
-  cmake_option_ENABLE_veloview: "True"
-  cmake_option_USE_SYSTEM_python: "True"
+  cmake_option_USE_SYSTEM_python: "False"
   cmake_option_CMAKE_BUILD_TYPE: "Release"
 
   # options specific to macOS builds
   cmake_option_CMAKE_OSX_ARCHITECTURES: "x86_64"
   cmake_option_CMAKE_OSX_DEPLOYMENT_TARGET: "10.12"
   cmake_option_CMAKE_OSX_SYSROOT: "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.12.sdk"
+  # it is also possible to use: -DCMAKE_OSX_SDK:STRING=macosx10.12
 
   slash_separator: "/"
 
@@ -56,11 +56,15 @@ stages:
     - cd Superbuild-build/
     # configure & generate
     - cmake -DCMAKE_BUILD_TYPE:STRING=${cmake_option_CMAKE_BUILD_TYPE} -DBUILD_TESTING=True -DUSE_SYSTEM_python=True
+      -DENABLE_pcl:BOOL=True
       ${CI_PROJECT_DIR}/Superbuild
     # compile
     - make -j8
     # remove Veloview
     - rm -rf common-superbuild/veloview
+    # - cd ${CI_PROJECT_DIR}
+    # create a symbolic link, inside the source tree else "push" will not work
+    # - ln -s ../Superbuild-build Superbuild-build # not working witth
     - echo "removing downloaded source archives"
     - rm downloads/*
     - echo "compressing and uploading Superbuild. This take some time..."
@@ -91,8 +95,7 @@ stages:
   before_script: *unix_get_superbuild # you cannot put linux_build here
   script:
     # get test data and baseline
-    # DO NOT use gilab-ci variable GIT_SUBMODULE_STRATEGY !!!
-    - git submodule update --init --recursive
+    - git submodule update --init
     - cd ../Superbuild-build/ # created by extracting cache in "unix_get_superbuild"
     - make veloview -j8
     # excluding packaging test targets (packaging is done later)
@@ -204,7 +207,10 @@ ubuntu14.04.5_package_schedule:
     - cd Superbuild-build/
     # configure & generate
     - cmake -DCMAKE_BUILD_TYPE:STRING=${cmake_option_CMAKE_BUILD_TYPE}
-      -DCMAKE_OSX_SDK:STRING=macosx10.12
+      -DCMAKE_OSX_ARCHITECTURES:STRING=${cmake_option_CMAKE_OSX_ARCHITECTURES}
+      -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING=${cmake_option_CMAKE_OSX_DEPLOYMENT_TARGET}
+      -DCMAKE_OSX_SYSROOT:STRING=${cmake_option_CMAKE_OSX_SYSROOT}
+      -DENABLE_pcl:BOOL="True"
       ${CI_PROJECT_DIR}/Superbuild
     # compile
     - make -j8

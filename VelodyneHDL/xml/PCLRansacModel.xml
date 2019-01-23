@@ -1,0 +1,45 @@
+<ServerManagerConfiguration>
+  <!-- Begin vtkPCLRansacModel -->
+  <ProxyGroup name="filters">
+    <SourceProxy name="PCLRansacModel" class="vtkPCLRansacModel" label="PCLRansac Model">
+      <Documentation
+        short_help="Compute ransac algorithm according to the selected model"
+        long_help="Compute ransac algorithm according to the selected model">
+        Compute ransac algorithm according to the selected model
+      </Documentation>
+
+    <InputProperty
+      name="Input"
+      command="SetInputConnection">
+      <DataTypeDomain name="input_type">
+        <DataType value="vtkPolyData"/>
+      </DataTypeDomain>
+    </InputProperty>
+
+    <DoubleVectorProperty
+      name="DistanceThreshold"
+      command="SetDistanceThreshold"
+      number_of_elements="1"
+      default_values="0.2">
+    </DoubleVectorProperty>
+
+    <IntVectorProperty
+      name="Model"
+      command="SetModelType"
+      number_of_elements="1"
+      default_values="5">
+      <EnumerationDomain name="enum">
+        <Entry value="0" text="Circle2D"/>
+        <Entry value="1" text="Circle3D"/>
+<!--        <Entry value="2" text="Cone"/>-->
+<!--        <Entry value="3" text="Cylinder"/>-->
+        <Entry value="4" text="Line"/>
+        <Entry value="6" text="Plane"/>
+      </EnumerationDomain>
+    </IntVectorProperty>
+
+
+    </SourceProxy>
+  </ProxyGroup>
+  <!-- End vtkPCLRansacModel -->
+</ServerManagerConfiguration>

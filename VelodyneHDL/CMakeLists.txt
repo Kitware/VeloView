@@ -77,6 +77,16 @@ find_package(Eigen REQUIRED)
 include_directories(${SYSTEM_OPTION} ${EIGEN_INCLUDE_DIR})
 
 #--------------------------------------
+# PCL dependency
+#--------------------------------------
+option(ENABLE_PCL OFF "PCL will be required for filters using pcl (PCLRansacFilter, Slam, ...)")
+if (ENABLE_PCL)
+  find_package(PCL REQUIRED)
+  include_directories(${SYSTEM_OPTION} ${PCL_INCLUDE_DIRS})
+  add_definitions(${PCL_DEFINITIONS})
+endif(ENABLE_PCL)
+
+#--------------------------------------
 # Boost dependency
 #--------------------------------------
 set(Boost_USE_MULTITHREADED ON)
@@ -88,6 +98,15 @@ set(ALL_BOOST_LIBRARIES ${Boost_LIBRARIES})
 find_package(Boost OPTIONAL_COMPONENTS atomic timer)
 include_directories(${SYSTEM_OPTION} ${Boost_INCLUDE_DIRS})
 list(APPEND ALL_BOOST_LIBRARIES ${Boost_LIBRARIES})
+
+#--------------------------------------
+# Ceres dependency
+#--------------------------------------
+option(ENABLE_Ceres OFF "Ceres is required for filters using non-linear least square optimization (Slam, autocalibration, ...)")
+if (ENABLE_Ceres)
+  find_package(Ceres REQUIRED)
+  include_directories(${SYSTEM_OPTION} ${CERES_INCLUDE_DIRS})
+endif(ENABLE_Ceres)
 
 #-----------------------------------------------------------------------------
 # Build Paraview Plugin
@@ -159,13 +178,28 @@ list(APPEND servermanager_sources
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/Lidar/KITTIDataSet/vtkLidarKITTIDataSetReader.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/GPS-IMU/Velodyne/vtkVelodyneHDLPositionReader.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/GPS-IMU/Applanix/vtkApplanixPositionReader.cxx
+  ${CMAKE_CURRENT_SOURCE_DIR}/IO/vtkTemporalTransformsReader.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/MotionDetector/vtkMotionDetector.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/BirdEyeViewSnap/vtkBirdEyeViewSnap.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/ProcessingSample/vtkProcessingSample.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/Ransac/vtkRansacPlaneModel.cxx
+  ${CMAKE_CURRENT_SOURCE_DIR}/Filter/TemporalTransformsApplier/vtkTemporalTransformsApplier.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/TrailingFrame/vtkTrailingFrame.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/Source/Grid/vtkVelodyneHDLGridSource.cxx
   )
+
+if (ENABLE_PCL)
+  list(APPEND servermanager_sources
+    ${CMAKE_CURRENT_SOURCE_DIR}/Filter/PCLRansacModel/vtkPCLRansacModel.cxx
+    )
+
+endif(ENABLE_PCL)
+if (ENABLE_PCL AND ENABLE_Ceres)
+  list(APPEND servermanager_sources
+    ${CMAKE_CURRENT_SOURCE_DIR}/Filter/Slam/vtkSlam.cxx
+    )
+endif(ENABLE_PCL AND ENABLE_Ceres)
+
 
 # xml file that describe the proxy of the wrap sources in paraview
 list(APPEND servermanager_xml
@@ -180,19 +214,35 @@ list(APPEND servermanager_xml
   xml/TrailingFrame.xml
   xml/ProcessingSample.xml
   xml/VelodyneHDLGridSource.xml
+  xml/TemporalTransformsReader.xml
+  xml/TemporalTransformsApplier.xml
   )
+
+if (ENABLE_PCL)
+  list(APPEND servermanager_xml
+    xml/PCLRansacModel.xml
+    )
+endif(ENABLE_PCL)
+
+if (ENABLE_PCL AND ENABLE_Ceres)
+  list(APPEND servermanager_xml
+    xml/Slam.xml
+    )
+endif(ENABLE_PCL AND ENABLE_Ceres)
 
 # other source code than won't be wrap by paraview but are needed to create the plugin
 # We make the distinction on that inherit from vtkObject as this one will be also wrap
 # in python later on
 set(sources_which_inherit_from_vtkObject
   ${CMAKE_CURRENT_SOURCE_DIR}/Common/vtkVelodyneTransformInterpolator.cxx
+  ${CMAKE_CURRENT_SOURCE_DIR}/Common/vtkTemporalTransforms.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/Lidar/Common/vtkLidarProvider.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/Lidar/Common/vtkLidarReader.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/Lidar/Common/vtkLidarStream.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/OldPlaneFitter/vtkPlaneFitter.cxx
   )
 set(sources_which_do_not_inherit_from_vtkObject
+  ${CMAKE_CURRENT_SOURCE_DIR}/IO/Lidar/Common/CrashAnalysing.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/Lidar/Common/LidarPacketInterpreter.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/Lidar/Common/NetworkSource.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/Lidar/Common/PacketReceiver.cxx
@@ -205,8 +255,14 @@ set(sources_which_do_not_inherit_from_vtkObject
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/MotionDetector/vtkSphericalMap.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/Common/Network/vtkPacketFileWriter.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/Common/Network/vvPacketSender.cxx
+  ${CMAKE_CURRENT_SOURCE_DIR}/Common/vtkEigenTools.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/${interpolator_pach_until_vtk_update}
   )
+if (ENABLE_PCL)
+  list(APPEND sources_which_do_not_inherit_from_vtkObject
+    ${CMAKE_CURRENT_SOURCE_DIR}/Common/vtkPCLConversions.cxx
+    )
+endif(ENABLE_PCL)
 
 
 # plugin dependencies
@@ -215,6 +271,8 @@ list(APPEND deps
   ${liblas_LIBRARY}
   ${ALL_BOOST_LIBRARIES}
   ${vtklibproj4_LIBRARIES}
+  ${PCL_LIBRARIES}
+  ${CERES_LIBRARIES}
   )
 
 # folder where to look for header file
@@ -233,7 +291,10 @@ set(plugin_include_dirs
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/OldPlaneFitter
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/Ransac
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/TrailingFrame
+  ${CMAKE_CURRENT_SOURCE_DIR}/Filter/TemporalTransformsApplier
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/ProcessingSample
+  ${CMAKE_CURRENT_SOURCE_DIR}/Filter/PCLRansacModel
+  ${CMAKE_CURRENT_SOURCE_DIR}/Filter/Slam
   ${CMAKE_CURRENT_SOURCE_DIR}/Source/Grid
   )
 

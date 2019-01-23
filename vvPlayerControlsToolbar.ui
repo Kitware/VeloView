@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>vvPlayerControlsToolbar</class>
+ <widget class="QToolBar" name="vvPlayerControlsToolbar">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>298</width>
+    <height>39</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>VCR Controls</string>
+  </property>
+  <property name="orientation">
+   <enum>Qt::Horizontal</enum>
+  </property>
+  <property name="PV_MUST_BE_MASTER" stdset="0">
+   <bool>true</bool>
+  </property>
+  <action name="actionPlay">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="vvResources.qrc">
+     <normaloff>:/vvResources/Icons/media-playback-start.png</normaloff>:/vvResources/Icons/media-playback-start.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Play</string>
+   </property>
+   <property name="shortcut">
+    <string>Space</string>
+   </property>
+  </action>
+  <action name="actionPreviousFrame">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="vvResources.qrc">
+     <normaloff>:/vvResources/Icons/media-seek-backward.png</normaloff>:/vvResources/Icons/media-seek-backward.png</iconset>
+   </property>
+   <property name="text">
+    <string>Pre&amp;vious Frame</string>
+   </property>
+   <property name="shortcut">
+    <string>Left</string>
+   </property>
+   <property name="PV_MUST_BE_MASTER" stdset="0">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionFirstFrame">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="vvResources.qrc">
+     <normaloff>:/vvResources/Icons/media-skip-backward.png</normaloff>:/vvResources/Icons/media-skip-backward.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;First Frame</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Left</string>
+   </property>
+  </action>
+  <action name="actionNextFrame">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="vvResources.qrc">
+     <normaloff>:/vvResources/Icons/media-seek-forward.png</normaloff>:/vvResources/Icons/media-seek-forward.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Next Frame</string>
+   </property>
+   <property name="shortcut">
+    <string>Right</string>
+   </property>
+  </action>
+  <action name="actionLastFrame">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="vvResources.qrc">
+     <normaloff>:/vvResources/Icons/media-skip-forward.png</normaloff>:/vvResources/Icons/media-skip-forward.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Last Frame</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Right</string>
+   </property>
+  </action>
+  <action name="actionLoop">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="vvResources.qrc">
+     <normaloff>:/vvResources/Icons/media-loop.png</normaloff>:/vvResources/Icons/media-loop.png</iconset>
+   </property>
+   <property name="text">
+    <string>L&amp;oop</string>
+   </property>
+   <property name="iconText">
+    <string>Loop</string>
+   </property>
+   <property name="toolTip">
+    <string>Loop</string>
+   </property>
+   <property name="statusTip">
+    <string>Loop</string>
+   </property>
+  </action>
+  <addaction name="actionFirstFrame"/>
+  <addaction name="actionPreviousFrame"/>
+  <addaction name="actionPlay"/>
+  <addaction name="actionNextFrame"/>
+  <addaction name="actionLastFrame"/>
+  <addaction name="actionLoop"/>
+ </widget>
+ <resources>
+  <include location="vvResources.qrc"/>
+ </resources>
+ <connections/>
+</ui>

@@ -88,7 +88,13 @@ public:
    * @copydoc NetworkSource::IsCrashAnalysing
    */
   bool GetIsCrashAnalysing();
-  void SetIsCrashAnalysing(const bool);
+  void SetIsCrashAnalysing(bool value);
+
+  /**
+   * @brief GetNeedsUpdate
+   * @return true if a new frame is ready
+   */
+  bool GetNeedsUpdate();
 
 protected:
   vtkLidarStream();

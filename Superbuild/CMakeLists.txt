@@ -80,6 +80,11 @@ function (superbuild_find_projects var)
     qt5
     veloview
     zlib
+    ceres
+    glog
+    pcl
+    qhull
+    flann
     )
 
   if (UNIX)

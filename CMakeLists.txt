@@ -153,6 +153,8 @@ set (source_files
   vvColorToolbar.cxx
   vvToggleSpreadSheetReaction.cxx
   vvLoadDataReaction.cxx
+  vvPlayerControlsToolbar.cxx
+  vvPlayerControlsController.cxx
   )
 
 qt5_wrap_cpp(moc_source_files
@@ -160,12 +162,15 @@ qt5_wrap_cpp(moc_source_files
   vvMainWindow.h
   vvToggleSpreadSheetReaction.h
   vvLoadDataReaction.h
+  vvPlayerControlsToolbar.h
+  vvPlayerControlsController.h
   )
 
 qt5_wrap_ui(ui_source_files
   vvColorToolbar.ui
   vvMainWindow.ui
   vvAboutDialog.ui
+  vvPlayerControlsToolbar.ui
   )
 
 qt5_add_resources(rcs_source_files

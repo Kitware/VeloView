@@ -1,0 +1,327 @@
+<ServerManagerConfiguration>
+  <!-- Begin Slam Registration -->
+  <ProxyGroup name="filters">
+    <SourceProxy name="Slam" class="vtkSlam" label="Slam">
+      <Documentation
+        short_help="Performs SLAM algorithm based Velodyne's sensor outputted point cloud"
+        long_help="Performs SLAM algorithm based Velodyne's sensor outputted point cloud.
+                   The SLAM algorithm is composed of three sequential steps:
+                   - Sampling strategy: extract keypoints that provide strong geometric information
+                   - Ego Motion: Sensor motion estimation between two frames
+                   - Mapping: Map the frame in a environment map">
+        filter which performs slam on points data.
+      </Documentation>
+
+      <InputProperty
+        name="Input"
+        command="SetInputConnection">
+        <DataTypeDomain name="input_type">
+          <DataType value="vtkPolyData"/>
+        </DataTypeDomain>
+      </InputProperty>
+
+      <OutputPort name="Last Frame processed" index="0" id="port0" />
+      <OutputPort name="Trajectory" index="1" id="port1" />
+      <OutputPort name="Edge Points Local Map" index="2" id="port2" />
+      <OutputPort name="Planar Points Local Map" index="3" id="port3" />
+
+      <!-- General -->
+      <DoubleVectorProperty
+          name="SetLeafSize"
+          command="SetLeafSize"
+          default_values="0.6"
+          number_of_elements="1"
+          panel_visibility="advanced">
+        <Documentation>
+          Size of the leaf when downsampling the environment map using
+          a voxel grid filter. It should not be too big or some high
+          frequency geometric information will be lost. It should not
+          be too low or the geometric information will be too local
+        </Documentation>
+      </DoubleVectorProperty>
+
+      <DoubleVectorProperty
+          name="SetAngleResolution"
+          command="SetAngleResolution"
+          default_values="0.00698"
+          number_of_elements="1">
+        <Documentation>
+          Azimutal angle resolution of the Velodyne sensor. This angle
+          resolution is used to compute an expected distance between two
+          consecutives firing. From this expected distance, we can detect
+          if a point is a potential gap and launch more investigation
+        </Documentation>
+      </DoubleVectorProperty>
+
+      <PropertyGroup label="General Parameters">
+        <!-- <Property name="Set_RollingGrid_Grid_NbVoxel" /> -->
+        <Property name="SetLeafSize" />
+        <Property name="SetAngleResolution" />
+      </PropertyGroup>
+
+      <IntVectorProperty
+          name="SetFastSlam"
+          command="SetFastSlam"
+          default_values="1"
+          number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          If fast slam is enable we remove the extraction of
+          blobs point in the Keypoint extraction step
+        </Documentation>
+      </IntVectorProperty>
+
+      <IntVectorProperty
+          name="SetDisplayMode"
+          command="SetDisplayMode"
+          default_values="1"
+          number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          If set display mode is enable, some extra arrays area
+          added to the SLAM output to display the SLAM algorithm
+          internal variables (the keypoints labels, the value of the
+          computed geometric features, ...). It is very usefull when
+          debugging and improving the SLAM
+        </Documentation>
+      </IntVectorProperty>
+
+      <!-- KeyPoint Extraction Parameters -->
+      <IntVectorProperty
+          name="Max Edge"
+          command="Set_Keypoint_MaxEdgePerScanLine"
+          default_values="200"
+          number_of_elements="1">
+        <Documentation>
+          Maximum number of edge keypoint we want to extract
+          during the Keypoint extraction step
+        </Documentation>
+      </IntVectorProperty>
+
+      <IntVectorProperty
+          name="Max Plane"
+          command="Set_Keypoint_MaxPlanarsPerScanLine"
+          default_values="200"
+          number_of_elements="1">
+        <Documentation>
+          Maximum number of planar keypoint we want to extract
+          during the Keypoint extraction step
+        </Documentation>
+      </IntVectorProperty>
+
+      <DoubleVectorProperty
+          name="MinDistanceToSensor"
+          command="Set_Keypoint_MinDistanceToSensor"
+          default_values="3"
+          number_of_elements="1">
+        <Documentation>
+          Minimal distance between a point and the sensor to be
+          processed for the keypoint extraction. In other words,
+          all points too close from the sensor are automatically
+          rejected
+        </Documentation>
+      </DoubleVectorProperty>
+
+      <DoubleVectorProperty
+          name="EdgeSinAngleThreshold"
+          command="Set_Keypoint_EdgeSinAngleThreshold"
+          default_values="0.86"
+          number_of_elements="1">
+        <Documentation>
+          One strategy to consider a point as an edge keypoint is to compute
+          the angle between the two lines that fit its previous and next neighborhood.
+          If the angle is close enought to 90° (sin(Angle) high enought) we consider
+          the point as an edge keypoint.
+        </Documentation>
+      </DoubleVectorProperty>
+
+      <DoubleVectorProperty
+          name="PlaneSinAngleThreshold"
+          command="Set_Keypoint_PlaneSinAngleThreshold"
+          default_values="0.5"
+          number_of_elements="1">
+        <Documentation>
+          One strategy to consider a point as a planar keypoint is to compute
+          the angle between the two lines that fit its previous and next neighborhood.
+          If the angle is close enought to 0° or 180° (sin(Angle) low enought) we consider
+          the point as a planar keypoint.
+        </Documentation>
+      </DoubleVectorProperty>
+
+      <DoubleVectorProperty
+          name="EdgeDepthGapThreshold"
+          command="Set_Keypoint_EdgeDepthGapThreshold"
+          default_values="0.15"
+          number_of_elements="1">
+        <Documentation>
+          One strategy to consider a point as an edge keypoint is to compute
+          the gap between the point and its neighborhood. Its left and right
+          neighborhood are fitted with a line and we then compute the gap as
+          being the distance between the point and the fitted lines. If the gap
+          is high enought, we consider the point as an edge keypoint
+        </Documentation>
+      </DoubleVectorProperty>
+
+      <PropertyGroup label="Keypoint Parameters">
+        <Property name="Max Edge" />
+        <Property name="Max Plane" />
+        <Property name="MinDistanceToSensor" />
+        <Property name="EdgeSinAngleThreshold" />
+        <Property name="PlaneSinAngleThreshold" />
+        <Property name="EdgeDepthGapThreshold" />
+      </PropertyGroup>
+
+      <!-- Ego Motion Parameters -->
+      <IntVectorProperty
+          name="LMMaxIter"
+          command="SetEgoMotionLMMaxIter"
+          default_values="15"
+          number_of_elements="1"
+          panel_visibility="advanced">
+        <Documentation>
+          The sensor motion estimation is performed using an ICP Mahalanobis
+          distance function. This lead to a numerical optimization problem with a
+          non-linear least square cost function (with a loss-function). To solve this
+          optimization problem we use the Levenberg-Marquardt algorithm which is an iterative
+          algorithm.
+        </Documentation>
+      </IntVectorProperty>
+
+      <IntVectorProperty
+          name="ICP Max Itertation"
+          command="SetEgoMotionICPMaxIter"
+          default_values="4"
+          number_of_elements="1">
+        <Documentation>
+          The sensor motion estimation is performed using an ICP Mahalanobis
+          distance function. The ICP algorithm is an iterative algorithm and the number
+          of iteration has to be settled
+        </Documentation>
+      </IntVectorProperty>
+
+      <IntVectorProperty
+          name="# Edge neighbors"
+          command="SetEgoMotionLineDistanceNbrNeighbors"
+          default_values="10"
+          number_of_elements="1">
+        <Documentation>
+          K-nearest neighbors point to consider to compute the Variance-Covariance
+          matrix of the neighborhood to define the Mahalanobis distance function.
+        </Documentation>
+      </IntVectorProperty>
+
+      <DoubleVectorProperty
+          name="Edge Linearity Factor"
+          command="SetEgoMotionLineDistancefactor"
+          default_values="5"
+          number_of_elements="1">
+        <Documentation>
+          Reject an edge keypoint if its neighborhood is not distributed
+          along a line eigenvalue1 > Factor * eigenvalue2
+        </Documentation>
+      </DoubleVectorProperty>
+
+      <DoubleVectorProperty
+          name="Max Edge distance"
+          command="SetEgoMotionMaxLineDistance"
+          default_values="0.1"
+          number_of_elements="1">
+        <Documentation>
+          Reject an edge point if its neighborhood has points that
+          are too far from the fitted line (degenerated ellipsoid)
+        </Documentation>
+      </DoubleVectorProperty>
+
+      <IntVectorProperty
+          name="# Plane neighbors"
+          command="SetEgoMotionPlaneDistanceNbrNeighbors"
+          default_values="5"
+          number_of_elements="1">
+        <Documentation>
+          K-nearest neighbors points to consider to compute the Variance-Covariance
+          matrix of the neighborhood to define the Mahalanobis distance function.
+        </Documentation>
+      </IntVectorProperty>
+
+      <DoubleVectorProperty
+          name="Plane Planarity Factor #1"
+          command="SetEgoMotionPlaneDistancefactor1"
+          default_values="35"
+          number_of_elements="1">
+        <Documentation>
+          Reject a planar keypoint if its neighborhood is not distributed
+          along a plane: Factor1 * eigenvalue2 > eigenvalue1 and
+          eigenvalue2 > Factor2 * eigenvalue3
+        </Documentation>
+      </DoubleVectorProperty>
+
+      <DoubleVectorProperty
+          name="Plane Planarity Factor #2"
+          command="SetEgoMotionPlaneDistancefactor2"
+          default_values="8"
+          number_of_elements="1">
+        <Documentation>
+          Reject a planar keypoint if its neighborhood is not distributed
+          along a plane: Factor1 * eigenvalue2 > eigenvalue1 and
+          eigenvalue2 > Factor2 * eigenvalue3
+        </Documentation>
+      </DoubleVectorProperty>
+
+      <DoubleVectorProperty
+          name="Max Plane distance"
+          command="SetEgoMotionMaxPlaneDistance"
+          default_values="0.2"
+          number_of_elements="1">
+        <Documentation>
+          Reject a planar point if its neighborhood has points that
+          are too far from the fitted plane (degenerated ellipsoid)
+        </Documentation>
+      </DoubleVectorProperty>
+
+      <PropertyGroup label="Ego Motion Parameters">
+        <Property name="LMMaxIter" />
+        <Property name="ICP Max Itertation" />
+        <Property name="# Edge neighbors" />
+        <Property name="Edge Linearity Factor" />
+        <Property name="Max Edge distance" />
+        <Property name="# Plane neighbors" />
+        <Property name="Plane Planarity Factor #1" />
+        <Property name="Plane Planarity Factor #2" />
+        <Property name="Max Plane distance" />
+     </PropertyGroup>
+
+    </SourceProxy>
+<!--
+    Combo box
+    <IntVectorProperty command="SetIntegrationDirection"
+                       default_values="2"
+                       name="IntegrationDirection"
+                       number_of_elements="1">
+      <EnumerationDomain name="enum">
+        <Entry text="FORWARD"
+               value="0" />
+        <Entry text="BACKWARD"
+               value="1" />
+        <Entry text="BOTH"
+               value="2" />
+      </EnumerationDomain>
+      <Documentation>This property determines in which direction(s) a
+      streamline is generated.</Documentation>
+    </IntVectorProperty>
+
+    Check box
+    <IntVectorProperty command="SetSurfaceStreamlines"
+                       default_values="0"
+                       name="Surface Streamlines"
+                       number_of_elements="1"
+                       panel_visibility="advanced" >
+      <BooleanDomain name="bool" />
+      <Documentation>Specify whether or not to compute surface
+      streamlines.</Documentation>
+    </IntVectorProperty>
+    -->
+
+
+  </ProxyGroup>
+  <!-- End SLAM Registration -->
+</ServerManagerConfiguration>

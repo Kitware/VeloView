@@ -131,6 +131,12 @@ public:
   vtkCustomGetMacro(IsCalibrated, bool)
 
   /**
+   * @copydoc LidarPacketInterpreter::TimeOffset
+   */
+  vtkCustomGetMacro(TimeOffset, double)
+  vtkCustomSetMacro(TimeOffset, double)
+
+  /**
    * @copydoc LidarPacketInterpreter::CalibrationReportedNumLasers
    */
   virtual int GetNumberOfChannels();

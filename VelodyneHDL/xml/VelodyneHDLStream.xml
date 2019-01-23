@@ -138,11 +138,28 @@
         </Documentation>
       </IntVectorProperty>
 
+      <IntVectorProperty
+          name="SetIsCrashAnalysing"
+          command="SetIsCrashAnalysing"
+          default_values="0"
+          number_of_elements="1"
+          panel_visibility="advanced">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          If fast slam is enable we remove the extraction of
+          blobs point in the Keypoint extraction step
+        </Documentation>
+      </IntVectorProperty>
+
       <IntVectorProperty command="GetNumberOfChannels"
                          information_only="1"
                          name="NumberOfChannels">
         <SimpleIntInformationHelper />
       </IntVectorProperty>
+
+      <Hints>
+        <LiveSource />
+      </Hints>
 
    </SourceProxy>
   </ProxyGroup>

@@ -61,8 +61,12 @@
 #include <pqVelodyneManager.h>
 #include <pqParaViewMenuBuilders.h>
 #include <pqTabbedMultiViewWidget.h>
+#include <pqSetName.h>
 #include <vtkPVPlugin.h>
 #include <vtkSMPropertyHelper.h>
+#include "pqAxesToolbar.h"
+#include "pqCameraToolbar.h"
+#include <pqLiveSourceBehavior.h>
 
 #include <QLabel>
 #include <QSplitter>
@@ -77,6 +81,7 @@
 #include <sstream>
 
 #include "vvConfig.h"
+#include "vvPlayerControlsToolbar.h"
 
 // Declare the plugin to load.
 PV_PLUGIN_IMPORT_INIT(VelodyneHDLPlugin);
@@ -112,6 +117,19 @@ private:
   {
     pqApplicationCore* core = pqApplicationCore::instance();
 
+    // need to be created before the first scene
+    QToolBar* vcrToolbar = new vvPlayerControlsToolbar(window)
+      << pqSetName("Player Control");
+    window->addToolBar(Qt::TopToolBarArea, vcrToolbar);
+
+    QToolBar* cameraToolbar = new pqCameraToolbar(window)
+      << pqSetName("cameraToolbar");
+    window->addToolBar(Qt::TopToolBarArea, cameraToolbar);
+
+    QToolBar* axesToolbar = new pqAxesToolbar(window)
+      << pqSetName("axesToolbar");
+    window->addToolBar(Qt::TopToolBarArea, axesToolbar);
+
     // Register ParaView interfaces.
     pqInterfaceTracker* pgm = core->interfaceTracker();
     //    pgm->addInterface(new pqStandardViewModules(pgm));
@@ -126,7 +144,10 @@ private:
     //    new pqDefaultViewBehavior(window);
     new pqCrashRecoveryBehavior(window);
     new pqAutoLoadPluginXMLBehavior(window);
+    new pqDataTimeStepBehavior(window);
     new pqCommandLineOptionsBehavior(window);
+    new pqLiveSourceBehavior(window);
+
     pqApplyBehavior* applyBehaviors = new pqApplyBehavior(window);
 
     // Check if the settings are well formed i.e. if an OriginalMainWindow
@@ -274,12 +295,12 @@ private:
 
     if (ENABLE_DEV_MODE_UI_VAR)
     {
-      /// If you want to automatically add toolbars for sources as requested in the
+      /// If you want to automatically add a menu for sources as requested in the
       /// configuration pass in a non-null main window.
       QMenu* sourceMenu = window->menuBar()->addMenu(tr("&Sources"));
       pqParaViewMenuBuilders::buildSourcesMenu(*sourceMenu, nullptr);
 
-      /// If you want to automatically add toolbars for filters as requested in the
+      /// If you want to automatically add a menu for filters as requested in the
       /// configuration pass in a non-null main window.
       QMenu* filterMenu = window->menuBar()->addMenu(tr("&Filters"));
       pqParaViewMenuBuilders:: buildFiltersMenu(*filterMenu, nullptr);
@@ -309,12 +330,6 @@ private:
       settings->value("VelodyneHDLPlugin/MeasurementGrid/Visibility", true);
     this->Ui.actionMeasurement_Grid->setChecked(gridVisible.toBool());
 
-    this->Ui.actionEnableCrashAnalysis->setChecked(
-      settings
-        ->value("VelodyneHDLPlugin/MainWindow/EnableCrashAnalysis",
-          this->Ui.actionEnableCrashAnalysis->isChecked())
-        .toBool());
-
     new vvLoadDataReaction(this->Ui.actionOpenPcap, false);
     new vvLoadDataReaction(this->Ui.actionOpenApplanix, true);
 
@@ -323,9 +338,6 @@ private:
 
     connect(this->Ui.actionMeasurement_Grid, SIGNAL(toggled(bool)), pqVelodyneManager::instance(),
       SLOT(onMeasurementGrid(bool)));
-
-    connect(this->Ui.actionEnableCrashAnalysis, SIGNAL(toggled(bool)),
-      pqVelodyneManager::instance(), SLOT(onEnableCrashAnalysis(bool)));
 
     connect(this->Ui.actionResetDefaultSettings, SIGNAL(triggered()),
       pqVelodyneManager::instance(), SLOT(onResetDefaultSettings()));

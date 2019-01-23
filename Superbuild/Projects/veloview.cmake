@@ -9,9 +9,10 @@ superbuild_add_project(veloview
     -DPYTHONQT_DIR:PATH=<INSTALL_DIR>
     -DVTK_DIR:PATH=${SuperBuild_BINARY_DIR}/common-superbuild/paraview/build/VTK
     -DCMAKE_CXX_STANDARD:STRING=${CMAKE_CXX_STANDARD}
-    -DBOOST_LIBRARY_DIR_RELEASE:STRING=<INSTALL_DIR>/lib
-    -DBOOST_LIBRARY_DIR_DEBUG:STRING=<INSTALL_DIR>/lib
+    -DBOOST_ROOT:PATH=<INSTALL_DIR>
+    -DBOOST_LIBRARYDIR:PATH=<INSTALL_DIR>/lib
     -Dqt_version:STRING=${qt_version}
+    -DPCL_DIR:PATH=<INSTALL_DIR>/share/pcl-1.8/
 )
 
 if (WIN32 OR APPLE)

@@ -137,6 +137,9 @@ public:
   GetMacro(IsCalibrated, bool)
   SetMacro(IsCalibrated, bool)
 
+  GetMacro(TimeOffset, double)
+  SetMacro(TimeOffset, double)
+
   GetMacro(LaserSelection, std::vector<bool>)
   SetMacro(LaserSelection, std::vector<bool>)
 
@@ -201,6 +204,9 @@ protected:
 
   //! Indicate if the sensor is calibrated or has been succesfully calibrated
   bool IsCalibrated;
+
+  //! TimeOffset in seconds relative to the system clock
+  double TimeOffset;
 
   //! Indicate for each laser if the points obtained by this specific laser
   //! should process/display (true) or ignore (false)

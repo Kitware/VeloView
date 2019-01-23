@@ -29,8 +29,14 @@
 #ifndef PACKETRECEIVER_H
 #define PACKETRECEIVER_H
 
+// LOCAL
+#include "CrashAnalysing.h"
+
+// BOOST
 #include <boost/asio.hpp>
 #include <boost/thread/thread.hpp>
+
+// STD
 #include <fstream>
 #include <iostream>
 
@@ -74,10 +80,10 @@ public:
   /**
    * @brief EnableCrashAnalysing
    * @param filenameCrashAnalysis_ the name of the output file
-   * @param bytesPerPacket_ the number of bytes per packets
+   * @param nbrPacketToStore the number of packets to store
    * @param isCrashAnalysing_ Enable the crash analysing
    */
-  void EnableCrashAnalysing(std::string filenameCrashAnalysis_, int bytesPerPacket_, bool isCrashAnalysing_);
+  void EnableCrashAnalysing(std::string filenameCrashAnalysis_, unsigned int nbrPacketToStore_, bool isCrashAnalysing_);
 
   void SocketCallback(const boost::system::error_code& error, std::size_t numberOfBytes);
 
@@ -111,11 +117,9 @@ private:
   bool ShouldStop;  /*!< Flag indicating if we should stop the listening */
   boost::mutex IsReceivingMtx; /*!< Mutex : Block the access of IsReceiving when a thread is seting the flag */
   boost::condition_variable IsReceivingCond;
-  std::string filenameCrashAnalysis; /*!< Flag indicating if we should stop the listening */
-  std::ofstream fileCrashAnalysis;
   boost::mutex IsWriting;
-  int bytesPerPacket;
-  bool isCrashAnalysing;
+  bool IsCrashAnalysing;
+  CrashAnalysisWriter CrashAnalysis;
 };
 
 #endif // PACKETRECEIVER_H
