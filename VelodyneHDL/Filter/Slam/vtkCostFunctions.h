@@ -17,12 +17,11 @@
 // limitations under the License.
 //=========================================================================
 
-#ifndef CERES_COST_FUNCTIONS_H
-#define CERES_COST_FUNCTIONS_H
+#ifndef VTK_COST_FUNCTION_H
+#define VTK_COST_FUNCTION_H
 
 // EIGEN
 #include <Eigen/Dense>
-
 // CERES
 #include <ceres/ceres.h>
 #include <ceres/rotation.h>
@@ -30,21 +29,14 @@
 namespace CostFunctions
 {
 
-/**
-* \class MahalanobisDistanceAffineIsometryResidual
-* \brief Cost function to estimate the affine isometry transformation
-*        (rotation and translation) that minimizes the mahalanobis distance
-*        between a point X and its neighborhood encoded by the mean point C
-*        and the variance covariance matrix A
-*/
 //-----------------------------------------------------------------------------
-struct MahalanobisDistanceAffineIsometryResidual
+struct AffineIsometryResidual
 {
 public:
-  MahalanobisDistanceAffineIsometryResidual(Eigen::Matrix<double, 3, 3> argA,
-                                            Eigen::Matrix<double, 3, 1> argC,
-                                            Eigen::Matrix<double, 3, 1> argX,
-                                            double argLambda)
+  AffineIsometryResidual(Eigen::Matrix<double, 3, 3> argA,
+                         Eigen::Matrix<double, 3, 1> argC,
+                         Eigen::Matrix<double, 3, 1> argX,
+                         double argLambda)
   {
     this->A = argA;
     this->C = argC;
@@ -102,24 +94,17 @@ private:
   double lambda;
 };
 
-/**
-* \class MahalanobisDistanceLinearDistortionResidual
-* \brief Cost function to estimate the rotation R1 and translation T1 so that:
-         The linearly interpolated transform:
-         (R, T) = (R0^(1-t) * R1^t, (1 - t)T0 + tT1)
-         applies to X acquired at time t minimizes the mahalanobis distance.
-*/
 //-----------------------------------------------------------------------------
-struct MahalanobisDistanceLinearDistortionResidual
+struct LinearDistortionResidual
 {
 public:
-  MahalanobisDistanceLinearDistortionResidual(Eigen::Matrix<double, 3, 3> argA,
-                                              Eigen::Matrix<double, 3, 1> argC,
-                                              Eigen::Matrix<double, 3, 1> argX,
-                                              Eigen::Matrix<double, 3, 1> argT0,
-                                              Eigen::Matrix<double, 3, 3> argR0,
-                                              double argTime,
-                                              double argLambda)
+  LinearDistortionResidual(Eigen::Matrix<double, 3, 3> argA,
+                                   Eigen::Matrix<double, 3, 1> argC,
+                                   Eigen::Matrix<double, 3, 1> argX,
+                                   Eigen::Matrix<double, 3, 1> argT0,
+                                   Eigen::Matrix<double, 3, 3> argR0,
+                                   double argTime,
+                                   double argLambda)
   {
     this->A = argA;
     this->R0 = argR0;
@@ -272,159 +257,6 @@ private:
   double lambda;
 };
 
-/**
-* \class FrobeniusDistanceRotationCalibrationResidual
-* \brief Cost function to estimate the calibration rotation between two sensors
-*        based on their trajectory. To do that, we exploit the "solid-system"
-*        constraint that links the coordinate reference frame of the two sensors.
-*/
-//-----------------------------------------------------------------------------
-struct FrobeniusDistanceRotationCalibrationResidual
-{
-public:
-  FrobeniusDistanceRotationCalibrationResidual(Eigen::Matrix3d argP1, Eigen::Matrix3d argP2,
-                                               Eigen::Matrix3d argQ1, Eigen::Matrix3d argQ2)
-  {
-    this->P1 = argP1; this->P2 = argP2;
-    this->Q1 = argQ1; this->Q2 = argQ2;
-  }
-
-  template <typename T>
-  bool operator()(const T* const w, T* residual) const
-  {
-    // Convert internal double matrix
-    // to a Jet matrix for auto diff calculous
-    Eigen::Matrix<T, 3, 3> P1j, P2j, Q1j, Q2j;
-    for (int i = 0; i < 3; ++i)
-    {
-      for (int j = 0; j < 3; ++j)
-      {
-        P1j(i, j) = T(this->P1(i, j));
-        P2j(i, j) = T(this->P2(i, j));
-        Q1j(i, j) = T(this->Q1(i, j));
-        Q2j(i, j) = T(this->Q2(i, j));
-      }
-    }
-
-    // store sin / cos values for this angle
-    T crx = ceres::cos(w[0]); T srx = ceres::sin(w[0]);
-    T cry = ceres::cos(w[1]); T sry = ceres::sin(w[1]);
-    T crz = ceres::cos(w[2]); T srz = ceres::sin(w[2]);
-
-    // Create current rotation
-    Eigen::Matrix<T, 3, 3> R0;
-    R0 << cry*crz, (srx*sry*crz-crx*srz), (crx*sry*crz+srx*srz),
-          cry*srz, (srx*sry*srz+crx*crz), (crx*sry*srz-srx*crz),
-             -sry,               srx*cry,               crx*cry;
-
-    // Compute the residual matrix
-    Eigen::Matrix<T, 3, 3> ResidualMatrix = R0.transpose() * Q1j.transpose() * Q2j * R0 - P1j.transpose() * P2j;
-
-    // Compute final residual value which is the frobenius norme
-    // of the residual matrix
-    T squaredResidual = (ResidualMatrix.transpose() * ResidualMatrix).trace();
-
-    // since t -> sqrt(t) is not differentiable
-    // in 0, we check the value of the distance
-    // infenitesimale part. If it is not finite
-    // it means that the first order derivative
-    // has been evaluated in 0
-    if (squaredResidual < T(1e-6))
-    {
-      residual[0] = T(0);
-    }
-    else
-    {
-      residual[0] = ceres::sqrt(squaredResidual);
-    }
-
-    return true;
-  }
-
-private:
-  Eigen::Matrix3d P1, P2, Q1, Q2;
-};
-
-//-----------------------------------------------------------------------------
-struct FrobeniusDistanceRotationAndTranslationCalibrationResidual
-{
-public:
-  FrobeniusDistanceRotationAndTranslationCalibrationResidual(Eigen::Matrix3d argP1, Eigen::Matrix3d argP2,
-                                                             Eigen::Matrix3d argQ1, Eigen::Matrix3d argQ2,
-                                                             Eigen::Vector3d argV1, Eigen::Vector3d argV2,
-                                                             Eigen::Vector3d argU1, Eigen::Vector3d argU2)
-  {
-    this->P1 = argP1; this->P2 = argP2;
-    this->Q1 = argQ1; this->Q2 = argQ2;
-    this->V1 = argV1; this->V2 = argV2;
-    this->U1 = argU1; this->U2 = argU2;
-  }
-
-  template <typename T>
-  bool operator()(const T* const w, T* residual) const
-  {
-    // Convert internal double matrix
-    // to a Jet matrix for auto diff calculous
-    Eigen::Matrix<T, 3, 3> P1j, P2j, Q1j, Q2j;
-    Eigen::Matrix<T, 3, 1> V1j, V2j, U1j, U2j;
-    for (int i = 0; i < 3; ++i)
-    {
-      for (int j = 0; j < 3; ++j)
-      {
-        P1j(i, j) = T(this->P1(i, j));
-        P2j(i, j) = T(this->P2(i, j));
-        Q1j(i, j) = T(this->Q1(i, j));
-        Q2j(i, j) = T(this->Q2(i, j));
-      }
-      V1j(i) = T(this->V1(i));
-      V2j(i) = T(this->V2(i));
-      U1j(i) = T(this->U1(i));
-      U2j(i) = T(this->U2(i));
-    }
-
-    Eigen::Matrix<T, 3, 1> dX;
-    dX << T(w[3]), T(w[4]), T(w[5]);
-
-    // store sin / cos values for this angle
-    T crx = ceres::cos(w[0]); T srx = ceres::sin(w[0]);
-    T cry = ceres::cos(w[1]); T sry = ceres::sin(w[1]);
-    T crz = ceres::cos(w[2]); T srz = ceres::sin(w[2]);
-
-    // Create current rotation
-    Eigen::Matrix<T, 3, 3> R0;
-    R0 << cry*crz, (srx*sry*crz-crx*srz), (crx*sry*crz+srx*srz),
-          cry*srz, (srx*sry*srz+crx*crz), (crx*sry*srz-srx*crz),
-             -sry,               srx*cry,               crx*cry;
-
-    Eigen::Matrix<T, 3, 3> R1 = R0.transpose() * Q1j.transpose() * Q2j * R0;
-    Eigen::Matrix<T, 3, 3> R2 = P1j.transpose() * P2j;
-    Eigen::Matrix<T, 3, 1> T1 = R0.transpose() * (Q1j.transpose() * (Q2j * dX + (U2j - U1j)) - dX);
-    Eigen::Matrix<T, 3, 1> T2 = P1j.transpose() * (V2j - V1j);
-
-    T squaredResidual = ((R1 - R0).transpose() * (R1 - R0)).trace() + ((T1 - T2).transpose() * (T1 - T2))(0);
-
-    // since t -> sqrt(t) is not differentiable
-    // in 0, we check the value of the distance
-    // infenitesimale part. If it is not finite
-    // it means that the first order derivative
-    // has been evaluated in 0
-    if (squaredResidual < T(1e-6))
-    {
-      residual[0] = T(0);
-    }
-    else
-    {
-      residual[0] = ceres::sqrt(squaredResidual);
-    }
-
-    return true;
-  }
-
-private:
-  Eigen::Matrix3d P1, P2, Q1, Q2;
-  Eigen::Vector3d V1, V2, U1, U2;
-};
-
 }
 
-#endif // CERES_COST_FUNCTIONS_H
+#endif // VTK_COST_FUNCTION_H
