@@ -1,6 +1,8 @@
 project(VelodyneHDLPlugin)
 cmake_minimum_required(VERSION 3.1 FATAL_ERROR)
 
+include_directories("ctk")
+
 #-----------------------------------------------------------------------------
 # Temporary Fix
 #-----------------------------------------------------------------------------
@@ -87,13 +89,10 @@ endif(ENABLE_PCL)
 #--------------------------------------
 # Boost dependency
 #--------------------------------------
-if(WIN32 OR APPLE)
-  set(Boost_USE_STATIC_LIBS ON)
-endif(WIN32 OR APPLE)
 set(Boost_USE_MULTITHREADED ON)
 # the expected behavior of find_package when  used wiht REQUIRED and OPTIONAL_COMPONENTS
 # it not the one expected, as it also required the optional component...
-find_package(Boost REQUIRED COMPONENTS system thread chrono regex date_time filesystem program_options)
+find_package(Boost REQUIRED COMPONENTS system thread chrono regex date_time filesystem program_options iostreams)
 include_directories(${SYSTEM_OPTION} ${Boost_INCLUDE_DIRS})
 set(ALL_BOOST_LIBRARIES ${Boost_LIBRARIES})
 find_package(Boost OPTIONAL_COMPONENTS atomic timer)
@@ -131,15 +130,18 @@ if(PARAVIEW_BUILD_QT_GUI)
     Ui/vvCropReturnsDialog.h
     Ui/vvLaserSelectionDialog.h
     Ui/vvSelectFramesDialog.h
+    ctk/ctkValueProxy.h
+    ctk/ctkRangeSlider.h
+    ctk/ctkDoubleRangeSlider.h
     )
 
   set(resources
     Ui/images/resources.qrc)
 
   # call some qt macro to create moc and code
-  QT4_WRAP_CPP(moc_srcs ${MOC_HEADERS})
-  QT4_WRAP_UI(ui_srcs ${UI_FILES})
-  QT4_ADD_RESOURCES(resource_srcs ${resources})
+  qt5_wrap_cpp(moc_srcs ${MOC_HEADERS})
+  qt5_wrap_ui(ui_srcs ${UI_FILES})
+  qt5_add_resources(resource_srcs ${resources})
 
   list(APPEND gui_sources
     ${moc_srcs}
@@ -149,6 +151,12 @@ if(PARAVIEW_BUILD_QT_GUI)
     Ui/vvCropReturnsDialog.cxx
     Ui/vvLaserSelectionDialog.cxx
     Ui/vvSelectFramesDialog.cxx
+    ctk/ctkPimpl.h
+    ctk/ctkCoreExport.h
+    ctk/ctkRangeSlider.cpp
+    ctk/ctkWidgetsExport.h
+    ctk/ctkDoubleRangeSlider.cpp
+    ctk/ctkValueProxy.cpp
     )
 
   # TODO I don"t get this dependancy is for
@@ -305,8 +313,13 @@ add_paraview_plugin(${VV_PLUGIN_LIBRARY} "1.0"
 target_include_directories(${VV_PLUGIN_LIBRARY} PRIVATE ${plugin_include_dirs})
 target_link_libraries(${VV_PLUGIN_LIBRARY} LINK_PUBLIC ${deps})
 if(WIN32)
-  target_compile_definitions(${VV_PLUGIN_LIBRARY} PRIVATE -DWIN32)
+  # -DBOOST_PROGRAM_OPTIONS_DYN_LINK is necessary to use boost as a dynamic library
+  # more about it here: https://svn.boost.org/trac10/ticket/13326
+  target_compile_definitions(${VV_PLUGIN_LIBRARY} PRIVATE -DWIN32 -DBOOST_PROGRAM_OPTIONS_DYN_LINK=1)
 endif(WIN32)
+if (APPLE)
+  target_compile_definitions(${VV_PLUGIN_LIBRARY} PRIVATE -DBOOST_PROGRAM_OPTIONS_DYN_LINK=1)
+endif(APPLE)
 
 #-----------------------------------------------------------------------------
 # Build PacketFileSender target which enable to playback a recorded pcap on the network
@@ -314,7 +327,10 @@ endif(WIN32)
 
 add_executable(PacketFileSender StandAloneTools/PacketFileSender.cxx)
 target_include_directories(PacketFileSender PRIVATE Common/Network)
-target_link_libraries(PacketFileSender LINK_PUBLIC ${VV_PLUGIN_LIBRARY})
+target_link_libraries(PacketFileSender LINK_PUBLIC ${VV_PLUGIN_LIBRARY} ${ALL_BOOST_LIBRARIES})
+if(WIN32)
+  target_compile_definitions(PacketFileSender PRIVATE -DWIN32 -DBOOST_PROGRAM_OPTIONS_DYN_LINK=1)
+endif(WIN32)
 
 #-----------------------------------------------------------------------------
 # As we don't want our paraview pluging to have a dependancies to PythonQt we
@@ -326,7 +342,7 @@ set(MOC_HEADERS
   )
 
 set(moc_srcs)
-QT4_WRAP_CPP(moc_srcs ${MOC_HEADERS})
+qt5_wrap_cpp(moc_srcs "${MOC_HEADERS}")
 
 set(gui_sources)
 list(APPEND gui_sources

@@ -91,32 +91,24 @@ pqVelodyneManager::~pqVelodyneManager()
 void pqVelodyneManager::pythonStartup()
 {
   QStringList pythonDirs;
-  pythonDirs << QCoreApplication::applicationDirPath() + "/../Python" // MacOSX application bundle
-             << QCoreApplication::applicationDirPath() + "/../../../../lib" // Mac OS X Plugin build
-             << QCoreApplication::applicationDirPath() +
-      "/../../../../lib/site-packages" // MacOSX application bundle in build directory
-             << QCoreApplication::applicationDirPath() +
-      "/site-packages" // Windows NMake build directory and install tree
-             << QCoreApplication::applicationDirPath() + "/../lib"               // Linux build tree
-             << QCoreApplication::applicationDirPath() + "/../lib/site-packages" // Linux build tree
-             << QCoreApplication::applicationDirPath() + "/../lib/paraview-" +
-      PARAVIEW_VERSION // Windows install tree
-             << QCoreApplication::applicationDirPath() + "/../lib/paraview-" + PARAVIEW_VERSION +
-      "/site-packages" // Windows install tree
-             << QCoreApplication::applicationDirPath() + "/../lib/paraview-" + PARAVIEW_VERSION +
-      "/site-packages/vtk" // Windows install tree
-             << QCoreApplication::applicationDirPath() + "/../paraview-" +
-      PARAVIEW_VERSION // Linux 4.3+ install tree
-             << QCoreApplication::applicationDirPath() + "/../paraview-" + PARAVIEW_VERSION +
-      "/site-packages" // Linux 4.3+ install tree
-             << QCoreApplication::applicationDirPath() + "/../paraview-" + PARAVIEW_VERSION +
-      "/site-packages/vtk"; // Linux 4.3+ install tree
+  pythonDirs << QCoreApplication::applicationDirPath()  + "/../Python" // MacOSX application bundle
+             << QCoreApplication::applicationDirPath()  + "/../../../../lib" // Mac OS X Plugin build
+             << QCoreApplication::applicationDirPath()  + "/../../../../lib/site-packages" // MacOSX application bundle in build directory
+             << QCoreApplication::applicationDirPath()  + "/site-packages" // Windows NMake build directory and install tree
+             << QCoreApplication::applicationDirPath()  + "/../lib" // Linux build tree
+             << QCoreApplication::applicationDirPath()  + "/../lib/site-packages" // Linux build tree
+             << QCoreApplication::applicationDirPath()  + "/../lib/paraview-" + PARAVIEW_VERSION // Windows install tree
+             << QCoreApplication::applicationDirPath()  + "/../lib/paraview-" + PARAVIEW_VERSION + "/site-packages" // Windows install tree
+             << QCoreApplication::applicationDirPath()  + "/../lib/paraview-" + PARAVIEW_VERSION + "/site-packages/vtk" // Windows install tree
+             << QCoreApplication::applicationDirPath()  + "/../paraview-" + PARAVIEW_VERSION // Linux 4.3+ install tree
+             << QCoreApplication::applicationDirPath()  + "/../paraview-" + PARAVIEW_VERSION + "/site-packages" // Linux 4.3+ install tree
+             << QCoreApplication::applicationDirPath()  + "/../paraview-" + PARAVIEW_VERSION + "/site-packages/vtk"; // Linux 4.3+ install tree
 
   foreach (const QString& dirname, pythonDirs)
   {
     if (QDir(dirname).exists())
     {
-      vtkPythonInterpreter::PrependPythonPath(dirname.toAscii().data());
+      vtkPythonInterpreter::PrependPythonPath(dirname.toLatin1().data());
     }
   }
 
@@ -124,11 +116,12 @@ void pqVelodyneManager::pythonStartup()
   PythonQt::self()->addDecorators(new vvPythonQtDecorators());
   vtkPythonInterpreter::RunSimpleString("import veloview");
 
-  this->runPython(QString("import PythonQt\n"
-                          "QtGui = PythonQt.QtGui\n"
-                          "QtCore = PythonQt.QtCore\n"
-                          "import veloview.applogic as vv\n"
-                          "vv.start()\n"));
+  this->runPython(QString(
+      "import PythonQt\n"
+      "QtGui = PythonQt.QtGui\n"
+      "QtCore = PythonQt.QtCore\n"
+      "import veloview.applogic as vv\n"
+      "vv.start()\n"));
 
   pqSettings* const settings = pqApplicationCore::instance()->settings();
   const QVariant& gridVisible =
@@ -242,7 +235,7 @@ void pqVelodyneManager::saveFramesToPCAP(
   }
 
   reader->Open();
-  reader->SaveFrame(startFrame, endFrame, filename.toAscii().data());
+  reader->SaveFrame(startFrame, endFrame, filename.toLatin1().data());
   reader->Close();
 }
 
@@ -250,7 +243,7 @@ void pqVelodyneManager::saveFramesToPCAP(
 void pqVelodyneManager::saveFramesToLAS(vtkVelodyneHDLReader* reader, vtkPolyData* position,
   int startFrame, int endFrame, const QString& filename, int positionMode)
 {
-  if (!reader)
+  if (!reader || (positionMode > 0 && !position))
   {
     return;
   }

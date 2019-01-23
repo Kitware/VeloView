@@ -1,4 +1,4 @@
-add_external_project(eigen
+superbuild_add_project(eigen
   PATCH_COMMAND
     ${CMAKE_COMMAND} -E copy_if_different
     ${SuperBuild_PROJECTS_DIR}/patches/eigen.cmake.language_support.cmake

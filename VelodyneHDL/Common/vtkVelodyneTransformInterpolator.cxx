@@ -152,7 +152,7 @@ vtkVelodyneTransformInterpolator::~vtkVelodyneTransformInterpolator()
 }
 
 //----------------------------------------------------------------------------
-unsigned long vtkVelodyneTransformInterpolator::GetMTime()
+vtkMTimeType vtkVelodyneTransformInterpolator::GetMTime()
 {
   unsigned long mTime = this->Superclass::GetMTime();
   unsigned long posMTime, scaleMTime, rotMTime;

@@ -1,3 +1,7 @@
+# Enable CPack packaging.
+set(VeloViewSuperBuild_SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/../")
+include(${VeloViewSuperBuild_SOURCE_DIR}/../SoftwareInformation/branding.cmake)
+
 # Include CMake scripts for geting the version from Git
 include(Git)
 include(ParaViewDetermineVersion)
@@ -18,14 +22,10 @@ if(NOT (version_txt STREQUAL VV_VERSION_FULL))
   message(STATUS "Git version (${VV_VERSION_FULL}) differs from version in file (${version_txt}) at " ${VV_VERSION_FILE})
 endif()
 
-
 # Sets GD_YEAR, GD_MONTH, GD_DAY
 include(${VeloViewSuperBuild_SOURCE_DIR}/Projects/getdate.cmake)
 GET_DATE()
 set(PACKAGE_TIMESTAMP "${GD_YEAR}${GD_MONTH}${GD_DAY}")
-
-# Enable CPack packaging.
-include(${VeloViewSuperBuild_SOURCE_DIR}/../SoftwareInformation/branding.cmake)
 
 set(CPACK_COMPONENT_VELOVIEW_DISPLAY_NAME ${SOFTWARE_NAME})
 set(CPACK_PACKAGE_VERSION_MAJOR ${VV_VERSION_MAJOR})
@@ -36,8 +36,6 @@ if (NOT VV_VERSION_IS_RELEASE)
 else()
 endif()
 
-set(CPACK_RESOURCE_FILE_LICENSE "${VeloViewSuperBuild_SOURCE_DIR}/LICENSE")
-
 if (NOT VV_VERSION_IS_RELEASE)
   set(CPACK_PACKAGE_FILE_NAME
       "${CPACK_PACKAGE_NAME}-${VV_VERSION_FULL}-${PACKAGE_TIMESTAMP}-${package_suffix}")
@@ -46,3 +44,41 @@ else()
       "${CPACK_PACKAGE_NAME}-${VV_VERSION_FULL}-${package_suffix}")
 endif()
 message(STATUS "Bundled package name will be: ${CPACK_PACKAGE_FILE_NAME}" )
+
+# Set the license file.
+set(CPACK_RESOURCE_FILE_LICENSE "${VeloViewSuperBuild_SOURCE_DIR}/LICENSE")
+
+set(veloview_executables
+	${SOFTWARE_NAME})
+
+
+if (qt5_enabled)
+  include(qt5.functions)
+
+  set(qt5_plugin_prefix)
+  if (NOT WIN32)
+    set(qt5_plugin_prefix "lib")
+  endif ()
+
+  set(qt5_plugins
+    sqldrivers/${qt5_plugin_prefix}qsqlite)
+
+  if (WIN32)
+    list(APPEND qt5_plugins
+      platforms/qwindows)
+  elseif (APPLE)
+    list(APPEND qt5_plugins
+      platforms/libqcocoa
+      printsupport/libcocoaprintersupport)
+  elseif (UNIX)
+    list(APPEND qt5_plugins
+      platforms/libqxcb
+      platforminputcontexts/libcomposeplatforminputcontextplugin
+      xcbglintegrations/libqxcb-glx-integration)
+  endif ()
+
+  superbuild_install_qt5_plugin_paths(qt5_plugin_paths ${qt5_plugins})
+else ()
+  set(qt5_plugin_paths)
+endif ()
+

@@ -1,4 +1,4 @@
-add_external_project(flann
+superbuild_add_project(flann
   CMAKE_ARGS
    -DBUILD_EXAMPLES:BOOL=OFF
    -DBUILD_PYTHON_BINDINGS:BOOL=OFF

@@ -1,4 +1,4 @@
-add_external_project(ceres
+superbuild_add_project(ceres
   DEPENDS eigen glog
   
   CMAKE_ARGS

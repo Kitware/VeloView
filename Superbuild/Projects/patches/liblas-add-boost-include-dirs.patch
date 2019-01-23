@@ -1,0 +1,27 @@
+From 3ed911f1e589d592403d43c2bd478f605c3b72a2 Mon Sep 17 00:00:00 2001
+From: Dan Lipsa <dan.lipsa@kitware.com>
+Date: Mon, 6 Nov 2017 10:11:45 -0500
+Subject: [PATCH] header.hpp includes boost/uuid/uuid.hpp
+
+On Windows, boost headers are installed in
+boost_1_59/boost/...
+Boost headers are not found unless libLAS
+specifies that it needs them.
+---
+ cmake/liblas-config.cmake.in | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/cmake/liblas-config.cmake.in b/cmake/liblas-config.cmake.in
+index 175e9974..a74031e4 100644
+--- a/cmake/liblas-config.cmake.in
++++ b/cmake/liblas-config.cmake.in
+@@ -21,6 +21,7 @@ set (libLAS_BINARY_DIRS "${PROJECT_ROOT_DIR}/bin")
+ 
+ include ("${_DIR}/liblas-depends.cmake")
+ if(WIN32)
++  list(APPEND libLAS_INCLUDE_DIRS @Boost_INCLUDE_DIRS@)
+   set (libLAS_LIBRARIES liblas liblas_c)
+ else()
+   set (libLAS_LIBRARIES las las_c)
+-- 
+2.11.0

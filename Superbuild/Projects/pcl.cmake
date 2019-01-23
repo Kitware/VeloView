@@ -1,10 +1,15 @@
-add_external_project(pcl
+superbuild_add_project(pcl
   DEPENDS flann eigen boost png zlib qhull
 
   CMAKE_ARGS
   -DCMAKE_CXX_STANDARD=11
   -DCMAKE_CXX_STANDARD_REQUIRED=true
   -DBOOST_ROOT:PATH=<INSTALL_DIR>
+  -DBoost_NO_BOOST_CMAKE:BOOL=true
+  -DBoost_USE_MULTITHREAD=ON
+  -DBoost_USE_STATIC_LIBS=OFF
+  -DBoost_USE_STATIC=OFF
+  -DPCL_BUILD_WITH_BOOST_DYNAMIC_LINKING_WIN32=true
   -DBOOST_LIBRARYDIR:PATH=<INSTALL_DIR>/lib
   -DBUILD_visualization:BOOL=OFF
   -DBUILD_examples:BOOL=OFF

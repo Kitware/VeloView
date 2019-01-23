@@ -571,7 +571,7 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
                                                      ScalarRangeInitialized=1.0)
         sb = smp.CreateScalarBar(LookupTable=rep.LookupTable, Title='Time')
         sb.Orientation = 'Horizontal'
-        sb.Position, sb.Position2 = [.1, .05], [.8, .02]
+        #sb.Position, sb.Position2 = [.1, .05], [.8, .02]
         app.overheadView.Representations.append(sb)
 
         app.position = (posreader, None, tripod)
@@ -581,6 +581,8 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
             QtGui.QMessageBox.warning(getMainWindow(), 'Georeferencing data invalid',
                                       'File %s is empty or not supported' % positionFilename)
 
+        smp.Render(app.overheadView)
+        app.overheadView.ResetCamera()
         smp.Delete(posreader)
 
     smp.SetActiveView(app.mainView)
@@ -1044,6 +1046,8 @@ def onSaveScreenshot():
 
     fileName = getSaveFileName('Save Screenshot', 'png', getDefaultSaveFileName('png', appendFrameNumber=True))
     if fileName:
+        if fileName[-4:] != ".png":
+            fileName += ".png"
         saveScreenshot(fileName)
 
 
@@ -1445,7 +1449,7 @@ def saveScreenshot(filename):
     screenshot.load(filename)
 
     # create a new pixmap with the status bar widget painted at the bottom
-    statusBar = QtGui.QPixmap.grabWidget(getMainWindow().statusBar())
+    statusBar = QtGui.QWidget.grab(getMainWindow().statusBar())
     composite = QtGui.QPixmap(screenshot.width(), screenshot.height() + statusBar.height())
     painter = QtGui.QPainter()
     painter.begin(composite)
@@ -1705,18 +1709,27 @@ def adjustScalarBarRangeLabelFormat():
         smp.Render()
 
 
-def addRecentFile(filename):
 
+def addRecentFile(filename):
+    maxRecentFiles = 4
     recentFiles = getRecentFiles()
 
+    # workaround to get system-locale to unicode conversion of filename
+    recentFiles.insert(0, filename)
+    getPVSettings().setValue('VelodyneHDLPlugin/RecentFiles', recentFiles)
+    unicodeFilename = getPVSettings().value('VelodyneHDLPlugin/RecentFiles')[0]
+    recentFiles = recentFiles[1:]
+
     try:
-        recentFiles.remove(filename)
+        recentFiles.remove(unicodeFilename)
     except ValueError:
         pass
 
-    recentFiles = recentFiles[:4]
-    recentFiles.insert(0, filename)
+    recentFiles = recentFiles[:maxRecentFiles]
+    recentFiles.insert(0, unicodeFilename)
+
     getPVSettings().setValue('VelodyneHDLPlugin/RecentFiles', recentFiles)
+
     updateRecentFiles()
 
 

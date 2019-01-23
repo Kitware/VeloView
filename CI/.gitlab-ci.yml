@@ -1,7 +1,6 @@
 # this cmake variable are exposed here so schedule jobs can modify them
 variables:
   # cmake superbuild option
-  cmake_option_ENABLE_veloview: "True"
   cmake_option_USE_SYSTEM_python: "False"
   cmake_option_CMAKE_BUILD_TYPE: "Release"
 
@@ -9,6 +8,7 @@ variables:
   cmake_option_CMAKE_OSX_ARCHITECTURES: "x86_64"
   cmake_option_CMAKE_OSX_DEPLOYMENT_TARGET: "10.12"
   cmake_option_CMAKE_OSX_SYSROOT: "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.12.sdk"
+  # it is also possible to use: -DCMAKE_OSX_SDK:STRING=macosx10.12
 
   slash_separator: "/"
 
@@ -39,26 +39,38 @@ stages:
 
 .unix_get_superbuild:
   script: &unix_get_superbuild
-    - chmod +x CI/findRightSuperbuildCache.sh
-    - CI/findRightSuperbuildCache.sh ${OS} ${CI_COMMIT_REF_NAME} ${MINIO_CACHE_SERVER_ADDRESS} ${MINIO_CACHE_SERVER_ACCESS_KEY} ${MINIO_CACHE_SERVER_SECRET_KEY}
+    - cd ..
+    - chmod +x ${CI_PROJECT_DIR}/CI/findRightSuperbuildCache.sh
+    - ${CI_PROJECT_DIR}/CI/findRightSuperbuildCache.sh ${OS} ${CI_COMMIT_REF_NAME} ${MINIO_CACHE_SERVER_ADDRESS} ${MINIO_CACHE_SERVER_ACCESS_KEY} ${MINIO_CACHE_SERVER_SECRET_KEY}
+    # create a symbolic link 
+    - cd ${CI_PROJECT_DIR}
+    - ln -s ../Superbuild-build Superbuild-build 
 
 .linux_superbuild: &linux_superbuild
   stage: superbuild
   script:
+    - git submodule update --init Superbuild/common-superbuild
     # prepare directory
+    - cd ..
     - mkdir Superbuild-build/
     - cd Superbuild-build/
     # configure & generate
-    - cmake -DCMAKE_BUILD_TYPE:STRING=${cmake_option_CMAKE_BUILD_TYPE}
-      -DENABLE_veloview:BOOL=${cmake_option_ENABLE_veloview}
-      -DUSE_SYSTEM_python:BOOL=${cmake_option_USE_SYSTEM_python}
-      -DENABLE_pcl:BOOL="True"
+    - cmake -DCMAKE_BUILD_TYPE:STRING=${cmake_option_CMAKE_BUILD_TYPE} -DBUILD_TESTING=True
       ${CI_PROJECT_DIR}/Superbuild
     # compile
     - make -j8
     # remove Veloview
-    - rm -rf veloview/
-  <<: *push-cache
+    - rm -rf common-superbuild/veloview
+    # - cd ${CI_PROJECT_DIR}
+    # create a symbolic link, inside the source tree else "push" will not work
+    # - ln -s ../Superbuild-build Superbuild-build # not working witth
+    - echo "removing downloaded source archives"
+    - rm downloads/*
+    - echo "compressing and uploading Superbuild. This take some time..."
+    - cd ..
+    - tar jcf archive Superbuild-build/
+    - ~/mc config host add superbuild ${MINIO_CACHE_SERVER_ADDRESS} ${MINIO_CACHE_SERVER_ACCESS_KEY} ${MINIO_CACHE_SERVER_SECRET_KEY}
+    - ~/mc cp archive superbuild/runner/minio/project/808/${cache_patch}/${OS}/${CI_COMMIT_REF_NAME}-1
 
 .linux_superbuild_manual: &linux_superbuild_manual
   when: manual
@@ -73,34 +85,31 @@ stages:
   stage: build
   before_script: *unix_get_superbuild
   script:
-    - cd Superbuild-build/
+    - git submodule update --init Superbuild/common-superbuild
+    - cd ../Superbuild-build/ # created by extracting cache in "unix_get_superbuild"
     - make veloview -j8
-  artifacts:
-    paths:
-     - Superbuild-build/veloview
-    expire_in: 24 hr
 
 .linux_test: &linux_test
   stage: test
-  before_script: *unix_get_superbuild
+  before_script: *unix_get_superbuild # you cannot put linux_build here
   script:
     # get test data and baseline
-    # DO NOT use gilab-ci variable GIT_SUBMODULE_STRATEGY !!!
-    - git submodule update --init --recursive
-    - cd Superbuild-build/veloview/src/veloview-build
-    - cmake -DBUILD_TESTING:BOLL=True
-      ${CI_PROJECT_DIR}
-    - make -j8
+    - git submodule update --init
+    - cd ../Superbuild-build/ # created by extracting cache in "unix_get_superbuild"
+    - make veloview -j8
+    # excluding packaging test targets (packaging is done later)
     # TODO current Source related tests fails, so we skip them.
     # This need to be fixed !
-    - ctest -E "TestVelodyneHDLSource*" -j16
+    - ctest -E cpack -E "TestVelodyneHDLSource*" -j16
 
 .linux_package: &linux_package
   stage: package
-  before_script: *unix_get_superbuild
+  before_script: *unix_get_superbuild # you cannot put linux_build here
   script:
-    - cd Superbuild-build
-    - make package -j8
+    - git submodule update --init Superbuild/common-superbuild
+    - cd ../Superbuild-build/ # created by extracting cache in "unix_get_superbuild"
+    - make veloview -j8
+    - ctest -R cpack-veloview-TGZ -V
 
 .linux_package_manual: &linux_package_manual
   when: manual
@@ -108,7 +117,7 @@ stages:
   artifacts:
     name: ${CI_JOB_NAME}
     paths:
-     - Superbuild-build/*.tar.gz
+     - Superbuild-build/*.tar.gz # Superbuild-build links to ../Superbuild-build
     expire_in: 1 hr
 
 .linux_package_schedule: &linux_package_schedule
@@ -116,7 +125,7 @@ stages:
   artifacts:
     name: ${CI_JOB_NAME}
     paths:
-     - Superbuild-build/*.tar.gz
+     - Superbuild-build/*.tar.gz # Superbuild-build links to ../Superbuild-build
     expire_in: 1 day
   only:
     - schedules
@@ -188,21 +197,23 @@ ubuntu14.04.5_package_schedule:
 .OSX_superbuild: &OSX_superbuild
   stage: superbuild
   script:
-    # prepare directory
+    - git submodule update --init Superbuild/common-superbuild
+    - cd ..
+    # prepare directory, on OSX as we use the shell executor we need to remove
+    # the old directory
+    - rm -rf Superbuild-build/
     - mkdir Superbuild-build/
     - cd Superbuild-build/
     # configure & generate
     - cmake -DCMAKE_BUILD_TYPE:STRING=${cmake_option_CMAKE_BUILD_TYPE}
-      -DENABLE_veloview:BOOL=${cmake_option_ENABLE_veloview}
       -DCMAKE_OSX_ARCHITECTURES:STRING=${cmake_option_CMAKE_OSX_ARCHITECTURES}
       -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING=${cmake_option_CMAKE_OSX_DEPLOYMENT_TARGET}
       -DCMAKE_OSX_SYSROOT:STRING=${cmake_option_CMAKE_OSX_SYSROOT}
-      -DENABLE_pcl:BOOL="True"
       ${CI_PROJECT_DIR}/Superbuild
     # compile
     - make -j8
     # remove Veloview
-    - rm -rf veloview/
+    - rm -rf common-superbuild/veloview
     # upload superbuild, Apple's Zip Utility, which I guess is use by gilab-ci
     # produce corrupted file for large file, so we need to upload the cache manually 
     - cd ..
@@ -212,7 +223,7 @@ ubuntu14.04.5_package_schedule:
     - ~/mc cp archive superbuild/runner/minio/project/808/${cache_patch}/${OS}/${CI_COMMIT_REF_NAME}-1
 
 .OSX_superbuild_manual: &OSX_superbuild_manual
-  when: manual
+  # when: manual
   <<: *OSX_superbuild
 
 .OSX_superbuild_schedule: &OSX_superbuild_schedule
@@ -246,7 +257,7 @@ ubuntu14.04.5_package_schedule:
     - make package -j8
 
 .OSX_package_manual: &OSX_package_manual
-  when: manual
+  # when: manual
   <<: *OSX_package
   artifacts:
     name: ${CI_JOB_NAME}

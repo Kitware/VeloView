@@ -157,7 +157,7 @@ set (source_files
   vvPlayerControlsController.cxx
   )
 
-qt4_wrap_cpp(moc_source_files
+qt5_wrap_cpp(moc_source_files
   vvColorToolbar.h
   vvMainWindow.h
   vvToggleSpreadSheetReaction.h
@@ -166,14 +166,14 @@ qt4_wrap_cpp(moc_source_files
   vvPlayerControlsController.h
   )
 
-qt4_wrap_ui(ui_source_files
+qt5_wrap_ui(ui_source_files
   vvColorToolbar.ui
   vvMainWindow.ui
   vvAboutDialog.ui
   vvPlayerControlsToolbar.ui
   )
 
-qt4_add_resources(rcs_source_files
+qt5_add_resources(rcs_source_files
   vvResources.qrc)
 
 include_directories(
@@ -215,6 +215,24 @@ unset(vv_installed_xml_files)
 unset(vv_configurefile_dest)
 unset(vv_installfile_dest)
 
+
+# TODO: once we use Qt built from source on Windows, remove this manual installation
+# currently: PythonQt fails to build against our own build of Qt
+if (WIN32)
+  foreach (qt5_opengl_lib IN ITEMS opengl32sw libEGL libGLESv2 libEGLd
+      Qt5Core Qt5Gui Qt5Widgets Qt5Help Qt5Network Qt5PrintSupport Qt5Sql)
+    install(
+       FILES
+      "${Qt5_DIR}/../../../bin/${qt5_opengl_lib}.dll"
+      DESTINATION
+      "bin")
+  endforeach ()
+  install(DIRECTORY "${Qt5_DIR}/../../../plugins/platforms"
+    DESTINATION "bin"
+  )
+endif ()
+
+
 # This ensure that build_paraview_client() adds an "forwarding path" to locate
 # paraview from installed location.
 set (PARAVIEW_INSTALL_LIB_DIR "lib/paraview-${PARAVIEW_VERSION_MAJOR}.${PARAVIEW_VERSION_MINOR}")
@@ -228,7 +246,10 @@ build_paraview_client(${SOFTWARE_NAME}
   PVMAIN_WINDOW vvMainWindow
   PVMAIN_WINDOW_INCLUDE vvMainWindow.h
   SPLASH_IMAGE "${CMAKE_CURRENT_SOURCE_DIR}/SoftwareInformation/${PARAVIEW_SPLASH_IMAGE}"
-  BUNDLE_ICON "${CMAKE_CURRENT_SOURCE_DIR}/SoftwareInformation/${PARAVIEW_BUNDLE_ICON}"
+  # right now the bundle's logo.icns file must be at the root of VeloView sources
+  # this problem is due to paraview/src/CMake/ParaViewBranding.cmake,
+  # on line: GET_FILENAME_COMPONENT(bundle_icon_file "${BPC_BUNDLE_ICON}" NAME)
+  BUNDLE_ICON "${CMAKE_CURRENT_SOURCE_DIR}/${PARAVIEW_BUNDLE_ICON}"
   APPLICATION_ICON "${CMAKE_CURRENT_SOURCE_DIR}/SoftwareInformation/${PARAVIEW_APPLICATION_ICON}"
   SOURCES
     ${source_files}

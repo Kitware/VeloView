@@ -5,7 +5,7 @@ if(CMAKE_BUILD_TYPE MATCHES "[dD]ebug")
 else()
     set(qhull_STATIC qhullstatic)
 endif()
-add_external_project(qhull
+superbuild_add_project(qhull
   CMAKE_ARGS
     -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>/qhull
     -Dqhull_TARGETS_INSTALL=${qhull_STATIC}
