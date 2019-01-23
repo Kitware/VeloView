@@ -70,7 +70,7 @@ private:
   //! or if the same transform should be apply to the whole point cloud.
   //! In the first case you must specify the array from the pointcloud containing the
   //! timestamp with 'SetInputArrayToProcess'
-  bool InterpolateEachPoint = true;
+  bool InterpolateEachPoint;
 
   //! Interpolator used to get the right transform
   vtkSmartPointer<vtkVelodyneTransformInterpolator> Interpolator;

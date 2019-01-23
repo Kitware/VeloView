@@ -4,6 +4,8 @@
 #include <vtkPolyLine.h>
 #include <vtkTransform.h>
 
+#include <cmath>
+
 //-----------------------------------------------------------------------------
 vtkStandardNewMacro(vtkTemporalTransforms)
 
@@ -48,7 +50,7 @@ vtkSmartPointer<vtkVelodyneTransformInterpolator> vtkTemporalTransforms::CreateI
     transform->Translate(this->GetTranslationArray()->GetTuple(i));
 
     // add the tranform to the interpolator
-    if (!std::isnan(currentTimestamp))
+    if (!vtkMath::IsNan(currentTimestamp))
     {
       interpolator->AddTransform(currentTimestamp, transform);
     }

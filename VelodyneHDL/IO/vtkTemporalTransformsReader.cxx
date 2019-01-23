@@ -59,25 +59,32 @@ std::unordered_map<std::string, vtkDoubleArray*> createArrayIndex(vtkTable* tabl
   std::unordered_map<std::string, vtkDoubleArray*> array;
   std::vector<std::string> potentialName;
 
-  potentialName = {"Time", "time", "Timestamp", "timestamp"};
+  std::string time[] = {"Time", "time", "Timestamp", "timestamp"};
+  potentialName = std::vector<std::string>(time, time + sizeof(time) / sizeof(time[0]));
   array["time"] = foundArray(table, potentialName);
 
-  potentialName = {"Rx(Roll)", "Roll", "roll", "Rx", "rx"};
+  std::string roll[] = {"Rx(Roll)", "Roll", "roll", "Rx", "rx"};
+  potentialName = std::vector<std::string>(roll, roll + sizeof(roll) / sizeof(roll[0]));
   array["roll"] = foundArray(table, potentialName);
 
-  potentialName = {"Ry(Pitch)", "Pitch", "pitch", "Ry", "ry"};
+  std::string pitch[] = {"Ry(Pitch)", "Pitch", "pitch", "Ry", "ry"};
+  potentialName = std::vector<std::string>(pitch, pitch + sizeof(pitch) / sizeof(pitch[0]));
   array["pitch"] = foundArray(table, potentialName);
 
-  potentialName = {"Rz(Yaw)", "Yaw", "yaw", "Rz", "rz"};
+  std::string yaw[] = {"Rz(Yaw)", "Yaw", "yaw", "Rz", "rz"};
+  potentialName = std::vector<std::string>(yaw, yaw + sizeof(yaw) / sizeof(yaw[0]));
   array["yaw"] = foundArray(table, potentialName);
 
-  potentialName = {"X", "x"};
+  std::string x[] = {"X", "x"};
+  potentialName = std::vector<std::string>(x, x + sizeof(x) / sizeof(x[0]));
   array["X"] = foundArray(table, potentialName);
 
-  potentialName = {"Y", "y"};
+  std::string y[] = {"Y", "y"};
+  potentialName = std::vector<std::string>(y, y + sizeof(y) / sizeof(y[0]));
   array["Y"] = foundArray(table, potentialName);
 
-  potentialName = {"Z", "z"};
+  std::string z[] = {"Z", "z"};
+  potentialName = std::vector<std::string>(z, z + sizeof(z) / sizeof(z[0]));
   array["Z"] = foundArray(table, potentialName);
 
   return array;

@@ -20,7 +20,7 @@
  * It can be used to pass an vtkTransformInterpolator between 2 filter: a filter inherit from
  * vtkAlgorithm, and it can only take a vtkDataObject as input/output.
  */
-class vtkTemporalTransforms : public vtkPolyData
+class VTK_EXPORT vtkTemporalTransforms : public vtkPolyData
 {
 public:
   static vtkTemporalTransforms *New();
@@ -52,11 +52,15 @@ public:
   //@}
 
 protected:
-  vtkTemporalTransforms(){}
+  vtkTemporalTransforms()
+  {
+    this->OrientationArrayName = "Orientation(AxisAngle)";
+    this->TimeArrayName = "Time";
+  }
 
 private:
-  const char *OrientationArrayName = "Orientation(AxisAngle)";
-  const char *TimeArrayName = "Time";
+  char *OrientationArrayName;
+  char *TimeArrayName;
 
   vtkTemporalTransforms(const vtkTemporalTransforms&) /*= delete*/;
   void operator =(const vtkTemporalTransforms&) /*= delete*/;
