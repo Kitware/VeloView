@@ -226,6 +226,8 @@ protected:
   vtkLidarProvider();
   ~vtkLidarProvider();
 
+  int FillOutputPortInformation(int port, vtkInformation* info) override;
+
   /**
    * @brief SetInterpreter method used to switch the opaque pointer
    */

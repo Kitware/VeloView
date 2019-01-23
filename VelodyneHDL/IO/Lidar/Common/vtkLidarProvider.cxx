@@ -2,8 +2,25 @@
 #include "LidarPacketInterpreter.h"
 #include "vtkVelodyneTransformInterpolator.h"
 
+#include <vtkInformation.h>
+
 #include <boost/filesystem.hpp>
 #include <sstream>
+
+//-----------------------------------------------------------------------------
+int vtkLidarProvider::FillOutputPortInformation(int port, vtkInformation* info)
+{
+  if ( port == 0 )
+  {
+    info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkPolyData" );
+    return 1;
+  }
+  if ( port == 1 )
+  {
+    info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkTable" );
+    return 1;
+  }
+}
 
 //-----------------------------------------------------------------------------
 void vtkLidarProvider::SetCalibrationFileName(const std::string &filename)
@@ -121,7 +138,7 @@ void vtkLidarProvider::SetDummyProperty(int)
 vtkLidarProvider::vtkLidarProvider()
 {
   this->SetNumberOfInputPorts(0);
-  this->SetNumberOfOutputPorts(1);
+  this->SetNumberOfOutputPorts(2);
 }
 
 //-----------------------------------------------------------------------------
