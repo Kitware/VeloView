@@ -55,7 +55,7 @@ stages:
     - mkdir Superbuild-build/
     - cd Superbuild-build/
     # configure & generate
-    - cmake -DCMAKE_BUILD_TYPE:STRING=${cmake_option_CMAKE_BUILD_TYPE} -DBUILD_TESTING=True -DUSE_SYSTEM_python=True
+    - cmake -DCMAKE_BUILD_TYPE:STRING=${cmake_option_CMAKE_BUILD_TYPE} -DBUILD_TESTING=True
       ${CI_PROJECT_DIR}/Superbuild
     # compile
     - make -j8

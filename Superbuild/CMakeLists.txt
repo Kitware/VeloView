@@ -120,6 +120,12 @@ if (WIN32)
   endif()
 endif()
 
+if(UNIX AND NOT DEFINED USE_SYSTEM_python)
+   # it is still possible to pass -DUSE_SYSTEM_python=False to cmake
+   message(STATUS "Defaulting USE_SYSTEM_python to True (was undefined and we are on UNIX)")
+   set(USE_SYSTEM_python True CACHE BOOL INTERNAL)
+endif()
+
 function (superbuild_add_packaging)
   if (WIN32)
     set(generators
