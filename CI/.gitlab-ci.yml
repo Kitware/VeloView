@@ -56,7 +56,6 @@ stages:
     - cd Superbuild-build/
     # configure & generate
     - cmake -DCMAKE_BUILD_TYPE:STRING=${cmake_option_CMAKE_BUILD_TYPE} -DBUILD_TESTING=True -DUSE_SYSTEM_python=True
-      -DENABLE_pcl:BOOL=True
       ${CI_PROJECT_DIR}/Superbuild
     # compile
     - make -j8
@@ -210,7 +209,6 @@ ubuntu14.04.5_package_schedule:
       -DCMAKE_OSX_ARCHITECTURES:STRING=${cmake_option_CMAKE_OSX_ARCHITECTURES}
       -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING=${cmake_option_CMAKE_OSX_DEPLOYMENT_TARGET}
       -DCMAKE_OSX_SYSROOT:STRING=${cmake_option_CMAKE_OSX_SYSROOT}
-      -DENABLE_pcl:BOOL="True"
       ${CI_PROJECT_DIR}/Superbuild
     # compile
     - make -j8
