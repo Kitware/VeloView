@@ -102,6 +102,10 @@ public:
                      const double v4, const double v5) override {notImpementedBody}
 
   //! Not implemented
+  vtkVelodyneTransformInterpolator* GetInterpolator() const override {notImpementedBody return nullptr;}
+  void SetInterpolator(vtkVelodyneTransformInterpolator* interpolator) override {notImpementedBody}
+
+  //! Not implemented
   void Open() override {notImpementedBody}
 
   //! Not implemented
