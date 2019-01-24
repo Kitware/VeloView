@@ -96,7 +96,6 @@ class AppLogic(object):
 
         self.filenameLabel = QtGui.QLabel()
         self.statusLabel = QtGui.QLabel()
-        self.timeLabel = QtGui.QLabel()
         self.sensorInformationLabel = QtGui.QLabel()
 
 
@@ -1167,7 +1166,6 @@ def close():
     resetCameraToForwardView()
     app.filenameLabel.setText('')
     app.statusLabel.setText('')
-    app.timeLabel.setText('')
     disableSaveActions()
     app.actions['actionRecord'].setChecked(False)
     app.actions['actionDualReturnModeDual'].setChecked(True)
@@ -1610,7 +1608,6 @@ def setupStatusBar():
     statusBar.addPermanentWidget(app.logoLabel)
     statusBar.addWidget(app.filenameLabel)
     statusBar.addWidget(app.statusLabel)
-    statusBar.addWidget(app.timeLabel)
     statusBar.addWidget(app.sensorInformationLabel)
 
 
@@ -2229,9 +2226,6 @@ def reloadCurrentFrame():
     updateUIwithNewFrame()
 
 def updateUIwithNewFrame():
-    frame = int(getTimeKeeper().getTime())
-    app.timeLabel.setText('  Frame: %s' % frame)
-
     lidar = getLidar()
     if lidar:
         app.sensorInformationLabel.setText(lidar.GetClientSideObject().GetSensorInformation())
