@@ -40,7 +40,7 @@ vtkTemporalTransformsApplier::vtkTemporalTransformsApplier()
 }
 
 //----------------------------------------------------------------------------
-unsigned long vtkTemporalTransformsApplier::GetMTime()
+vtkMTimeType vtkTemporalTransformsApplier::GetMTime()
 {
   return std::max(this->Superclass::GetMTime(), this->Interpolator->GetMTime());
 }

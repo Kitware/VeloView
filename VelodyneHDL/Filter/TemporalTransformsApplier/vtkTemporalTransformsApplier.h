@@ -52,7 +52,7 @@ public:
    * @brief Override GetMTime() because we depend on the TransformInterpolator
    * which may be modified outside of this class.
    */
-  unsigned long GetMTime();
+  vtkMTimeType GetMTime();
 
 protected:
   vtkTemporalTransformsApplier();
