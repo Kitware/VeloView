@@ -1984,6 +1984,22 @@ def intensitiesCorrectedChanged():
     # Workaround to force the refresh for all the views
     # todo
 
+def onToogleAdvancedGUI(updateSettings = True):
+  """ Switch the GUI between advanced and classic mode"""
+  # hide/show Sources menu
+  menuSources = getMainWindow().findChild("QMenu", "menuSources").menuAction()
+  menuSources.visible = not menuSources.visible
+  # hide/show Filters menu
+  menuFilters = getMainWindow().findChild("QMenu", "menuFilters").menuAction()
+  menuFilters.visible = not menuFilters.visible
+  # hide/show view decorator
+  getMainWindow().centralWidget().toggleWidgetDecoration()
+  # update the UserSettings
+  if updateSettings:
+    # booleans must be store as int
+    newValue = int(not int(getPVSettings().value("VelodyneHDLPlugin/AdvanceFeature/Enable", 0)))
+    getPVSettings().setValue("VelodyneHDLPlugin/AdvanceFeature/Enable", newValue)
+
 
 def setupActions():
 
@@ -2000,6 +2016,8 @@ def setupActions():
       "actionRecord",\
       mW)
     app.actions['actionRecord'].setCheckable(True)
+
+    app.actions['actionAdvanceFeature'].connect('triggered()', onToogleAdvancedGUI)
 
     app.actions['actionIgnoreZeroDistances'].connect('triggered()', onIgnoreZeroDistances)
     app.actions['actionIntraFiringAdjust'].connect('triggered()', onIntraFiringAdjust)
@@ -2046,6 +2064,12 @@ def setupActions():
     app.actions['actionIgnoreZeroDistances'].setChecked(int(settings.value('VelodyneHDLPlugin/IgnoreZeroDistances', 1)))
     app.actions['actionIntraFiringAdjust'].setChecked(int(settings.value('VelodyneHDLPlugin/IntraFiringAdjust', 1)))
     app.actions['actionIgnoreEmptyFrames'].setChecked(int(settings.value('VelodyneHDLPlugin/IgnoreEmptyFrames', 1)))
+
+
+    advanceMode = int(settings.value("VelodyneHDLPlugin/AdvanceFeature/Enable"))
+    if not advanceMode:
+      app.actions['actionAdvanceFeature'].checked = False
+      onToogleAdvancedGUI(updateSettings=False)
 
     # Setup and add the geolocation toolbar
     geolocationToolBar = mW.findChild('QToolBar', 'geolocationToolbar')
