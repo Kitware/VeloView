@@ -80,7 +80,6 @@
 #include <iostream>
 #include <sstream>
 
-#include "vvConfig.h"
 #include "vvPlayerControlsToolbar.h"
 
 // Declare the plugin to load.
@@ -211,14 +210,19 @@ private:
     vtkSMPropertyHelper(renderviewsettings, "ResolveCoincidentTopology").Set(0);
 
     // Create a overhead view
-    pqView* overheadView = builder->createView(pqRenderView::renderViewType(), server);
+    pqView* overheadView = builder->createView(pqRenderView::renderViewType(), server, true);
     overheadView->getProxy()->UpdateVTKObjects();
     this->Ui.overheadViewDock->setWidget(overheadView->widget());
     new vvToggleSpreadSheetReaction(this->Ui.actionOverheadView, overheadView);
 
+    // Set the central widget
+    pqTabbedMultiViewWidget* mv = new pqTabbedMultiViewWidget;
+    mv->setTabVisibility(false);
+    window->setCentralWidget(mv);
+
     // create SpreadSheet
     pqSpreadSheetView* spreadsheetView = qobject_cast<pqSpreadSheetView*>
-        (builder->createView(pqSpreadSheetView::spreadsheetViewType(), server));
+        (builder->createView(pqSpreadSheetView::spreadsheetViewType(), server, true));
     assert(spreadsheetView);
     this->Ui.spreadSheetDock->setWidget(spreadsheetView->widget());
     spreadsheetView->getProxy()->UpdateVTKObjects();
@@ -227,17 +231,6 @@ private:
     dec->setPrecision(3);
     dec->setFixedRepresentation(true);
 
-    // Create a default view.
-    // Due to our old version of paraview, it's not possible to create a view in
-    // detachedFromLayout mode. This feature was introduce by paraview 5.2.
-    // So we need to create the pqTabbedMultiViewWidget after creating all other view but
-    // before creating the main view, in order to have the main view in the pqTabbedMultiViewWidget.
-    // This is because all view created are register by the pqTabbedMultiViewWidget.
-    if (ENABLE_DEV_MODE_UI_VAR)
-    {
-      pqTabbedMultiViewWidget* mv = new pqTabbedMultiViewWidget;
-      window->setCentralWidget(mv);
-    }
     pqRenderView* view =
       qobject_cast<pqRenderView*>(builder->createView(pqRenderView::renderViewType(), server));
     assert(view);
@@ -249,10 +242,6 @@ private:
     // MultiSamples doesn't work, we need to set that up before registering the proxy.
     // vtkSMPropertyHelper(view->getProxy(),"MultiSamples").Set(1);
     view->getProxy()->UpdateVTKObjects();
-   if (!ENABLE_DEV_MODE_UI_VAR)
-   {
-     window->setCentralWidget(view->widget());
-   }
 
     // properties panel
     // connect apply button
@@ -293,22 +282,17 @@ private:
     // have been created.
     pqParaViewMenuBuilders::buildViewMenu(*this->Ui.menuViews, *window);
 
-    if (ENABLE_DEV_MODE_UI_VAR)
-    {
-      /// If you want to automatically add a menu for sources as requested in the
-      /// configuration pass in a non-null main window.
-      QMenu* sourceMenu = window->menuBar()->addMenu(tr("&Sources"));
-      pqParaViewMenuBuilders::buildSourcesMenu(*sourceMenu, nullptr);
+    /// If you want to automatically add a menu for sources as requested in the
+    /// configuration pass in a non-null main window.
+    pqParaViewMenuBuilders::buildSourcesMenu(*this->Ui.menuSources, nullptr);
 
-      /// If you want to automatically add a menu for filters as requested in the
-      /// configuration pass in a non-null main window.
-      QMenu* filterMenu = window->menuBar()->addMenu(tr("&Filters"));
-      pqParaViewMenuBuilders:: buildFiltersMenu(*filterMenu, nullptr);
-    }
+    /// If you want to automatically add a menu for filters as requested in the
+    /// configuration pass in a non-null main window.
+    pqParaViewMenuBuilders::buildFiltersMenu(*this->Ui.menuFilters, nullptr);
 
-      // add 'ctrl+space' shortcut for quickLaunch
-      QShortcut *ctrlSpace = new QShortcut(Qt::CTRL + Qt::Key_Space, window);
-      QObject::connect(ctrlSpace, SIGNAL(activated()), pqApplicationCore::instance(), SLOT(quickLaunch()));
+    // add 'ctrl+space' shortcut for quickLaunch
+    QShortcut *ctrlSpace = new QShortcut(Qt::CTRL + Qt::Key_Space, window);
+    QObject::connect(ctrlSpace, SIGNAL(activated()), pqApplicationCore::instance(), SLOT(quickLaunch()));
 
     pqActiveObjects::instance().setActiveView(view);
   }

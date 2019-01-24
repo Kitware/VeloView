@@ -142,14 +142,27 @@
     <addaction name="actionVeloViewUserGuide"/>
     <addaction name="actionVeloViewDeveloperGuide"/>
     <addaction name="actionResetDefaultSettings"/>
+    <addaction name="actionAdvanceFeature"/>
    </widget>
    <widget class="QMenu" name="menuViews">
     <property name="title">
      <string>Views</string>
     </property>
    </widget>
+   <widget class="QMenu" name="menuFilters">
+    <property name="title">
+     <string>Filters</string>
+    </property>
+   </widget>
+   <widget class="QMenu" name="menuSources">
+    <property name="title">
+     <string>Sources</string>
+    </property>
+   </widget>
    <addaction name="menu_File"/>
    <addaction name="menuTools"/>
+   <addaction name="menuSources"/>
+   <addaction name="menuFilters"/>
    <addaction name="menuViews"/>
    <addaction name="menuHelp"/>
   </widget>
@@ -953,6 +966,17 @@
    </property>
    <property name="text">
     <string>Motion Detection</string>
+   </property>
+  </action>
+  <action name="actionAdvanceFeature">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Advance Feature</string>
    </property>
   </action>
  </widget>

@@ -63,20 +63,6 @@ if(BUILD_DOC)
 endif()
 
 #-------------------------------------------------------------------------------
-# Developper Mode UI option
-option(ENABLE_DEV_MODE_UI "Enable advance feature" OFF)
-
-set (ENABLE_DEV_MODE_UI_VAR false)
-if (ENABLE_DEV_MODE_UI)
-  set (ENABLE_DEV_MODE_UI_VAR true)
-endif()
-
-# generate the configuration file
-configure_file(vvConfig.h.in vvConfig.h)
-# needed as the vvconfig file will be generate in the build directory
-include_directories(${CMAKE_CURRENT_BINARY_DIR})
-
-#-------------------------------------------------------------------------------
 set (VeloView_CMAKE_DIR "${VeloView_SOURCE_DIR}/CMake")
 set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${VeloView_CMAKE_DIR})
 
