@@ -2060,7 +2060,7 @@ def setupActions():
     app.actions['actionIgnoreEmptyFrames'].setChecked(int(settings.value('VelodyneHDLPlugin/IgnoreEmptyFrames', 1)))
 
 
-    advanceMode = int(settings.value("VelodyneHDLPlugin/AdvanceFeature/Enable"),0)
+    advanceMode = int(settings.value("VelodyneHDLPlugin/AdvanceFeature/Enable", 0))
     if not advanceMode:
       app.actions['actionAdvanceFeature'].checked = False
       onToogleAdvancedGUI(updateSettings=False)
