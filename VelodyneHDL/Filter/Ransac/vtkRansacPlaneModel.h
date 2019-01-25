@@ -29,17 +29,53 @@ class VTK_EXPORT vtkRansacPlaneModel : public vtkPolyDataAlgorithm
   vtkTypeMacro(vtkRansacPlaneModel, vtkPolyDataAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent);
 
-  // Set the maximum number of iteration for ransac
-  void SetMaximumIteration(unsigned int maxIt);
+  /// Get the maximum number of ransac iterations
+  vtkGetMacro(MaxRansacIteration, unsigned int)
 
-  // Set the threshold
-  void SetThreshold(double thresh);
+  /// Set the maximum number of ransac iterations
+  vtkSetMacro(MaxRansacIteration, unsigned int)
 
-  // Set the Ratio inlier
-  void SetRatioInlierRequired(double ratio);
+  /// Get the distance to plane inlier / outlier threshold
+  vtkGetMacro(Threshold, double)
 
-  // Get the fitted plane parameters
-  void GetPlaneParam(double param[4]);
+  /// Set the distance to plane inlier / outlier threshold
+  vtkSetMacro(Threshold, double)
+
+  /// Get the ratio of inliers required to break the ransac algorithm loop
+  vtkGetMacro(RatioInliersRequired, double);
+
+  /// Set the ratio of inliers required to break the ransac algorithm loop
+  vtkSetMacro(RatioInliersRequired, double);
+
+  /// Get the plane fitted parameters
+  vtkGetVector4Macro(PlaneParam, double)
+
+  /// Set the plane fitted parameters
+  vtkSetVector4Macro(PlaneParam, double)
+
+  /// Get the option to apply alignment to the output polydata
+  vtkGetMacro(AlignOutput, bool)
+
+  /// Set the option to apply alignment to the output polydata
+  vtkSetMacro(AlignOutput, bool)
+
+  /// Get temporal averaging
+  vtkGetMacro(TemporalAveraging, bool)
+
+  /// Set temporal averaging
+  vtkSetMacro(TemporalAveraging, bool)
+
+  /// Get the maximal angle difference between the new plane estimate and the previous one
+  vtkGetMacro(MaxTemporalAngleChange, double)
+
+  /// Set the maximal angle difference between the new plane estimate and the previous one
+  vtkSetMacro(MaxTemporalAngleChange, double)
+
+  /// Get how much the previous estimation is used in temporal averaging
+  vtkGetMacro(PreviousEstimationWeight, double)
+
+  /// Set how much the previous estimation is used in temporal averaging
+  vtkSetMacro(PreviousEstimationWeight, double)
 
 protected:
   // constructor / destructor
@@ -54,18 +90,29 @@ private:
   vtkRansacPlaneModel(const vtkRansacPlaneModel&);
   void operator=(const vtkRansacPlaneModel&);
 
-  // maximum ransac iteration
+  /// maximum ransac iteration
   unsigned int MaxRansacIteration;
 
-  // distance to plane inlier / outlier threshold
+  /// distance to plane inlier / outlier threshold
   double Threshold;
 
-  // ratio of inliers required to break the
-  // ransac algorithm loop
+  /// ratio of inliers required to break the ransac algorithm loop
   double RatioInliersRequired;
 
-  // plane fitted parameters
-  double Param[4];
+  /// plane fitted parameters
+  double PlaneParam[4];
+
+  /// apply alignment to the output polydata
+  bool AlignOutput;
+
+  /// temporal averaging
+  bool TemporalAveraging;
+
+  /// maximal angle difference between the new plane estimate and the previous one
+  double MaxTemporalAngleChange;
+
+  /// how much the previous estimation is used in temporal averaging
+  double PreviousEstimationWeight;
 };
 
 #endif // VTK_RANSAC_PLANE_MODEL_H

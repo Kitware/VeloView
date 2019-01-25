@@ -15,6 +15,9 @@ target_link_libraries(TestNMEAParser VelodyneHDLPlugin)
 add_executable(TestTrailingFrame TestTrailingFrame.cxx)
 target_link_libraries(TestTrailingFrame VelodyneHDLPlugin)
 
+add_executable(TestRansacPlaneModel TestRansacPlaneModel.cxx)
+target_link_libraries(TestRansacPlaneModel VelodyneHDLPlugin)
+
 set(sensors "HDL-64"
             "VLP-16"
             "VLP-32c")
@@ -111,4 +114,8 @@ add_test(TestNMEAParser
 
 add_test(TestTrailingFrame
   ${INSTALL_LOCAL_DIR}/TestTrailingFrame
+)
+
+add_test(TestRansacPlaneModel
+  ${INSTALL_LOCAL_DIR}/TestRansacPlaneModel
 )
