@@ -328,5 +328,9 @@ int vtkLidarStream::RequestData(vtkInformation* vtkNotUsed(request),
     output->ShallowCopy(polyData);
   }
 
+  vtkTable* calibration = vtkTable::GetData(outputVector,1);
+  vtkTable *t = this->Interpreter->GetCalibrationTable();
+  calibration->ShallowCopy(t);
+
   return 1;
 }

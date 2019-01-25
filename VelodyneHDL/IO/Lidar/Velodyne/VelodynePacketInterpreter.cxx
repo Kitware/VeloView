@@ -668,6 +668,37 @@ void VelodynePacketInterpreter::LoadCalibration(const std::string& filename)
 
   PrecomputeCorrectionCosSin();
   this->IsCalibrated = true;
+
+  // Copy the calibration into a vtkTable
+  this->CalibrationData->SetNumberOfRows(14);
+
+  #define AddToCalibrationDataRowNamed(name, field)                                     \
+  auto array##field = vtkSmartPointer<vtkDoubleArray>::New();                           \
+  array##field->SetName(name);                                                          \
+  for (int i = 0; i < this->CalibrationReportedNumLasers; i++)                          \
+  {                                                                                     \
+    array##field->InsertNextTuple1(this->laser_corrections_[i].field);                  \
+  }                                                                                     \
+  this->CalibrationData->AddColumn(array##field);
+
+  AddToCalibrationDataRowNamed("rotationalCorrection",      rotationalCorrection)
+  AddToCalibrationDataRowNamed("verticalCorrection",        verticalCorrection)
+  AddToCalibrationDataRowNamed("distanceCorrection",        distanceCorrection)
+  AddToCalibrationDataRowNamed("distanceCorrectionX",       distanceCorrectionX)
+  AddToCalibrationDataRowNamed("distanceCorrectionY",       distanceCorrectionY)
+  AddToCalibrationDataRowNamed("verticalOffsetCorrection",  verticalOffsetCorrection)
+  AddToCalibrationDataRowNamed("horizontalOffsetCorrection",horizontalOffsetCorrection)
+  AddToCalibrationDataRowNamed("focalDistance",             focalDistance)
+  AddToCalibrationDataRowNamed("focalSlope",                focalSlope)
+  AddToCalibrationDataRowNamed("closeSlope",                closeSlope)
+  AddToCalibrationDataRowNamed("minIntensity",              minIntensity)
+  AddToCalibrationDataRowNamed("maxIntensity",              maxIntensity)
+  AddToCalibrationDataRowNamed("sinRotationalCorrection",   sinRotationalCorrection)
+  AddToCalibrationDataRowNamed("cosRotationalCorrection",   cosRotationalCorrection)
+  AddToCalibrationDataRowNamed("sinVertCorrection",         sinVertCorrection)
+  AddToCalibrationDataRowNamed("cosVertCorrection",         cosVertCorrection)
+  AddToCalibrationDataRowNamed("sinVertOffsetCorrection",   sinVertOffsetCorrection)
+  AddToCalibrationDataRowNamed("cosVertOffsetCorrection",   cosVertOffsetCorrection)
 }
 
 //-----------------------------------------------------------------------------

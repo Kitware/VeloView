@@ -319,6 +319,8 @@ vtkLidarReader::~vtkLidarReader()
 int vtkLidarReader::RequestData(vtkInformation *request, vtkInformationVector **inputVector, vtkInformationVector *outputVector)
 {
   vtkPolyData* output = vtkPolyData::GetData(outputVector);
+  vtkTable* calibration = vtkTable::GetData(outputVector,1);
+
   vtkInformation* info = outputVector->GetInformationObject(0);
 
   if (this->Internal->FileName.empty())
@@ -355,6 +357,10 @@ int vtkLidarReader::RequestData(vtkInformation *request, vtkInformationVector **
   this->Internal->Open();
   output->ShallowCopy(this->GetFrame(frameRequested, this->Interpreter->GetNumberOfTrailingFrames()));
   this->Internal->Close();
+
+  vtkTable *t = this->Interpreter->GetCalibrationTable();
+  calibration->ShallowCopy(t);
+
   return 1;
 }
 

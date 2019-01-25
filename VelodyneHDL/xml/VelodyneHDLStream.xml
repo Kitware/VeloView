@@ -6,6 +6,9 @@
          long_help="Velodyne HDL Stream">
       </Documentation>
 
+      <OutputPort name="Frame"       index="0" id="port0" />
+      <OutputPort name="Calibration" index="1" id="port1" />
+
       <StringVectorProperty
           name="CorrectionsFile"
           animateable="0"

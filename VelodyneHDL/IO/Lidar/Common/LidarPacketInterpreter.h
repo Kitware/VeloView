@@ -18,6 +18,7 @@
 
 #include <vtkNew.h>
 #include <vtkSmartPointer.h>
+#include <vtkTable.h>
 #include <vtkTransform.h>
 #include <vtkPolyData.h>
 
@@ -55,6 +56,12 @@ public:
    * @param filename should be garanty to exist, as no check will be perform.
    */
   virtual void LoadCalibration(const std::string& filename) = 0;
+
+  /**
+   * @brief GetCalibrationTable return a table conttaining all information related to the sensor
+   * calibration.
+   */
+  virtual vtkSmartPointer<vtkTable> GetCalibrationTable() { return this->CalibrationData.Get(); }
 
   /**
    * @brief ProcessPacket process the data packet to create incrementaly the frame.
@@ -198,6 +205,9 @@ protected:
 
   //! File containing all calibration information
   std::string CalibrationFileName;
+
+  ///! Calibration data store in a table
+  vtkNew<vtkTable> CalibrationData;
 
   //! Number of laser which can be shoot at the same time or at least in dt < epsilon
   int CalibrationReportedNumLasers;
