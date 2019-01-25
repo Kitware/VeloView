@@ -78,4 +78,4 @@ HDL-64E sensor.
 # How to build
 
 Detailed instructions for building and packaging are available in the
-[VeloView Developer Guide](Documentation/VeloView_Developer_Guide.pdf) .
+[VeloView Developer Guide](Documentation/VeloView_Developer_Guide.md) .
