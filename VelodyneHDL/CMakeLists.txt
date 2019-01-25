@@ -270,6 +270,7 @@ list(APPEND deps
   ${PCAP_LIBRARY}
   ${liblas_LIBRARY}
   ${ALL_BOOST_LIBRARIES}
+  "vtkIOInfovis" # https://public.kitware.com/pipermail/paraview/2016-January/036010.html
   ${vtklibproj4_LIBRARIES}
   ${PCL_LIBRARIES}
   ${CERES_LIBRARIES}
