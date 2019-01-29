@@ -241,19 +241,6 @@ public:
   vtkGetMacro(MappingLineMaxDistInlier, double)
   vtkSetMacro(MappingLineMaxDistInlier, double)
 
-  // Set transforms information / interpolator from an
-  // external sensor (GPS, IMU, Camera SLAM, ...) to be
-  // use to aid the SLAM algorithm. Note that without any
-  // information about the variance / covariance of the measured
-  // the data will only be used to initialize the SLAM odometry
-  // and will not be merged with the slam data using a Kalman filter
-  void SetExternalSensorMeasures(vtkVelodyneTransformInterpolator* interpolator);
-
-  // return the internal interpolator
-  void SetInterpolator(vtkVelodyneTransformInterpolator* interpolator, double easting0, double northing0, double height0, int utm);
-  void SetInterpolator(vtkVelodyneTransformInterpolator* interpolator);
-  void AddGeoreferencingFieldInformation(double easting0, double northing0, double height0, int utm);
-
 protected:
   // vtkPolyDataAlgorithm functions
   vtkSlam();
@@ -600,10 +587,6 @@ private:
   // the relative motion recover and the previous
   // world transformation
   void UpdateTworldUsingTrelative();
-
-  // Initialize Tworld using external data provided
-  // by an external sensor (GPS / IMU, ...)
-  void InitTworldUsingExternalData(double adjustedTime0, double rawTime0);
 
   // Fill the information array with default value
   // it is used if a mapping step is skipped for example
