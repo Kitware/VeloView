@@ -155,6 +155,7 @@ The following packages are needed to build on Ubuntu 16.04:
 - libbz2-dev
 - zlib1g-dev
 - freeglut3-dev
+- pkg-config
 
 
 ### Linux build instructions <a name="linux-build-instructions"></a>
