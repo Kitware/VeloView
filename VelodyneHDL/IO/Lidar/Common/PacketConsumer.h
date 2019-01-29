@@ -48,6 +48,7 @@ public:
 
   void HandleSensorData(const unsigned char* data, unsigned int length);
 
+  // You must lock PacketConsumer.ConsumerMutex while calling this function
   vtkSmartPointer<vtkPolyData> GetFrameForTime(double timeRequest, double& actualTime, int numberOfTrailingFrame = 0);
 
   std::vector<double> GetTimesteps();
@@ -73,6 +74,9 @@ public:
   // Hold this when running reader code code or modifying its internals
   boost::mutex ReaderMutex;
 
+  // Hold this when modifying internals of reader
+  boost::mutex ConsumerMutex;
+
 protected:
   void UpdateDequeSize();
 
@@ -84,9 +88,6 @@ protected:
   bool NewData;
   int MaxNumberOfFrames;
   double LastTime;
-
-  // Hold this when modifying internals of reader
-  boost::mutex ConsumerMutex;
 
   std::deque<vtkSmartPointer<vtkPolyData> > Frames;
   std::deque<double> Timesteps;

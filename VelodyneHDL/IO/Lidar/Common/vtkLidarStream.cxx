@@ -309,8 +309,10 @@ int vtkLidarStream::RequestData(vtkInformation* vtkNotUsed(request),
     timeRequest = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP());
   }
 
-  double actualTime;
-  vtkSmartPointer<vtkPolyData> polyData(NULL);
+  {
+    boost::lock_guard<boost::mutex> lock(this->Internal->Consumer->ConsumerMutex);
+    double actualTime;
+    vtkSmartPointer<vtkPolyData> polyData(NULL);
 //  if (this->Internal->Consumer->GetNumberOfTrailingFrames() > 0)
 //  {
 //    polyData = this->Internal->Consumer->GetFramesForTime(
@@ -321,11 +323,12 @@ int vtkLidarStream::RequestData(vtkInformation* vtkNotUsed(request),
     polyData = this->Internal->Consumer->GetFrameForTime(timeRequest, actualTime);
 //  }
 
-  if (polyData)
-  {
-    // printf("request %f, returning %f\n", timeRequest, actualTime);
-    output->GetInformation()->Set(vtkDataObject::DATA_TIME_STEP(), actualTime);
-    output->ShallowCopy(polyData);
+    if (polyData)
+    {
+      // printf("request %f, returning %f\n", timeRequest, actualTime);
+      output->GetInformation()->Set(vtkDataObject::DATA_TIME_STEP(), actualTime);
+      output->ShallowCopy(polyData);
+    }
   }
 
   vtkTable* calibration = vtkTable::GetData(outputVector,1);
