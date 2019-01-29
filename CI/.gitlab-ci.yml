@@ -163,33 +163,6 @@ ubuntu16.04_package_schedule:
   <<: *ubuntu_16_04
   <<: *linux_package_schedule
 
-#-------------------------------------------------------------------------------
-# jobs for ubunu 14.04.5
-#-------------------------------------------------------------------------------
-.ubuntu_14_04_5: &ubuntu_14_04_5
-  tags:
-    - ubuntu_14.04.5
-  variables:
-    OS: ubuntu_14.04.5
-  only:
-    - schedules
-
-ubuntu14.04.5_superbuild_schedule:
-  <<: *ubuntu_14_04_5
-  <<: *linux_superbuild_schedule
-
-ubuntu14.04.5_build:
-  <<: *ubuntu_14_04_5
-  <<: *linux_build
-
-ubuntu14.04.5_test:
-  <<: *ubuntu_14_04_5
-  <<: *linux_test
-
-ubuntu14.04.5_package_schedule:
-  <<: *ubuntu_14_04_5
-  <<: *linux_package_schedule
-
 ################################################################################
 ### anchor jobs for OSX, they will be used accros multiple other jobs
 ################################################################################
