@@ -30,8 +30,6 @@ void PacketConsumer::HandleSensorData(const unsigned char *data, unsigned int le
 //----------------------------------------------------------------------------
 vtkSmartPointer<vtkPolyData> PacketConsumer::GetFrameForTime(double timeRequest, double &actualTime, int numberOfTrailingFrames)
 {
-  boost::lock_guard<boost::mutex> lock(this->ConsumerMutex);
-
   size_t stepIndex = this->GetIndexForTime(timeRequest);
   if (stepIndex < this->Timesteps.size())
   {
