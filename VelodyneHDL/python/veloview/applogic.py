@@ -1460,10 +1460,7 @@ def saveScreenshot(filename):
 
 
 def getSpreadSheetViewProxy():
-    for p in smp.servermanager.ProxyManager():
-        if p.GetXMLName() == 'SpreadSheetView':
-            return p
-
+    return smp.servermanager.ProxyManager().GetProxy("views", "main spreadsheet view")
 
 def clearSpreadSheetView():
     view = getSpreadSheetViewProxy()
