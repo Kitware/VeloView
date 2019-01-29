@@ -130,25 +130,25 @@ public:
   LineFitting();
 
   // Fitting using PCA
-  bool FitPCA(std::vector<Eigen::Matrix<double, 3, 1> >& points);
+  bool FitPCA(std::vector<Eigen::Vector3d >& points);
 
   // Futting using very local line and
   // check if this local line is consistent
   // in a more global neighborhood
-  bool FitPCAAndCheckConsistency(std::vector<Eigen::Matrix<double, 3, 1> >& points);
+  bool FitPCAAndCheckConsistency(std::vector<Eigen::Vector3d >& points);
 
   // Poor but fast fitting using
   // extremities of the distribution
-  void FitFast(std::vector<Eigen::Matrix<double, 3, 1> >& points);
+  void FitFast(std::vector<Eigen::Vector3d >& points);
 
   // Direction and position
-  Eigen::Matrix<double, 3, 1> Direction;
-  Eigen::Matrix<double, 3, 1> Position;
-  Eigen::Matrix<double, 3, 3> SemiDist;
+  Eigen::Vector3d Direction;
+  Eigen::Vector3d Position;
+  Eigen::Matrix3d SemiDist;
   double MaxDistance;
   double MaxSinAngle;
 
-  Eigen::Matrix<double, 3, 3> I3;
+  Eigen::Matrix3d I3;
 };
 
 //-----------------------------------------------------------------------------
@@ -163,7 +163,7 @@ LineFitting::LineFitting()
 }
 
 //-----------------------------------------------------------------------------
-bool LineFitting::FitPCA(std::vector<Eigen::Matrix<double, 3, 1> >& points)
+bool LineFitting::FitPCA(std::vector<Eigen::Vector3d >& points)
 {
   // Compute PCA to determine best line approximation
   // of the points distribution
@@ -174,7 +174,7 @@ bool LineFitting::FitPCA(std::vector<Eigen::Matrix<double, 3, 1> >& points)
     data.row(k) = points[k];
   }
 
-  Eigen::Matrix<double, 3, 1> mean = data.colwise().mean();
+  Eigen::Vector3d mean = data.colwise().mean();
   Eigen::MatrixXd centered = data.rowwise() - mean.transpose();
   Eigen::MatrixXd cov = centered.transpose() * centered;
   Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eig(cov);
@@ -218,12 +218,12 @@ bool LineFitting::FitPCA(std::vector<Eigen::Matrix<double, 3, 1> >& points)
 }
 
 //-----------------------------------------------------------------------------
-bool LineFitting::FitPCAAndCheckConsistency(std::vector<Eigen::Matrix<double, 3, 1> >& points)
+bool LineFitting::FitPCAAndCheckConsistency(std::vector<Eigen::Vector3d >& points)
 {
   bool isLineFittingAccurate = true;
 
   // first check if the neighborhood is straight
-  Eigen::Matrix<double, 3, 1> U, V;
+  Eigen::Vector3d U, V;
   U = (points[1] - points[0]).normalized();
   double sinAngle;
   for (unsigned int index = 1; index < points.size() - 1; index++)
@@ -242,12 +242,12 @@ bool LineFitting::FitPCAAndCheckConsistency(std::vector<Eigen::Matrix<double, 3,
 }
 
 //-----------------------------------------------------------------------------
-void LineFitting::FitFast(std::vector<Eigen::Matrix<double, 3, 1> >& points)
+void LineFitting::FitFast(std::vector<Eigen::Vector3d >& points)
 {
   // Take the two extrems points of the neighborhood
   // i.e the farest and the closest to the current point
-  Eigen::Matrix<double, 3, 1> U = points[0];
-  Eigen::Matrix<double, 3, 1> V = points[points.size() - 1];
+  Eigen::Vector3d U = points[0];
+  Eigen::Vector3d V = points[points.size() - 1];
 
   // direction
   this->Direction = (V - U).normalized();
@@ -930,7 +930,7 @@ vtkSlam::~vtkSlam()
 void vtkSlam::GetWorldTransform(double* Tworld)
 {
   // Rotation and translation relative
-  Eigen::Matrix<double, 3, 3> Rw;
+  Eigen::Matrix3d Rw;
 
   // full rotation
   Rw = GetRotationMatrix(this->Tworld);
@@ -1474,8 +1474,8 @@ Eigen::Matrix<double, 6, 1> GetTransformsParametersForTime(double t, vtkSmartPoi
   interp->InterpolateTransform(t, corrTransform.Get());
   vtkNew<vtkMatrix4x4> M;
   corrTransform->GetMatrix(M.Get());
-  Eigen::Matrix<double, 3, 3> R;
-  Eigen::Matrix<double, 3, 1> T0, theta0;
+  Eigen::Matrix3d R;
+  Eigen::Vector3d T0, theta0;
   R << M->Element[0][0], M->Element[0][1], M->Element[0][2],
        M->Element[1][0], M->Element[1][1], M->Element[1][2],
        M->Element[2][0], M->Element[2][1], M->Element[2][2];
@@ -1488,12 +1488,12 @@ Eigen::Matrix<double, 6, 1> GetTransformsParametersForTime(double t, vtkSmartPoi
 }
 
 //-----------------------------------------------------------------------------
-Eigen::Matrix<double, 3, 1> GetVelocityForTime(double t, double dt, vtkSmartPointer<vtkVelodyneTransformInterpolator> interp)
+Eigen::Vector3d GetVelocityForTime(double t, double dt, vtkSmartPointer<vtkVelodyneTransformInterpolator> interp)
 {
   Eigen::Matrix<double, 6, 1> Tp = GetTransformsParametersForTime(t - dt, interp);
   Eigen::Matrix<double, 6, 1> Tn = GetTransformsParametersForTime(t + dt, interp);
   Eigen::Matrix<double, 6, 1> deltaT = (Tn - Tp) / (2 * dt);
-  Eigen::Matrix<double, 3, 1> V;
+  Eigen::Vector3d V;
   V << deltaT(3), deltaT(4), deltaT(5);
   return V;
 }
@@ -1613,8 +1613,8 @@ void vtkSlam::InitTworldUsingExternalData(double adjustedTime0, double rawTime0)
     transformsSmoothed.push_back(tempTransform);
   }
 
-  Eigen::Matrix<double, 3, 1> NoiseVelocityMean = Eigen::Matrix<double, 3, 1>::Zero();
-  Eigen::Matrix<double, 3, 3> NoiseVelocityVar = Eigen::Matrix<double, 3, 3>::Zero();
+  Eigen::Vector3d NoiseVelocityMean = Eigen::Vector3d::Zero();
+  Eigen::Matrix3d NoiseVelocityVar = Eigen::Matrix3d::Zero();
   this->VelocityNormCov = 0.0;
   double VelocityNormMean = 0.0;
 
@@ -1624,8 +1624,8 @@ void vtkSlam::InitTworldUsingExternalData(double adjustedTime0, double rawTime0)
     int indexPrev = std::max(0, k - 1);
     int indexNext = std::min(static_cast<int>(transforms.size()) - 1, k + 1);
 
-    Eigen::Matrix<double, 3, 1> Xp, Xn, V;
-    Eigen::Matrix<double, 3, 1> Xsp, Xsn, Vs;
+    Eigen::Vector3d Xp, Xn, V;
+    Eigen::Vector3d Xsp, Xsn, Vs;
 
     Xp << transforms[indexPrev][4], transforms[indexPrev][5], transforms[indexPrev][6];
     Xn << transforms[indexNext][4], transforms[indexNext][5], transforms[indexNext][6];
@@ -1648,8 +1648,8 @@ void vtkSlam::InitTworldUsingExternalData(double adjustedTime0, double rawTime0)
     int indexPrev = std::max(0, k - 1);
     int indexNext = std::min(static_cast<int>(transforms.size()) - 1, k + 1);
 
-    Eigen::Matrix<double, 3, 1> Xp, Xn, V;
-    Eigen::Matrix<double, 3, 1> Xsp, Xsn, Vs;
+    Eigen::Vector3d Xp, Xn, V;
+    Eigen::Vector3d Xsp, Xsn, Vs;
 
     Xp << transforms[indexPrev][4], transforms[indexPrev][5], transforms[indexPrev][6];
     Xn << transforms[indexNext][4], transforms[indexNext][5], transforms[indexNext][6];
@@ -1669,13 +1669,13 @@ void vtkSlam::InitTworldUsingExternalData(double adjustedTime0, double rawTime0)
   // we will estimate the mean and the standard deviation
   // of the GPS signal by analyzing the difference between
   // our regression and the raw data
-  Eigen::Matrix<double, 3, 1> NoiseMean = Eigen::Matrix<double, 3, 1>::Zero();
-  Eigen::Matrix<double, 3, 3> NoiseVar = Eigen::Matrix<double, 3, 3>::Zero();
+  Eigen::Vector3d NoiseMean = Eigen::Vector3d::Zero();
+  Eigen::Matrix3d NoiseVar = Eigen::Matrix3d::Zero();
 
   // Compute the mean of the noise
   for (int k = 0; k < transforms.size(); ++k)
   {
-    Eigen::Matrix<double, 3, 1> X, Xs;
+    Eigen::Vector3d X, Xs;
     X << transforms[k][4], transforms[k][5], transforms[k][6];
     Xs << transformsSmoothed[k][4], transformsSmoothed[k][5], transformsSmoothed[k][6];
     NoiseMean += X - Xs;
@@ -1685,7 +1685,7 @@ void vtkSlam::InitTworldUsingExternalData(double adjustedTime0, double rawTime0)
   // compute the variance covariance of the noise
   for (int k = 0; k < transforms.size(); ++k)
   {
-    Eigen::Matrix<double, 3, 1> X, Xs;
+    Eigen::Vector3d X, Xs;
     X << transforms[k][4], transforms[k][5], transforms[k][6];
     Xs << transformsSmoothed[k][4], transformsSmoothed[k][5], transformsSmoothed[k][6];
     NoiseVar += ((X - Xs) - NoiseMean) * ((X - Xs) - NoiseMean).transpose();
@@ -1714,7 +1714,7 @@ void vtkSlam::InitTworldUsingExternalData(double adjustedTime0, double rawTime0)
   {
     StateVector(k) = this->Tworld(k);
   }
-  Eigen::Matrix<double, 3, 1> V = GetVelocityForTime(t, 1.5, this->ExternalMeasures);
+  Eigen::Vector3d V = GetVelocityForTime(t, 1.5, this->ExternalMeasures);
   StateVector(9) = V(0);
   StateVector(10) = V(1);
   StateVector(11) = V(2);
@@ -1837,7 +1837,7 @@ void vtkSlam::AddFrame(vtkPolyData* newFrame)
   this->NbrFrameProcessed++;
 
   // Motion and localization parameters estimation information display
-  Eigen::Matrix<double, 3, 1> angles, trans;
+  Eigen::Vector3d angles, trans;
   angles << Rad2Deg(this->Trelative(0)), Rad2Deg(this->Trelative(1)), Rad2Deg(this->Trelative(2));
   trans << this->Trelative(3), this->Trelative(4), this->Trelative(5);
   std::cout << "Ego-Motion estimation: angles = [" << angles.transpose() << "] translation: [" << trans.transpose() << "]" << std::endl;
@@ -1993,7 +1993,7 @@ void vtkSlam::ComputeKeyPoints(vtkSmartPointer<vtkPolyData> input)
 void vtkSlam::ComputeCurvature(vtkSmartPointer<vtkPolyData> input)
 {
   Point currentPoint;
-  Eigen::Matrix<double, 3, 1> X, centralPoint;
+  Eigen::Vector3d X, centralPoint;
   LineFitting leftLine, rightLine, farNeighborsLine;
 
   // loop over scans lines
@@ -2019,9 +2019,9 @@ void vtkSlam::ComputeCurvature(vtkSmartPointer<vtkPolyData> input)
       // neighbors located after the current points. We will then
       // compute the angle between these two lines as an approximation
       // of the "sharpness" of the current point.
-      std::vector<Eigen::Matrix<double, 3, 1> > leftNeighbor;
-      std::vector<Eigen::Matrix<double, 3, 1> > rightNeighbor;
-      std::vector<Eigen::Matrix<double, 3, 1> > farNeighbors;
+      std::vector<Eigen::Vector3d > leftNeighbor;
+      std::vector<Eigen::Vector3d > rightNeighbor;
+      std::vector<Eigen::Vector3d > farNeighbors;
 
       // Fill right and left neighborhood
       // /!\ The way the neighbors are added
@@ -2148,8 +2148,8 @@ void vtkSlam::ComputeCurvature(vtkSmartPointer<vtkPolyData> input)
 void vtkSlam::InvalidPointWithBadCriteria()
 {
   // Temporary variables used in the next loop
-  Eigen::Matrix<double, 3, 1> dX, X, Xn, Xp, Xproj, dXproj;
-  Eigen::Matrix<double, 3, 1> Y, Yn, Yp, dY;
+  Eigen::Vector3d dX, X, Xn, Xp, Xproj, dXproj;
+  Eigen::Vector3d Y, Yn, Yp, dY;
   double dL, L, Ln, expectedLength, dLn, dLp, expectedLengthNeighbor;
   Point currentPoint, nextPoint, previousPoint;
   Point temp;
@@ -2523,9 +2523,9 @@ void vtkSlam::TransformToWorld(Point& p)
   else
   {
     // Rotation and translation and points
-    Eigen::Matrix<double, 3, 3> Rw;
-    Eigen::Matrix<double, 3, 1> Tw;
-    Eigen::Matrix<double, 3, 1> P;
+    Eigen::Matrix3d Rw;
+    Eigen::Vector3d Tw;
+    Eigen::Vector3d P;
 
     Rw = GetRotationMatrix(this->Tworld);
     Tw << this->Tworld(3), this->Tworld(4), this->Tworld(5);
@@ -2540,8 +2540,8 @@ void vtkSlam::TransformToWorld(Point& p)
 }
 
 //-----------------------------------------------------------------------------
-int vtkSlam::ComputeLineDistanceParameters(pcl::KdTreeFLANN<Point>::Ptr kdtreePreviousEdges, Eigen::Matrix<double, 3, 3>& R,
-                                                   Eigen::Matrix<double, 3, 1>& dT, Point p, std::string step)
+int vtkSlam::ComputeLineDistanceParameters(pcl::KdTreeFLANN<Point>::Ptr kdtreePreviousEdges, Eigen::Matrix3d& R,
+                                                   Eigen::Vector3d& dT, Point p, std::string step)
 {
   // number of neighbors edge points required to approximate
   // the corresponding egde line
@@ -2570,8 +2570,8 @@ int vtkSlam::ComputeLineDistanceParameters(pcl::KdTreeFLANN<Point>::Ptr kdtreePr
   }
 
 
-  Eigen::Matrix<double, 3, 1> P0, P, n;
-  Eigen::Matrix<double, 3, 3> A;
+  Eigen::Vector3d P0, P, n;
+  Eigen::Matrix3d A;
 
   // Transform the point using the current pose estimation
   P0 << p.x, p.y, p.z;
@@ -2635,7 +2635,7 @@ int vtkSlam::ComputeLineDistanceParameters(pcl::KdTreeFLANN<Point>::Ptr kdtreePr
     data.row(k) << pt.x, pt.y, pt.z;
   }
 
-  Eigen::Matrix<double, 3, 1> mean = data.colwise().mean();
+  Eigen::Vector3d mean = data.colwise().mean();
   Eigen::MatrixXd centered = data.rowwise() - mean.transpose();
   Eigen::MatrixXd cov = centered.transpose() * centered;
   Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eig(cov);
@@ -2683,7 +2683,7 @@ int vtkSlam::ComputeLineDistanceParameters(pcl::KdTreeFLANN<Point>::Ptr kdtreePr
 
   // Evaluate the distance from the fitted line distribution
   // of the neighborhood
-  Eigen::Matrix<double, 3, 1> Xtemp;
+  Eigen::Vector3d Xtemp;
   Point pt;
   double meanSquaredDist = 0;
   for (unsigned int k = 0; k < requiredNearest; ++k)
@@ -2730,8 +2730,8 @@ int vtkSlam::ComputeLineDistanceParameters(pcl::KdTreeFLANN<Point>::Ptr kdtreePr
 }
 
 //-----------------------------------------------------------------------------
-int vtkSlam::ComputePlaneDistanceParameters(pcl::KdTreeFLANN<Point>::Ptr kdtreePreviousPlanes, Eigen::Matrix<double, 3, 3>& R,
-                                                    Eigen::Matrix<double, 3, 1>& dT, Point p, std::string step)
+int vtkSlam::ComputePlaneDistanceParameters(pcl::KdTreeFLANN<Point>::Ptr kdtreePreviousPlanes, Eigen::Matrix3d& R,
+                                                    Eigen::Vector3d& dT, Point p, std::string step)
 {
   // number of neighbors edge points required to approximate
   // the corresponding egde line
@@ -2761,8 +2761,8 @@ int vtkSlam::ComputePlaneDistanceParameters(pcl::KdTreeFLANN<Point>::Ptr kdtreeP
     throw "ComputeLineDistanceParameters function got invalide step parameter";
   }
 
-  Eigen::Matrix<double, 3, 1> P0, P, n;
-  Eigen::Matrix<double, 3, 3> A;
+  Eigen::Vector3d P0, P, n;
+  Eigen::Matrix3d A;
 
   // Transform the point using the current pose estimation
   P0 << p.x, p.y, p.z;
@@ -2813,7 +2813,7 @@ int vtkSlam::ComputePlaneDistanceParameters(pcl::KdTreeFLANN<Point>::Ptr kdtreeP
     data.row(k) << pt.x, pt.y, pt.z;
   }
 
-  Eigen::Matrix<double, 3, 1> mean = data.colwise().mean();
+  Eigen::Vector3d mean = data.colwise().mean();
   Eigen::MatrixXd centered = data.rowwise() - mean.transpose();
   Eigen::MatrixXd cov = centered.transpose() * centered;
   Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eig(cov);
@@ -2829,7 +2829,7 @@ int vtkSlam::ComputePlaneDistanceParameters(pcl::KdTreeFLANN<Point>::Ptr kdtreeP
   // if the second eigen value is close to the highest one
   // and bigger than the smallest one it means that the points
   // are distributed among a plane
-  Eigen::Matrix<double, 3, 1> u, v;
+  Eigen::Vector3d u, v;
   if ( (significantlyFactor2 * D(1) > D(2)) && (D(1) > significantlyFactor1 * D(0)) )
   {
     u = V.col(2);
@@ -2857,7 +2857,7 @@ int vtkSlam::ComputePlaneDistanceParameters(pcl::KdTreeFLANN<Point>::Ptr kdtreeP
     return 3;
   }
 
-  Eigen::Matrix<double, 3, 1> Xtemp;
+  Eigen::Vector3d Xtemp;
   Point pt;
   double meanSquaredDist = 0;
   for (unsigned int k = 0; k < requiredNearest; ++k)
@@ -2891,8 +2891,8 @@ int vtkSlam::ComputePlaneDistanceParameters(pcl::KdTreeFLANN<Point>::Ptr kdtreeP
 }
 
 //-----------------------------------------------------------------------------
-int vtkSlam::ComputeBlobsDistanceParameters(pcl::KdTreeFLANN<Point>::Ptr kdtreePreviousBlobs, Eigen::Matrix<double, 3, 3>& R,
-                                                    Eigen::Matrix<double, 3, 1>& dT, Point p, std::string step)
+int vtkSlam::ComputeBlobsDistanceParameters(pcl::KdTreeFLANN<Point>::Ptr kdtreePreviousBlobs, Eigen::Matrix3d& R,
+                                                    Eigen::Vector3d& dT, Point p, std::string step)
 {
   // number of neighbors blobs points required to approximate
   // the corresponding ellipsoide
@@ -2904,8 +2904,8 @@ int vtkSlam::ComputeBlobsDistanceParameters(pcl::KdTreeFLANN<Point>::Ptr kdtreeP
   float maxDiameterTol = std::pow(4.0, 2);
 
   // Usefull variables
-  Eigen::Matrix<double, 3, 1> P0, P, n;
-  Eigen::Matrix<double, 3, 3> A;
+  Eigen::Vector3d P0, P, n;
+  Eigen::Matrix3d A;
 
   // Transform the point using the current pose estimation
   P << p.x, p.y, p.z;
@@ -2964,7 +2964,7 @@ int vtkSlam::ComputeBlobsDistanceParameters(pcl::KdTreeFLANN<Point>::Ptr kdtreeP
     data.row(k) << pt.x, pt.y, pt.z;
   }
 
-  Eigen::Matrix<double, 3, 1> mean = data.colwise().mean();
+  Eigen::Vector3d mean = data.colwise().mean();
   Eigen::MatrixXd centered = data.rowwise() - mean.transpose();
   Eigen::MatrixXd cov = centered.transpose() * centered;
 
@@ -2984,7 +2984,7 @@ int vtkSlam::ComputeBlobsDistanceParameters(pcl::KdTreeFLANN<Point>::Ptr kdtreeP
   Eigen::MatrixXd D = eig.eigenvalues();
   Eigen::MatrixXd U = eig.eigenvectors();
   D = D / D(2);
-  Eigen::Matrix<double, 3, 3> diagD = Eigen::Matrix<double, 3, 3>::Zero();
+  Eigen::Matrix3d diagD = Eigen::Matrix3d::Zero();
   diagD(0, 0) = D(0); diagD(1, 1) = D(1); diagD(2, 2) = D(2);
   A = U * diagD * U.transpose();
 
@@ -3086,8 +3086,8 @@ void vtkSlam::GetMappingLineSpecificNeigbbor(std::vector<int>& nearestValid, std
   nearestValid.push_back(nearestIndex[0]);
   nearestValidDist.push_back(nearestDist[0]);
 
-  Eigen::Matrix<double, 3, 1> P1, P2, dir, Pcdt;
-  Eigen::Matrix<double, 3, 3> D;
+  Eigen::Vector3d P1, P2, dir, Pcdt;
+  Eigen::Matrix3d D;
   P1 << closest.x, closest.y, closest.z;
   Point pclP2;
   Point inlierCandidate;
@@ -3139,8 +3139,8 @@ void vtkSlam::GetMappingLineSpecificNeigbbor(std::vector<int>& nearestValid, std
 }
 
 //-----------------------------------------------------------------------------
-void vtkSlam::ComputeResidualJacobians(std::vector<Eigen::Matrix<double, 3, 3> >& vA, std::vector<Eigen::Matrix<double, 3, 1> >& vX,
-                                       std::vector<Eigen::Matrix<double, 3, 1> >& vP, std::vector<double> vS,
+void vtkSlam::ComputeResidualJacobians(std::vector<Eigen::Matrix3d >& vA, std::vector<Eigen::Vector3d >& vX,
+                                       std::vector<Eigen::Vector3d >& vP, std::vector<double> vS,
                                        Eigen::Matrix<double, 6, 1>& T, Eigen::MatrixXd& residualsJacobians)
 {
   residualsJacobians = Eigen::MatrixXd(vX.size(), 6);
@@ -3151,9 +3151,9 @@ void vtkSlam::ComputeResidualJacobians(std::vector<Eigen::Matrix<double, 3, 3> >
   rx = T(0); ry = T(1); rz = T(2);
   double X1, X2, X3;
   double C1, C2, C3;
-  Eigen::Matrix<double, 3, 3> A;
-  Eigen::Matrix<double, 3, 3> R = GetRotationMatrix(T);
-  Eigen::Matrix<double, 3, 1> dT;
+  Eigen::Matrix3d A;
+  Eigen::Matrix3d R = GetRotationMatrix(T);
+  Eigen::Vector3d dT;
   dT << T(3), T(4), T(5);
 
   // cosinus and sinus of the current
@@ -3189,7 +3189,7 @@ void vtkSlam::ComputeResidualJacobians(std::vector<Eigen::Matrix<double, 3, 3> >
     A = vA[k];
 
     // represents h(R,T)
-    Eigen::Matrix<double, 3, 1> h_R_t = R * vX[k] + dT - vP[k];
+    Eigen::Vector3d h_R_t = R * vX[k] + dT - vP[k];
 
     // represent the jacobian of the G function
     // evaluated at the point h(R,T). Note that G is
@@ -3301,8 +3301,8 @@ void vtkSlam::ComputeEgoMotion()
   for (unsigned int icpCount = 0; icpCount < this->EgoMotionICPMaxIter; ++icpCount)
   {
     // Rotation and translation at this step
-    Eigen::Matrix<double, 3, 3> R = GetRotationMatrix(this->Trelative);
-    Eigen::Matrix<double, 3, 1> T;
+    Eigen::Matrix3d R = GetRotationMatrix(this->Trelative);
+    Eigen::Vector3d T;
     T << this->Trelative(3), this->Trelative(4), this->Trelative(5);
 
     // clear all keypoints matching data
@@ -3370,8 +3370,8 @@ void vtkSlam::ComputeEgoMotion()
       {
         ceres::CostFunction* cost_function = new ceres::AutoDiffCostFunction<CostFunctions::LinearDistortionResidual, 1, 6>(
                                              new CostFunctions::LinearDistortionResidual(this->Avalues[k], this->Pvalues[k], this->Xvalues[k],
-                                                                                         Eigen::Matrix<double, 3, 1>::Zero(),
-                                                                                         Eigen::Matrix<double, 3, 3>::Identity(),
+                                                                                         Eigen::Vector3d::Zero(),
+                                                                                         Eigen::Matrix3d::Identity(),
                                                                                          this->TimeValues[k], this->residualCoefficient[k]));
         problem.AddResidualBlock(cost_function, new ceres::ArctanLoss(2.0), this->Trelative.data());
       }
@@ -3488,8 +3488,8 @@ void vtkSlam::Mapping()
     }
 
     // Rotation and position at this step
-    Eigen::Matrix<double, 3, 3> R = GetRotationMatrix(this->Tworld);
-    Eigen::Matrix<double, 3, 1> T;
+    Eigen::Matrix3d R = GetRotationMatrix(this->Tworld);
+    Eigen::Vector3d T;
     T << this->Tworld(3), this->Tworld(4), this->Tworld(5);
 
     // loop over edges
@@ -3544,8 +3544,8 @@ void vtkSlam::Mapping()
     }
 
     // Get the previous sensor pose
-    Eigen::Matrix<double, 3, 3> R0 = GetRotationMatrix(this->PreviousTworld);
-    Eigen::Matrix<double, 3, 1> T0; T0 << this->PreviousTworld[3], this->PreviousTworld[4], this->PreviousTworld[5];
+    Eigen::Matrix3d R0 = GetRotationMatrix(this->PreviousTworld);
+    Eigen::Vector3d T0; T0 << this->PreviousTworld[3], this->PreviousTworld[4], this->PreviousTworld[5];
 
     // We want to estimate our 6-DOF parameters using a non
     // linear least square minimization. The non linear part
@@ -3653,7 +3653,7 @@ void vtkSlam::Mapping()
           SigmaMeas(i, j) = 0.0;
         }
       }
-      Eigen::Matrix<double, 3, 1> V = GetVelocityForTime(this->CurrentTime, 1.5, this->ExternalMeasures);
+      Eigen::Vector3d V = GetVelocityForTime(this->CurrentTime, 1.5, this->ExternalMeasures);
       for (unsigned int i = 0; i < 6; ++i)
       {
         Measure(i) = this->Tworld(i);
@@ -3778,8 +3778,8 @@ vtkSmartPointer<vtkVelodyneTransformInterpolator> vtkSlam::InitUndistortionInter
   // transform 1 is the delta transform
   // between T0 and T1 computed in the EgoMotion
   // i.e Trelative
-  Eigen::Matrix<double, 3, 3> R = GetRotationMatrix(this->Trelative);
-  Eigen::Matrix<double, 3, 1> T;
+  Eigen::Matrix3d R = GetRotationMatrix(this->Trelative);
+  Eigen::Vector3d T;
   T << this->Trelative(3), this->Trelative(4), this->Trelative(5);
 
   vtkNew<vtkMatrix4x4> M;
@@ -3819,11 +3819,11 @@ vtkSmartPointer<vtkVelodyneTransformInterpolator> vtkSlam::InitUndistortionInter
 
   // transform 1 is the delta transform
   // between T0 and T1
-  Eigen::Matrix<double, 3, 3> R0, R1;
+  Eigen::Matrix3d R0, R1;
   R0 = GetRotationMatrix(this->PreviousTworld);
   R1 = GetRotationMatrix(this->Tworld);
 
-  Eigen::Matrix<double, 3, 1> T0, T1;
+  Eigen::Vector3d T0, T1;
   T0 << this->PreviousTworld(3), this->PreviousTworld(4), this->PreviousTworld(5);
   T1 << this->Tworld(3), this->Tworld(4), this->Tworld(5);
 
@@ -3902,8 +3902,8 @@ void vtkSlam::ResetDistanceParameters()
 void vtkSlam::UpdateTworldUsingTrelative()
 {
   // Rotation and translation relative
-  Eigen::Matrix<double, 3, 3> Rr, Rw;
-  Eigen::Matrix<double, 3, 1> Tr, Tw;
+  Eigen::Matrix3d Rr, Rw;
+  Eigen::Vector3d Tr, Tw;
   Rr = GetRotationMatrix(this->Trelative);
   Tr << this->Trelative(3), this->Trelative(4), this->Trelative(5);
 
@@ -3911,8 +3911,8 @@ void vtkSlam::UpdateTworldUsingTrelative()
   Rw = GetRotationMatrix(this->Tworld);
   Tw << this->Tworld(3), this->Tworld(4), this->Tworld(5);
 
-  Eigen::Matrix<double, 3, 1> newTw;
-  Eigen::Matrix<double, 3, 3> newRw;
+  Eigen::Vector3d newTw;
+  Eigen::Matrix3d newRw;
 
   // The new pos of the sensor in the world
   // referential is the previous one composed

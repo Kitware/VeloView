@@ -593,9 +593,9 @@ private:
   // - Xvalues will store the W points
   // - residualCoefficient will attenuate the distance function for outliers
   // - TimeValues store the time acquisition
-  std::vector<Eigen::Matrix<double, 3, 3> > Avalues;
-  std::vector<Eigen::Matrix<double, 3, 1> > Pvalues;
-  std::vector<Eigen::Matrix<double, 3, 1> > Xvalues;
+  std::vector<Eigen::Matrix3d > Avalues;
+  std::vector<Eigen::Vector3d > Pvalues;
+  std::vector<Eigen::Vector3d > Xvalues;
   std::vector<double> RadiusIncertitude;
   std::vector<double> residualCoefficient;
   std::vector<double> TimeValues;
@@ -680,18 +680,18 @@ private:
   // (R * X + T - P).t * A * (R * X + T - P)
   // Where P is the mean point of the neighborhood and A is the symmetric
   // variance-covariance matrix encoding the shape of the neighborhood
-  int ComputeLineDistanceParameters(pcl::KdTreeFLANN<Point>::Ptr kdtreePreviousEdges, Eigen::Matrix<double, 3, 3>& R,
-                                             Eigen::Matrix<double, 3, 1>& dT, Point p, std::string step);
-  int ComputePlaneDistanceParameters(pcl::KdTreeFLANN<Point>::Ptr kdtreePreviousPlanes, Eigen::Matrix<double, 3, 3>& R,
-                                              Eigen::Matrix<double, 3, 1>& dT, Point p, std::string step);
-  int ComputeBlobsDistanceParameters(pcl::KdTreeFLANN<Point>::Ptr kdtreePreviousBlobs, Eigen::Matrix<double, 3, 3>& R,
-                                              Eigen::Matrix<double, 3, 1>& dT, Point p, std::string step);
+  int ComputeLineDistanceParameters(pcl::KdTreeFLANN<Point>::Ptr kdtreePreviousEdges, Eigen::Matrix3d& R,
+                                             Eigen::Vector3d& dT, Point p, std::string step);
+  int ComputePlaneDistanceParameters(pcl::KdTreeFLANN<Point>::Ptr kdtreePreviousPlanes, Eigen::Matrix3d& R,
+                                              Eigen::Vector3d& dT, Point p, std::string step);
+  int ComputeBlobsDistanceParameters(pcl::KdTreeFLANN<Point>::Ptr kdtreePreviousBlobs, Eigen::Matrix3d& R,
+                                              Eigen::Vector3d& dT, Point p, std::string step);
 
   // we want to minimize F(R,T) = sum(fi(R,T)^2)
   // for a given i; fi is called a residual value and
   // the jacobian of fi is called the residual jacobian
-  void ComputeResidualJacobians(std::vector<Eigen::Matrix<double, 3, 3> >& vA, std::vector<Eigen::Matrix<double, 3, 1> >& vX,
-                                std::vector<Eigen::Matrix<double, 3, 1> >& vP, std::vector<double> vS,
+  void ComputeResidualJacobians(std::vector<Eigen::Matrix3d >& vA, std::vector<Eigen::Vector3d >& vX,
+                                std::vector<Eigen::Vector3d >& vP, std::vector<double> vS,
                                 Eigen::Matrix<double, 6, 1>& T, Eigen::MatrixXd& residualsJacobians);
 
   // Instead of taking the k-nearest neigbirs in the odometry
@@ -759,7 +759,7 @@ private:
   bool DisplayMode;
 
   // Identity matrix
-  Eigen::Matrix<double, 3, 3> I3;
+  Eigen::Matrix3d I3;
   Eigen::Matrix<double, 6, 6> I6;
 };
 

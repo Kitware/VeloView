@@ -33,9 +33,9 @@ namespace CostFunctions
 struct AffineIsometryResidual
 {
 public:
-  AffineIsometryResidual(Eigen::Matrix<double, 3, 3> argA,
-                         Eigen::Matrix<double, 3, 1> argC,
-                         Eigen::Matrix<double, 3, 1> argX,
+  AffineIsometryResidual(Eigen::Matrix3d argA,
+                         Eigen::Vector3d argC,
+                         Eigen::Vector3d argX,
                          double argLambda)
   {
     this->A = argA;
@@ -88,9 +88,9 @@ public:
   }
 
 private:
-  Eigen::Matrix<double, 3, 3> A;
-  Eigen::Matrix<double, 3, 1> C;
-  Eigen::Matrix<double, 3, 1> X;
+  Eigen::Matrix3d A;
+  Eigen::Vector3d C;
+  Eigen::Vector3d X;
   double lambda;
 };
 
@@ -98,11 +98,11 @@ private:
 struct LinearDistortionResidual
 {
 public:
-  LinearDistortionResidual(Eigen::Matrix<double, 3, 3> argA,
-                                   Eigen::Matrix<double, 3, 1> argC,
-                                   Eigen::Matrix<double, 3, 1> argX,
-                                   Eigen::Matrix<double, 3, 1> argT0,
-                                   Eigen::Matrix<double, 3, 3> argR0,
+  LinearDistortionResidual(Eigen::Matrix3d argA,
+                                   Eigen::Vector3d argC,
+                                   Eigen::Vector3d argX,
+                                   Eigen::Vector3d argT0,
+                                   Eigen::Matrix3d argR0,
                                    double argTime,
                                    double argLambda)
   {
@@ -248,11 +248,11 @@ public:
   }
 
 private:
-  Eigen::Matrix<double, 3, 3> A;
-  Eigen::Matrix<double, 3, 3> R0;
-  Eigen::Matrix<double, 3, 1> T0;
-  Eigen::Matrix<double, 3, 1> C;
-  Eigen::Matrix<double, 3, 1> X;
+  Eigen::Matrix3d A;
+  Eigen::Matrix3d R0;
+  Eigen::Vector3d T0;
+  Eigen::Vector3d C;
+  Eigen::Vector3d X;
   double time;
   double lambda;
 };
