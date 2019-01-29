@@ -89,7 +89,7 @@
       <!-- KeyPoint Extraction Parameters -->
       <IntVectorProperty
           name="Max Edge"
-          command="Set_Keypoint_MaxEdgePerScanLine"
+          command="SetMaxEdgePerScanLine"
           default_values="200"
           number_of_elements="1">
         <Documentation>
@@ -100,7 +100,7 @@
 
       <IntVectorProperty
           name="Max Plane"
-          command="Set_Keypoint_MaxPlanarsPerScanLine"
+          command="SetMaxPlanarsPerScanLine"
           default_values="200"
           number_of_elements="1">
         <Documentation>
@@ -111,7 +111,7 @@
 
       <DoubleVectorProperty
           name="MinDistanceToSensor"
-          command="Set_Keypoint_MinDistanceToSensor"
+          command="SetMinDistanceToSensor"
           default_values="3"
           number_of_elements="1">
         <Documentation>
@@ -124,7 +124,7 @@
 
       <DoubleVectorProperty
           name="EdgeSinAngleThreshold"
-          command="Set_Keypoint_EdgeSinAngleThreshold"
+          command="SetEdgeSinAngleThreshold"
           default_values="0.86"
           number_of_elements="1">
         <Documentation>
@@ -137,7 +137,7 @@
 
       <DoubleVectorProperty
           name="PlaneSinAngleThreshold"
-          command="Set_Keypoint_PlaneSinAngleThreshold"
+          command="SetPlaneSinAngleThreshold"
           default_values="0.5"
           number_of_elements="1">
         <Documentation>
@@ -150,7 +150,7 @@
 
       <DoubleVectorProperty
           name="EdgeDepthGapThreshold"
-          command="Set_Keypoint_EdgeDepthGapThreshold"
+          command="SetEdgeDepthGapThreshold"
           default_values="0.15"
           number_of_elements="1">
         <Documentation>

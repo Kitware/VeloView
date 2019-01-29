@@ -71,18 +71,6 @@
 #ifndef VTK_SLAM_H
 #define VTK_SLAM_H
 
-#define slamGetMacro(prefix,name,type) \
-type Get##prefix##_##name () const\
-  { \
-  return this->name; \
-  }
-
-#define slamSetMacro(prefix,name,type) \
-void Set##prefix##_##name (const type _arg) \
-{ \
-  this->name = _arg; \
-}
-
 // LOCAL
 #include "vtkPCLConversions.h"
 // STD
@@ -126,22 +114,8 @@ public:
   // output the parameters value of the slam algorithm
   void PrintParameters();
 
-  // Provide the calibration of the current sensor.
-  // The mapping indicates the number of laser and
-  // the mapping of the laser id
-  void SetSensorCalibration(int* mapping, int nbLaser);
-
-  // Indicate if the sensor calibration: number
-  // of lasers and mapping of the laser id has been
-  // provided earlier
-  bool GetIsSensorCalibrationProvided();
-
   // Get the computed world transform so far
   void GetWorldTransform(double* Tworld);
-
-  // Only compute the keypoint extraction to display result
-  // This function is usefull for debugging
-  void OnlyComputeKeypoints(vtkSmartPointer<vtkPolyData> newFrame);
 
   // Get/Set General
   vtkGetMacro(DisplayMode, bool)
@@ -184,23 +158,23 @@ public:
   void Set_RollingGrid_LeafVoxelFilterSize(const double size);
 
   // Get/Set Keypoint
-  slamGetMacro(_Keypoint,MaxEdgePerScanLine, unsigned int)
-  slamSetMacro(_Keypoint,MaxEdgePerScanLine, unsigned int)
+  vtkGetMacro(MaxEdgePerScanLine, unsigned int)
+  vtkSetMacro(MaxEdgePerScanLine, unsigned int)
 
-  slamGetMacro(_Keypoint,MaxPlanarsPerScanLine, unsigned int)
-  slamSetMacro(_Keypoint,MaxPlanarsPerScanLine, unsigned int)
+  vtkGetMacro(MaxPlanarsPerScanLine, unsigned int)
+  vtkSetMacro(MaxPlanarsPerScanLine, unsigned int)
 
-  slamGetMacro(_Keypoint,MinDistanceToSensor, double)
-  slamSetMacro(_Keypoint,MinDistanceToSensor, double)
+  vtkGetMacro(MinDistanceToSensor, double)
+  vtkSetMacro(MinDistanceToSensor, double)
 
-  slamGetMacro(_Keypoint,EdgeSinAngleThreshold, double)
-  slamSetMacro(_Keypoint,EdgeSinAngleThreshold, double)
+  vtkGetMacro(EdgeSinAngleThreshold, double)
+  vtkSetMacro(EdgeSinAngleThreshold, double)
 
-  slamGetMacro(_Keypoint,PlaneSinAngleThreshold, double)
-  slamSetMacro(_Keypoint,PlaneSinAngleThreshold, double)
+  vtkGetMacro(PlaneSinAngleThreshold, double)
+  vtkSetMacro(PlaneSinAngleThreshold, double)
 
-  slamGetMacro(_Keypoint,EdgeDepthGapThreshold, double)
-  slamSetMacro(_Keypoint,EdgeDepthGapThreshold, double)
+  vtkGetMacro(EdgeDepthGapThreshold, double)
+  vtkSetMacro(EdgeDepthGapThreshold, double)
 
   // Get/Set EgoMotion
   vtkGetMacro(EgoMotionLMMaxIter, unsigned int)
@@ -275,28 +249,16 @@ public:
   // and will not be merged with the slam data using a Kalman filter
   void SetExternalSensorMeasures(vtkVelodyneTransformInterpolator* interpolator);
 
-  // Load slam transforms in order to add them in
-  // the trajectory polydata. This won't affect the
-  // slam algorithm state
-  void LoadTransforms(const std::string& filename);
-
   // return the internal interpolator
-  vtkVelodyneTransformInterpolator* GetInterpolator() const;
   void SetInterpolator(vtkVelodyneTransformInterpolator* interpolator, double easting0, double northing0, double height0, int utm);
   void SetInterpolator(vtkVelodyneTransformInterpolator* interpolator);
   void AddGeoreferencingFieldInformation(double easting0, double northing0, double height0, int utm);
-
-  // Export the transforms that have been computed
-  void ExportTransforms(const std::string& filename);
 
 protected:
   // vtkPolyDataAlgorithm functions
   vtkSlam();
   ~vtkSlam();
   virtual int RequestData(vtkInformation *, vtkInformationVector **, vtkInformationVector *);
-  virtual int RequestDataObject(vtkInformation *, vtkInformationVector **, vtkInformationVector *);
-  virtual int RequestInformation(vtkInformation *, vtkInformationVector **, vtkInformationVector *);
-  virtual int RequestUpdateExtent(vtkInformation *, vtkInformationVector **, vtkInformationVector * );
 private:
   vtkSlam(const vtkSlam&);
   void operator = (const vtkSlam&);
@@ -328,25 +290,25 @@ private:
   // will be the same than the EgoMotion one. If set to false
   // all points that are not set to invalid will be used
   // as mapping planars points.
-  bool FastSlam;
+  bool FastSlam = true;
 
   // If set to true, the mapping will use a motion
   // model. The motion model will be integrating to
   // ICP estimator using a kalman filter. hence, when
   // the estimation has a poor confidence the slam will
   // use the motion model to improve accuracy
-  int MotionModel;
+  int MotionModel = 1;
 
   // Should the algorithm undistord the frame or not
   // The undistortion will improve the accuracy but
   // the computation speed will decrease
-  bool Undistortion;
+  bool Undistortion = false;
   vtkSmartPointer<vtkVelodyneTransformInterpolator> EgoMotionInterpolator;
   vtkSmartPointer<vtkVelodyneTransformInterpolator> MappingInterpolator;
 
   // Size of the leafs in the voxel grid filter
   // used by the local maps
-  double LeafSize;
+  double LeafSize = 0.6;
 
   // keypoints extracted
   pcl::PointCloud<Point>::Ptr CurrentEdgesPoints;
@@ -381,55 +343,56 @@ private:
 
   // with of the neighbor used to compute discrete
   // differential operators
-  int NeighborWidth;
+  int NeighborWidth = 4;
 
   // Number of lasers scan lines composing the pointcloud
-  unsigned int NLasers;
+  unsigned int NLasers = 0;
 
   // maximal angle resolution of the lidar
   double AngleResolution;
 
   // Number of frame that have been processed
-  unsigned int NbrFrameProcessed;
+  unsigned int NbrFrameProcessed = 0;
 
   // minimal point/sensor sensor to consider a point as valid
-  double MinDistanceToSensor;
+  double MinDistanceToSensor = 3.0;
 
   // Indicated the number max of keypoints
   // that we admit per laser scan line
-  unsigned int MaxEdgePerScanLine;
-  unsigned int MaxPlanarsPerScanLine;
+  unsigned int MaxEdgePerScanLine = 200;
+  unsigned int MaxPlanarsPerScanLine = 200;
 
   // Sharpness threshold to select a point
-  double EdgeSinAngleThreshold;
-  double PlaneSinAngleThreshold;
-  double EdgeDepthGapThreshold;
-  double DistToLineThreshold;
+  double EdgeSinAngleThreshold = 0.86; // 60 degrees
+  double PlaneSinAngleThreshold = 0.5; // 30 degrees
+  double EdgeDepthGapThreshold = 0.15;
+  double DistToLineThreshold = 0.20;
 
   // The max distance allowed between two frames
   // If the distance is over this limit, the ICP
   // matching will not match point and the odometry
   // will fail. It has to be setted according to the
   // maximum speed of the vehicule used
-  double MaxDistBetweenTwoFrames;
+  // Represent the distance that the lidar has made during one sweep
+  // if it is moving at a speed of 90 km/h and spinning at a rpm
+  // of 600 rotation per minute
+  double MaxDistBetweenTwoFrames = (90.0 / 3.6) * (60.0 / 600.0);
 
   // Maximum number of iteration
   // in the ego motion optimization step
-  unsigned int EgoMotionLMMaxIter;
-  unsigned int EgoMotionIterMade;
+  unsigned int EgoMotionLMMaxIter = 15;
 
   // Maximum number of iteration
   // in the mapping optimization step
-  unsigned int MappingLMMaxIter;
-  unsigned int MappingIterMade;
+  unsigned int MappingLMMaxIter = 15;
 
   // During the Levenberg-Marquardt algoritm
   // keypoints will have to be match with planes
   // and lines of the previous frame. This parameter
   // indicates how many times we want to do the
   // the ICP matching
-  unsigned int EgoMotionICPMaxIter;
-  unsigned int MappingICPMaxIter;
+  unsigned int EgoMotionICPMaxIter = 4;
+  unsigned int MappingICPMaxIter = 3;
 
   // When computing the point<->line and point<->plane distance
   // in the ICP, the kNearest edges/planes points of the current
@@ -438,49 +401,49 @@ private:
   // is rejected. We also make a filter upon the ratio of the eigen
   // values of the variance-covariance matrix of the neighborhood
   // to check if the points are distributed upon a line or a plane
-  unsigned int MappingLineDistanceNbrNeighbors;
-  unsigned int MappingMinimumLineNeighborRejection;
-  double MappingLineDistancefactor;
+  unsigned int MappingLineDistanceNbrNeighbors = 15;
+  unsigned int MappingMinimumLineNeighborRejection = 5;
+  double MappingLineDistancefactor = 5.0;
 
-  unsigned int MappingPlaneDistanceNbrNeighbors;
-  double MappingPlaneDistancefactor1;
-  double MappingPlaneDistancefactor2;
+  unsigned int MappingPlaneDistanceNbrNeighbors = 5;
+  double MappingPlaneDistancefactor1 = 35.0;
+  double MappingPlaneDistancefactor2 = 8.0;
 
-  double MappingMaxPlaneDistance;
-  double MappingMaxLineDistance;
-  double MappingLineMaxDistInlier;
+  double MappingMaxPlaneDistance = 0.2;
+  double MappingMaxLineDistance = 0.2;
+  double MappingLineMaxDistInlier = 0.2;
 
-  unsigned int EgoMotionLineDistanceNbrNeighbors;
-  unsigned int EgoMotionMinimumLineNeighborRejection;
-  double EgoMotionLineDistancefactor;
+  unsigned int EgoMotionLineDistanceNbrNeighbors = 10;
+  unsigned int EgoMotionMinimumLineNeighborRejection = 4;
+  double EgoMotionLineDistancefactor = 5.;
 
-  unsigned int EgoMotionPlaneDistanceNbrNeighbors;
-  double EgoMotionPlaneDistancefactor1;
-  double EgoMotionPlaneDistancefactor2;
+  unsigned int EgoMotionPlaneDistanceNbrNeighbors = 5;
+  double EgoMotionPlaneDistancefactor1 = 35.0;
+  double EgoMotionPlaneDistancefactor2 = 8.0;
 
-  double EgoMotionMaxPlaneDistance;
-  double EgoMotionMaxLineDistance;
+  double EgoMotionMaxPlaneDistance = 0.2;
+  double EgoMotionMaxLineDistance = 0.10;
 
   // norm of the farest keypoints
   double FarestKeypointDist;
 
   // Use or not blobs
-  bool UseBlob;
+  bool UseBlob = false;
 
   // Threshold upon sphricity of a neighborhood
   // to select a blob point
-  double SphericityThreshold;
+  double SphericityThreshold = 0.35;
 
   // Coef to apply to the incertitude
   // radius of the blob neighborhood
-  double IncertitudeCoef;
+  double IncertitudeCoef = 3.0;
 
   // The max distance allowed between two frames
   // If the distance is over this limit, the ICP
   // matching will not match point and the odometry
   // will fail. It has to be setted according to the
   // maximum speed of the vehicule used
-  double MaxDistanceForICPMatching;
+  double MaxDistanceForICPMatching = 20.0;
 
   // Transformation to map the current pointcloud
   // in the referential of the previous one
@@ -518,7 +481,7 @@ private:
   std::vector<double> MatchRejectionHistogramPlane;
   std::vector<double> MatchRejectionHistogramLine;
   std::vector<double> MatchRejectionHistogramBlob;
-  int NrejectionCauses;
+  int NrejectionCauses = 7;
   void ResetDistanceParameters();
 
   // external sensor (GPS, IMU, Camera SLAM, ...) to be
@@ -601,13 +564,6 @@ private:
   int ComputeBlobsDistanceParameters(pcl::KdTreeFLANN<Point>::Ptr kdtreePreviousBlobs, Eigen::Matrix3d& R,
                                               Eigen::Vector3d& dT, Point p, std::string step);
 
-  // we want to minimize F(R,T) = sum(fi(R,T)^2)
-  // for a given i; fi is called a residual value and
-  // the jacobian of fi is called the residual jacobian
-  void ComputeResidualJacobians(std::vector<Eigen::Matrix3d >& vA, std::vector<Eigen::Vector3d >& vX,
-                                std::vector<Eigen::Vector3d >& vP, std::vector<double> vS,
-                                Eigen::Matrix<double, 6, 1>& T, Eigen::MatrixXd& residualsJacobians);
-
   // Instead of taking the k-nearest neigbirs in the odometry
   // step we will take specific neighbor using the particularities
   // of the velodyne's lidar sensor
@@ -670,7 +626,7 @@ private:
   // Display mode will add arrays showing some
   // results of the slam algorithm such as
   // the keypoints extracted, curvature etc
-  bool DisplayMode;
+  bool DisplayMode = false;
 
   // Identity matrix
   Eigen::Matrix3d I3;
