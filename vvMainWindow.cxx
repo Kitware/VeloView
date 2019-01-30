@@ -223,6 +223,7 @@ private:
     // create SpreadSheet
     pqSpreadSheetView* spreadsheetView = qobject_cast<pqSpreadSheetView*>
         (builder->createView(pqSpreadSheetView::spreadsheetViewType(), server, true));
+    spreadsheetView->rename("main spreadsheet view");
     assert(spreadsheetView);
     this->Ui.spreadSheetDock->setWidget(spreadsheetView->widget());
     spreadsheetView->getProxy()->UpdateVTKObjects();
