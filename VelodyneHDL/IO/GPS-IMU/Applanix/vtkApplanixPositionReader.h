@@ -76,9 +76,6 @@ public:
   void SetCalibrationTransform(vtkTransform* transform);
 
   // Description:
-  int CanReadFile(const char* fname) { return 1; }
-
-  // Description:
   vtkVelodyneTransformInterpolator* GetInterpolator() const;
 
 protected:

@@ -110,7 +110,7 @@ void vtkPlaneFitter::PlaneFit(vtkPointSet* pts, double origin[3], double normal[
 
   stdDev = std::sqrt(distances.squaredNorm() / (n - 1));
 
-  for (int i = 0; i < nchannels; ++i)
+  for (unsigned int i = 0; i < nchannels; ++i)
   {
     vtkNew<vtkThreshold> threshold;
     threshold->ThresholdBetween(i, i);

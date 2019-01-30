@@ -22,7 +22,6 @@
 std::vector<Eigen::Vector3d> vtkPointsToEigenVector(vtkPoints* points)
 {
   std::vector<Eigen::Vector3d> eigenVector(points->GetNumberOfPoints());
-  double currPt[3];
   for (unsigned int k = 0; k < points->GetNumberOfPoints(); ++k)
   {
     points->GetPoint(k, eigenVector[k].data());
@@ -37,7 +36,7 @@ vtkSmartPointer<vtkPoints> eigenVectorToVTKPoints(std::vector<Eigen::Vector3d> c
   auto newPoints = vtkSmartPointer<vtkPoints>::New();
   newPoints->SetNumberOfPoints(points.size());
   float temp[3];
-  for (int i = 0; i < points.size(); ++i)
+  for (size_t i = 0; i < points.size(); ++i)
   {
     temp[0] = points[i].x();
     temp[1] = points[i].y();

@@ -92,7 +92,6 @@ public:
   };
 
   vtkTypeMacro(vtkLidarProvider, vtkPolyDataAlgorithm);
-  void PrintSelf(ostream& os, vtkIndent indent) {};
 
   /**
    * @brief GetFrame returns the requested frame concatenated with the n previous frames

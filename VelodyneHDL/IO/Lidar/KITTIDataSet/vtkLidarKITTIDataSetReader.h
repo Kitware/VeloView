@@ -18,7 +18,7 @@ std::cerr << typeid(this).name() << "::" << __FUNCTION__ << " is not implemented
 // Set built-in type.  Creates member Set"name"() (e.g., SetVisibility());
 //
 #define notImplementedSetMacro(name_,type) \
-void Set##name_ (const type _arg) override\
+void Set##name_ (const type vtkNotUsed(_arg)) override\
   { \
     notImpementedBody \
   }
@@ -43,7 +43,6 @@ class VTK_EXPORT vtkLidarKITTIDataSetReader : public vtkLidarReader
 public:
   static vtkLidarKITTIDataSetReader* New();
   vtkTypeMacro(vtkLidarKITTIDataSetReader, vtkLidarReader)
-  void PrintSelf(ostream& os, vtkIndent indent) override;
 
   vtkSmartPointer<vtkPolyData> GetFrame(int frameNumber, int wantedNumberOfTrailingFrames = 0) override;
 
@@ -57,7 +56,7 @@ public:
 
   //! Not implemented
   notImplementedGetMacro(CalibrationFileName, std::string)
-  void SetCalibrationFileName(const std::string& filename) override {notImpementedBody}
+  void SetCalibrationFileName(const std::string& vtkNotUsed(filename)) override {notImpementedBody}
 
   //! Not implemented
   notImplementedGetMacro(IsCalibrated, bool)
@@ -92,18 +91,18 @@ public:
   notImplementedSetMacro(ApplyTransform, bool)
 
   //! Not implemented
-  void SetLaserSelection(bool laserSelection[]) override {notImpementedBody}
-  void GetLaserSelection(bool laserSelection[]) override {notImpementedBody}
+  void SetLaserSelection(bool vtkNotUsed(laserSelection)[]) override {notImpementedBody}
+  void GetLaserSelection(bool vtkNotUsed(laserSelection)[]) override {notImpementedBody}
 
   //! Not implemented
-  void SetCropRegion(double region[6]) override {notImpementedBody}
-  void SetCropRegion(const double v0, const double v1,
-                     const double v2, const double v3,
-                     const double v4, const double v5) override {notImpementedBody}
+  void SetCropRegion(double vtkNotUsed(region)[6]) override {notImpementedBody}
+  void SetCropRegion(const double vtkNotUsed(v0), const double vtkNotUsed(v1),
+                     const double vtkNotUsed(v2), const double vtkNotUsed(v3),
+                     const double vtkNotUsed(v4), const double vtkNotUsed(v5)) override {notImpementedBody}
 
   //! Not implemented
   vtkVelodyneTransformInterpolator* GetInterpolator() const override {notImpementedBody return nullptr;}
-  void SetInterpolator(vtkVelodyneTransformInterpolator* interpolator) override {notImpementedBody}
+  void SetInterpolator(vtkVelodyneTransformInterpolator* vtkNotUsed(interpolator)) override {notImpementedBody}
 
   //! Not implemented
   void Open() override {notImpementedBody}
@@ -112,7 +111,8 @@ public:
   void Close() override {notImpementedBody}
 
   //! Not implemented
-  void SaveFrame(int startFrame, int endFrame, const std::string& filename) override {notImpementedBody}
+  void SaveFrame(int vtkNotUsed(startFrame), int vtkNotUsed(endFrame),
+                 const std::string& vtkNotUsed(filename)) override {notImpementedBody}
 
   //! Not implemented
   std::string GetSensorInformation();

@@ -20,6 +20,7 @@ int vtkLidarProvider::FillOutputPortInformation(int port, vtkInformation* info)
     info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkTable" );
     return 1;
   }
+  return 0;
 }
 
 //-----------------------------------------------------------------------------
@@ -66,7 +67,7 @@ void vtkLidarProvider::SetLaserSelection(bool laserSelection[])
 }
 
 //-----------------------------------------------------------------------------
-void vtkLidarProvider::GetLaserSelection(bool laserSelection[])
+void vtkLidarProvider::GetLaserSelection(bool vtkNotUsed(laserSelection)[])
 {
   // Bool vector is a particular data structure
   // you can't access to the data

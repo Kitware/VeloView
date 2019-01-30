@@ -316,7 +316,9 @@ vtkLidarReader::~vtkLidarReader()
 }
 
 //-----------------------------------------------------------------------------
-int vtkLidarReader::RequestData(vtkInformation *request, vtkInformationVector **inputVector, vtkInformationVector *outputVector)
+int vtkLidarReader::RequestData(vtkInformation *vtkNotUsed(request),
+                                vtkInformationVector **vtkNotUsed(inputVector),
+                                vtkInformationVector *outputVector)
 {
   vtkPolyData* output = vtkPolyData::GetData(outputVector);
   vtkTable* calibration = vtkTable::GetData(outputVector,1);
@@ -365,7 +367,9 @@ int vtkLidarReader::RequestData(vtkInformation *request, vtkInformationVector **
 }
 
 //-----------------------------------------------------------------------------
-int vtkLidarReader::RequestInformation(vtkInformation* request, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
+int vtkLidarReader::RequestInformation(vtkInformation* vtkNotUsed(request),
+                                       vtkInformationVector** vtkNotUsed(inputVector),
+                                       vtkInformationVector* outputVector)
 {
   if (!this->Internal->FileName.empty() && this->Internal->FilePositions.empty())
   {

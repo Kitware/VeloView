@@ -61,12 +61,6 @@ vtkLidarKITTIDataSetReader::vtkLidarKITTIDataSetReader()
 
 }
 
-//-----------------------------------------------------------------------------
-void vtkLidarKITTIDataSetReader::PrintSelf(std::ostream &os, vtkIndent indent)
-{
-
-}
-
 //----------------------------------------------------------------------------
 void vtkLidarKITTIDataSetReader::SetFileName(const std::string &filename)
 {
@@ -203,7 +197,8 @@ vtkSmartPointer<vtkPolyData> vtkLidarKITTIDataSetReader::GetFrame(int frameNumbe
 
 //----------------------------------------------------------------------------
 int vtkLidarKITTIDataSetReader::RequestData(vtkInformation* vtkNotUsed(request),
-  vtkInformationVector** inputVector, vtkInformationVector* outputVector)
+                                            vtkInformationVector** vtkNotUsed(inputVector),
+                                            vtkInformationVector* outputVector)
 {
   vtkPolyData* output = vtkPolyData::GetData(outputVector);
   vtkInformation* info = outputVector->GetInformationObject(0);
@@ -225,7 +220,9 @@ int vtkLidarKITTIDataSetReader::RequestData(vtkInformation* vtkNotUsed(request),
 }
 
 //----------------------------------------------------------------------------
-int vtkLidarKITTIDataSetReader::RequestInformation(vtkInformation* request, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
+int vtkLidarKITTIDataSetReader::RequestInformation(vtkInformation* vtkNotUsed(request),
+                                                   vtkInformationVector** vtkNotUsed(inputVector),
+                                                   vtkInformationVector* outputVector)
 {
   vtkInformation* info = outputVector->GetInformationObject(0);
   int numberOfTimesteps = this->NumberOfFrames;

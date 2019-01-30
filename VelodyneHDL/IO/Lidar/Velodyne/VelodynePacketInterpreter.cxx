@@ -826,7 +826,7 @@ void VelodynePacketInterpreter::ProcessPacket(unsigned char const * data, unsign
 
 
 //-----------------------------------------------------------------------------
-bool VelodynePacketInterpreter::IsLidarPacket(unsigned char const * data, unsigned int dataLength)
+bool VelodynePacketInterpreter::IsLidarPacket(unsigned char const * vtkNotUsed(data), unsigned int dataLength)
 {
   if (dataLength == HDLDataPacket::getDataByteLength())
   {
@@ -1413,7 +1413,9 @@ void VelodynePacketInterpreter::ResetCurrentFrame()
 }
 
 //-----------------------------------------------------------------------------
-void VelodynePacketInterpreter::PreProcessPacket(unsigned char const * data, unsigned int dataLength, bool &isNewFrame, int &framePositionInPacket)
+void VelodynePacketInterpreter::PreProcessPacket(unsigned char const * data,
+                                                 unsigned int vtkNotUsed(dataLength),
+                                                 bool &isNewFrame, int &framePositionInPacket)
 {
   const HDLDataPacket* dataPacket = reinterpret_cast<const HDLDataPacket*>(data);
   //! @todo don't use static value here this is ugly...

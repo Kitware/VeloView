@@ -196,12 +196,12 @@ void vvLaserSelectionDialog::onToggleSelected()
 }
 
 //-----------------------------------------------------------------------------
-void vvLaserSelectionDialog::onItemChanged(QTableWidgetItem* item)
+void vvLaserSelectionDialog::onItemChanged(QTableWidgetItem* vtkNotUsed(item))
 {
   // Set enable/disable all based on all checked
   bool allChecked = true;
   bool noneChecked = true;
-  // Iterate over visible rows to choose in whch state the enable/disable
+  // Iterate over visible rows to choose in which state the enable/disable
   // all checkbox should pass
 
   // Store the current sorting state

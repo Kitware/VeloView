@@ -102,8 +102,8 @@ vtkTemporalTransformsReader::vtkTemporalTransformsReader()
 }
 
 //-----------------------------------------------------------------------------
-int vtkTemporalTransformsReader::RequestData(vtkInformation* request,
-                        vtkInformationVector** inputVector,
+int vtkTemporalTransformsReader::RequestData(vtkInformation* vtkNotUsed(request),
+                        vtkInformationVector** vtkNotUsed(inputVector),
                         vtkInformationVector* outputVector)
 {
   if (!this->FileName)

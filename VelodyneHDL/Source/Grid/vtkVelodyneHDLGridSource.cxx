@@ -114,8 +114,9 @@ vtkSmartPointer<vtkPolyData> vtkVelodyneHDLGridSource::CreateGrid(
 }
 
 //-----------------------------------------------------------------------------
-int vtkVelodyneHDLGridSource::RequestData(
-  vtkInformation* request, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
+int vtkVelodyneHDLGridSource::RequestData(vtkInformation* vtkNotUsed(request),
+                                          vtkInformationVector** vtkNotUsed(inputVector),
+                                          vtkInformationVector* outputVector)
 {
   vtkPolyData* output = vtkPolyData::GetData(outputVector);
 
