@@ -769,7 +769,6 @@ void vtkSlam::PrintSelf(ostream& os, vtkIndent indent)
   PrintParameter(EgoMotionMinimumLineNeighborRejection)
   PrintParameter(MappingMinimumLineNeighborRejection)
   PrintParameter(MappingLineMaxDistInlier)
-  PrintParameter(MotionModel)
   PrintParameter(LeafSize)
 }
 
@@ -778,8 +777,6 @@ vtkSlam::vtkSlam()
 {
   this->SetNumberOfInputPorts(1);
   this->SetNumberOfOutputPorts(5);
-
-  this->KalmanEstimator.ResetKalmanFilter();
 
   EdgesPointsLocalMap = new RollingGrid();
   PlanarPointsLocalMap = new RollingGrid();
@@ -1024,59 +1021,6 @@ void vtkSlam::AddTransform(double rx, double ry, double rz, double tx, double ty
 }
 
 //-----------------------------------------------------------------------------
-Eigen::MatrixXd GetPolynomeApproxParam(std::vector<double>& x, std::vector<double>& y, int order)
-{
-  // order of the polynome
-  order = order + 1;
-  Eigen::MatrixXd M(x.size(), order);
-  Eigen::MatrixXd Y(x.size(), 1);
-
-  for (int sample = 0; sample < x.size(); ++sample)
-  {
-    for (int i = 0; i < order; ++i)
-    {
-      M(sample, i) = std::pow(x[sample], i);
-    }
-    Y(sample) = y[sample];
-  }
-
-  Eigen::MatrixXd param = (M.transpose() * M).inverse() * M.transpose() * Y;
-  return param;
-}
-
-//-----------------------------------------------------------------------------
-Eigen::Matrix<double, 6, 1> GetTransformsParametersForTime(double t, vtkSmartPointer<vtkVelodyneTransformInterpolator> interp)
-{
-  Eigen::Matrix<double, 6, 1> T;
-  vtkNew<vtkTransform> corrTransform;
-  interp->InterpolateTransform(t, corrTransform.Get());
-  vtkNew<vtkMatrix4x4> M;
-  corrTransform->GetMatrix(M.Get());
-  Eigen::Matrix3d R;
-  Eigen::Vector3d T0, theta0;
-  R << M->Element[0][0], M->Element[0][1], M->Element[0][2],
-       M->Element[1][0], M->Element[1][1], M->Element[1][2],
-       M->Element[2][0], M->Element[2][1], M->Element[2][2];
-  T0 << M->Element[0][3], M->Element[1][3], M->Element[2][3];
-  theta0(0) = std::atan2(R(2, 1), R(2, 2));
-  theta0(1) = -std::asin(R(2, 0));
-  theta0(2) = std::atan2(R(1, 0), R(0, 0));
-  T << theta0(0), theta0(1), theta0(2), T0(0), T0(1), T0(2);
-  return T;
-}
-
-//-----------------------------------------------------------------------------
-Eigen::Vector3d GetVelocityForTime(double t, double dt, vtkSmartPointer<vtkVelodyneTransformInterpolator> interp)
-{
-  Eigen::Matrix<double, 6, 1> Tp = GetTransformsParametersForTime(t - dt, interp);
-  Eigen::Matrix<double, 6, 1> Tn = GetTransformsParametersForTime(t + dt, interp);
-  Eigen::Matrix<double, 6, 1> deltaT = (Tn - Tp) / (2 * dt);
-  Eigen::Vector3d V;
-  V << deltaT(3), deltaT(4), deltaT(5);
-  return V;
-}
-
-//-----------------------------------------------------------------------------
 void vtkSlam::AddFrame(vtkPolyData* newFrame)
 {
   if (!newFrame)
@@ -1097,23 +1041,12 @@ void vtkSlam::AddFrame(vtkPolyData* newFrame)
             << "#########################################################" << std::endl
             << std::endl;
 
-  // Check if external measures have been
-  // provided to the slam algorithm
-  double adjuestedTime0 = newFrame->GetPointData()->GetArray("adjustedtime")->GetTuple1(0) * 1e-6;
-  double rawTime0 = static_cast<double>(newFrame->GetPointData()->GetArray("timestamp")->GetTuple1(0)) * 1e-6;
-
-  if (this->shouldBeRawTime)
-    this->CurrentTime = rawTime0;
-  else
-    this->CurrentTime = adjuestedTime0;
-
   // Reset the members variables used during the last
   // processed frame so that they can be used again
   PrepareDataForNextFrame();
 
   // Update the kalman filter time
   double time = newFrame->GetPointData()->GetArray("adjustedtime")->GetTuple1(0) * 1e-6;
-  this->KalmanEstimator.SetCurrentTime(time);
 
   // If the new frame is the first one we just add the
   // extracted keypoints into the map without running
@@ -1136,7 +1069,7 @@ void vtkSlam::AddFrame(vtkPolyData* newFrame)
     this->PreviousBlobsPoints = this->CurrentBlobsPoints;
     this->NbrFrameProcessed++;
 
-    this->AddTransform(rawTime0);
+    this->AddTransform(time);
     return;
   }
 
@@ -1193,7 +1126,7 @@ void vtkSlam::AddFrame(vtkPolyData* newFrame)
 
   // Indicate the filter has been modify
   this->Modified();
-  this->AddTransform(rawTime0);
+  this->AddTransform(time);
   return;
 }
 
@@ -2776,52 +2709,6 @@ void vtkSlam::Mapping()
   std::cout << "Covariance Eigen values: " << D.transpose() << std::endl;
   std::cout << "Maximum variance: " << D(5) << std::endl;
 
-  if (this->MotionModel > 0)
-  {
-    Eigen::MatrixXd SigmaMeas(this->KalmanEstimator.GetNbrMeasure(), this->KalmanEstimator.GetNbrMeasure());
-    Eigen::MatrixXd Measure(this->KalmanEstimator.GetNbrMeasure(), 1);
-    // with speed measure
-    if (this->KalmanEstimator.GetMode() > 0)
-    {
-      // Fill the matrix
-      for (unsigned int i = 0; i < this->KalmanEstimator.GetNbrMeasure(); ++i)
-      {
-        Measure(i, 0) = 0.0;
-        for (unsigned int j = 0; j < this->KalmanEstimator.GetNbrMeasure(); ++j)
-        {
-          SigmaMeas(i, j) = 0.0;
-        }
-      }
-      Eigen::Vector3d V = GetVelocityForTime(this->CurrentTime, 1.5, this->ExternalMeasures);
-      for (unsigned int i = 0; i < 6; ++i)
-      {
-        Measure(i) = this->Tworld(i);
-        for (unsigned int j = 0; j < 6; ++j)
-        {
-          SigmaMeas(i, j) = estimatorCovariance(i, j);
-        }
-      }
-      Measure(6) = V.norm();
-      SigmaMeas(6, 6) = this->VelocityNormCov;
-    }
-    else
-    {
-      SigmaMeas = estimatorCovariance;
-      Measure = this->Tworld;
-    }
-    this->KalmanEstimator.Prediction();
-    this->KalmanEstimator.SetMeasureCovariance(SigmaMeas);
-    this->KalmanEstimator.Correction(Measure);
-    Eigen::Matrix<double, 12, 1> stateVector = this->KalmanEstimator.GetStateVector();
-
-    std::cout << "Before motion model: " << this->Tworld.transpose() << std::endl;
-    for (unsigned int i = 0; i < 6; ++i)
-    {
-      this->Tworld(i) = stateVector(i);
-    }
-    std::cout << "After motion model: " << this->Tworld.transpose() << std::endl;
-  }
-
   // Add the current computed transform to the list
   this->TworldList.push_back(this->Tworld);
 
@@ -3131,25 +3018,6 @@ void vtkSlam::Set_RollingGrid_LeafVoxelFilterSize(const double size)
 }
 
 //-----------------------------------------------------------------------------
-void vtkSlam::SetMaxVelocityAcceleration(double acc)
-{
-  this->KalmanEstimator.SetMaxVelocityAcceleration(acc);
-}
-
-//-----------------------------------------------------------------------------
-void vtkSlam::SetMaxAngleAcceleration(double acc)
-{
-  this->KalmanEstimator.SetMaxAngleAcceleration(acc);
-}
-
-//-----------------------------------------------------------------------------
-void vtkSlam::SetMotionModel(int input)
-{
-  this->MotionModel = input;
-  if (input > 0)
-    this->KalmanEstimator.SetMode(input - 1);
-}
-
 //-----------------------------------------------------------------------------
 void vtkSlam::SetUndistortion(bool input)
 {

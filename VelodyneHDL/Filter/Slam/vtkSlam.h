@@ -127,14 +127,9 @@ public:
 
   void SetUndistortion(bool input);
   vtkGetMacro(Undistortion, bool)
-  // set the motion model
-  void SetMotionModel(int input);
 
   // set LeafSize
   void SetLeafSize(double argInput);
-
-  void SetMaxVelocityAcceleration(double acc);
-  void SetMaxAngleAcceleration(double acc);
 
   // Get/Set RollingGrid
   unsigned int Get_RollingGrid_VoxelSize() const;
@@ -271,13 +266,6 @@ private:
   // as mapping planars points.
   bool FastSlam = true;
 
-  // If set to true, the mapping will use a motion
-  // model. The motion model will be integrating to
-  // ICP estimator using a kalman filter. hence, when
-  // the estimation has a poor confidence the slam will
-  // use the motion model to improve accuracy
-  int MotionModel = 1;
-
   // Should the algorithm undistord the frame or not
   // The undistortion will improve the accuracy but
   // the computation speed will decrease
@@ -314,11 +302,6 @@ private:
   std::vector<std::vector<double> > SaillantPoint;
   std::vector<std::vector<int> > IsPointValid;
   std::vector<std::vector<int> > Label;
-
-  // Kalman estimator to predict motion
-  // using a motion model when the minimization
-  // algorithm have a poor parameter prediction
-  KalmanFilter KalmanEstimator;
 
   // with of the neighbor used to compute discrete
   // differential operators
@@ -463,16 +446,6 @@ private:
   std::vector<double> MatchRejectionHistogramBlob;
   int NrejectionCauses = 7;
   void ResetDistanceParameters();
-
-  // external sensor (GPS, IMU, Camera SLAM, ...) to be
-  // use to aid the SLAM algorithm. Note that without any
-  // information about the variance / covariance of the measured
-  // the data will only be used to initialize the SLAM odometry
-  // and will not be merged with the slam data using a Kalman filter
-  vtkSmartPointer<vtkVelodyneTransformInterpolator> ExternalMeasures;
-  double VelocityNormCov;
-  bool shouldBeRawTime;
-  double CurrentTime;
 
   // Display information about the keypoints - neighborhood
   // mathching rejections
