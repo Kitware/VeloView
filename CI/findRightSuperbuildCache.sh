@@ -80,15 +80,7 @@ echo "Downloading and uncompressing the Superbuild. This take some time..."
 mkdir cache
 $MC cp --recursive "$superbuild_cache" cache
 
-if file cache/* | grep -i bzip2; then
-    if [ "$(uname)" == "Darwin" ]; then
-        tar zxf cache/* # on Debian, tar zxf cannot extract bzip2 archives, but it works on macOS
-    else
-	tar jxf cache/*
-    fi
-else
-    unzip -q cache/*
-fi
+tar xf cache/*
 
 rm cache/*
 

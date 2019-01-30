@@ -88,11 +88,9 @@ stages:
     # - cd ${CI_PROJECT_DIR}
     # create a symbolic link, inside the source tree else "push" will not work
     # - ln -s ../Superbuild-build Superbuild-build # not working witth
-    - echo "removing downloaded source archives"
-    - rm downloads/*
     - echo "compressing and uploading Superbuild. This take some time..."
     - cd ..
-    - tar jcf archive Superbuild-build/
+    - tar zcf archive Superbuild-build/
     - ~/mc config host add superbuild ${MINIO_CACHE_SERVER_ADDRESS} ${MINIO_CACHE_SERVER_ACCESS_KEY} ${MINIO_CACHE_SERVER_SECRET_KEY}
     - ~/mc cp archive superbuild/runner/minio/project/808/${cache_patch}/${OS}/${CI_COMMIT_REF_NAME}-1
 
@@ -335,11 +333,9 @@ ubuntu16.04_package_schedule:
     - echo "build terminated"
     - echo "removing common-superbuild/veloview"
     - rm -rf common-superbuild/veloview
-    - echo "removing downloaded source archives"
-    - rm downloads/*
     - echo "compressing and uploading Superbuild. This take some time..."
     - cd ..
-    - tar jcf archive Superbuild-build/
+    - tar zcf archive Superbuild-build/
     - /cygdrive/c/mc.exe config host add superbuild ${MINIO_CACHE_SERVER_ADDRESS} ${MINIO_CACHE_SERVER_ACCESS_KEY} ${MINIO_CACHE_SERVER_SECRET_KEY}
     - /cygdrive/c/mc.exe cp archive superbuild/runner/minio/project/808/${cache_patch}/${OS}/${CI_COMMIT_REF_NAME}-1
 
@@ -382,7 +378,7 @@ windows_test:
     - cd /cygdrive/c/Superbuild-build # provided by windows_get_superbuild
     - echo "call \"C:\\Users\\vagrant\\Desktop\\cmd-env-variables.cmd\"" > test.bat
     - echo "ninja veloview" >> test.bat
-    - echo "ctest -E cpack -E \"TestVelodyneHDLSource*\"" >> test.bat
+    - echo "ctest -V -E cpack -E \"TestVelodyneHDLSource*\"" >> test.bat
     - chmod +x test.bat
     - ./test.bat
 
@@ -399,7 +395,7 @@ windows_test:
     - cd /cygdrive/c/Superbuild-build # provided by windows_get_superbuild
     - echo "call \"C:\\Users\\vagrant\\Desktop\\cmd-env-variables.cmd\"" > package.bat
     - echo "ninja veloview" >> package.bat
-    - echo "ctest -R cpack" >> package.bat
+    - echo "ctest -V -R cpack" >> package.bat
     - chmod +x package.bat
     - ./package.bat
 
