@@ -3127,7 +3127,7 @@ void vtkSlam::UpdateTworldUsingTrelative()
 }
 
 //-----------------------------------------------------------------------------
-/*const*/ unsigned int vtkSlam::Get_RollingGrid_VoxelSize() const
+unsigned int vtkSlam::Get_RollingGrid_VoxelSize() const
 {
   return this->EdgesPointsLocalMap->Get_VoxelSize();
 }
@@ -3167,7 +3167,7 @@ void vtkSlam::Set_RollingGrid_PointCloud_NbVoxel(const double nbVoxel[3])
 }
 
 //-----------------------------------------------------------------------------
-/*const*/ double vtkSlam::Get_RollingGrid_LeafVoxelFilterSize() const
+double vtkSlam::Get_RollingGrid_LeafVoxelFilterSize() const
 {
   return this->EdgesPointsLocalMap->Get_LeafVoxelFilterSize();
 }

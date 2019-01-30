@@ -142,7 +142,7 @@ public:
   void SetMaxAngleAcceleration(double acc);
 
   // Get/Set RollingGrid
-  /*const*/ unsigned int Get_RollingGrid_VoxelSize() const;
+  unsigned int Get_RollingGrid_VoxelSize() const;
   void Set_RollingGrid_VoxelSize(const unsigned int size);
 
   void Get_RollingGrid_Grid_NbVoxel(double nbVoxel[3]) const;
@@ -151,7 +151,7 @@ public:
   void Get_RollingGrid_PointCloud_NbVoxel(double nbVoxel[3]) const;
   void Set_RollingGrid_PointCloud_NbVoxel(const double nbVoxel[3]);
 
-  /*const*/ double Get_RollingGrid_LeafVoxelFilterSize() const;
+  double Get_RollingGrid_LeafVoxelFilterSize() const;
   void Set_RollingGrid_LeafVoxelFilterSize(const double size);
 
   // Get/Set Keypoint
