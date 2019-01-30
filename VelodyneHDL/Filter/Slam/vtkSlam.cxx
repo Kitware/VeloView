@@ -70,7 +70,6 @@
 
 // LOCAL
 #include "vtkSlam.h"
-#include "vtkVelodyneHDLReader.h"
 #include "vtkVelodyneTransformInterpolator.h"
 #include "vtkPCLConversions.h"
 #include "vtkCostFunctions.h"
@@ -120,8 +119,6 @@ namespace {
 class LineFitting
 {
 public:
-  LineFitting();
-
   // Fitting using PCA
   bool FitPCA(std::vector<Eigen::Vector3d >& points);
 
@@ -138,22 +135,10 @@ public:
   Eigen::Vector3d Direction;
   Eigen::Vector3d Position;
   Eigen::Matrix3d SemiDist;
-  double MaxDistance;
-  double MaxSinAngle;
-
-  Eigen::Matrix3d I3;
+  Eigen::Matrix3d I3 = Eigen::Matrix3d::Identity();
+  double MaxDistance = 0.02;
+  double MaxSinAngle = 0.65;
 };
-
-//-----------------------------------------------------------------------------
-LineFitting::LineFitting()
-{
-  this->I3 << 1, 0, 0,
-              0, 1, 0,
-              0, 0, 1;
-
-  this->MaxDistance = 0.02;
-  this->MaxSinAngle = 0.65;
-}
 
 //-----------------------------------------------------------------------------
 bool LineFitting::FitPCA(std::vector<Eigen::Vector3d >& points)
@@ -3023,15 +3008,14 @@ void vtkSlam::SetUndistortion(bool input)
 {
   this->Undistortion = input;
 
+  this->InternalInterp->Initialize();
   // Use linear interpolator if undistortion has been chosed
   if (this->Undistortion)
   {
-    this->InternalInterp = vtkSmartPointer<vtkVelodyneTransformInterpolator>::New();
     this->InternalInterp->SetInterpolationTypeToLinear();
   }
   else
   {
-    this->InternalInterp = vtkSmartPointer<vtkVelodyneTransformInterpolator>::New();
     this->InternalInterp->SetInterpolationTypeToNearestLowBounded();
   }
 }

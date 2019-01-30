@@ -79,6 +79,7 @@
 // VTK
 #include <vtkPolyDataAlgorithm.h>
 #include <vtkSmartPointer.h>
+#include <vtkNew.h>
 // EIGEN
 #include <Eigen/Dense>
 // PCL
@@ -239,7 +240,7 @@ private:
   // Polydata which represents the trajectory computed
   vtkSmartPointer<vtkPolyData> Trajectory;
   vtkSmartPointer<vtkPolyData> Orientation;
-  vtkSmartPointer<vtkVelodyneTransformInterpolator> InternalInterp;
+  vtkNew<vtkVelodyneTransformInterpolator> InternalInterp;
 
   // Current point cloud stored in two differents
   // formats: PCL-pointcloud and vtkPolyData
