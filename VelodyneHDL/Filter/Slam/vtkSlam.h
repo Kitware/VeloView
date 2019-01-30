@@ -106,11 +106,6 @@ public:
   // and to update the map using keypoints and ego-motion
   void AddFrame(vtkPolyData* newFrame);
 
-  // Reset the algorithm. Notice that this function
-  // will erase the map and all transformations that
-  // have been computed so far
-  void ResetAlgorithm();
-
   // Get the computed world transform so far
   void GetWorldTransform(double* Tworld);
 
@@ -333,7 +328,8 @@ private:
   unsigned int NLasers = 0;
 
   // maximal angle resolution of the lidar
-  double AngleResolution;
+  // azimutal resolution of the VLP-16. We add an extra 20 %
+  double AngleResolution = 0.00698132; // 0.4 degree
 
   // Number of frame that have been processed
   unsigned int NbrFrameProcessed = 0;
@@ -609,8 +605,8 @@ private:
   bool DisplayMode = false;
 
   // Identity matrix
-  Eigen::Matrix3d I3;
-  Eigen::Matrix<double, 6, 6> I6;
+  Eigen::Matrix3d I3 = Eigen::Matrix3d::Identity();
+  Eigen::Matrix<double, 6, 6> I6 = Eigen::Matrix<double, 6, 6>::Identity();
 };
 
 #endif // VTK_SLAM_H

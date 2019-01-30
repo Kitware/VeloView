@@ -785,74 +785,8 @@ vtkSlam::vtkSlam()
 {
   this->SetNumberOfInputPorts(1);
   this->SetNumberOfOutputPorts(5);
-  this->ResetAlgorithm();
-}
 
-//-----------------------------------------------------------------------------
-vtkSlam::~vtkSlam()
-{
-  delete this->EdgesPointsLocalMap;
-  delete this->PlanarPointsLocalMap;
-  delete this->BlobsPointsLocalMap;
-}
-
-//-----------------------------------------------------------------------------
-void vtkSlam::GetWorldTransform(double* Tworld)
-{
-  // Rotation and translation relative
-  Eigen::Matrix3d Rw;
-
-  // full rotation
-  Rw = GetRotationMatrix(this->Tworld);
-
-  double rx = std::atan2(Rw(2, 1), Rw(2, 2));
-  double ry = -std::asin(Rw(2, 0));
-  double rz = std::atan2(Rw(1, 0), Rw(0, 0));
-//  std::vector<double> res(6, 0);
-  
-  Tworld[0] = rx;
-  Tworld[1] = ry;
-  Tworld[2] = rz;
-  Tworld[3] = this->Tworld(3);
-  Tworld[4] = this->Tworld(4);
-  Tworld[5] = this->Tworld(5);
-
-//  return res;
-}
-
-//-----------------------------------------------------------------------------
-void vtkSlam::ResetAlgorithm()
-{
   this->KalmanEstimator.ResetKalmanFilter();
-
-  this->AngleResolution = Deg2Rad(0.4);  // azimutal resolution of the VLP-16. We add an extra 20 %
-  this->LaserIdMapping.clear();
-  this->LaserIdMapping.resize(0);
-  this->FromVTKtoPCLMapping.clear();
-  this->FromVTKtoPCLMapping.resize(0);
-  this->FromPCLtoVTKMapping.clear();
-  this->FromPCLtoVTKMapping.resize(this->NLasers);
-  this->Angles.clear();
-  this->Angles.resize(this->NLasers);
-  this->LengthResolution.clear();
-  this->LengthResolution.resize(this->NLasers);
-  this->SaillantPoint.clear();
-  this->SaillantPoint.resize(this->NLasers);
-  this->DepthGap.clear();
-  this->DepthGap.resize(this->NLasers);
-  this->BlobScore.clear();
-  this->BlobScore.resize(this->NLasers);
-  this->IsPointValid.clear();
-  this->IsPointValid.resize(this->NLasers);
-  this->Label.clear();
-  this->Label.resize(this->NLasers);
-  this->Tworld << 0, 0, 0, 0, 0, 0;
-  this->PreviousTworld = this->Tworld;
-  this->TworldList.clear();
-  this->TworldList.resize(0);
-
-  this->I3 = Eigen::Matrix3d::Identity();
-  this->I6 = Eigen::Matrix<double, 6, 6>::Identity();
 
   EdgesPointsLocalMap = new RollingGrid();
   PlanarPointsLocalMap = new RollingGrid();
@@ -898,8 +832,39 @@ void vtkSlam::ResetAlgorithm()
   CreateDataArray<vtkIntArray>("EgoMotion: total keypoints used", 0, this->Trajectory);
   this->Trajectory->SetPoints(points.GetPointer());
 
-  this->InternalInterp = vtkSmartPointer<vtkVelodyneTransformInterpolator>::New();
   this->InternalInterp->SetInterpolationTypeToNearestLowBounded();
+}
+
+//-----------------------------------------------------------------------------
+vtkSlam::~vtkSlam()
+{
+  delete this->EdgesPointsLocalMap;
+  delete this->PlanarPointsLocalMap;
+  delete this->BlobsPointsLocalMap;
+}
+
+//-----------------------------------------------------------------------------
+void vtkSlam::GetWorldTransform(double* Tworld)
+{
+  // Rotation and translation relative
+  Eigen::Matrix3d Rw;
+
+  // full rotation
+  Rw = GetRotationMatrix(this->Tworld);
+
+  double rx = std::atan2(Rw(2, 1), Rw(2, 2));
+  double ry = -std::asin(Rw(2, 0));
+  double rz = std::atan2(Rw(1, 0), Rw(0, 0));
+//  std::vector<double> res(6, 0);
+  
+  Tworld[0] = rx;
+  Tworld[1] = ry;
+  Tworld[2] = rz;
+  Tworld[3] = this->Tworld(3);
+  Tworld[4] = this->Tworld(4);
+  Tworld[5] = this->Tworld(5);
+
+//  return res;
 }
 
 //-----------------------------------------------------------------------------
