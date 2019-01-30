@@ -108,13 +108,6 @@
 // PCL
 #include <pcl/point_types.h>
 #include <pcl/filters/voxel_grid.h>
-// BOOST
-#include <boost/filesystem.hpp>
-#include <boost/foreach.hpp>
-#include <boost/preprocessor.hpp>
-#include <boost/property_tree/ptree.hpp>
-#include <boost/property_tree/xml_parser.hpp>
-#include <boost/algorithm/string.hpp>
 // CERES
 #include <ceres/ceres.h>
 #include <glog/logging.h>
