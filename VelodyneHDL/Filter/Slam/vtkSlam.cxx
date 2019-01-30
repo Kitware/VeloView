@@ -207,7 +207,7 @@ bool LineFitting::FitPCAAndCheckConsistency(std::vector<Eigen::Vector3d >& point
   {
     V = (points[index + 1] - points[index]).normalized();
     double sinAngle = (U.cross(V)).norm();
-    if (sinAngle > this->MaxSinAngle) // 30°
+    if (sinAngle > this->MaxSinAngle)
     {
       isLineFittingAccurate = false;
     }
@@ -3002,7 +3002,6 @@ void vtkSlam::Set_RollingGrid_LeafVoxelFilterSize(const double size)
   this->BlobsPointsLocalMap->Set_LeafVoxelFilterSize(0.20 * size);
 }
 
-//-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 void vtkSlam::SetUndistortion(bool input)
 {
