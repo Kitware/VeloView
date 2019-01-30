@@ -2735,17 +2735,9 @@ void vtkSlam::Mapping()
     shouldBreak = (icpCount == this->MappingICPMaxIter - 1);
     if (summary.num_successful_steps == 1)
     {
-      shouldBreak = true;
-    }
-
-    // If it is the last iteration, compute
-    // the variance covariance of the estimator
-
-    // Now evaluate the quality of the parameters
-    // estimated using an approximate computation
-    // of the variance covariance matrix
-    if (shouldBreak)
-    {
+      // Now evaluate the quality of the parameters
+      // estimated using an approximate computation
+      // of the variance covariance matrix
       // Covariance computation options
       ceres::Covariance::Options covOptions;
       covOptions.apply_loss_function = true;
@@ -2762,7 +2754,7 @@ void vtkSlam::Mapping()
         for (int j = 0; j < 6; ++j)
           estimatorCovariance(i, j) = covarianceMat[i + 6 * j];
       break;
-    }
+      }
   }
 
   // Provide information about keypoints-neighborhood matching rejections
