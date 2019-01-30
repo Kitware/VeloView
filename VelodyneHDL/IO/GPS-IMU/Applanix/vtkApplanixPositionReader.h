@@ -41,7 +41,7 @@ class VTK_EXPORT vtkApplanixPositionReader : public vtkPolyDataAlgorithm
 {
 public:
   static vtkApplanixPositionReader* New();
-  vtkTypeMacro(vtkApplanixPositionReader, vtkPolyDataAlgorithm);
+  vtkTypeMacro(vtkApplanixPositionReader, vtkPolyDataAlgorithm)
   void PrintSelf(ostream& os, vtkIndent indent);
 
   // Description:

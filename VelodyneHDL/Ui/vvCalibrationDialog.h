@@ -75,7 +75,7 @@ private:
   class pqInternal;
   QScopedPointer<pqInternal> Internal;
 
-  Q_DISABLE_COPY(vvCalibrationDialog);
+  Q_DISABLE_COPY(vvCalibrationDialog)
 };
 
 #endif

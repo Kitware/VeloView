@@ -23,7 +23,7 @@ class vtkLidarStreamInternal;
 class VTK_EXPORT vtkLidarStream : public vtkLidarProvider
 {
 public:
-  vtkTypeMacro(vtkLidarStream, vtkLidarProvider);
+  vtkTypeMacro(vtkLidarStream, vtkLidarProvider)
 
   int GetNumberOfFrames() override;
 

@@ -27,7 +27,7 @@
 class VTK_EXPORT vtkProcessingSample : public vtkPolyDataAlgorithm
 {
 public:
-  vtkTypeMacro(vtkProcessingSample, vtkPolyDataAlgorithm);
+  vtkTypeMacro(vtkProcessingSample, vtkPolyDataAlgorithm)
   void PrintSelf(ostream& os, vtkIndent indent);
 
   static vtkProcessingSample* New();

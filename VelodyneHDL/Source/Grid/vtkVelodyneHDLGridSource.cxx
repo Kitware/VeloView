@@ -41,7 +41,7 @@
 #include "vtkSmartPointer.h"
 
 //-----------------------------------------------------------------------------
-vtkStandardNewMacro(vtkVelodyneHDLGridSource);
+vtkStandardNewMacro(vtkVelodyneHDLGridSource)
 
 //-----------------------------------------------------------------------------
 vtkVelodyneHDLGridSource::vtkVelodyneHDLGridSource()

@@ -26,7 +26,7 @@ class vtkLidarReaderInternal;
 class VTK_EXPORT vtkLidarReader : public vtkLidarProvider
 {
 public:
-  vtkTypeMacro(vtkLidarReader, vtkLidarProvider);
+  vtkTypeMacro(vtkLidarReader, vtkLidarProvider)
   void PrintSelf(ostream& os, vtkIndent indent);
 
   /**

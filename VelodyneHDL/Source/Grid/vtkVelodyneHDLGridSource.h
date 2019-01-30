@@ -39,7 +39,7 @@ class VTK_EXPORT vtkVelodyneHDLGridSource : public vtkPolyDataAlgorithm
 {
 public:
   static vtkVelodyneHDLGridSource* New();
-  vtkTypeMacro(vtkVelodyneHDLGridSource, vtkPolyDataAlgorithm);
+  vtkTypeMacro(vtkVelodyneHDLGridSource, vtkPolyDataAlgorithm)
   void PrintSelf(ostream& os, vtkIndent indent);
 
   vtkSetMacro(GridNbTicks, int);

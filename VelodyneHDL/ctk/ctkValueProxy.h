@@ -90,8 +90,8 @@ protected:
   void updateValue();
 
 private:
-  Q_DECLARE_PRIVATE(ctkValueProxy);
-  Q_DISABLE_COPY(ctkValueProxy);
+  Q_DECLARE_PRIVATE(ctkValueProxy)
+  Q_DISABLE_COPY(ctkValueProxy)
 };
 
 #endif

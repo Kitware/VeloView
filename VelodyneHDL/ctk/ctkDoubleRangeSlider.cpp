@@ -35,7 +35,7 @@
 //-----------------------------------------------------------------------------
 class ctkDoubleRangeSliderPrivate
 {
-  Q_DECLARE_PUBLIC(ctkDoubleRangeSlider);
+  Q_DECLARE_PUBLIC(ctkDoubleRangeSlider)
 protected:
   ctkDoubleRangeSlider* const q_ptr;
 public:
@@ -68,7 +68,7 @@ public:
   QPointer<ctkValueProxy> Proxy;
 
 private:
-  Q_DISABLE_COPY(ctkDoubleRangeSliderPrivate);
+  Q_DISABLE_COPY(ctkDoubleRangeSliderPrivate)
 };
 
 // --------------------------------------------------------------------------

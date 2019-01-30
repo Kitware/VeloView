@@ -65,7 +65,7 @@
 #include <iostream>
 
 // Implementation of the New function
-vtkStandardNewMacro(vtkMotionDetector);
+vtkStandardNewMacro(vtkMotionDetector)
 
 //----------------------------------------------------------------------------
 vtkMotionDetector::vtkMotionDetector()

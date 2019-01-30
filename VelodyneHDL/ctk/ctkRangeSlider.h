@@ -204,8 +204,8 @@ protected:
   QScopedPointer<ctkRangeSliderPrivate> d_ptr;
 
 private:
-  Q_DECLARE_PRIVATE(ctkRangeSlider);
-  Q_DISABLE_COPY(ctkRangeSlider);
+  Q_DECLARE_PRIVATE(ctkRangeSlider)
+  Q_DISABLE_COPY(ctkRangeSlider)
 };
 
 #endif

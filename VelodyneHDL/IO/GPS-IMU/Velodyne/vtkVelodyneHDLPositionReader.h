@@ -43,7 +43,7 @@ class VTK_EXPORT vtkVelodyneHDLPositionReader : public vtkPolyDataAlgorithm
 {
 public:
   static vtkVelodyneHDLPositionReader* New();
-  vtkTypeMacro(vtkVelodyneHDLPositionReader, vtkPolyDataAlgorithm);
+  vtkTypeMacro(vtkVelodyneHDLPositionReader, vtkPolyDataAlgorithm)
   void PrintSelf(ostream& os, vtkIndent indent);
 
   // Description:

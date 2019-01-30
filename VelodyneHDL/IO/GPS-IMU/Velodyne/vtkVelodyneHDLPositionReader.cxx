@@ -408,7 +408,7 @@ void vtkVelodyneHDLPositionReader::vtkInternal::InterpolateGPS(
 }
 
 //-----------------------------------------------------------------------------
-vtkStandardNewMacro(vtkVelodyneHDLPositionReader);
+vtkStandardNewMacro(vtkVelodyneHDLPositionReader)
 
 //-----------------------------------------------------------------------------
 vtkVelodyneHDLPositionReader::vtkVelodyneHDLPositionReader()

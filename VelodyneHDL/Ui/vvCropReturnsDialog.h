@@ -63,7 +63,7 @@ private:
   class pqInternal;
   QScopedPointer<pqInternal> Internal;
 
-  Q_DISABLE_COPY(vvCropReturnsDialog);
+  Q_DISABLE_COPY(vvCropReturnsDialog)
 };
 
 #endif

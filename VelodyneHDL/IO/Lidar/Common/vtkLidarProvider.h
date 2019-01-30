@@ -91,7 +91,7 @@ public:
     Cylindric = 3,  /*!< 3 */
   };
 
-  vtkTypeMacro(vtkLidarProvider, vtkPolyDataAlgorithm);
+  vtkTypeMacro(vtkLidarProvider, vtkPolyDataAlgorithm)
 
   /**
    * @brief GetFrame returns the requested frame concatenated with the n previous frames

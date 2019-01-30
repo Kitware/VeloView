@@ -80,7 +80,7 @@ void vtkApplanixPositionReader::vtkInternal::SetMapping(
 }
 
 //-----------------------------------------------------------------------------
-vtkStandardNewMacro(vtkApplanixPositionReader);
+vtkStandardNewMacro(vtkApplanixPositionReader)
 
 //-----------------------------------------------------------------------------
 vtkApplanixPositionReader::vtkApplanixPositionReader()

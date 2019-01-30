@@ -62,7 +62,7 @@ private:
   class pqInternal;
   pqInternal* Internal;
 
-  Q_DISABLE_COPY(vvLaserSelectionDialog);
+  Q_DISABLE_COPY(vvLaserSelectionDialog)
 };
 
 #endif

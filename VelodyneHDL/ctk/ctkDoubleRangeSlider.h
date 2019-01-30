@@ -272,8 +272,8 @@ protected:
   QScopedPointer<ctkDoubleRangeSliderPrivate> d_ptr;
 
 private:
-  Q_DECLARE_PRIVATE(ctkDoubleRangeSlider);
-  Q_DISABLE_COPY(ctkDoubleRangeSlider);
+  Q_DECLARE_PRIVATE(ctkDoubleRangeSlider)
+  Q_DISABLE_COPY(ctkDoubleRangeSlider)
 };
 
 #endif
