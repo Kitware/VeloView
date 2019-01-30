@@ -111,9 +111,6 @@ public:
   // have been computed so far
   void ResetAlgorithm();
 
-  // output the parameters value of the slam algorithm
-  void PrintParameters();
-
   // Get the computed world transform so far
   void GetWorldTransform(double* Tworld);
 

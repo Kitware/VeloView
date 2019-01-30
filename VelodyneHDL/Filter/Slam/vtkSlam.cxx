@@ -752,6 +752,32 @@ vtkInformationVector **inputVector, vtkInformationVector *outputVector)
 void vtkSlam::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
+  os << indent << "Slam Parameters: " << std::endl;
+  vtkIndent paramIndent = indent.GetNextIndent();
+  #define PrintParameter(param) os << paramIndent << #param << "\t" << this->param << std::endl;
+  PrintParameter(EgoMotionLMMaxIter)
+  PrintParameter(EgoMotionICPMaxIter)
+  PrintParameter(MappingLMMaxIter)
+  PrintParameter(MappingICPMaxIter)
+  PrintParameter(MaxEdgePerScanLine)
+  PrintParameter(MaxPlanarsPerScanLine)
+  PrintParameter(EdgeSinAngleThreshold)
+  PrintParameter(PlaneSinAngleThreshold)
+  PrintParameter(EdgeDepthGapThreshold)
+  PrintParameter(EgoMotionLineDistanceNbrNeighbors)
+  PrintParameter(EgoMotionLineDistancefactor)
+  PrintParameter(MappingMaxLineDistance)
+  PrintParameter(MappingPlaneDistanceNbrNeighbors)
+  PrintParameter(MappingPlaneDistancefactor1)
+  PrintParameter(MappingPlaneDistancefactor2)
+  PrintParameter(MappingMaxPlaneDistance)
+  PrintParameter(MaxDistanceForICPMatching)
+  PrintParameter(AngleResolution)
+  PrintParameter(EgoMotionMinimumLineNeighborRejection)
+  PrintParameter(MappingMinimumLineNeighborRejection)
+  PrintParameter(MappingLineMaxDistInlier)
+  PrintParameter(MotionModel)
+  PrintParameter(LeafSize)
 }
 
 //-----------------------------------------------------------------------------
@@ -792,35 +818,6 @@ void vtkSlam::GetWorldTransform(double* Tworld)
   Tworld[5] = this->Tworld(5);
 
 //  return res;
-}
-
-//-----------------------------------------------------------------------------
-void vtkSlam::PrintParameters()
-{
-  std::cout << "Launching slam with parameters: " << std::endl;
-  std::cout << "EgoMotionLMMaxIter: " << this->EgoMotionLMMaxIter << std::endl;
-  std::cout << "MappingLMMaxIter: " << this->MappingLMMaxIter << std::endl;
-  std::cout << "MappingICPMaxIter: " << this->MappingICPMaxIter << std::endl;
-  std::cout << "EgoMotionICPMaxIter: " << this->EgoMotionICPMaxIter << std::endl;
-  std::cout << "MaxEdgePerScanLine: " << this->MaxEdgePerScanLine << std::endl;
-  std::cout << "MaxPlanarsPerScanLine: " << this->MaxPlanarsPerScanLine << std::endl;
-  std::cout << "EdgeSinAngleThreshold: " << this->EdgeSinAngleThreshold << std::endl;
-  std::cout << "PlaneSinAngleThreshold: " << this->PlaneSinAngleThreshold << std::endl;
-  std::cout << "EdgeDepthGapThreshold: " << this->EdgeDepthGapThreshold << std::endl;
-  std::cout << "EgoMotionLineDistanceNbrNeighbors: " << this->EgoMotionLineDistanceNbrNeighbors << std::endl;
-  std::cout << "EgoMotionLineDistancefactor: " << this->EgoMotionLineDistancefactor << std::endl;
-  std::cout << "MappingMaxLineDistance: " << this->MappingMaxLineDistance << std::endl;
-  std::cout << "MappingPlaneDistanceNbrNeighbors: " << this->MappingPlaneDistanceNbrNeighbors << std::endl;
-  std::cout << "MappingPlaneDistancefactor1: " << this->MappingPlaneDistancefactor1 << std::endl;
-  std::cout << "MappingPlaneDistancefactor2: " << this->MappingPlaneDistancefactor2 << std::endl;
-  std::cout << "MappingMaxPlaneDistance: " << this->MappingMaxPlaneDistance << std::endl;
-  std::cout << "MaxDistanceForICPMatching: " << this->MaxDistanceForICPMatching << std::endl;
-  std::cout << "AngleResolution: " << this->AngleResolution << std::endl;
-  std::cout << "EgoMotionMinimumLineNeighborRejection: " << this->EgoMotionMinimumLineNeighborRejection << std::endl;
-  std::cout << "MappingMinimumLineNeighborRejection: " << this->MappingMinimumLineNeighborRejection << std::endl;
-  std::cout << "MappingLineMaxDistInlier: " << this->MappingLineMaxDistInlier << std::endl;
-  std::cout << "Motion Model: " << this->MotionModel << std::endl;
-  std::cout << "LeafSize: " << this->LeafSize << std::endl;
 }
 
 //-----------------------------------------------------------------------------
@@ -1165,9 +1162,6 @@ void vtkSlam::AddFrame(vtkPolyData* newFrame)
   // odometry and mapping steps
   if (this->NbrFrameProcessed == 0)
   {
-    // print parameters to provide some information
-    this->PrintParameters();
-
     // Convert the new frame into pcl format and sort
     // the laser scan-lines by vertical angle
     this->ConvertAndSortScanLines(newFrame);
