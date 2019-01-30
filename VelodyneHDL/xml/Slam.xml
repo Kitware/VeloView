@@ -22,8 +22,9 @@
 
       <OutputPort name="Last Frame processed" index="0" id="port0" />
       <OutputPort name="Trajectory" index="1" id="port1" />
-      <OutputPort name="Edge Points Local Map" index="2" id="port2" />
-      <OutputPort name="Planar Points Local Map" index="3" id="port3" />
+      <OutputPort name="Edge   Map" index="2" id="port2" />
+      <OutputPort name="Planar Map" index="3" id="port3" />
+      <OutputPort name="Blob   Map" index="4" id="port4" />
 
       <!-- General -->
       <DoubleVectorProperty

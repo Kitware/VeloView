@@ -680,31 +680,13 @@ vtkInformationVector **inputVector, vtkInformationVector *outputVector)
   }
 
   // Get the input
-  vtkPolyData * input = vtkPolyData::GetData(inputVector[0]->GetInformationObject(0));
+  vtkPolyData *input = vtkPolyData::GetData(inputVector[0]->GetInformationObject(0));
+
   this->AddFrame(input);
-  // get info
-  vtkInformation *outInfo0 = outputVector->GetInformationObject(0);
-  vtkInformation *outInfo1 = outputVector->GetInformationObject(1);
-  vtkInformation *outInfo2 = outputVector->GetInformationObject(2);
-  vtkInformation *outInfo3 = outputVector->GetInformationObject(3);
-  vtkInformation *outInfo4 = outputVector->GetInformationObject(4);
-  vtkInformation *outInfo5 = outputVector->GetInformationObject(5);
-
-  // get output
-  vtkPolyData *output0 = vtkPolyData::SafeDownCast(
-    outInfo0->Get(vtkDataObject::DATA_OBJECT()));
-  vtkPolyData *output1 = vtkPolyData::SafeDownCast(
-    outInfo1->Get(vtkDataObject::DATA_OBJECT()));
-  vtkPolyData *output2 = vtkPolyData::SafeDownCast(
-    outInfo2->Get(vtkDataObject::DATA_OBJECT()));
-  vtkPolyData *output3 = vtkPolyData::SafeDownCast(
-    outInfo3->Get(vtkDataObject::DATA_OBJECT()));
-  vtkPolyData *output4 = vtkPolyData::SafeDownCast(
-    outInfo4->Get(vtkDataObject::DATA_OBJECT()));
-  vtkPolyData *output5 = vtkPolyData::SafeDownCast(
-    outInfo5->Get(vtkDataObject::DATA_OBJECT()));
-
   // output 0 - Current Frame
+  vtkInformation *outInfo0 = outputVector->GetInformationObject(0);
+  vtkPolyData *output0 = vtkPolyData::SafeDownCast(
+      outInfo0->Get(vtkDataObject::DATA_OBJECT()));
   // add all debug information if displayMode == True
   if (this->DisplayMode = true && this->NbrFrameProcessed > 0)
   {
@@ -745,34 +727,23 @@ vtkInformationVector **inputVector, vtkInformationVector *outputVector)
   vtkSmartPointer<vtkCellArray> cells = vtkSmartPointer<vtkCellArray>::New();
   cells->InsertNextCell(polyLine);
   Trajectory->SetLines(cells);
+  auto *output1 = vtkPolyData::GetData(outputVector->GetInformationObject(1));
   output1->ShallowCopy(this->Trajectory);
 
-  // output 2 - Edges Map
-  vtkSmartPointer<vtkPolyData> EdgeMap = vtkPCLConversions::PolyDataFromPointCloud(this->EdgesPointsLocalMap->Get());
+  // output 2 - Edges Points Map
+  auto *output2 = vtkPolyData::GetData(outputVector->GetInformationObject(2));
+  auto EdgeMap = vtkPCLConversions::PolyDataFromPointCloud(this->EdgesPointsLocalMap->Get());
   output2->ShallowCopy(EdgeMap);
 
   // output 3 - Planar Points Map
-  vtkSmartPointer<vtkPolyData> PlanarMap = vtkPCLConversions::PolyDataFromPointCloud(this->PlanarPointsLocalMap->Get());
+  auto *output3 = vtkPolyData::GetData(outputVector->GetInformationObject(3));
+  auto PlanarMap = vtkPCLConversions::PolyDataFromPointCloud(this->PlanarPointsLocalMap->Get());
   output3->ShallowCopy(PlanarMap);
 
   // output 4 - Blob Points Map
-  vtkSmartPointer<vtkPolyData> BlobMap = vtkPCLConversions::PolyDataFromPointCloud(this->BlobsPointsLocalMap->Get());
+  auto *output4 = vtkPolyData::GetData(outputVector->GetInformationObject(4));
+  auto BlobMap = vtkPCLConversions::PolyDataFromPointCloud(this->BlobsPointsLocalMap->Get());
   output4->ShallowCopy(BlobMap);
-
-  // output 5 - Orientation
-  // create polyLine
-  vtkSmartPointer<vtkPolyLine> polyLine2 = vtkSmartPointer<vtkPolyLine>::New();
-  int NbPosition2 = Orientation->GetNumberOfPoints();
-  polyLine2->GetPointIds()->SetNumberOfIds(NbPosition2);
-  for(unsigned int i = 0; i < NbPosition2; i++)
-  {
-    polyLine2->GetPointIds()->SetId(i,i);
-  }
-  // create cells for Trajectory
-  vtkSmartPointer<vtkCellArray> cells2 = vtkSmartPointer<vtkCellArray>::New();
-  cells2->InsertNextCell(polyLine2);
-  Orientation->SetLines(cells2);
-  output5->ShallowCopy(this->Orientation);
 
   return 1;
 }
@@ -787,7 +758,7 @@ void vtkSlam::PrintSelf(ostream& os, vtkIndent indent)
 vtkSlam::vtkSlam()
 {
   this->SetNumberOfInputPorts(1);
-  this->SetNumberOfOutputPorts(6);
+  this->SetNumberOfOutputPorts(5);
   this->ResetAlgorithm();
 }
 
@@ -908,7 +879,6 @@ void vtkSlam::ResetAlgorithm()
 
   // output of the vtk filter
   this->Trajectory = vtkSmartPointer<vtkPolyData>::New();
-  this->Orientation = vtkSmartPointer<vtkPolyData>::New();
 
   // add the required array in the trajectory
   vtkNew<vtkPoints> points;
@@ -930,14 +900,6 @@ void vtkSlam::ResetAlgorithm()
   CreateDataArray<vtkIntArray>("EgoMotion: blobs used", 0, this->Trajectory);
   CreateDataArray<vtkIntArray>("EgoMotion: total keypoints used", 0, this->Trajectory);
   this->Trajectory->SetPoints(points.GetPointer());
-
-  // add the required array in the orientation
-  vtkNew<vtkPoints> points2;
-  CreateDataArray<vtkDoubleArray>("time", 0, this->Orientation);
-  CreateDataArray<vtkDoubleArray>("X", 0, this->Orientation);
-  CreateDataArray<vtkDoubleArray>("Y", 0, this->Orientation);
-  CreateDataArray<vtkDoubleArray>("Z", 0, this->Orientation);
-  this->Orientation->SetPoints(points2.GetPointer());
 
   this->InternalInterp = vtkSmartPointer<vtkVelodyneTransformInterpolator>::New();
   this->InternalInterp->SetInterpolationTypeToNearestLowBounded();
@@ -1184,11 +1146,6 @@ void vtkSlam::AddFrame(vtkPolyData* newFrame)
   // provided to the slam algorithm
   double adjuestedTime0 = newFrame->GetPointData()->GetArray("adjustedtime")->GetTuple1(0) * 1e-6;
   double rawTime0 = static_cast<double>(newFrame->GetPointData()->GetArray("timestamp")->GetTuple1(0)) * 1e-6;
-  if (this->ExternalMeasures && (this->NbrFrameProcessed == 0))
-  {
-    vtkGenericWarningMacro("External data provided to the SLAM");
-    this->InitTworldUsingExternalData(adjuestedTime0, rawTime0);
-  }
 
   if (this->shouldBeRawTime)
     this->CurrentTime = rawTime0;
@@ -1281,13 +1238,6 @@ void vtkSlam::AddFrame(vtkPolyData* newFrame)
   static_cast<vtkDoubleArray*>(this->Trajectory->GetPointData()->GetArray("pitch"))->InsertNextValue(this->Tworld[0]);
   static_cast<vtkDoubleArray*>(this->Trajectory->GetPointData()->GetArray("roll"))->InsertNextValue(this->Tworld[1]);
   static_cast<vtkDoubleArray*>(this->Trajectory->GetPointData()->GetArray("yaw"))->InsertNextValue(this->Tworld[2]);
-
-  // Update orientation points, the cell are construct in the request data
-  this->Orientation->GetPoints()->InsertNextPoint(this->Tworld[0], this->Tworld[1], this->Tworld[2]);
-  static_cast<vtkDoubleArray*>(this->Orientation->GetPointData()->GetArray("time"))->InsertNextValue(newFrame->GetPointData()->GetArray("timestamp")->GetTuple1(0));
-  static_cast<vtkDoubleArray*>(this->Orientation->GetPointData()->GetArray("X"))->InsertNextValue(this->Tworld[3]);
-  static_cast<vtkDoubleArray*>(this->Orientation->GetPointData()->GetArray("Y"))->InsertNextValue(this->Tworld[4]);
-  static_cast<vtkDoubleArray*>(this->Orientation->GetPointData()->GetArray("Z"))->InsertNextValue(this->Tworld[5]);
 
   // Indicate the filter has been modify
   this->Modified();
