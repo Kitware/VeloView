@@ -29,7 +29,7 @@
       <!-- General -->
       <DoubleVectorProperty
           name="SetLeafSize"
-          command="SetLeafSize"
+          command="SetVoxelGridLeafSize"
           default_values="0.6"
           number_of_elements="1"
           panel_visibility="advanced">

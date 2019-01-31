@@ -129,21 +129,10 @@ public:
   void SetUndistortion(bool input);
   vtkGetMacro(Undistortion, bool)
 
-  // set LeafSize
-  void SetLeafSize(double argInput);
-
-  // Get/Set RollingGrid
-  unsigned int Get_RollingGrid_VoxelSize() const;
-  void Set_RollingGrid_VoxelSize(const unsigned int size);
-
-  void Get_RollingGrid_Grid_NbVoxel(double nbVoxel[3]) const;
-  void Set_RollingGrid_Grid_NbVoxel(const double nbVoxel[3]);
-
-  void Get_RollingGrid_PointCloud_NbVoxel(double nbVoxel[3]) const;
-  void Set_RollingGrid_PointCloud_NbVoxel(const double nbVoxel[3]);
-
-  double Get_RollingGrid_LeafVoxelFilterSize() const;
-  void Set_RollingGrid_LeafVoxelFilterSize(const double size);
+  // Set RollingGrid Parameters
+  void SetVoxelGridLeafSize(const double size);
+  void SetVoxelGridSize(const unsigned int size);
+  void SetVoxelGridResolution(const double resolution);
 
   // Get/Set Keypoint
   vtkGetMacro(MaxEdgePerScanLine, unsigned int)
@@ -273,10 +262,6 @@ private:
   bool Undistortion = false;
   vtkSmartPointer<vtkVelodyneTransformInterpolator> EgoMotionInterpolator;
   vtkSmartPointer<vtkVelodyneTransformInterpolator> MappingInterpolator;
-
-  // Size of the leafs in the voxel grid filter
-  // used by the local maps
-  double LeafSize = 0.6;
 
   // keypoints extracted
   pcl::PointCloud<Point>::Ptr CurrentEdgesPoints;
@@ -571,6 +556,9 @@ private:
   void DisplayLaserIdMapping(vtkSmartPointer<vtkPolyData> input);
   void DisplayRelAdv(vtkSmartPointer<vtkPolyData> input);
   void DisplayUsedKeypoints(vtkSmartPointer<vtkPolyData> input);
+
+  // Set the lidar
+  void SetLidarMaximunRange(const double maxRange);
 
   // Indicate if we are in display mode or not
   // Display mode will add arrays showing some

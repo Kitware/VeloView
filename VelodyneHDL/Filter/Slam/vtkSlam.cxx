@@ -340,13 +340,13 @@ public:
     int frameCenterZ = std::floor(T[5] / this->VoxelSize) - this->VoxelGridPosition[2];
 
     // shift the voxel grid to the left
-    while (frameCenterX - std::ceil(this->PointCloud_NbVoxelX / 2) <= 0)
+    while (frameCenterX - std::ceil(this->PointCloudSize / 2) <= 0)
     {
-      for (int j = 0; j < this->Grid_NbVoxelY; j++)
+      for (int j = 0; j < this->VoxelSize; j++)
       {
-        for (int k = 0; k < this->Grid_NbVoxelZ; k++)
+        for (int k = 0; k < this->VoxelSize; k++)
         {
-          for (int i = this->Grid_NbVoxelX - 1; i > 0; i--)
+          for (int i = this->VoxelSize - 1; i > 0; i--)
           {
             this->grid[i][j][k] = this->grid[i-1][j][k];
           }
@@ -358,17 +358,17 @@ public:
     }
 
     // shift the voxel grid to the right
-    while (frameCenterX + std::ceil(this->PointCloud_NbVoxelX / 2) >= this->Grid_NbVoxelX - 1)
+    while (frameCenterX + std::ceil(this->PointCloudSize / 2) >= this->VoxelSize - 1)
     {
-      for (int j = 0; j < this->Grid_NbVoxelY; j++)
+      for (int j = 0; j < this->VoxelSize; j++)
       {
-        for (int k = 0; k < this->Grid_NbVoxelZ; k++)
+        for (int k = 0; k < this->VoxelSize; k++)
         {
-          for (int i = 0; i < this->Grid_NbVoxelX - 1; i++)
+          for (int i = 0; i < this->VoxelSize - 1; i++)
           {
             this->grid[i][j][k] = this->grid[i+1][j][k];
           }
-          this->grid[Grid_NbVoxelX-1][j][k].reset(new pcl::PointCloud<Point>());
+          this->grid[VoxelSize-1][j][k].reset(new pcl::PointCloud<Point>());
         }
       }
       frameCenterX--;
@@ -376,13 +376,13 @@ public:
     }
 
     // shift the voxel grid to the bottom
-    while (frameCenterY - std::ceil(this->PointCloud_NbVoxelY / 2) <= 0)
+    while (frameCenterY - std::ceil(this->PointCloudSize / 2) <= 0)
     {
-      for (int i = 0; i < this->Grid_NbVoxelX; i++)
+      for (int i = 0; i < this->VoxelSize; i++)
       {
-        for (int k = 0; k < this->Grid_NbVoxelZ; k++)
+        for (int k = 0; k < this->VoxelSize; k++)
         {
-          for (int j = this->Grid_NbVoxelY - 1; j > 0; j--)
+          for (int j = this->VoxelSize - 1; j > 0; j--)
           {
             this->grid[i][j][k] = this->grid[i][j-1][k];
           }
@@ -395,17 +395,17 @@ public:
     }
 
     // shift the voxel grid to the top
-    while (frameCenterY + std::ceil(this->PointCloud_NbVoxelY / 2) >= this->Grid_NbVoxelY - 1)
+    while (frameCenterY + std::ceil(this->PointCloudSize / 2) >= this->VoxelSize - 1)
     {
-      for (int i = 0; i < this->Grid_NbVoxelX; i++)
+      for (int i = 0; i < this->VoxelSize; i++)
       {
-        for (int k = 0; k < this->Grid_NbVoxelZ; k++)
+        for (int k = 0; k < this->VoxelSize; k++)
         {
-          for (int j = 0; j < this->Grid_NbVoxelY - 1; j++)
+          for (int j = 0; j < this->VoxelSize - 1; j++)
           {
             this->grid[i][j][k] = this->grid[i][j+1][k];
           }
-          this->grid[i][Grid_NbVoxelY-1][k].reset(new pcl::PointCloud<Point>());
+          this->grid[i][VoxelSize-1][k].reset(new pcl::PointCloud<Point>());
         }
       }
       frameCenterY--;
@@ -413,13 +413,13 @@ public:
     }
 
     // shift the voxel grid to the "camera"
-    while (frameCenterZ - std::ceil(this->PointCloud_NbVoxelZ / 2) <= 0)
+    while (frameCenterZ - std::ceil(this->PointCloudSize / 2) <= 0)
     {
-      for (int i = 0; i < this->Grid_NbVoxelX; i++)
+      for (int i = 0; i < this->VoxelSize; i++)
       {
-        for (int j = 0; j < this->Grid_NbVoxelY; j++)
+        for (int j = 0; j < this->VoxelSize; j++)
         {
-          for (int k = this->Grid_NbVoxelZ - 1; k > 0; k--)
+          for (int k = this->VoxelSize - 1; k > 0; k--)
           {
             this->grid[i][j][k] = this->grid[i][j][k-1];
           }
@@ -431,17 +431,17 @@ public:
     }
 
     // shift the voxel grid to the "horizon"
-    while (frameCenterZ + std::ceil(this->PointCloud_NbVoxelZ  / 2) >= this->Grid_NbVoxelZ - 1)
+    while (frameCenterZ + std::ceil(this->PointCloudSize  / 2) >= this->VoxelSize - 1)
     {
-      for (int i = 0; i < this->Grid_NbVoxelX; i++)
+      for (int i = 0; i < this->VoxelSize; i++)
       {
-        for (int j = 0; j < this->Grid_NbVoxelY; j++)
+        for (int j = 0; j < this->VoxelSize; j++)
         {
-          for (int k = 0; k < this->Grid_NbVoxelZ - 1; k++)
+          for (int k = 0; k < this->VoxelSize - 1; k++)
           {
             this->grid[i][j][k] = this->grid[i][j][k+1];
           }
-          this->grid[i][j][Grid_NbVoxelZ-1].reset(new pcl::PointCloud<Point>());
+          this->grid[i][j][VoxelSize-1].reset(new pcl::PointCloud<Point>());
         }
       }
       frameCenterZ--;
@@ -460,20 +460,20 @@ public:
     pcl::PointCloud<Point>::Ptr intersection(new pcl::PointCloud<Point>);
 
     // Get all voxel in intersection should use ceil here
-    for (int i = frameCenterX - std::ceil(this->PointCloud_NbVoxelX / 2); i <= frameCenterX + std::ceil(this->PointCloud_NbVoxelX / 2); i++)
+    for (int i = frameCenterX - std::ceil(this->PointCloudSize / 2); i <= frameCenterX + std::ceil(this->PointCloudSize / 2); i++)
     {
-      for (int j = frameCenterY - std::ceil(this->PointCloud_NbVoxelY / 2); j <= frameCenterY + std::ceil(this->PointCloud_NbVoxelY / 2); j++)
+      for (int j = frameCenterY - std::ceil(this->PointCloudSize / 2); j <= frameCenterY + std::ceil(this->PointCloudSize / 2); j++)
       {
-        for (int k = frameCenterZ - std::ceil(this->PointCloud_NbVoxelZ / 2); k <= frameCenterZ + std::ceil(this->PointCloud_NbVoxelZ / 2); k++)
+        for (int k = frameCenterZ - std::ceil(this->PointCloudSize / 2); k <= frameCenterZ + std::ceil(this->PointCloudSize / 2); k++)
         {
-          if (i < 0 || i > (this->Grid_NbVoxelX - 1) ||
-              j < 0 || j > (this->Grid_NbVoxelY - 1) ||
-              k < 0 || k > (this->Grid_NbVoxelZ - 1))
+          if (i < 0 || i > (this->VoxelSize - 1) ||
+              j < 0 || j > (this->VoxelSize - 1) ||
+              k < 0 || k > (this->VoxelSize - 1))
           {
             continue;
           }
           pcl::PointCloud<Point>:: Ptr voxel = this->grid[i][j][k];
-          for (int l = 0; l < voxel->size(); l++)
+          for (unsigned int l = 0; l < voxel->size(); l++)
           {
             intersection->push_back(voxel->at(l));
           }
@@ -489,14 +489,14 @@ public:
     pcl::PointCloud<Point>::Ptr intersection(new pcl::PointCloud<Point>);
 
     // Get all voxel in intersection should use ceil here
-    for (unsigned int i = 0; i < Grid_NbVoxelX; i++)
+    for (int i = 0; i < VoxelSize; i++)
     {
-      for (unsigned int j = 0; j < Grid_NbVoxelY; j++)
+      for (int j = 0; j < VoxelSize; j++)
       {
-        for (unsigned int k = 0; k < Grid_NbVoxelZ; k++)
+        for (int k = 0; k < VoxelSize; k++)
         {
           pcl::PointCloud<Point>:: Ptr voxel = this->grid[i][j][k];
-          for (int l = 0; l < voxel->size(); l++)
+          for (unsigned int l = 0; l < voxel->size(); l++)
           {
             intersection->push_back(voxel->at(l));
           }
@@ -514,14 +514,13 @@ public:
       vtkGenericWarningMacro("Pointcloud empty, voxel grid not updated");
       return;
     }
-    this->vizualisation.clear();
 
     // Voxel to filte because new points were add
-    std::vector<std::vector<std::vector<int> > > voxelToFilter(Grid_NbVoxelX, std::vector<std::vector<int> >(Grid_NbVoxelY, std::vector<int>(Grid_NbVoxelZ, 0)));
+    std::vector<std::vector<std::vector<int> > > voxelToFilter(VoxelSize, std::vector<std::vector<int> >(VoxelSize, std::vector<int>(VoxelSize, 0)));
 
     // Add points in the rolling grid
     int outlier = 0; // point who are not in the rolling grid
-    for (int i = 0; i < pointcloud->size(); i++)
+    for (unsigned int i = 0; i < pointcloud->size(); i++)
     {
       Point pts = pointcloud->points[i];
       // find the closest coordinate
@@ -530,30 +529,27 @@ public:
       int cubeIdxZ = std::floor(pts.z / this->VoxelSize) - this->VoxelGridPosition[2];
 
 
-      if (cubeIdxX >= 0 && cubeIdxX < this->Grid_NbVoxelX &&
-        cubeIdxY >= 0 && cubeIdxY < this->Grid_NbVoxelY &&
-        cubeIdxZ >= 0 && cubeIdxZ < this->Grid_NbVoxelZ)
+      if (cubeIdxX >= 0 && cubeIdxX < this->VoxelSize &&
+        cubeIdxY >= 0 && cubeIdxY < this->VoxelSize &&
+        cubeIdxZ >= 0 && cubeIdxZ < this->VoxelSize)
       {
         voxelToFilter[cubeIdxX][cubeIdxY][cubeIdxZ] = 1;
         grid[cubeIdxX][cubeIdxY][cubeIdxZ]->push_back(pts);
-        // for vizualization purpose only
-        this->vizualisation.push_back(cubeIdxX);
       }
       else
       {
-        this->vizualisation.push_back(-1);
         outlier++;
       }
     }
 
     // Filter the modified pointCloud
     pcl::VoxelGrid<Point> downSizeFilter;
-    downSizeFilter.setLeafSize(LeafVoxelFilterSize, LeafVoxelFilterSize, LeafVoxelFilterSize); // one point per 20x20x20 cm
-    for (int i = 0; i < this->Grid_NbVoxelX; i++)
+    downSizeFilter.setLeafSize(this->LeafSize, this->LeafSize, this->LeafSize);
+    for (int i = 0; i < this->VoxelSize; i++)
     {
-      for (int j = 0; j < this->Grid_NbVoxelY; j++)
+      for (int j = 0; j < this->VoxelSize; j++)
       {
-        for (int k = 0; k < this->Grid_NbVoxelZ; k++)
+        for (int k = 0; k < this->VoxelSize; k++)
         {
           if (voxelToFilter[i][j][k] == 1)
           {
@@ -567,30 +563,23 @@ public:
     }
   }
 
-  unsigned int Get_VoxelSize() const {return this->VoxelSize;}
 
-  void Set_VoxelSize(const unsigned int size) {this->VoxelSize = size;}
-
-  void Get_Grid_NbVoxel(double nbVoxel[3]) const
+  void SetPointCoudMaxRange(const double maxdist)
   {
-    nbVoxel[0] = this->Grid_NbVoxelX;
-    nbVoxel[1] = this->Grid_NbVoxelY;
-    nbVoxel[2] = this->Grid_NbVoxelZ;
+    this->PointCloudSize = std::ceil(2 * maxdist / this->VoxelResolution);
   }
 
-  void Set_Grid_NbVoxel(const double nbVoxel[3])
+  void SetSize(const unsigned int size)
   {
-    this->Grid_NbVoxelX = nbVoxel[0];
-    this->Grid_NbVoxelY = nbVoxel[1];
-    this->Grid_NbVoxelZ = nbVoxel[2];
-    grid.resize(Grid_NbVoxelX);
-    for (int i = 0; i < Grid_NbVoxelX; i++)
+    this->VoxelSize = size;
+    grid.resize(this->VoxelSize);
+    for (int i = 0; i < this->VoxelSize; i++)
     {
-      grid[i].resize(Grid_NbVoxelY);
-      for (int j = 0; j < Grid_NbVoxelY; j++)
+      grid[i].resize(this->VoxelSize);
+      for (int j = 0; j < this->VoxelSize; j++)
       {
-        grid[i][j].resize(Grid_NbVoxelZ);
-        for (int k = 0; k < Grid_NbVoxelZ; k++)
+        grid[i][j].resize(this->VoxelSize);
+        for (int k = 0; k < this->VoxelSize; k++)
         {
           grid[i][j][k].reset(new pcl::PointCloud<Point>());
         }
@@ -598,49 +587,28 @@ public:
     }
   }
 
-  void Get_PointCloud_NbVoxel(double nbVoxel[3]) const
-  {
-    nbVoxel[0] = this->PointCloud_NbVoxelX;
-    nbVoxel[1] = this->PointCloud_NbVoxelY;
-    nbVoxel[2] = this->PointCloud_NbVoxelZ;
-  }
-  void Set_PointCloud_NbVoxel(const double nbVoxel[3])
-  {
-    this->PointCloud_NbVoxelX = nbVoxel[0];
-    this->PointCloud_NbVoxelY = nbVoxel[1];
-    this->PointCloud_NbVoxelZ = nbVoxel[2];
-  }
+  void SetResolution(const double resolution) { this->VoxelResolution = resolution; }
 
-  double Get_LeafVoxelFilterSize() const { return this->LeafVoxelFilterSize; }
-
-  void Set_LeafVoxelFilterSize(const double size) { this->LeafVoxelFilterSize = size; }
+  void SetLeafSize(const double size) { this->LeafSize = size; }
 
 private:
-  // width of a voxel in m
-  // since the voxels are cubic
-  // their volume is VoxelSize^3
-  unsigned int VoxelSize = 1;
+  //! Size of the voxel grid: n*n*n voxels
+  int VoxelSize = 50;
 
-  // number of voxel / axis
-  unsigned int Grid_NbVoxelX = 50;
-  unsigned int Grid_NbVoxelY = 50;
-  unsigned int Grid_NbVoxelZ = 50;
+  //! Resolution of a voxel
+  double VoxelResolution = 10;
 
-  // Size of a pointcloud in voxel
-  unsigned int PointCloud_NbVoxelX = 25;
-  unsigned int PointCloud_NbVoxelY = 25;
-  unsigned int PointCloud_NbVoxelZ = 25;
+  //! Size of a pointcloud in voxel
+  int PointCloudSize = 25;
 
-  double LeafVoxelFilterSize = 0.2;
+  //! Size of the leaf use to downsample the pointcloud
+  double LeafSize = 0.2;
 
-  // grid of pointcloud
+  //! VoxelGrid of pointcloud
   std::vector<std::vector<std::vector<pcl::PointCloud<Point>::Ptr> > > grid;
 
   // Position of the VoxelGrid
   int VoxelGridPosition[3] = {0,0,0};
-
-  // vizualisation
-  std::vector<int> vizualisation;
 };
 
 //-----------------------------------------------------------------------------
@@ -754,7 +722,6 @@ void vtkSlam::PrintSelf(ostream& os, vtkIndent indent)
   PrintParameter(EgoMotionMinimumLineNeighborRejection)
   PrintParameter(MappingMinimumLineNeighborRejection)
   PrintParameter(MappingLineMaxDistInlier)
-  PrintParameter(LeafSize)
 }
 
 //-----------------------------------------------------------------------------
@@ -767,21 +734,13 @@ vtkSlam::vtkSlam()
   PlanarPointsLocalMap = new RollingGrid();
   BlobsPointsLocalMap = new RollingGrid();
 
-  EdgesPointsLocalMap->Set_VoxelSize(10);
-  PlanarPointsLocalMap->Set_VoxelSize(10);
-  BlobsPointsLocalMap->Set_VoxelSize(10);
+  EdgesPointsLocalMap->SetResolution(10);
+  PlanarPointsLocalMap->SetResolution(10);
+  BlobsPointsLocalMap->SetResolution(10);
 
-  double nbVoxel[3] = {50, 50, 50};
-  EdgesPointsLocalMap->Set_Grid_NbVoxel(nbVoxel);
-  PlanarPointsLocalMap->Set_Grid_NbVoxel(nbVoxel);
-  BlobsPointsLocalMap->Set_Grid_NbVoxel(nbVoxel);
-
-  nbVoxel[0] = nbVoxel[1] = nbVoxel[2] = 16;
-  EdgesPointsLocalMap->Set_PointCloud_NbVoxel(nbVoxel);
-  PlanarPointsLocalMap->Set_PointCloud_NbVoxel(nbVoxel);
-  BlobsPointsLocalMap->Set_PointCloud_NbVoxel(nbVoxel);
-
-  this->Set_RollingGrid_LeafVoxelFilterSize(this->LeafSize);
+  EdgesPointsLocalMap->SetSize(50);
+  PlanarPointsLocalMap->SetSize(50);
+  BlobsPointsLocalMap->SetSize(50);
 
   // output of the vtk filter
   this->Trajectory = vtkSmartPointer<vtkPolyData>::New();
@@ -2502,15 +2461,8 @@ void vtkSlam::Mapping()
   pcl::KdTreeFLANN<Point>::Ptr kdtreePlanes(new pcl::KdTreeFLANN<Point>());
   pcl::KdTreeFLANN<Point>::Ptr kdtreeBlobs(new pcl::KdTreeFLANN<Point>());
 
-  // Compute the number of voxel required depending on the
-  // max range of the keypoints
-  // the max keypoint distance in number of voxel
-  double requiredVoxels = this->FarestKeypointDist / static_cast<double>(this->EdgesPointsLocalMap->Get_VoxelSize());
-  // Since we want a diameter and not the radius, multiply it by two; Add an extra 10% distance
-  unsigned int nbrRequiredVoxels = static_cast<unsigned int>(vtkMath::Round(1.15 * 2.0 * requiredVoxels));
-  double voxelsR[3] = {nbrRequiredVoxels, nbrRequiredVoxels, nbrRequiredVoxels};
-  // Set it
-  this->Set_RollingGrid_PointCloud_NbVoxel(voxelsR);
+  // Set the FarestPoint to reduce the map to the minimun since
+  this->SetLidarMaximunRange(this->FarestKeypointDist);
 
   pcl::PointCloud<Point>::Ptr subEdgesPointsLocalMap = this->EdgesPointsLocalMap->Get(this->Tworld);
   pcl::PointCloud<Point>::Ptr subPlanarPointsLocalMap = this->PlanarPointsLocalMap->Get(this->Tworld);
@@ -2949,57 +2901,35 @@ void vtkSlam::UpdateTworldUsingTrelative()
 }
 
 //-----------------------------------------------------------------------------
-unsigned int vtkSlam::Get_RollingGrid_VoxelSize() const
+void vtkSlam::SetVoxelGridLeafSize(const double size)
 {
-  return this->EdgesPointsLocalMap->Get_VoxelSize();
+  this->PlanarPointsLocalMap->SetLeafSize(size);
+  this->EdgesPointsLocalMap->SetLeafSize(0.75 * size);
+  this->BlobsPointsLocalMap->SetLeafSize(0.20 * size);
 }
 
 //-----------------------------------------------------------------------------
-void vtkSlam::Set_RollingGrid_VoxelSize(const unsigned int size)
+void vtkSlam::SetVoxelGridSize(const unsigned int size)
 {
-  this->EdgesPointsLocalMap->Set_VoxelSize(size);
-  this->PlanarPointsLocalMap->Set_VoxelSize(size);
+  this->EdgesPointsLocalMap->SetSize(size);
+  this->PlanarPointsLocalMap->SetSize(size);
+  this->BlobsPointsLocalMap->SetSize(size);
 }
 
 //-----------------------------------------------------------------------------
-void vtkSlam::Get_RollingGrid_Grid_NbVoxel(double nbVoxel[3]) const
+void vtkSlam::SetVoxelGridResolution(const double resolution)
 {
-  this->EdgesPointsLocalMap->Get_Grid_NbVoxel(nbVoxel);
+  this->EdgesPointsLocalMap->SetResolution(resolution);
+  this->PlanarPointsLocalMap->SetResolution(resolution);
+  this->BlobsPointsLocalMap->SetResolution(resolution);
 }
 
 //-----------------------------------------------------------------------------
-void vtkSlam::Set_RollingGrid_Grid_NbVoxel(const double nbVoxel[3])
+void vtkSlam::SetLidarMaximunRange(const double maxRange)
 {
-  this->EdgesPointsLocalMap->Set_Grid_NbVoxel(nbVoxel);
-  this->PlanarPointsLocalMap->Set_Grid_NbVoxel(nbVoxel);
-}
-
-//-----------------------------------------------------------------------------
-void vtkSlam::Get_RollingGrid_PointCloud_NbVoxel(double nbVoxel[3]) const
-{
-  this->EdgesPointsLocalMap->Get_PointCloud_NbVoxel(nbVoxel);
-}
-
-//-----------------------------------------------------------------------------
-void vtkSlam::Set_RollingGrid_PointCloud_NbVoxel(const double nbVoxel[3])
-{
-  this->EdgesPointsLocalMap->Set_PointCloud_NbVoxel(nbVoxel);
-  this->PlanarPointsLocalMap->Set_PointCloud_NbVoxel(nbVoxel);
-  this->BlobsPointsLocalMap->Set_PointCloud_NbVoxel(nbVoxel);
-}
-
-//-----------------------------------------------------------------------------
-double vtkSlam::Get_RollingGrid_LeafVoxelFilterSize() const
-{
-  return this->EdgesPointsLocalMap->Get_LeafVoxelFilterSize();
-}
-
-//-----------------------------------------------------------------------------
-void vtkSlam::Set_RollingGrid_LeafVoxelFilterSize(const double size)
-{
-  this->EdgesPointsLocalMap->Set_LeafVoxelFilterSize(0.75 * size);
-  this->PlanarPointsLocalMap->Set_LeafVoxelFilterSize(size);
-  this->BlobsPointsLocalMap->Set_LeafVoxelFilterSize(0.20 * size);
+  this->EdgesPointsLocalMap->SetPointCoudMaxRange(maxRange);
+  this->PlanarPointsLocalMap->SetPointCoudMaxRange(maxRange);
+  this->BlobsPointsLocalMap->SetPointCoudMaxRange(maxRange);
 }
 
 //-----------------------------------------------------------------------------
@@ -3017,13 +2947,6 @@ void vtkSlam::SetUndistortion(bool input)
   {
     this->InternalInterp->SetInterpolationTypeToNearestLowBounded();
   }
-}
-
-//-----------------------------------------------------------------------------
-void vtkSlam::SetLeafSize(double argInput)
-{
-  this->LeafSize = argInput;
-  this->Set_RollingGrid_LeafVoxelFilterSize(this->LeafSize);
 }
 
 //-----------------------------------------------------------------------------
