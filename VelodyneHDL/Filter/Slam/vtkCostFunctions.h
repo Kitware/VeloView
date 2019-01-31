@@ -153,7 +153,7 @@ public:
     T s = T(this->time);
     Eigen::Matrix<T, 3, 1> Tc = (T(1.0) - s) * T0c + s * T1c;
 
-    T r0[9], r1[9], dr[9];
+    T r0[9], r1[9];
     T angle_axis_r0[3], angle_axis_r1[3];
     // column major
     for (unsigned int j = 0; j < 3; ++j)

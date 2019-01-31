@@ -302,12 +302,6 @@ double Rad2Deg(double val)
 {
   return val / vtkMath::Pi() * 180;
 }
-
-//-----------------------------------------------------------------------------
-double Deg2Rad(double val)
-{
-  return val / 180 * vtkMath::Pi();
-}
 }
 
 // The map reconstructed from the slam algorithm is stored in a voxel grid
@@ -634,7 +628,7 @@ vtkInformationVector **inputVector, vtkInformationVector *outputVector)
   vtkPolyData *output0 = vtkPolyData::SafeDownCast(
       outInfo0->Get(vtkDataObject::DATA_OBJECT()));
   // add all debug information if displayMode == True
-  if (this->DisplayMode = true && this->NbrFrameProcessed > 0)
+  if (this->DisplayMode == true && this->NbrFrameProcessed > 0)
   {
     this->DisplayLaserIdMapping(this->vtkCurrentFrame);
     this->DisplayRelAdv(this->vtkCurrentFrame);
@@ -665,7 +659,7 @@ vtkInformationVector **inputVector, vtkInformationVector *outputVector)
   vtkSmartPointer<vtkPolyLine> polyLine = vtkSmartPointer<vtkPolyLine>::New();
   int NbPosition = Trajectory->GetNumberOfPoints();
   polyLine->GetPointIds()->SetNumberOfIds(NbPosition);
-  for(unsigned int i = 0; i < NbPosition; i++)
+  for(int i = 0; i < NbPosition; i++)
   {
     polyLine->GetPointIds()->SetId(i,i);
   }
@@ -1137,7 +1131,7 @@ void vtkSlam::ComputeKeyPoints(vtkSmartPointer<vtkPolyData> input)
 }
 
 //-----------------------------------------------------------------------------
-void vtkSlam::ComputeCurvature(vtkSmartPointer<vtkPolyData> input)
+void vtkSlam::ComputeCurvature(vtkSmartPointer<vtkPolyData> vtkNotUsed(input))
 {
   Point currentPoint;
   Eigen::Vector3d X, centralPoint;
@@ -1297,7 +1291,7 @@ void vtkSlam::InvalidPointWithBadCriteria()
   // Temporary variables used in the next loop
   Eigen::Vector3d dX, X, Xn, Xp, Xproj, dXproj;
   Eigen::Vector3d Y, Yn, Yp, dY;
-  double dL, L, Ln, expectedLength, dLn, dLp, expectedLengthNeighbor;
+  double L, Ln, expectedLength, dLn, dLp;
   Point currentPoint, nextPoint, previousPoint;
   Point temp;
 
@@ -1360,7 +1354,7 @@ void vtkSlam::InvalidPointWithBadCriteria()
         // invalid next part
         if (L < Ln)
         {
-          for (unsigned int i = index + 1; i <= index + this->NeighborWidth; ++i)
+          for (int i = index + 1; i <= index + this->NeighborWidth; ++i)
           {
             if (i > index + 1)
             {
@@ -1369,7 +1363,6 @@ void vtkSlam::InvalidPointWithBadCriteria()
               temp = this->pclCurrentFrameByScan[scanLine]->points[i];
               Y << temp.x, temp.y, temp.z;
               dY = Y - Yp;
-              expectedLengthNeighbor = 2.0 *  std::tan(this->AngleResolution / 2.0) * Y.norm();
               // if there is a gap in the neihborhood
               // we do not invalidate the rest of neihborhood
               if (dY.norm() > ratioExpectedLength * expectedLength)
@@ -1383,7 +1376,7 @@ void vtkSlam::InvalidPointWithBadCriteria()
         // invalid previous part
         else
         {
-          for (unsigned int i = index - this->NeighborWidth; i <= index; ++i)
+          for (int i = index - this->NeighborWidth; i <= index; ++i)
           {
             if (i < index)
             {
@@ -1392,7 +1385,6 @@ void vtkSlam::InvalidPointWithBadCriteria()
               temp = this->pclCurrentFrameByScan[scanLine]->points[i];
               Y << temp.x, temp.y, temp.z;
               dY = Yn - Y;
-              expectedLengthNeighbor = 2.0 *  std::tan(this->AngleResolution / 2.0) * Y.norm();
               // if there is a gap in the neihborhood
               // we do not invalidate the rest of neihborhood
               if (dY.norm() > ratioExpectedLength * expectedLength)
@@ -1423,7 +1415,7 @@ void vtkSlam::InvalidPointWithBadCriteria()
 }
 
 //-----------------------------------------------------------------------------
-void vtkSlam::SetKeyPointsLabels(vtkSmartPointer<vtkPolyData> input)
+void vtkSlam::SetKeyPointsLabels(vtkSmartPointer<vtkPolyData> vtkNotUsed(input))
 {
   this->EdgesIndex.clear(); this->EdgesIndex.resize(0);
   this->PlanarIndex.clear(); this->PlanarIndex.resize(0);
@@ -1452,9 +1444,8 @@ void vtkSlam::SetKeyPointsLabels(vtkSmartPointer<vtkPolyData> input)
     std::vector<size_t> sortedDepthGapIdx = sortIdx<double>(this->DepthGap[scanLine]);
     std::vector<size_t> sortedAnglesIdx = sortIdx<double>(this->Angles[scanLine]);
     std::vector<size_t> sortedSaillancyIdx = sortIdx<double>(this->SaillantPoint[scanLine]);
-    std::vector<size_t> sortedBlobScoreIdx = sortIdx<double>(this->BlobScore[scanLine]);
 
-    double depthGap, sinAngle, blobScore, saillancy;
+    double depthGap, sinAngle, saillancy;
     int index = 0;
 
     // Edges using depth gap
@@ -2039,7 +2030,7 @@ int vtkSlam::ComputePlaneDistanceParameters(pcl::KdTreeFLANN<Point>::Ptr kdtreeP
 
 //-----------------------------------------------------------------------------
 int vtkSlam::ComputeBlobsDistanceParameters(pcl::KdTreeFLANN<Point>::Ptr kdtreePreviousBlobs, Eigen::Matrix3d& R,
-                                                    Eigen::Vector3d& dT, Point p, std::string step)
+                                                    Eigen::Vector3d& dT, Point p, std::string vtkNotUsed(step))
 {
   // number of neighbors blobs points required to approximate
   // the corresponding ellipsoide
@@ -2184,7 +2175,7 @@ void vtkSlam::GetEgoMotionLineSpecificNeighbor(std::vector<int>& nearestValid, s
 
   // invalid all possible points from scan
   // lines that are too far from the closest one
-  for (int k = 0; k < this->NLasers; ++k)
+  for (unsigned int k = 0; k < this->NLasers; ++k)
   {
     if (std::abs(closest.normal_y - k) > 3)
     {
@@ -2264,7 +2255,7 @@ void vtkSlam::GetMappingLineSpecificNeigbbor(std::vector<int>& nearestValid, std
     inliersList.push_back(inlierIndex);
   }
 
-  int maxInliers = 0;
+  std::size_t maxInliers = 0;
   int indexMaxInliers = -1;
   for (unsigned int k = 0; k < inliersList.size(); ++k)
   {
@@ -2481,7 +2472,6 @@ void vtkSlam::Mapping()
     std::cout << "blobs map : " << subBlobPointsLocalMap->points.size() << std::endl;
   }
 
-  bool shouldBreak = false;
   unsigned int usedEdges = 0;
   unsigned int usedPlanes = 0;
   unsigned int usedBlobs = 0;
@@ -2493,7 +2483,7 @@ void vtkSlam::Mapping()
   // Once the keypoints matched, we estimate the the 6-DOF
   // parameters by minimizing a non-linear least square cost
   // function using a Levenberg-Marquardt algorithm
-  for (int icpCount = 0; icpCount < this->MappingICPMaxIter; ++icpCount)
+  for (unsigned int icpCount = 0; icpCount < this->MappingICPMaxIter; ++icpCount)
   {
     // clear all keypoints matching data
     this->ResetDistanceParameters();
@@ -2602,7 +2592,6 @@ void vtkSlam::Mapping()
     // If no L-M iteration has been made since the
     // last ICP matching it means we reached a local
     // minimum for the ICP-LM algorithm
-    shouldBreak = (icpCount == this->MappingICPMaxIter - 1);
     if (summary.num_successful_steps == 1)
     {
       // Now evaluate the quality of the parameters
@@ -2954,19 +2943,19 @@ void vtkSlam::RejectionInformationDisplay()
 {
   double totalRejectionsLine = 0;
   double totalRejectionsPlane = 0;
-  for (unsigned int k = 0; k < this->NrejectionCauses; ++k)
+  for (int k = 0; k < this->NrejectionCauses; ++k)
   {
     totalRejectionsLine += this->MatchRejectionHistogramLine[k];
     totalRejectionsPlane += this->MatchRejectionHistogramPlane[k];
   }
   std::cout << "Rejection frequencies lines: [";
-  for (unsigned int k = 0; k < this->NrejectionCauses; ++k)
+  for (int k = 0; k < this->NrejectionCauses; ++k)
   {
     std::cout << this->MatchRejectionHistogramLine[k] / totalRejectionsLine * 100.0 << ", ";
   }
   std::cout << std::endl;
   std::cout << "Rejection frequencies planes: [";
-  for (unsigned int k = 0; k < this->NrejectionCauses; ++k)
+  for (int k = 0; k < this->NrejectionCauses; ++k)
   {
     std::cout << this->MatchRejectionHistogramPlane[k] / totalRejectionsPlane * 100.0 << ", ";
   }
