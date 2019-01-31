@@ -46,8 +46,6 @@ using DataPacketFixedLength::HDL_MAX_NUM_LASERS;
 class VTK_EXPORT vtkVelodyneHDLReader : public vtkLidarReader
 {
 public:
-
-public:
   static vtkVelodyneHDLReader* New();
   vtkTypeMacro(vtkVelodyneHDLReader, vtkLidarReader);
   void PrintSelf(ostream& os, vtkIndent indent);

@@ -348,8 +348,6 @@ void vtkVelodyneHDLPositionReader::vtkInternal::InterpolateGPS(
   headingInterpolator->SetInterpolationTypeToLinear();
   headingInterpolator->SetNumberOfComponents(2);
 
-  double timeOffset = 0.0;
-
   assert(times->GetNumberOfTuples() == gpsTime->GetNumberOfTuples());
 
   double lastGPS = 0.0;
@@ -410,7 +408,7 @@ void vtkVelodyneHDLPositionReader::vtkInternal::InterpolateGPS(
 }
 
 //-----------------------------------------------------------------------------
-vtkStandardNewMacro(vtkVelodyneHDLPositionReader);
+vtkStandardNewMacro(vtkVelodyneHDLPositionReader)
 
 //-----------------------------------------------------------------------------
 vtkVelodyneHDLPositionReader::vtkVelodyneHDLPositionReader()
@@ -447,8 +445,9 @@ void vtkVelodyneHDLPositionReader::SetFileName(const std::string& filename)
 
 
 //-----------------------------------------------------------------------------
-int vtkVelodyneHDLPositionReader::RequestData(
-  vtkInformation* request, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
+int vtkVelodyneHDLPositionReader::RequestData(vtkInformation* vtkNotUsed(request),
+                                              vtkInformationVector** vtkNotUsed(inputVector),
+                                              vtkInformationVector* outputVector)
 {
   vtkPolyData* output = vtkPolyData::GetData(outputVector);
 
@@ -566,8 +565,8 @@ int vtkVelodyneHDLPositionReader::RequestData(
         continue; // not the NMEA sentence we are interested in, skipping
       }
 
-      if (!(parser.IsGPGGA(NMEAwords) && parser.ParseGPGGA(NMEAwords, parsedNMEA)
-         || (parser.IsGPRMC(NMEAwords) && parser.ParseGPRMC(NMEAwords, parsedNMEA))))
+      if ( !( (parser.IsGPGGA(NMEAwords) && parser.ParseGPGGA(NMEAwords, parsedNMEA))
+           || (parser.IsGPRMC(NMEAwords) && parser.ParseGPRMC(NMEAwords, parsedNMEA)) ))
       {
         vtkGenericWarningMacro("Failed to parse NMEA sentence: "
                                << "<" << NMEASentence << ">");
@@ -719,12 +718,6 @@ void vtkVelodyneHDLPositionReader::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
   os << indent << "FileName: " << this->FileName << endl;
-}
-
-//-----------------------------------------------------------------------------
-int vtkVelodyneHDLPositionReader::CanReadFile(const char* fname)
-{
-  return 1;
 }
 
 //-----------------------------------------------------------------------------

@@ -43,7 +43,7 @@ class VTK_EXPORT vtkVelodyneHDLPositionReader : public vtkPolyDataAlgorithm
 {
 public:
   static vtkVelodyneHDLPositionReader* New();
-  vtkTypeMacro(vtkVelodyneHDLPositionReader, vtkPolyDataAlgorithm);
+  vtkTypeMacro(vtkVelodyneHDLPositionReader, vtkPolyDataAlgorithm)
   void PrintSelf(ostream& os, vtkIndent indent);
 
   // Description:
@@ -52,9 +52,6 @@ public:
   void SetFileName(const std::string& filename);
   void SetShouldWarnOnWeirdGPSData(bool ShouldWarnOnWeirdGPSData_);
   void SetCalibrationTransform(vtkTransform* transform);
-  // Description:
-  //
-  int CanReadFile(const char* fname);
 
   // Default is false (disabled)
   // If disabled, only GPRMC sentences will be used, they do not provide altitude

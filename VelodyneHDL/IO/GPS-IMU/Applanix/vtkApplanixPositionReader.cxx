@@ -80,7 +80,7 @@ void vtkApplanixPositionReader::vtkInternal::SetMapping(
 }
 
 //-----------------------------------------------------------------------------
-vtkStandardNewMacro(vtkApplanixPositionReader);
+vtkStandardNewMacro(vtkApplanixPositionReader)
 
 //-----------------------------------------------------------------------------
 vtkApplanixPositionReader::vtkApplanixPositionReader()
@@ -112,7 +112,7 @@ vtkVelodyneTransformInterpolator* vtkApplanixPositionReader::GetInterpolator() c
 
 //-----------------------------------------------------------------------------
 int vtkApplanixPositionReader::RequestData(
-  vtkInformation* request, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
+  vtkInformation* vtkNotUsed(request), vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* outputVector)
 {
   vtkPolyData* output = vtkPolyData::GetData(outputVector);
 

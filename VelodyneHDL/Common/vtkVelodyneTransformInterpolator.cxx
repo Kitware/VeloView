@@ -93,7 +93,6 @@ std::vector<std::vector<double> > vtkVelodyneTransformInterpolator::GetTransform
 
   std::vector<std::vector<double> > transforms;
   // Okay, insert in sorted order
-  TransformListIterator iter = this->TransformList->begin();
   for (TransformListIterator iter = this->TransformList->begin(); iter != this->TransformList->end(); ++iter)
   {
     std::vector<double> currentTransform(7, 0);

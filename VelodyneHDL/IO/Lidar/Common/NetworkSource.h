@@ -54,11 +54,11 @@ public:
   NetworkSource(std::shared_ptr<PacketConsumer> _consumer, int argLIDARPort,
     int ForwardedLIDARPort_, std::string ForwardedIpAddress_,
     bool isForwarding_, bool isCrashAnalysing_)
-    : IsCrashAnalysing(isCrashAnalysing_)
-    , IsForwarding(isForwarding_)
-    , ForwardedIpAddress(ForwardedIpAddress_)
+    : LIDARPort(argLIDARPort)
     , ForwardedLIDARPort(ForwardedLIDARPort_)
-    , LIDARPort(argLIDARPort)
+    , ForwardedIpAddress(ForwardedIpAddress_)
+    , IsForwarding(isForwarding_)
+    , IsCrashAnalysing(isCrashAnalysing_)
     , IOService()
     , Thread()
     , LIDARPortReceiver()

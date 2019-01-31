@@ -52,15 +52,11 @@ public:
   //@}
 
 protected:
-  vtkTemporalTransforms()
-  {
-    this->OrientationArrayName = "Orientation(AxisAngle)";
-    this->TimeArrayName = "Time";
-  }
+  vtkTemporalTransforms() = default;
 
 private:
-  char *OrientationArrayName;
-  char *TimeArrayName;
+  char const* OrientationArrayName = "Orientation(AxisAngle)";
+  char const* TimeArrayName = "Time";
 
   vtkTemporalTransforms(const vtkTemporalTransforms&) /*= delete*/;
   void operator =(const vtkTemporalTransforms&) /*= delete*/;

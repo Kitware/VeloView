@@ -38,7 +38,7 @@
 #include <sstream>
 
 //-----------------------------------------------------------------------------
-vtkStandardNewMacro(vtkVelodyneHDLReader);
+vtkStandardNewMacro(vtkVelodyneHDLReader)
 
 //-----------------------------------------------------------------------------
 vtkVelodyneHDLReader::vtkVelodyneHDLReader()

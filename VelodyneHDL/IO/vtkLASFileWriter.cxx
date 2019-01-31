@@ -283,6 +283,7 @@ void vtkLASFileWriter::SetGeoConversion(int in, int out)
 void vtkLASFileWriter::SetGeoConversion(int in, int out, int utmZone, bool isLatLon)
 {
 #ifdef PJ_VERSION // 4.8 or later
+  in = in;  // this was just added to avoid the warning: "parameter 'in' is not used"
 
   std::stringstream utmparamsIn;
   utmparamsIn << "+proj=utm ";

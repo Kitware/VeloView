@@ -61,7 +61,7 @@ struct vtkQTransform;
 class VTK_EXPORT vtkVelodyneTransformInterpolator : public vtkObject
 {
 public:
-  vtkTypeMacro(vtkVelodyneTransformInterpolator, vtkObject);
+  vtkTypeMacro(vtkVelodyneTransformInterpolator, vtkObject)
   void PrintSelf(ostream& os, vtkIndent indent);
 
   // Description:

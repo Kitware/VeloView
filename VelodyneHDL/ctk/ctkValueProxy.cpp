@@ -28,7 +28,7 @@
 
 class CTK_CORE_EXPORT ctkValueProxyPrivate
 {
-  Q_DECLARE_PUBLIC(ctkValueProxy);
+  Q_DECLARE_PUBLIC(ctkValueProxy)
 
 public:
   ctkValueProxy* q_ptr;

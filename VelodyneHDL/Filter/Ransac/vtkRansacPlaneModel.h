@@ -26,7 +26,7 @@ class VTK_EXPORT vtkRansacPlaneModel : public vtkPolyDataAlgorithm
 {
     public:
   static vtkRansacPlaneModel *New();
-  vtkTypeMacro(vtkRansacPlaneModel, vtkPolyDataAlgorithm);
+  vtkTypeMacro(vtkRansacPlaneModel, vtkPolyDataAlgorithm)
   void PrintSelf(ostream& os, vtkIndent indent);
 
   /// Get the maximum number of ransac iterations

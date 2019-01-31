@@ -45,7 +45,7 @@ class VTK_EXPORT vtkVelodyneHDLStream : public vtkLidarStream
 {
 public:
   static vtkVelodyneHDLStream* New();
-  vtkTypeMacro(vtkVelodyneHDLStream, vtkLidarStream);
+  vtkTypeMacro(vtkVelodyneHDLStream, vtkLidarStream)
   void PrintSelf(ostream& os, vtkIndent indent);
 
   std::string GetSensorInformation() override;

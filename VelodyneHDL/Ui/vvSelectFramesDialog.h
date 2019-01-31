@@ -98,7 +98,7 @@ private:
   class pqInternal;
   pqInternal* Internal;
 
-  Q_DISABLE_COPY(vvSelectFramesDialog);
+  Q_DISABLE_COPY(vvSelectFramesDialog)
 };
 
 #endif

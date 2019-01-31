@@ -37,7 +37,7 @@
 using DataPacketFixedLength::HDL_MAX_NUM_LASERS;
 
 //----------------------------------------------------------------------------
-vtkStandardNewMacro(vtkVelodyneHDLStream);
+vtkStandardNewMacro(vtkVelodyneHDLStream)
 
 //----------------------------------------------------------------------------
 vtkVelodyneHDLStream::vtkVelodyneHDLStream()

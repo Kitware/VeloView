@@ -55,7 +55,7 @@
 #include <Eigen/Dense>
 
 // Implementation of the New function
-vtkStandardNewMacro(vtkBirdEyeViewSnap);
+vtkStandardNewMacro(vtkBirdEyeViewSnap)
 
 //----------------------------------------------------------------------------
 vtkBirdEyeViewSnap::vtkBirdEyeViewSnap()

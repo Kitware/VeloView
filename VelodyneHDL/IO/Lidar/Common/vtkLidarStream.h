@@ -23,8 +23,7 @@ class vtkLidarStreamInternal;
 class VTK_EXPORT vtkLidarStream : public vtkLidarProvider
 {
 public:
-  vtkTypeMacro(vtkLidarStream, vtkLidarProvider);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  vtkTypeMacro(vtkLidarStream, vtkLidarProvider)
 
   int GetNumberOfFrames() override;
 

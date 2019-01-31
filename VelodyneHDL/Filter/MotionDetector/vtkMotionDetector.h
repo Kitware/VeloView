@@ -49,7 +49,7 @@ class VTK_EXPORT vtkMotionDetector : public vtkPolyDataAlgorithm
 {
 public:
   static vtkMotionDetector *New();
-  vtkTypeMacro(vtkMotionDetector, vtkPolyDataAlgorithm);
+  vtkTypeMacro(vtkMotionDetector, vtkPolyDataAlgorithm)
   void PrintSelf(ostream& os, vtkIndent indent);
 
   // Add a frame to update the motion estimator

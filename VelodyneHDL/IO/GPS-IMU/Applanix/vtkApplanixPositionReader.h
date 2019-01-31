@@ -41,7 +41,7 @@ class VTK_EXPORT vtkApplanixPositionReader : public vtkPolyDataAlgorithm
 {
 public:
   static vtkApplanixPositionReader* New();
-  vtkTypeMacro(vtkApplanixPositionReader, vtkPolyDataAlgorithm);
+  vtkTypeMacro(vtkApplanixPositionReader, vtkPolyDataAlgorithm)
   void PrintSelf(ostream& os, vtkIndent indent);
 
   // Description:
@@ -74,9 +74,6 @@ public:
   vtkGetMacro(TimeOffset, double);
 
   void SetCalibrationTransform(vtkTransform* transform);
-
-  // Description:
-  int CanReadFile(const char* fname) { return 1; }
 
   // Description:
   vtkVelodyneTransformInterpolator* GetInterpolator() const;

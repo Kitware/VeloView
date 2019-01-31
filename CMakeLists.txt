@@ -18,6 +18,14 @@ project(VeloView)
 
 set (CMAKE_CXX_STANDARD 11)
 
+if (MSVC)
+    # warning level all
+    add_compile_options(/Wall)
+else()
+    # warning level all and extra
+    add_compile_options(-Wall -Wextra)
+endif()
+
 # Disallow in-source build
 if ("${VeloView_SOURCE_DIR}"  STREQUAL "${VeloView_BINARY_DIR}")
   message(FATAL_ERROR

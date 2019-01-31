@@ -59,12 +59,6 @@ vtkLidarStream::~vtkLidarStream()
 }
 
 //-----------------------------------------------------------------------------
-void vtkLidarStream::PrintSelf(std::ostream &os, vtkIndent indent)
-{
-
-}
-
-//-----------------------------------------------------------------------------
 int vtkLidarStream::GetNumberOfFrames()
 {
   std::cerr << "this is not implemented yet" << std::endl;
@@ -72,7 +66,8 @@ int vtkLidarStream::GetNumberOfFrames()
 }
 
 //-----------------------------------------------------------------------------
-vtkSmartPointer<vtkPolyData> vtkLidarStream::GetFrame(int frameNumber, int wantedNumberOfTrailingFrames)
+vtkSmartPointer<vtkPolyData> vtkLidarStream::GetFrame(int vtkNotUsed(frameNumber),
+                                                      int vtkNotUsed(wantedNumberOfTrailingFrames))
 {
   std::cerr << "this is not implemented yet" << std::endl;
   return nullptr;
@@ -266,8 +261,9 @@ void vtkLidarStream::UnloadFrames()
 
 
 //-----------------------------------------------------------------------------
-int vtkLidarStream::RequestInformation(
-  vtkInformation* request, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
+int vtkLidarStream::RequestInformation(vtkInformation* vtkNotUsed(request),
+                                       vtkInformationVector** vtkNotUsed(inputVector),
+                                       vtkInformationVector* outputVector)
 {
   vtkInformation* outInfo = outputVector->GetInformationObject(0);
 
@@ -298,7 +294,8 @@ void vtkLidarStream::SetInterpreter(LidarPacketInterpreter *interpreter)
 
 //----------------------------------------------------------------------------
 int vtkLidarStream::RequestData(vtkInformation* vtkNotUsed(request),
-  vtkInformationVector** inputVector, vtkInformationVector* outputVector)
+                                vtkInformationVector** vtkNotUsed(inputVector),
+                                vtkInformationVector* outputVector)
 {
   vtkInformation* outInfo = outputVector->GetInformationObject(0);
   vtkDataSet* output = vtkDataSet::SafeDownCast(outInfo->Get(vtkDataObject::DATA_OBJECT()));

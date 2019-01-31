@@ -32,7 +32,7 @@
 #include <limits>
 
 //----------------------------------------------------------------------------
-vtkStandardNewMacro(vtkProcessingSample);
+vtkStandardNewMacro(vtkProcessingSample)
 
 //----------------------------------------------------------------------------
 vtkProcessingSample::vtkProcessingSample()

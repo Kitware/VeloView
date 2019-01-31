@@ -152,7 +152,7 @@ unsigned int ComputeNumberOfInlier(std::vector<Eigen::Matrix<double, 3, 1> >& Po
 }
 
 // Implementation of the New function
-vtkStandardNewMacro(vtkRansacPlaneModel);
+vtkStandardNewMacro(vtkRansacPlaneModel)
 
 //----------------------------------------------------------------------------
 vtkRansacPlaneModel::vtkRansacPlaneModel()

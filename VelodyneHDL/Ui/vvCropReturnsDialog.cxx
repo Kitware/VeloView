@@ -618,7 +618,7 @@ void vvCropReturnsDialog::pqInternal::updateRangeValues(bool isSliderMode)
 }
 
 //-----------------------------------------------------------------------------
-void vvCropReturnsDialog::onSpinBoxChanged(double value)
+void vvCropReturnsDialog::onSpinBoxChanged(double vtkNotUsed(value))
 {
   this->Internal->updateRangeValues(false);
 }

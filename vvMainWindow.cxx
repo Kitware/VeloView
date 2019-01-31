@@ -95,7 +95,7 @@ public:
   {
     this->Ui.setupUi(window);
     this->paraviewInit(window);
-    this->setupUi(window);
+    this->setupUi();
 
     QActionGroup* dualReturnFilterActions = new QActionGroup(window);
     dualReturnFilterActions->addAction(this->Ui.actionDualReturnModeDual);
@@ -299,7 +299,7 @@ private:
   }
 
   //-----------------------------------------------------------------------------
-  void setupUi(vvMainWindow* window)
+  void setupUi()
   {
     new pqRenderViewSelectionReaction(this->Ui.actionSelect_Visible_Points, this->MainView,
       pqRenderViewSelectionReaction::SELECT_SURFACE_POINTS);

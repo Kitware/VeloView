@@ -29,7 +29,7 @@ class VTK_EXPORT vtkBirdEyeViewSnap : public vtkPolyDataAlgorithm
 {
 public:
   static vtkBirdEyeViewSnap *New();
-  vtkTypeMacro(vtkBirdEyeViewSnap, vtkPolyDataAlgorithm);
+  vtkTypeMacro(vtkBirdEyeViewSnap, vtkPolyDataAlgorithm)
   void PrintSelf(ostream& os, vtkIndent indent);
 
   // Set Orientation of the plane

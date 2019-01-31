@@ -30,7 +30,7 @@
 Eigen::Quaterniond AvgUnitQuaternions(const std::vector<Eigen::Quaterniond>& Q)
 {
   Eigen::Matrix4d A = Eigen::Matrix4d::Zero();
-  for (int i = 0; i < Q.size(); i++)
+  for (size_t i = 0; i < Q.size(); i++)
   {
     Eigen::Vector4d q = Eigen::Vector4d(Q[i].w(), Q[i].x(), Q[i].y(), Q[i].z());
     A = A + q * q.transpose();
@@ -61,7 +61,7 @@ Eigen::Quaterniond AvgUnitQuaternions(const std::vector<Eigen::Quaterniond>& Q)
 Eigen::Matrix3d AvgRotation(const std::vector<Eigen::Matrix3d>& rotations)
 {
   std::vector<Eigen::Quaterniond> Q = std::vector<Eigen::Quaterniond>(rotations.size());
-  for (int i = 0; i < rotations.size(); i++)
+  for (size_t i = 0; i < rotations.size(); i++)
   {
     Q[i] = Eigen::Quaterniond(rotations[i]);
   }
@@ -88,8 +88,6 @@ Eigen::Matrix3d RollPitchYawInDegreeToMatrix(double roll, double pitch, double y
 //-----------------------------------------------------------------------------
 double SignedAngle(const Eigen::Vector3d& v1, const Eigen::Vector3d& v2)
 {
-  Eigen::Vector3d nv1 = v1.normalized();
-  Eigen::Vector3d nv2 = v2.normalized();
   double sinus = v1.cross(v2).norm();
   double cosinus = v1.dot(v2);
   return std::atan2(sinus, cosinus);

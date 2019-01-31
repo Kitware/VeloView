@@ -140,7 +140,7 @@ int vtkTrailingFrame::RequestData(vtkInformation* request,
     request->Remove(vtkStreamingDemandDrivenPipeline::CONTINUE_EXECUTING());
 
     // reset block that should be empty
-    for (int i = this->PipelineIndex + 1; i < this->NumberOfTrailingFrames + 1; i++)
+    for (unsigned int i = this->PipelineIndex + 1; i < this->NumberOfTrailingFrames + 1; i++)
     {
       int index = i % (this->NumberOfTrailingFrames + 1);
       this->Cache->SetBlock(index, nullptr);

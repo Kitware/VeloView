@@ -46,7 +46,7 @@ vtkMTimeType vtkTemporalTransformsApplier::GetMTime()
 }
 
 //-----------------------------------------------------------------------------
-int vtkTemporalTransformsApplier::RequestData(vtkInformation* request,
+int vtkTemporalTransformsApplier::RequestData(vtkInformation* vtkNotUsed(request),
                         vtkInformationVector** inputVector,
                         vtkInformationVector* outputVector)
 {
@@ -128,8 +128,8 @@ int vtkTemporalTransformsApplier::RequestData(vtkInformation* request,
 }
 
 //-----------------------------------------------------------------------------
-int vtkTemporalTransformsApplier::RequestInformation(vtkInformation* request,
-                       vtkInformationVector** inputVector,
+int vtkTemporalTransformsApplier::RequestInformation(vtkInformation* vtkNotUsed(request),
+                       vtkInformationVector** vtkNotUsed(inputVector),
                        vtkInformationVector* outputVector)
 {
   // indicate that this filter produce continuous timstep in the interpolator range

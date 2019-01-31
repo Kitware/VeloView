@@ -33,7 +33,7 @@
 
 class ctkRangeSliderPrivate
 {
-  Q_DECLARE_PUBLIC(ctkRangeSlider);
+  Q_DECLARE_PUBLIC(ctkRangeSlider)
 protected:
   ctkRangeSlider* const q_ptr;
 public:
@@ -44,7 +44,7 @@ public:
     MinimumHandle = 0x1,
     MaximumHandle = 0x2
   };
-  Q_DECLARE_FLAGS(Handles, Handle);
+  Q_DECLARE_FLAGS(Handles, Handle)
 
   ctkRangeSliderPrivate(ctkRangeSlider& object);
   void init();
@@ -95,7 +95,7 @@ public:
   QString m_HandleToolTip;
 
 private:
-  Q_DISABLE_COPY(ctkRangeSliderPrivate);
+  Q_DISABLE_COPY(ctkRangeSliderPrivate)
 };
 
 // --------------------------------------------------------------------------
