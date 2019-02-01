@@ -6,6 +6,12 @@
 
 struct NMEALocation;
 
+#ifdef _MSC_VER
+#define DLLEXPORT __declspec(dllexport)
+#else
+#define DLLEXPORT
+#endif
+
 /**
  * @brief NMEAParser parses a NMEA 0183 sentence that provides location data
  * (GPRMC, GPGGA or GPGLL sequence).
@@ -13,7 +19,7 @@ struct NMEALocation;
  * If the sentence can be parsed, the result is stored inside a NMEALocation
  * structure.
  */
-class NMEAParser
+class DLLEXPORT NMEAParser
 {
 public:
   std::vector<std::string> SplitWords(const std::string& sentence);
