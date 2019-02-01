@@ -27,7 +27,13 @@ MINIO_CACHE_SERVER_ADDRESS=$3
 MINIO_CACHE_SERVER_ACCESS_KEY=$4
 MINIO_CACHE_SERVER_SECRET_KEY=$5
 
-MC=~/mc
+echo "inside findRightSuperbuildCache, OS is: $OS"
+if [ $OS == "windows_10" ]; then
+    MC=/cygdrive/c/mc.exe
+else
+    MC=~/mc
+fi
+
 prefix=superbuild/runner/minio/project/808
 
 # start timer
@@ -74,15 +80,7 @@ echo "Downloading and uncompressing the Superbuild. This take some time..."
 mkdir cache
 $MC cp --recursive "$superbuild_cache" cache
 
-if file cache/* | grep -i bzip2; then
-    if [ "$(uname)" == "Darwin" ]; then
-        tar zxf cache/* # on Debian, tar zxf cannot extract bzip2 archives, but it works on macOS
-    else
-	tar jxf cache/*
-    fi
-else
-    unzip -q cache/*
-fi
+tar xf cache/*
 
 rm cache/*
 
