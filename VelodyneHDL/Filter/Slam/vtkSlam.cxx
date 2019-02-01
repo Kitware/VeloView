@@ -760,7 +760,6 @@ void vtkSlam::Reset()
   CreateDataArray<vtkIntArray>("EgoMotion: edges used", 0, this->Trajectory);
   CreateDataArray<vtkIntArray>("EgoMotion: planes used", 0, this->Trajectory);
   CreateDataArray<vtkIntArray>("EgoMotion: total keypoints used", 0, this->Trajectory);
-  this->Trajectory->SetPoints(points.GetPointer());
 }
 
 //-----------------------------------------------------------------------------
@@ -948,34 +947,6 @@ void vtkSlam::DisplayUsedKeypoints(vtkSmartPointer<vtkPolyData> input)
 }
 
 //-----------------------------------------------------------------------------
-void vtkSlam::AddTransform(double time)
-{
-  double tw[6];
-  this->GetWorldTransform(tw);
-  this->AddTransform(tw[0] * 180.0 / vtkMath::Pi(), tw[1] * 180.0 / vtkMath::Pi(),
-                     tw[2] * 180.0 / vtkMath::Pi(), tw[3], tw[4], tw[5], time);
-}
-
-//-----------------------------------------------------------------------------
-void vtkSlam::AddTransform(double rx, double ry, double rz, double tx, double ty, double tz, double t)
-{
-  // All the result obtained was with ZXY but it should be ZYX
-  // at the end, let's try with ZYX and make some test
-  vtkNew<vtkTransform> mappingTransform;
-  mappingTransform->PostMultiply();
-
-  // Passage from L(t_current) to L(t_begin) first frame
-  // Application of the SLAM result
-  mappingTransform->RotateX(rx);
-  mappingTransform->RotateY(ry);
-  mappingTransform->RotateZ(rz);
-  double pos[3] = {tx, ty, tz};
-  mappingTransform->Translate(pos);
-  this->InternalInterp->AddTransform(t, mappingTransform.GetPointer());
-  this->InternalInterp->Modified();
-}
-
-//-----------------------------------------------------------------------------
 void vtkSlam::AddFrame(vtkPolyData* newFrame)
 {
   if (!newFrame)
@@ -1023,8 +994,6 @@ void vtkSlam::AddFrame(vtkPolyData* newFrame)
     this->PreviousPlanarsPoints = this->CurrentPlanarsPoints;
     this->PreviousBlobsPoints = this->CurrentBlobsPoints;
     this->NbrFrameProcessed++;
-
-    this->AddTransform(time);
     return;
   }
 
@@ -1081,7 +1050,6 @@ void vtkSlam::AddFrame(vtkPolyData* newFrame)
 
   // Indicate the filter has been modify
   this->Modified();
-  this->AddTransform(time);
   return;
 }
 
@@ -2988,24 +2956,6 @@ void vtkSlam::UpdateLaserIdMapping(vtkTable *calib)
   {
     vtkErrorMacro("<< The calibration data has no colomn named 'verticalCorrection'");
   }
-}
-
-//-----------------------------------------------------------------------------
-void vtkSlam::SetUndistortion(bool input)
-{
-  this->Undistortion = input;
-
-  this->InternalInterp->Initialize();
-  // Use linear interpolator if undistortion has been chosed
-  if (this->Undistortion)
-  {
-    this->InternalInterp->SetInterpolationTypeToLinear();
-  }
-  else
-  {
-    this->InternalInterp->SetInterpolationTypeToNearestLowBounded();
-  }
-  this->ParametersModificationTime.Modified();
 }
 
 //-----------------------------------------------------------------------------

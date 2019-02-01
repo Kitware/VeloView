@@ -145,7 +145,7 @@ public:
   vtkGetMacro(FastSlam, bool)
   vtkCustomSetMacro(FastSlam, bool)
 
-  void SetUndistortion(bool input);
+  vtkSetMacro(Undistortion, bool)
   vtkGetMacro(Undistortion, bool)
 
   // Set RollingGrid Parameters
@@ -254,7 +254,6 @@ private:
   // Polydata which represents the trajectory computed
   vtkSmartPointer<vtkPolyData> Trajectory;
   vtkSmartPointer<vtkPolyData> Orientation;
-  vtkNew<vtkVelodyneTransformInterpolator> InternalInterp;
 
   // Current point cloud stored in two differents
   // formats: PCL-pointcloud and vtkPolyData
@@ -487,10 +486,6 @@ private:
 
   // Labelizes point to be a keypoints or not
   void SetKeyPointsLabels(vtkSmartPointer<vtkPolyData> input);
-
-  // Add Transform to the interpolator
-  void AddTransform(double time);
-  void AddTransform(double rx, double ry, double rz, double tx, double ty, double tz, double t);
 
   // Reset all mumbers variables that are
   // used during the process of a frame.
