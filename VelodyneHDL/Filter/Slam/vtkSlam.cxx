@@ -752,18 +752,13 @@ void vtkSlam::Reset()
   CreateDataArray<vtkDoubleArray>("roll", 0, this->Trajectory);
   CreateDataArray<vtkDoubleArray>("pitch", 0, this->Trajectory);
   CreateDataArray<vtkDoubleArray>("yaw", 0, this->Trajectory);
-  CreateDataArray<vtkDoubleArray>("Mapping: intiale cost function", 0, this->Trajectory);
-  CreateDataArray<vtkDoubleArray>("Mapping: final cost function", 0, this->Trajectory);
   CreateDataArray<vtkDoubleArray>("Variance Error", 0, this->Trajectory);
   CreateDataArray<vtkIntArray>("Mapping: edges used", 0, this->Trajectory);
   CreateDataArray<vtkIntArray>("Mapping: planes used", 0, this->Trajectory);
   CreateDataArray<vtkIntArray>("Mapping: blobs used", 0, this->Trajectory);
   CreateDataArray<vtkIntArray>("Mapping: total keypoints used", 0, this->Trajectory);
-  CreateDataArray<vtkDoubleArray>("EgoMotion: intiale cost function", 0, this->Trajectory);
-  CreateDataArray<vtkDoubleArray>("EgoMotion: final cost function", 0, this->Trajectory);
   CreateDataArray<vtkIntArray>("EgoMotion: edges used", 0, this->Trajectory);
   CreateDataArray<vtkIntArray>("EgoMotion: planes used", 0, this->Trajectory);
-  CreateDataArray<vtkIntArray>("EgoMotion: blobs used", 0, this->Trajectory);
   CreateDataArray<vtkIntArray>("EgoMotion: total keypoints used", 0, this->Trajectory);
   this->Trajectory->SetPoints(points.GetPointer());
 }
@@ -2481,11 +2476,8 @@ void vtkSlam::ComputeEgoMotion()
   // Provide information about keypoints-neighborhood matching rejections
   this->RejectionInformationDisplay();
 
-  static_cast<vtkDoubleArray*>(this->Trajectory->GetPointData()->GetArray("EgoMotion: intiale cost function"))->InsertNextValue(0);
-  static_cast<vtkDoubleArray*>(this->Trajectory->GetPointData()->GetArray("EgoMotion: final cost function"))->InsertNextValue(0);
   static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("EgoMotion: edges used"))->InsertNextValue(usedEdges);
   static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("EgoMotion: planes used"))->InsertNextValue(usedPlanes);
-  static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("EgoMotion: blobs used"))->InsertNextValue(0.0);
   static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("EgoMotion: total keypoints used"))->InsertNextValue(this->Xvalues.size());
   std::cout << "used keypoints : " << this->Xvalues.size() << std::endl;
   std::cout << "edges : " << usedEdges << " planes : " << usedPlanes << std::endl;
@@ -2682,8 +2674,6 @@ void vtkSlam::Mapping()
   Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eig(estimatorCovariance);
   Eigen::MatrixXd D = eig.eigenvalues();
 
-  static_cast<vtkDoubleArray*>(this->Trajectory->GetPointData()->GetArray("Mapping: intiale cost function"))->InsertNextValue(0);
-  static_cast<vtkDoubleArray*>(this->Trajectory->GetPointData()->GetArray("Mapping: final cost function"))->InsertNextValue(0);
   static_cast<vtkDoubleArray*>(this->Trajectory->GetPointData()->GetArray("Variance Error"))->InsertNextValue(D(5));
   static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("Mapping: edges used"))->InsertNextValue(usedEdges);
   static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("Mapping: planes used"))->InsertNextValue(usedPlanes);
@@ -2751,8 +2741,6 @@ void vtkSlam::UpdateMapsUsingTworld()
 //-----------------------------------------------------------------------------
 void vtkSlam::FillMappingInfoArrayWithDefaultValues()
 {
-  static_cast<vtkDoubleArray*>(this->Trajectory->GetPointData()->GetArray("Mapping: intiale cost function"))->InsertNextValue(0.0);
-  static_cast<vtkDoubleArray*>(this->Trajectory->GetPointData()->GetArray("Mapping: final cost function"))->InsertNextValue(10.0);
   static_cast<vtkDoubleArray*>(this->Trajectory->GetPointData()->GetArray("Variance Error"))->InsertNextValue(10.0);
   static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("Mapping: edges used"))->InsertNextValue(0);
   static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("Mapping: planes used"))->InsertNextValue(0);
@@ -2763,11 +2751,8 @@ void vtkSlam::FillMappingInfoArrayWithDefaultValues()
 //-----------------------------------------------------------------------------
 void vtkSlam::FillEgoMotionInfoArrayWithDefaultValues()
 {
-  static_cast<vtkDoubleArray*>(this->Trajectory->GetPointData()->GetArray("EgoMotion: intiale cost function"))->InsertNextValue(10.0);
-  static_cast<vtkDoubleArray*>(this->Trajectory->GetPointData()->GetArray("EgoMotion: final cost function"))->InsertNextValue(10.0);
   static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("EgoMotion: edges used"))->InsertNextValue(0);
   static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("EgoMotion: planes used"))->InsertNextValue(0);
-  static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("EgoMotion: blobs used"))->InsertNextValue(0);
   static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("EgoMotion: total keypoints used"))->InsertNextValue(0);
 }
 
