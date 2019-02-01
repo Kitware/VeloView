@@ -109,6 +109,7 @@ virtual void Set##name (type _arg) \
 
 class vtkVelodyneTransformInterpolator;
 class RollingGrid;
+class vtkTable;
 typedef pcl::PointXYZINormal Point;
 
 class VTK_EXPORT vtkSlam : public vtkPolyDataAlgorithm
@@ -238,7 +239,9 @@ protected:
   vtkSlam();
   void Reset();
   ~vtkSlam();
-  virtual int RequestData(vtkInformation *, vtkInformationVector **, vtkInformationVector *);
+
+  int FillInputPortInformation(int port, vtkInformation* info) override;
+  int RequestData(vtkInformation *, vtkInformationVector **, vtkInformationVector *) override;
 
   // Keeps track of the time the parameters have been modified
   // This will enable the SlamManager to be time-agnostic
@@ -299,7 +302,7 @@ private:
   std::shared_ptr<RollingGrid> BlobsPointsLocalMap;
 
   // Mapping of the lasers id
-  std::vector<int> LaserIdMapping;
+  std::vector<size_t> LaserIdMapping;
 
   // Curvature and over differntial operations
   // scan by scan; point by point
@@ -577,6 +580,9 @@ private:
 
   // Set the lidar
   void SetLidarMaximunRange(const double maxRange);
+
+  //
+  void UpdateLaserIdMapping(vtkTable* calib);
 
   // Indicate if we are in display mode or not
   // Display mode will add arrays showing some

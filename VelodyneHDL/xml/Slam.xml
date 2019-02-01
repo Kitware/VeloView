@@ -13,11 +13,27 @@
       </Documentation>
 
       <InputProperty
-        name="Input"
-        command="SetInputConnection">
+         name="PointCloud"
+         port_index="0"
+         command="SetInputConnection">
         <DataTypeDomain name="input_type">
           <DataType value="vtkPolyData"/>
         </DataTypeDomain>
+        <Documentation>
+          Set the input trajectory
+        </Documentation>
+      </InputProperty>
+
+      <InputProperty
+         name="Calibration"
+         port_index="1"
+         command="SetInputConnection">
+        <DataTypeDomain name="input_type">
+          <DataType value="vtkTable"/>
+        </DataTypeDomain>
+        <Documentation>
+          Set the input point cloud
+        </Documentation>
       </InputProperty>
 
       <OutputPort name="Last Frame processed" index="0" id="port0" />

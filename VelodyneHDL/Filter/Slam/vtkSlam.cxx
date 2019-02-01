@@ -102,6 +102,7 @@
 #include <vtkPoints.h>
 #include <vtkTransform.h>
 #include <vtkTransformPolyDataFilter.h>
+#include <vtkTable.h>
 // EIGEN
 #include <Eigen/Dense>
 // PCL
@@ -609,14 +610,10 @@ private:
 int vtkSlam::RequestData(vtkInformation *vtkNotUsed(request),
 vtkInformationVector **inputVector, vtkInformationVector *outputVector)
 {
+  if (this->LaserIdMapping.empty())
   {
-  // force the laserIdMapping temporary for a HDL32 sensor
-  this->NLasers = 32;
-  this->LaserIdMapping.resize(this->NLasers);
-  int hdl32Mapping[32] = {0,2,4,6,8,10,12,14,16,18,20,22,24,26,28,30,1,3,5,7,9,11,13,15,17,19,21,23,25,27,29,31};
-  this->LaserIdMapping.resize(32);
-  std::copy(hdl32Mapping, hdl32Mapping + 32, this->LaserIdMapping.begin());
-  this->pclCurrentFrameByScan.resize(this->NLasers);
+    vtkTable *calib = vtkTable::GetData(inputVector[1]->GetInformationObject(0));
+    this->UpdateLaserIdMapping(calib);
   }
 
   // Get the input
@@ -720,7 +717,7 @@ void vtkSlam::PrintSelf(ostream& os, vtkIndent indent)
 //-----------------------------------------------------------------------------
 vtkSlam::vtkSlam()
 {
-  this->SetNumberOfInputPorts(1);
+  this->SetNumberOfInputPorts(2);
   this->SetNumberOfOutputPorts(5);
   this->Reset();
   this->InternalInterp->SetInterpolationTypeToNearestLowBounded();
@@ -778,6 +775,22 @@ vtkSlam::~vtkSlam()
 }
 
 //-----------------------------------------------------------------------------
+int vtkSlam::FillInputPortInformation(int port, vtkInformation *info)
+{
+  if ( port == 0 )
+  {
+    info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkPolyData" );
+    return 1;
+  }
+  if ( port == 1 )
+  {
+    info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkTable" );
+    return 1;
+  }
+  return 0;
+}
+
+//-----------------------------------------------------------------------------
 void vtkSlam::GetWorldTransform(double* Tworld)
 {
   // Rotation and translation relative
@@ -806,6 +819,7 @@ void vtkSlam::PrepareDataForNextFrame()
 {
   // Reset the pcl format pointcloud to store the new frame
   this->pclCurrentFrame.reset(new pcl::PointCloud<Point>());
+  this->pclCurrentFrameByScan.resize(this->NLasers);
   for (unsigned int k = 0; k < this->NLasers; ++k)
   {
     this->pclCurrentFrameByScan[k].reset(new pcl::PointCloud<Point>());
@@ -2968,6 +2982,27 @@ void vtkSlam::SetLidarMaximunRange(const double maxRange)
   this->EdgesPointsLocalMap->SetPointCoudMaxRange(maxRange);
   this->PlanarPointsLocalMap->SetPointCoudMaxRange(maxRange);
   this->BlobsPointsLocalMap->SetPointCoudMaxRange(maxRange);
+}
+
+//-----------------------------------------------------------------------------
+void vtkSlam::UpdateLaserIdMapping(vtkTable *calib)
+{
+  this->NLasers = calib->GetNumberOfRows();
+  auto array = vtkDataArray::SafeDownCast(calib->GetColumnByName("verticalCorrection"));
+  if (array)
+  {
+    std::vector<double> verticalCorrection;
+    verticalCorrection.resize(array->GetNumberOfTuples());
+    for (int i =0; i < array->GetNumberOfTuples(); ++i)
+    {
+      verticalCorrection[i] = array->GetTuple1(i);
+    }
+    this->LaserIdMapping = sortIdx(verticalCorrection);
+  }
+  else
+  {
+    vtkErrorMacro("<< The calibration data has no colomn named 'verticalCorrection'");
+  }
 }
 
 //-----------------------------------------------------------------------------
