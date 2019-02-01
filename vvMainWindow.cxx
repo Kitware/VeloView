@@ -291,6 +291,26 @@ private:
     /// configuration pass in a non-null main window.
     pqParaViewMenuBuilders::buildFiltersMenu(*this->Ui.menuFilters, nullptr);
 
+    // build Paraview file menu
+    QMenu *paraviewFileMenu = this->Ui.menuAdvance->addMenu("File (Paraview)");
+    pqParaViewMenuBuilders::buildFileMenu(*paraviewFileMenu);
+    // for some reason the menu builder rename the QMenu...
+    paraviewFileMenu->setTitle("File (Paraview)");
+
+    // build Paraview edit menu
+    QMenu *paraviewEditMenu = this->Ui.menuAdvance->addMenu("Edit (Paraview)");
+    // for some reason the menu builder rename the QMenu...
+    pqParaViewMenuBuilders::buildEditMenu(*paraviewEditMenu);
+    paraviewEditMenu->setTitle("Edit (Paraview)");
+
+    // build Paraview tools menu
+    QMenu *paraviewToolsMenu = this->Ui.menuAdvance->addMenu("Tools (Paraview)");
+    pqParaViewMenuBuilders::buildToolsMenu(*paraviewToolsMenu);
+
+    // build Paraview macro menu
+    QMenu *paraviewMacroMenu = this->Ui.menuAdvance->addMenu("Macro (Paraview)");
+    pqParaViewMenuBuilders::buildMacrosMenu(*paraviewMacroMenu);
+
     // add 'ctrl+space' shortcut for quickLaunch
     QShortcut *ctrlSpace = new QShortcut(Qt::CTRL + Qt::Key_Space, window);
     QObject::connect(ctrlSpace, SIGNAL(activated()), pqApplicationCore::instance(), SLOT(quickLaunch()));

@@ -158,12 +158,18 @@
      <string>Sources</string>
     </property>
    </widget>
+   <widget class="QMenu" name="menuAdvance">
+    <property name="title">
+     <string>Advance</string>
+    </property>
+   </widget>
    <addaction name="menu_File"/>
    <addaction name="menuTools"/>
    <addaction name="menuSources"/>
    <addaction name="menuFilters"/>
    <addaction name="menuViews"/>
    <addaction name="menuHelp"/>
+   <addaction name="menuAdvance"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <widget class="QToolBar" name="toolBar">

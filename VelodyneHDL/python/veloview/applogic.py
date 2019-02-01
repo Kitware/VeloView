@@ -1984,6 +1984,9 @@ def onToogleAdvancedGUI(updateSettings = True):
   # hide/show Filters menu
   menuFilters = getMainWindow().findChild("QMenu", "menuFilters").menuAction()
   menuFilters.visible = not menuFilters.visible
+  # hide/show Advance menu
+  menuAdvance = getMainWindow().findChild("QMenu", "menuAdvance").menuAction()
+  menuAdvance.visible = not menuAdvance.visible
   # hide/show view decorator
   getMainWindow().centralWidget().toggleWidgetDecoration()
   # update the UserSettings
