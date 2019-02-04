@@ -699,8 +699,6 @@ void vtkSlam::PrintSelf(ostream& os, vtkIndent indent)
   PrintParameter(EgoMotionICPMaxIter)
   PrintParameter(MappingLMMaxIter)
   PrintParameter(MappingICPMaxIter)
-  PrintParameter(MaxEdgePerScanLine)
-  PrintParameter(MaxPlanarsPerScanLine)
   PrintParameter(EdgeSinAngleThreshold)
   PrintParameter(PlaneSinAngleThreshold)
   PrintParameter(EdgeDepthGapThreshold)
@@ -1567,12 +1565,6 @@ void vtkSlam::SetKeyPointsLabels(vtkSmartPointer<vtkPolyData> vtkNotUsed(input))
     {
       index = sortedAnglesIdx[k];
       sinAngle = this->Angles[scanLine][index];
-
-      // max keypoints reached
-      if (nbrPlanarPicked >= this->MaxPlanarsPerScanLine)
-      {
-        //break;
-      }
 
       // thresh
       if (sinAngle > this->PlaneSinAngleThreshold)
