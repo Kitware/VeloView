@@ -17,6 +17,12 @@
 
 #include "vtkConversions.h"
 
+// LOCAL
+#include "vtkEigenTools.h"
+
+// VTK
+#include <vtkMatrix4x4.h>
+
 
 //----------------------------------------------------------------------------
 std::vector<Eigen::Vector3d> vtkPointsToEigenVector(vtkPoints* points)
@@ -44,4 +50,46 @@ vtkSmartPointer<vtkPoints> eigenVectorToVTKPoints(std::vector<Eigen::Vector3d> c
     newPoints->SetPoint(i, temp);
   }
   return newPoints;
+}
+
+//----------------------------------------------------------------------------
+std::pair<Eigen::Vector3d, Eigen::Vector3d> GetPoseParamsFromTransform(vtkSmartPointer<vtkTransform> transform)
+{
+  vtkSmartPointer<vtkMatrix4x4> H = transform->GetMatrix();
+
+  // Position
+  Eigen::Vector3d position;
+  position(0) = H->Element[0][3];
+  position(1) = H->Element[1][3];
+  position(2) = H->Element[2][3];
+  // orientation
+  Eigen::Vector3d angles;
+  angles(0) = std::atan2(H->Element[2][1], H->Element[2][2]);
+  angles(1) = -std::asin(H->Element[2][0]);
+  angles(2) = std::atan2(H->Element[1][0], H->Element[0][0]);
+
+  return std::pair<Eigen::Vector3d, Eigen::Vector3d>(angles, position);
+}
+
+//----------------------------------------------------------------------------
+vtkSmartPointer<vtkTransform> GetTransformFromPosesParams(std::pair<Eigen::Vector3d, Eigen::Vector3d> dof6)
+{
+  Eigen::Matrix3d R = RollPitchYawToMatrix(dof6.first);
+  Eigen::Vector3d T = dof6.second;
+
+  vtkSmartPointer<vtkMatrix4x4> H = vtkSmartPointer<vtkMatrix4x4>::New();
+  H->Zero();
+  for (unsigned int i = 0; i < 3; ++i)
+  {
+    for (unsigned int j = 0; j < 3; ++j)
+    {
+      H->SetElement(i, j, R(i, j));
+    }
+    H->SetElement(i, 3, T(i));
+  }
+  H->SetElement(3, 3, 1.0);
+
+  vtkSmartPointer<vtkTransform> transform = vtkSmartPointer<vtkTransform>::New();
+  transform->SetMatrix(H.Get());
+  return transform;
 }

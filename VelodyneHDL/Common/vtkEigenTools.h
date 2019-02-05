@@ -46,6 +46,19 @@ Eigen::Quaterniond AvgUnitQuaternions(const std::vector<Eigen::Quaterniond>& Q);
 Eigen::Matrix3d AvgRotation(const std::vector<Eigen::Matrix3d>& rotations);
 
 /**
+   * @brief MatrixToRollPitchYaw Computes the Euler angles from
+   *        matrix using the following mapping:
+   *        R^3          ->     SO(3)
+   *        (rx, ry, rz) -> R = Rz(rz)*Ry(ry)*Rx(rx)
+   * with rx denoted as roll and being the angle around X-axis
+   * with ry denoted as pitch and being the angle around Y-axis
+   * with rz denoted as yaw and being the angle around the Z-axis
+   * with (X, Y, Z) being an orthonormal basis of R^3
+   * @param rotation input rotation to decompose
+   */
+Eigen::Vector3d MatrixToRollPitchYaw(const Eigen::Matrix3d& rotation);
+
+/**
    * @brief RollPitchYawToMatrix Computes the rotation matrix from Euler
    *        angles using the following mapping:
    *        R^3          ->     SO(3)
@@ -59,6 +72,7 @@ Eigen::Matrix3d AvgRotation(const std::vector<Eigen::Matrix3d>& rotations);
    * @param yaw is the angle around Z-axis (in radian)
    */
 Eigen::Matrix3d RollPitchYawToMatrix(double roll, double pitch, double yaw);
+Eigen::Matrix3d RollPitchYawToMatrix(const Eigen::Vector3d& angles);
 
 /**
   * @brief RollPitchYawInDegreeToMatrix Computes the rotation matrix from Euler

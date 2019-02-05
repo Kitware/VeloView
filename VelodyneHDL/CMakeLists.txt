@@ -265,6 +265,11 @@ if (ENABLE_PCL)
     ${CMAKE_CURRENT_SOURCE_DIR}/Common/vtkPCLConversions.cxx
     )
 endif(ENABLE_PCL)
+if (ENABLE_Ceres)
+  list(APPEND sources_which_do_not_inherit_from_vtkObject
+      ${CMAKE_CURRENT_SOURCE_DIR}/Common/vtkGeometricCalibration.cxx
+      )
+endif (ENABLE_Ceres)
 
 
 # plugin dependencies

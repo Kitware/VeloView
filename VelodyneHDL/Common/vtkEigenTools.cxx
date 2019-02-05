@@ -70,11 +70,28 @@ Eigen::Matrix3d AvgRotation(const std::vector<Eigen::Matrix3d>& rotations)
 }
 
 //-----------------------------------------------------------------------------
+Eigen::Vector3d MatrixToRollPitchYaw(const Eigen::Matrix3d& rotation)
+{
+  Eigen::Vector3d eulerAngles;
+  eulerAngles(0) = std::atan2(rotation(2, 1), rotation(2, 2));
+  eulerAngles(1) = -std::asin(rotation(2, 0));
+  eulerAngles(2) = std::atan2(rotation(1, 0), rotation(0, 0));
+
+  return eulerAngles;
+}
+
+//-----------------------------------------------------------------------------
 Eigen::Matrix3d RollPitchYawToMatrix(double roll, double pitch, double yaw)
 {
   return Eigen::Matrix3d(Eigen::AngleAxisd(yaw, Eigen::Vector3d::UnitZ())
                   * Eigen::AngleAxisd(pitch, Eigen::Vector3d::UnitY())
                   * Eigen::AngleAxisd(roll, Eigen::Vector3d::UnitX()));
+}
+
+//-----------------------------------------------------------------------------
+Eigen::Matrix3d RollPitchYawToMatrix(const Eigen::Vector3d& angles)
+{
+  return RollPitchYawToMatrix(angles(0), angles(1), angles(2));
 }
 
 //-----------------------------------------------------------------------------

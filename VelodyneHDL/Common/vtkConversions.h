@@ -18,9 +18,13 @@
 #ifndef VTK_CONVERSIONS_H
 #define VTK_CONVERSIONS_H
 
+// STD
+#include <utility>
+
 // VTK
 #include <vtkPoints.h>
 #include <vtkSmartPointer.h>
+#include <vtkTransform.h>
 
 // Eigen
 #include <Eigen/Dense>
@@ -30,5 +34,11 @@ std::vector<Eigen::Vector3d> vtkPointsToEigenVector(vtkPoints* points);
 
 /// This function creates a vtkPoints from a vector of Eigen::Vector3d. (Warning: loss of precision because vtkPoints are in float)
 vtkSmartPointer<vtkPoints> eigenVectorToVTKPoints(std::vector<Eigen::Vector3d> const& points);
+
+/// Get the 6-DOF parameters (angles, translation) of a vtkTransform
+std::pair<Eigen::Vector3d, Eigen::Vector3d> GetPoseParamsFromTransform(vtkSmartPointer<vtkTransform> transform);
+
+/// Get the vtkTransform from the 6-DOF parameters (angles, translation)
+vtkSmartPointer<vtkTransform> GetTransformFromPosesParams(std::pair<Eigen::Vector3d, Eigen::Vector3d> dof6);
 
 #endif

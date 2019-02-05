@@ -72,7 +72,7 @@
 #include "vtkSlam.h"
 #include "vtkVelodyneTransformInterpolator.h"
 #include "vtkPCLConversions.h"
-#include "vtkCostFunctions.h"
+#include "CeresCostFunctions.h"
 // STD
 #include <sstream>
 #include <algorithm>
@@ -2383,18 +2383,19 @@ void vtkSlam::ComputeEgoMotion()
     {
       if (this->Undistortion)
       {
-        ceres::CostFunction* cost_function = new ceres::AutoDiffCostFunction<CostFunctions::LinearDistortionResidual, 1, 6>(
-                                             new CostFunctions::LinearDistortionResidual(this->Avalues[k], this->Pvalues[k], this->Xvalues[k],
-                                                                                         Eigen::Vector3d::Zero(),
-                                                                                         Eigen::Matrix3d::Identity(),
-                                                                                         this->TimeValues[k], this->residualCoefficient[k]));
+        ceres::CostFunction* cost_function = new ceres::AutoDiffCostFunction<CostFunctions::MahalanobisDistanceLinearDistortionResidual, 1, 6>(
+                                              new CostFunctions::MahalanobisDistanceLinearDistortionResidual(
+                                                this->Avalues[k], this->Pvalues[k], this->Xvalues[k],
+                                                Eigen::Matrix<double, 3, 1>::Zero(),
+                                                Eigen::Matrix<double, 3, 3>::Identity(),
+                                                this->TimeValues[k], this->residualCoefficient[k]));
         problem.AddResidualBlock(cost_function, new ceres::ArctanLoss(2.0), this->Trelative.data());
       }
       else
       {
-        ceres::CostFunction* cost_function = new ceres::AutoDiffCostFunction<CostFunctions::AffineIsometryResidual, 1, 6>(
-                                             new CostFunctions::AffineIsometryResidual(this->Avalues[k], this->Pvalues[k],
-                                                                                       this->Xvalues[k], this->residualCoefficient[k]));
+        ceres::CostFunction* cost_function = new ceres::AutoDiffCostFunction<CostFunctions::MahalanobisDistanceAffineIsometryResidual, 1, 6>(
+                                             new CostFunctions::MahalanobisDistanceAffineIsometryResidual(this->Avalues[k], this->Pvalues[k],
+                                                                                                          this->Xvalues[k], this->residualCoefficient[k]));
         problem.AddResidualBlock(cost_function, new ceres::ArctanLoss(2.0), this->Trelative.data());
       }
     }
@@ -2564,18 +2565,17 @@ void vtkSlam::Mapping()
     {
       if (this->Undistortion)
       {
-        ceres::CostFunction* cost_function = new ceres::AutoDiffCostFunction<CostFunctions::LinearDistortionResidual, 1, 6>(
-                                             new CostFunctions::LinearDistortionResidual(this->Avalues[k], this->Pvalues[k], this->Xvalues[k],
-                                                                                         T0,
-                                                                                         R0,
-                                                                                         this->TimeValues[k], this->residualCoefficient[k]));
+        ceres::CostFunction* cost_function = new ceres::AutoDiffCostFunction<CostFunctions::MahalanobisDistanceLinearDistortionResidual, 1, 6>(
+                                              new CostFunctions::MahalanobisDistanceLinearDistortionResidual(
+                                                this->Avalues[k], this->Pvalues[k], this->Xvalues[k], T0, R0,
+                                                this->TimeValues[k], this->residualCoefficient[k]));
         problem.AddResidualBlock(cost_function, new ceres::ArctanLoss(2.0), this->Tworld.data());
       }
       else
       {
-        ceres::CostFunction* cost_function = new ceres::AutoDiffCostFunction<CostFunctions::AffineIsometryResidual, 1, 6>(
-                                             new CostFunctions::AffineIsometryResidual(this->Avalues[k], this->Pvalues[k],
-                                                                                       this->Xvalues[k], this->residualCoefficient[k]));
+        ceres::CostFunction* cost_function = new ceres::AutoDiffCostFunction<CostFunctions::MahalanobisDistanceAffineIsometryResidual, 1, 6>(
+                                             new CostFunctions::MahalanobisDistanceAffineIsometryResidual(this->Avalues[k], this->Pvalues[k],
+                                                                                                          this->Xvalues[k], this->residualCoefficient[k]));
         problem.AddResidualBlock(cost_function, new ceres::ArctanLoss(2.0), this->Tworld.data());
       }
     }
