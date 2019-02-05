@@ -185,3 +185,13 @@ int vtkTemporalTransformsReader::RequestData(vtkInformation* vtkNotUsed(request)
 
   return 1;
 }
+
+//-----------------------------------------------------------------------------
+vtkSmartPointer<vtkTemporalTransforms> vtkTemporalTransformsReader::OpenTemporalTransforms(const std::string& filename)
+{
+  auto reader1 = vtkSmartPointer<vtkTemporalTransformsReader>::New();
+  reader1->SetFileName(filename.c_str());
+  reader1->Update();
+  auto temporalTransform1 = reader1->GetOutput();
+  return vtkTemporalTransforms::CreateFromPolyData(temporalTransform1);
+}

@@ -18,6 +18,11 @@ target_link_libraries(TestTrailingFrame VelodyneHDLPlugin)
 add_executable(TestRansacPlaneModel TestRansacPlaneModel.cxx)
 target_link_libraries(TestRansacPlaneModel VelodyneHDLPlugin)
 
+if (ENABLE_PCL AND ENABLE_Ceres)
+  add_executable(TestGeometricCalibration TestGeometricCalibration.cxx)
+  target_link_libraries(TestGeometricCalibration VelodyneHDLPlugin)
+endif(ENABLE_PCL AND ENABLE_Ceres)
+
 set(sensors "HDL-64"
             "VLP-16"
             "VLP-32c")
@@ -119,3 +124,11 @@ add_test(TestTrailingFrame
 add_test(TestRansacPlaneModel
   ${INSTALL_LOCAL_DIR}/TestRansacPlaneModel
 )
+
+if (ENABLE_PCL AND ENABLE_Ceres)
+  add_test(TestGeometricCalibration
+    ${INSTALL_LOCAL_DIR}/TestGeometricCalibration
+    ${CMAKE_SOURCE_DIR}/TestData/trajectories/mockup1/imu.csv
+    ${CMAKE_SOURCE_DIR}/TestData/trajectories/mockup1/lidar-slam.csv
+  )
+endif(ENABLE_PCL AND ENABLE_Ceres)

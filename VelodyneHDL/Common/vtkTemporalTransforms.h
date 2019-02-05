@@ -31,6 +31,33 @@ public:
 
   vtkSmartPointer<vtkVelodyneTransformInterpolator> CreateInterpolator();
 
+  /**
+  * \brief This function apply an isometric affine
+  *        transform to the poses trajectory:
+  *        Rout(t) = R0 * Rin(t)
+  *        Tout(t) = R0 * Tin(t) + T0
+  *
+  *        with H = [R0 | T0]
+  *
+  * \@param H transform to apply
+  */
+  vtkSmartPointer<vtkTemporalTransforms> IsometricTransform(vtkSmartPointer<vtkTransform> H);
+
+  /**
+  * \brief This function apply a "cycloidic" transform.
+  *        Let's suppose you know the Orientation Rin(t) and
+  *        the position Tin(t) of a sensor1. You also know the
+  *        the pose (R0, T0) of the sensor2 according to the sensor1
+  *        reference coordinate frame. Then, the orientation
+  *        Rout(t) and Tout(t) of the sensor2 can be computed:
+  *
+  *        Rout(t) = Rin(t) * R0
+  *        Tout(t) = Rin(t) * T0 + Tin(t)
+  *
+  * \@param H transform to apply
+  */
+  vtkSmartPointer<vtkTemporalTransforms> CycloidicTransform(vtkSmartPointer<vtkTransform> H);
+
   //@{
   /// Get/Set the orientation array
   vtkDataArray* GetOrientationArray() { return this->GetPointData()->GetArray(OrientationArrayName); }

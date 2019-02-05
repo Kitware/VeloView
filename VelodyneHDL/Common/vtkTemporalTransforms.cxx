@@ -1,10 +1,15 @@
 #include "vtkTemporalTransforms.h"
+#include "vtkEigenTools.h"
+#include "vtkConversions.h"
 
 #include <vtkCellData.h>
 #include <vtkPolyLine.h>
 #include <vtkTransform.h>
 
 #include <cmath>
+
+// Eigen
+#include <Eigen/Dense>
 
 //-----------------------------------------------------------------------------
 vtkStandardNewMacro(vtkTemporalTransforms)
@@ -59,6 +64,7 @@ vtkSmartPointer<vtkVelodyneTransformInterpolator> vtkTemporalTransforms::CreateI
       vtkErrorMacro(<< "Timestamp " << i << "is not a number")
     }
   }
+  interpolator->Modified();
   return interpolator;
 }
 
@@ -108,4 +114,92 @@ void vtkTemporalTransforms::SetTimeArray(vtkDoubleArray *array)
   }
   array->SetName(this->TimeArrayName);
   this->GetPointData()->AddArray(array);
+}
+
+//-----------------------------------------------------------------------------
+vtkSmartPointer<vtkTemporalTransforms> vtkTemporalTransforms::IsometricTransform(vtkSmartPointer<vtkTransform> H)
+{
+  vtkSmartPointer<vtkTemporalTransforms> outputPoses = vtkSmartPointer<vtkTemporalTransforms>::New();
+  outputPoses->DeepCopy(this);
+
+  // First, compute the rotation and translation from H 4x4 matrix
+  std::pair<Eigen::Vector3d, Eigen::Vector3d> transParams = GetPoseParamsFromTransform(H);
+  Eigen::Matrix3d R0 = RollPitchYawToMatrix(transParams.first);
+  Eigen::Vector3d T0 = transParams.second;
+
+  // We need to change the angle axis and position arrays
+  vtkDoubleArray* xyzwArray = vtkDoubleArray::SafeDownCast(this->GetOrientationArray());
+  vtkDoubleArray* xyzArray = vtkDoubleArray::SafeDownCast(this->GetTranslationArray());
+
+  // Loop over the transforms points
+  for (unsigned int transformIndex = 0; transformIndex < this->GetNumberOfPoints(); transformIndex++)
+  {
+    // Get the angle-axis representation
+    double* xyzw = xyzwArray->GetTuple4(transformIndex);
+    double* xyz = xyzArray->GetTuple3(transformIndex);
+
+    // Compute the corresponding rotation matrix that
+    // correspond to the angle axis representation
+    Eigen::Vector3d T(xyz[0], xyz[1], xyz[2]);
+    Eigen::AngleAxisd angleAxis(xyzw[3], Eigen::Vector3d(xyzw[0], xyzw[1], xyzw[2]));
+    Eigen::Matrix3d R = angleAxis.toRotationMatrix();
+
+    // Compute the new rotation and translation
+    R = R0 * R;
+    T = R0 * T + T0;
+
+    // Get the axis angle representation of this new rotation
+    Eigen::AngleAxisd newAngleAxis(R);
+    double newXyzw[4] = {newAngleAxis.axis()(0), newAngleAxis.axis()(1),
+                         newAngleAxis.axis()(2), newAngleAxis.angle()};
+
+    // Replace it
+    xyzwArray->SetTuple4(transformIndex, newXyzw[0], newXyzw[1], newXyzw[2], newXyzw[3]);
+    xyzArray->SetTuple3(transformIndex, T(0), T(1), T(2));
+  }
+  return outputPoses;
+}
+
+//-----------------------------------------------------------------------------
+vtkSmartPointer<vtkTemporalTransforms> vtkTemporalTransforms::CycloidicTransform(vtkSmartPointer<vtkTransform> H)
+{
+  vtkSmartPointer<vtkTemporalTransforms> outputPoses = vtkSmartPointer<vtkTemporalTransforms>::New();
+  outputPoses->DeepCopy(this);
+
+  // First, compute the rotation and translation from H 4x4 matrix
+  std::pair<Eigen::Vector3d, Eigen::Vector3d> transParams = GetPoseParamsFromTransform(H);
+  Eigen::Matrix3d R0 = RollPitchYawToMatrix(transParams.first);
+  Eigen::Vector3d T0 = transParams.second;
+
+  // We need to change the angle axis and position arrays
+  vtkDoubleArray* xyzwArray = vtkDoubleArray::SafeDownCast(this->GetOrientationArray());
+  vtkDoubleArray* xyzArray = vtkDoubleArray::SafeDownCast(this->GetTranslationArray());
+
+  // Loop over the transforms points
+  for (unsigned int transformIndex = 0; transformIndex < this->GetNumberOfPoints(); transformIndex++)
+  {
+    // Get the angle-axis representation
+    double* xyzw = xyzwArray->GetTuple4(transformIndex);
+    double* xyz = xyzArray->GetTuple3(transformIndex);
+
+    // Compute the corresponding rotation matrix that
+    // correspond to the angle axis representation
+    Eigen::Vector3d T(xyz[0], xyz[1], xyz[2]);
+    Eigen::AngleAxisd angleAxis(xyzw[3], Eigen::Vector3d(xyzw[0], xyzw[1], xyzw[2]));
+    Eigen::Matrix3d R = angleAxis.toRotationMatrix();
+
+    // Compute the new rotation and translation
+    T = R * T0 + T;
+    R = R * R0;
+
+    // Get the axis angle representation of this new rotation
+    Eigen::AngleAxisd newAngleAxis(R);
+    double newXyzw[4] = {newAngleAxis.axis()(0), newAngleAxis.axis()(1),
+                         newAngleAxis.axis()(2), newAngleAxis.angle()};
+
+    // Replace it
+    xyzwArray->SetTuple4(transformIndex, newXyzw[0], newXyzw[1], newXyzw[2], newXyzw[3]);
+    xyzArray->SetTuple3(transformIndex, T(0), T(1), T(2));
+  }
+  return outputPoses;
 }

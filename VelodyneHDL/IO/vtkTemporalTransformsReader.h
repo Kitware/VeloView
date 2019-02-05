@@ -15,7 +15,13 @@
 #ifndef VTKTEMPORALTRANSFORMSREADER_H
 #define VTKTEMPORALTRANSFORMSREADER_H
 
+// STD
+#include <string>
+
+// VTK
 #include <vtkPolyDataReader.h>
+#include <vtkSmartPointer.h>
+#include "vtkTemporalTransforms.h"
 
 /**
  * @brief vtkTemporalTransformsReader reads a csv file to generate a vtkTemporalTransform.
@@ -36,6 +42,8 @@ class VTK_EXPORT vtkTemporalTransformsReader : public vtkPolyDataReader
 public:
   static vtkTemporalTransformsReader* New();
   vtkTypeMacro(vtkTemporalTransformsReader,vtkPolyDataReader)
+
+  static vtkSmartPointer<vtkTemporalTransforms> OpenTemporalTransforms(const std::string& filename);
 
   //@{
   /**
