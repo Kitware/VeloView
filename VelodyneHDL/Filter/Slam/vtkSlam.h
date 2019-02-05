@@ -135,11 +135,8 @@ public:
   void SetVoxelGridResolution(const double resolution);
 
   // Get/Set Keypoint
-  vtkGetMacro(MaxEdgePerScanLine, unsigned int)
-  vtkSetMacro(MaxEdgePerScanLine, unsigned int)
-
-  vtkGetMacro(MaxPlanarsPerScanLine, unsigned int)
-  vtkSetMacro(MaxPlanarsPerScanLine, unsigned int)
+  vtkGetMacro(NeighborWidth, int)
+  vtkSetMacro(NeighborWidth, int)
 
   vtkGetMacro(MinDistanceToSensor, double)
   vtkSetMacro(MinDistanceToSensor, double)
@@ -306,11 +303,6 @@ private:
   // minimal point/sensor sensor to consider a point as valid
   double MinDistanceToSensor = 3.0;
 
-  // Indicated the number max of keypoints
-  // that we admit per laser scan line
-  unsigned int MaxEdgePerScanLine = 200;
-  unsigned int MaxPlanarsPerScanLine = 200;
-
   // Sharpness threshold to select a point
   double EdgeSinAngleThreshold = 0.86; // 60 degrees
   double PlaneSinAngleThreshold = 0.5; // 30 degrees
@@ -351,7 +343,7 @@ private:
   // values of the variance-covariance matrix of the neighborhood
   // to check if the points are distributed upon a line or a plane
   unsigned int MappingLineDistanceNbrNeighbors = 15;
-  unsigned int MappingMinimumLineNeighborRejection = 5;
+  unsigned int MappingMinimumLineNeighborRejection = 4;
   double MappingLineDistancefactor = 5.0;
 
   unsigned int MappingPlaneDistanceNbrNeighbors = 5;
@@ -363,7 +355,7 @@ private:
   double MappingLineMaxDistInlier = 0.2;
 
   unsigned int EgoMotionLineDistanceNbrNeighbors = 10;
-  unsigned int EgoMotionMinimumLineNeighborRejection = 4;
+  unsigned int EgoMotionMinimumLineNeighborRejection = 3;
   double EgoMotionLineDistancefactor = 5.;
 
   unsigned int EgoMotionPlaneDistanceNbrNeighbors = 5;
