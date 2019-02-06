@@ -746,6 +746,7 @@ void vtkSlam::Reset()
 
   // output of the vtk filter
   this->Trajectory = vtkSmartPointer<vtkPolyData>::New();
+  Tworld = Eigen::Matrix<double, 6, 1>::Zero();
 
   this->LaserIdMapping.clear();
   this->NbrFrameProcessed = 0;
