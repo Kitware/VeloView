@@ -68,13 +68,11 @@
 #include "pqCameraToolbar.h"
 #include <pqLiveSourceBehavior.h>
 
-#include <QLabel>
-#include <QSplitter>
 #include <QToolBar>
 #include <QShortcut>
-#include <QDockWidget>
-#include <QMenuBar>
 #include <QMenu>
+#include <QMimeData>
+#include <QUrl>
 
 #include <cassert>
 #include <iostream>
@@ -399,6 +397,46 @@ vvMainWindow::~vvMainWindow()
 {
   delete this->Internals;
   this->Internals = NULL;
+}
+
+//-----------------------------------------------------------------------------
+void vvMainWindow::dragEnterEvent(QDragEnterEvent* evt)
+{
+  evt->acceptProposedAction();
+}
+
+//-----------------------------------------------------------------------------
+void vvMainWindow::dropEvent(QDropEvent* evt)
+{
+  QList<QUrl> urls = evt->mimeData()->urls();
+  if (urls.isEmpty())
+  {
+    return;
+  }
+
+  QList<QString> files;
+
+  foreach (QUrl url, urls)
+  {
+    if (!url.toLocalFile().isEmpty())
+    {
+      files.append(url.toLocalFile());
+    }
+  }
+
+  // If we have no file we return
+  if (files.empty() || files.first().isEmpty())
+  {
+    return;
+  }
+
+  if (files[0].endsWith(".pcap"))
+  {
+    pqVelodyneManager::instance()->runPython(QString("vv.openPCAP('" + files[0] + "')"));
+  }
+  else {
+    pqLoadDataReaction::loadData(files);
+  }
 }
 
 //-----------------------------------------------------------------------------
