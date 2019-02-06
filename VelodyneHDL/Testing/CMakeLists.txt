@@ -1,25 +1,41 @@
-add_executable(TestVelodyneHDLSource TestHelpers.cxx TestVelodyneHDLSource.cxx)
+if (WIN32)
+  set(INSTALL_LOCAL_DIR "${CMAKE_BINARY_DIR}/../../../install/bin")
+else()
+  set(INSTALL_LOCAL_DIR "${CMAKE_BINARY_DIR}/bin")
+endif()
+
+function(custom_add_executable)
+  add_executable(${ARGV})
+  if (WIN32)
+    install(TARGETS ${ARGV0}
+	    RUNTIME DESTINATION ${INSTALL_LOCAL_DIR}
+	    LIBRARY DESTINATION ${VV_INSTALL_LIBRARY_DIR}
+	    COMPONENT Runtime)
+  endif(WIN32)
+endfunction(custom_add_executable)
+
+custom_add_executable(TestVelodyneHDLSource TestHelpers.cxx TestVelodyneHDLSource.cxx)
 target_include_directories(TestVelodyneHDLSource PRIVATE ${plugin_include_dirs})
 target_link_libraries(TestVelodyneHDLSource LINK_PUBLIC VelodyneHDLPlugin)
 
-add_executable(TestVelodyneHDLReader TestVelodyneHDLReader.cxx TestHelpers.cxx)
+custom_add_executable(TestVelodyneHDLReader TestVelodyneHDLReader.cxx TestHelpers.cxx)
 target_include_directories(TestVelodyneHDLReader PRIVATE ${plugin_include_dirs})
 target_link_libraries(TestVelodyneHDLReader LINK_PUBLIC VelodyneHDLPlugin)
 
-add_executable(TestVelodyneHDLPositionReader TestVelodyneHDLPositionReader.cxx)
+custom_add_executable(TestVelodyneHDLPositionReader TestVelodyneHDLPositionReader.cxx)
 target_link_libraries(TestVelodyneHDLPositionReader VelodyneHDLPlugin)
 
-add_executable(TestNMEAParser TestNMEAParser.cxx TestHelpers.cxx)
+custom_add_executable(TestNMEAParser TestNMEAParser.cxx TestHelpers.cxx)
 target_link_libraries(TestNMEAParser VelodyneHDLPlugin)
 
-add_executable(TestTrailingFrame TestTrailingFrame.cxx)
+custom_add_executable(TestTrailingFrame TestTrailingFrame.cxx)
 target_link_libraries(TestTrailingFrame VelodyneHDLPlugin)
 
-add_executable(TestRansacPlaneModel TestRansacPlaneModel.cxx)
+custom_add_executable(TestRansacPlaneModel TestRansacPlaneModel.cxx)
 target_link_libraries(TestRansacPlaneModel VelodyneHDLPlugin)
 
 if (ENABLE_PCL AND ENABLE_Ceres)
-  add_executable(TestGeometricCalibration TestGeometricCalibration.cxx)
+  custom_add_executable(TestGeometricCalibration TestGeometricCalibration.cxx)
   target_link_libraries(TestGeometricCalibration VelodyneHDLPlugin)
 endif(ENABLE_PCL AND ENABLE_Ceres)
 
@@ -27,21 +43,6 @@ set(sensors "HDL-64"
             "VLP-16"
             "VLP-32c")
 
-if (WIN32)
-    set(INSTALL_LOCAL_DIR "${CMAKE_BINARY_DIR}/../../../install/bin")
-
-    install(TARGETS TestVelodyneHDLSource
-                RUNTIME DESTINATION ${INSTALL_LOCAL_DIR}
-                LIBRARY DESTINATION ${VV_INSTALL_LIBRARY_DIR}
-                COMPONENT Runtime)
-
-    install(TARGETS TestVelodyneHDLReader
-                RUNTIME DESTINATION ${INSTALL_LOCAL_DIR}
-                LIBRARY DESTINATION ${VV_INSTALL_LIBRARY_DIR}
-                COMPONENT Runtime)
-else()
-    set(INSTALL_LOCAL_DIR "${CMAKE_BINARY_DIR}/bin")
-endif()
 
 # generate script to generate new test baseline
 configure_file(generateTestData.py.in ${INSTALL_LOCAL_DIR}/generateTestData.py)
