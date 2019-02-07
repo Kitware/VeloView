@@ -382,7 +382,7 @@ private:
   double MappingMaxLineDistance = 0.2;
   double MappingLineMaxDistInlier = 0.2;
 
-  unsigned int EgoMotionLineDistanceNbrNeighbors = 10;
+  unsigned int EgoMotionLineDistanceNbrNeighbors = 8;
   unsigned int EgoMotionMinimumLineNeighborRejection = 3;
   double EgoMotionLineDistancefactor = 5.;
 
@@ -391,7 +391,7 @@ private:
   double EgoMotionPlaneDistancefactor2 = 8.0;
 
   double EgoMotionMaxPlaneDistance = 0.2;
-  double EgoMotionMaxLineDistance = 0.10;
+  double EgoMotionMaxLineDistance = 0.2;
 
   // norm of the farest keypoints
   double FarestKeypointDist;
@@ -420,8 +420,8 @@ private:
 
   // Transformation to map the current pointcloud
   // in the world (i.e first frame) one
-  Eigen::Matrix<double, 6, 1> Tworld;
-  Eigen::Matrix<double, 6, 1> PreviousTworld;
+  Eigen::Matrix<double, 6, 1> Tworld = Eigen::Matrix<double, 6, 1>::Zero();
+  Eigen::Matrix<double, 6, 1> PreviousTworld = Eigen::Matrix<double, 6, 1>::Zero();
 
   // Computed trajectory of the sensor
   // i.e the list of transforms computed
