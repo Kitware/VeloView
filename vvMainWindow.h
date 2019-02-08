@@ -25,6 +25,10 @@ public:
   vvMainWindow();
   virtual ~vvMainWindow();
 
+protected:
+  void dragEnterEvent(QDragEnterEvent* evt) override;
+  void dropEvent(QDropEvent* evt) override;
+
 protected slots:
   void showHelpForProxy(const QString& proxyname, const QString& groupname);
 

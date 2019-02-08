@@ -10,6 +10,9 @@
     <height>645</height>
    </rect>
   </property>
+  <property name="acceptDrops">
+   <bool>true</bool>
+  </property>
   <property name="windowTitle">
    <string>MainWindow</string>
   </property>
@@ -17,7 +20,11 @@
    <iconset resource="vvResources.qrc">
     <normaloff>:/vvResources/Icons/logo.png</normaloff>:/vvResources/Icons/logo.png</iconset>
   </property>
-  <widget class="QWidget" name="centralwidget"/>
+  <widget class="QWidget" name="centralwidget">
+   <property name="acceptDrops">
+    <bool>true</bool>
+   </property>
+  </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
     <rect>
