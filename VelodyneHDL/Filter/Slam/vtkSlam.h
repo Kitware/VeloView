@@ -142,9 +142,9 @@ public:
   vtkGetMacro(Undistortion, bool)
 
   // Set RollingGrid Parameters
-  void SetVoxelGridLeafSize(const double size);
-  void SetVoxelGridSize(const unsigned int size);
-  void SetVoxelGridResolution(const double resolution);
+  void SetVoxelGridLeafSize(double size);
+  void SetVoxelGridSize(unsigned int size);
+  void SetVoxelGridResolution(double resolution);
 
   // Get/Set Keypoint
   vtkGetMacro(NeighborWidth, int)

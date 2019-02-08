@@ -563,7 +563,7 @@ public:
     this->PointCloudSize = std::ceil(2 * maxdist / this->VoxelResolution);
   }
 
-  void SetSize(const unsigned int size)
+  void SetSize(int size)
   {
     this->VoxelSize = size;
     grid.resize(this->VoxelSize);
@@ -581,9 +581,9 @@ public:
     }
   }
 
-  void SetResolution(const double resolution) { this->VoxelResolution = resolution; }
+  void SetResolution(double resolution) { this->VoxelResolution = resolution; }
 
-  void SetLeafSize(const double size) { this->LeafSize = size; }
+  void SetLeafSize(double size) { this->LeafSize = size; }
 
 private:
   //! Size of the voxel grid: n*n*n voxels
@@ -2895,7 +2895,7 @@ void vtkSlam::UpdateTworldUsingTrelative()
 }
 
 //-----------------------------------------------------------------------------
-void vtkSlam::SetVoxelGridLeafSize(const double size)
+void vtkSlam::SetVoxelGridLeafSize(double size)
 {
   this->PlanarPointsLocalMap->SetLeafSize(size);
   this->EdgesPointsLocalMap->SetLeafSize(0.75 * size);
@@ -2904,7 +2904,7 @@ void vtkSlam::SetVoxelGridLeafSize(const double size)
 }
 
 //-----------------------------------------------------------------------------
-void vtkSlam::SetVoxelGridSize(const unsigned int size)
+void vtkSlam::SetVoxelGridSize(unsigned int size)
 {
   this->EdgesPointsLocalMap->SetSize(size);
   this->PlanarPointsLocalMap->SetSize(size);
@@ -2913,7 +2913,7 @@ void vtkSlam::SetVoxelGridSize(const unsigned int size)
 }
 
 //-----------------------------------------------------------------------------
-void vtkSlam::SetVoxelGridResolution(const double resolution)
+void vtkSlam::SetVoxelGridResolution(double resolution)
 {
   this->EdgesPointsLocalMap->SetResolution(resolution);
   this->PlanarPointsLocalMap->SetResolution(resolution);
