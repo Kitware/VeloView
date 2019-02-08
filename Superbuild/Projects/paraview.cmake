@@ -1,3 +1,9 @@
+set(pv_cmake_options "")
+find_package(Protobuf)
+if (Protobuf_FOUND)
+  list(APPEND pv_cmake_options "-DVTK_USE_SYSTEM_PROTOBUF:BOOL=TRUE" )
+  message(MESSAGE "Found a system-wide Protobuf library, tell VTK to use it to avoid runtime version mismatch")
+endif()
 superbuild_add_project(paraview
   DEPENDS qt5 python pythonqt
   DEFAULT_ON
@@ -59,6 +65,7 @@ superbuild_add_project(paraview
     -DPARAVIEW_QT_VERSION:STRING=${qt_version}
     -DVTK_RENDERING_BACKEND:STRING=OpenGL2
     -DVTK_LEGACY_SILENT:BOOL=TRUE
+    ${pv_cmake_options}
 
     -DPARAVIEW_BUILD_PLUGIN_PythonQtPlugin:BOOL=TRUE
     -DPYTHONQT_DIR:PATH=<INSTALL_DIR>
