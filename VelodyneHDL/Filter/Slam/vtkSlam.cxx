@@ -728,13 +728,9 @@ vtkSlam::vtkSlam()
 //-----------------------------------------------------------------------------
 void vtkSlam::Reset()
 {
-  delete this->EdgesPointsLocalMap;
-  delete this->PlanarPointsLocalMap;
-  delete this->BlobsPointsLocalMap;
-
-  this->EdgesPointsLocalMap = new RollingGrid();
-  this->PlanarPointsLocalMap = new RollingGrid();
-  this->BlobsPointsLocalMap = new RollingGrid();
+  this->EdgesPointsLocalMap = std::make_shared<RollingGrid>();
+  this->PlanarPointsLocalMap = std::make_shared<RollingGrid>();
+  this->BlobsPointsLocalMap = std::make_shared<RollingGrid>();
 
   this->EdgesPointsLocalMap->SetResolution(10);
   this->PlanarPointsLocalMap->SetResolution(10);
@@ -777,9 +773,7 @@ void vtkSlam::Reset()
 //-----------------------------------------------------------------------------
 vtkSlam::~vtkSlam()
 {
-  delete this->EdgesPointsLocalMap;
-  delete this->PlanarPointsLocalMap;
-  delete this->BlobsPointsLocalMap;
+
 }
 
 //-----------------------------------------------------------------------------

@@ -89,6 +89,12 @@
 
 #include "KalmanFilter.h"
 
+// This custom macro is needed to make the SlamManager time agnostic
+// The SlamManager need to know when RequestData is call, if it's due
+// to a new timestep been requested or due to Slam parameters been changed.
+// By keeping track of the last time the parameters been modified there is
+// no ambiguty anymore. This mecanimsm is similar to the one usedby the paraview filter
+// PlotDataOverTime
 #define vtkCustomSetMacro(name,type) \
 virtual void Set##name (type _arg) \
 { \
@@ -234,7 +240,7 @@ protected:
   ~vtkSlam();
   virtual int RequestData(vtkInformation *, vtkInformationVector **, vtkInformationVector *);
 
-  // Keep track on when the parameter have been modify
+  // Keeps track of the time the parameters have been modified
   // This will enable the SlamManager to be time-agnostic
   // MTime is a much more general mecanism so we can't rely on it
   vtkTimeStamp ParametersModificationTime;
@@ -288,9 +294,9 @@ private:
   pcl::PointCloud<Point>::Ptr PreviousBlobsPoints;
 
   // keypoints local map
-  RollingGrid* EdgesPointsLocalMap;
-  RollingGrid* PlanarPointsLocalMap;
-  RollingGrid* BlobsPointsLocalMap;
+  std::shared_ptr<RollingGrid> EdgesPointsLocalMap;
+  std::shared_ptr<RollingGrid> PlanarPointsLocalMap;
+  std::shared_ptr<RollingGrid> BlobsPointsLocalMap;
 
   // Mapping of the lasers id
   std::vector<int> LaserIdMapping;

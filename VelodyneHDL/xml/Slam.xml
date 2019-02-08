@@ -498,7 +498,7 @@
          panel_visibility="advanced">
        <Documentation>
           Resolution of the map. It should not be too big or too much
-          points will be consider when trying to position the frame in
+          points will be considered when trying to position the frame in
           the position.This do not impact accuracy but only speed.
         </Documentation>
      </DoubleVectorProperty>
