@@ -283,6 +283,7 @@ private:
   std::vector<std::vector<double> > BlobScore;
   std::vector<std::vector<double> > LengthResolution;
   std::vector<std::vector<double> > SaillantPoint;
+  std::vector<std::vector<double> > IntensityGap;
   std::vector<std::vector<int> > IsPointValid;
   std::vector<std::vector<int> > Label;
 
