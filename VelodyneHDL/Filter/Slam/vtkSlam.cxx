@@ -563,7 +563,7 @@ public:
     this->PointCloudSize = std::ceil(2 * maxdist / this->VoxelResolution);
   }
 
-  void SetSize(const unsigned int size)
+  void SetSize(int size)
   {
     this->VoxelSize = size;
     grid.resize(this->VoxelSize);
@@ -581,9 +581,9 @@ public:
     }
   }
 
-  void SetResolution(const double resolution) { this->VoxelResolution = resolution; }
+  void SetResolution(double resolution) { this->VoxelResolution = resolution; }
 
-  void SetLeafSize(const double size) { this->LeafSize = size; }
+  void SetLeafSize(double size) { this->LeafSize = size; }
 
 private:
   //! Size of the voxel grid: n*n*n voxels
@@ -721,21 +721,32 @@ vtkSlam::vtkSlam()
 {
   this->SetNumberOfInputPorts(1);
   this->SetNumberOfOutputPorts(5);
+  this->Reset();
+  this->InternalInterp->SetInterpolationTypeToNearestLowBounded();
+}
 
-  EdgesPointsLocalMap = new RollingGrid();
-  PlanarPointsLocalMap = new RollingGrid();
-  BlobsPointsLocalMap = new RollingGrid();
+//-----------------------------------------------------------------------------
+void vtkSlam::Reset()
+{
+  this->EdgesPointsLocalMap = std::make_shared<RollingGrid>();
+  this->PlanarPointsLocalMap = std::make_shared<RollingGrid>();
+  this->BlobsPointsLocalMap = std::make_shared<RollingGrid>();
 
-  EdgesPointsLocalMap->SetResolution(10);
-  PlanarPointsLocalMap->SetResolution(10);
-  BlobsPointsLocalMap->SetResolution(10);
+  this->EdgesPointsLocalMap->SetResolution(10);
+  this->PlanarPointsLocalMap->SetResolution(10);
+  this->BlobsPointsLocalMap->SetResolution(10);
 
-  EdgesPointsLocalMap->SetSize(50);
-  PlanarPointsLocalMap->SetSize(50);
-  BlobsPointsLocalMap->SetSize(50);
+  this->EdgesPointsLocalMap->SetSize(50);
+  this->PlanarPointsLocalMap->SetSize(50);
+  this->BlobsPointsLocalMap->SetSize(50);
 
   // output of the vtk filter
   this->Trajectory = vtkSmartPointer<vtkPolyData>::New();
+  Tworld = Eigen::Matrix<double, 6, 1>::Zero();
+
+  this->LaserIdMapping.clear();
+  this->NbrFrameProcessed = 0;
+  this->Tworld = Eigen::Matrix<double, 6, 1>::Zero();
 
   // add the required array in the trajectory
   vtkNew<vtkPoints> points;
@@ -757,16 +768,12 @@ vtkSlam::vtkSlam()
   CreateDataArray<vtkIntArray>("EgoMotion: blobs used", 0, this->Trajectory);
   CreateDataArray<vtkIntArray>("EgoMotion: total keypoints used", 0, this->Trajectory);
   this->Trajectory->SetPoints(points.GetPointer());
-
-  this->InternalInterp->SetInterpolationTypeToNearestLowBounded();
 }
 
 //-----------------------------------------------------------------------------
 vtkSlam::~vtkSlam()
 {
-  delete this->EdgesPointsLocalMap;
-  delete this->PlanarPointsLocalMap;
-  delete this->BlobsPointsLocalMap;
+
 }
 
 //-----------------------------------------------------------------------------
@@ -2882,27 +2889,30 @@ void vtkSlam::UpdateTworldUsingTrelative()
 }
 
 //-----------------------------------------------------------------------------
-void vtkSlam::SetVoxelGridLeafSize(const double size)
+void vtkSlam::SetVoxelGridLeafSize(double size)
 {
   this->PlanarPointsLocalMap->SetLeafSize(size);
   this->EdgesPointsLocalMap->SetLeafSize(0.75 * size);
   this->BlobsPointsLocalMap->SetLeafSize(0.20 * size);
+  this->ParametersModificationTime.Modified();
 }
 
 //-----------------------------------------------------------------------------
-void vtkSlam::SetVoxelGridSize(const unsigned int size)
+void vtkSlam::SetVoxelGridSize(unsigned int size)
 {
   this->EdgesPointsLocalMap->SetSize(size);
   this->PlanarPointsLocalMap->SetSize(size);
   this->BlobsPointsLocalMap->SetSize(size);
+  this->ParametersModificationTime.Modified();
 }
 
 //-----------------------------------------------------------------------------
-void vtkSlam::SetVoxelGridResolution(const double resolution)
+void vtkSlam::SetVoxelGridResolution(double resolution)
 {
   this->EdgesPointsLocalMap->SetResolution(resolution);
   this->PlanarPointsLocalMap->SetResolution(resolution);
   this->BlobsPointsLocalMap->SetResolution(resolution);
+  this->ParametersModificationTime.Modified();
 }
 
 //-----------------------------------------------------------------------------
@@ -2928,6 +2938,7 @@ void vtkSlam::SetUndistortion(bool input)
   {
     this->InternalInterp->SetInterpolationTypeToNearestLowBounded();
   }
+  this->ParametersModificationTime.Modified();
 }
 
 //-----------------------------------------------------------------------------

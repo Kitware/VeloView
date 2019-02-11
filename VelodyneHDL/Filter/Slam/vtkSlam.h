@@ -89,6 +89,24 @@
 
 #include "KalmanFilter.h"
 
+// This custom macro is needed to make the SlamManager time agnostic
+// The SlamManager need to know when RequestData is call, if it's due
+// to a new timestep been requested or due to Slam parameters been changed.
+// By keeping track of the last time the parameters been modified there is
+// no ambiguty anymore. This mecanimsm is similar to the one usedby the paraview filter
+// PlotDataOverTime
+#define vtkCustomSetMacro(name,type) \
+virtual void Set##name (type _arg) \
+{ \
+  vtkDebugMacro(<< this->GetClassName() << " (" << this << "): setting " #name " to " << _arg); \
+  if (this->name != _arg) \
+  { \
+    this->name = _arg; \
+    this->Modified(); \
+    this->ParametersModificationTime.Modified(); \
+  } \
+}
+
 class vtkVelodyneTransformInterpolator;
 class RollingGrid;
 typedef pcl::PointXYZINormal Point;
@@ -112,114 +130,121 @@ public:
 
   // Get/Set General
   vtkGetMacro(DisplayMode, bool)
-  vtkSetMacro(DisplayMode, bool)
+  vtkCustomSetMacro(DisplayMode, bool)
 
   vtkGetMacro(MaxDistBetweenTwoFrames, double)
-  vtkSetMacro(MaxDistBetweenTwoFrames, double)
+  vtkCustomSetMacro(MaxDistBetweenTwoFrames, double)
 
   vtkGetMacro(AngleResolution, double)
-  vtkSetMacro(AngleResolution, double)
+  vtkCustomSetMacro(AngleResolution, double)
 
   vtkGetMacro(MaxDistanceForICPMatching, double)
-  vtkSetMacro(MaxDistanceForICPMatching, double)
+  vtkCustomSetMacro(MaxDistanceForICPMatching, double)
 
   vtkGetMacro(FastSlam, bool)
-  vtkSetMacro(FastSlam, bool)
+  vtkCustomSetMacro(FastSlam, bool)
 
   void SetUndistortion(bool input);
   vtkGetMacro(Undistortion, bool)
 
   // Set RollingGrid Parameters
-  void SetVoxelGridLeafSize(const double size);
-  void SetVoxelGridSize(const unsigned int size);
-  void SetVoxelGridResolution(const double resolution);
+  void SetVoxelGridLeafSize(double size);
+  void SetVoxelGridSize(unsigned int size);
+  void SetVoxelGridResolution(double resolution);
 
   // Get/Set Keypoint
   vtkGetMacro(NeighborWidth, int)
-  vtkSetMacro(NeighborWidth, int)
+  vtkCustomSetMacro(NeighborWidth, int)
 
   vtkGetMacro(MinDistanceToSensor, double)
-  vtkSetMacro(MinDistanceToSensor, double)
+  vtkCustomSetMacro(MinDistanceToSensor, double)
 
   vtkGetMacro(EdgeSinAngleThreshold, double)
-  vtkSetMacro(EdgeSinAngleThreshold, double)
+  vtkCustomSetMacro(EdgeSinAngleThreshold, double)
 
   vtkGetMacro(PlaneSinAngleThreshold, double)
-  vtkSetMacro(PlaneSinAngleThreshold, double)
+  vtkCustomSetMacro(PlaneSinAngleThreshold, double)
 
   vtkGetMacro(EdgeDepthGapThreshold, double)
-  vtkSetMacro(EdgeDepthGapThreshold, double)
+  vtkCustomSetMacro(EdgeDepthGapThreshold, double)
 
   // Get/Set EgoMotion
   vtkGetMacro(EgoMotionLMMaxIter, unsigned int)
-  vtkSetMacro(EgoMotionLMMaxIter, unsigned int)
+  vtkCustomSetMacro(EgoMotionLMMaxIter, unsigned int)
 
   vtkGetMacro(EgoMotionICPMaxIter, unsigned int)
-  vtkSetMacro(EgoMotionICPMaxIter, unsigned int)
+  vtkCustomSetMacro(EgoMotionICPMaxIter, unsigned int)
 
   vtkGetMacro(EgoMotionLineDistanceNbrNeighbors, unsigned int)
-  vtkSetMacro(EgoMotionLineDistanceNbrNeighbors, unsigned int)
+  vtkCustomSetMacro(EgoMotionLineDistanceNbrNeighbors, unsigned int)
 
   vtkGetMacro(EgoMotionMinimumLineNeighborRejection, unsigned int)
-  vtkSetMacro(EgoMotionMinimumLineNeighborRejection, unsigned int)
+  vtkCustomSetMacro(EgoMotionMinimumLineNeighborRejection, unsigned int)
 
   vtkGetMacro(EgoMotionLineDistancefactor, double)
-  vtkSetMacro(EgoMotionLineDistancefactor, double)
+  vtkCustomSetMacro(EgoMotionLineDistancefactor, double)
 
   vtkGetMacro(EgoMotionPlaneDistanceNbrNeighbors, unsigned int)
-  vtkSetMacro(EgoMotionPlaneDistanceNbrNeighbors, unsigned int)
+  vtkCustomSetMacro(EgoMotionPlaneDistanceNbrNeighbors, unsigned int)
 
   vtkGetMacro(EgoMotionPlaneDistancefactor1, double)
-  vtkSetMacro(EgoMotionPlaneDistancefactor1, double)
+  vtkCustomSetMacro(EgoMotionPlaneDistancefactor1, double)
 
   vtkGetMacro(EgoMotionPlaneDistancefactor2, double)
-  vtkSetMacro(EgoMotionPlaneDistancefactor2, double)
+  vtkCustomSetMacro(EgoMotionPlaneDistancefactor2, double)
 
   vtkGetMacro(EgoMotionMaxLineDistance, double)
-  vtkSetMacro(EgoMotionMaxLineDistance, double)
+  vtkCustomSetMacro(EgoMotionMaxLineDistance, double)
 
   vtkGetMacro(EgoMotionMaxPlaneDistance, double)
-  vtkSetMacro(EgoMotionMaxPlaneDistance, double)
+  vtkCustomSetMacro(EgoMotionMaxPlaneDistance, double)
 
   // Get/Set Mapping
   vtkGetMacro(MappingLMMaxIter, unsigned int)
-  vtkSetMacro(MappingLMMaxIter, unsigned int)
+  vtkCustomSetMacro(MappingLMMaxIter, unsigned int)
 
   vtkGetMacro(MappingICPMaxIter, unsigned int)
-  vtkSetMacro(MappingICPMaxIter, unsigned int)
+  vtkCustomSetMacro(MappingICPMaxIter, unsigned int)
 
   vtkGetMacro(MappingLineDistanceNbrNeighbors, unsigned int)
-  vtkSetMacro(MappingLineDistanceNbrNeighbors, unsigned int)
+  vtkCustomSetMacro(MappingLineDistanceNbrNeighbors, unsigned int)
 
   vtkGetMacro(MappingMinimumLineNeighborRejection, unsigned int)
-  vtkSetMacro(MappingMinimumLineNeighborRejection, unsigned int)
+  vtkCustomSetMacro(MappingMinimumLineNeighborRejection, unsigned int)
 
   vtkGetMacro(MappingLineDistancefactor, double)
-  vtkSetMacro(MappingLineDistancefactor, double)
+  vtkCustomSetMacro(MappingLineDistancefactor, double)
 
   vtkGetMacro(MappingPlaneDistanceNbrNeighbors, unsigned int)
-  vtkSetMacro(MappingPlaneDistanceNbrNeighbors, unsigned int)
+  vtkCustomSetMacro(MappingPlaneDistanceNbrNeighbors, unsigned int)
 
   vtkGetMacro(MappingPlaneDistancefactor1, double)
-  vtkSetMacro(MappingPlaneDistancefactor1, double)
+  vtkCustomSetMacro(MappingPlaneDistancefactor1, double)
 
   vtkGetMacro(MappingPlaneDistancefactor2, double)
-  vtkSetMacro(MappingPlaneDistancefactor2, double)
+  vtkCustomSetMacro(MappingPlaneDistancefactor2, double)
 
   vtkGetMacro(MappingMaxLineDistance, double)
-  vtkSetMacro(MappingMaxLineDistance, double)
+  vtkCustomSetMacro(MappingMaxLineDistance, double)
 
   vtkGetMacro(MappingMaxPlaneDistance, double)
-  vtkSetMacro(MappingMaxPlaneDistance, double)
+  vtkCustomSetMacro(MappingMaxPlaneDistance, double)
 
   vtkGetMacro(MappingLineMaxDistInlier, double)
-  vtkSetMacro(MappingLineMaxDistInlier, double)
+  vtkCustomSetMacro(MappingLineMaxDistInlier, double)
 
 protected:
   // vtkPolyDataAlgorithm functions
   vtkSlam();
+  void Reset();
   ~vtkSlam();
   virtual int RequestData(vtkInformation *, vtkInformationVector **, vtkInformationVector *);
+
+  // Keeps track of the time the parameters have been modified
+  // This will enable the SlamManager to be time-agnostic
+  // MTime is a much more general mecanism so we can't rely on it
+  vtkTimeStamp ParametersModificationTime;
+
 private:
   vtkSlam(const vtkSlam&);
   void operator = (const vtkSlam&);
@@ -269,9 +294,9 @@ private:
   pcl::PointCloud<Point>::Ptr PreviousBlobsPoints;
 
   // keypoints local map
-  RollingGrid* EdgesPointsLocalMap;
-  RollingGrid* PlanarPointsLocalMap;
-  RollingGrid* BlobsPointsLocalMap;
+  std::shared_ptr<RollingGrid> EdgesPointsLocalMap;
+  std::shared_ptr<RollingGrid> PlanarPointsLocalMap;
+  std::shared_ptr<RollingGrid> BlobsPointsLocalMap;
 
   // Mapping of the lasers id
   std::vector<int> LaserIdMapping;

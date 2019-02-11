@@ -178,7 +178,7 @@
    <addaction name="menuHelp"/>
    <addaction name="menuAdvance"/>
   </widget>
-  <widget class="QStatusBar" name="statusbar"/>
+  <widget class="pqStatusBar" name="statusbar"/>
   <widget class="QToolBar" name="toolBar">
    <property name="windowTitle">
     <string>Basic Controls</string>
@@ -1019,6 +1019,11 @@
    <extends>QWidget</extends>
    <header>pqMemoryInspectorPanel.h</header>
    <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>pqStatusBar</class>
+   <extends>QStatusBar</extends>
+   <header>pqStatusBar.h</header>
   </customwidget>
  </customwidgets>
  <resources>
