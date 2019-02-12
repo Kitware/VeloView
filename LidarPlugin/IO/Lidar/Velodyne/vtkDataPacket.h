@@ -77,7 +77,7 @@ static inline std::string SensorTypeToString(SensorType type)
     case SensorType::VLS128:
       return "VLS-128";
     default:
-      return "Unkown";
+      return "Unknown";
   }
   /*
   std::unordered_map<SensorType, std::string> toStringMap;
@@ -130,7 +130,7 @@ static inline std::string DualReturnSensorModeToString(DualReturnSensorMode type
     case DualReturnSensorMode::DUAL_RETURN:
       return "DUAL RETURN";
     default:
-      return "Unkown";
+      return "Unknown";
   }
   /*
   std::unordered_map<DualReturnSensorMode, std::string> toStringMap;
