@@ -88,6 +88,7 @@
 #include <pcl/kdtree/kdtree_flann.h>
 
 #include "KalmanFilter.h"
+#include "vtkTemporalTransforms.h"
 
 // This custom macro is needed to make the SlamManager time agnostic
 // The SlamManager need to know when RequestData is call, if it's due
@@ -252,8 +253,7 @@ private:
   vtkSlam(const vtkSlam&);
   void operator = (const vtkSlam&);
   // Polydata which represents the trajectory computed
-  vtkSmartPointer<vtkPolyData> Trajectory;
-  vtkSmartPointer<vtkPolyData> Orientation;
+  vtkSmartPointer<vtkTemporalTransforms> Trajectory;
 
   // Current point cloud stored in two differents
   // formats: PCL-pointcloud and vtkPolyData
@@ -573,10 +573,10 @@ private:
   void DisplayRelAdv(vtkSmartPointer<vtkPolyData> input);
   void DisplayUsedKeypoints(vtkSmartPointer<vtkPolyData> input);
 
-  // Set the lidar
+  // Set the lidar maximun range
   void SetLidarMaximunRange(const double maxRange);
 
-  //
+  // Create a correspondance map between laser id and laser vertical angle
   void UpdateLaserIdMapping(vtkTable* calib);
 
   // Indicate if we are in display mode or not
