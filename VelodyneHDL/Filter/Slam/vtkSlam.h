@@ -88,6 +88,7 @@
 #include <pcl/kdtree/kdtree_flann.h>
 
 #include "KalmanFilter.h"
+#include "vtkTemporalTransforms.h"
 
 // This custom macro is needed to make the SlamManager time agnostic
 // The SlamManager need to know when RequestData is call, if it's due
@@ -109,6 +110,7 @@ virtual void Set##name (type _arg) \
 
 class vtkVelodyneTransformInterpolator;
 class RollingGrid;
+class vtkTable;
 typedef pcl::PointXYZINormal Point;
 
 class VTK_EXPORT vtkSlam : public vtkPolyDataAlgorithm
@@ -144,7 +146,7 @@ public:
   vtkGetMacro(FastSlam, bool)
   vtkCustomSetMacro(FastSlam, bool)
 
-  void SetUndistortion(bool input);
+  vtkSetMacro(Undistortion, bool)
   vtkGetMacro(Undistortion, bool)
 
   // Set RollingGrid Parameters
@@ -238,7 +240,9 @@ protected:
   vtkSlam();
   void Reset();
   ~vtkSlam();
-  virtual int RequestData(vtkInformation *, vtkInformationVector **, vtkInformationVector *);
+
+  int FillInputPortInformation(int port, vtkInformation* info) override;
+  int RequestData(vtkInformation *, vtkInformationVector **, vtkInformationVector *) override;
 
   // Keeps track of the time the parameters have been modified
   // This will enable the SlamManager to be time-agnostic
@@ -249,9 +253,7 @@ private:
   vtkSlam(const vtkSlam&);
   void operator = (const vtkSlam&);
   // Polydata which represents the trajectory computed
-  vtkSmartPointer<vtkPolyData> Trajectory;
-  vtkSmartPointer<vtkPolyData> Orientation;
-  vtkNew<vtkVelodyneTransformInterpolator> InternalInterp;
+  vtkSmartPointer<vtkTemporalTransforms> Trajectory;
 
   // Current point cloud stored in two differents
   // formats: PCL-pointcloud and vtkPolyData
@@ -299,7 +301,7 @@ private:
   std::shared_ptr<RollingGrid> BlobsPointsLocalMap;
 
   // Mapping of the lasers id
-  std::vector<int> LaserIdMapping;
+  std::vector<size_t> LaserIdMapping;
 
   // Curvature and over differntial operations
   // scan by scan; point by point
@@ -485,10 +487,6 @@ private:
   // Labelizes point to be a keypoints or not
   void SetKeyPointsLabels(vtkSmartPointer<vtkPolyData> input);
 
-  // Add Transform to the interpolator
-  void AddTransform(double time);
-  void AddTransform(double rx, double ry, double rz, double tx, double ty, double tz, double t);
-
   // Reset all mumbers variables that are
   // used during the process of a frame.
   // The map and the recovered transformations
@@ -575,8 +573,11 @@ private:
   void DisplayRelAdv(vtkSmartPointer<vtkPolyData> input);
   void DisplayUsedKeypoints(vtkSmartPointer<vtkPolyData> input);
 
-  // Set the lidar
+  // Set the lidar maximun range
   void SetLidarMaximunRange(const double maxRange);
+
+  // Create a correspondance map between laser id and laser vertical angle
+  void UpdateLaserIdMapping(vtkTable* calib);
 
   // Indicate if we are in display mode or not
   // Display mode will add arrays showing some

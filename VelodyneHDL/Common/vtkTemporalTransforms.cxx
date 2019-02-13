@@ -15,6 +15,23 @@
 vtkStandardNewMacro(vtkTemporalTransforms)
 
 //-----------------------------------------------------------------------------
+vtkTemporalTransforms::vtkTemporalTransforms()
+{
+  auto points = vtkSmartPointer<vtkPoints>::New();
+
+  auto timeArray = vtkSmartPointer<vtkDoubleArray>::New();
+  timeArray->SetName(this->TimeArrayName);
+
+  auto orientationArray = vtkSmartPointer<vtkDoubleArray>::New();
+  orientationArray->SetName(this->OrientationArrayName);
+  orientationArray->SetNumberOfComponents(4);
+
+  this->SetPoints(points);
+  this->GetPointData()->AddArray(timeArray);
+  this->GetPointData()->AddArray(orientationArray);
+}
+
+//-----------------------------------------------------------------------------
 vtkSmartPointer<vtkTemporalTransforms> vtkTemporalTransforms::CreateFromPolyData(vtkPolyData *poly)
 {
   if (!poly)
@@ -28,8 +45,27 @@ vtkSmartPointer<vtkTemporalTransforms> vtkTemporalTransforms::CreateFromPolyData
   bool isWellFormed = temporalTransforms->GetTimeArray() &&
                       temporalTransforms->GetTranslationArray() &&
                       temporalTransforms->GetOrientationArray();
+  if(!isWellFormed)
+  {
+    return nullptr;
+  }
 
-  return isWellFormed ? temporalTransforms : nullptr;
+  // create polyline if needed
+  if (temporalTransforms->GetLines()->GetNumberOfCells() == 0)
+  {
+    // create the cell in the same time for visualization
+    auto polyLine = vtkSmartPointer<vtkPolyLine>::New();
+    polyLine->GetPointIds()->SetNumberOfIds(temporalTransforms->GetNumberOfPoints());
+    for (vtkIdType i = 0; i < temporalTransforms->GetNumberOfPoints(); i++)
+    {
+      polyLine->GetPointIds()->SetId(i,i);
+    }
+    auto cell = vtkSmartPointer<vtkCellArray>::New();
+    cell->InsertNextCell(polyLine);
+    temporalTransforms->SetLines(cell);
+  }
+
+  return temporalTransforms;
 }
 
 vtkSmartPointer<vtkVelodyneTransformInterpolator> vtkTemporalTransforms::CreateInterpolator()
@@ -202,4 +238,26 @@ vtkSmartPointer<vtkTemporalTransforms> vtkTemporalTransforms::CycloidicTransform
     xyzArray->SetTuple3(transformIndex, T(0), T(1), T(2));
   }
   return outputPoses;
+}
+
+//-----------------------------------------------------------------------------
+void vtkTemporalTransforms::PushBack(double time, const Eigen::AngleAxisd& orientation , const Eigen::Vector3d translation)
+{
+  this->GetTimeArray()->InsertNextTuple1(time);
+  this->GetOrientationArray()->InsertNextTuple4(orientation.angle(),
+                                            orientation.axis()[0],
+                                            orientation.axis()[1],
+                                            orientation.axis()[2]);
+  this->GetTranslationArray()->InsertNextTuple(static_cast<const double*>(translation.data()));
+
+  // replace the cell by a line with one more point
+  auto polyLine = vtkSmartPointer<vtkPolyLine>::New();
+  polyLine->GetPointIds()->SetNumberOfIds(this->GetNumberOfPoints());
+  for (vtkIdType i = 0; i < this->GetNumberOfPoints(); i++)
+  {
+    polyLine->GetPointIds()->SetId(i,i);
+  }
+  auto cell = vtkSmartPointer<vtkCellArray>::New();
+  cell->InsertNextCell(polyLine);
+  this->SetLines(cell);
 }

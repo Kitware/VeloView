@@ -7,6 +7,8 @@
 #include <vtkPolyData.h>
 #include <vtkVelodyneTransformInterpolator.h>
 
+#include <Eigen/Geometry>
+
 /**
  * @brief The vtkTemporalTransforms class store some vtkTransform associated with time
  * as a polyData containing a polyline where each point correspond to timestamp
@@ -78,8 +80,12 @@ public:
   void SetTimeArray(vtkDoubleArray *array);
   //@}
 
+  /// Add a temporal transform to the end
+  void PushBack(double time, const Eigen::AngleAxisd& orientation , const Eigen::Vector3d translation);
+
 protected:
-  vtkTemporalTransforms() = default;
+
+  vtkTemporalTransforms();
 
 private:
   char const* OrientationArrayName = "Orientation(AxisAngle)";
