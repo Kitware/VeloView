@@ -637,6 +637,7 @@ vtkInformationVector **inputVector, vtkInformationVector *outputVector)
     AddVectorToPolydataPoints<double, vtkDoubleArray>(this->LengthResolution, "length_resolution", this->vtkCurrentFrame);
     AddVectorToPolydataPoints<double, vtkDoubleArray>(this->SaillantPoint, "saillant_point", this->vtkCurrentFrame);
     AddVectorToPolydataPoints<double, vtkDoubleArray>(this->DepthGap, "depth_gap", this->vtkCurrentFrame);
+    AddVectorToPolydataPoints<double, vtkDoubleArray>(this->IntensityGap, "intensity_gap", this->vtkCurrentFrame);
     AddVectorToPolydataPoints<double, vtkDoubleArray>(this->BlobScore, "blob_score", this->vtkCurrentFrame);
     AddVectorToPolydataPoints<int, vtkIntArray>(this->IsPointValid, "is_point_valid", this->vtkCurrentFrame);
     AddVectorToPolydataPoints<int, vtkIntArray>(this->Label, "keypoint_label", this->vtkCurrentFrame);
@@ -827,6 +828,8 @@ void vtkSlam::PrepareDataForNextFrame()
   this->SaillantPoint.resize(this->NLasers);
   this->DepthGap.clear();
   this->DepthGap.resize(this->NLasers);
+  this->IntensityGap.clear();
+  this->IntensityGap.resize(this->NLasers);
   this->BlobScore.clear();
   this->BlobScore.resize(this->NLasers);
   this->IsPointValid.clear();
@@ -1083,6 +1086,7 @@ void vtkSlam::ConvertAndSortScanLines(vtkSmartPointer<vtkPolyData> input)
   // Get informations about input pointcloud
   vtkDataArray* lasersId = input->GetPointData()->GetArray("laser_id");
   vtkDataArray* time = input->GetPointData()->GetArray("timestamp");
+  vtkDataArray* reflectivity = input->GetPointData()->GetArray("intensity");
   vtkPoints* Points = input->GetPoints();
   unsigned int Npts = input->GetNumberOfPoints();
   double t0 = static_cast<double>(time->GetTuple1(0));
@@ -1098,9 +1102,11 @@ void vtkSlam::ConvertAndSortScanLines(vtkSmartPointer<vtkPolyData> input)
 
     double relAdv = (static_cast<double>(time->GetTuple1(index)) - t0) / (t1 - t0);
     unsigned int id = static_cast<int>(lasersId->GetTuple1(index));
+    double reflec = static_cast<double>(reflectivity->GetTuple1(index));
     id = this->LaserIdMapping[id];
     yL.intensity = relAdv;
     yL.normal_y = id;
+    yL.normal_z = reflec;
 
     // add the current point to its corresponding laser scan
     this->pclCurrentFrame->push_back(yL);
@@ -1122,6 +1128,7 @@ void vtkSlam::ComputeKeyPoints(vtkSmartPointer<vtkPolyData> input)
     this->LengthResolution[k].resize(this->pclCurrentFrameByScan[k]->size(),0);
     this->SaillantPoint[k].resize(this->pclCurrentFrameByScan[k]->size(),0);
     this->DepthGap[k].resize(this->pclCurrentFrameByScan[k]->size(), 0);
+    this->IntensityGap[k].resize(this->pclCurrentFrameByScan[k]->size(), 0);
     this->BlobScore[k].resize(this->pclCurrentFrameByScan[k]->size(), 0);
   }
 
@@ -1138,7 +1145,7 @@ void vtkSlam::ComputeKeyPoints(vtkSmartPointer<vtkPolyData> input)
 //-----------------------------------------------------------------------------
 void vtkSlam::ComputeCurvature(vtkSmartPointer<vtkPolyData> vtkNotUsed(input))
 {
-  Point currentPoint;
+  Point currentPoint, nextPoint, previousPoint;
   Eigen::Vector3d X, centralPoint;
   LineFitting leftLine, rightLine, farNeighborsLine;
 
@@ -1160,6 +1167,10 @@ void vtkSlam::ComputeCurvature(vtkSmartPointer<vtkPolyData> vtkNotUsed(input))
       currentPoint = this->pclCurrentFrameByScan[scanLine]->points[index];
       centralPoint << currentPoint.x, currentPoint.y, currentPoint.z;
 
+      // compute intensity gap
+      nextPoint = this->pclCurrentFrameByScan[scanLine]->points[index + 1];
+      previousPoint = this->pclCurrentFrameByScan[scanLine]->points[index - 1];
+      this->IntensityGap[scanLine][index] = std::abs(nextPoint.normal_z - previousPoint.normal_z);
       // We will compute the line that fit the neighbors located
       // previously the current. We will do the same for the
       // neighbors located after the current points. We will then
@@ -1449,8 +1460,9 @@ void vtkSlam::SetKeyPointsLabels(vtkSmartPointer<vtkPolyData> vtkNotUsed(input))
     std::vector<size_t> sortedDepthGapIdx = sortIdx<double>(this->DepthGap[scanLine]);
     std::vector<size_t> sortedAnglesIdx = sortIdx<double>(this->Angles[scanLine]);
     std::vector<size_t> sortedSaillancyIdx = sortIdx<double>(this->SaillantPoint[scanLine]);
+    std::vector<size_t> sortedIntensityGap = sortIdx<double>(this->IntensityGap[scanLine]);
 
-    double depthGap, sinAngle, saillancy;
+    double depthGap, sinAngle, saillancy, intensity;
     int index = 0;
 
     // Edges using depth gap
@@ -1550,6 +1562,41 @@ void vtkSlam::SetKeyPointsLabels(vtkSmartPointer<vtkPolyData> vtkNotUsed(input))
       // invalid its neighborhod
       int indexBegin = index - this->NeighborWidth + 1;
       int indexEnd = index + this->NeighborWidth - 1;
+      indexBegin = std::max(0, indexBegin);
+      indexEnd = std::min(Npts - 1, indexEnd);
+      for (int j = indexBegin; j <= indexEnd; ++j)
+      {
+        this->IsPointValid[scanLine][j] = 0;
+      }
+    }
+
+    // Edges using intensity
+    for (int k = 0; k < Npts; ++k)
+    {
+      index = sortedIntensityGap[k];
+      intensity = this->IntensityGap[scanLine][index];
+
+      // thresh
+      if (intensity < 50.0)
+      {
+        break;
+      }
+
+      // if the point is invalid continue
+      if (this->IsPointValid[scanLine][index] == 0)
+      {
+        continue;
+      }
+
+      // else indicate that the point is an edge
+      this->Label[scanLine][index] = 4;
+      this->EdgesIndex.push_back(std::pair<int, int>(scanLine, index));
+      nbrEdgePicked++;
+      //IsPointValidForPlanar[index] = 0;
+
+      // invalid its neighborhood
+      int indexBegin = index - 1;
+      int indexEnd = index + 1;
       indexBegin = std::max(0, indexBegin);
       indexEnd = std::min(Npts - 1, indexEnd);
       for (int j = indexBegin; j <= indexEnd; ++j)
