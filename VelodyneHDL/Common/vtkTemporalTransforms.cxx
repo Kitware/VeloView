@@ -244,10 +244,10 @@ vtkSmartPointer<vtkTemporalTransforms> vtkTemporalTransforms::CycloidicTransform
 void vtkTemporalTransforms::PushBack(double time, const Eigen::AngleAxisd& orientation , const Eigen::Vector3d translation)
 {
   this->GetTimeArray()->InsertNextTuple1(time);
-  this->GetOrientationArray()->InsertNextTuple4(orientation.angle(),
-                                            orientation.axis()[0],
-                                            orientation.axis()[1],
-                                            orientation.axis()[2]);
+  this->GetOrientationArray()->InsertNextTuple4(orientation.axis()[0],
+                                                orientation.axis()[1],
+                                                orientation.axis()[2],
+                                                orientation.angle());
   this->GetTranslationArray()->InsertNextTuple(static_cast<const double*>(translation.data()));
 
   // replace the cell by a line with one more point
