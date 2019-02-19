@@ -97,6 +97,7 @@ class AppLogic(object):
         self.filenameLabel = QtGui.QLabel()
         self.statusLabel = QtGui.QLabel()
         self.sensorInformationLabel = QtGui.QLabel()
+        self.positionPacketInfoLabel = QtGui.QLabel()
 
 
 class GridProperties:
@@ -424,6 +425,7 @@ def openSensor():
     app.sensor = sensor
     app.colorByInitialized = False
     app.filenameLabel.setText('Live sensor stream (Port:'+str(LIDARPort)+')' )
+    app.positionPacketInfoLabel.setText('')
     enableSaveActions()
 
     onCropReturns(False) # Dont show the dialog just restore settings
@@ -502,6 +504,7 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
 
     app.reader = reader
     app.filenameLabel.setText('File: %s' % os.path.basename(filename))
+    app.positionPacketInfoLabel.setText('') # will be updated later if possible
     onCropReturns(False) # Dont show the dialog just restore settings
 
     # Resetting laser selection dialog according to the opened PCAP file
@@ -543,6 +546,13 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
     posreader.GetClientSideObject().SetCalibrationTransform(calibration.gpsTransform)
 
     smp.Show(posreader)
+
+    if positionFilename is None:
+        # only VelodyneHDLReader provides this information
+        # this information must be read after an update
+        # GetTimeSyncInfo() has the side effect of showing a message in the error
+        # console in the cases where the timeshift if computed
+        app.positionPacketInfoLabel.setText(posreader.GetClientSideObject().GetTimeSyncInfo())
 
     # Create a tripod glyph
     tripod = smp.Axes()
@@ -1606,6 +1616,7 @@ def setupStatusBar():
     statusBar.addWidget(app.filenameLabel)
     statusBar.addWidget(app.statusLabel)
     statusBar.addWidget(app.sensorInformationLabel)
+    statusBar.addWidget(app.positionPacketInfoLabel)
 
 
 def onGridProperties():

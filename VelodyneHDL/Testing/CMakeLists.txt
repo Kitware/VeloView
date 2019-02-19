@@ -34,6 +34,9 @@ target_link_libraries(TestTrailingFrame VelodyneHDLPlugin)
 custom_add_executable(TestRansacPlaneModel TestRansacPlaneModel.cxx)
 target_link_libraries(TestRansacPlaneModel VelodyneHDLPlugin)
 
+custom_add_executable(TestVelodynePPSIdentification TestVelodynePPSIdentification.cxx)
+target_link_libraries(TestVelodynePPSIdentification VelodyneHDLPlugin)
+
 if (ENABLE_PCL AND ENABLE_Ceres)
   custom_add_executable(TestGeometricCalibration TestGeometricCalibration.cxx)
   target_link_libraries(TestGeometricCalibration VelodyneHDLPlugin)
@@ -133,3 +136,10 @@ if (ENABLE_PCL AND ENABLE_Ceres)
     ${CMAKE_SOURCE_DIR}/TestData/trajectories/mockup1/lidar-slam.csv
   )
 endif(ENABLE_PCL AND ENABLE_Ceres)
+
+add_test(TestVelodynePPSIdentification
+  ${INSTALL_LOCAL_DIR}/TestVelodynePPSIdentification
+  "${CMAKE_SOURCE_DIR}/TestData/HDL32-V2_R_into_Butterfield_into_Digital_Drive.pcap"
+  "${CMAKE_SOURCE_DIR}/TestData/VLP-16_Single.pcap"
+  "${CMAKE_SOURCE_DIR}/TestData/VLP-16-with-GPRMC-with-PPS-timesync.pcap"
+)
