@@ -56,12 +56,14 @@
 
 #include <vtk_libproj4.h>
 #include "NMEAParser.h"
+#include "statistics.h"
 
 #include <boost/foreach.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
 #include <boost/algorithm/string.hpp>
 
+#include <iomanip>
 #include <algorithm>
 #include <map>
 #include <sstream>
@@ -90,6 +92,10 @@ struct PositionPacket
   short temp[3];
   short accelx[3];
   short accely[3];
+  // Usage of field PPS (Pulse Per Second signal) is explained in PDF document
+  // "Webserver User Guide (VLP-16 & HDL-32E)" available at
+  // https://velodynelidar.com/downloads.html#application_notes
+  unsigned char PPSSync;
   // UDP position packet is 554 bytes long with 42 bytes of header and 512 bytes
   // of payload. In the payload, 512 - (198 + 4 + 1 + 3) = 306 are available for
   // the NMEA sequence.
@@ -297,6 +303,10 @@ int vtkVelodyneHDLPositionReader::vtkInternal::ProcessHDLPacket(
 
   memcpy(&position.tohTimestamp, data + 14 + 3 * 8 + 160, 4);
 
+  // ethernet payload starts at byte 2A, PPS byte is at F4 inside full ethernet
+  // frame, so PPS in payload is at F4 - 2A = 244 - 42 = 202
+  memcpy(&position.PPSSync, data + 202, 1);
+
   const int sentence_start =  14 + 8 + 8 + 8 + 160 + 4 + 4;
   std::copy(data + sentence_start,
             data + sentence_start + 306,
@@ -417,6 +427,11 @@ vtkVelodyneHDLPositionReader::vtkVelodyneHDLPositionReader()
   this->Internal = new vtkInternal;
   this->SetNumberOfInputPorts(0);
   this->SetNumberOfOutputPorts(1);
+  this->PPSSynced = false;
+  this->LastPPSState = this->PPSState::PPS_ABSENT;
+  this->HasTimeshiftEstimation = false;
+  this->TimeshiftMeasurements.clear();
+  this->AssumedHardwareLag = 0.094; // always positive, in seconds
 }
 
 //-----------------------------------------------------------------------------
@@ -439,7 +454,12 @@ void vtkVelodyneHDLPositionReader::SetFileName(const std::string& filename)
     return;
   }
 
+  this->PPSSynced = false;
+  this->LastPPSState = this->PPSState::PPS_ABSENT;
+  this->HasTimeshiftEstimation = false;
+  this->TimeshiftMeasurements.clear();
   this->FileName = filename;
+
   this->Modified();
 }
 
@@ -519,6 +539,8 @@ int vtkVelodyneHDLPositionReader::RequestData(vtkInformation* vtkNotUsed(request
   double lastLidarUpdateTime = 0.0;
   double lidarTimeOffset = 0.0;
 
+  double previousConvertedGPSUpdateTime = -1.0; // negative means "no previous"
+
   while (this->Internal->Reader->NextPacket(data, dataLength, timeSinceStart))
   {
     PositionPacket position;
@@ -526,6 +548,22 @@ int vtkVelodyneHDLPositionReader::RequestData(vtkInformation* vtkNotUsed(request
     {
       continue;
     }
+
+    if (!hasLastLidarUpdateTime)
+    {
+      hasLastLidarUpdateTime = true;
+      lastLidarUpdateTime = position.tohTimestamp;
+    }
+    else
+    {
+      if (position.tohTimestamp - lastLidarUpdateTime < - 1e6 * 0.5 * 3600.0)
+      {
+        // tod wrap detected
+        lidarTimeOffset += 1e6 * 3600.0;
+      }
+    }
+    double convertedLidarUpdateTime = position.tohTimestamp + lidarTimeOffset;
+
 
     double x, y, z, lat, lon, heading, gpsUpdateTime;
     if (std::string(position.sentance).size() == 0)
@@ -572,6 +610,18 @@ int vtkVelodyneHDLPositionReader::RequestData(vtkInformation* vtkNotUsed(request
                                << "<" << NMEASentence << ">");
         continue; // skipping this PositionPacket
       }
+
+      // Gathering information on time synchronization between Lidar & GPS,
+      // see Velodyne doc mentioned at definition of PositionPacket above.
+      // We assume the Lidar will remain synchronized on gps (UTC) time even
+      // if some NMEA packets without fix are received later (tunnel, hill ...).
+      if (!this->PPSSynced
+          && position.PPSSync == PPSState::PPS_LOCKED
+          && parsedNMEA.Valid)
+      {
+        this->PPSSynced = true;
+      }
+      this->LastPPSState = static_cast<PPSState>(position.PPSSync);
 
       lat = parsedNMEA.Lat;
       lon = parsedNMEA.Long;
@@ -630,6 +680,30 @@ int vtkVelodyneHDLPositionReader::RequestData(vtkInformation* vtkNotUsed(request
       }
 
       convertedGPSUpdateTime = gpsUpdateTime + GPSTimeOffset;
+      if (previousConvertedGPSUpdateTime < 0.0)
+      {
+        previousConvertedGPSUpdateTime = convertedGPSUpdateTime;
+      }
+
+      if (convertedGPSUpdateTime > previousConvertedGPSUpdateTime
+          && parsedNMEA.Valid)
+      {
+        // We have detected that this position packet is the first one since
+        // last gps fix (there are more position packets than there are fixes)
+        // and that the new NMEA sentence refers to a valid fix,
+        // so we can do an estimation of the timeshift.
+        this->HasTimeshiftEstimation = true;
+        // To understand this formula, think that we want to add this timeshift
+        // to a lidar time to get a gps time, and that the "lidar instant" that
+        // corresponds to the new fix is earlier than convertedLidarUpdateTime,
+        // because of the time it took the information to go from GPS to Lidar.
+        // Possible improvement: store the different estimations
+        // (one per new fix) and return the median.
+        this->TimeshiftMeasurements.push_back(
+            convertedGPSUpdateTime -
+            (1e-6 * convertedLidarUpdateTime - this->AssumedHardwareLag));
+      }
+      previousConvertedGPSUpdateTime = convertedGPSUpdateTime;
     }
 
     if (pointcount == 0)
@@ -647,20 +721,6 @@ int vtkVelodyneHDLPositionReader::RequestData(vtkInformation* vtkNotUsed(request
     gpsTime->InsertNextValue(convertedGPSUpdateTime);
     polyIds->InsertNextId(pointcount);
 
-    if (!hasLastLidarUpdateTime)
-    {
-      hasLastLidarUpdateTime = true;
-      lastLidarUpdateTime = position.tohTimestamp;
-    }
-    else
-    {
-      if (position.tohTimestamp - lastLidarUpdateTime < 0.5 * 3600.0)
-      {
-        // tod wrap detected
-        lidarTimeOffset += 3600.0;
-      }
-    }
-    double convertedLidarUpdateTime = position.tohTimestamp + lidarTimeOffset;
     times->InsertNextValue(convertedLidarUpdateTime);
 
     dataVectors["gyro1"]->InsertNextValue(position.gyro[0] * GYRO_SCALE);
@@ -744,4 +804,65 @@ void vtkVelodyneHDLPositionReader::Close()
 {
   delete this->Internal->Reader;
   this->Internal->Reader = 0;
+}
+
+//-----------------------------------------------------------------------------
+double vtkVelodyneHDLPositionReader::GetTimeshiftEstimation() {
+  if (this->TimeshiftMeasurements.size() == 0)
+  {
+    vtkGenericWarningMacro("Error : timeshift estimation asked"
+                           " but no measurement available.")
+    return 0.0;
+  }
+  return ComputeMedian(this->TimeshiftMeasurements);
+}
+
+//-----------------------------------------------------------------------------
+std::string vtkVelodyneHDLPositionReader::GetTimeSyncInfo()
+{
+  std::string PPSDesc;
+  if (this->LastPPSState == PPSState::PPS_ABSENT)
+  {
+    PPSDesc = "absent";
+  }
+  else if (this->LastPPSState == PPSState::PPS_ATTEMPTING_TO_SYNC)
+  {
+    PPSDesc = "attempting to sync";
+  }
+  else if (this->LastPPSState == PPSState::PPS_LOCKED)
+  {
+    PPSDesc = "locked";
+  }
+  else if (this->LastPPSState == PPSState::PPS_ERROR)
+  {
+    PPSDesc = "error";
+  }
+  else
+  {
+    PPSDesc = "unknown";
+  }
+
+  if  (!this->PPSSynced && this->HasTimeshiftEstimation)
+  {
+    std::ostringstream timeshiftEstimation;
+    timeshiftEstimation << std::fixed << std::setprecision(6)
+                        << this->GetTimeshiftEstimation();
+    std::ostringstream assumedHWLag;
+    assumedHWLag << std::fixed << std::setprecision(6)
+                        << this->AssumedHardwareLag;
+    vtkGenericWarningMacro("Recovered timeshift despite missing PPS sync: "
+                        << timeshiftEstimation.str()
+                        << " seconds (assuming hardware lag of: "
+                        << assumedHWLag.str()
+                        << " seconds)."
+                        << " Add this value to the lidar timestamps (ToH)"
+                        << " to get GPS UTC time (mod. 1 hour).");
+  }
+
+  return " Lidar PPS signal: "
+      + PPSDesc
+      + " - "
+      + (this->PPSSynced ? "Lidar clock synced on GPS UTC ToH"
+                         : "NO Lidar clock sync on GPS UTC ToH")
+      + " ";
 }

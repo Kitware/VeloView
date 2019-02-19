@@ -52,6 +52,7 @@ public:
   void SetFileName(const std::string& filename);
   void SetShouldWarnOnWeirdGPSData(bool ShouldWarnOnWeirdGPSData_);
   void SetCalibrationTransform(vtkTransform* transform);
+  std::string GetTimeSyncInfo();
 
   // Default is false (disabled)
   // If disabled, only GPRMC sentences will be used, they do not provide altitude
@@ -64,6 +65,18 @@ public:
   void SetUseGPGGASentences(bool useGPGGASentences);
 
   vtkVelodyneTransformInterpolator* GetInterpolator();
+
+  // field names starts with PPS_ because accessed from python wrapping which
+  // does not scope using the name of the enum
+  // Warning: PPS_LOCKED does not mean that Lidar is synchronized with GPS:
+  // see documentation "Webserver User Guide (VLP-16 & HDL-32E)".
+  enum PPSState { PPS_ABSENT = 0, PPS_ATTEMPTING_TO_SYNC, PPS_LOCKED, PPS_ERROR };
+  vtkGetMacro(LastPPSState, PPSState)
+  vtkGetMacro(PPSSynced, bool)
+  vtkGetMacro(HasTimeshiftEstimation, bool)
+  vtkGetMacro(AssumedHardwareLag, double)
+  vtkSetMacro(AssumedHardwareLag, double)
+  double GetTimeshiftEstimation();
 
 protected:
   vtkVelodyneHDLPositionReader();
@@ -84,6 +97,26 @@ protected:
 private:
   bool ShouldWarnOnWeirdGPSData;
   bool UseGPGGASentences;
+  bool PPSSynced;
+  PPSState LastPPSState;
+  // HasTimeshiftEstimation can be used to tell if the timeshift between GPS UTC time
+  // and Lidar ToH time could becomputed.
+  bool HasTimeshiftEstimation;
+  // If HasTimeshiftEstimation is true, all measurements of the timeshift are
+  // available in this vector. Add the timeshift to lidar time ToH time to get
+  // gps time UTC (mod 3600).
+  std::vector<double> TimeshiftMeasurements;
+  // AssumedHardwareLag is used to compute TimeshiftEstimation,
+  // when there is no PPS sync, but we have some NMEA messages with valid fixes.
+  // AssumedHardwareLag is the sum of:
+  // 1) the time it takes the GPS to emit the first NMEA message after a new fix
+  // 2) the time it take this NMEA message to travel over serial link to lidar
+  // 3) the time it takes the lidar to decode this NMEA message and place it in
+  // a position packet.
+  // This value depends of hardware, firmware version and maybe temperature.
+  // 0.094 s was measured on two private datasets recorded using the same
+  // hardware setup. Precision of this measure is approximately 3e-3 seconds.
+  double AssumedHardwareLag;
   vtkVelodyneHDLPositionReader(const vtkVelodyneHDLPositionReader&);
   void operator=(const vtkVelodyneHDLPositionReader&);
 };
