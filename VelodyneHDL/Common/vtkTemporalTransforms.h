@@ -15,8 +15,8 @@
  * sensor pos.
  * The sensor position is store as a point for vizualisation purpose.
  * The sensor orientation is store in a 4D array named "Orientation(AxisAngle):
- *  - the angle w (radian) is store at index 0;
- *  - the axis (x,y,z) is store at index 1,2,3
+ *  - the axis (x,y,z) is store at index 0,1,2
+ *  - the angle w (radian) is store at index 3
  * The sensor timestamp (second) is stored in a array named "Timestamp"
  *
  * It can be used to pass an vtkTransformInterpolator between 2 filter: a filter inherit from
