@@ -31,6 +31,8 @@ public:
   static vtkSmartPointer<vtkTemporalTransforms> CreateFromPolyData(vtkPolyData* poly);
 //  static vtkSmartPointer<vtkTemporalTransforms> CreateFromInterpolator(const vtkVelodyneTransformInterpolator*);
 
+  vtkSmartPointer<vtkTransform> GetTransform(unsigned int transformNumber);
+
   vtkSmartPointer<vtkVelodyneTransformInterpolator> CreateInterpolator();
 
   /**

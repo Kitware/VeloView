@@ -36,6 +36,14 @@
  * - pitch : expresses the sensor rotation around the Y axis and is in degree
  * - yaw   : expresses the sensor rotation around the Z axis and is in degree
  * - the rotation matrix can be recomposed this way: R = Rz(z)*Ry(y)*Rx(x)
+ *
+ * Remark: if you get from VeloView UI the error:
+ * "vtkSIProxyDefinitionManager: No proxy that matches: group= and proxy= were found."
+ * when you tried to open a file with a ".csv" extension and was asked to chose
+ * between standard "Delimited Text" and "pose trajectory" then it means you
+ * did not click on "pose trajectory".
+ * This is a bug solved in recent ParaViews.
+ * see: https://gitlab.kitware.com/paraview/paraview/issues/17594
  */
 class VTK_EXPORT vtkTemporalTransformsReader : public vtkPolyDataReader
 {
@@ -68,8 +76,8 @@ private:
   //! TimeOffset in seconds relative to the system clock
   double TimeOffset = 0.0;
 
-  vtkTemporalTransformsReader(const vtkTemporalTransformsReader&) /*= delete*/;
-  void operator =(const vtkTemporalTransformsReader&) /*= delete*/;
+  vtkTemporalTransformsReader(const vtkTemporalTransformsReader&) = delete;
+  void operator =(const vtkTemporalTransformsReader&) = delete;
 
 };
 
