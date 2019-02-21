@@ -182,6 +182,34 @@ int vtkVelodyneTransformInterpolator::GetNumberOfTransforms()
 }
 
 //----------------------------------------------------------------------------
+void vtkVelodyneTransformInterpolator::GetSample(int n,
+                                              vtkTransform *xform,
+                                              double& xformTime)
+{
+  if (this->TransformList->empty())
+  {
+    return;
+  }
+
+  this->InitializeInterpolation();
+
+  if (n < 0 || n >= static_cast<int>(this->TransformVector.size()))
+  {
+    return;
+  }
+
+  // Get the transform
+  xform->Identity();
+  xform->Translate(this->TransformVector[n].P);
+  double Q[4];
+  Q[0] = vtkMath::DegreesFromRadians(this->TransformVector[n].Q.GetRotationAngleAndAxis(Q+1));
+  xform->RotateWXYZ(Q[0],Q+1);
+  xform->Scale(this->TransformVector[n].S);
+
+  xformTime = this->TransformVector[n].Time;
+}
+
+//----------------------------------------------------------------------------
 double vtkVelodyneTransformInterpolator::GetMinimumT()
 {
   if (this->TransformList->empty())
@@ -205,6 +233,12 @@ double vtkVelodyneTransformInterpolator::GetMaximumT()
   {
     return this->TransformList->back().Time;
   }
+}
+
+//----------------------------------------------------------------------------
+double vtkVelodyneTransformInterpolator::GetPeriod()
+{
+  return (this->GetMaximumT() - this->GetMinimumT()) / (this->GetNumberOfTransforms() - 1);
 }
 
 //----------------------------------------------------------------------------
@@ -364,13 +398,8 @@ void vtkVelodyneTransformInterpolator::InitializeInterpolation()
       this->RotationInterpolator = vtkVeloViewQuaternionInterpolator::New();
     }
 
-    if (this->InterpolationType == INTERPOLATION_TYPE_LINEAR)
-    {
-      this->PositionInterpolator->SetInterpolationTypeToLinear();
-      this->ScaleInterpolator->SetInterpolationTypeToLinear();
-      this->RotationInterpolator->SetInterpolationTypeToLinear();
-    }
-    else if (this->InterpolationType == INTERPOLATION_TYPE_NEAREST
+    if (this->InterpolationType == INTERPOLATION_TYPE_LINEAR
+             || this->InterpolationType == INTERPOLATION_TYPE_NEAREST
              || this->InterpolationType == INTERPOLATION_TYPE_NEAREST_LOW_BOUNDED)
     {
       this->PositionInterpolator->SetInterpolationTypeToLinear();

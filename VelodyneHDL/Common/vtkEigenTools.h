@@ -28,6 +28,8 @@
 // STD
 #include <vector>
 
+#include "vvConfigure.h"
+
 /**
    * @brief AvgUnitQuaternions Computes and returns the average unit quaternion
    *        of a unit quaternion list. The average unit quaternion is defined according
@@ -56,7 +58,7 @@ Eigen::Matrix3d AvgRotation(const std::vector<Eigen::Matrix3d>& rotations);
    * with (X, Y, Z) being an orthonormal basis of R^3
    * @param rotation input rotation to decompose
    */
-Eigen::Vector3d MatrixToRollPitchYaw(const Eigen::Matrix3d& rotation);
+Eigen::Vector3d VelodyneHDLPlugin_EXPORT MatrixToRollPitchYaw(const Eigen::Matrix3d& rotation);
 
 /**
    * @brief RollPitchYawToMatrix Computes the rotation matrix from Euler
@@ -71,8 +73,8 @@ Eigen::Vector3d MatrixToRollPitchYaw(const Eigen::Matrix3d& rotation);
    * @param pitch is the angle around Y-axis (in radian)
    * @param yaw is the angle around Z-axis (in radian)
    */
-Eigen::Matrix3d RollPitchYawToMatrix(double roll, double pitch, double yaw);
-Eigen::Matrix3d RollPitchYawToMatrix(const Eigen::Vector3d& angles);
+Eigen::Matrix3d VelodyneHDLPlugin_EXPORT RollPitchYawToMatrix(double roll, double pitch, double yaw);
+Eigen::Matrix3d VelodyneHDLPlugin_EXPORT RollPitchYawToMatrix(const Eigen::Vector3d& angles);
 
 /**
   * @brief RollPitchYawInDegreeToMatrix Computes the rotation matrix from Euler
@@ -87,7 +89,7 @@ Eigen::Matrix3d RollPitchYawToMatrix(const Eigen::Vector3d& angles);
   * @param pitch is the angle around Y-axis (in dedgree)
   * @param yaw is the angle around Z-axis (in dedgree)
   */
-Eigen::Matrix3d RollPitchYawInDegreeToMatrix(double roll, double pitch, double yaw);
+Eigen::Matrix3d VelodyneHDLPlugin_EXPORT RollPitchYawInDegreeToMatrix(double roll, double pitch, double yaw);
 
 /**
   * @brief SignedAngle Computes the signed angle between two vectors

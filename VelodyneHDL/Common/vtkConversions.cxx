@@ -93,3 +93,27 @@ vtkSmartPointer<vtkTransform> GetTransformFromPosesParams(std::pair<Eigen::Vecto
   transform->SetMatrix(H.Get());
   return transform;
 }
+
+//------------------------------------------------------------------------------
+Eigen::Matrix3d RotationMatrixFromTransform(vtkTransform* transform)
+{
+  vtkSmartPointer<vtkMatrix4x4> H = vtkSmartPointer<vtkMatrix4x4>::New();
+  transform->GetMatrix(H);
+  Eigen::Matrix3d out = Eigen::Matrix3d(3, 3);
+  for (unsigned int i = 0; i < 3; i++)
+  {
+    for (unsigned int j = 0; j < 3; j++)
+    {
+      out(i, j) = H->GetElement(i, j);
+    }
+  }
+  return out;
+}
+
+//------------------------------------------------------------------------------
+Eigen::Vector3d PositionVectorFromTransform(vtkTransform* transform)
+{
+  double pos[3];
+  transform->GetPosition(pos);
+  return Eigen::Vector3d(pos[0], pos[1], pos[2]);
+}

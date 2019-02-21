@@ -38,8 +38,11 @@ custom_add_executable(TestVelodynePPSIdentification TestVelodynePPSIdentificatio
 target_link_libraries(TestVelodynePPSIdentification VelodyneHDLPlugin)
 
 if (ENABLE_PCL AND ENABLE_Ceres)
-  custom_add_executable(TestGeometricCalibration TestGeometricCalibration.cxx)
-  target_link_libraries(TestGeometricCalibration VelodyneHDLPlugin)
+  add_executable(TestGeometricCalibration-MM TestGeometricCalibration-MM.cxx)
+  target_link_libraries(TestGeometricCalibration-MM VelodyneHDLPlugin)
+
+  add_executable(TestGeometricCalibration-LaDoua TestGeometricCalibration-LaDoua.cxx)
+  target_link_libraries(TestGeometricCalibration-LaDoua VelodyneHDLPlugin)
 endif(ENABLE_PCL AND ENABLE_Ceres)
 
 set(sensors "HDL-64"
@@ -130,10 +133,14 @@ add_test(TestRansacPlaneModel
 )
 
 if (ENABLE_PCL AND ENABLE_Ceres)
-  add_test(TestGeometricCalibration
-    ${INSTALL_LOCAL_DIR}/TestGeometricCalibration
-    ${CMAKE_SOURCE_DIR}/TestData/trajectories/mockup1/imu.csv
-    ${CMAKE_SOURCE_DIR}/TestData/trajectories/mockup1/lidar-slam.csv
+  add_test(TestGeometricCalibration-MM
+    ${INSTALL_LOCAL_DIR}/TestGeometricCalibration-MM
+    ${CMAKE_SOURCE_DIR}/TestData/trajectories
+  )
+
+  add_test(TestGeometricCalibration-LaDoua
+    ${INSTALL_LOCAL_DIR}/TestGeometricCalibration-LaDoua
+    ${CMAKE_SOURCE_DIR}/TestData/trajectories/la_doua_dataset
   )
 endif(ENABLE_PCL AND ENABLE_Ceres)
 
@@ -142,4 +149,40 @@ add_test(TestVelodynePPSIdentification
   "${CMAKE_SOURCE_DIR}/TestData/HDL32-V2_R_into_Butterfield_into_Digital_Drive.pcap"
   "${CMAKE_SOURCE_DIR}/TestData/VLP-16_Single.pcap"
   "${CMAKE_SOURCE_DIR}/TestData/VLP-16-with-GPRMC-with-PPS-timesync.pcap"
+)
+
+custom_add_executable(TestScaleCalibration-MM TestScaleCalibration-MM.cxx)
+target_link_libraries(TestScaleCalibration-MM VelodyneHDLPlugin)
+add_test(TestScaleCalibration-MM
+  ${INSTALL_LOCAL_DIR}/TestScaleCalibration-MM
+  ${CMAKE_SOURCE_DIR}/TestData/trajectories
+)
+
+custom_add_executable(TestTimeCalibration-LaDoua TestTimeCalibration-LaDoua.cxx)
+target_link_libraries(TestTimeCalibration-LaDoua VelodyneHDLPlugin)
+add_test(TestTimeCalibration-LaDoua
+  ${INSTALL_LOCAL_DIR}/TestTimeCalibration-LaDoua
+  ${CMAKE_SOURCE_DIR}/TestData/trajectories/la_doua_dataset
+)
+
+custom_add_executable(TestTimeCalibration-MM TestTimeCalibration-MM.cxx)
+target_link_libraries(TestTimeCalibration-MM VelodyneHDLPlugin)
+
+add_test(TestTimeCalibration-MM
+  ${INSTALL_LOCAL_DIR}/TestTimeCalibration-MM
+  ${CMAKE_SOURCE_DIR}/TestData/trajectories
+)
+
+custom_add_executable(TestCarGeometricCalibration-LaDoua TestCarGeometricCalibration-LaDoua.cxx)
+target_link_libraries(TestCarGeometricCalibration-LaDoua VelodyneHDLPlugin)
+add_test(TestCarGeometricCalibration-LaDoua
+  ${INSTALL_LOCAL_DIR}/TestCarGeometricCalibration-LaDoua
+  ${CMAKE_SOURCE_DIR}/TestData/trajectories/la_doua_dataset
+)
+
+custom_add_executable(TestCarGeometricCalibration-MM TestCarGeometricCalibration-MM.cxx)
+target_link_libraries(TestCarGeometricCalibration-MM VelodyneHDLPlugin)
+add_test(TestCarGeometricCalibration-MM
+  ${INSTALL_LOCAL_DIR}/TestCarGeometricCalibration-MM
+  ${CMAKE_SOURCE_DIR}/TestData/trajectories
 )

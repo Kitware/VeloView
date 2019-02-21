@@ -260,6 +260,8 @@ set(sources_which_do_not_inherit_from_vtkObject
   ${CMAKE_CURRENT_SOURCE_DIR}/Common/vtkEigenTools.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/${interpolator_pach_until_vtk_update}
   ${CMAKE_CURRENT_SOURCE_DIR}/Common/vtkConversions.cxx
+  ${CMAKE_CURRENT_SOURCE_DIR}/Common/vtkTimeCalibration.cxx
+  ${CMAKE_CURRENT_SOURCE_DIR}/Common/vtkCarGeometricCalibration.cxx
   )
 if (ENABLE_PCL)
   list(APPEND sources_which_do_not_inherit_from_vtkObject

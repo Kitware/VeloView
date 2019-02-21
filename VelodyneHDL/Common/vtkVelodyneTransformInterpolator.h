@@ -72,12 +72,17 @@ public:
   // Return the number of transforms in the list of transforms.
   int GetNumberOfTransforms();
 
+  void GetSample(int n,
+		  vtkTransform *xform,
+		  double& xformTime);
+
   // Description:
   // Obtain some information about the interpolation range. The numbers
   // returned (corresponding to parameter t, usually thought of as time)
   // are undefined if the list of transforms is empty.
   double GetMinimumT();
   double GetMaximumT();
+  double GetPeriod();
 
   // Description:
   // Clear the list of transforms.
