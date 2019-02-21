@@ -261,3 +261,131 @@ void vtkTemporalTransforms::PushBack(double time, const Eigen::AngleAxisd& orien
   cell->InsertNextCell(polyLine);
   this->SetLines(cell);
 }
+
+vtkSmartPointer<vtkTemporalTransforms> vtkTemporalTransforms::ExtractTimes(double tstart, double tend)
+{
+  auto extract = vtkSmartPointer<vtkTemporalTransforms>::New();
+
+  for (unsigned int i = 0; i < this->GetNumberOfPoints(); i++)
+  {
+    // get timestamp
+    double currentTimestamp = this->GetTimeArray()->GetTuple1(i);
+    if (currentTimestamp < tstart || currentTimestamp > tend) {
+      continue;
+    }
+
+    extract->GetTimeArray()->InsertNextTuple1(currentTimestamp);
+    double* aa = this->GetOrientationArray()->GetTuple4(i);
+    extract->GetOrientationArray()->InsertNextTuple(aa);
+    double* xyz = this->GetTranslationArray()->GetTuple3(i);
+    extract->GetTranslationArray()->InsertNextTuple(xyz);
+  }
+
+  return extract;
+}
+
+vtkSmartPointer<vtkTemporalTransforms> vtkTemporalTransforms::Subsample(int N)
+{
+
+  auto extract = vtkSmartPointer<vtkTemporalTransforms>::New();
+
+  for (unsigned int i = 0; i < this->GetNumberOfPoints(); i++)
+  {
+    if (i % N != 0)
+    {
+      continue;
+    }
+    // get timestamp
+    double currentTimestamp = this->GetTimeArray()->GetTuple1(i);
+    extract->GetTimeArray()->InsertNextTuple1(currentTimestamp);
+    double* aa = this->GetOrientationArray()->GetTuple4(i);
+    extract->GetOrientationArray()->InsertNextTuple(aa);
+    double* xyz = this->GetTranslationArray()->GetTuple3(i);
+    extract->GetTranslationArray()->InsertNextTuple(xyz);
+  }
+
+  auto polyLine = vtkSmartPointer<vtkPolyLine>::New();
+  polyLine->GetPointIds()->SetNumberOfIds(extract->GetNumberOfPoints());
+  for (vtkIdType i = 0; i < extract->GetNumberOfPoints(); i++)
+  {
+    polyLine->GetPointIds()->SetId(i,i);
+  }
+  auto cell = vtkSmartPointer<vtkCellArray>::New();
+  cell->InsertNextCell(polyLine);
+  extract->SetLines(cell);
+
+  return extract;
+}
+
+vtkSmartPointer<vtkTemporalTransforms> vtkTemporalTransforms::ApplyTimeshift(double shift)
+{
+  auto timeshifted = vtkSmartPointer<vtkTemporalTransforms>::New();
+
+  for (unsigned int i = 0; i < this->GetNumberOfPoints(); i++)
+  {
+    double currentTimestamp = this->GetTimeArray()->GetTuple1(i);
+    timeshifted->GetTimeArray()->InsertNextTuple1(currentTimestamp + shift);
+    double* aa = this->GetOrientationArray()->GetTuple4(i);
+    timeshifted->GetOrientationArray()->InsertNextTuple(aa);
+    double* xyz = this->GetTranslationArray()->GetTuple3(i);
+    timeshifted->GetTranslationArray()->InsertNextTuple(xyz);
+  }
+
+  auto polyLine = vtkSmartPointer<vtkPolyLine>::New();
+  polyLine->GetPointIds()->SetNumberOfIds(timeshifted->GetNumberOfPoints());
+  for (vtkIdType i = 0; i < timeshifted->GetNumberOfPoints(); i++)
+  {
+    polyLine->GetPointIds()->SetId(i,i);
+  }
+  auto cell = vtkSmartPointer<vtkCellArray>::New();
+  cell->InsertNextCell(polyLine);
+  timeshifted->SetLines(cell);
+
+  bool isWellFormed = timeshifted->GetTimeArray() &&
+                      timeshifted->GetTranslationArray() &&
+                      timeshifted->GetOrientationArray();
+  if(!isWellFormed)
+  {
+    std::cout << "warning ! timeshifted not well formed" << std::endl;
+  }
+
+  return timeshifted;
+}
+
+
+vtkSmartPointer<vtkTemporalTransforms> vtkTemporalTransforms::ApplyScale(double scale)
+{
+  auto scaled = vtkSmartPointer<vtkTemporalTransforms>::New();
+
+  for (unsigned int i = 0; i < this->GetNumberOfPoints(); i++)
+  {
+    double currentTimestamp = this->GetTimeArray()->GetTuple1(i);
+    scaled->GetTimeArray()->InsertNextTuple1(currentTimestamp);
+    double* aa = this->GetOrientationArray()->GetTuple4(i);
+    scaled->GetOrientationArray()->InsertNextTuple(aa);
+    double* xyz = this->GetTranslationArray()->GetTuple3(i);
+    xyz[0] *= scale;
+    xyz[1] *= scale;
+    xyz[2] *= scale;
+    scaled->GetTranslationArray()->InsertNextTuple(xyz);
+  }
+
+  auto polyLine = vtkSmartPointer<vtkPolyLine>::New();
+  polyLine->GetPointIds()->SetNumberOfIds(scaled->GetNumberOfPoints());
+  for (vtkIdType i = 0; i < scaled->GetNumberOfPoints(); i++)
+  {
+    polyLine->GetPointIds()->SetId(i,i);
+  }
+  auto cell = vtkSmartPointer<vtkCellArray>::New();
+  cell->InsertNextCell(polyLine);
+  scaled->SetLines(cell);
+
+  bool isWellFormed = scaled->GetTimeArray() && scaled->GetTranslationArray() &&
+                      scaled->GetOrientationArray();
+  if(!isWellFormed)
+  {
+    std::cout << "warning ! scaled not well formed" << std::endl;
+  }
+
+  return scaled;
+}

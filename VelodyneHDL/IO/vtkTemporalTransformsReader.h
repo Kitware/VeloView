@@ -66,7 +66,7 @@ protected:
 
 private:
   //! TimeOffset in seconds relative to the system clock
-  double TimeOffset;
+  double TimeOffset = 0.0;
 
   vtkTemporalTransformsReader(const vtkTemporalTransformsReader&) /*= delete*/;
   void operator =(const vtkTemporalTransformsReader&) /*= delete*/;

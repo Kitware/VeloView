@@ -5,18 +5,6 @@
 
 #include <Eigen/Dense>
 
-// replace by a helper when such helper is available in Veloview
-Eigen::Matrix3d Rot(const vtkSmartPointer<vtkTransform> transform)
-{
-  Eigen::Matrix3d M;
-  vtkSmartPointer<vtkMatrix4x4> tmp = vtkSmartPointer<vtkMatrix4x4>::New();
-  transform->GetMatrix(tmp);
-  M << tmp->GetElement(0,0), tmp->GetElement(0,1), tmp->GetElement(0,2),
-       tmp->GetElement(1,0), tmp->GetElement(1,1), tmp->GetElement(1,2),
-       tmp->GetElement(2,0), tmp->GetElement(2,1), tmp->GetElement(2,2);
-  return M;
-}
-
 Eigen::Matrix3d RollPitchYawToMatrix(double roll, double pitch, double yaw)
 {
   return Eigen::Matrix3d(Eigen::AngleAxisd(yaw, Eigen::Vector3d::UnitZ())

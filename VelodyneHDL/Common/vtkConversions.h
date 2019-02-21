@@ -41,4 +41,10 @@ std::pair<Eigen::Vector3d, Eigen::Vector3d> GetPoseParamsFromTransform(vtkSmartP
 /// Get the vtkTransform from the 6-DOF parameters (angles, translation)
 vtkSmartPointer<vtkTransform> GetTransformFromPosesParams(std::pair<Eigen::Vector3d, Eigen::Vector3d> dof6);
 
+// Extracts the rotation part of a vtkTransform
+Eigen::Matrix3d RotationMatrixFromTransform(vtkTransform* transform);
+
+// Extracts the position part of a vtkTransform
+Eigen::Vector3d PositionVectorFromTransform(vtkTransform* transform);
+
 #endif

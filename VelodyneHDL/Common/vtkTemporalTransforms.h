@@ -83,6 +83,11 @@ public:
   /// Add a temporal transform to the end
   void PushBack(double time, const Eigen::AngleAxisd& orientation , const Eigen::Vector3d translation);
 
+  vtkSmartPointer<vtkTemporalTransforms> ExtractTimes(double tstart, double tend);
+  vtkSmartPointer<vtkTemporalTransforms> Subsample(int N);
+  vtkSmartPointer<vtkTemporalTransforms> ApplyTimeshift(double shift);
+  vtkSmartPointer<vtkTemporalTransforms> ApplyScale(double scale);
+
 protected:
 
   vtkTemporalTransforms();
