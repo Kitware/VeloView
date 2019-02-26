@@ -1,14 +1,20 @@
 <ServerManagerConfiguration>
-  <ProxyGroup name="filters">
-    <SourceProxy name="TemporalTransformsReader" class="vtkTemporalTransformsReader" label="Temporal Transforms Reader">
+  <ProxyGroup name="sources">
+    <SourceProxy
+      name="TemporalTransformsReader"
+      class="vtkTemporalTransformsReader"
+      label="Temporal Transforms Reader">
       <Documentation
-          short_help="Reads a csv containing a list of transforms and ouput the trajectory"
-          long_help="Reads a csv containing a list of transforms and ouput the trajectory">
-          Reads a csv containing a list of transforms and ouput the trajectory. The csv file must
-          be comptible with the following header: `time,roll,pitch,yaw,X,Y,Z`
+        short_help="Read from a CSV a list of time indexed transforms (vtkTemporalTransforms)"
+        long_help="Read from a CSV a list of time indexed transforms (vtkTemporalTransforms)">
+	Read from a CSV a list of time indexed transforms.
+	Usually these transforms represent the pose trajectory of a solid
+	over time.
+	The CSV must have the following columns:
+	time(s),roll(d),pitch(d),yaw(d),x(m),y(m),z(m)
       </Documentation>
 
-    <StringVectorProperty
+      <StringVectorProperty
         name="FileName"
         label="FileName"
         animateable="0"
@@ -16,24 +22,24 @@
         number_of_elements="1">
         <FileListDomain name="files"/>
         <Documentation>
-          The csv file which respect the following header "Time,Rx(Roll),Ry(Pitch),Rz(Yaw),X,Y,Z"
+          The path to the CSV formated file to read.
         </Documentation>
-    </StringVectorProperty>
+      </StringVectorProperty>
 
-    <DoubleVectorProperty name="Time Offset"
-                          command="SetTimeOffset"
-                          default_values="0"
-                          number_of_elements="1">
-      <Documentation>
+      <DoubleVectorProperty
+        name="Time Offset"
+        command="SetTimeOffset"
+        default_values="0"
+        number_of_elements="1">
+        <Documentation>
           TimeOffset (in seconds) relative to the system clock.
-      </Documentation>
-    </DoubleVectorProperty>
+        </Documentation>
+      </DoubleVectorProperty>
 
-    <Hints>
-      <ReaderFactory extensions="csv"
-         file_description="csv file that is compatible with the following header:`time,roll,pitch,yaw,X,Y,Z`"/>
-    </Hints>
-
-   </SourceProxy>
+      <Hints>
+        <ReaderFactory extensions="csv txt poses"
+          file_description="CSV formated file containing a pose trajectory"/>
+      </Hints>
+    </SourceProxy>
   </ProxyGroup>
 </ServerManagerConfiguration>

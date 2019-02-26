@@ -45,6 +45,9 @@ if (ENABLE_PCL AND ENABLE_Ceres)
   target_link_libraries(TestGeometricCalibration-LaDoua VelodyneHDLPlugin)
 endif(ENABLE_PCL AND ENABLE_Ceres)
 
+custom_add_executable(TestTemporalTransformsReaderWriter TestTemporalTransformsReaderWriter.cxx TestHelpers.cxx)
+target_link_libraries(TestTemporalTransformsReaderWriter VelodyneHDLPlugin)
+
 set(sensors "HDL-64"
             "VLP-16"
             "VLP-32c")
@@ -185,4 +188,10 @@ target_link_libraries(TestCarGeometricCalibration-MM VelodyneHDLPlugin)
 add_test(TestCarGeometricCalibration-MM
   ${INSTALL_LOCAL_DIR}/TestCarGeometricCalibration-MM
   ${CMAKE_SOURCE_DIR}/TestData/trajectories
+)
+
+add_test(TestTemporalTransformsReaderWriter
+  ${INSTALL_LOCAL_DIR}/TestTemporalTransformsReaderWriter
+  ${CMAKE_SOURCE_DIR}/TestData/trajectories/mm04/orbslam2-no-loop-closure.csv
+  ${CMAKE_SOURCE_DIR}/TestData/trajectories/mm04/orbslam2-no-loop-closure.csv.temporary
 )

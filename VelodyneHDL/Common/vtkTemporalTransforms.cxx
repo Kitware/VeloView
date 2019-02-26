@@ -68,11 +68,26 @@ vtkSmartPointer<vtkTemporalTransforms> vtkTemporalTransforms::CreateFromPolyData
   return temporalTransforms;
 }
 
+vtkSmartPointer<vtkTransform> vtkTemporalTransforms::GetTransform(unsigned int transformNumber)
+{
+  auto axisAngle = this->GetOrientationArray();
+  auto transform = vtkSmartPointer<vtkTransform>::New();
+  transform->PostMultiply();
+  double x = axisAngle->GetTuple4(transformNumber)[0];
+  double y = axisAngle->GetTuple4(transformNumber)[1];
+  double z = axisAngle->GetTuple4(transformNumber)[2];
+  double w = axisAngle->GetTuple4(transformNumber)[3]
+      * 180 / vtkMath::Pi(); // vtk need degrees not radians
+  transform->RotateWXYZ(w, x, y, z);
+  transform->Translate(this->GetTranslationArray()->GetTuple(transformNumber));
+
+  return transform;
+}
+
 vtkSmartPointer<vtkVelodyneTransformInterpolator> vtkTemporalTransforms::CreateInterpolator()
 {
   auto interpolator = vtkSmartPointer<vtkVelodyneTransformInterpolator>::New();
 
-  auto axisAngle = this->GetOrientationArray();
   auto timestamp = this->GetTimeArray();
 
   for (unsigned int i = 0; i < this->GetNumberOfPoints(); i++)
@@ -81,14 +96,7 @@ vtkSmartPointer<vtkVelodyneTransformInterpolator> vtkTemporalTransforms::CreateI
     double currentTimestamp = timestamp->GetTuple1(i);
 
     // create the tranform
-    auto transform = vtkSmartPointer<vtkTransform>::New();
-    transform->PostMultiply();
-    double x = axisAngle->GetTuple4(i)[0];
-    double y = axisAngle->GetTuple4(i)[1];
-    double z = axisAngle->GetTuple4(i)[2];
-    double w = axisAngle->GetTuple4(i)[3] * 180 / vtkMath::Pi(); // vtk need degrees not radians
-    transform->RotateWXYZ(w, x, y, z);
-    transform->Translate(this->GetTranslationArray()->GetTuple(i));
+    auto transform = this->GetTransform(i);
 
     // add the tranform to the interpolator
     if (!vtkMath::IsNan(currentTimestamp))
