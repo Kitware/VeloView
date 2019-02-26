@@ -643,10 +643,11 @@ vtkInformationVector **inputVector, vtkInformationVector *outputVector)
   }
   // get transform
   vtkSmartPointer<vtkTransform> transform = vtkSmartPointer<vtkTransform>::New();
-  transform->Translate(Tworld[3], Tworld[4], Tworld[5]);
+  transform->PostMultiply();
   transform->RotateX(Rad2Deg(Tworld[0]));
   transform->RotateY(Rad2Deg(Tworld[1]));
   transform->RotateZ(Rad2Deg(Tworld[2]));
+  transform->Translate(Tworld[3], Tworld[4], Tworld[5]);
   // create transform filter and transformt the current frame
   vtkSmartPointer<vtkTransformPolyDataFilter> transformFilter = vtkSmartPointer<vtkTransformPolyDataFilter>::New();
   transformFilter->SetInputData(this->vtkCurrentFrame);
@@ -1026,10 +1027,7 @@ void vtkSlam::AddFrame(vtkPolyData* newFrame)
             << std::endl << std::endl << std::endl;
 
   // Update Trajectory
-  Eigen::AngleAxisd orientation = Eigen::AngleAxisd(
-      Eigen::AngleAxisd(this->Tworld[0], Eigen::Vector3d::UnitX())
-      * Eigen::AngleAxisd(this->Tworld[1],  Eigen::Vector3d::UnitY())
-      * Eigen::AngleAxisd(this->Tworld[2], Eigen::Vector3d::UnitZ()));
+  Eigen::AngleAxisd orientation = Eigen::AngleAxisd(GetRotationMatrix(this->Tworld));
   this->Trajectory->PushBack(time, orientation, Tworld.tail(3));
 
   // Indicate the filter has been modify
