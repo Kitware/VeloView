@@ -1,0 +1,86 @@
+<ServerManagerConfiguration>
+  <ProxyGroup name="writers">
+    <WriterProxy
+           class="vtkLASFileWriter"
+           name="LASFileWriter">
+      <Documentation></Documentation>
+      <StringVectorProperty command="SetFileName"
+                            name="FileName"
+                            number_of_elements="1">
+        <Documentation>The name of the file to write.</Documentation>
+      </StringVectorProperty>
+
+      <InputProperty command="SetInputConnection"
+                     name="Input">
+        <DataTypeDomain composite_data_supported="0"
+                        name="input_type">
+          <DataType value="vtkPolyData" />
+        </DataTypeDomain>
+      </InputProperty>
+
+      <IntVectorProperty
+          name="FirstFrame"
+          command="SetFirstFrame"
+          default_values="0"
+	  number_of_elements="1">
+        <Documentation>
+		First frame to save (included).
+        </Documentation>
+      </IntVectorProperty>
+
+      <IntVectorProperty
+          name="LastFrame"
+          command="SetLastFrame"
+          default_values="-1"
+	  number_of_elements="1">
+        <Documentation>
+		Last frame to save (included).
+		If the stride is set different than 1, is is possible that the effective last frame number will be inferior.
+		Negative indexes work similarily to Python list indexes (so -1 is last frame).
+        </Documentation>
+      </IntVectorProperty>
+
+      <IntVectorProperty
+          name="FrameStride"
+          command="SetFrameStride"
+          default_values="1"
+	  number_of_elements="1">
+        <Documentation>
+		One frame every "stride" frame will be saved. Useful to generate faster, ligher LAS for testing. 
+        </Documentation>
+      </IntVectorProperty>
+
+      <IntVectorProperty
+          name="InOutSignedUTMZone"
+          command="SetInOutSignedUTMZone"
+          default_values="31"
+	  number_of_elements="1">
+        <Documentation>
+		UTM zone used for input and output.
+		1 to 60: Northern hemisphere UTM zones
+		-60 to -1: Southern hemisphere UTM zones (-n means "UTM zone n, South")
+        </Documentation>
+      </IntVectorProperty>
+
+      <DoubleVectorProperty
+          name="Offset"
+          command="SetOffset"
+          default_values="0 0 0"
+	  number_of_elements="3">
+        <Documentation>
+		Offset to apply to the points in order to find their position inside the provided UTM Zone.
+		Also used as origin for writing the LAS File (this offset is written in the header and is not applied to the points).
+        </Documentation>
+      </DoubleVectorProperty>
+
+      <Hints>
+        <Property name="Input"
+                  show="0" />
+        <Property name="FileName"
+                  show="0" />
+        <WriterFactory extensions="las"
+                       file_description="LAS point cloud file" />
+      </Hints>
+    </WriterProxy>
+  </ProxyGroup>
+</ServerManagerConfiguration>
