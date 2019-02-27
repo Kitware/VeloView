@@ -371,6 +371,7 @@ void vtkLASFileWriter::WriteFrame(vtkPolyData* data)
   for (vtkIdType n = 0; n < numPoints; ++n)
   {
     const double time = timestampData->GetComponent(n, 0) * 1e-6;
+    // This test implements the time-clamping feature
     if (time >= this->Internal->MinTime && time <= this->Internal->MaxTime)
     {
       Eigen::Vector3d pos;

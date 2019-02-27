@@ -39,18 +39,40 @@ class vtkPolyData;
 class VTK_EXPORT vtkLASFileWriter
 {
 public:
+  // The default LAS export scale is set to (1e-3, 1e-3, 1e-3)
+  // The LAS file is opened immediatly, will be closed when destructor is called
   vtkLASFileWriter(const char* filename);
   ~vtkLASFileWriter();
 
+  // If used, will restric to a time range the points written with WriteFrame
   void SetTimeRange(double min, double max);
+
+  // Must be called before any call to WriteFrame()
   void SetOrigin(int gcs, double easting, double northing, double height);
   void SetGeoConversion(int in, int out);
   void SetGeoConversion(int in, int out, int utmZone, bool isLatLon);
+
+  // Must be called before any call to WriteFrame()
   void SetPrecision(double neTol, double hTol = 1e-3);
 
+  // - Computes the axis-aligned bounding box (Origin offset applied first)
+  // - Count the number of points
   void UpdateMetaData(vtkPolyData* data);
+
+  // Sets the metadata into the LAS header
   void FlushMetaData();
 
+  // UpdateMetaData() and FlushMetaData() must have been called before the
+  // first call to WriteFrame()
+  // Will use arrays:
+  // - intensity
+  // - laser_id (has user data field)
+  // - timestamp
+  // Some values are hardcoded:
+  // - return number = 1
+  // - number of returns = 1
+  // Note: if SetTimeRange() was used, it is possible that not all points will
+  // be written
   void WriteFrame(vtkPolyData* data);
 
 protected:
