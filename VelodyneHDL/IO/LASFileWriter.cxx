@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "vtkLASFileWriter.h"
+#include "LASFileWriter.h"
 
 #include <vtkPointData.h>
 #include <vtkPolyData.h>
@@ -115,7 +115,7 @@ Eigen::Vector3d InvertProj(Eigen::Vector3d in, PROJ* proj)
 }
 
 //-----------------------------------------------------------------------------
-class vtkLASFileWriter::vtkInternal
+class LASFileWriter::vtkInternal
 {
 public:
   vtkInternal()
@@ -149,7 +149,7 @@ public:
 };
 
 //-----------------------------------------------------------------------------
-void vtkLASFileWriter::vtkInternal::Close()
+void LASFileWriter::vtkInternal::Close()
 {
   delete this->Writer;
   this->Writer = 0;
@@ -157,7 +157,7 @@ void vtkLASFileWriter::vtkInternal::Close()
 }
 
 //-----------------------------------------------------------------------------
-vtkLASFileWriter::vtkLASFileWriter(const char* filename)
+LASFileWriter::LASFileWriter(const char* filename)
   : Internal(new vtkInternal)
 {
   this->Internal->MinTime = -std::numeric_limits<double>::infinity();
@@ -187,7 +187,7 @@ vtkLASFileWriter::vtkLASFileWriter(const char* filename)
 }
 
 //-----------------------------------------------------------------------------
-vtkLASFileWriter::~vtkLASFileWriter()
+LASFileWriter::~LASFileWriter()
 {
   this->Internal->Close();
 
@@ -202,14 +202,14 @@ vtkLASFileWriter::~vtkLASFileWriter()
 }
 
 //-----------------------------------------------------------------------------
-void vtkLASFileWriter::SetTimeRange(double min, double max)
+void LASFileWriter::SetTimeRange(double min, double max)
 {
   this->Internal->MinTime = min;
   this->Internal->MaxTime = max;
 }
 
 //-----------------------------------------------------------------------------
-void vtkLASFileWriter::SetOrigin(int gcs, double easting, double northing, double height)
+void LASFileWriter::SetOrigin(int gcs, double easting, double northing, double height)
 {
   if (this->Internal->IsWriterInstanciated)
   {
@@ -257,7 +257,7 @@ void vtkLASFileWriter::SetOrigin(int gcs, double easting, double northing, doubl
 }
 
 //-----------------------------------------------------------------------------
-void vtkLASFileWriter::SetGeoConversion(int in, int out)
+void LASFileWriter::SetGeoConversion(int in, int out)
 {
 #ifdef PJ_VERSION // 4.8 or later
   pj_free(this->Internal->InProj);
@@ -280,7 +280,7 @@ void vtkLASFileWriter::SetGeoConversion(int in, int out)
 }
 
 //-----------------------------------------------------------------------------
-void vtkLASFileWriter::SetGeoConversion(int in, int out, int utmZone, bool isLatLon)
+void LASFileWriter::SetGeoConversion(int in, int out, int utmZone, bool isLatLon)
 {
 #ifdef PJ_VERSION // 4.8 or later
   in = in;  // this was just added to avoid the warning: "parameter 'in' is not used"
@@ -342,7 +342,7 @@ void vtkLASFileWriter::SetGeoConversion(int in, int out, int utmZone, bool isLat
 }
 
 //-----------------------------------------------------------------------------
-void vtkLASFileWriter::SetPrecision(double neTol, double hTol)
+void LASFileWriter::SetPrecision(double neTol, double hTol)
 {
   if (this->Internal->IsWriterInstanciated)
   {
@@ -354,7 +354,7 @@ void vtkLASFileWriter::SetPrecision(double neTol, double hTol)
 }
 
 //-----------------------------------------------------------------------------
-void vtkLASFileWriter::WriteFrame(vtkPolyData* data)
+void LASFileWriter::WriteFrame(vtkPolyData* data)
 {
   if (!this->Internal->IsWriterInstanciated)
   {
@@ -404,7 +404,7 @@ void vtkLASFileWriter::WriteFrame(vtkPolyData* data)
 }
 
 //-----------------------------------------------------------------------------
-void vtkLASFileWriter::FlushMetaData()
+void LASFileWriter::FlushMetaData()
 {
   this->Internal->header.SetPointRecordsByReturnCount(0, this->Internal->npoints);
   this->Internal->header.SetMin(this->Internal->MinPt[0], this->Internal->MinPt[1], this->Internal->MinPt[2]);
@@ -412,7 +412,7 @@ void vtkLASFileWriter::FlushMetaData()
 }
 
 //-----------------------------------------------------------------------------
-void vtkLASFileWriter::UpdateMetaData(vtkPolyData* data)
+void LASFileWriter::UpdateMetaData(vtkPolyData* data)
 {
   vtkPoints* const points = data->GetPoints();
   vtkDataArray* const timestampData = data->GetPointData()->GetArray("timestamp");

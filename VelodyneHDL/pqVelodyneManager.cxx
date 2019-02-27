@@ -13,7 +13,7 @@
 // limitations under the License.
 #include "pqVelodyneManager.h"
 
-#include "vtkLASFileWriter.h"
+#include "LASFileWriter.h"
 #include "vtkPVConfig.h" //  needed for PARAVIEW_VERSION
 #include "vtkLidarReader.h"
 #include "vvPythonQtDecorators.h"
@@ -261,7 +261,7 @@ void pqVelodyneManager::saveFramesToLAS(vtkLidarReader* reader, vtkPolyData* pos
 
   bool isLatLon = false;
 
-  vtkLASFileWriter writer(qPrintable(filename));
+  LASFileWriter writer(qPrintable(filename));
 
   // not sensor relative; it can be
   // relative registered data or

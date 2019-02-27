@@ -36,13 +36,13 @@
 
 class vtkPolyData;
 
-class VTK_EXPORT vtkLASFileWriter
+class VTK_EXPORT LASFileWriter
 {
 public:
   // The default LAS export scale is set to (1e-3, 1e-3, 1e-3)
   // The LAS file is opened immediatly, will be closed when destructor is called
-  vtkLASFileWriter(const char* filename);
-  ~vtkLASFileWriter();
+  LASFileWriter(const char* filename);
+  ~LASFileWriter();
 
   // If used, will restric to a time range the points written with WriteFrame
   void SetTimeRange(double min, double max);
