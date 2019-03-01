@@ -34,18 +34,45 @@
 
 #include <pcap.h>
 #include <string>
+#include <cstdlib>
+#include <cstring>
+#include <vector>
+#include <unordered_map>
 
 // Some versions of libpcap do not have PCAP_NETMASK_UNKNOWN
 #if !defined(PCAP_NETMASK_UNKNOWN)
 #define PCAP_NETMASK_UNKNOWN 0xffffffff
 #endif
 
+// Packet fragment offsets are given in steps of 8 bytes.
+constexpr unsigned int FRAGMENT_OFFSET_STEP = 8;
+
+//! @brief Track fragment reassembly to confirm that all data has been
+//!        reassembled before passing it on.
+struct FragmentTracker
+{
+  // The incrementally reassembled data.
+  std::vector<unsigned char> Data;
+  // Set when the final fragment is encountered.
+  unsigned int ExpectedSize = 0;
+  // Incremented as fragments are added to the data.
+  unsigned int CurrentSize = 0;
+};
+
+
+
 class vtkPacketFileReader
 {
 public:
-  vtkPacketFileReader() { this->PCAPFile = 0; }
+  vtkPacketFileReader()
+  {
+    this->PCAPFile = 0;
+  }
 
-  ~vtkPacketFileReader() { this->Close(); }
+  ~vtkPacketFileReader()
+  {
+    this->Close();
+  }
 
   // This function is called to read a savefile .pcap
   // 1-Open a savefile in the tcpdump/libcap format to read packet
@@ -62,7 +89,7 @@ public:
       return false;
     }
 
-    struct bpf_program filter;
+    bpf_program filter;
 
     if (pcap_compile(pcapFile, &filter, "udp", 0, PCAP_NETMASK_UNKNOWN) == -1)
     {
@@ -97,7 +124,6 @@ public:
     this->StartTime.tv_sec = this->StartTime.tv_usec = 0;
     return true;
   }
-
   bool IsOpen() { return (this->PCAPFile != 0); }
 
   void Close()
@@ -125,7 +151,7 @@ public:
   }
 
   void SetFilePosition(fpos_t* position)
-  {
+{
 #ifdef _MSC_VER
     pcap_fsetpos(this->PCAPFile, position);
 #else
@@ -142,36 +168,119 @@ public:
       return false;
     }
 
-    struct pcap_pkthdr* header;
-    int returnValue = pcap_next_ex(this->PCAPFile, &header, &data);
-    if (returnValue < 0)
+    // Delete reassembled fragment data from the previous call, if any. This
+    // cannot be done earlier because it would invalidate the data before it is
+    // returned.
+    if (this->RemoveAssembled)
     {
-      this->Close();
-      return false;
+      auto it = this->Fragments.find(this->AssembledId);
+      this->Fragments.erase(it);
+      this->AssembledId = 0;
+      this->RemoveAssembled = false;
     }
 
-    // Only return the payload.
-    // We read the actual IP header length (v4 & v6) + assumes UDP
-    const unsigned int ipHeaderLength = (data[FrameHeaderLength + 0] & 0xf) * 4;
-    const unsigned int udpHeaderLength = 8;
-    const unsigned int bytesToSkip = FrameHeaderLength + ipHeaderLength + udpHeaderLength;
+    dataLength = 0;
+    bool moreFragments = true;
+    uint16_t fragmentOffset = 0;
+    pcap_pkthdr* header;
 
-    dataLength = header->len - bytesToSkip;
-    if (header->len > header->caplen)
-      dataLength = header->caplen - bytesToSkip;
-    data = data + bytesToSkip;
-    timeSinceStart = GetElapsedTime(header->ts, this->StartTime);
-
-    if (headerReference != NULL && dataHeaderLength != NULL)
+    while (moreFragments)
     {
-      *headerReference = header;
-      *dataHeaderLength = bytesToSkip;
+      unsigned char const * tmpData = nullptr;
+      unsigned int tmpDataLength;
+
+      int returnValue = pcap_next_ex(this->PCAPFile, &header, &tmpData);
+      if (returnValue < 0)
+      {
+        this->Close();
+        return false;
+      }
+
+      // Collect header values before they are removed.
+      uint16_t identification = 0x100 * tmpData[0x12] + tmpData[0x13];
+      unsigned char const flags = tmpData[0x14] >> 4;
+      moreFragments = flags & 0x2;
+      fragmentOffset = (tmpData[0x14] & 0x1F) * 0x100 + tmpData[0x15];
+
+      // Only return the payload.
+      // We read the actual IP header length (v4 & v6) + assumes UDP
+      const unsigned int ipHeaderLength = (tmpData[this->FrameHeaderLength + 0] & 0xf) * 4;
+      const unsigned int udpHeaderLength = 8;
+      const unsigned int bytesToSkip = this->FrameHeaderLength + ipHeaderLength + udpHeaderLength;
+
+      tmpDataLength = header->len - bytesToSkip;
+      if (header->len > header->caplen)
+        tmpDataLength = header->caplen - bytesToSkip;
+      tmpData = tmpData + bytesToSkip;
+      timeSinceStart = GetElapsedTime(header->ts, this->StartTime);
+
+      if (headerReference != NULL && dataHeaderLength != NULL)
+      {
+        *headerReference = header;
+        *dataHeaderLength = bytesToSkip;
+      }
+
+      // pcap_next_ex may reallocate the buffers it returns so the data must be
+      // copied between each call.
+      if (dataLength > 0 || moreFragments || fragmentOffset > 0)
+      {
+        decltype(tmpDataLength) offset = fragmentOffset * FRAGMENT_OFFSET_STEP;
+        unsigned requiredSize = offset + tmpDataLength;
+
+        auto & fragmentTracker = this->Fragments[identification];
+        auto & reassembledData = fragmentTracker.Data;
+
+        if (requiredSize > reassembledData.size())
+        {
+          reassembledData.resize(requiredSize);
+        }
+        std::copy(tmpData, tmpData + tmpDataLength, reassembledData.begin() + offset);
+
+        // Update current size, which represents the total number of bytes
+        // collected in the reassembled packet.
+        fragmentTracker.CurrentSize += tmpDataLength;
+
+        // There may be gaps of size FRAGMENT_OFFSET_STEP between fragments. Add
+        // this to the current size.
+        //
+        // Note that this assumes that <number of fragments - 1> *
+        // FRAGMENT_OFFSET_STEP is never larger than any given fragment so that
+        // it will not be omitted accidentally.
+        if (moreFragments)
+        {
+          fragmentTracker.CurrentSize += FRAGMENT_OFFSET_STEP;
+        }
+        // Set the expected size if this is the final fragment.
+        else
+        {
+          fragmentTracker.ExpectedSize = requiredSize;
+        }
+
+
+        // Return the packet if it's complete.
+        if (fragmentTracker.ExpectedSize > 0 && fragmentTracker.CurrentSize >= fragmentTracker.ExpectedSize)
+        {
+          data = reassembledData.data();
+          dataLength = reassembledData.size();
+          // Delete the associated data on the next iteration.
+          this->AssembledId = identification;
+          this->RemoveAssembled = true;
+          return true;
+        }
+      }
+      else
+      {
+        data = tmpData;
+        dataLength = tmpDataLength;
+        return true;
+      }
     }
+
     return true;
   }
 
 protected:
-  double GetElapsedTime(const struct timeval& end, const struct timeval& start)
+  double GetElapsedTime(const timeval& end, const timeval& start)
   {
     return (end.tv_sec - start.tv_sec) + (end.tv_usec - start.tv_usec) / 1000000.00;
   }
@@ -179,8 +288,19 @@ protected:
   pcap_t* PCAPFile;
   std::string FileName;
   std::string LastError;
-  struct timeval StartTime;
+  timeval StartTime;
   unsigned int FrameHeaderLength;
+
+
+private:
+  //! @brief A map of fragmented packet IDs to the collected array of fragments.
+  std::unordered_map<uint16_t, FragmentTracker> Fragments;
+
+  //! @brief The ID of the last completed fragment.
+  uint16_t AssembledId = 0;
+
+  //! @brief True if there is a reassembled packet to remove.
+  bool RemoveAssembled = false;
 };
 
 #endif
