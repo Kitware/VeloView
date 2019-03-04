@@ -63,12 +63,7 @@ class AppLogic(object):
         self.mousePressed = False
 
         mainView = smp.GetActiveView()
-        views = smp.GetRenderViews()
-        otherViews = [v for v in views if v != mainView]
-        assert len(otherViews) == 1
-        overheadView = otherViews[0]
         self.mainView = mainView
-        self.overheadView = overheadView
 
         self.transformMode = 0
         self.relativeTransform = False
@@ -531,9 +526,6 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
         prep = smp.Show(processor)
     app.scene.UpdateAnimationUsingDataTimeSteps()
 
-    # update overhead view
-    smp.SetActiveView(app.overheadView)
-
     if positionFilename is None:
         posreader = smp.VelodyneHDLPositionReader(guiName="Position",
                                                   FileName=filename)
@@ -562,9 +554,6 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
         #reader.GetClientSideObject().SetInterpolator(
         #    posreader.GetClientSideObject().GetInterpolator())
 
-        smp.Render(app.overheadView)
-        app.overheadView.ResetCamera()
-
         trange = posreader.GetPointDataInformation().GetArray('time').GetRange()
 
         # By construction time zero is at position 0,0,0
@@ -580,17 +569,11 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
         sb = smp.CreateScalarBar(LookupTable=rep.LookupTable, Title='Time')
         sb.Orientation = 'Horizontal'
         #sb.Position, sb.Position2 = [.1, .05], [.8, .02]
-        app.overheadView.Representations.append(sb)
-
         app.position = (posreader, None, tripod)
-        smp.Render(app.overheadView)
     else:
         if positionFilename is not None:
             QtGui.QMessageBox.warning(getMainWindow(), 'Georeferencing data invalid',
                                       'File %s is empty or not supported' % positionFilename)
-
-        smp.Render(app.overheadView)
-        app.overheadView.ResetCamera()
         smp.Delete(posreader)
 
     smp.SetActiveView(app.mainView)
@@ -633,7 +616,6 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
     showMeasurementGrid()
 
     smp.SetActiveSource(reader)
-    updatePosition()
     updateUIwithNewFrame()
 
 
@@ -1162,7 +1144,6 @@ def close():
 
     hideRuler()
     unloadData()
-    smp.Render(app.overheadView)
     app.scene.AnimationTime = 0
     app.reader = None
     app.sensor = None
@@ -1293,53 +1274,12 @@ def getNumberOfTimesteps():
     return getTimeKeeper().getNumberOfTimeStepValues()
 
 
-def updatePosition():
-    reader = getReader()
-    pos = getPosition()
-
-    if reader and pos:
-        pointcloud = reader.GetClientSideObject().GetOutput()
-
-        if pointcloud.GetNumberOfPoints():
-            # get the timestamp of the first point
-            # of the current point cloud (in seconds)
-            time = pointcloud.GetPointData().GetArray('adjustedtime').GetTuple1(0)
-            time = time * 1e-6
-
-            # Get the transform of the first point of the
-            # current point cloud by interpolating using
-            # the two nearest transform data available (slerp + linear)
-            currentTransform = vtk.vtkTransform()
-            #getReader().GetClientSideObject().GetInterpolator().InterpolateTransform(time, currentTransform)
-
-            position = [0.0] * 3
-            currentTransform.TransformPoint(position, position)
-
-            rep = cachedGetRepresentation(reader, view=app.mainView)
-            if app.relativeTransform:
-                rep.Position = currentTransform.GetInverse().GetPosition()
-                rep.Orientation = currentTransform.GetInverse().GetOrientation()
-            else:
-                rep.Position = [0.0, 0.0, 0.0]
-                rep.Orientation = [0.0, 0.0, 0.0]
-
-            g = getGlyph()
-            rep = cachedGetRepresentation(g, view=app.overheadView)
-            rep.Position = position[:3]
-            rep.Orientation = currentTransform.GetOrientation()
-
-    showRPM()
-
 def unloadData():
     _repCache.clear()
 
     for k, src in smp.GetSources().iteritems():
         if src != app.grid:
             smp.Delete(src)
-
-    toremove = [x for x in app.overheadView.Representations if type(x) == servermanager.rendering.ScalarBarWidgetRepresentation]
-    for t in toremove:
-        app.overheadView.Representations.remove(t)
 
     app.reader = None
     app.position = (None, None, None)
@@ -1967,8 +1907,6 @@ def setTransformMode(mode):
 
 def geolocationChanged(setting):
     setTransformMode(setting)
-
-    updatePosition()
     smp.Render(view=app.mainView)
 
 def fastRendererChanged():

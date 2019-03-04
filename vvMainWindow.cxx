@@ -207,12 +207,6 @@ private:
 
     vtkSMPropertyHelper(renderviewsettings, "ResolveCoincidentTopology").Set(0);
 
-    // Create a overhead view
-    pqView* overheadView = builder->createView(pqRenderView::renderViewType(), server, true);
-    overheadView->getProxy()->UpdateVTKObjects();
-    this->Ui.overheadViewDock->setWidget(overheadView->widget());
-    new vvToggleSpreadSheetReaction(this->Ui.actionOverheadView, overheadView);
-
     // Set the central widget
     pqTabbedMultiViewWidget* mv = new pqTabbedMultiViewWidget;
     mv->setTabVisibility(false);

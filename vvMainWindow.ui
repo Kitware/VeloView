@@ -236,7 +236,6 @@
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
-   <addaction name="actionOverheadView"/>
   </widget>
   <widget class="QDockWidget" name="colorMapEditorDock">
    <property name="windowTitle">
@@ -297,15 +296,6 @@
     <number>1</number>
    </attribute>
    <widget class="pqProxyInformationWidget" name="proxyInformationWidget"/>
-  </widget>
-  <widget class="QDockWidget" name="overheadViewDock">
-   <property name="windowTitle">
-    <string>Overhead View</string>
-   </property>
-   <attribute name="dockWidgetArea">
-    <number>2</number>
-   </attribute>
-   <widget class="QWidget" name="overheadView"/>
   </widget>
   <action name="actionE_xit">
    <property name="text">
@@ -582,21 +572,6 @@
    </property>
    <property name="toolTip">
     <string>Measure the distance (in meters) between two screen points.&lt;br/&gt;To draw a ruler line, click this button, then hold down the &lt;b&gt;Ctrl key&lt;/b&gt; and the &lt;b&gt;left button&lt;/b&gt; of your mouse. &lt;br/&gt;&lt;u&gt;This feature is only available in orthogonal projection.&lt;/u&gt;</string>
-   </property>
-  </action>
-  <action name="actionOverheadView">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="icon">
-    <iconset resource="vvResources.qrc">
-     <normaloff>:/vvResources/Icons/map.png</normaloff>:/vvResources/Icons/map.png</iconset>
-   </property>
-   <property name="text">
-    <string>OverheadView</string>
-   </property>
-   <property name="toolTip">
-    <string>Show overhead view of GPS position</string>
    </property>
   </action>
   <action name="actionPlaneFit">
