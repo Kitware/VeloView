@@ -17,12 +17,6 @@
 #include <vtkPointData.h>
 #include <vtkPolyData.h>
 
-#include <vtk_libproj4.h>
-
-#include <liblas/liblas.hpp>
-
-#include <Eigen/Dense>
-
 namespace
 {
 
@@ -64,108 +58,69 @@ Eigen::Vector3d ConvertGcs(Eigen::Vector3d p, projPJ inProj, projPJ outProj)
 }
 
 //-----------------------------------------------------------------------------
-class LASFileWriter::vtkInternal
-{
-public:
-  vtkInternal()
-  {
-    this->IsWriterInstanciated = false;
-  }
-
-  void Close();
-
-  std::ofstream Stream;
-  liblas::Writer* Writer;
-
-  double MinTime;
-  double MaxTime;
-  Eigen::Vector3d Origin;
-
-  size_t npoints;
-  double MinPt[3];
-  double MaxPt[3];
-
-  liblas::Header header;
-  bool IsWriterInstanciated;
-
-  projPJ InProj;
-  projPJ OutProj;
-  int OutGcs;
-};
-
-//-----------------------------------------------------------------------------
-void LASFileWriter::vtkInternal::Close()
-{
-  delete this->Writer;
-  this->Writer = 0;
-  this->Stream.close();
-}
-
-//-----------------------------------------------------------------------------
 LASFileWriter::LASFileWriter(const char* filename)
-  : Internal(new vtkInternal)
 {
-  this->Internal->MinTime = -std::numeric_limits<double>::infinity();
-  this->Internal->MaxTime = +std::numeric_limits<double>::infinity();
+  this->MinTime = -std::numeric_limits<double>::infinity();
+  this->MaxTime = +std::numeric_limits<double>::infinity();
 
-  this->Internal->InProj = 0;
-  this->Internal->OutProj = 0;
-  this->Internal->OutGcs = -1;
+  this->InProj = 0;
+  this->OutProj = 0;
+  this->OutGcs = -1;
 
-  this->Internal->npoints = 0;
+  this->npoints = 0;
 
   for (int i = 0; i < 3; ++i)
   {
-    this->Internal->MaxPt[i] = -std::numeric_limits<double>::max();
-    this->Internal->MinPt[i] = std::numeric_limits<double>::max();
+    this->MaxPt[i] = -std::numeric_limits<double>::max();
+    this->MinPt[i] = std::numeric_limits<double>::max();
   }
 
-  this->Internal->Stream.open(filename, std::ios::out | std::ios::trunc | std::ios::binary);
+  this->Stream.open(filename, std::ios::out | std::ios::trunc | std::ios::binary);
 
-  this->Internal->header.SetSoftwareId(SOFTWARE_NAME);
-  this->Internal->header.SetDataFormatId(liblas::ePointFormat1);
-  this->Internal->header.SetScale(1e-3, 1e-3, 1e-3);
+  this->header.SetSoftwareId(SOFTWARE_NAME);
+  this->header.SetDataFormatId(liblas::ePointFormat1);
+  this->header.SetScale(1e-3, 1e-3, 1e-3);
 }
 
 //-----------------------------------------------------------------------------
 LASFileWriter::~LASFileWriter()
 {
-  this->Internal->Close();
+  delete this->Writer;
+  this->Writer = 0;
+  this->Stream.close();
 
-  pj_free(this->Internal->InProj);
-  pj_free(this->Internal->OutProj);
-
-  delete this->Internal;
+  pj_free(this->InProj);
+  pj_free(this->OutProj);
 }
 
 //-----------------------------------------------------------------------------
 void LASFileWriter::SetTimeRange(double min, double max)
 {
-  this->Internal->MinTime = min;
-  this->Internal->MaxTime = max;
+  this->MinTime = min;
+  this->MaxTime = max;
 }
 
 //-----------------------------------------------------------------------------
 void LASFileWriter::SetOrigin(int gcs, double easting, double northing, double height)
 {
-  if (this->Internal->IsWriterInstanciated)
+  if (this->IsWriterInstanciated)
   {
     vtkGenericWarningMacro("Header can't be changed once the writer is instanciated");
     return;
   }
 
   Eigen::Vector3d origin(northing, easting, height);
-  this->Internal->Origin = origin;
+  this->Origin = origin;
 
   // Convert offset to output GCS, if a geoconversion is set up
-  if (this->Internal->OutProj)
+  if (this->OutProj)
   {
-    origin = ConvertGcs(origin, this->Internal->InProj, this->Internal->OutProj);
-    gcs = this->Internal->OutGcs;
+    origin = ConvertGcs(origin, this->InProj, this->OutProj);
+    gcs = this->OutGcs;
   }
 
   // Update header
-  this->Internal->header.SetOffset(origin[0], origin[1], origin[2]);
+  this->header.SetOffset(origin[0], origin[1], origin[2]);
   try
   {
     liblas::SpatialReference srs;
@@ -173,7 +128,7 @@ void LASFileWriter::SetOrigin(int gcs, double easting, double northing, double h
     ss << "EPSG:" << gcs;
     srs.SetFromUserInput(ss.str());
     std::cout << srs << std::endl;
-    this->Internal->header.SetSRS(srs);
+    this->header.SetSRS(srs);
   }
   catch (std::logic_error)
   {
@@ -188,13 +143,13 @@ void LASFileWriter::SetOrigin(int gcs, double easting, double northing, double h
 //-----------------------------------------------------------------------------
 void LASFileWriter::SetGeoConversion(int in, int out)
 {
-  pj_free(this->Internal->InProj);
-  pj_free(this->Internal->OutProj);
+  pj_free(this->InProj);
+  pj_free(this->OutProj);
 
-  this->Internal->InProj = CreateProj(in);
-  this->Internal->OutProj = CreateProj(out);
+  this->InProj = CreateProj(in);
+  this->OutProj = CreateProj(out);
 
-  this->Internal->OutGcs = out;
+  this->OutGcs = out;
 }
 
 //-----------------------------------------------------------------------------
@@ -211,7 +166,7 @@ void LASFileWriter::SetGeoConversion(int in, int out, int utmZone, bool isLatLon
   utmparamsIn << "+datum=WGS84 ";
   utmparamsIn << "+units=m ";
   utmparamsIn << "+no_defs ";
-  this->Internal->InProj = pj_init_plus(utmparamsIn.str().c_str());
+  this->InProj = pj_init_plus(utmparamsIn.str().c_str());
   std::cout << "init In : " << utmparamsIn.str() << std::endl;
 
   if (isLatLon)
@@ -221,7 +176,7 @@ void LASFileWriter::SetGeoConversion(int in, int out, int utmZone, bool isLatLon
     utmparamsOut << "+ellps=WGS84 ";
     utmparamsOut << "+datum=WGS84 ";
     utmparamsOut << "+no_defs ";
-    this->Internal->OutProj = pj_init_plus(utmparamsOut.str().c_str());
+    this->OutProj = pj_init_plus(utmparamsOut.str().c_str());
     std::cout << "init Out : " << utmparamsOut.str() << std::endl;
   }
   else
@@ -235,38 +190,38 @@ void LASFileWriter::SetGeoConversion(int in, int out, int utmZone, bool isLatLon
     utmparamsOut << "+ellps=WGS84 ";
     utmparamsOut << "+datum=WGS84 ";
     utmparamsOut << "+no_defs ";
-    this->Internal->OutProj = pj_init_plus(utmparamsOut.str().c_str());
+    this->OutProj = pj_init_plus(utmparamsOut.str().c_str());
   }
 
-  std::cout << "InProj :  created : " << this->Internal->InProj << std::endl;
-  std::cout << "OutProj created : " << this->Internal->OutProj << std::endl;
-  if (this->Internal->InProj)
-    std::cout << "inProj datum_type : [" << this->Internal->InProj->datum_type << "]" << std::endl;
-  if (this->Internal->OutProj)
-    std::cout << "outProj datum_type : [" << this->Internal->OutProj->datum_type << "]" << std::endl;
+  std::cout << "InProj :  created : " << this->InProj << std::endl;
+  std::cout << "OutProj created : " << this->OutProj << std::endl;
+  if (this->InProj)
+    std::cout << "inProj datum_type : [" << this->InProj->datum_type << "]" << std::endl;
+  if (this->OutProj)
+    std::cout << "outProj datum_type : [" << this->OutProj->datum_type << "]" << std::endl;
 
-  this->Internal->OutGcs = out;
+  this->OutGcs = out;
 }
 
 //-----------------------------------------------------------------------------
 void LASFileWriter::SetPrecision(double neTol, double hTol)
 {
-  if (this->Internal->IsWriterInstanciated)
+  if (this->IsWriterInstanciated)
   {
     vtkGenericWarningMacro("Header can't be changed once writer is instanciated");
     return;
   }
 
-  this->Internal->header.SetScale(neTol, neTol, hTol);
+  this->header.SetScale(neTol, neTol, hTol);
 }
 
 //-----------------------------------------------------------------------------
 void LASFileWriter::WriteFrame(vtkPolyData* data)
 {
-  if (!this->Internal->IsWriterInstanciated)
+  if (!this->IsWriterInstanciated)
   {
-    this->Internal->Writer = new liblas::Writer(this->Internal->Stream, this->Internal->header);
-    this->Internal->IsWriterInstanciated = true;
+    this->Writer = new liblas::Writer(this->Stream, this->header);
+    this->IsWriterInstanciated = true;
   }
 
   vtkPoints* const points = data->GetPoints();
@@ -279,18 +234,18 @@ void LASFileWriter::WriteFrame(vtkPolyData* data)
   {
     const double time = timestampData->GetComponent(n, 0) * 1e-6;
     // This test implements the time-clamping feature
-    if (time >= this->Internal->MinTime && time <= this->Internal->MaxTime)
+    if (time >= this->MinTime && time <= this->MaxTime)
     {
       Eigen::Vector3d pos;
       points->GetPoint(n, pos.data());
-      pos += this->Internal->Origin;
+      pos += this->Origin;
 
-      if (this->Internal->OutProj)
+      if (this->OutProj)
       {
-        pos = ConvertGcs(pos, this->Internal->InProj, this->Internal->OutProj);
+        pos = ConvertGcs(pos, this->InProj, this->OutProj);
       }
 
-      liblas::Point p(&this->Internal->Writer->GetHeader());
+      liblas::Point p(&this->Writer->GetHeader());
       p.SetCoordinates(pos[0], pos[1], pos[2]);
       p.SetIntensity(static_cast<uint16_t>(intensityData->GetComponent(n, 0)));
       p.SetReturnNumber(1);
@@ -298,7 +253,7 @@ void LASFileWriter::WriteFrame(vtkPolyData* data)
       p.SetUserData(static_cast<uint8_t>(laserIdData->GetComponent(n, 0)));
       p.SetTime(time);
 
-      this->Internal->Writer->WritePoint(p);
+      this->Writer->WritePoint(p);
     }
   }
 }
@@ -306,9 +261,9 @@ void LASFileWriter::WriteFrame(vtkPolyData* data)
 //-----------------------------------------------------------------------------
 void LASFileWriter::FlushMetaData()
 {
-  this->Internal->header.SetPointRecordsByReturnCount(0, this->Internal->npoints);
-  this->Internal->header.SetMin(this->Internal->MinPt[0], this->Internal->MinPt[1], this->Internal->MinPt[2]);
-  this->Internal->header.SetMax(this->Internal->MaxPt[0], this->Internal->MaxPt[1], this->Internal->MaxPt[2]);
+  this->header.SetPointRecordsByReturnCount(0, this->npoints);
+  this->header.SetMin(this->MinPt[0], this->MinPt[1], this->MinPt[2]);
+  this->header.SetMax(this->MaxPt[0], this->MaxPt[1], this->MaxPt[2]);
 }
 
 //-----------------------------------------------------------------------------
@@ -321,28 +276,28 @@ void LASFileWriter::UpdateMetaData(vtkPolyData* data)
   for (vtkIdType n = 0; n < numPoints; ++n)
   {
     const double time = timestampData->GetComponent(n, 0) * 1e-6;
-    if (time >= this->Internal->MinTime && time <= this->Internal->MaxTime)
+    if (time >= this->MinTime && time <= this->MaxTime)
     {
       Eigen::Vector3d pos;
       points->GetPoint(n, pos.data());
-      pos += this->Internal->Origin;
+      pos += this->Origin;
 
-      if (this->Internal->OutProj)
+      if (this->OutProj)
       {
-        pos = ConvertGcs(pos, this->Internal->InProj, this->Internal->OutProj);
+        pos = ConvertGcs(pos, this->InProj, this->OutProj);
       }
 
-      this->Internal->npoints++;
+      this->npoints++;
 
       for (int i = 0; i < 3; ++i)
       {
-        if (pos[i] > this->Internal->MaxPt[i])
+        if (pos[i] > this->MaxPt[i])
         {
-          this->Internal->MaxPt[i] = pos[i];
+          this->MaxPt[i] = pos[i];
         }
-        if (pos[i] < this->Internal->MinPt[i])
+        if (pos[i] < this->MinPt[i])
         {
-          this->Internal->MinPt[i] = pos[i];
+          this->MinPt[i] = pos[i];
         }
       }
     }

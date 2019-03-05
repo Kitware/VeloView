@@ -33,6 +33,11 @@
 #define __vtkLASFileWriter_h
 
 #include <vtkSystemIncludes.h>
+#include <vtk_libproj4.h>
+
+#include <liblas/liblas.hpp>
+
+#include <Eigen/Dense>
 
 class vtkPolyData;
 
@@ -75,10 +80,24 @@ public:
   // be written
   void WriteFrame(vtkPolyData* data);
 
-protected:
-  class vtkInternal;
+private:
+  std::ofstream Stream;
+  liblas::Writer* Writer;
 
-  vtkInternal* Internal;
+  double MinTime;
+  double MaxTime;
+  Eigen::Vector3d Origin;
+
+  size_t npoints;
+  double MinPt[3];
+  double MaxPt[3];
+
+  liblas::Header header;
+  bool IsWriterInstanciated;
+
+  projPJ InProj;
+  projPJ OutProj;
+  int OutGcs;
 };
 
 #endif
