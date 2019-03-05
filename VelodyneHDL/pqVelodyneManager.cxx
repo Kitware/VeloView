@@ -261,7 +261,8 @@ void pqVelodyneManager::saveFramesToLAS(vtkLidarReader* reader, vtkPolyData* pos
 
   bool isLatLon = false;
 
-  LASFileWriter writer(qPrintable(filename));
+  LASFileWriter writer;
+  writer.Open(qPrintable(filename));
 
   // not sensor relative; it can be
   // relative registered data or
@@ -313,8 +314,8 @@ void pqVelodyneManager::saveFramesToLAS(vtkLidarReader* reader, vtkPolyData* pos
   std::cout << "gcs : " << gcs << std::endl;
 
   writer.SetPrecision(neTol, hTol);
-  writer.SetGeoConversion(in, out, utmZone, isLatLon);
-  writer.SetOrigin(gcs, easting, northing, height);
+  writer.SetGeoConversionUTM(utmZone, isLatLon);
+  writer.SetOrigin(easting, northing, height);
 
   QProgressDialog progress("Exporting LAS...", "Abort Export", startFrame,
     startFrame + (endFrame - startFrame) * 2, getMainWindow());

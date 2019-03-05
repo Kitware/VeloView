@@ -44,18 +44,26 @@ class vtkPolyData;
 class VTK_EXPORT LASFileWriter
 {
 public:
-  // The default LAS export scale is set to (1e-3, 1e-3, 1e-3)
-  // The LAS file is opened immediatly, will be closed when destructor is called
-  LASFileWriter(const char* filename);
+  LASFileWriter();
   ~LASFileWriter();
+
+  // Open a file for writting to it. Deleted if exising.
+  // Will be closed with Close() or when the destructor is called.
+  // The default LAS export scale is set to (1e-3, 1e-3, 1e-3)
+  int Open(const char* filename);
+
+  void Close();
 
   // If used, will restric to a time range the points written with WriteFrame
   void SetTimeRange(double min, double max);
 
-  // Must be called before any call to WriteFrame()
-  void SetOrigin(int gcs, double easting, double northing, double height);
-  void SetGeoConversion(int in, int out);
-  void SetGeoConversion(int in, int out, int utmZone, bool isLatLon);
+  // SetGeoConversion{EPSG,UTM}  and SetOrigin() must be called before any call
+  // to WriteFrame()
+  void SetGeoConversionEPSG(int inEPSG, int outEPSG);
+  // if useLatLonForOut then inOutSignedUTMZone is not used for the output
+  void SetGeoConversionUTM(int inOutSignedUTMZone, bool useLatLonForOut);
+  // SetOrigin() must be called after SetGeoConversion{EPSG,UTM}()
+  void SetOrigin(double easting, double northing, double height);
 
   // Must be called before any call to WriteFrame()
   void SetPrecision(double neTol, double hTol = 1e-3);
@@ -93,11 +101,11 @@ private:
   double MaxPt[3];
 
   liblas::Header header;
-  bool IsWriterInstanciated;
 
-  projPJ InProj;
-  projPJ OutProj;
-  int OutGcs;
+  projPJ InProj; // used to intepret the polyDatas points
+  projPJ OutProj; // used to project the points into coordinates used inside LAS
+  int OutGcsEPSG; // used to tell in the LAS header which projection is used
+  // Obviously, OutGcsEPSG should be coherent with OutProj
 };
 
 #endif
