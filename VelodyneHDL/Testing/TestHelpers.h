@@ -19,8 +19,8 @@
 #include <vector>
 
 class vtkErrorObserver;
-class vtkVelodyneHDLReader;
-class vtkVelodyneHDLStream;
+class vtkLidarReader;
+class vtkLidarStream;
 class vtkPolyData;
 
 // Represent every processing options as a bit. Options are in the following order:
@@ -48,20 +48,20 @@ std::string toString(double const (&d)[N])
   return toString(d, N);
 }
 
-vtkPolyData* GetCurrentFrame(vtkVelodyneHDLReader* HDLreader, int index);
+vtkPolyData* GetCurrentFrame(vtkLidarReader* HDLreader, int index);
 
-vtkPolyData* GetCurrentFrame(vtkVelodyneHDLStream* HDLsource, int index);
+vtkPolyData* GetCurrentFrame(vtkLidarStream* HDLsource, int index);
 
-int GetNumberOfTimesteps(vtkVelodyneHDLStream* HDLSource);
+int GetNumberOfTimesteps(vtkLidarStream* HDLSource);
 
 std::vector<std::string> GenerateFileList(const std::string& metaFileName);
 
 vtkPolyData* GetCurrentReference(const std::vector<std::string>& referenceFilesList, int index);
 
-void SetProcessingOptions(vtkVelodyneHDLReader* HDLReader, vvProcessingOptionsType currentOptions,
+void SetProcessingOptions(vtkLidarReader* HDLReader, vvProcessingOptionsType currentOptions,
   int numProcessingOptions);
 
-//void SetProcessingOptions(vtkVelodyneHDLStream* HDLSource, vvProcessingOptionsType currentOptions,
+//void SetProcessingOptions(vtkLidarStream* HDLSource, vvProcessingOptionsType currentOptions,
 //  int numProcessingOptions, std::string pcapFileName, std::string destinationIp, int dataPort);
 
 // Test functions
@@ -122,14 +122,14 @@ int TestRPMValues(vtkPolyData* currentFrame, vtkPolyData* currentReference);
  * @param HDLReader Current reader
  * @return 0 on success, 1 on failure
  */
-int TestProcessingOptions(vtkVelodyneHDLReader* HDLReader);
+int TestProcessingOptions(vtkLidarReader* HDLReader);
 
 /**
  * @brief TestProcessingOptions
  * @param HDLSource Current source
  * @return 0 on success, 1 on failure
  */
-int TestProcessingOptions(vtkVelodyneHDLStream* HDLSource, std::string pcapFileName,
+int TestProcessingOptions(vtkLidarStream* HDLSource, std::string pcapFileName,
   std::string destinationIp, int dataPort);
 
 #endif

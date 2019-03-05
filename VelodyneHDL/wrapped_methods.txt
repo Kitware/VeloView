@@ -13,4 +13,4 @@ bool isDisplayMoreSelectionsChecked();
 void setDisplayMoreSelectionsChecked(bool state);
 
 static void pqVelodyneManager::saveFramesToPCAP(vtkSMSourceProxy*, int, int, const QString&);
-static void pqVelodyneManager::saveFramesToLAS(vtkVelodyneHDLReader*, vtkPolyData*, int, int, const QString&, int);
+static void pqVelodyneManager::saveFramesToLAS(vtkLidarReader*, vtkPolyData*, int, int, const QString&, int);

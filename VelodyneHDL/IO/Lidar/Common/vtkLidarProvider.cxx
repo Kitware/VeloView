@@ -1,6 +1,7 @@
 #include "vtkLidarProvider.h"
-#include "LidarPacketInterpreter.h"
+#include "vtkLidarPacketInterpreter.h"
 #include "vtkVelodyneTransformInterpolator.h"
+#include "vtkVelodynePacketInterpreter.h"
 
 #include <vtkInformation.h>
 
@@ -24,9 +25,15 @@ int vtkLidarProvider::FillOutputPortInformation(int port, vtkInformation* info)
 }
 
 //-----------------------------------------------------------------------------
+std::string vtkLidarProvider::GetSensorInformation()
+{
+  return this->Interpreter->GetSensorInformation();
+}
+
+//-----------------------------------------------------------------------------
 void vtkLidarProvider::SetCalibrationFileName(const std::string &filename)
 {
-  if (filename == this->Interpreter->GetCalibrationFileName())
+  if (filename == this->CalibrationFileName)
   {
     return;
   }
@@ -47,85 +54,7 @@ void vtkLidarProvider::SetCalibrationFileName(const std::string &filename)
     vtkErrorMacro(<< errorMessage.str());
     return;
   }
-
-  this->Interpreter->LoadCalibration(filename);
-  this->Modified();
-}
-
-//-----------------------------------------------------------------------------
-int vtkLidarProvider::GetNumberOfChannels()
-{
-  return this->Interpreter->GetCalibrationReportedNumLasers();
-}
-
-//-----------------------------------------------------------------------------
-void vtkLidarProvider::SetLaserSelection(bool laserSelection[])
-{
-  this->Interpreter->SetLaserSelection(
-        std::vector<bool>(laserSelection, laserSelection + this->Interpreter->GetCalibrationReportedNumLasers()));
-  this->Modified();
-}
-
-//-----------------------------------------------------------------------------
-void vtkLidarProvider::GetLaserSelection(bool vtkNotUsed(laserSelection)[])
-{
-  // Bool vector is a particular data structure
-  // you can't access to the data
-  //this->Interpreter->GetLaserSelection().data();
-}
-
-//-----------------------------------------------------------------------------
-void vtkLidarProvider::SetCropMode(const int mode)
-{
-  this->Interpreter->SetCropMode(/*static_cast<CropModeEnum>(*/mode/*)*/);
-  this->Modified();
-}
-
-//-----------------------------------------------------------------------------
-void vtkLidarProvider::SetCropRegion(double region[6])
-{
-  this->Interpreter->SetCropRegion(region);
-  this->Modified();
-}
-
-//-----------------------------------------------------------------------------
-void vtkLidarProvider::SetCropRegion(const double v0, const double v1, const double v2, const double v3, const double v4, const double v5)
-{
-  double region[6];
-  region[0] = v0;
-  region[1] = v1;
-  region[2] = v2;
-  region[3] = v3;
-  region[4] = v4;
-  region[5] = v5;
-  this->SetCropRegion(region);
-  this->Modified();
-}
-
-//-----------------------------------------------------------------------------
-void vtkLidarProvider::SetSensorTransform(vtkTransform * t)
-{
-  if (t)
-  {
-    this->Interpreter->SensorTransform->SetMatrix(t->GetMatrix());
-  }
-  else
-  {
-    this->Interpreter->SensorTransform->Identity();
-  }
-  this->Modified();
-}
-
-//-----------------------------------------------------------------------------
-vtkVelodyneTransformInterpolator *vtkLidarProvider::GetInterpolator() const
-{
-  return this->Interpreter->Interp;
-}
-
-//-----------------------------------------------------------------------------
-void vtkLidarProvider::SetInterpolator(vtkVelodyneTransformInterpolator *interpolator)
-{
-  this->Interpreter->Interp = interpolator;
+  this->CalibrationFileName = filename;
   this->Modified();
 }
 
@@ -136,6 +65,16 @@ void vtkLidarProvider::SetDummyProperty(int)
 }
 
 //-----------------------------------------------------------------------------
+vtkMTimeType vtkLidarProvider::GetMTime()
+{
+  if (this->Interpreter)
+  {
+    return std::max(this->Superclass::GetMTime(), this->Interpreter->GetMTime());
+  }
+  return this->Superclass::GetMTime();
+}
+
+//-----------------------------------------------------------------------------
 vtkLidarProvider::vtkLidarProvider()
 {
   this->SetNumberOfInputPorts(0);
@@ -143,10 +82,21 @@ vtkLidarProvider::vtkLidarProvider()
 }
 
 //-----------------------------------------------------------------------------
-vtkLidarProvider::~vtkLidarProvider()
+int vtkLidarProvider::RequestInformation(vtkInformation *request,
+                                         vtkInformationVector **inputVector,
+                                         vtkInformationVector *outputVector)
 {
-  if (this->Interpreter)
+  if (!this->Interpreter)
   {
-    delete this->Interpreter;
+    vtkErrorMacro(<< "Please select an Packet Interpreter" << endl);
+  }
+
+  // load the calibration file only now to allow to set it before the interpreter.
+  if (this->Interpreter->GetCalibrationFileName() != this->CalibrationFileName)
+  {
+    this->Interpreter->LoadCalibration(this->CalibrationFileName);
   }
 }
+
+//-----------------------------------------------------------------------------
+vtkCxxSetObjectMacro(vtkLidarProvider, Interpreter, vtkLidarPacketInterpreter)

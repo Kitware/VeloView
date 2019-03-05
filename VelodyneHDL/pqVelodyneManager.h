@@ -19,7 +19,7 @@
 
 #include "vvConfigure.h"
 
-class vtkVelodyneHDLReader;
+class vtkLidarReader;
 class vvAppLogic;
 
 class pqPipelineSource;
@@ -70,7 +70,7 @@ public:
   static void saveFramesToPCAP(
     vtkSMSourceProxy* proxy, int startFrame, int endFrame, const QString& filename);
 
-  static void saveFramesToLAS(vtkVelodyneHDLReader* reader, vtkPolyData* position, int startFrame,
+  static void saveFramesToLAS(vtkLidarReader* reader, vtkPolyData* position, int startFrame,
     int endFrame, const QString& filename, int positionMode);
 
 public slots:

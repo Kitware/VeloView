@@ -7,27 +7,16 @@
         Read Velodyne HDL data files.
       </Documentation>
 
-      <StringVectorProperty
-          name="FileName"
-          animateable="0"
-          command="SetFileName"
-          number_of_elements="1">
-          <FileListDomain name="files"/>
-          <Documentation>
-            This property specifies the file name for the reader.
-          </Documentation>
-      </StringVectorProperty>
-
-      <IntVectorProperty
-          name="NumberOfTrailingFrames"
-          animateable="0"
-          command="SetNumberOfTrailingFrames"
-          default_values="0"
-          number_of_elements="1">
-        <Documentation>
-          Number of frames behind the current frame to show
-        </Documentation>
-      </IntVectorProperty>
+    <StringVectorProperty
+      name="FileName"
+      animateable="0"
+      command="SetFileName"
+      number_of_elements="1">
+      <FileListDomain name="files"/>
+      <Documentation>
+        This property specifies the file name for the reader.
+      </Documentation>
+    </StringVectorProperty>
 
     <DoubleVectorProperty
               name="TimestepValues"

@@ -35,7 +35,7 @@
 #include <deque>
 
 #include "vtkSmartPointer.h"
-#include "LidarPacketInterpreter.h"
+#include "vtkLidarPacketInterpreter.h"
 
 
 template<typename T>
@@ -67,7 +67,7 @@ public:
 
   void Enqueue(std::string* packet);
 
-  void SetInterpreter(LidarPacketInterpreter* inter) { this->Interpreter = inter;}
+  void SetInterpreter(vtkLidarPacketInterpreter* inter) { this->Interpreter = inter;}
 
   void UnloadData();
 
@@ -91,7 +91,7 @@ protected:
 
   std::deque<vtkSmartPointer<vtkPolyData> > Frames;
   std::deque<double> Timesteps;
-  LidarPacketInterpreter* Interpreter;
+  vtkLidarPacketInterpreter* Interpreter;
 
   boost::shared_ptr<SynchronizedQueue<std::string*> > Packets;
 

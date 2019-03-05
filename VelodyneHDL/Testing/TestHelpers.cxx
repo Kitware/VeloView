@@ -14,8 +14,9 @@
 
 #include "TestHelpers.h"
 
-#include "vtkVelodyneHDLReader.h"
-#include "vtkVelodyneHDLStream.h"
+#include "vtkLidarReader.h"
+#include "vtkLidarStream.h"
+#include "vtkVelodynePacketInterpreter.h"
 
 #include <vtkCommand.h>
 #include <vtkExecutive.h>
@@ -98,7 +99,7 @@ std::vector<int> parseOptions(vvProcessingOptionsType currentOptions, int numPro
 
 //-----------------------------------------------------------------------------
 void SetProcessingOptions(
-  vtkVelodyneHDLReader* HDLReader, vvProcessingOptionsType currentOptions, int numProcessingOptions)
+  vtkLidarReader* HDLReader, vvProcessingOptionsType currentOptions, int numProcessingOptions)
 {
   vtkNew<vtkErrorObserver> errorObserver;
 
@@ -110,14 +111,16 @@ void SetProcessingOptions(
 
   std::vector<int> parsedOptions = parseOptions(currentOptions, numProcessingOptions);
 
-  HDLReader->SetIgnoreEmptyFrames(parsedOptions[0]);
-  HDLReader->SetIntraFiringAdjust(parsedOptions[1]);
-  HDLReader->SetIgnoreZeroDistances(parsedOptions[2]);
-
-  if (HDLReader->getIsHDL64Data())
+  vtkVelodynePacketInterpreter* pk =
+      dynamic_cast<vtkVelodynePacketInterpreter*>(HDLReader->GetInterpreter());
+  if (!pk)
   {
-    HDLReader->SetIntensitiesCorrected(parsedOptions[3]);
+    return;
   }
+  pk->SetIgnoreEmptyFrames(parsedOptions[0]);
+  pk->SetUseIntraFiringAdjustment(parsedOptions[1]);
+  pk->SetIgnoreZeroDistances(parsedOptions[2]);
+  pk->SetWantIntensityCorrection(parsedOptions[3]);
 
   HDLReader->Update();
 
@@ -134,7 +137,7 @@ void SetProcessingOptions(
 }
 
 ////-----------------------------------------------------------------------------
-//void SetProcessingOptions(vtkVelodyneHDLStream* HDLSource, vvProcessingOptionsType currentOptions,
+//void SetProcessingOptions(vtkLidarStream* HDLSource, vvProcessingOptionsType currentOptions,
 //  int numProcessingOptions, std::string pcapFileName, std::string destinationIp, int dataPort)
 //{
 //  vtkNew<vtkErrorObserver> errorObserver;
@@ -196,7 +199,7 @@ void SetProcessingOptions(
 
 // Processing tests
 //-----------------------------------------------------------------------------
-int TestProcessingOptions(vtkVelodyneHDLReader* HDLReader)
+int TestProcessingOptions(vtkLidarReader* HDLReader)
 {
   // Total number of processing options
   int nbProcessingOptions = 4;
@@ -233,7 +236,7 @@ int TestProcessingOptions(vtkVelodyneHDLReader* HDLReader)
 }
 
 ////-----------------------------------------------------------------------------
-//int TestProcessingOptions(vtkVelodyneHDLStream* HDLSource, std::string pcapFileName,
+//int TestProcessingOptions(vtkLidarStream* HDLSource, std::string pcapFileName,
 //  std::string destinationIp, int dataPort)
 //{
 //  // Total number of processing options
@@ -303,7 +306,7 @@ std::string toString(const double* const d, const size_t N)
 }
 
 //-----------------------------------------------------------------------------
-int GetNumberOfTimesteps(vtkVelodyneHDLStream* HDLSource)
+int GetNumberOfTimesteps(vtkLidarStream* HDLSource)
 {
   HDLSource->UpdateInformation();
 
@@ -313,7 +316,7 @@ int GetNumberOfTimesteps(vtkVelodyneHDLStream* HDLSource)
 }
 
 //-----------------------------------------------------------------------------
-vtkPolyData* GetCurrentFrame(vtkVelodyneHDLReader* HDLreader, int index)
+vtkPolyData* GetCurrentFrame(vtkLidarReader* HDLreader, int index)
 {
   HDLreader->Open();
   vtkPolyData* currentFrame = HDLreader->GetFrame(index);
@@ -323,7 +326,7 @@ vtkPolyData* GetCurrentFrame(vtkVelodyneHDLReader* HDLreader, int index)
 }
 
 //-----------------------------------------------------------------------------
-vtkPolyData* GetCurrentFrame(vtkVelodyneHDLStream* HDLsource, int index)
+vtkPolyData* GetCurrentFrame(vtkLidarStream* HDLsource, int index)
 {
   HDLsource->UpdateInformation();
 

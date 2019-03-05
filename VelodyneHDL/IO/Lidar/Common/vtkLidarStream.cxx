@@ -46,6 +46,10 @@ public:
   std::unique_ptr<NetworkSource> Network;
 };
 
+
+//-----------------------------------------------------------------------------
+vtkStandardNewMacro(vtkLidarStream)
+
 //-----------------------------------------------------------------------------
 vtkLidarStream::vtkLidarStream()
 {
@@ -63,14 +67,6 @@ int vtkLidarStream::GetNumberOfFrames()
 {
   std::cerr << "this is not implemented yet" << std::endl;
   return 0;
-}
-
-//-----------------------------------------------------------------------------
-vtkSmartPointer<vtkPolyData> vtkLidarStream::GetFrame(int vtkNotUsed(frameNumber),
-                                                      int vtkNotUsed(wantedNumberOfTrailingFrames))
-{
-  std::cerr << "this is not implemented yet" << std::endl;
-  return nullptr;
 }
 
 //-----------------------------------------------------------------------------
@@ -186,6 +182,11 @@ bool vtkLidarStream::GetNeedsUpdate()
 //----------------------------------------------------------------------------
 void vtkLidarStream::Start()
 {
+  if (!this->Interpreter)
+  {
+    vtkErrorMacro(<< "Please set a Interpreter")
+  }
+  this->Internal->Consumer->SetInterpreter(this->Interpreter);
   if (this->Internal->OutputFileName.length())
   {
     this->Internal->Writer->Start(this->Internal->OutputFileName);
@@ -261,10 +262,11 @@ void vtkLidarStream::UnloadFrames()
 
 
 //-----------------------------------------------------------------------------
-int vtkLidarStream::RequestInformation(vtkInformation* vtkNotUsed(request),
-                                       vtkInformationVector** vtkNotUsed(inputVector),
+int vtkLidarStream::RequestInformation(vtkInformation* request,
+                                       vtkInformationVector** inputVector,
                                        vtkInformationVector* outputVector)
 {
+  this->Superclass::RequestInformation(request, inputVector, outputVector);
   vtkInformation* outInfo = outputVector->GetInformationObject(0);
 
   std::vector<double> timesteps = this->Internal->Consumer->GetTimesteps();
@@ -283,13 +285,6 @@ int vtkLidarStream::RequestInformation(vtkInformation* vtkNotUsed(request),
   outInfo->Set(vtkStreamingDemandDrivenPipeline::TIME_RANGE(), timeRange, 2);
 
   return 1;
-}
-
-//----------------------------------------------------------------------------
-void vtkLidarStream::SetInterpreter(LidarPacketInterpreter *interpreter)
-{
-  vtkLidarProvider::SetInterpreter(interpreter);
-  this->Internal->Consumer->SetInterpreter(interpreter);
 }
 
 //----------------------------------------------------------------------------

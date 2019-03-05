@@ -13,7 +13,8 @@
 // limitations under the License.
 
 #include "TestHelpers.h"
-#include "vtkVelodyneHDLReader.h"
+#include "vtkLidarReader.h"
+#include "vtkVelodynePacketInterpreter.h"
 
 #include <vtkNew.h>
 #include <vtkTimerLog.h>
@@ -53,7 +54,9 @@ int main(int argc, char* argv[])
   referenceFilesList = GenerateFileList(referenceFileName);
 
   // Generate a Velodyne HDL reader
-  vtkNew<vtkVelodyneHDLReader> HDLReader;
+  vtkNew<vtkLidarReader> HDLReader;
+  auto interp = vtkSmartPointer<vtkVelodynePacketInterpreter>::New();
+  HDLReader->SetInterpreter(interp);
   HDLReader->SetFileName(pcapFileName);
   HDLReader->SetCalibrationFileName(correctionFileName);
   HDLReader->Update();

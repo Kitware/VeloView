@@ -14,8 +14,9 @@
 // limitations under the License.
 
 #include "TestHelpers.h"
-#include "vtkVelodyneHDLStream.h"
+#include "vtkLidarStream.h"
 #include "vvPacketSender.h"
+#include <vtkVelodynePacketInterpreter.h>
 
 #include <vtkNew.h>
 #include <vtkTimerLog.h>
@@ -61,7 +62,9 @@ int main(int argc, char* argv[])
   const int dataPort = 2368;
 
   // Generate a Velodyne HDL source
-  vtkNew<vtkVelodyneHDLStream> HDLsource;
+  vtkNew<vtkLidarStream> HDLsource;
+  auto interp = vtkSmartPointer<vtkVelodynePacketInterpreter>::New();
+  HDLsource->SetInterpreter(interp);
   HDLsource->SetCalibrationFileName(correctionFileName);
   HDLsource->SetCacheSize(100);
   HDLsource->SetLIDARPort(dataPort);
@@ -94,7 +97,7 @@ int main(int argc, char* argv[])
   double elapsedTime = vtkTimerLog::GetUniversalTime() - startTime;
   std::cout << "Data sent in " << elapsedTime << "s" << std::endl;
 
-  if (correctionFileName == "" && HDLsource->GetIsCalibrated())
+  if (correctionFileName == "" && HDLsource->GetInterpreter()->GetIsCalibrated())
   {
     HDLsource->UnloadFrames();
 

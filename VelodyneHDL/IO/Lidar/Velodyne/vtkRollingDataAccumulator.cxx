@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #include "vtkRollingDataAccumulator.h"
-#include "vtkVelodyneHDLReader.h"
 
 vtkRollingDataAccumulator::vtkRollingDataAccumulator()
   : beginMarkerValuePair(0, '5', '#')

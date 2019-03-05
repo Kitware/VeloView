@@ -191,8 +191,8 @@ vvCropReturnsDialog::vvCropReturnsDialog(QWidget* p)
     this->Internal->sphericalRadioButton, SIGNAL(clicked()), this, SLOT(onSphericalToggled()));
   connect(this->Internal->CropGroupBox, SIGNAL(clicked()), this, SLOT(onCropGroupBoxToggled()));
 
-  // Without configuration file, the cartesian mode is set by default
-  this->Internal->cartesianRadioButton->setChecked(true);
+  // Without configuration file, no croping is perform
+  this->Internal->noneRadioButton->setChecked(true);
   this->Internal->restoreSettings();
 }
 

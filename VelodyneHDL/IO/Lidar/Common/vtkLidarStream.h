@@ -23,11 +23,10 @@ class vtkLidarStreamInternal;
 class VTK_EXPORT vtkLidarStream : public vtkLidarProvider
 {
 public:
+  static vtkLidarStream* New();
   vtkTypeMacro(vtkLidarStream, vtkLidarProvider)
 
   int GetNumberOfFrames() override;
-
-  vtkSmartPointer<vtkPolyData> GetFrame(int frameNumber, int wantedNumberOfTrailingFrames = 0) override;
 
   void Poll();
 
@@ -105,7 +104,6 @@ protected:
 
   virtual int RequestInformation(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
 
-  void SetInterpreter(LidarPacketInterpreter *interpreter);
 private:
   vtkLidarStreamInternal* Internal;
   vtkLidarStream(const vtkLidarStream&); // not implemented

@@ -32,7 +32,7 @@ import aboutDialog
 import planefit
 
 from PythonQt.paraview import vvCalibrationDialog, vvCropReturnsDialog, vvSelectFramesDialog
-from VelodyneHDLPluginPython import vtkVelodyneHDLReader
+from VelodyneHDLPluginPython import vtkVelodynePacketInterpreter
 
 _repCache = {}
 
@@ -402,7 +402,7 @@ def openSensor():
 
     initializeRPMText()
 
-    sensor = smp.VelodyneHDLStream(guiName='Data', CalibrationFile=calibrationFile, CacheSize=1)
+    sensor = smp.LidarStream(guiName='Data', CalibrationFile=calibrationFile, CacheSize=1)
     sensor.GetClientSideObject().SetLIDARPort(LIDARPort)
     sensor.GetClientSideObject().EnableGPSListening(True)
     sensor.GetClientSideObject().SetGPSPort(GPSPort)
@@ -411,10 +411,10 @@ def openSensor():
     sensor.GetClientSideObject().SetIsForwarding(isForwarding)
     sensor.GetClientSideObject().SetIsCrashAnalysing(calibration.isCrashAnalysing)
     sensor.GetClientSideObject().SetForwardedIpAddress(ipAddressForwarding)
-    sensor.GetClientSideObject().SetSensorTransform(sensorTransform)
-    sensor.GetClientSideObject().SetIgnoreZeroDistances(app.actions['actionIgnoreZeroDistances'].isChecked())
-    sensor.GetClientSideObject().SetIntraFiringAdjust(app.actions['actionIntraFiringAdjust'].isChecked())
-    sensor.GetClientSideObject().SetIgnoreEmptyFrames(app.actions['actionIgnoreEmptyFrames'].isChecked())
+    sensor.Interpreter.GetClientSideObject().SetSensorTransform(sensorTransform)
+    sensor.Interpreter.IgnoreZeroDistances = app.actions['actionIgnoreZeroDistances'].isChecked()
+    sensor.Interpreter.UseIntraFiringAdjustment = app.actions['actionIntraFiringAdjust'].isChecked()
+    sensor.Interpreter.IgnoreEmptyFrames = app.actions['actionIgnoreEmptyFrames'].isChecked()
     sensor.UpdatePipeline()
     sensor.Start()
 
@@ -450,7 +450,7 @@ def openSensor():
     app.actions['actionFastRenderer'].enabled = True
 
     #Auto adjustment of the grid size with the distance resolution
-    app.DistanceResolutionM = sensor.GetClientSideObject().GetDistanceResolutionM()
+    app.DistanceResolutionM = sensor.Interpreter.GetClientSideObject().GetDistanceResolutionM()
     app.actions['actionMeasurement_Grid'].setChecked(True)
     showMeasurementGrid()
 
@@ -496,12 +496,9 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
 
     # construct the reader, this calls UpdateInformation on the
     # reader which scans the pcap file and emits progress events
-    reader = smp.VelodyneHDLReader(guiName='Data',
-                                   FileName=filename,
-                                   CalibrationFile=calibrationFile,
-                                   ApplyTransform=(app.transformMode > 0),
-                                   NumberOfTrailingFrames=app.trailingFramesSpinBox.value,
-                                   FiringsSkip=app.trailingFramesSpinBox.value)
+    reader = smp.LidarReader(guiName='Data',
+                             FileName = filename,
+                             CalibrationFile = calibrationFile)
 
     app.reader = reader
     app.filenameLabel.setText('File: %s' % os.path.basename(filename))
@@ -513,11 +510,12 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
 
     restoreLaserSelectionDialog()
 
-    reader.GetClientSideObject().SetSensorTransform(sensorTransform)
+    reader.Interpreter.GetClientSideObject().SetSensorTransform(sensorTransform)
 
-    reader.GetClientSideObject().SetIgnoreZeroDistances(app.actions['actionIgnoreZeroDistances'].isChecked())
-    reader.GetClientSideObject().SetIntraFiringAdjust(app.actions['actionIntraFiringAdjust'].isChecked())
-    reader.GetClientSideObject().SetIgnoreEmptyFrames(app.actions['actionIgnoreEmptyFrames'].isChecked())
+    lidarPacketInterpreter = getLidarPacketInterpreter()
+    lidarPacketInterpreter.IgnoreZeroDistances = app.actions['actionIgnoreZeroDistances'].isChecked()
+    lidarPacketInterpreter.UseIntraFiringAdjustment = app.actions['actionIntraFiringAdjust'].isChecked()
+    lidarPacketInterpreter.IgnoreEmptyFrames = app.actions['actionIgnoreEmptyFrames'].isChecked()
 
     if SAMPLE_PROCESSING_MODE:
         processor = smp.ProcessingSample(reader)
@@ -561,8 +559,8 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
     smp.Show(tripod)
 
     if posreader.GetClientSideObject().GetOutput().GetNumberOfPoints():
-        reader.GetClientSideObject().SetInterpolator(
-            posreader.GetClientSideObject().GetInterpolator())
+        #reader.GetClientSideObject().SetInterpolator(
+        #    posreader.GetClientSideObject().GetInterpolator())
 
         smp.Render(app.overheadView)
         app.overheadView.ResetCamera()
@@ -629,7 +627,7 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
     app.actions['actionFastRenderer'].enabled = True
 
     #Auto adjustment of the grid size with the distance resolution
-    app.DistanceResolutionM = reader.GetClientSideObject().GetDistanceResolutionM()
+    app.DistanceResolutionM = reader.Interpreter.GetClientSideObject().GetDistanceResolutionM()
     app.grid = createGrid()
     app.actions['actionMeasurement_Grid'].setChecked(True)
     showMeasurementGrid()
@@ -1312,7 +1310,7 @@ def updatePosition():
             # current point cloud by interpolating using
             # the two nearest transform data available (slerp + linear)
             currentTransform = vtk.vtkTransform()
-            getReader().GetClientSideObject().GetInterpolator().InterpolateTransform(time, currentTransform)
+            #getReader().GetClientSideObject().GetInterpolator().InterpolateTransform(time, currentTransform)
 
             position = [0.0] * 3
             currentTransform.TransformPoint(position, position)
@@ -1358,6 +1356,12 @@ def getSensor():
 def getLidar():
     return getReader() or getSensor()
 
+def getLidarPacketInterpreter():
+    lidar = getLidar()
+    if lidar:
+      return lidar.Interpreter
+    return None
+
 def getPosition():
     return getattr(app, 'position', (None, None, None))[0]
 
@@ -1394,14 +1398,14 @@ def onCropReturns(show = True):
     firstCorner = QtGui.QVector3D()
     secondCorner = QtGui.QVector3D()
 
-    lidar = getLidar()
+    lidarInterpreter = getLidarPacketInterpreter()
 
     # Retrieve current values to fill the UI
-    if lidar:
-        cropEnabled = lidar.CropReturns
-        cropOutside = lidar.CropOutside
-        firstCorner = QtGui.QVector3D(lidar.CropRegion[0], lidar.CropRegion[2], lidar.CropRegion[4])
-        secondCorner = QtGui.QVector3D(lidar.CropRegion[1], lidar.CropRegion[3], lidar.CropRegion[5])
+    if lidarInterpreter:
+        cropEnabled = lidarInterpreter.CropMode != 'None'
+        cropOutside = lidarInterpreter.CropOutside
+        firstCorner = QtGui.QVector3D(lidarInterpreter.CropRegion[0], lidarInterpreter.CropRegion[2], lidarInterpreter.CropRegion[4])
+        secondCorner = QtGui.QVector3D(lidarInterpreter.CropRegion[1], lidarInterpreter.CropRegion[3], lidarInterpreter.CropRegion[5])
 
     #show the dialog box
     if show:
@@ -1419,13 +1423,13 @@ def onCropReturns(show = True):
         if not dialog.exec_():
             return
 
-    if lidar:
-        lidar.CropReturns = dialog.croppingEnabled
-        lidar.CropOutside = dialog.cropOutside
-        lidar.GetClientSideObject().SetCropMode(dialog.GetCropMode())
+    if lidarInterpreter:
+        lidarInterpreter.CropOutside = dialog.cropOutside
+        dialogCropMode = ['None', 'Cartesian', 'Spherical']
+        lidarInterpreter.CropMode = dialogCropMode[dialog.GetCropMode()]
         p1 = dialog.firstCorner
         p2 = dialog.secondCorner
-        lidar.CropRegion = [p1.x(), p2.x(), p1.y(), p2.y(), p1.z(), p2.z()]
+        lidarInterpreter.CropRegion = [p1.x(), p2.x(), p1.y(), p2.y(), p1.z(), p2.z()]
         if show:
             smp.Render()
 
@@ -1602,10 +1606,9 @@ def onTrailingFramesChanged(numFrames):
         smp.Render(getSpreadSheetViewProxy())
 
 def onFiringsSkipChanged(pr):
-    hdlSource = app.sensor or app.reader
-
-    if hdlSource is not None:
-        hdlSource.FiringsSkip = pr
+    lidarPacketInterpreter = getLidarPacketInterpreter()
+    if lidarPacketInterpreter:
+        lidarPacketInterpreter.FiringsSkip = pr
         smp.Render()
         smp.Render(getSpreadSheetViewProxy())
 
@@ -1647,10 +1650,10 @@ def onLaserSelection(show = True):
     maxIntensity = [0] * nchannels
 
     lidar = getLidar()
-
-    if lidar:
-        lidar.GetClientSideObject().GetLaserSelection(oldmask)
-        lidar.GetClientSideObject().GetLaserCorrections(verticalCorrection,
+    lidarPacketInterpreter = getLidarPacketInterpreter()
+    if lidarPacketInterpreter:
+        lidarPacketInterpreter.GetClientSideObject().GetLaserSelection(oldmask)
+        lidarPacketInterpreter.GetClientSideObject().GetLaserCorrections(verticalCorrection,
             rotationalCorrection,
             distanceCorrection,
             distanceCorrectionX,
@@ -1661,7 +1664,7 @@ def onLaserSelection(show = True):
             focalSlope,
             minIntensity,
             maxIntensity)
-        nchannels = lidar.GetPropertyValue('NumberOfChannels')
+        nchannels = lidarPacketInterpreter.GetClientSideObject().GetNumberOfChannels()
 
     # Initializing the laser selection dialog
     if app.laserSelectionDialog == None:
@@ -1695,8 +1698,9 @@ def onLaserSelectionChanged():
     lidar = getLidar()
 
     mask = dialog.getLaserSelectionSelector()
-    if lidar:
-        lidar.GetClientSideObject().SetLaserSelection(mask)
+    LidarInterpreter = getLidarPacketInterpreter()
+    if LidarInterpreter:
+        LidarInterpreter.GetClientSideObject().SetLaserSelection(mask)
         reloadCurrentFrame()
 
 
@@ -1813,12 +1817,13 @@ def toggleSelectDualReturn():
 
     #Get the active source
     source = smp.GetActiveSource()
+    lidarPacketInterpreter = getLidarPacketInterpreter()
 
     #If no data are available
     if not source :
         return
 
-    if not source.GetClientSideObject().GetHasDualReturn() :
+    if not lidarPacketInterpreter.GetHasDualReturn() :
         QtGui.QMessageBox.warning(getMainWindow(), 'Dual returns not found',
         "The functionality only works with dual returns, and the current"
         "frame has no dual returns.")
@@ -1850,8 +1855,8 @@ def toggleSelectDualReturn():
                 array[dualId] = 1
 
         #Add the temporary array to the source
-        source.GetClientSideObject().SetSelectedPointsWithDualReturn(array,nPoints)
-        source.GetClientSideObject().SetShouldAddDualReturnArray(True)
+        getLidarPacketInterpreter().SetSelectedPointsWithDualReturn(array,nPoints)
+        getLidarPacketInterpreter().SetShouldAddDualReturnArray(True)
         reloadCurrentFrame()
 
         query = 'dualReturn_of_selectedPoints>0'
@@ -1911,23 +1916,23 @@ def setFilterToDual():
     setFilterTo(0)
 
 def setFilterToDistanceNear():
-    setFilterTo(vtkVelodyneHDLReader.DUAL_DISTANCE_NEAR)
+    setFilterTo(vtkVelodynePacketInterpreter.DUAL_DISTANCE_NEAR)
 
 def setFilterToDistanceFar():
-    setFilterTo(vtkVelodyneHDLReader.DUAL_DISTANCE_FAR)
+    setFilterTo(vtkVelodynePacketInterpreter.DUAL_DISTANCE_FAR)
 
 def setFilterToIntensityHigh():
-    setFilterTo(vtkVelodyneHDLReader.DUAL_INTENSITY_HIGH)
+    setFilterTo(vtkVelodynePacketInterpreter.DUAL_INTENSITY_HIGH)
 
 def setFilterToIntensityLow():
-    setFilterTo(vtkVelodyneHDLReader.DUAL_INTENSITY_LOW)
+    setFilterTo(vtkVelodynePacketInterpreter.DUAL_INTENSITY_LOW)
 
 def setFilterTo(mask):
 
     lidar = getLidar()
     if lidar:
-        if lidar.GetClientSideObject().GetHasDualReturn():
-            lidar.DualReturnFilter = mask
+        if getLidarPacketInterpreter().GetClientSideObject().GetHasDualReturn():
+            getLidarPacketInterpreter().SetDualReturnFilter(mask)
             smp.Render()
             smp.Render(getSpreadSheetViewProxy())
         else:
@@ -1982,11 +1987,9 @@ def fastRendererChanged():
     # todo
 
 def intensitiesCorrectedChanged():
-    lidar = getLidar()
-    if lidar:
-        lidar.GetClientSideObject().SetIntensitiesCorrected(app.actions['actionCorrectIntensityValues'].isChecked())
-    # Workaround to force the refresh for all the views
-    # todo
+    lidarInterpreter = getLidarPacketInterpreter()
+    if lidarInterpreter:
+        lidarInterpreter.CorrectIntensity = app.actions['actionCorrectIntensityValues'].isChecked()
 
 def onToogleAdvancedGUI(updateSettings = True):
   """ Switch the GUI between advanced and classic mode"""
@@ -2190,9 +2193,9 @@ def onIgnoreZeroDistances():
     getPVSettings().setValue('VelodyneHDLPlugin/IgnoreZeroDistances', IgnoreZeroDistances)
 
     # Apply it to the current source if any
-    lidar = getLidar()
-    if lidar:
-        lidar.GetClientSideObject().SetIgnoreZeroDistances(IgnoreZeroDistances)
+    lidarInterpreter = getLidarPacketInterpreter()
+    if lidarInterpreter:
+        lidarInterpreter.IgnoreZeroDistances = IgnoreZeroDistances
         reloadCurrentFrame()
 
 
@@ -2204,10 +2207,9 @@ def onIntraFiringAdjust():
     getPVSettings().setValue('VelodyneHDLPlugin/IntraFiringAdjust', intraFiringAdjust)
 
     # Apply it to the current source if any
-    lidar = getLidar()
-
-    if lidar:
-        lidar.GetClientSideObject().SetIntraFiringAdjust(intraFiringAdjust)
+    lidarInterpreter = getLidarPacketInterpreter()
+    if lidarInterpreter:
+        lidarInterpreter.UseIntraFiringAdjustment = intraFiringAdjust
         reloadCurrentFrame()
 
 
@@ -2219,10 +2221,9 @@ def onIgnoreEmptyFrames():
     getPVSettings().setValue('VelodyneHDLPlugin/IgnoreEmptyFrames', ignoreEmptyFrames)
 
     # Apply it to the current source if any
-    lidar = getLidar()
-
-    if lidar:
-        lidar.GetClientSideObject().SetIgnoreEmptyFrames(ignoreEmptyFrames)
+    lidarInterpreter = getLidarPacketInterpreter()
+    if lidarInterpreter:
+        lidarInterpreter.IgnoreEmptyFrames = ignoreEmptyFrames
         reloadCurrentFrame()
 
 
