@@ -37,6 +37,9 @@ target_link_libraries(TestRansacPlaneModel VelodyneHDLPlugin)
 custom_add_executable(TestVelodynePPSIdentification TestVelodynePPSIdentification.cxx)
 target_link_libraries(TestVelodynePPSIdentification VelodyneHDLPlugin)
 
+custom_add_executable(TestVtkEigenTools TestVtkEigenTools.cxx TestHelpers.cxx)
+target_link_libraries(TestVtkEigenTools VelodyneHDLPlugin)
+
 if (ENABLE_PCL AND ENABLE_Ceres)
   add_executable(TestGeometricCalibration-MM TestGeometricCalibration-MM.cxx)
   target_link_libraries(TestGeometricCalibration-MM VelodyneHDLPlugin)
@@ -194,4 +197,8 @@ add_test(TestTemporalTransformsReaderWriter
   ${INSTALL_LOCAL_DIR}/TestTemporalTransformsReaderWriter
   ${CMAKE_SOURCE_DIR}/TestData/trajectories/mm04/orbslam2-no-loop-closure.csv
   ${CMAKE_SOURCE_DIR}/TestData/trajectories/mm04/orbslam2-no-loop-closure.csv.temporary
+)
+
+add_test(TestVtkEigenTools
+  ${INSTALL_LOCAL_DIR}/TestVtkEigenTools
 )

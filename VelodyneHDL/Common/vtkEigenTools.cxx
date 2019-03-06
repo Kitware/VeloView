@@ -105,9 +105,32 @@ Eigen::Matrix3d RollPitchYawInDegreeToMatrix(double roll, double pitch, double y
 //-----------------------------------------------------------------------------
 double SignedAngle(const Eigen::Vector3d& v1, const Eigen::Vector3d& v2)
 {
-  double sinus = v1.cross(v2).norm();
-  double cosinus = v1.dot(v2);
-  return std::atan2(sinus, cosinus);
+  // if one of the vector is the null vector return 0
+  if ((v1.norm() < std::numeric_limits<double>::epsilon()) ||
+      (v2.norm() < std::numeric_limits<double>::epsilon()))
+  {
+    return 0.0;
+  }
+
+  // Check if the vectors are colinear
+  Eigen::Vector3d orthogonal = v1.cross(v2);
+  if (orthogonal.norm() < std::numeric_limits<double>::epsilon())
+  {
+    double lambda = v1.sum() / v2.sum();
+    if (lambda > 0)
+    {
+      return 0.0;
+    }
+    if (lambda < 0)
+    {
+      return vtkMath::Pi();
+    }
+  }
+  orthogonal.normalize();
+
+  double scaleCosinusAngle = v1.dot(v2);
+  double scaleSinusAngle = (v1.cross(v2)).dot(orthogonal);
+  return std::atan2(scaleSinusAngle, scaleCosinusAngle);
 }
 
 //-----------------------------------------------------------------------------

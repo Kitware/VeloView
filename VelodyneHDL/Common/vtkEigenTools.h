@@ -96,12 +96,12 @@ Eigen::Matrix3d VelodyneHDLPlugin_EXPORT RollPitchYawInDegreeToMatrix(double rol
   * @param v1 first vector
   * @param v2 second vector
   */
-double SignedAngle(const Eigen::Vector3d& v1, const Eigen::Vector3d& v2);
+double VelodyneHDLPlugin_EXPORT SignedAngle(const Eigen::Vector3d& v1, const Eigen::Vector3d& v2);
 
 /**
   * @brief IsMatrixFinite Check if all the coefficients of a matrix are finite
   * @param M matrix to checkr
   */
-bool IsMatrixFinite(const Eigen::Matrix3d& M);
+bool VelodyneHDLPlugin_EXPORT IsMatrixFinite(const Eigen::Matrix3d& M);
 
 #endif // VTK_EIGEN_TOOLS_H
