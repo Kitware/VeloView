@@ -73,10 +73,6 @@ class AppLogic(object):
         self.position = None
         self.sensor = None
 
-        self.fps = [0,0]
-
-        self.text = None
-
         self.laserSelectionDialog = None
 
         self.gridProperties = None
@@ -396,8 +392,6 @@ def openSensor():
     close()
     app.grid = createGrid()
 
-    initializeRPMText()
-
     sensor = smp.LidarStream(guiName='Data', CalibrationFile=calibrationFile, CacheSize=1)
     sensor.GetClientSideObject().SetLIDARPort(LIDARPort)
     sensor.GetClientSideObject().EnableGPSListening(True)
@@ -573,8 +567,6 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
     smp.SetActiveView(app.mainView)
 
     colorByIntensity(app.trailingFrame)
-
-    initializeRPMText()
 
     showSourceInSpreadSheet(reader)
 
@@ -1135,8 +1127,6 @@ def close():
     app.reader = None
     app.sensor = None
     app.trailingFrame = None
-    if app.text:
-        smp.Delete(app.text)
     smp.Delete(app.grid)
 
     smp.HideUnusedScalarBars()
@@ -1266,7 +1256,7 @@ def unloadData():
     _repCache.clear()
 
     for k, src in smp.GetSources().iteritems():
-        if src != app.grid:
+        if src != app.grid and src != smp.FindSource("RPM"):
             smp.Delete(src)
 
     app.reader = None
@@ -1487,8 +1477,7 @@ def start():
     hideColorByComponent()
     restoreNativeFileDialogsAction()
     updateRecentFiles()
-
-    initializeRPMText()
+    createRPMBehaviour()
 
 
 def findQObjectByName(widgets, name):
@@ -1723,13 +1712,14 @@ def toggleProjectionType():
 
     smp.Render()
 
-
 def toggleRPM():
-
-    r = smp.GetRepresentation(app.text)
-    r.Visibility = app.actions['actionShowRPM'].isChecked()
-
-    smp.Render()
+    rpm = smp.FindSource("RPM")
+    if rpm:
+        if app.actions['actionShowRPM'].isChecked():
+            smp.Show(rpm)
+        else:
+            smp.Hide(rpm)
+        smp.Render()
 
 
 def toggleSelectDualReturn():
@@ -2082,40 +2072,34 @@ def setupActions():
     app.GeolocationToolbar = getMainWindow().findChild('QToolBar','geolocationToolbar')
 
 
-def showRPM():
+def createRPMBehaviour():
+    # create and customize a label to display the rpm
+    rpm = smp.Text(guiName="RPM", Text="No RPM")
+    representation = smp.GetRepresentation(rpm)
+    representation.FontSize = 8
+    representation.Color = [1,1,0]
+    # create an python animation cue to update the rpm value in the label
+    PythonAnimationCue1 = smp.PythonAnimationCue()
+    PythonAnimationCue1.Script= """
+import paraview.simple as smp
+def start_cue(self):
+    pass
 
-    rpmArray = None
-    lidar = getLidar()
-    if lidar:
-        rpmArray = lidar.GetClientSideObject().GetOutput().GetFieldData().GetArray('RotationPerMinute')
-
-    if rpmArray:
-        rpm = rpmArray.GetTuple1(0)
-        # try to convert the RPM into a str
-        # If the RPM is NaN, Infinity, ... catch
-        # it and display ??? RPM
-        try:
-            app.text.Text = str(int(rpm)) + " RPM"
-        except :
-            app.text.Text = "??? RPM"
+def tick(self):
+    rpm = smp.FindSource("RPM")
+    lidar = smp.FindSource("Data")
+    if (lidar):
+        value = int(lidar.Interpreter.GetClientSideObject().GetFrequency())
+        rpm.Text = str(value) + " RPM"
     else:
-        app.text.Text = "No RPM"
+        rpm.Text = "No RPM"
 
-    # Set text style
-
-    textRepresentation = smp.GetRepresentation(app.text)
-    textRepresentation.Visibility = app.actions['actionShowRPM'].isChecked()
-
-    smp.Render()
-
-
-def initializeRPMText():
-    app.text = smp.Text()
-    app.text.Text = "No RPM"
-    textRepresentation = smp.GetRepresentation(app.text)
-    textRepresentation.Visibility = app.actions['actionShowRPM'].isChecked()
-    textRepresentation.FontSize = 8
-    textRepresentation.Color = [1,1,0]
+def end_cue(self):
+    pass
+"""
+    smp.GetAnimationScene().Cues.append(PythonAnimationCue1)
+    # force to be consistant with the UI
+    toggleRPM()
 
 
 def onIgnoreZeroDistances():
