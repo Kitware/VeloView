@@ -47,6 +47,54 @@ int TestSignedAngle()
 }
 
 //-----------------------------------------------------------------------------
+int TestGetSphericalCoordinates()
+{
+  int nbrErrors = 0;
+  int Ntests = 250;
+
+  for (int testIndex = 0; testIndex < Ntests; ++testIndex)
+  {
+    // Generate random phi, theta
+    double theta = 2.0 * vtkMath::Pi() * (static_cast<double>(std::rand()) / static_cast<double>(RAND_MAX) - 0.5);
+    double phi = vtkMath::Pi() / 2.0 * static_cast<double>(std::rand()) / static_cast<double>(RAND_MAX);
+    // Generate random radius
+    double r = 100.0 * static_cast<double>(std::rand()) / static_cast<double>(RAND_MAX);
+
+    Eigen::Vector3d Xref1(r * std::cos(theta) * std::sin(phi),
+                          r * std::sin(theta) * std::sin(phi),
+                          r * std::cos(phi));
+
+    Eigen::Vector3d spheCoord;
+    double testMode = static_cast<double>(std::rand()) / static_cast<double>(RAND_MAX);
+    if (testMode > 0.5)
+    {
+      spheCoord = GetSphericalCoordinates(Xref1);
+    }
+    else
+    {
+      // Generate a random reference frame change
+      Eigen::Vector3d rotationAxis(2.0 * (static_cast<double>(std::rand()) / static_cast<double>(RAND_MAX) - 0.5),
+                                   2.0 * (static_cast<double>(std::rand()) / static_cast<double>(RAND_MAX) - 0.5),
+                                   2.0 * (static_cast<double>(std::rand()) / static_cast<double>(RAND_MAX) - 0.5));
+      rotationAxis.normalize();
+      double angle = 2.0 * vtkMath::Pi() * (static_cast<double>(std::rand()) / static_cast<double>(RAND_MAX) - 0.5);
+      Eigen::Matrix3d R(Eigen::AngleAxisd(angle, rotationAxis));
+      Eigen::Vector3d T(100.0 * (static_cast<double>(std::rand()) / static_cast<double>(RAND_MAX) - 0.5),
+                        100.0 * (static_cast<double>(std::rand()) / static_cast<double>(RAND_MAX) - 0.5),
+                        100.0 * (static_cast<double>(std::rand()) / static_cast<double>(RAND_MAX) - 0.5));
+      Eigen::Vector3d Xref2 = R * Xref1 + T;
+      spheCoord = GetSphericalCoordinates(Xref2, R, T);
+    }
+
+    if ((Eigen::Vector3d(r, theta, phi) - spheCoord).norm() > std::numeric_limits<float>::epsilon())
+    {
+      nbrErrors++;
+    }
+  }
+  return nbrErrors;
+}
+
+//-----------------------------------------------------------------------------
 int main()
 {
   // initialize the random generator to a fixed seed
@@ -55,5 +103,6 @@ int main()
 
   int nbrErrors = 0;
   nbrErrors += TestSignedAngle();
+  nbrErrors += TestGetSphericalCoordinates();
   return nbrErrors;
 }
