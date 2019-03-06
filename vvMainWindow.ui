@@ -236,6 +236,7 @@
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
+   <addaction name="actionShowPosition"/>
   </widget>
   <widget class="QDockWidget" name="colorMapEditorDock">
    <property name="windowTitle">
@@ -956,6 +957,21 @@
    </property>
    <property name="text">
     <string>Advance Feature</string>
+   </property>
+  </action>
+  <action name="actionShowPosition">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="vvResources.qrc">
+     <normaloff>:/vvResources/Icons/map.png</normaloff>:/vvResources/Icons/map.png</iconset>
+   </property>
+   <property name="text">
+    <string>actionShowPosition</string>
+   </property>
+   <property name="toolTip">
+    <string>Show the GPS Track</string>
    </property>
   </action>
  </widget>

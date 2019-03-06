@@ -69,7 +69,7 @@ class AppLogic(object):
         self.relativeTransform = False
 
         self.reader = None
-        self.position = (None, None, None)
+        self.position = None
         self.sensor = None
 
         self.fps = [0,0]
@@ -545,18 +545,8 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
         # console in the cases where the timeshift if computed
         app.positionPacketInfoLabel.setText(posreader.GetClientSideObject().GetTimeSyncInfo())
 
-    # Create a tripod glyph
-    tripod = smp.Axes()
-    tripod.ScaleFactor = 10.0
-    smp.Show(tripod)
-
     if posreader.GetClientSideObject().GetOutput().GetNumberOfPoints():
-        #reader.GetClientSideObject().SetInterpolator(
-        #    posreader.GetClientSideObject().GetInterpolator())
-
         trange = posreader.GetPointDataInformation().GetArray('time').GetRange()
-
-        # By construction time zero is at position 0,0,0
 
         # Setup scalar bar
         rep = smp.GetDisplayProperties(posreader)
@@ -568,8 +558,9 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
                                                      ScalarRangeInitialized=1.0)
         sb = smp.CreateScalarBar(LookupTable=rep.LookupTable, Title='Time')
         sb.Orientation = 'Horizontal'
-        #sb.Position, sb.Position2 = [.1, .05], [.8, .02]
-        app.position = (posreader, None, tripod)
+        app.position = posreader
+        if not app.actions['actionShowPosition'].isChecked():
+            smp.Hide(app.position)
     else:
         if positionFilename is not None:
             QtGui.QMessageBox.warning(getMainWindow(), 'Georeferencing data invalid',
@@ -1282,7 +1273,7 @@ def unloadData():
             smp.Delete(src)
 
     app.reader = None
-    app.position = (None, None, None)
+    app.position = None
     app.sensor = None
 
     clearSpreadSheetView()
@@ -1303,10 +1294,7 @@ def getLidarPacketInterpreter():
     return None
 
 def getPosition():
-    return getattr(app, 'position', (None, None, None))[0]
-
-def getGlyph():
-    return getattr(app, 'position', (None, None, None))[2]
+    return getattr(app, 'position', None)
 
 def getLaserSelectionDialog():
     return getattr(app, 'laserSelectionDialog', None)
@@ -1948,6 +1936,16 @@ def onToogleAdvancedGUI(updateSettings = True):
     newValue = int(not int(getPVSettings().value("VelodyneHDLPlugin/AdvanceFeature/Enable", 0)))
     getPVSettings().setValue("VelodyneHDLPlugin/AdvanceFeature/Enable", newValue)
 
+def switchVisibility(Proxy):
+    """ Invert the Proxy visibility int the current view """
+    ProxyRep = smp.GetRepresentation(Proxy)
+    ProxyRep.Visibility = not ProxyRep.Visibility
+
+def ShowPosition():
+    if app.position:
+        switchVisibility(app.position)
+        smp.Render()
+
 
 def setupActions():
 
@@ -1992,6 +1990,7 @@ def setupActions():
 
     app.actions['actionToggleProjection'].connect('triggered()', toggleProjectionType)
     app.actions['actionMeasure'].connect('triggered()', toggleRulerContext)
+    app.actions['actionShowPosition'].connect('triggered()', ShowPosition)
 
     app.actions['actionDualReturnModeDual'].connect('triggered()', setFilterToDual)
     app.actions['actionDualReturnDistanceNear'].connect('triggered()', setFilterToDistanceNear)
