@@ -69,6 +69,9 @@ public:
    */
   virtual void SaveFrame(int startFrame, int endFrame, const std::string& filename);
 
+  vtkGetMacro(ShowFirstAndLastFrame, bool)
+  vtkSetMacro(ShowFirstAndLastFrame, bool)
+
 protected:
   vtkLidarReader() = default;
   ~vtkLidarReader() = default;
@@ -84,6 +87,9 @@ protected:
 
   //! frame index which enable to jump quickly to a given frame
   std::vector<FramePosition> FilePositions;
+
+  //! Show/Hide the first and last frame that most of the time are partial frames
+  bool ShowFirstAndLastFrame = false;
 
   //! libpcap wrapped reader which enable to get the raw pcap packet from the pcap file
   vtkPacketFileReader* Reader = nullptr;

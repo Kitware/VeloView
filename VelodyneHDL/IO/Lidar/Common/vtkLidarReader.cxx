@@ -28,6 +28,7 @@ int vtkLidarReader::ReadFrameInformation()
   this->FilePositions.clear();
   fpos_t lastFilePosition;
   reader.GetFilePosition(&lastFilePosition);
+  bool firstIteration = true;
 
   while (reader.NextPacket(data, dataLength, timeSinceStart))
   {
@@ -44,16 +45,24 @@ int vtkLidarReader::ReadFrameInformation()
       continue;
     }
 
+    // add an index for the first Lidar packet
+    if (firstIteration)
+    {
+      // it is possible that the first packet contains 2 frames
+      // (end and start of one), and as we rely on the packet header time
+      // this 2 frames will have the same timestep. So to avoid that we
+      // artificatially move the first timeStep back by one.
+      FramePosition newPosition(lastFilePosition, 0, timeSinceStart-1);
+      this->FilePositions.push_back(newPosition);
+      firstIteration = false;
+    }
+
+    // check if the packet content indicate a new frame should be created
+    this->Interpreter->PreProcessPacket(data, dataLength, isNewFrame, framePositionInPacket);
+    if (isNewFrame)
     {
       FramePosition newPosition(lastFilePosition,framePositionInPacket, timeSinceStart);
       this->FilePositions.push_back(newPosition);
-      // check if the packet content indicate a new frame should be created
-      this->Interpreter->PreProcessPacket(data, dataLength, isNewFrame, framePositionInPacket);
-      if (isNewFrame)
-      {
-        FramePosition newPosition(lastFilePosition,framePositionInPacket, timeSinceStart);
-        this->FilePositions.push_back(newPosition);
-      }
     }
 
     reader.GetFilePosition(&lastFilePosition);
@@ -79,8 +88,21 @@ void vtkLidarReader::SetTimestepInformation(vtkInformation *info)
 
   if (this->FilePositions.size())
   {
-    double timeRange[2] = { timesteps.front(), timesteps.back() };
-    info->Set(vtkStreamingDemandDrivenPipeline::TIME_STEPS(), &timesteps.front(), timesteps.size());
+    double* firstTimestepPointer = &timesteps.front();
+    double* lastTimestepPointer = &timesteps.back();
+    // Remove the first and last frame timestep
+    // in case you have less that 3 timstep we will still show the partial
+    // frame to avoid showing nothing
+    if (!this->ShowFirstAndLastFrame && numberOfTimesteps >= 3)
+    {
+      firstTimestepPointer++;
+      lastTimestepPointer--;
+      numberOfTimesteps -= 2;
+
+    }
+    double timeRange[2] = { *firstTimestepPointer, *lastTimestepPointer };
+    // In order to avoid to display
+    info->Set(vtkStreamingDemandDrivenPipeline::TIME_STEPS(), firstTimestepPointer, numberOfTimesteps);
     info->Set(vtkStreamingDemandDrivenPipeline::TIME_RANGE(), timeRange, 2);
   }
   else
