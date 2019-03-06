@@ -311,7 +311,7 @@
   </action>
   <action name="actionOpenPcap">
    <property name="icon">
-    <iconset>
+    <iconset resource="VelodyneHDL/Ui/images/resources.qrc">
      <normaloff>:/VelodyneHDLPlugin/WiresharkDoc-128.png</normaloff>:/VelodyneHDLPlugin/WiresharkDoc-128.png</iconset>
    </property>
    <property name="text">
@@ -374,7 +374,7 @@
   </action>
   <action name="actionOpen_Sensor_Stream">
    <property name="icon">
-    <iconset>
+    <iconset resource="VelodyneHDL/Ui/images/resources.qrc">
      <normaloff>:/VelodyneHDLPlugin/velodyne_hdl.png</normaloff>:/VelodyneHDLPlugin/velodyne_hdl.png</iconset>
    </property>
    <property name="text">
@@ -383,7 +383,7 @@
   </action>
   <action name="actionChoose_Calibration_File">
    <property name="icon">
-    <iconset>
+    <iconset resource="VelodyneHDL/Ui/images/resources.qrc">
      <normaloff>:/VelodyneHDLPlugin/calibrate.png</normaloff>:/VelodyneHDLPlugin/calibrate.png</iconset>
    </property>
    <property name="text">
@@ -446,7 +446,7 @@
   </action>
   <action name="actionSaveCSV">
    <property name="icon">
-    <iconset>
+    <iconset resource="VelodyneHDL/Ui/images/resources.qrc">
      <normaloff>:/VelodyneHDLPlugin/csv.png</normaloff>:/VelodyneHDLPlugin/csv.png</iconset>
    </property>
    <property name="text">
@@ -455,7 +455,7 @@
   </action>
   <action name="actionExport_To_KiwiViewer">
    <property name="icon">
-    <iconset>
+    <iconset resource="VelodyneHDL/Ui/images/resources.qrc">
      <normaloff>:/VelodyneHDLPlugin/kiwi_200.png</normaloff>:/VelodyneHDLPlugin/kiwi_200.png</iconset>
    </property>
    <property name="text">
@@ -472,7 +472,7 @@
   </action>
   <action name="actionSavePCAP">
    <property name="icon">
-    <iconset>
+    <iconset resource="VelodyneHDL/Ui/images/resources.qrc">
      <normaloff>:/VelodyneHDLPlugin/WiresharkDoc-128.png</normaloff>:/VelodyneHDLPlugin/WiresharkDoc-128.png</iconset>
    </property>
    <property name="text">
@@ -633,7 +633,7 @@
   </action>
   <action name="actionSaveLAS">
    <property name="icon">
-    <iconset>
+    <iconset resource="VelodyneHDL/Ui/images/resources.qrc">
      <normaloff>:/VelodyneHDLPlugin/las.png</normaloff>:/VelodyneHDLPlugin/las.png</iconset>
    </property>
    <property name="text">
@@ -645,7 +645,7 @@
   </action>
   <action name="actionOpenApplanix">
    <property name="icon">
-    <iconset>
+    <iconset resource="VelodyneHDL/Ui/images/resources.qrc">
      <normaloff>:/VelodyneHDLPlugin/gps.png</normaloff>:/VelodyneHDLPlugin/gps.png</iconset>
    </property>
    <property name="text">
@@ -657,7 +657,7 @@
   </action>
   <action name="actionCropReturns">
    <property name="icon">
-    <iconset>
+    <iconset resource="VelodyneHDL/Ui/images/resources.qrc">
      <normaloff>:/VelodyneHDLPlugin/crop.png</normaloff>:/VelodyneHDLPlugin/crop.png</iconset>
    </property>
    <property name="text">
@@ -850,72 +850,6 @@
     <string>Ignore empty frames</string>
    </property>
   </action>
-  <action name="actionBasic_Controls">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="checked">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Basic Controls</string>
-   </property>
-  </action>
-  <action name="actionColor_Controls">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="checked">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Color Controls</string>
-   </property>
-  </action>
-  <action name="actionView_Controls">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="checked">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Camera Controls</string>
-   </property>
-  </action>
-  <action name="actionGeolocation_Controls">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="checked">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Geolocation Controls</string>
-   </property>
-  </action>
-  <action name="actionShowPipelineBrowser">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Pipeline Browser</string>
-   </property>
-   <property name="shortcut">
-    <string>Ctrl+P</string>
-   </property>
-  </action>
-  <action name="actionShowPropertiesPanel">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Properties Panel</string>
-   </property>
-   <property name="shortcut">
-    <string>Ctrl+Shift+P</string>
-   </property>
-  </action>
   <action name="actionFastRenderer">
    <property name="checkable">
     <bool>true</bool>
@@ -1018,8 +952,8 @@
   </customwidget>
  </customwidgets>
  <resources>
+  <include location="VelodyneHDL/Ui/images/resources.qrc"/>
   <include location="vvResources.qrc"/>
-  <include location="VelodyneHDL/images/resources.qrc"/>
  </resources>
  <connections>
   <connection>
