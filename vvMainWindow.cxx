@@ -236,18 +236,22 @@ private:
     // vtkSMPropertyHelper(view->getProxy(),"MultiSamples").Set(1);
     view->getProxy()->UpdateVTKObjects();
 
-    // properties panel
+    // Specify each Properties Panel as we do want to present one panel per dock
+    this->Ui.propertiesPanel->setPanelMode(pqPropertiesPanel::SOURCE_PROPERTIES);
+    this->Ui.viewPropertiesPanel->setPanelMode(pqPropertiesPanel::VIEW_PROPERTIES);
+    this->Ui.displayPropertiesPanel->setPanelMode(pqPropertiesPanel::DISPLAY_PROPERTIES);
+
     // connect apply button
     applyBehaviors->registerPanel(this->Ui.propertiesPanel);
     // Enable help from the properties panel.
-    QObject::connect(this->Ui.propertiesPanelDock->widget(),
+    QObject::connect(this->Ui.propertiesPanel,
       SIGNAL(helpRequested(const QString&, const QString&)),
       window, SLOT(showHelpForProxy(const QString&, const QString&)));
 
     /// hook delete to pqDeleteReaction.
     QAction* tempDeleteAction = new QAction(window);
     pqDeleteReaction* handler = new pqDeleteReaction(tempDeleteAction);
-    handler->connect(this->Ui.propertiesPanelDock->widget(),
+    handler->connect(this->Ui.propertiesPanel,
       SIGNAL(deleteRequested(pqPipelineSource*)),
       SLOT(deleteSource(pqPipelineSource*)));
 
@@ -259,13 +263,17 @@ private:
 
     // organize dockable widget in tab
     window->setTabPosition(Qt::LeftDockWidgetArea, QTabWidget::North);
-    window->tabifyDockWidget(this->Ui.propertiesPanelDock, this->Ui.colorMapEditorDock);
+    window->tabifyDockWidget(this->Ui.propertiesDock, this->Ui.colorMapEditorDock);
+    window->tabifyDockWidget(this->Ui.viewPropertiesDock, this->Ui.colorMapEditorDock);
+    window->tabifyDockWidget(this->Ui.displayPropertiesDock, this->Ui.colorMapEditorDock);
     window->tabifyDockWidget(this->Ui.spreadSheetDock, this->Ui.informationDock);
     window->tabifyDockWidget(this->Ui.spreadSheetDock, this->Ui.memoryInspectorDock);
 
     // hide docker by default
     this->Ui.pipelineBrowserDock->hide();
-    this->Ui.propertiesPanelDock->hide();
+    this->Ui.propertiesDock->hide();
+    this->Ui.viewPropertiesDock->hide();
+    this->Ui.displayPropertiesDock->hide();
     this->Ui.colorMapEditorDock->hide();
     this->Ui.spreadSheetDock->hide();
     this->Ui.informationDock->hide();

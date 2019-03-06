@@ -259,7 +259,7 @@
    </attribute>
    <widget class="pqPipelineBrowserWidget" name="pipelineBrowser"/>
   </widget>
-  <widget class="QDockWidget" name="propertiesPanelDock">
+  <widget class="QDockWidget" name="propertiesDock">
    <property name="features">
     <set>QDockWidget::AllDockWidgetFeatures</set>
    </property>
@@ -297,6 +297,24 @@
     <number>1</number>
    </attribute>
    <widget class="pqProxyInformationWidget" name="proxyInformationWidget"/>
+  </widget>
+  <widget class="QDockWidget" name="displayPropertiesDock">
+   <property name="windowTitle">
+    <string>Display</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>2</number>
+   </attribute>
+   <widget class="pqPropertiesPanel" name="displayPropertiesPanel"/>
+  </widget>
+  <widget class="QDockWidget" name="viewPropertiesDock">
+   <property name="windowTitle">
+    <string>View</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>2</number>
+   </attribute>
+   <widget class="pqPropertiesPanel" name="viewPropertiesPanel"/>
   </widget>
   <action name="actionE_xit">
    <property name="text">
