@@ -120,6 +120,12 @@ int vtkLidarReaderInternal::ReadFrameInformation()
 
   while (reader.NextPacket(data, dataLength, timeSinceStart))
   {
+    // This command sends a signal that can be observed from outside
+    // and that is used to diplay a Qt progress dialog from Python
+    // This progress dialog is not displaying a progress percentage,
+    // thus it is ok to pass 0.0
+    this->Lidar->UpdateProgress(0.0);
+
     if (!this->Lidar->Interpreter->IsLidarPacket(const_cast<unsigned char*>(data), dataLength))
     {
       reader.GetFilePosition(&lastFilePosition);
