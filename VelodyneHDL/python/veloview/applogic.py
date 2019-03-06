@@ -1298,7 +1298,7 @@ def onChooseCalibrationFile():
 
     lidar = getLidar()
     if lidar:
-        lidar.GetClientSideObject().SetSensorTransform(sensorTransform)
+        lidar.Interpreter.GetClientSideObject().SetSensorTransform(sensorTransform)
         lidar.CalibrationFile = calibrationFile
         if getReader():
             reloadCurrentFrame()
