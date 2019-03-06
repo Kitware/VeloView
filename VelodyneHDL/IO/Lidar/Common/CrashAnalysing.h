@@ -58,15 +58,15 @@ public:
 
 private:
   // Export file information
-  unsigned int NbrPacketsToStore;
-  std::string Filename;
+  unsigned int NbrPacketsToStore = 5000;
+  std::string Filename = "";
 
   // Writer
   vtkPacketFileWriter Writer;
 
   // Internal parameters
-  unsigned int PacketCount;
-  unsigned int FileToStore;
+  unsigned int PacketCount = 0;
+  unsigned int FileToStore = 0;
 
   void WriteLastPacket(const std::string& packet);
 };
