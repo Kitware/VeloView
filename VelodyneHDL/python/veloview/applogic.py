@@ -1843,10 +1843,10 @@ def setFilterToIntensityLow():
 
 def setFilterTo(mask):
 
-    lidar = getLidar()
-    if lidar:
-        if getLidarPacketInterpreter().GetClientSideObject().GetHasDualReturn():
-            getLidarPacketInterpreter().SetDualReturnFilter(mask)
+    interp = getLidarPacketInterpreter()
+    if interp:
+        if interp.GetClientSideObject().GetHasDualReturn():
+            interp.GetClientSideObject().SetDualReturnFilter(mask)
             smp.Render()
             smp.Render(getSpreadSheetViewProxy())
         else:
