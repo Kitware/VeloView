@@ -138,3 +138,50 @@ bool IsMatrixFinite(const Eigen::Matrix3d& M)
 {
   return ((M - M).array() == (M - M).array()).all();
 }
+
+//----------------------------------------------------------------------------
+Eigen::Vector3d GetSphericalCoordinates(const Eigen::Vector3d& X)
+{
+  Eigen::Vector3d Y = X;
+  // If the norm of the vector is
+  // not too small we normalized it
+  double r = Y.norm();
+  if (r > std::numeric_limits<double>::epsilon())
+  {
+    Y.normalize();
+  }
+  else
+  {
+    return Eigen::Vector3d(0, 0, 0);
+  }
+
+  // Project Y onto the (ex, ey) plane and norm it
+  Eigen::Vector3d projY(Y(0), Y(1), 0);
+  if (projY.norm() < std::numeric_limits<double>::epsilon())
+  {
+    return Eigen::Vector3d(r, 0, (Y(2) >= 0) ? 0.0 : vtkMath::Pi());
+  }
+
+  // Compute Phi angle
+  double scaledCosinePhi = Y.dot(Eigen::Vector3d::UnitZ());
+  double scaledSinusPhi = Y.dot(projY.normalized());
+  double phi = std::atan2(scaledSinusPhi, scaledCosinePhi);
+
+  // Compute theta angle
+  double scaledCosineTheta = projY.dot(Eigen::Vector3d::UnitX());
+  double scaledSinusTheta = projY.dot(Eigen::Vector3d::UnitY());
+  double theta = std::atan2(scaledSinusTheta, scaledCosineTheta);
+
+  Eigen::Vector3d sphericalCoords(r, theta, phi);
+  return sphericalCoords;
+}
+
+//----------------------------------------------------------------------------
+Eigen::Matrix<double, 3, 1> GetSphericalCoordinates(const Eigen::Vector3d& X,
+                                                    const Eigen::Matrix3d& Basis,
+                                                    const Eigen::Vector3d& Origin)
+{
+  // Express the vector in the new reference frame
+  Eigen::Vector3d Y = Basis.transpose() * (X - Origin);
+  return GetSphericalCoordinates(Y);
+}

@@ -104,4 +104,17 @@ double VelodyneHDLPlugin_EXPORT SignedAngle(const Eigen::Vector3d& v1, const Eig
   */
 bool VelodyneHDLPlugin_EXPORT IsMatrixFinite(const Eigen::Matrix3d& M);
 
+/**
+  * @brief GetSphericalCoordinates compute the spherical coordinates
+  *        of the vector (X - Origin) relatively to the basis Basis
+  * @param X point we want to compute the spherical coordinate relatively
+  *        to the affine space reference frame
+  * @param Basis basis part of the affine space reference frame
+  *        (basis of the direction vector space)
+  * @param Origin origin of the affine space reference frame
+  */
+Eigen::Vector3d VelodyneHDLPlugin_EXPORT GetSphericalCoordinates(const Eigen::Vector3d& X,
+                                                                 const Eigen::Matrix3d& Basis,
+                                                                 const Eigen::Vector3d& Origin);
+Eigen::Vector3d VelodyneHDLPlugin_EXPORT GetSphericalCoordinates(const Eigen::Vector3d& X);
 #endif // VTK_EIGEN_TOOLS_H
