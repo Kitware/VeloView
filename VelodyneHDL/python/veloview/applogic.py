@@ -69,6 +69,7 @@ class AppLogic(object):
         self.relativeTransform = False
 
         self.reader = None
+        self.trailingFrame = None
         self.position = None
         self.sensor = None
 
@@ -419,6 +420,7 @@ def openSensor():
     smp.GetActiveView().ViewTime = 0.0
 
     app.sensor = sensor
+    app.trailingFramesSpinBox.enabled = False
     app.colorByInitialized = False
     app.filenameLabel.setText('Live sensor stream (Port:'+str(LIDARPort)+')' )
     app.positionPacketInfoLabel.setText('')
@@ -496,6 +498,8 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
                              CalibrationFile = calibrationFile)
 
     app.reader = reader
+    app.trailingFramesSpinBox.enabled = True
+    app.trailingFrame = smp.TrailingFrame(guiName="TrailingFrame", Input=getLidar(), NumberOfTrailingFrames=app.trailingFramesSpinBox.value)
     app.filenameLabel.setText('File: %s' % os.path.basename(filename))
     app.positionPacketInfoLabel.setText('') # will be updated later if possible
     onCropReturns(False) # Dont show the dialog just restore settings
@@ -521,7 +525,6 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
 
     smp.GetActiveView().ViewTime = 0.0
 
-    rep = smp.Show(reader)
     if SAMPLE_PROCESSING_MODE:
         prep = smp.Show(processor)
     app.scene.UpdateAnimationUsingDataTimeSteps()
@@ -536,7 +539,7 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
 
     posreader.GetClientSideObject().SetCalibrationTransform(calibration.gpsTransform)
 
-    smp.Show(posreader)
+    smp.Show(app.trailingFrame)
 
     if positionFilename is None:
         # only VelodyneHDLReader provides this information
@@ -569,14 +572,7 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
 
     smp.SetActiveView(app.mainView)
 
-    rep.InterpolateScalarsBeforeMapping = 0
-
-#    rep = smp.Show(reader)
-#    if app.reader.GetClientSideObject().GetNumberOfChannels() == 128:
-
-#        rep.ColorArrayName = 'intensity'
-#    #setDefaultLookupTables(reader)
-    colorByIntensity(reader)
+    colorByIntensity(app.trailingFrame)
 
     initializeRPMText()
 
@@ -606,7 +602,7 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
     app.actions['actionMeasurement_Grid'].setChecked(True)
     showMeasurementGrid()
 
-    smp.SetActiveSource(reader)
+    smp.SetActiveSource(app.trailingFrame)
     updateUIwithNewFrame()
 
 
@@ -1138,6 +1134,7 @@ def close():
     app.scene.AnimationTime = 0
     app.reader = None
     app.sensor = None
+    app.trailingFrame = None
     if app.text:
         smp.Delete(app.text)
     smp.Delete(app.grid)
@@ -1273,6 +1270,7 @@ def unloadData():
             smp.Delete(src)
 
     app.reader = None
+    app.trailingFrame = None
     app.position = None
     app.sensor = None
 
@@ -1526,12 +1524,10 @@ def addShortcuts(keySequenceStr, function):
 
 
 def onTrailingFramesChanged(numFrames):
-    hdlSource = app.sensor or app.reader
+    tr = smp.FindSource("TrailingFrame")
+    tr.NumberOfTrailingFrames = numFrames
+    smp.Render()
 
-    if hdlSource is not None:
-        hdlSource.NumberOfTrailingFrames = numFrames
-        smp.Render()
-        smp.Render(getSpreadSheetViewProxy())
 
 def onFiringsSkipChanged(pr):
     lidarPacketInterpreter = getLidarPacketInterpreter()
@@ -2176,7 +2172,9 @@ def updateUIwithNewFrame():
     lidar = getLidar()
     if lidar:
         app.sensorInformationLabel.setText(lidar.GetClientSideObject().GetSensorInformation())
-        #Remove the Rotation per minute from color label comboBox
+    #Remove some array to display
     ComboBox = getMainWindow().findChild('vvColorToolbar').findChild('pqDisplayColorWidget').findChildren('QComboBox')[0]
-    n = ComboBox.findText('RotationPerMinute')
-    ComboBox.removeItem(n)
+    listOfArrayToRemove = ['RotationPerMinute', 'vtkBlockColor', 'vtkCompositeIndex']
+    for arrayName in listOfArrayToRemove:
+        n = ComboBox.findText(arrayName)
+        ComboBox.removeItem(n)
