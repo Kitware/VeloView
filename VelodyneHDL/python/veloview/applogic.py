@@ -1816,16 +1816,6 @@ def toggleBirdEyeViewSnap():
     birdEyeViewGenerator.GetClientSideObject().SetPlaneParam(planeParams)
     birdEyeViewGenerator.UpdatePipeline()
 
-def toggleMotionDetection():
-    reader = getReader()
-
-    # check that a reader is available
-    if reader is None:
-        return
-
-    motionDetector = smp.MotionDetector(reader)
-    motionDetector.UpdatePipeline()
-
 def setFilterToDual():
     setFilterTo(0)
 
@@ -1989,7 +1979,6 @@ def setupActions():
     app.actions['actionSelectDualReturn'].connect('triggered()',toggleSelectDualReturn)
     app.actions['actionSelectDualReturn2'].connect('triggered()',toggleSelectDualReturn)
     app.actions['actionBirdEyeViewSnap'].connect('triggered()', toggleBirdEyeViewSnap)
-    app.actions['actionMotionDetection'].connect('triggered()', toggleMotionDetection)
 
     # Restore action states from settings
     settings = getPVSettings()

@@ -108,7 +108,6 @@
       <string>others...</string>
      </property>
      <addaction name="actionBirdEyeViewSnap"/>
-     <addaction name="actionMotionDetection"/>
     </widget>
     <addaction name="actionSpreadsheet"/>
     <addaction name="actionMeasurement_Grid"/>
@@ -889,15 +888,6 @@
    </property>
    <property name="toolTip">
     <string>Take a snapshot of the scene in a bird eye view</string>
-   </property>
-  </action>
-  <action name="actionMotionDetection">
-   <property name="icon">
-    <iconset resource="vvResources.qrc">
-     <normaloff>:/vvResources/Icons/icon_motion.png</normaloff>:/vvResources/Icons/icon_motion.png</iconset>
-   </property>
-   <property name="text">
-    <string>Motion Detection</string>
    </property>
   </action>
   <action name="actionAdvanceFeature">
