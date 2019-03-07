@@ -236,7 +236,7 @@
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
-   <addaction name="actionOverheadView"/>
+   <addaction name="actionShowPosition"/>
   </widget>
   <widget class="QDockWidget" name="colorMapEditorDock">
    <property name="windowTitle">
@@ -259,7 +259,7 @@
    </attribute>
    <widget class="pqPipelineBrowserWidget" name="pipelineBrowser"/>
   </widget>
-  <widget class="QDockWidget" name="propertiesPanelDock">
+  <widget class="QDockWidget" name="propertiesDock">
    <property name="features">
     <set>QDockWidget::AllDockWidgetFeatures</set>
    </property>
@@ -298,14 +298,23 @@
    </attribute>
    <widget class="pqProxyInformationWidget" name="proxyInformationWidget"/>
   </widget>
-  <widget class="QDockWidget" name="overheadViewDock">
+  <widget class="QDockWidget" name="displayPropertiesDock">
    <property name="windowTitle">
-    <string>Overhead View</string>
+    <string>Display</string>
    </property>
    <attribute name="dockWidgetArea">
     <number>2</number>
    </attribute>
-   <widget class="QWidget" name="overheadView"/>
+   <widget class="pqPropertiesPanel" name="displayPropertiesPanel"/>
+  </widget>
+  <widget class="QDockWidget" name="viewPropertiesDock">
+   <property name="windowTitle">
+    <string>View</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>2</number>
+   </attribute>
+   <widget class="pqPropertiesPanel" name="viewPropertiesPanel"/>
   </widget>
   <action name="actionE_xit">
    <property name="text">
@@ -320,7 +329,7 @@
   </action>
   <action name="actionOpenPcap">
    <property name="icon">
-    <iconset>
+    <iconset resource="VelodyneHDL/Ui/images/resources.qrc">
      <normaloff>:/VelodyneHDLPlugin/WiresharkDoc-128.png</normaloff>:/VelodyneHDLPlugin/WiresharkDoc-128.png</iconset>
    </property>
    <property name="text">
@@ -383,7 +392,7 @@
   </action>
   <action name="actionOpen_Sensor_Stream">
    <property name="icon">
-    <iconset>
+    <iconset resource="VelodyneHDL/Ui/images/resources.qrc">
      <normaloff>:/VelodyneHDLPlugin/velodyne_hdl.png</normaloff>:/VelodyneHDLPlugin/velodyne_hdl.png</iconset>
    </property>
    <property name="text">
@@ -392,7 +401,7 @@
   </action>
   <action name="actionChoose_Calibration_File">
    <property name="icon">
-    <iconset>
+    <iconset resource="VelodyneHDL/Ui/images/resources.qrc">
      <normaloff>:/VelodyneHDLPlugin/calibrate.png</normaloff>:/VelodyneHDLPlugin/calibrate.png</iconset>
    </property>
    <property name="text">
@@ -455,7 +464,7 @@
   </action>
   <action name="actionSaveCSV">
    <property name="icon">
-    <iconset>
+    <iconset resource="VelodyneHDL/Ui/images/resources.qrc">
      <normaloff>:/VelodyneHDLPlugin/csv.png</normaloff>:/VelodyneHDLPlugin/csv.png</iconset>
    </property>
    <property name="text">
@@ -464,7 +473,7 @@
   </action>
   <action name="actionExport_To_KiwiViewer">
    <property name="icon">
-    <iconset>
+    <iconset resource="VelodyneHDL/Ui/images/resources.qrc">
      <normaloff>:/VelodyneHDLPlugin/kiwi_200.png</normaloff>:/VelodyneHDLPlugin/kiwi_200.png</iconset>
    </property>
    <property name="text">
@@ -481,7 +490,7 @@
   </action>
   <action name="actionSavePCAP">
    <property name="icon">
-    <iconset>
+    <iconset resource="VelodyneHDL/Ui/images/resources.qrc">
      <normaloff>:/VelodyneHDLPlugin/WiresharkDoc-128.png</normaloff>:/VelodyneHDLPlugin/WiresharkDoc-128.png</iconset>
    </property>
    <property name="text">
@@ -584,21 +593,6 @@
     <string>Measure the distance (in meters) between two screen points.&lt;br/&gt;To draw a ruler line, click this button, then hold down the &lt;b&gt;Ctrl key&lt;/b&gt; and the &lt;b&gt;left button&lt;/b&gt; of your mouse. &lt;br/&gt;&lt;u&gt;This feature is only available in orthogonal projection.&lt;/u&gt;</string>
    </property>
   </action>
-  <action name="actionOverheadView">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="icon">
-    <iconset resource="vvResources.qrc">
-     <normaloff>:/vvResources/Icons/map.png</normaloff>:/vvResources/Icons/map.png</iconset>
-   </property>
-   <property name="text">
-    <string>OverheadView</string>
-   </property>
-   <property name="toolTip">
-    <string>Show overhead view of GPS position</string>
-   </property>
-  </action>
   <action name="actionPlaneFit">
    <property name="icon">
     <iconset resource="vvResources.qrc">
@@ -657,7 +651,7 @@
   </action>
   <action name="actionSaveLAS">
    <property name="icon">
-    <iconset>
+    <iconset resource="VelodyneHDL/Ui/images/resources.qrc">
      <normaloff>:/VelodyneHDLPlugin/las.png</normaloff>:/VelodyneHDLPlugin/las.png</iconset>
    </property>
    <property name="text">
@@ -669,7 +663,7 @@
   </action>
   <action name="actionOpenApplanix">
    <property name="icon">
-    <iconset>
+    <iconset resource="VelodyneHDL/Ui/images/resources.qrc">
      <normaloff>:/VelodyneHDLPlugin/gps.png</normaloff>:/VelodyneHDLPlugin/gps.png</iconset>
    </property>
    <property name="text">
@@ -681,7 +675,7 @@
   </action>
   <action name="actionCropReturns">
    <property name="icon">
-    <iconset>
+    <iconset resource="VelodyneHDL/Ui/images/resources.qrc">
      <normaloff>:/VelodyneHDLPlugin/crop.png</normaloff>:/VelodyneHDLPlugin/crop.png</iconset>
    </property>
    <property name="text">
@@ -874,72 +868,6 @@
     <string>Ignore empty frames</string>
    </property>
   </action>
-  <action name="actionBasic_Controls">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="checked">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Basic Controls</string>
-   </property>
-  </action>
-  <action name="actionColor_Controls">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="checked">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Color Controls</string>
-   </property>
-  </action>
-  <action name="actionView_Controls">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="checked">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Camera Controls</string>
-   </property>
-  </action>
-  <action name="actionGeolocation_Controls">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="checked">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Geolocation Controls</string>
-   </property>
-  </action>
-  <action name="actionShowPipelineBrowser">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Pipeline Browser</string>
-   </property>
-   <property name="shortcut">
-    <string>Ctrl+P</string>
-   </property>
-  </action>
-  <action name="actionShowPropertiesPanel">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Properties Panel</string>
-   </property>
-   <property name="shortcut">
-    <string>Ctrl+Shift+P</string>
-   </property>
-  </action>
   <action name="actionFastRenderer">
    <property name="checkable">
     <bool>true</bool>
@@ -981,6 +909,21 @@
    </property>
    <property name="text">
     <string>Advance Feature</string>
+   </property>
+  </action>
+  <action name="actionShowPosition">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="vvResources.qrc">
+     <normaloff>:/vvResources/Icons/map.png</normaloff>:/vvResources/Icons/map.png</iconset>
+   </property>
+   <property name="text">
+    <string>actionShowPosition</string>
+   </property>
+   <property name="toolTip">
+    <string>Show the GPS Track</string>
    </property>
   </action>
  </widget>
@@ -1027,8 +970,8 @@
   </customwidget>
  </customwidgets>
  <resources>
+  <include location="VelodyneHDL/Ui/images/resources.qrc"/>
   <include location="vvResources.qrc"/>
-  <include location="VelodyneHDL/images/resources.qrc"/>
  </resources>
  <connections>
   <connection>

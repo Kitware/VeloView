@@ -682,7 +682,7 @@ void vtkVelodynePacketInterpreter::LoadCalibration(const std::string& filename)
 
   PrecomputeCorrectionCosSin();
   this->IsCalibrated = true;
-
+  this->CalibrationData->Initialize();
 //  // Copy the calibration into a vtkTable
   #define AddToCalibrationDataRowNamed(name, field)                                     \
   auto array##field = vtkSmartPointer<vtkDoubleArray>::New();                           \

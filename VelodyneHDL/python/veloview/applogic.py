@@ -63,23 +63,15 @@ class AppLogic(object):
         self.mousePressed = False
 
         mainView = smp.GetActiveView()
-        views = smp.GetRenderViews()
-        otherViews = [v for v in views if v != mainView]
-        assert len(otherViews) == 1
-        overheadView = otherViews[0]
         self.mainView = mainView
-        self.overheadView = overheadView
 
         self.transformMode = 0
         self.relativeTransform = False
 
         self.reader = None
-        self.position = (None, None, None)
+        self.trailingFrame = None
+        self.position = None
         self.sensor = None
-
-        self.fps = [0,0]
-
-        self.text = None
 
         self.laserSelectionDialog = None
 
@@ -400,8 +392,6 @@ def openSensor():
     close()
     app.grid = createGrid()
 
-    initializeRPMText()
-
     sensor = smp.LidarStream(guiName='Data', CalibrationFile=calibrationFile, CacheSize=1)
     sensor.GetClientSideObject().SetLIDARPort(LIDARPort)
     sensor.GetClientSideObject().EnableGPSListening(True)
@@ -424,6 +414,7 @@ def openSensor():
     smp.GetActiveView().ViewTime = 0.0
 
     app.sensor = sensor
+    app.trailingFramesSpinBox.enabled = False
     app.colorByInitialized = False
     app.filenameLabel.setText('Live sensor stream (Port:'+str(LIDARPort)+')' )
     app.positionPacketInfoLabel.setText('')
@@ -501,6 +492,8 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
                              CalibrationFile = calibrationFile)
 
     app.reader = reader
+    app.trailingFramesSpinBox.enabled = True
+    app.trailingFrame = smp.TrailingFrame(guiName="TrailingFrame", Input=getLidar(), NumberOfTrailingFrames=app.trailingFramesSpinBox.value)
     app.filenameLabel.setText('File: %s' % os.path.basename(filename))
     app.positionPacketInfoLabel.setText('') # will be updated later if possible
     onCropReturns(False) # Dont show the dialog just restore settings
@@ -526,13 +519,9 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
 
     smp.GetActiveView().ViewTime = 0.0
 
-    rep = smp.Show(reader)
     if SAMPLE_PROCESSING_MODE:
         prep = smp.Show(processor)
     app.scene.UpdateAnimationUsingDataTimeSteps()
-
-    # update overhead view
-    smp.SetActiveView(app.overheadView)
 
     if positionFilename is None:
         posreader = smp.VelodyneHDLPositionReader(guiName="Position",
@@ -544,7 +533,7 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
 
     posreader.GetClientSideObject().SetCalibrationTransform(calibration.gpsTransform)
 
-    smp.Show(posreader)
+    smp.Show(app.trailingFrame)
 
     if positionFilename is None:
         # only VelodyneHDLReader provides this information
@@ -553,21 +542,8 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
         # console in the cases where the timeshift if computed
         app.positionPacketInfoLabel.setText(posreader.GetClientSideObject().GetTimeSyncInfo())
 
-    # Create a tripod glyph
-    tripod = smp.Axes()
-    tripod.ScaleFactor = 10.0
-    smp.Show(tripod)
-
     if posreader.GetClientSideObject().GetOutput().GetNumberOfPoints():
-        #reader.GetClientSideObject().SetInterpolator(
-        #    posreader.GetClientSideObject().GetInterpolator())
-
-        smp.Render(app.overheadView)
-        app.overheadView.ResetCamera()
-
         trange = posreader.GetPointDataInformation().GetArray('time').GetRange()
-
-        # By construction time zero is at position 0,0,0
 
         # Setup scalar bar
         rep = smp.GetDisplayProperties(posreader)
@@ -579,32 +555,18 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
                                                      ScalarRangeInitialized=1.0)
         sb = smp.CreateScalarBar(LookupTable=rep.LookupTable, Title='Time')
         sb.Orientation = 'Horizontal'
-        #sb.Position, sb.Position2 = [.1, .05], [.8, .02]
-        app.overheadView.Representations.append(sb)
-
-        app.position = (posreader, None, tripod)
-        smp.Render(app.overheadView)
+        app.position = posreader
+        if not app.actions['actionShowPosition'].isChecked():
+            smp.Hide(app.position)
     else:
         if positionFilename is not None:
             QtGui.QMessageBox.warning(getMainWindow(), 'Georeferencing data invalid',
                                       'File %s is empty or not supported' % positionFilename)
-
-        smp.Render(app.overheadView)
-        app.overheadView.ResetCamera()
         smp.Delete(posreader)
 
     smp.SetActiveView(app.mainView)
 
-    rep.InterpolateScalarsBeforeMapping = 0
-
-#    rep = smp.Show(reader)
-#    if app.reader.GetClientSideObject().GetNumberOfChannels() == 128:
-
-#        rep.ColorArrayName = 'intensity'
-#    #setDefaultLookupTables(reader)
-    colorByIntensity(reader)
-
-    initializeRPMText()
+    colorByIntensity(app.trailingFrame)
 
     showSourceInSpreadSheet(reader)
 
@@ -632,8 +594,7 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
     app.actions['actionMeasurement_Grid'].setChecked(True)
     showMeasurementGrid()
 
-    smp.SetActiveSource(reader)
-    updatePosition()
+    smp.SetActiveSource(app.trailingFrame)
     updateUIwithNewFrame()
 
 
@@ -1162,12 +1123,10 @@ def close():
 
     hideRuler()
     unloadData()
-    smp.Render(app.overheadView)
     app.scene.AnimationTime = 0
     app.reader = None
     app.sensor = None
-    if app.text:
-        smp.Delete(app.text)
+    app.trailingFrame = None
     smp.Delete(app.grid)
 
     smp.HideUnusedScalarBars()
@@ -1293,56 +1252,16 @@ def getNumberOfTimesteps():
     return getTimeKeeper().getNumberOfTimeStepValues()
 
 
-def updatePosition():
-    reader = getReader()
-    pos = getPosition()
-
-    if reader and pos:
-        pointcloud = reader.GetClientSideObject().GetOutput()
-
-        if pointcloud.GetNumberOfPoints():
-            # get the timestamp of the first point
-            # of the current point cloud (in seconds)
-            time = pointcloud.GetPointData().GetArray('adjustedtime').GetTuple1(0)
-            time = time * 1e-6
-
-            # Get the transform of the first point of the
-            # current point cloud by interpolating using
-            # the two nearest transform data available (slerp + linear)
-            currentTransform = vtk.vtkTransform()
-            #getReader().GetClientSideObject().GetInterpolator().InterpolateTransform(time, currentTransform)
-
-            position = [0.0] * 3
-            currentTransform.TransformPoint(position, position)
-
-            rep = cachedGetRepresentation(reader, view=app.mainView)
-            if app.relativeTransform:
-                rep.Position = currentTransform.GetInverse().GetPosition()
-                rep.Orientation = currentTransform.GetInverse().GetOrientation()
-            else:
-                rep.Position = [0.0, 0.0, 0.0]
-                rep.Orientation = [0.0, 0.0, 0.0]
-
-            g = getGlyph()
-            rep = cachedGetRepresentation(g, view=app.overheadView)
-            rep.Position = position[:3]
-            rep.Orientation = currentTransform.GetOrientation()
-
-    showRPM()
-
 def unloadData():
     _repCache.clear()
 
     for k, src in smp.GetSources().iteritems():
-        if src != app.grid:
+        if src != app.grid and src != smp.FindSource("RPM"):
             smp.Delete(src)
 
-    toremove = [x for x in app.overheadView.Representations if type(x) == servermanager.rendering.ScalarBarWidgetRepresentation]
-    for t in toremove:
-        app.overheadView.Representations.remove(t)
-
     app.reader = None
-    app.position = (None, None, None)
+    app.trailingFrame = None
+    app.position = None
     app.sensor = None
 
     clearSpreadSheetView()
@@ -1363,10 +1282,7 @@ def getLidarPacketInterpreter():
     return None
 
 def getPosition():
-    return getattr(app, 'position', (None, None, None))[0]
-
-def getGlyph():
-    return getattr(app, 'position', (None, None, None))[2]
+    return getattr(app, 'position', None)
 
 def getLaserSelectionDialog():
     return getattr(app, 'laserSelectionDialog', None)
@@ -1382,7 +1298,7 @@ def onChooseCalibrationFile():
 
     lidar = getLidar()
     if lidar:
-        lidar.GetClientSideObject().SetSensorTransform(sensorTransform)
+        lidar.Interpreter.GetClientSideObject().SetSensorTransform(sensorTransform)
         lidar.CalibrationFile = calibrationFile
         if getReader():
             reloadCurrentFrame()
@@ -1561,8 +1477,7 @@ def start():
     hideColorByComponent()
     restoreNativeFileDialogsAction()
     updateRecentFiles()
-
-    initializeRPMText()
+    createRPMBehaviour()
 
 
 def findQObjectByName(widgets, name):
@@ -1598,12 +1513,10 @@ def addShortcuts(keySequenceStr, function):
 
 
 def onTrailingFramesChanged(numFrames):
-    hdlSource = app.sensor or app.reader
+    tr = smp.FindSource("TrailingFrame")
+    tr.NumberOfTrailingFrames = numFrames
+    smp.Render()
 
-    if hdlSource is not None:
-        hdlSource.NumberOfTrailingFrames = numFrames
-        smp.Render()
-        smp.Render(getSpreadSheetViewProxy())
 
 def onFiringsSkipChanged(pr):
     lidarPacketInterpreter = getLidarPacketInterpreter()
@@ -1799,13 +1712,14 @@ def toggleProjectionType():
 
     smp.Render()
 
-
 def toggleRPM():
-
-    r = smp.GetRepresentation(app.text)
-    r.Visibility = app.actions['actionShowRPM'].isChecked()
-
-    smp.Render()
+    rpm = smp.FindSource("RPM")
+    if rpm:
+        if app.actions['actionShowRPM'].isChecked():
+            smp.Show(rpm)
+        else:
+            smp.Hide(rpm)
+        smp.Render()
 
 
 def toggleSelectDualReturn():
@@ -1929,10 +1843,10 @@ def setFilterToIntensityLow():
 
 def setFilterTo(mask):
 
-    lidar = getLidar()
-    if lidar:
-        if getLidarPacketInterpreter().GetClientSideObject().GetHasDualReturn():
-            getLidarPacketInterpreter().SetDualReturnFilter(mask)
+    interp = getLidarPacketInterpreter()
+    if interp:
+        if interp.GetClientSideObject().GetHasDualReturn():
+            interp.GetClientSideObject().SetDualReturnFilter(mask)
             smp.Render()
             smp.Render(getSpreadSheetViewProxy())
         else:
@@ -1967,8 +1881,6 @@ def setTransformMode(mode):
 
 def geolocationChanged(setting):
     setTransformMode(setting)
-
-    updatePosition()
     smp.Render(view=app.mainView)
 
 def fastRendererChanged():
@@ -2009,6 +1921,16 @@ def onToogleAdvancedGUI(updateSettings = True):
     # booleans must be store as int
     newValue = int(not int(getPVSettings().value("VelodyneHDLPlugin/AdvanceFeature/Enable", 0)))
     getPVSettings().setValue("VelodyneHDLPlugin/AdvanceFeature/Enable", newValue)
+
+def switchVisibility(Proxy):
+    """ Invert the Proxy visibility int the current view """
+    ProxyRep = smp.GetRepresentation(Proxy)
+    ProxyRep.Visibility = not ProxyRep.Visibility
+
+def ShowPosition():
+    if app.position:
+        switchVisibility(app.position)
+        smp.Render()
 
 
 def setupActions():
@@ -2054,6 +1976,7 @@ def setupActions():
 
     app.actions['actionToggleProjection'].connect('triggered()', toggleProjectionType)
     app.actions['actionMeasure'].connect('triggered()', toggleRulerContext)
+    app.actions['actionShowPosition'].connect('triggered()', ShowPosition)
 
     app.actions['actionDualReturnModeDual'].connect('triggered()', setFilterToDual)
     app.actions['actionDualReturnDistanceNear'].connect('triggered()', setFilterToDistanceNear)
@@ -2149,40 +2072,34 @@ def setupActions():
     app.GeolocationToolbar = getMainWindow().findChild('QToolBar','geolocationToolbar')
 
 
-def showRPM():
+def createRPMBehaviour():
+    # create and customize a label to display the rpm
+    rpm = smp.Text(guiName="RPM", Text="No RPM")
+    representation = smp.GetRepresentation(rpm)
+    representation.FontSize = 8
+    representation.Color = [1,1,0]
+    # create an python animation cue to update the rpm value in the label
+    PythonAnimationCue1 = smp.PythonAnimationCue()
+    PythonAnimationCue1.Script= """
+import paraview.simple as smp
+def start_cue(self):
+    pass
 
-    rpmArray = None
-    lidar = getLidar()
-    if lidar:
-        rpmArray = lidar.GetClientSideObject().GetOutput().GetFieldData().GetArray('RotationPerMinute')
-
-    if rpmArray:
-        rpm = rpmArray.GetTuple1(0)
-        # try to convert the RPM into a str
-        # If the RPM is NaN, Infinity, ... catch
-        # it and display ??? RPM
-        try:
-            app.text.Text = str(int(rpm)) + " RPM"
-        except :
-            app.text.Text = "??? RPM"
+def tick(self):
+    rpm = smp.FindSource("RPM")
+    lidar = smp.FindSource("Data")
+    if (lidar):
+        value = int(lidar.Interpreter.GetClientSideObject().GetFrequency())
+        rpm.Text = str(value) + " RPM"
     else:
-        app.text.Text = "No RPM"
+        rpm.Text = "No RPM"
 
-    # Set text style
-
-    textRepresentation = smp.GetRepresentation(app.text)
-    textRepresentation.Visibility = app.actions['actionShowRPM'].isChecked()
-
-    smp.Render()
-
-
-def initializeRPMText():
-    app.text = smp.Text()
-    app.text.Text = "No RPM"
-    textRepresentation = smp.GetRepresentation(app.text)
-    textRepresentation.Visibility = app.actions['actionShowRPM'].isChecked()
-    textRepresentation.FontSize = 8
-    textRepresentation.Color = [1,1,0]
+def end_cue(self):
+    pass
+"""
+    smp.GetAnimationScene().Cues.append(PythonAnimationCue1)
+    # force to be consistant with the UI
+    toggleRPM()
 
 
 def onIgnoreZeroDistances():
@@ -2239,7 +2156,9 @@ def updateUIwithNewFrame():
     lidar = getLidar()
     if lidar:
         app.sensorInformationLabel.setText(lidar.GetClientSideObject().GetSensorInformation())
-        #Remove the Rotation per minute from color label comboBox
+    #Remove some array to display
     ComboBox = getMainWindow().findChild('vvColorToolbar').findChild('pqDisplayColorWidget').findChildren('QComboBox')[0]
-    n = ComboBox.findText('RotationPerMinute')
-    ComboBox.removeItem(n)
+    listOfArrayToRemove = ['RotationPerMinute', 'vtkBlockColor', 'vtkCompositeIndex']
+    for arrayName in listOfArrayToRemove:
+        n = ComboBox.findText(arrayName)
+        ComboBox.removeItem(n)
