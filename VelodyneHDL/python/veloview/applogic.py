@@ -1790,32 +1790,6 @@ def toggleSelectDualReturn():
 def toggleCrashAnalysis():
     app.EnableCrashAnalysis = app.actions['actionEnableCrashAnalysis'].isChecked()
 
-
-def toggleBirdEyeViewSnap():
-    # Get export images filename
-    fileName = getSaveFileName('Choose Output File', 'png', getDefaultSaveFileName('png'))
-    if not fileName:
-        QtGui.QMessageBox.warning(getMainWindow(), 'Invalid filename', 'Please, select a valid filename')
-        return
-
-    # Fit a plane using ransac algorithm
-    reader = getReader()
-    ransacPlaneFitting = smp.RansacPlaneModel(reader)
-    ransacPlaneFitting.GetClientSideObject().SetMaxRansacIteration(1000)
-    ransacPlaneFitting.GetClientSideObject().SetThreshold(0.35)
-    ransacPlaneFitting.GetClientSideObject().SetRatioInlierRequired(0.80)
-    ransacPlaneFitting.UpdatePipeline()
-    planeParams = range(4)
-    ransacPlaneFitting.GetClientSideObject().GetPlaneParam(planeParams)
-
-    # use the fitted plane to generate the bird eye view
-    # image (i.e: project the point cloud on the fitted plan
-    # and use the 2D projected point cloud to generate the image)
-    birdEyeViewGenerator = smp.BirdEyeViewSnap(reader)
-    birdEyeViewGenerator.GetClientSideObject().SetFolderName(fileName)
-    birdEyeViewGenerator.GetClientSideObject().SetPlaneParam(planeParams)
-    birdEyeViewGenerator.UpdatePipeline()
-
 def setFilterToDual():
     setFilterTo(0)
 
@@ -1978,7 +1952,6 @@ def setupActions():
     app.actions['actionFastRenderer'].connect('triggered()',fastRendererChanged)
     app.actions['actionSelectDualReturn'].connect('triggered()',toggleSelectDualReturn)
     app.actions['actionSelectDualReturn2'].connect('triggered()',toggleSelectDualReturn)
-    app.actions['actionBirdEyeViewSnap'].connect('triggered()', toggleBirdEyeViewSnap)
 
     # Restore action states from settings
     settings = getPVSettings()

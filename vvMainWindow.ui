@@ -107,7 +107,6 @@
      <property name="title">
       <string>others...</string>
      </property>
-     <addaction name="actionBirdEyeViewSnap"/>
     </widget>
     <addaction name="actionSpreadsheet"/>
     <addaction name="actionMeasurement_Grid"/>
@@ -876,18 +875,6 @@
    </property>
    <property name="text">
     <string>Apply VLS-128 Fast Renderering</string>
-   </property>
-  </action>
-  <action name="actionBirdEyeViewSnap">
-   <property name="icon">
-    <iconset resource="vvResources.qrc">
-     <normaloff>:/vvResources/Icons/camera_logo.png</normaloff>:/vvResources/Icons/camera_logo.png</iconset>
-   </property>
-   <property name="text">
-    <string>Bird Eye View Snap</string>
-   </property>
-   <property name="toolTip">
-    <string>Take a snapshot of the scene in a bird eye view</string>
    </property>
   </action>
   <action name="actionAdvanceFeature">
