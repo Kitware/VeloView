@@ -1731,14 +1731,14 @@ def toggleSelectDualReturn():
         return
 
     #Get the active source
-    source = smp.GetActiveSource()
+    source = getLidar()
     lidarPacketInterpreter = getLidarPacketInterpreter()
 
     #If no data are available
     if not source :
         return
 
-    if not lidarPacketInterpreter.GetHasDualReturn() :
+    if not lidarPacketInterpreter.GetClientSideObject().GetHasDualReturn() :
         QtGui.QMessageBox.warning(getMainWindow(), 'Dual returns not found',
         "The functionality only works with dual returns, and the current"
         "frame has no dual returns.")
