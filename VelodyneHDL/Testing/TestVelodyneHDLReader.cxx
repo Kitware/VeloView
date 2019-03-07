@@ -74,7 +74,7 @@ int main(int argc, char* argv[])
   std::cout << "Integrity tests..." << std::endl;
 
   // Checks frame count
-  retVal += TestFrameCount(HDLReader->GetNumberOfFrames(), referenceFilesList.size());
+  retVal += TestFrameCount(HDLReader->GetNumberOfFrames()-1, referenceFilesList.size());
 
   // Check properties frame by frame
   unsigned int nbReferences = referenceFilesList.size();
@@ -85,7 +85,7 @@ int main(int argc, char* argv[])
               << "FRAME " << idFrame << " ..." << std::endl
               << "---------------------" << std::endl;
 
-    vtkPolyData* currentFrame = GetCurrentFrame(HDLReader.Get(), idFrame);
+    vtkPolyData* currentFrame = GetCurrentFrame(HDLReader.Get(), idFrame+1);
     vtkPolyData* currentReference = GetCurrentReference(referenceFilesList, idFrame);
 
     // Check points count
