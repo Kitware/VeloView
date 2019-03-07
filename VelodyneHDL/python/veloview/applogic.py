@@ -1514,8 +1514,9 @@ def addShortcuts(keySequenceStr, function):
 
 def onTrailingFramesChanged(numFrames):
     tr = smp.FindSource("TrailingFrame")
-    tr.NumberOfTrailingFrames = numFrames
-    smp.Render()
+    if tr:
+        tr.NumberOfTrailingFrames = numFrames
+        smp.Render()
 
 
 def onFiringsSkipChanged(pr):
