@@ -207,6 +207,16 @@ void vtkLidarReader::SaveFrame(int startFrame, int endFrame, const std::string &
     return;
   }
 
+
+  // Ensure that frame indexes match between what is effectively shown
+  // and what is present inside the PCAP
+  size_t numberOfTimesteps = this->FilePositions.size();
+  if (!this->ShowFirstAndLastFrame && numberOfTimesteps >= 3)
+  {
+    startFrame++;
+    endFrame++;
+  }
+
   // because fpos_t is plateform specific and should not be used for comparaison
   // it's not possible to simply interate from FiePositions[start] to FilePositions[end]
   // we need to detect new frame in the pcap directly once again
@@ -216,12 +226,35 @@ void vtkLidarReader::SaveFrame(int startFrame, int endFrame, const std::string &
   unsigned int dataHeaderLength = 0;
   double timeSinceStart = 0;
   int currentFrame = startFrame;
-  bool isNewFrame;
-  int notUsed;
+
+  bool isNewFrame = false;
+  int notUsed = 0;
+
+  // Explanation for why we need to allow currentFrame to go to endFrame + 1:
+  // If '[]' represents a packet, '|' represents the separation between frames,
+  // Then the contents of a Velodyne Lidar PCAP is in general*:
+  // [-- incomplete frame --|-- begin frame 0 --]
+  // [-- content of frame 0 --]
+  // ... many packets ...
+  // [-- end frame 0 --|-- begin frame1 --]
+  // ... end of the PCAP
+  // Here we see that the first separation between two frame happens in the
+  // first packet. We do need to see one more separation than the number of
+  // packets to write. This is due to the fact that the first incomplete frame
+  // is hidden by VeloView.
+  // A possible improvement to VeloView would be to not always hide this first
+  // frame, depending on a flag set on the reader.
+  // *if you are very lucky the first frame will start at the begining of the
+  // first packet, and there will be no "incomplete frame".
+  //
+  // In my test, writing all frames of the PCAP results in a .pcap file exactly
+  // identical to the one that is read, if you enable "ShowFirstAndLastFrame".
 
   this->Reader->SetFilePosition(&this->FilePositions[startFrame].Position);
-  while (this->Reader->NextPacket(data, dataLength, timeSinceStart, &header, &dataHeaderLength)
-         && currentFrame <= endFrame)
+
+  while (this->Reader->NextPacket(
+           data, dataLength, timeSinceStart, &header, &dataHeaderLength)
+         && currentFrame <= endFrame + 1) // see explanation above for "+ 1"
   {
     // writing all packets, even those that do not contain lidar frames,
     // such as the 512 bytes packets of Velodyne IMU data + forwarded GPS data

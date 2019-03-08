@@ -30,6 +30,7 @@ import kiwiviewerExporter
 import gridAdjustmentDialog
 import aboutDialog
 import planefit
+import bisect
 
 from PythonQt.paraview import vvCalibrationDialog, vvCropReturnsDialog, vvSelectFramesDialog
 from VelodyneHDLPluginPython import vtkVelodynePacketInterpreter
@@ -872,8 +873,13 @@ def getFrameSelectionFromUser(frameStrideVisibility=False, framePackVisibility=F
         pass
 
     dialog = PythonQt.paraview.vvSelectFramesDialog(getMainWindow())
-    dialog.frameMinimum = app.scene.StartTime
-    dialog.frameMaximum = app.scene.EndTime
+    dialog.frameMinimum = 0
+    if app.reader is None:
+        dialog.frameMaximum = 0
+    elif app.reader.GetClientSideObject().GetShowFirstAndLastFrame():
+        dialog.frameMaximum = app.reader.GetClientSideObject().GetNumberOfFrames() - 1
+    else:
+        dialog.frameMaximum = app.reader.GetClientSideObject().GetNumberOfFrames() - 3
     dialog.frameStrideVisibility = frameStrideVisibility
     dialog.framePackVisibility = framePackVisibility
     dialog.frameTransformVisibility = frameTransformVisibility
@@ -998,10 +1004,12 @@ def onSavePCAP():
         return
 
     if frameOptions.mode == vvSelectFramesDialog.CURRENT_FRAME:
-        frameOptions.start = frameOptions.stop = app.scene.AnimationTime
+        frameOptions.start = frameOptions.stop = bisect.bisect_left(
+          getAnimationScene().TimeKeeper.TimestepValues,
+          getAnimationScene().TimeKeeper.Time)
     elif frameOptions.mode == vvSelectFramesDialog.ALL_FRAMES:
-        frameOptions.start = int(app.scene.StartTime)
-        frameOptions.stop = int(app.scene.EndTime)
+        frameOptions.start = 0
+        frameOptions.stop = 0 if app.reader is None else app.reader.GetClientSideObject().GetNumberOfFrames() - 1
 
     defaultFileName = getDefaultSaveFileName('pcap', suffix=' (Frame %d to %d)' % (frameOptions.start, frameOptions.stop))
     fileName = getSaveFileName('Save PCAP', 'pcap', defaultFileName)
