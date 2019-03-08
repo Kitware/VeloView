@@ -225,7 +225,7 @@ void vvPlayerControlsController::onFirstFrame()
 void vvPlayerControlsController::onPreviousFrame()
 {
   emit this->beginNonUndoableChanges();
-  SetProperty(this->Scene, "Duration", this->duration);
+  SetProperty(this->Scene, "PlayMode", 2);
   this->Scene->getProxy()->InvokeCommand("GoToPrevious");
   SM_SCOPED_TRACE(CallMethod)
     .arg(this->Scene->getProxy())
@@ -237,7 +237,7 @@ void vvPlayerControlsController::onPreviousFrame()
 void vvPlayerControlsController::onNextFrame()
 {
   emit this->beginNonUndoableChanges();
-  SetProperty(this->Scene, "Duration", this->duration);
+  SetProperty(this->Scene, "PlayMode", 2);
   this->Scene->getProxy()->InvokeCommand("GoToNext");
   SM_SCOPED_TRACE(CallMethod)
     .arg(this->Scene->getProxy())

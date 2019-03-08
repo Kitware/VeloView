@@ -434,7 +434,6 @@ def openSensor():
         prep = smp.Show(processor)
     smp.Render()
 
-    updateUIwithNewFrame()
     showSourceInSpreadSheet(sensor)
 
     app.actions['actionShowRPM'].enabled = True
@@ -454,6 +453,8 @@ def openSensor():
     app.actions['actionDualReturnIntensityHigh'].enabled = True
     app.actions['actionDualReturnIntensityLow'].enabled = True
     app.actions['actionRecord'].enabled = True
+
+    updateUIwithNewLidar()
 
 
 def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrationUIArgs=None):
@@ -533,7 +534,7 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
                                                FileName=positionFilename)
 
     posreader.GetClientSideObject().SetCalibrationTransform(calibration.gpsTransform)
-
+    smp.Show(posreader)
     smp.Show(app.trailingFrame)
 
     if positionFilename is None:
@@ -596,7 +597,7 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
     showMeasurementGrid()
 
     smp.SetActiveSource(app.trailingFrame)
-    updateUIwithNewFrame()
+    updateUIwithNewLidar()
 
 
 
@@ -1129,6 +1130,7 @@ def close():
     app.gridProperties.LineWidth = app.grid.LineWidth
     app.gridProperties.Color = app.grid.Color
 
+    smp.GetAnimationScene().Stop()
     hideRuler()
     unloadData()
     app.scene.AnimationTime = 0
@@ -1308,8 +1310,7 @@ def onChooseCalibrationFile():
     if lidar:
         lidar.Interpreter.GetClientSideObject().SetSensorTransform(sensorTransform)
         lidar.CalibrationFile = calibrationFile
-        if getReader():
-            reloadCurrentFrame()
+        updateUIwithNewLidar()
 
     restoreLaserSelectionDialog()
 
@@ -1522,8 +1523,9 @@ def addShortcuts(keySequenceStr, function):
 
 def onTrailingFramesChanged(numFrames):
     tr = smp.FindSource("TrailingFrame")
-    tr.NumberOfTrailingFrames = numFrames
-    smp.Render()
+    if tr:
+        tr.NumberOfTrailingFrames = numFrames
+        smp.Render()
 
 
 def onFiringsSkipChanged(pr):
@@ -1622,7 +1624,7 @@ def onLaserSelectionChanged():
     LidarInterpreter = getLidarPacketInterpreter()
     if LidarInterpreter:
         LidarInterpreter.GetClientSideObject().SetLaserSelection(mask)
-        reloadCurrentFrame()
+        smp.Render()
 
 
 def hideColorByComponent():
@@ -1738,101 +1740,41 @@ def toggleSelectDualReturn():
         return
 
     #Get the active source
-    source = smp.GetActiveSource()
+    source = smp.FindSource("TrailingFrame")
     lidarPacketInterpreter = getLidarPacketInterpreter()
 
     #If no data are available
     if not source :
         return
 
-    if not lidarPacketInterpreter.GetHasDualReturn() :
+    if not lidarPacketInterpreter.GetClientSideObject().GetHasDualReturn() :
         QtGui.QMessageBox.warning(getMainWindow(), 'Dual returns not found',
         "The functionality only works with dual returns, and the current"
         "frame has no dual returns.")
         return
 
-    #Get the polyData which contains all points
-    allFrame = source.GetClientSideObject().GetOutput()
-    nPoints = allFrame.GetNumberOfPoints()
-
     #Get the selected Points
     selectedPoints = source.GetSelectionOutput(0)
     polyData = selectedPoints.GetClientSideObject().GetOutput()
-    idArray = polyData.GetPointData().GetArray('dual_return_matching')
-    nSelectedpoints = polyData.GetNumberOfPoints()
+    nSelectedPoints = polyData.GetNumberOfPoints()
 
-    #Select the dual return of each selected points which have a dual return
-    if nSelectedpoints >0 :
-        #create a temporary array to make a query selection
-        array = range(0,nPoints)
-
-        #fill the temporary array
-        for i in range (nPoints):
-            array[i] = -1
-
-        #Add the dualId in the temporary array
-        for i in range(nSelectedpoints):
-            dualId = idArray.GetValue(i)
-            if dualId >=0:
-                array[dualId] = 1
-
-        #Add the temporary array to the source
-        getLidarPacketInterpreter().SetSelectedPointsWithDualReturn(array,nPoints)
-        getLidarPacketInterpreter().SetShouldAddDualReturnArray(True)
-        reloadCurrentFrame()
-
-        query = 'dualReturn_of_selectedPoints>0'
-        smp.SelectPoints(query,source)
-        smp.Render()
-        #Tell the source the selection is made
-        #source.GetClientSideObject().SetShouldAddDualReturnArray(False)
-        #Remove the query
-        query = ''
-    #Select all the points which have a dual return if no points are selected
-    else :
-        query = 'dual_return_matching>-1'
-        smp.SelectPoints(query)
-        smp.Render()
+    if nSelectedPoints > 0:
+        idArray = polyData.GetPointData().GetArray('dual_return_matching')
+        idArray = polyData.GetBlock(0).GetPointData().GetArray('dual_return_matching')
+        # It should be possible to filter -1 from the idArray and then just use
+        # np.in1d below, but doing so generates errors (either an invalid
+        # expression, even when handling the case of an empty array, or an
+        # invalid non-mask return value.
+        selectedDualIds = set(str(int(idArray.GetValue(i))) for i in range(nSelectedPoints))
+        query = 'np.logical_and(dual_return_matching > -1, np.in1d(id, [{}]))'.format(','.join(selectedDualIds))
+    else:
+        query = 'dual_return_matching > -1'
+    smp.SelectPoints(query)
+    smp.Render()
 
 
 def toggleCrashAnalysis():
     app.EnableCrashAnalysis = app.actions['actionEnableCrashAnalysis'].isChecked()
-
-
-def toggleBirdEyeViewSnap():
-    # Get export images filename
-    fileName = getSaveFileName('Choose Output File', 'png', getDefaultSaveFileName('png'))
-    if not fileName:
-        QtGui.QMessageBox.warning(getMainWindow(), 'Invalid filename', 'Please, select a valid filename')
-        return
-
-    # Fit a plane using ransac algorithm
-    reader = getReader()
-    ransacPlaneFitting = smp.RansacPlaneModel(reader)
-    ransacPlaneFitting.GetClientSideObject().SetMaxRansacIteration(1000)
-    ransacPlaneFitting.GetClientSideObject().SetThreshold(0.35)
-    ransacPlaneFitting.GetClientSideObject().SetRatioInlierRequired(0.80)
-    ransacPlaneFitting.UpdatePipeline()
-    planeParams = range(4)
-    ransacPlaneFitting.GetClientSideObject().GetPlaneParam(planeParams)
-
-    # use the fitted plane to generate the bird eye view
-    # image (i.e: project the point cloud on the fitted plan
-    # and use the 2D projected point cloud to generate the image)
-    birdEyeViewGenerator = smp.BirdEyeViewSnap(reader)
-    birdEyeViewGenerator.GetClientSideObject().SetFolderName(fileName)
-    birdEyeViewGenerator.GetClientSideObject().SetPlaneParam(planeParams)
-    birdEyeViewGenerator.UpdatePipeline()
-
-def toggleMotionDetection():
-    reader = getReader()
-
-    # check that a reader is available
-    if reader is None:
-        return
-
-    motionDetector = smp.MotionDetector(reader)
-    motionDetector.UpdatePipeline()
 
 def setFilterToDual():
     setFilterTo(0)
@@ -1895,16 +1837,14 @@ def fastRendererChanged():
     """ Enable/Disable fast rendering by using the point cloud representation (currently only for VLS-128)
     this representation hardcode the color map and their LookUpTable, which improve execution speed significantly """
 
-    source = getReader() or getSensor()
-    rep = smp.Show(source)
+    source = smp.FindSource("TrailingFrame")
+    if source:
+        rep = smp.GetRepresentation(source)
 
-    if app.actions['actionFastRenderer'].isChecked():
-        rep.Representation = 'Point Cloud'
-    else:
-        rep.Representation = 'Surface'
-
-    # Workaround to force the refresh for all the views
-    # todo
+        if app.actions['actionFastRenderer'].isChecked():
+            rep.Representation = 'Point Cloud'
+        else:
+            rep.Representation = 'Surface'
 
 def intensitiesCorrectedChanged():
     lidarInterpreter = getLidarPacketInterpreter()
@@ -1996,8 +1936,6 @@ def setupActions():
     app.actions['actionFastRenderer'].connect('triggered()',fastRendererChanged)
     app.actions['actionSelectDualReturn'].connect('triggered()',toggleSelectDualReturn)
     app.actions['actionSelectDualReturn2'].connect('triggered()',toggleSelectDualReturn)
-    app.actions['actionBirdEyeViewSnap'].connect('triggered()', toggleBirdEyeViewSnap)
-    app.actions['actionMotionDetection'].connect('triggered()', toggleMotionDetection)
 
     # Restore action states from settings
     settings = getPVSettings()
@@ -2121,8 +2059,7 @@ def onIgnoreZeroDistances():
     lidarInterpreter = getLidarPacketInterpreter()
     if lidarInterpreter:
         lidarInterpreter.IgnoreZeroDistances = IgnoreZeroDistances
-        reloadCurrentFrame()
-
+        smp.Render()
 
 def onIntraFiringAdjust():
     # Get the check box value as an int to save it into the PV settings (there's incompatibility with python booleans)
@@ -2135,7 +2072,7 @@ def onIntraFiringAdjust():
     lidarInterpreter = getLidarPacketInterpreter()
     if lidarInterpreter:
         lidarInterpreter.UseIntraFiringAdjustment = intraFiringAdjust
-        reloadCurrentFrame()
+        smp.Render()
 
 
 def onIgnoreEmptyFrames():
@@ -2149,24 +2086,15 @@ def onIgnoreEmptyFrames():
     lidarInterpreter = getLidarPacketInterpreter()
     if lidarInterpreter:
         lidarInterpreter.IgnoreEmptyFrames = ignoreEmptyFrames
-        reloadCurrentFrame()
-
-
-def reloadCurrentFrame():
-    lidar = getLidar()
-    if lidar:
-        lidar.DummyProperty = not lidar.DummyProperty
         smp.Render()
-        smp.Render(getSpreadSheetViewProxy())
-    updateUIwithNewFrame()
 
-def updateUIwithNewFrame():
+def updateUIwithNewLidar():
     lidar = getLidar()
     if lidar:
         app.sensorInformationLabel.setText(lidar.GetClientSideObject().GetSensorInformation())
     #Remove some array to display
     ComboBox = getMainWindow().findChild('vvColorToolbar').findChild('pqDisplayColorWidget').findChildren('QComboBox')[0]
-    listOfArrayToRemove = ['RotationPerMinute', 'vtkBlockColor', 'vtkCompositeIndex']
+    listOfArrayToRemove = ['RotationPerMinute', 'vtkBlockColors', 'vtkCompositeIndex']
     for arrayName in listOfArrayToRemove:
         n = ComboBox.findText(arrayName)
         ComboBox.removeItem(n)

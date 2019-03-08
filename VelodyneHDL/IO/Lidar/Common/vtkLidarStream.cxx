@@ -59,6 +59,7 @@ vtkLidarStream::vtkLidarStream()
 //-----------------------------------------------------------------------------
 vtkLidarStream::~vtkLidarStream()
 {
+  this->Stop();
   delete this->Internal;
 }
 
