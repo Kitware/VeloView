@@ -84,8 +84,11 @@ PacketReceiver::~PacketReceiver()
   // if a log file is present in the next session
   // it means that the software has been closed
   // properly (potentially a crash)
-  this->CrashAnalysis.CloseAnalyzer();
-  this->CrashAnalysis.DeleteLogFiles();
+  if (this->IsCrashAnalysing)
+  {
+    this->CrashAnalysis.CloseAnalyzer();
+    this->CrashAnalysis.DeleteLogFiles();
+  }
 }
 
 //-----------------------------------------------------------------------------
