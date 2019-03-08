@@ -533,7 +533,7 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
                                                FileName=positionFilename)
 
     posreader.GetClientSideObject().SetCalibrationTransform(calibration.gpsTransform)
-
+    smp.Show(posreader)
     smp.Show(app.trailingFrame)
 
     if positionFilename is None:
