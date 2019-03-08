@@ -44,7 +44,7 @@ def fitPlane():
     smp.Show(extracter)
 
     try:
-        pd = extracter.GetClientSideObject().GetOutput()
+        pd = extracter.GetClientSideObject().GetOutput().GetBlock(0)
         max_laser_id = pd.GetPointData().GetArray("laser_id").GetRange()[1]
         nchannels = 2**vtk.vtkMath.CeilLog2(int(max_laser_id))
 
