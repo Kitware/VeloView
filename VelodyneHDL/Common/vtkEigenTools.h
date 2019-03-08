@@ -117,4 +117,14 @@ Eigen::Vector3d VelodyneHDLPlugin_EXPORT GetSphericalCoordinates(const Eigen::Ve
                                                                  const Eigen::Matrix3d& Basis,
                                                                  const Eigen::Vector3d& Origin);
 Eigen::Vector3d VelodyneHDLPlugin_EXPORT GetSphericalCoordinates(const Eigen::Vector3d& X);
+
+/**
+  * @brief ComputeHomography compute the best homography (minimizing
+  *        least square error) that maps the x vectors to the y vectors
+  * @param x vector of the input vectors
+  * @param y vector of the output vectors
+  */
+Eigen::Matrix3d ComputeHomography(const std::vector<Eigen::Vector2d>& x,
+                                  const std::vector<Eigen::Vector2d>& y);
+
 #endif // VTK_EIGEN_TOOLS_H

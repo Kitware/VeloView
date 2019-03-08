@@ -185,3 +185,35 @@ Eigen::Matrix<double, 3, 1> GetSphericalCoordinates(const Eigen::Vector3d& X,
   Eigen::Vector3d Y = Basis.transpose() * (X - Origin);
   return GetSphericalCoordinates(Y);
 }
+
+//----------------------------------------------------------------------------
+Eigen::Matrix3d ComputeHomography(const std::vector<Eigen::Vector2d>& x,
+                                  const std::vector<Eigen::Vector2d>& y)
+{
+  if (x.size() != y.size())
+  {
+    vtkGenericWarningMacro("The input and output list of vectors must be the same size");
+    return Eigen::Matrix3d::Identity();
+  }
+
+  // Compute the direct linear transform matrix
+  Eigen::MatrixXd A(2 * x.size(), 9);
+  for (unsigned int i = 0; i < x.size(); ++i)
+  {
+    A.row(2 * i) << x[i](0), x[i](1), 1,
+                    0, 0, 0,
+                    -y[i](0) * x[i](0), -y[i](0) * x[i](1), -y[i](0);
+
+    A.row(2 * i + 1) << 0, 0, 0,
+                    x[i](0), x[i](1), 1,
+                    -y[i](1) * x[i](0), -y[i](1) * x[i](1), -y[i](1);
+  }
+
+  Eigen::JacobiSVD<Eigen::MatrixXd> svd(A, Eigen::ComputeThinU | Eigen::ComputeThinV);
+  Eigen::MatrixXd flattenH = svd.matrixV().col(8);
+  Eigen::Matrix3d H;
+  H << flattenH(0), flattenH(1), flattenH(2),
+       flattenH(3), flattenH(4), flattenH(5),
+       flattenH(6), flattenH(7), flattenH(8);
+  return H;
+}

@@ -1,0 +1,44 @@
+<ServerManagerConfiguration>
+  <!-- Begin vtkPointCloudLinearProjector -->
+  <ProxyGroup name="filters">
+    <SourceProxy name="PointCloudLinearProjector" class="vtkPointCloudLinearProjector" label="PointCloudLinearProjector">
+      <Documentation
+        short_help="Create a linear projection image of the current frame"
+        long_help="Create a linear projection image of the current frame">
+        Create a linear projection image of the current frame
+      </Documentation>
+
+    <InputProperty
+      name="Input"
+      command="SetInputConnection">
+      <DataTypeDomain name="input_type">
+        <DataType value="vtkPolyData"/>
+      </DataTypeDomain>
+    </InputProperty>
+
+    <IntVectorProperty
+        name="Dimensions"
+        animateable="0"
+        default_values="1000 1000"
+        command="SetDimensions"
+        number_of_elements="2">
+        <Documentation>
+          Image resolution
+        </Documentation>
+    </IntVectorProperty>
+
+    <DoubleVectorProperty
+        name="Plane Normal"
+        animateable="0"
+        default_values="0 0 1"
+        command="SetPlaneNormal"
+        number_of_elements="3">
+        <Documentation>
+          The normal of the plane onto which we want to project
+        </Documentation>
+    </DoubleVectorProperty>
+
+    </SourceProxy>
+  </ProxyGroup>
+  <!-- End vtkPointCloudLinearProjector -->
+</ServerManagerConfiguration>
