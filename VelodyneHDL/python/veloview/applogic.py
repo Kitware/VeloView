@@ -1122,6 +1122,7 @@ def close():
     app.gridProperties.LineWidth = app.grid.LineWidth
     app.gridProperties.Color = app.grid.Color
 
+    smp.GetAnimationScene().Stop()
     hideRuler()
     unloadData()
     app.scene.AnimationTime = 0
