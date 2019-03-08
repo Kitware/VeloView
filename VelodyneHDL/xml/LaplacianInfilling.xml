@@ -1,0 +1,22 @@
+<ServerManagerConfiguration>
+  <!-- Begin vtkLaplacianInfilling -->
+  <ProxyGroup name="filters">
+    <SourceProxy name="LaplacianInfilling" class="vtkLaplacianInfilling" label="LaplacianInfilling">
+      <Documentation
+        short_help="Hallucinate missing data by solving Dirichlet problem"
+        long_help="Hallucinate missing data by solving Dirichlet problem">
+        Hallucinate missing data by solving Dirichlet problem
+      </Documentation>
+
+    <InputProperty
+      name="Input"
+      command="SetInputConnection">
+      <DataTypeDomain name="input_type">
+        <DataType value="vtkPolyData"/>
+      </DataTypeDomain>
+    </InputProperty>
+
+    </SourceProxy>
+  </ProxyGroup>
+  <!-- End vtkLaplacianInfilling -->
+</ServerManagerConfiguration>
