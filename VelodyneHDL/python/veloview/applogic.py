@@ -1827,16 +1827,14 @@ def fastRendererChanged():
     """ Enable/Disable fast rendering by using the point cloud representation (currently only for VLS-128)
     this representation hardcode the color map and their LookUpTable, which improve execution speed significantly """
 
-    source = getReader() or getSensor()
-    rep = smp.Show(source)
+    source = smp.FindSource("TrailingFrame")
+    if source:
+        rep = smp.GetRepresentation(source)
 
-    if app.actions['actionFastRenderer'].isChecked():
-        rep.Representation = 'Point Cloud'
-    else:
-        rep.Representation = 'Surface'
-
-    # Workaround to force the refresh for all the views
-    # todo
+        if app.actions['actionFastRenderer'].isChecked():
+            rep.Representation = 'Point Cloud'
+        else:
+            rep.Representation = 'Surface'
 
 def intensitiesCorrectedChanged():
     lidarInterpreter = getLidarPacketInterpreter()
