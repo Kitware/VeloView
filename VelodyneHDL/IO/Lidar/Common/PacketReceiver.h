@@ -118,7 +118,7 @@ private:
   boost::mutex IsReceivingMtx; /*!< Mutex : Block the access of IsReceiving when a thread is seting the flag */
   boost::condition_variable IsReceivingCond;
   boost::mutex IsWriting;
-  bool IsCrashAnalysing;
+  bool IsCrashAnalysing = false;
   CrashAnalysisWriter CrashAnalysis;
 };
 
