@@ -433,7 +433,6 @@ def openSensor():
         prep = smp.Show(processor)
     smp.Render()
 
-    updateUIwithNewFrame()
     showSourceInSpreadSheet(sensor)
 
     app.actions['actionShowRPM'].enabled = True
@@ -453,6 +452,8 @@ def openSensor():
     app.actions['actionDualReturnIntensityHigh'].enabled = True
     app.actions['actionDualReturnIntensityLow'].enabled = True
     app.actions['actionRecord'].enabled = True
+
+    updateUIwithNewLidar()
 
 
 def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrationUIArgs=None):
@@ -595,7 +596,7 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
     showMeasurementGrid()
 
     smp.SetActiveSource(app.trailingFrame)
-    updateUIwithNewFrame()
+    updateUIwithNewLidar()
 
 
 
@@ -1300,8 +1301,7 @@ def onChooseCalibrationFile():
     if lidar:
         lidar.Interpreter.GetClientSideObject().SetSensorTransform(sensorTransform)
         lidar.CalibrationFile = calibrationFile
-        if getReader():
-            reloadCurrentFrame()
+        updateUIwithNewLidar()
 
     restoreLaserSelectionDialog()
 
@@ -1615,7 +1615,7 @@ def onLaserSelectionChanged():
     LidarInterpreter = getLidarPacketInterpreter()
     if LidarInterpreter:
         LidarInterpreter.GetClientSideObject().SetLaserSelection(mask)
-        reloadCurrentFrame()
+        smp.Render()
 
 
 def hideColorByComponent():
@@ -2051,8 +2051,7 @@ def onIgnoreZeroDistances():
     lidarInterpreter = getLidarPacketInterpreter()
     if lidarInterpreter:
         lidarInterpreter.IgnoreZeroDistances = IgnoreZeroDistances
-        reloadCurrentFrame()
-
+        smp.Render()
 
 def onIntraFiringAdjust():
     # Get the check box value as an int to save it into the PV settings (there's incompatibility with python booleans)
@@ -2065,7 +2064,7 @@ def onIntraFiringAdjust():
     lidarInterpreter = getLidarPacketInterpreter()
     if lidarInterpreter:
         lidarInterpreter.UseIntraFiringAdjustment = intraFiringAdjust
-        reloadCurrentFrame()
+        smp.Render()
 
 
 def onIgnoreEmptyFrames():
@@ -2079,24 +2078,15 @@ def onIgnoreEmptyFrames():
     lidarInterpreter = getLidarPacketInterpreter()
     if lidarInterpreter:
         lidarInterpreter.IgnoreEmptyFrames = ignoreEmptyFrames
-        reloadCurrentFrame()
-
-
-def reloadCurrentFrame():
-    lidar = getLidar()
-    if lidar:
-        lidar.DummyProperty = not lidar.DummyProperty
         smp.Render()
-        smp.Render(getSpreadSheetViewProxy())
-    updateUIwithNewFrame()
 
-def updateUIwithNewFrame():
+def updateUIwithNewLidar():
     lidar = getLidar()
     if lidar:
         app.sensorInformationLabel.setText(lidar.GetClientSideObject().GetSensorInformation())
     #Remove some array to display
     ComboBox = getMainWindow().findChild('vvColorToolbar').findChild('pqDisplayColorWidget').findChildren('QComboBox')[0]
-    listOfArrayToRemove = ['RotationPerMinute', 'vtkBlockColor', 'vtkCompositeIndex']
+    listOfArrayToRemove = ['RotationPerMinute', 'vtkBlockColors', 'vtkCompositeIndex']
     for arrayName in listOfArrayToRemove:
         n = ComboBox.findText(arrayName)
         ComboBox.removeItem(n)
