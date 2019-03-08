@@ -1732,7 +1732,7 @@ def toggleSelectDualReturn():
         return
 
     #Get the active source
-    source = getLidar()
+    source = smp.FindSource("TrailingFrame")
     lidarPacketInterpreter = getLidarPacketInterpreter()
 
     #If no data are available
@@ -1752,6 +1752,7 @@ def toggleSelectDualReturn():
 
     if nSelectedPoints > 0:
         idArray = polyData.GetPointData().GetArray('dual_return_matching')
+        idArray = polyData.GetBlock(0).GetPointData().GetArray('dual_return_matching')
         # It should be possible to filter -1 from the idArray and then just use
         # np.in1d below, but doing so generates errors (either an invalid
         # expression, even when handling the case of an empty array, or an
