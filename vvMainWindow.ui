@@ -879,7 +879,7 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Advance Feature</string>
+    <string>Advanced Feature</string>
    </property>
   </action>
   <action name="actionShowPosition">
