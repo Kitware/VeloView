@@ -435,6 +435,7 @@ def openSensor():
     smp.Render()
 
     showSourceInSpreadSheet(sensor)
+    colorByIntensity(sensor)
 
     app.actions['actionShowRPM'].enabled = True
     app.actions['actionCorrectIntensityValues'].enabled = True
