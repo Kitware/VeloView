@@ -16,9 +16,12 @@
 #ifndef VTKLIDARSTREAM_H
 #define VTKLIDARSTREAM_H
 
+#include <memory>
 #include "vtkLidarProvider.h"
 
-class vtkLidarStreamInternal;
+class PacketConsumer;
+class PacketFileWriter;
+class NetworkSource;
 
 class VTK_EXPORT vtkLidarStream : public vtkLidarProvider
 {
@@ -48,13 +51,13 @@ public:
    * @copydoc NetworkSource::LIDARPort
    */
   int GetLIDARPort();
-  void SetLIDARPort(const int);
+  void SetLIDARPort(int);
 
   /**
    * @copydoc NetworkSource::GPSPort
    */
   int GetGPSPort();
-  void SetGPSPort(const int);
+  void SetGPSPort(int);
 
   /**
    * @copydoc NetworkSource::ForwardedIpAddress
@@ -66,21 +69,21 @@ public:
    * @copydoc NetworkSource::ForwardedLIDARPort
    */
   int GetForwardedLIDARPort();
-  void SetForwardedLIDARPort(const int);
+  void SetForwardedLIDARPort(int);
 
   /**
    * @copydoc NetworkSource::ForwardedLIDARPort
    */
   int GetForwardedGPSPort();
-  void SetForwardedGPSPort(const int);
+  void SetForwardedGPSPort(int);
 
-  void EnableGPSListening(const bool);
+  void EnableGPSListening(bool);
 
   /**
    * @copydoc NetworkSource::IsForwarding
    */
   bool GetIsForwarding();
-  void SetIsForwarding(const bool);
+  void SetIsForwarding(bool);
 
   /**
    * @copydoc NetworkSource::IsCrashAnalysing
@@ -104,11 +107,14 @@ protected:
 
   virtual int RequestInformation(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
 
+  //! where to save a live record of the sensor
+  std::string OutputFileName = "";
+  std::shared_ptr<PacketConsumer> Consumer;
+  std::shared_ptr<PacketFileWriter> Writer;
+  std::unique_ptr<NetworkSource> Network;
 private:
-  vtkLidarStreamInternal* Internal;
-  vtkLidarStream(const vtkLidarStream&); // not implemented
-  void operator=(const vtkLidarStream&); // not implemented
-
+  vtkLidarStream(const vtkLidarStream&) = delete;
+  void operator=(const vtkLidarStream&) = delete;
 };
 
 #endif // VTKLIDARSTREAM_H
