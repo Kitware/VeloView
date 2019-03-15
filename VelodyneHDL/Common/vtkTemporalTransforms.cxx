@@ -19,6 +19,7 @@ vtkStandardNewMacro(vtkTemporalTransforms)
 vtkTemporalTransforms::vtkTemporalTransforms()
 {
   auto points = vtkSmartPointer<vtkPoints>::New();
+  points->SetDataTypeToDouble();
 
   auto timeArray = vtkSmartPointer<vtkDoubleArray>::New();
   timeArray->SetName(this->TimeArrayName);
