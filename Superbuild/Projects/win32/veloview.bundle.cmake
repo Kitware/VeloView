@@ -84,6 +84,16 @@ if (qt5_enabled)
     DESTINATION "bin"
     COMPONENT superbuild
   )
+  # required to have Windows Vista style (else Windows 98 look):
+  # see https://gitlab.kitware.com/paraview/paraview/issues/18551
+  # the bug fix is not yet integrated to the Superbuild,
+  # and we do not use the superbuild for Qt (yet) anyway
+  # note that this will only add the directoy to the package,
+  # not to build_dir/install
+  install(DIRECTORY "${Qt5_DIR}/../../../plugins/styles"
+    DESTINATION "bin"
+    COMPONENT superbuild
+  )
   # unset(platforms_dll)
 endif ()
 

@@ -224,6 +224,10 @@ if (WIN32)
   install(DIRECTORY "${Qt5_DIR}/../../../plugins/platforms"
     DESTINATION "bin"
   )
+  # see comment in: Superbuild/Projects/win32/veloview.bundle.cmake
+  install(DIRECTORY "${Qt5_DIR}/../../../plugins/styles"
+    DESTINATION "bin"
+  )
 endif ()
 
 
