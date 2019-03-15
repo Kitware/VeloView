@@ -3,6 +3,7 @@
 #include "vtkConversions.h"
 
 #include <vtkCellData.h>
+#include <vtkCell.h>
 #include <vtkPolyLine.h>
 #include <vtkTransform.h>
 
@@ -29,6 +30,13 @@ vtkTemporalTransforms::vtkTemporalTransforms()
   this->SetPoints(points);
   this->GetPointData()->AddArray(timeArray);
   this->GetPointData()->AddArray(orientationArray);
+
+  // create the cell in the same time for visualization
+  auto polyLine = vtkSmartPointer<vtkPolyLine>::New();
+  polyLine->GetPointIds()->SetNumberOfIds(0);
+  auto cell = vtkSmartPointer<vtkCellArray>::New();
+  cell->InsertNextCell(polyLine);
+  this->SetLines(cell);
 }
 
 //-----------------------------------------------------------------------------
