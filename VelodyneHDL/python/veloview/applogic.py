@@ -393,7 +393,7 @@ def openSensor():
     close()
     app.grid = createGrid()
 
-    sensor = smp.LidarStream(guiName='Data', CalibrationFile=calibrationFile, CacheSize=1)
+    sensor = smp.LidarStream(guiName='Data', CalibrationFile=calibrationFile)
     sensor.GetClientSideObject().SetLIDARPort(LIDARPort)
     sensor.GetClientSideObject().EnableGPSListening(True)
     sensor.GetClientSideObject().SetGPSPort(GPSPort)

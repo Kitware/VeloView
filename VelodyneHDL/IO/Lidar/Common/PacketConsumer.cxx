@@ -8,7 +8,7 @@ PacketConsumer::PacketConsumer()
 {
   this->NewData = false;
   this->ShouldCheckSensor = true;
-  this->MaxNumberOfFrames = 1000;
+  this->MaxNumberOfFrames = 1;
   this->LastTime = 0.0;
   this->Timesteps.clear();
   this->Frames.clear();

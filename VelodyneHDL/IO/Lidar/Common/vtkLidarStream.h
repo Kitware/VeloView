@@ -36,11 +36,6 @@ public:
   void Start();
   void Stop();
 
-  void UnloadFrames();
-
-  int GetCacheSize();
-  void SetCacheSize(int cacheSize);
-
   /**
    * @copydoc vtkLidarStreamInternal::OutputFileName
    */
@@ -101,11 +96,9 @@ protected:
   vtkLidarStream();
   ~vtkLidarStream();
 
-  virtual int RequestData(vtkInformation* request,
-                          vtkInformationVector** inputVector,
-                          vtkInformationVector* outputVector);
-
-  virtual int RequestInformation(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
+  int RequestData(vtkInformation* request,
+                  vtkInformationVector** inputVector,
+                  vtkInformationVector* outputVector) override;
 
   //! where to save a live record of the sensor
   std::string OutputFileName = "";

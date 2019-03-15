@@ -22,8 +22,6 @@
 
 #include <vtkInformationVector.h>
 #include <vtkInformation.h>
-#include <vtkStreamingDemandDrivenPipeline.h>
-
 
 //-----------------------------------------------------------------------------
 vtkStandardNewMacro(vtkLidarStream)
@@ -202,86 +200,19 @@ void vtkLidarStream::Poll()
 }
 
 //----------------------------------------------------------------------------
-int vtkLidarStream::GetCacheSize()
-{
-  return this->Consumer->GetMaxNumberOfFrames();
-}
-
-//----------------------------------------------------------------------------
-void vtkLidarStream::SetCacheSize(int cacheSize)
-{
-  if (cacheSize == this->GetCacheSize())
-  {
-    return;
-  }
-  this->Modified();
-}
-
-//-----------------------------------------------------------------------------
-void vtkLidarStream::UnloadFrames()
-{
-  this->Consumer->UnloadData();
-}
-
-
-//-----------------------------------------------------------------------------
-int vtkLidarStream::RequestInformation(vtkInformation* request,
-                                       vtkInformationVector** inputVector,
-                                       vtkInformationVector* outputVector)
-{
-  this->Superclass::RequestInformation(request, inputVector, outputVector);
-  vtkInformation* outInfo = outputVector->GetInformationObject(0);
-
-  std::vector<double> timesteps = this->Consumer->GetTimesteps();
-  const size_t nTimesteps = timesteps.size();
-  if (nTimesteps > 0)
-  {
-    outInfo->Set(vtkStreamingDemandDrivenPipeline::TIME_STEPS(), &timesteps.front(),
-      static_cast<int>(nTimesteps));
-  }
-  else
-  {
-    outInfo->Remove(vtkStreamingDemandDrivenPipeline::TIME_STEPS());
-  }
-
-  double timeRange[2] = { 0.0, nTimesteps ? nTimesteps - 1.0 : 0.0 };
-  outInfo->Set(vtkStreamingDemandDrivenPipeline::TIME_RANGE(), timeRange, 2);
-
-  return 1;
-}
-
-//----------------------------------------------------------------------------
 int vtkLidarStream::RequestData(vtkInformation* vtkNotUsed(request),
                                 vtkInformationVector** vtkNotUsed(inputVector),
                                 vtkInformationVector* outputVector)
 {
-  vtkInformation* outInfo = outputVector->GetInformationObject(0);
-  vtkDataSet* output = vtkDataSet::SafeDownCast(outInfo->Get(vtkDataObject::DATA_OBJECT()));
-
-  double timeRequest = 0;
-  if (outInfo->Has(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP()))
-  {
-    timeRequest = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP());
-  }
+  vtkPolyData* output = vtkPolyData::GetData(outputVector);
 
   {
     boost::lock_guard<boost::mutex> lock(this->Consumer->ConsumerMutex);
     double actualTime;
     vtkSmartPointer<vtkPolyData> polyData(NULL);
-//  if (this->Internal->Consumer->GetNumberOfTrailingFrames() > 0)
-//  {
-//    polyData = this->Internal->Consumer->GetFramesForTime(
-//      timeRequest, actualTime, this->Internal->Consumer->GetNumberOfTrailingFrames());
-//  }
-//  else
-//  {
-    polyData = this->Consumer->GetFrameForTime(timeRequest, actualTime);
-//  }
-
+    polyData = this->Consumer->GetFrameForTime(0, actualTime);
     if (polyData)
     {
-      // printf("request %f, returning %f\n", timeRequest, actualTime);
-      output->GetInformation()->Set(vtkDataObject::DATA_TIME_STEP(), actualTime);
       output->ShallowCopy(polyData);
     }
   }

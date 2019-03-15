@@ -183,17 +183,6 @@
       command="Stop" />
 
     <IntVectorProperty
-      name="CacheSize"
-      command="SetCacheSize"
-      number_of_elements="1"
-      default_values="500">
-      <Documentation>
-      The cache size determines how many timesteps of data will be saved
-      by this source.  A cache size of zero indicates an unlimited size.
-      </Documentation>
-    </IntVectorProperty>
-
-    <IntVectorProperty
         name="SetIsCrashAnalysing"
         command="SetIsCrashAnalysing"
         default_values="0"

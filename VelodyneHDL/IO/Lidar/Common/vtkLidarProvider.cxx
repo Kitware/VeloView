@@ -96,6 +96,7 @@ int vtkLidarProvider::RequestInformation(vtkInformation *request,
   {
     this->Interpreter->LoadCalibration(this->CalibrationFileName);
   }
+  return 1;
 }
 
 //-----------------------------------------------------------------------------
