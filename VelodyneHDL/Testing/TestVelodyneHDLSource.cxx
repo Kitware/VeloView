@@ -66,7 +66,6 @@ int main(int argc, char* argv[])
   auto interp = vtkSmartPointer<vtkVelodynePacketInterpreter>::New();
   HDLsource->SetInterpreter(interp);
   HDLsource->SetCalibrationFileName(correctionFileName);
-  HDLsource->SetCacheSize(100);
   HDLsource->SetLIDARPort(dataPort);
   HDLsource->SetIsForwarding(false);
   HDLsource->SetIsCrashAnalysing(true);
@@ -99,8 +98,6 @@ int main(int argc, char* argv[])
 
   if (correctionFileName == "" && HDLsource->GetInterpreter()->GetIsCalibrated())
   {
-    HDLsource->UnloadFrames();
-
     std::cout << "Live Correction initialized, resend data..." << std::endl;
     const double resendingDataStartTime = vtkTimerLog::GetUniversalTime();
     try
