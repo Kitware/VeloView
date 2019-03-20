@@ -58,6 +58,9 @@ public:
   vtkGetObjectMacro(Interpreter, vtkLidarPacketInterpreter)
   virtual void SetInterpreter(vtkLidarPacketInterpreter *);
 
+  vtkGetMacro(DetectFrameDropping, bool)
+  vtkSetMacro(DetectFrameDropping, bool)
+
   vtkMTimeType GetMTime() override;
 
   friend class vtkLidarReaderInternal;
@@ -70,6 +73,12 @@ protected:
                          vtkInformationVector *outputVector) override;
 
   int FillOutputPortInformation(int port, vtkInformation* info) override;
+
+  //! Indicate if we should detect that some frames are dropped
+  bool DetectFrameDropping = false;
+
+  //! Last Frame processed, this is important if we want to detect frame dropping
+  int LastFrameProcessed = 0;
 
   //! Interpret the packet to create a frame, all the magic happen here
   vtkLidarPacketInterpreter* Interpreter = nullptr;

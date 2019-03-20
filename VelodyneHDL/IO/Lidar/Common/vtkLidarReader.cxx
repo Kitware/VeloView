@@ -1,5 +1,7 @@
 #include "vtkLidarReader.h"
 
+#include <sstream>
+
 #include "vtkLidarPacketInterpreter.h"
 #include "vtkPacketFileWriter.h"
 #include "vtkPacketFileReader.h"
@@ -276,7 +278,7 @@ int vtkLidarReader::RequestData(vtkInformation *vtkNotUsed(request),
                                 vtkInformationVector *outputVector)
 {
   vtkPolyData* output = vtkPolyData::GetData(outputVector);
-  vtkTable* calibration = vtkTable::GetData(outputVector,1);
+  vtkTable* calibration = vtkTable::GetData(outputVector, 1);
 
   vtkInformation* info = outputVector->GetInformationObject(0);
 
@@ -313,6 +315,20 @@ int vtkLidarReader::RequestData(vtkInformation *vtkNotUsed(request),
                                                    << this->GetNumberOfFrames() << " datasets.");
     return 0;
   }
+
+  // detect frame dropping
+  if (this->DetectFrameDropping)
+  {
+    int step = frameRequested - this->LastFrameProcessed;
+    if (step > 1)
+    {
+      std::stringstream text;
+      text << "WARNING : At frame " << std::right << std::setw(6) << frameRequested
+           << " Drop " << std::right << std::setw(2) << step-1 << " frame(s)\n";
+      vtkWarningMacro( << text.str() )
+    }
+  }
+  this->LastFrameProcessed = frameRequested;
 
   //! @todo we should no open the pcap file everytime a frame is requested !!!
   this->Open();

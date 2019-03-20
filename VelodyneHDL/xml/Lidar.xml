@@ -18,6 +18,19 @@
       </Documentation>
     </IntVectorProperty>
 
+    <IntVectorProperty
+        name="DetectFrameDropping"
+        animateable="0"
+        command="SetDetectFrameDropping"
+        default_values="0"
+        number_of_elements="1"
+        panel_visibility="advanced">
+      <BooleanDomain name="bool" />
+      <Documentation>
+        Throw a warning to the user each time a frame is dropped
+      </Documentation>
+    </IntVectorProperty>
+
   </SourceProxy>
 </ProxyGroup>
 <!-- End LidarProvider -->
