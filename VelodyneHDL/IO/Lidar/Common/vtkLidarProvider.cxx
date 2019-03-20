@@ -94,6 +94,7 @@ int vtkLidarProvider::RequestInformation(vtkInformation *request,
   // load the calibration file only now to allow to set it before the interpreter.
   if (this->Interpreter->GetCalibrationFileName() != this->CalibrationFileName)
   {
+    this->Interpreter->SetCalibrationFileName(this->CalibrationFileName);
     this->Interpreter->LoadCalibration(this->CalibrationFileName);
   }
   return 1;
