@@ -51,6 +51,8 @@ public:
 
   int CheckForNewData();
 
+  void ClearAllFrames() { this->Frames.clear();}
+
   void Start();
 
   void Stop();

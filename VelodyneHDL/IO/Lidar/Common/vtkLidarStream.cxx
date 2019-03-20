@@ -16,6 +16,9 @@
 //=========================================================================
 
 #include "vtkLidarStream.h"
+
+#include <sstream>
+
 #include "NetworkSource.h"
 #include "PacketConsumer.h"
 #include "PacketFileWriter.h"
@@ -202,13 +205,27 @@ int vtkLidarStream::RequestData(vtkInformation* vtkNotUsed(request),
 {
   vtkPolyData* output = vtkPolyData::GetData(outputVector);
 
+  int numberOfFrameAvailable = 0;
   {
     boost::lock_guard<boost::mutex> lock(this->Consumer->ConsumerMutex);
-    int tmp = this->Consumer->CheckForNewData();
-    cout << tmp << endl;
-    if (tmp)
+    numberOfFrameAvailable = this->Consumer->CheckForNewData();
+    if (numberOfFrameAvailable != 0)
     {
-      output->ShallowCopy(this->Consumer->GetLastAvailableFrame());
+      vtkSmartPointer<vtkPolyData> polyData = this->Consumer->GetLastAvailableFrame();
+      output->ShallowCopy(polyData);
+      this->Consumer->ClearAllFrames();
+      this->LastFrameProcessed += numberOfFrameAvailable;
+    }
+  }
+
+  if (this->DetectFrameDropping)
+  {
+    if (numberOfFrameAvailable > 1)
+    {
+      std::stringstream text;
+      text << "WARNING : At frame " << std::right << std::setw(6) << this->LastFrameProcessed
+           << " Drop " << std::right << std::setw(2) << numberOfFrameAvailable-1 << " frame(s)\n";
+      vtkWarningMacro( << text.str() )
     }
   }
 
