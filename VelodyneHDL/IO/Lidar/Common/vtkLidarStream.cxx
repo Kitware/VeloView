@@ -153,8 +153,13 @@ void vtkLidarStream::SetIsCrashAnalysing(bool value)
 //-----------------------------------------------------------------------------
 bool vtkLidarStream::GetNeedsUpdate()
 {
-  Poll();
-  return true;
+  boost::lock_guard<boost::mutex> lock(this->Consumer->ConsumerMutex);
+  if (this->Consumer->CheckForNewData())
+  {
+    this->Modified();
+    return true;
+  }
+  return false;
 }
 
 //----------------------------------------------------------------------------
@@ -191,15 +196,6 @@ void vtkLidarStream::Stop()
 }
 
 //----------------------------------------------------------------------------
-void vtkLidarStream::Poll()
-{
-  if (this->Consumer->CheckForNewData())
-  {
-    this->Modified();
-  }
-}
-
-//----------------------------------------------------------------------------
 int vtkLidarStream::RequestData(vtkInformation* vtkNotUsed(request),
                                 vtkInformationVector** vtkNotUsed(inputVector),
                                 vtkInformationVector* outputVector)
@@ -208,12 +204,11 @@ int vtkLidarStream::RequestData(vtkInformation* vtkNotUsed(request),
 
   {
     boost::lock_guard<boost::mutex> lock(this->Consumer->ConsumerMutex);
-    double actualTime;
-    vtkSmartPointer<vtkPolyData> polyData(NULL);
-    polyData = this->Consumer->GetFrameForTime(0, actualTime);
-    if (polyData)
+    int tmp = this->Consumer->CheckForNewData();
+    cout << tmp << endl;
+    if (tmp)
     {
-      output->ShallowCopy(polyData);
+      output->ShallowCopy(this->Consumer->GetLastAvailableFrame());
     }
   }
 

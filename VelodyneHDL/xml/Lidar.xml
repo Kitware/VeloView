@@ -171,10 +171,6 @@
     </StringVectorProperty>
 
     <Property
-      name="Poll"
-      command="Poll" />
-
-    <Property
       name="Start"
       command="Start" />
 

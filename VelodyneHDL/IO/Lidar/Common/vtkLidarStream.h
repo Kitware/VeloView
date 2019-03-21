@@ -31,8 +31,6 @@ public:
 
   int GetNumberOfFrames() override;
 
-  void Poll();
-
   void Start();
   void Stop();
 
