@@ -1421,7 +1421,7 @@ def showSourceInSpreadSheet(source):
 def createGrid(view=None):
 
     view = view or smp.GetActiveView()
-    grid = smp.VelodyneHDLGridSource(guiName='Measurement Grid')
+    grid = smp.GridSource(guiName='Measurement Grid')
 
     if app.gridProperties.Persist == False:
         grid.GridNbTicks = (int(math.ceil(50000 * app.DistanceResolutionM/ grid.Scale )))

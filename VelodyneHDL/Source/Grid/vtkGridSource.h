@@ -14,7 +14,7 @@
 /*=========================================================================
 
   Program:   Visualization Toolkit
-  Module:    vtkVelodyneHDLGridSource.cxx
+  Module:    vtkGridSource.cxx
 
   Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
   All rights reserved.
@@ -25,21 +25,21 @@
   PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkVelodyneHDLGridSource - generates a vtkPolyData measurement grid plane
+// .NAME vtkGridSource - generates a vtkPolyData measurement grid plane
 // .Section Description
 //
 
-#ifndef _vtkVelodyneHDLGridSource_h
-#define _vtkVelodyneHDLGridSource_h
+#ifndef _vtkGridSource_h
+#define _vtkGridSource_h
 
 #include <vtkPolyDataAlgorithm.h>
 #include <vtkSmartPointer.h>
 
-class VTK_EXPORT vtkVelodyneHDLGridSource : public vtkPolyDataAlgorithm
+class VTK_EXPORT vtkGridSource : public vtkPolyDataAlgorithm
 {
 public:
-  static vtkVelodyneHDLGridSource* New();
-  vtkTypeMacro(vtkVelodyneHDLGridSource, vtkPolyDataAlgorithm)
+  static vtkGridSource* New();
+  vtkTypeMacro(vtkGridSource, vtkPolyDataAlgorithm)
   void PrintSelf(ostream& os, vtkIndent indent);
 
   vtkSetMacro(GridNbTicks, int);
@@ -67,8 +67,8 @@ public:
     int gridNbTicks, double scale, double origin[3], double normal[3]);
 
 protected:
-  vtkVelodyneHDLGridSource();
-  ~vtkVelodyneHDLGridSource();
+  vtkGridSource();
+  ~vtkGridSource();
 
   int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
 
@@ -82,7 +82,7 @@ protected:
   double Color[3];
 
 private:
-  vtkVelodyneHDLGridSource(const vtkVelodyneHDLGridSource&);
-  void operator=(const vtkVelodyneHDLGridSource&);
+  vtkGridSource(const vtkGridSource&);
+  void operator=(const vtkGridSource&);
 };
 #endif
