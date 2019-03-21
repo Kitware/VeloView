@@ -189,7 +189,7 @@ list(APPEND servermanager_sources
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/Ransac/vtkRansacPlaneModel.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/TemporalTransformsApplier/vtkTemporalTransformsApplier.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/TrailingFrame/vtkTrailingFrame.cxx
-  ${CMAKE_CURRENT_SOURCE_DIR}/Source/Grid/vtkVelodyneHDLGridSource.cxx
+  ${CMAKE_CURRENT_SOURCE_DIR}/Source/Grid/vtkGridSource.cxx
   )
 
 if (ENABLE_PCL)
@@ -221,7 +221,7 @@ list(APPEND servermanager_xml
   xml/RansacPlaneModel.xml
   xml/TrailingFrame.xml
   xml/ProcessingSample.xml
-  xml/VelodyneHDLGridSource.xml
+  xml/GridSource.xml
   xml/TemporalTransformsReader.xml
   xml/TemporalTransformsWriter.xml
   xml/TemporalTransformsApplier.xml

@@ -14,7 +14,7 @@
 /*=========================================================================
 
   Program:   Visualization Toolkit
-  Module:    vtkVelodyneHDLGridSource.cxx
+  Module:    vtkGridSource.cxx
 
   Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
   All rights reserved.
@@ -26,7 +26,7 @@
 
 =========================================================================*/
 
-#include "vtkVelodyneHDLGridSource.h"
+#include "vtkGridSource.h"
 
 #include "vtkAppendPolyData.h"
 #include "vtkArcSource.h"
@@ -41,10 +41,10 @@
 #include "vtkSmartPointer.h"
 
 //-----------------------------------------------------------------------------
-vtkStandardNewMacro(vtkVelodyneHDLGridSource)
+vtkStandardNewMacro(vtkGridSource)
 
 //-----------------------------------------------------------------------------
-vtkVelodyneHDLGridSource::vtkVelodyneHDLGridSource()
+vtkGridSource::vtkGridSource()
 {
   this->GridNbTicks = 10;
   this->Scale = 10.0;
@@ -68,12 +68,12 @@ vtkVelodyneHDLGridSource::vtkVelodyneHDLGridSource()
 }
 
 //-----------------------------------------------------------------------------
-vtkVelodyneHDLGridSource::~vtkVelodyneHDLGridSource()
+vtkGridSource::~vtkGridSource()
 {
 }
 
 //-----------------------------------------------------------------------------
-vtkSmartPointer<vtkPolyData> vtkVelodyneHDLGridSource::CreateGrid(
+vtkSmartPointer<vtkPolyData> vtkGridSource::CreateGrid(
   int gridNbTicks, double scale, double origin[3], double normal[3])
 {
   vtkNew<vtkPlaneSource> plane;
@@ -114,7 +114,7 @@ vtkSmartPointer<vtkPolyData> vtkVelodyneHDLGridSource::CreateGrid(
 }
 
 //-----------------------------------------------------------------------------
-int vtkVelodyneHDLGridSource::RequestData(vtkInformation* vtkNotUsed(request),
+int vtkGridSource::RequestData(vtkInformation* vtkNotUsed(request),
                                           vtkInformationVector** vtkNotUsed(inputVector),
                                           vtkInformationVector* outputVector)
 {
@@ -133,7 +133,7 @@ int vtkVelodyneHDLGridSource::RequestData(vtkInformation* vtkNotUsed(request),
 }
 
 //-----------------------------------------------------------------------------
-void vtkVelodyneHDLGridSource::PrintSelf(ostream& os, vtkIndent indent)
+void vtkGridSource::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
   os << indent << "GridSize: " << this->GridNbTicks << endl;
