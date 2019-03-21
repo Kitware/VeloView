@@ -54,7 +54,6 @@
 #include <vtkUnsignedIntArray.h>
 #include <vtkUnsignedShortArray.h>
 
-#include <vtk_libproj4.h>
 #include "NMEAParser.h"
 #include "statistics.h"
 
@@ -76,6 +75,8 @@ typedef boost::uint8_t uint8_t;
 #else
 #include <stdint.h>
 #endif
+
+#include "GPSProjectionUtils.h"
 
 namespace
 {
@@ -102,119 +103,6 @@ struct PositionPacket
   // The last bytes stored in the sentence char array should be 0 (NMEA
   // sentences are not that long).
   char sentance[306];
-};
-}
-
-namespace
-{
-int LatLongToZone(double lat, double lon)
-{
-  double longTemp = (lon + 180) - static_cast<int>((lon + 180) / 360) * 360 - 180;
-
-  int zone = static_cast<int>((longTemp + 180) / 6) + 1;
-  if (lat >= 56.0 && lat < 64.0 && longTemp >= 3.0 && longTemp < 12.0)
-  {
-    zone = 32;
-  }
-
-  if (lat >= 72.0 && lat < 84)
-  {
-    if (longTemp >= 0.0 && longTemp < 9.0)
-    {
-      zone = 31;
-    }
-    else if (longTemp >= 9.0 && longTemp < 21.0)
-    {
-      zone = 33;
-    }
-    else if (longTemp >= 21.0 && longTemp < 33.0)
-    {
-      zone = 35;
-    }
-    else if (longTemp >= 33.0 && longTemp < 42.0)
-    {
-      zone = 37;
-    }
-  }
-
-  return zone;
-}
-
-
-class UTMProjector
-{
-  public:
-  UTMProjector(bool shouldWarnOnWeirdGPSData)
-  {
-    this->ShouldWarnOnWeirdGPSData = shouldWarnOnWeirdGPSData;
-    this->pj_utm = nullptr;
-    this->UTMZone = -1;
-  }
-
-  ~UTMProjector()
-  {
-    if (this->IsInitialized())
-    {
-      pj_free(this->pj_utm);
-    }
-  }
-
-  void Project(double lat, double lon, double& x, double& y)
-  {
-    if (!this->IsInitialized())
-    {
-      this->Init(lat, lon);
-    }
-
-    projUV lp;
-    lp.u = DEG_TO_RAD * lon;
-    lp.v = DEG_TO_RAD * lat;
-
-    projUV xy;
-    xy = pj_fwd(lp, pj_utm);
-    if (pj_utm->ctx->last_errno != 0 && this->ShouldWarnOnWeirdGPSData)
-    {
-      vtkGenericWarningMacro("Error : WGS84 projection failed, this will create a GPS error. "
-                             "Please check the latitude and longitude inputs");
-    }
-
-    x = xy.u;
-    y = xy.v;
-  }
-
-  private:
-  bool IsInitialized()
-  {
-    return this->pj_utm != nullptr;
-  }
-
-  void Init(double initial_lat, double initial_lon)
-  {
-    assert(!pj_utm);
-    this->UTMZone = LatLongToZone(initial_lat, initial_lon);
-    std::stringstream utmparams;
-    utmparams << "+proj=utm ";
-    std::stringstream zone;
-    zone << "+zone=" << this->UTMZone;
-    this->UTMString = zone.str();
-    // WARNING: Dont let the string stream pass out of scope until
-    // we finish initialization
-    utmparams << this->UTMString << " ";
-    if (initial_lat < 0)
-    {
-      utmparams << "+south ";
-    }
-
-    utmparams << "+ellps=WGS84 ";
-    utmparams << "+units=m ";
-    utmparams << "+no_defs ";
-    pj_utm = pj_init_plus(utmparams.str().c_str());
-  }
-
-  bool ShouldWarnOnWeirdGPSData;
-  projPJ pj_utm;
-  int UTMZone;
-  std::string UTMString;
 };
 }
 
