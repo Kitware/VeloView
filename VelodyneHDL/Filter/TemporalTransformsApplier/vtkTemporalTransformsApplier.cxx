@@ -129,7 +129,7 @@ int vtkTemporalTransformsApplier::RequestData(vtkInformation* vtkNotUsed(request
 
 //-----------------------------------------------------------------------------
 int vtkTemporalTransformsApplier::RequestInformation(vtkInformation* vtkNotUsed(request),
-                       vtkInformationVector** vtkNotUsed(inputVector),
+                       vtkInformationVector** inputVector,
                        vtkInformationVector* outputVector)
 {
   // indicate that this filter produce continuous timstep in the interpolator range
@@ -137,5 +137,16 @@ int vtkTemporalTransformsApplier::RequestInformation(vtkInformation* vtkNotUsed(
   double timeRange[2] = {this->Interpolator->GetMinimumT(), this->Interpolator->GetMaximumT()};
   outInfo->Set(vtkStreamingDemandDrivenPipeline::TIME_RANGE(), timeRange, 2);
 
+  // Propagate the information that steps are available:
+  // Not needed to show the modified point clouds but required to save them to
+  // to LAS using the pipeline to go through frames
+  vtkInformation* inInfo = inputVector[1]->GetInformationObject(0);
+  const int steps = inInfo->Length(vtkStreamingDemandDrivenPipeline::TIME_STEPS());
+  std::vector<double> timesteps;
+  for (int i = 0; i < steps; ++i)
+  {
+    timesteps.push_back(inInfo->Get(vtkStreamingDemandDrivenPipeline::TIME_STEPS(), i));
+  }
+  outInfo->Set(vtkStreamingDemandDrivenPipeline::TIME_STEPS(), &timesteps.front(), timesteps.size());
   return 1;
 }

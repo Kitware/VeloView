@@ -3,6 +3,7 @@
 #include "vtkConversions.h"
 
 #include <vtkCellData.h>
+#include <vtkCell.h>
 #include <vtkPolyLine.h>
 #include <vtkTransform.h>
 
@@ -18,6 +19,7 @@ vtkStandardNewMacro(vtkTemporalTransforms)
 vtkTemporalTransforms::vtkTemporalTransforms()
 {
   auto points = vtkSmartPointer<vtkPoints>::New();
+  points->SetDataTypeToDouble();
 
   auto timeArray = vtkSmartPointer<vtkDoubleArray>::New();
   timeArray->SetName(this->TimeArrayName);
@@ -29,6 +31,13 @@ vtkTemporalTransforms::vtkTemporalTransforms()
   this->SetPoints(points);
   this->GetPointData()->AddArray(timeArray);
   this->GetPointData()->AddArray(orientationArray);
+
+  // create the cell in the same time for visualization
+  auto polyLine = vtkSmartPointer<vtkPolyLine>::New();
+  polyLine->GetPointIds()->SetNumberOfIds(0);
+  auto cell = vtkSmartPointer<vtkCellArray>::New();
+  cell->InsertNextCell(polyLine);
+  this->SetLines(cell);
 }
 
 //-----------------------------------------------------------------------------
@@ -172,11 +181,11 @@ vtkSmartPointer<vtkTemporalTransforms> vtkTemporalTransforms::IsometricTransform
   Eigen::Vector3d T0 = transParams.second;
 
   // We need to change the angle axis and position arrays
-  vtkDoubleArray* xyzwArray = vtkDoubleArray::SafeDownCast(this->GetOrientationArray());
-  vtkDoubleArray* xyzArray = vtkDoubleArray::SafeDownCast(this->GetTranslationArray());
+  vtkDoubleArray* xyzwArray = vtkDoubleArray::SafeDownCast(outputPoses->GetOrientationArray());
+  vtkDoubleArray* xyzArray = vtkDoubleArray::SafeDownCast(outputPoses->GetTranslationArray());
 
   // Loop over the transforms points
-  for (unsigned int transformIndex = 0; transformIndex < this->GetNumberOfPoints(); transformIndex++)
+  for (unsigned int transformIndex = 0; transformIndex < outputPoses->GetNumberOfPoints(); transformIndex++)
   {
     // Get the angle-axis representation
     double* xyzw = xyzwArray->GetTuple4(transformIndex);

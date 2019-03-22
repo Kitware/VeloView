@@ -193,6 +193,12 @@ list(APPEND servermanager_sources
   ${CMAKE_CURRENT_SOURCE_DIR}/Source/Grid/vtkGridSource.cxx
   )
 
+if (ENABLE_Ceres)
+  list(APPEND servermanager_sources
+    ${CMAKE_CURRENT_SOURCE_DIR}/Filter/TemporalTransformsRemapper/vtkTemporalTransformsRemapper.cxx
+    )
+endif(ENABLE_Ceres)
+
 if (ENABLE_PCL)
   list(APPEND servermanager_sources
     ${CMAKE_CURRENT_SOURCE_DIR}/Filter/PCLRansacModel/vtkPCLRansacModel.cxx
@@ -227,6 +233,7 @@ list(APPEND servermanager_xml
   xml/TemporalTransformsReader.xml
   xml/TemporalTransformsWriter.xml
   xml/TemporalTransformsApplier.xml
+  xml/TemporalTransformsRemapper.xml
   )
 
 if (ENABLE_PCL)
@@ -316,6 +323,7 @@ set(plugin_include_dirs
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/ProcessingSample
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/PCLRansacModel
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/Slam
+  ${CMAKE_CURRENT_SOURCE_DIR}/Filter/TemporalTransformsRemapper
   ${CMAKE_CURRENT_SOURCE_DIR}/Source/Grid
   )
 
