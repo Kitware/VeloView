@@ -62,8 +62,8 @@ void vtkLidarKITTIDataSetReader::SetFileName(const std::string &filename)
 
   if (!boost::filesystem::exists(filename))
   {
-    vtkErrorMacro(<< "Folder not be found! Contrary to what the name of this function implies, \
-                    the input must be the folder containing all '.bin' files for a given sequence");
+    vtkErrorMacro("Folder not be found! Contrary to what the name of this function implies,"
+                    " the input must be the folder containing all \".bin\" files for a given sequence");
     return;
   }
 
@@ -153,7 +153,7 @@ vtkSmartPointer<vtkPolyData> vtkLidarKITTIDataSetReader::GetFrame(int frameNumbe
         laser_id++;
         if (laser_id >= this->NbrLaser)
         {
-          vtkErrorMacro(<< "An error occur while parsing the frame, more than 64 laser where detected. The last point won't be processed")
+          vtkErrorMacro("An error occur while parsing the frame, more than 64 lasers where detected. The last point won't be processed")
           break;
         }
       }
@@ -202,7 +202,7 @@ int vtkLidarKITTIDataSetReader::RequestData(vtkInformation* vtkNotUsed(request),
   // Because no timestep are present in the .bin file we consider that timestep = frame number.
   if (timestep < 0 || timestep >= this->GetNumberOfFrames())
   {
-    vtkErrorMacro("Cannot meet timestep request: " << timestep << ".  Have "
+    vtkErrorMacro("Cannot fulfill timestep request: " << timestep << ".  There are only "
                                                    << this->GetNumberOfFrames() << " datasets.");
     return 0;
   }

@@ -114,7 +114,7 @@ vtkSmartPointer<vtkVelodyneTransformInterpolator> vtkTemporalTransforms::CreateI
     }
     else
     {
-      vtkErrorMacro(<< "Timestamp " << i << "is not a number")
+      vtkErrorMacro("Timestamp " << i << "is not a number")
     }
   }
   interpolator->Modified();

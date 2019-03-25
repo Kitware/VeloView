@@ -2929,7 +2929,7 @@ void vtkSlam::UpdateLaserIdMapping(vtkTable *calib)
   }
   else
   {
-    vtkErrorMacro("<< The calibration data has no colomn named 'verticalCorrection'");
+    vtkErrorMacro("The calibration data has no column named \"verticalCorrection\"");
   }
 }
 

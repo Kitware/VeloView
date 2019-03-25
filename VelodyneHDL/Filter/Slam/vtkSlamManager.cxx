@@ -64,22 +64,22 @@ int vtkSlamManager::RequestData(vtkInformation *request, vtkInformationVector **
   int nb_time_steps = inInfo->Length(vtkStreamingDemandDrivenPipeline::TIME_STEPS());
   if (this->StepSize <= 0)
   {
-    vtkErrorMacro(<< "StepSize must be strictly positive!")
+    vtkErrorMacro("StepSize must be greater than zero!")
     return 0;
   }
   if (this->EndFrame < 0 || this->StartFrame < 0)
   {
-    vtkErrorMacro(<< "StartFrame and EndFrame number must be positive!")
+    vtkErrorMacro("StartFrame and EndFrame must be positive integers!")
     return 0;
   }
   if (this->StartFrame > nb_time_steps - 1 || this->EndFrame > nb_time_steps -1)
   {
-    vtkErrorMacro(<< "The dataset has only " << nb_time_steps << " frames! ")
+    vtkErrorMacro("The dataset only has" << nb_time_steps << " frames!")
     return 0;
   }
   if (this->EndFrame < this->StartFrame )
   {
-    vtkErrorMacro(<< "The end frame must be greater than the start frame!")
+    vtkErrorMacro(<< "The end frame must come after the start frame!")
     return 0;
   }
 

@@ -170,7 +170,7 @@ void vtkLidarStream::Start()
 {
   if (!this->Interpreter)
   {
-    vtkErrorMacro(<< "Please set a Interpreter")
+    vtkErrorMacro("no interpreter is set")
   }
   this->Consumer->SetInterpreter(this->Interpreter);
   if (this->OutputFileName.length())
