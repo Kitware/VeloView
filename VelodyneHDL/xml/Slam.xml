@@ -481,9 +481,37 @@
 
      <!-- ==================== Map Parameters ==================== -->
      <DoubleVectorProperty
-         name="Map Voxel Grid Leaf Size"
-         command="SetVoxelGridLeafSize"
+         name="Map Edges Voxel Grid Leaf Size"
+         command="SetVoxelGridLeafSizeEdges"
+         default_values="0.45"
+         number_of_elements="1"
+         panel_visibility="advanced">
+       <Documentation>
+          Size of the leaf when downsampling the environment map using
+          a voxel grid filter. It should not be too big or some high
+          frequency geometric information will be lost. It should not
+          be too low or the geometric information will be too local
+        </Documentation>
+     </DoubleVectorProperty>
+
+     <DoubleVectorProperty
+         name="Map Planes Voxel Grid Leaf Size"
+         command="SetVoxelGridLeafSizePlanes"
          default_values="0.6"
+         number_of_elements="1"
+         panel_visibility="advanced">
+       <Documentation>
+          Size of the leaf when downsampling the environment map using
+          a voxel grid filter. It should not be too big or some high
+          frequency geometric information will be lost. It should not
+          be too low or the geometric information will be too local
+        </Documentation>
+     </DoubleVectorProperty>
+
+     <DoubleVectorProperty
+         name="Map Blobs Voxel Grid Leaf Size"
+         command="SetVoxelGridLeafSizeBlobs"
+         default_values="0.12"
          number_of_elements="1"
          panel_visibility="advanced">
        <Documentation>
@@ -520,7 +548,9 @@
      </DoubleVectorProperty>
 
      <PropertyGroup label="Map Parameters">
-        <Property name="Map Voxel Grid Leaf Size" />
+        <Property name="Map Edges Voxel Grid Leaf Size" />
+        <Property name="Map Planes Voxel Grid Leaf Size" />
+        <Property name="Map Blobs Voxel Grid Leaf Size" />
         <Property name="Map Voxel Grid Size" />
         <Property name="Map Voxel Grid Resolution" />
      </PropertyGroup>
