@@ -150,7 +150,9 @@ public:
   vtkGetMacro(Undistortion, bool)
 
   // Set RollingGrid Parameters
-  void SetVoxelGridLeafSize(double size);
+  void SetVoxelGridLeafSizeEdges(double size);
+  void SetVoxelGridLeafSizePlanes(double size);
+  void SetVoxelGridLeafSizeBlobs(double size);
   void SetVoxelGridSize(unsigned int size);
   void SetVoxelGridResolution(double resolution);
 

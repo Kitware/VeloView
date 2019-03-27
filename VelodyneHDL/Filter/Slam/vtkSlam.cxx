@@ -2866,11 +2866,23 @@ void vtkSlam::UpdateTworldUsingTrelative()
 }
 
 //-----------------------------------------------------------------------------
-void vtkSlam::SetVoxelGridLeafSize(double size)
+void vtkSlam::SetVoxelGridLeafSizeEdges(double size)
+{
+  this->EdgesPointsLocalMap->SetLeafSize(size);
+  this->ParametersModificationTime.Modified();
+}
+
+//-----------------------------------------------------------------------------
+void vtkSlam::SetVoxelGridLeafSizePlanes(double size)
 {
   this->PlanarPointsLocalMap->SetLeafSize(size);
-  this->EdgesPointsLocalMap->SetLeafSize(0.75 * size);
-  this->BlobsPointsLocalMap->SetLeafSize(0.20 * size);
+  this->ParametersModificationTime.Modified();
+}
+
+//-----------------------------------------------------------------------------
+void vtkSlam::SetVoxelGridLeafSizeBlobs(double size)
+{
+  this->BlobsPointsLocalMap->SetLeafSize(size);
   this->ParametersModificationTime.Modified();
 }
 
