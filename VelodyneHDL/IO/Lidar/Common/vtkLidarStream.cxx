@@ -15,37 +15,16 @@
 // limitations under the License.
 //=========================================================================
 
-// LOCAL
 #include "vtkLidarStream.h"
+
+#include <sstream>
+
 #include "NetworkSource.h"
 #include "PacketConsumer.h"
 #include "PacketFileWriter.h"
 
-// VTK
 #include <vtkInformationVector.h>
 #include <vtkInformation.h>
-#include <vtkStreamingDemandDrivenPipeline.h>
-
-class vtkLidarStreamInternal
-{
-public:
-  vtkLidarStreamInternal(int argLIDARPort, int ForwardedLIDARPort,
-                         std::string ForwardedIpAddress, bool isForwarding, bool isCrashAnalysing)
-    : Consumer(new PacketConsumer)
-    , Writer(new PacketFileWriter)
-    , Network(std::unique_ptr<NetworkSource>(new NetworkSource(this->Consumer, argLIDARPort, ForwardedLIDARPort,
-                                                               ForwardedIpAddress, isForwarding, isCrashAnalysing))) {}
-
-
-  //! where to save a live record of the sensor
-  std::string OutputFileName;
-
-
-  std::shared_ptr<PacketConsumer> Consumer;
-  std::shared_ptr<PacketFileWriter> Writer;
-  std::unique_ptr<NetworkSource> Network;
-};
-
 
 //-----------------------------------------------------------------------------
 vtkStandardNewMacro(vtkLidarStream)
@@ -53,14 +32,15 @@ vtkStandardNewMacro(vtkLidarStream)
 //-----------------------------------------------------------------------------
 vtkLidarStream::vtkLidarStream()
 {
-  this->Internal = new vtkLidarStreamInternal(2368, 2369, "127.0.0.1", false, false);
+  this->Consumer = std::make_shared<PacketConsumer>();
+  this->Writer = std::make_shared<PacketFileWriter>();
+  this->Network = std::make_unique<NetworkSource>(this->Consumer, 2368, 2369, "127.0.0.1", false, false);
 }
 
 //-----------------------------------------------------------------------------
 vtkLidarStream::~vtkLidarStream()
 {
   this->Stop();
-  delete this->Internal;
 }
 
 //-----------------------------------------------------------------------------
@@ -73,111 +53,116 @@ int vtkLidarStream::GetNumberOfFrames()
 //-----------------------------------------------------------------------------
 std::string vtkLidarStream::GetOutputFile()
 {
-  return this->Internal->OutputFileName;
+  return this->OutputFileName;
 }
 
 //-----------------------------------------------------------------------------
 void vtkLidarStream::SetOutputFile(const std::string &filename)
 {
-  this->Internal->OutputFileName  = filename;
+  this->OutputFileName  = filename;
 }
 
 //-----------------------------------------------------------------------------
 std::string vtkLidarStream::GetForwardedIpAddress()
 {
-  return this->Internal->Network->ForwardedIpAddress;
+  return this->Network->ForwardedIpAddress;
 }
 
 //-----------------------------------------------------------------------------
 void vtkLidarStream::SetForwardedIpAddress(const std::string &ipAddress)
 {
-  this->Internal->Network->ForwardedIpAddress = ipAddress;
+  this->Network->ForwardedIpAddress = ipAddress;
 }
 
 //-----------------------------------------------------------------------------
 int vtkLidarStream::GetLIDARPort()
 {
-  return this->Internal->Network->LIDARPort;
+  return this->Network->LIDARPort;
 }
 
 //-----------------------------------------------------------------------------
-void vtkLidarStream::SetLIDARPort(const int value)
+void vtkLidarStream::SetLIDARPort(int value)
 {
-  this->Internal->Network->LIDARPort = value;
+  this->Network->LIDARPort = value;
 }
 
 //-----------------------------------------------------------------------------
 int vtkLidarStream::GetGPSPort()
 {
-  return this->Internal->Network->GPSPort;
+  return this->Network->GPSPort;
 }
 
 //-----------------------------------------------------------------------------
-void vtkLidarStream::SetGPSPort(const int value)
+void vtkLidarStream::SetGPSPort(int value)
 {
-  this->Internal->Network->GPSPort = value;
+  this->Network->GPSPort = value;
 }
 
 //-----------------------------------------------------------------------------
 int vtkLidarStream::GetForwardedLIDARPort()
 {
-  return this->Internal->Network->ForwardedLIDARPort;
+  return this->Network->ForwardedLIDARPort;
 }
 
 //-----------------------------------------------------------------------------
-void vtkLidarStream::SetForwardedLIDARPort(const int value)
+void vtkLidarStream::SetForwardedLIDARPort(int value)
 {
-  this->Internal->Network->ForwardedLIDARPort = value;
+  this->Network->ForwardedLIDARPort = value;
 }
 
 //-----------------------------------------------------------------------------
 int vtkLidarStream::GetForwardedGPSPort()
 {
-  return this->Internal->Network->ForwardedGPSPort;
+  return this->Network->ForwardedGPSPort;
 }
 
 //-----------------------------------------------------------------------------
-void vtkLidarStream::SetForwardedGPSPort(const int value)
+void vtkLidarStream::SetForwardedGPSPort(int value)
 {
-  this->Internal->Network->ForwardedGPSPort = value;
+  this->Network->ForwardedGPSPort = value;
 }
 
 //-----------------------------------------------------------------------------
 bool vtkLidarStream::GetIsForwarding()
 {
-  return this->Internal->Network->IsForwarding;
+  return this->Network->IsForwarding;
 }
 
 //-----------------------------------------------------------------------------
-void vtkLidarStream::EnableGPSListening(const bool value)
+void vtkLidarStream::EnableGPSListening(bool value)
 {
-  this->Internal->Network->ListenGPS = value;
+  this->Network->ListenGPS = value;
 }
 
 
 //-----------------------------------------------------------------------------
 void vtkLidarStream::SetIsForwarding(bool value)
 {
-  this->Internal->Network->IsForwarding = value;
+  this->Network->IsForwarding = value;
 }
 
 //-----------------------------------------------------------------------------
 bool vtkLidarStream::GetIsCrashAnalysing()
 {
-  return this->Internal->Network->IsCrashAnalysing;
+  return this->Network->IsCrashAnalysing;
 }
 
 //-----------------------------------------------------------------------------
-void vtkLidarStream::SetIsCrashAnalysing(const bool value)
+void vtkLidarStream::SetIsCrashAnalysing(bool value)
 {
-  this->Internal->Network->IsCrashAnalysing = value;
+  this->Network->IsCrashAnalysing = value;
 }
 
 //-----------------------------------------------------------------------------
 bool vtkLidarStream::GetNeedsUpdate()
 {
-  Poll();
-  return true;
+  boost::lock_guard<boost::mutex> lock(this->Consumer->ConsumerMutex);
+  if (this->Consumer->CheckForNewData())
+  {
+    this->Modified();
+    return true;
+  }
+  return false;
 }
 
 //----------------------------------------------------------------------------
@@ -187,105 +172,30 @@ void vtkLidarStream::Start()
   {
     vtkErrorMacro(<< "Please set a Interpreter")
   }
-  this->Internal->Consumer->SetInterpreter(this->Interpreter);
-  if (this->Internal->OutputFileName.length())
+  this->Consumer->SetInterpreter(this->Interpreter);
+  if (this->OutputFileName.length())
   {
-    this->Internal->Writer->Start(this->Internal->OutputFileName);
+    this->Writer->Start(this->OutputFileName);
   }
 
-  this->Internal->Network->Writer.reset();
+  this->Network->Writer.reset();
 
-  if (this->Internal->Writer->IsOpen())
+  if (this->Writer->IsOpen())
   {
-    this->Internal->Network->Writer = this->Internal->Writer;
+    this->Network->Writer = this->Writer;
   }
 
-  // Check if the IP address is valid
-//  {
-//    boost::system::error_code ec;
-//    boost::asio::ip::address::from_string(this->ForwardedIpAddress, ec);
-//    if (ec)
-//    {
-//      this->ForwardedIpAddress = "0.0.0.0";
-//      this->isForwarding = false;
-//    }
-//  }
+  this->Consumer->Start();
 
-  this->Internal->Consumer->Start();
-//  this->Internal->Network->LIDARPort = this->LIDARPort;
-//  this->Internal->Network->ForwardedLIDARPort = this->ForwardedLIDARPort;
-//  this->Internal->Network->ForwardedIpAddress = this->ForwardedIpAddress;
-//  this->Internal->Network->isForwarding = this->isForwarding;
-//  this->Internal->Network->isCrashAnalysing = this->isCrashAnalysing;
-  this->Internal->Network->Start();
+  this->Network->Start();
 }
 
 //----------------------------------------------------------------------------
 void vtkLidarStream::Stop()
 {
-  this->Internal->Network->Stop();
-  this->Internal->Consumer->Stop();
-  this->Internal->Writer->Stop();
-}
-
-//----------------------------------------------------------------------------
-void vtkLidarStream::Poll()
-{
-  if (this->Internal->Consumer->CheckForNewData())
-  {
-    this->Modified();
-  }
-}
-
-//----------------------------------------------------------------------------
-int vtkLidarStream::GetCacheSize()
-{
-  return this->Internal->Consumer->GetMaxNumberOfFrames();
-}
-
-//----------------------------------------------------------------------------
-void vtkLidarStream::SetCacheSize(int cacheSize)
-{
-  if (cacheSize == this->GetCacheSize())
-  {
-    return;
-  }
-
-  this->Internal->Consumer->SetMaxNumberOfFrames(cacheSize);
-  this->Modified();
-}
-
-//-----------------------------------------------------------------------------
-void vtkLidarStream::UnloadFrames()
-{
-  this->Internal->Consumer->UnloadData();
-}
-
-
-//-----------------------------------------------------------------------------
-int vtkLidarStream::RequestInformation(vtkInformation* request,
-                                       vtkInformationVector** inputVector,
-                                       vtkInformationVector* outputVector)
-{
-  this->Superclass::RequestInformation(request, inputVector, outputVector);
-  vtkInformation* outInfo = outputVector->GetInformationObject(0);
-
-  std::vector<double> timesteps = this->Internal->Consumer->GetTimesteps();
-  const size_t nTimesteps = timesteps.size();
-  if (nTimesteps > 0)
-  {
-    outInfo->Set(vtkStreamingDemandDrivenPipeline::TIME_STEPS(), &timesteps.front(),
-      static_cast<int>(nTimesteps));
-  }
-  else
-  {
-    outInfo->Remove(vtkStreamingDemandDrivenPipeline::TIME_STEPS());
-  }
-
-  double timeRange[2] = { 0.0, nTimesteps ? nTimesteps - 1.0 : 0.0 };
-  outInfo->Set(vtkStreamingDemandDrivenPipeline::TIME_RANGE(), timeRange, 2);
-
-  return 1;
+  this->Network->Stop();
+  this->Consumer->Stop();
+  this->Writer->Stop();
 }
 
 //----------------------------------------------------------------------------
@@ -293,34 +203,29 @@ int vtkLidarStream::RequestData(vtkInformation* vtkNotUsed(request),
                                 vtkInformationVector** vtkNotUsed(inputVector),
                                 vtkInformationVector* outputVector)
 {
-  vtkInformation* outInfo = outputVector->GetInformationObject(0);
-  vtkDataSet* output = vtkDataSet::SafeDownCast(outInfo->Get(vtkDataObject::DATA_OBJECT()));
+  vtkPolyData* output = vtkPolyData::GetData(outputVector);
 
-  double timeRequest = 0;
-  if (outInfo->Has(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP()))
+  int numberOfFrameAvailable = 0;
   {
-    timeRequest = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP());
+    boost::lock_guard<boost::mutex> lock(this->Consumer->ConsumerMutex);
+    numberOfFrameAvailable = this->Consumer->CheckForNewData();
+    if (numberOfFrameAvailable != 0)
+    {
+      vtkSmartPointer<vtkPolyData> polyData = this->Consumer->GetLastAvailableFrame();
+      output->ShallowCopy(polyData);
+      this->Consumer->ClearAllFrames();
+      this->LastFrameProcessed += numberOfFrameAvailable;
+    }
   }
 
+  if (this->DetectFrameDropping)
   {
-    boost::lock_guard<boost::mutex> lock(this->Internal->Consumer->ConsumerMutex);
-    double actualTime;
-    vtkSmartPointer<vtkPolyData> polyData(NULL);
-//  if (this->Internal->Consumer->GetNumberOfTrailingFrames() > 0)
-//  {
-//    polyData = this->Internal->Consumer->GetFramesForTime(
-//      timeRequest, actualTime, this->Internal->Consumer->GetNumberOfTrailingFrames());
-//  }
-//  else
-//  {
-    polyData = this->Internal->Consumer->GetFrameForTime(timeRequest, actualTime);
-//  }
-
-    if (polyData)
+    if (numberOfFrameAvailable > 1)
     {
-      // printf("request %f, returning %f\n", timeRequest, actualTime);
-      output->GetInformation()->Set(vtkDataObject::DATA_TIME_STEP(), actualTime);
-      output->ShallowCopy(polyData);
+      std::stringstream text;
+      text << "WARNING : At frame " << std::right << std::setw(6) << this->LastFrameProcessed
+           << " Drop " << std::right << std::setw(2) << numberOfFrameAvailable-1 << " frame(s)\n";
+      vtkWarningMacro( << text.str() )
     }
   }
 

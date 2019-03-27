@@ -31,7 +31,6 @@
 
 #include <boost/shared_ptr.hpp>
 #include <boost/thread.hpp>
-#include <vtkNew.h>
 #include <deque>
 
 #include "vtkSmartPointer.h"
@@ -48,18 +47,11 @@ public:
 
   void HandleSensorData(const unsigned char* data, unsigned int length);
 
-  // You must lock PacketConsumer.ConsumerMutex while calling this function
-  vtkSmartPointer<vtkPolyData> GetFrameForTime(double timeRequest, double& actualTime, int numberOfTrailingFrame = 0);
+  vtkSmartPointer<vtkPolyData> GetLastAvailableFrame();
 
-  std::vector<double> GetTimesteps();
+  int CheckForNewData();
 
-  int GetMaxNumberOfFrames() { return this->MaxNumberOfFrames; }
-
-  void SetMaxNumberOfFrames(int nFrames);
-
-  bool CheckForNewData();
-
-  void ThreadLoop();
+  void ClearAllFrames() { this->Frames.clear();}
 
   void Start();
 
@@ -69,28 +61,15 @@ public:
 
   void SetInterpreter(vtkLidarPacketInterpreter* inter) { this->Interpreter = inter;}
 
-  void UnloadData();
-
-  // Hold this when running reader code code or modifying its internals
-  boost::mutex ReaderMutex;
-
   // Hold this when modifying internals of reader
   boost::mutex ConsumerMutex;
 
 protected:
-  void UpdateDequeSize();
-
-  size_t GetIndexForTime(double time);
+  void ThreadLoop();
 
   void HandleNewData(vtkSmartPointer<vtkPolyData> polyData);
 
-  bool ShouldCheckSensor;
-  bool NewData;
-  int MaxNumberOfFrames;
-  double LastTime;
-
   std::deque<vtkSmartPointer<vtkPolyData> > Frames;
-  std::deque<double> Timesteps;
   vtkLidarPacketInterpreter* Interpreter;
 
   boost::shared_ptr<SynchronizedQueue<std::string*> > Packets;

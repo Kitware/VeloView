@@ -18,6 +18,19 @@
       </Documentation>
     </IntVectorProperty>
 
+    <IntVectorProperty
+        name="DetectFrameDropping"
+        animateable="0"
+        command="SetDetectFrameDropping"
+        default_values="0"
+        number_of_elements="1"
+        panel_visibility="advanced">
+      <BooleanDomain name="bool" />
+      <Documentation>
+        Throw a warning to the user each time a frame is dropped
+      </Documentation>
+    </IntVectorProperty>
+
   </SourceProxy>
 </ProxyGroup>
 <!-- End LidarProvider -->
@@ -158,27 +171,12 @@
     </StringVectorProperty>
 
     <Property
-      name="Poll"
-      command="Poll" />
-
-    <Property
       name="Start"
       command="Start" />
 
     <Property
       name="Stop"
       command="Stop" />
-
-    <IntVectorProperty
-      name="CacheSize"
-      command="SetCacheSize"
-      number_of_elements="1"
-      default_values="500">
-      <Documentation>
-      The cache size determines how many timesteps of data will be saved
-      by this source.  A cache size of zero indicates an unlimited size.
-      </Documentation>
-    </IntVectorProperty>
 
     <IntVectorProperty
         name="SetIsCrashAnalysing"

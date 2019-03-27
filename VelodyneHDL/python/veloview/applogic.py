@@ -393,7 +393,7 @@ def openSensor():
     close()
     app.grid = createGrid()
 
-    sensor = smp.LidarStream(guiName='Data', CalibrationFile=calibrationFile, CacheSize=1)
+    sensor = smp.LidarStream(guiName='Data', CalibrationFile=calibrationFile)
     sensor.GetClientSideObject().SetLIDARPort(LIDARPort)
     sensor.GetClientSideObject().EnableGPSListening(True)
     sensor.GetClientSideObject().SetGPSPort(GPSPort)
@@ -782,7 +782,7 @@ def saveLASCurrentFrame(filename, transform = 0):
 
 
 def saveAllFrames(filename, saveFunction):
-    saveFunction(filename, getCurrentTimesteps())
+    saveFunction(filename, getLidar.TimestepValues())
 
 
 def saveFrameRange(filename, frameStart, frameStop, saveFunction):
@@ -1228,16 +1228,6 @@ def stopStream():
         sensor.Stop()
 
 
-def pollSource():
-
-    source = getSensor()
-    reader = getReader()
-    if source is not None:
-        source.Poll()
-        source.UpdatePipelineInformation()
-    return source or reader
-
-
 def getPointCloudData(attribute=None):
 
     if attribute is not None:
@@ -1251,11 +1241,6 @@ def getPointCloudData(attribute=None):
         source = getSensor() or getReader()
         if source:
             return source.GetClientSideObject().GetOutput()
-
-
-def getCurrentTimesteps():
-    source = pollSource()
-    return list(source.TimestepValues) if source is not None else []
 
 
 def getNumberOfTimesteps():
