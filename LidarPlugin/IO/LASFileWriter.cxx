@@ -123,7 +123,8 @@ int LASFileWriter::Open(const char* filename)
   }
 
   this->header.SetSoftwareId(SOFTWARE_NAME);
-  this->header.SetDataFormatId(liblas::ePointFormat1);
+  // this->header.SetDataFormatId(liblas::ePointFormat1);
+  this->header.SetDataFormatId(liblas::ePointFormat3); // the first format with color and time
   this->header.SetScale(1e-3, 1e-3, 1e-3);
 
   return 1;
@@ -309,6 +310,7 @@ void LASFileWriter::WriteFrame(vtkPolyData* data)
   vtkDataArray* const intensityData = data->GetPointData()->GetArray("intensity");
   vtkDataArray* const laserIdData = data->GetPointData()->GetArray("laser_id");
   vtkDataArray* const timestampData = data->GetPointData()->GetArray("adjustedtime");
+  vtkDataArray* const colorData = data->GetPointData()->GetArray("camera_color");
 
   const vtkIdType numPoints = points->GetNumberOfPoints();
   for (vtkIdType n = 0; n < numPoints; ++n)
@@ -332,6 +334,15 @@ void LASFileWriter::WriteFrame(vtkPolyData* data)
       p.SetReturnNumber(1);
       p.SetNumberOfReturns(1);
       p.SetUserData(static_cast<uint8_t>(laserIdData == nullptr ? 0.0 : laserIdData->GetComponent(n, 0)));
+      if (colorData != nullptr)
+      {
+        liblas::Color color = liblas::Color(
+              static_cast<uint32_t>(colorData->GetComponent(n, 0)),
+              static_cast<uint32_t>(colorData->GetComponent(n, 1)),
+              static_cast<uint32_t>(colorData->GetComponent(n, 2))
+              );
+        p.SetColor(color);
+      }
       p.SetTime(time);
 
       this->Writer->WritePoint(p);
