@@ -48,7 +48,6 @@
                           name="MaxTemporalAngleChange"
                           number_of_elements="1"
                           panel_visibility="advanced">
-      <DoubleRangeDomain min="0" max="180" name="range" />
       <Documentation>Set the maximal angle change allowed between between two successive plane estimations.
       This has effects only if the temporal averaging is enabled. </Documentation>
     </DoubleVectorProperty>
@@ -59,7 +58,6 @@
                           name="PreviousEstimationWeight"
                           number_of_elements="1"
                           panel_visibility="advanced">
-      <DoubleRangeDomain min="0.0" max="1.0" name="range" />
       <Documentation>Set the previous estimation influence in the temporal averaging. </Documentation>
     </DoubleVectorProperty>
 
