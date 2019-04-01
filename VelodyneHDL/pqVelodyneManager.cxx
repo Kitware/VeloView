@@ -127,7 +127,7 @@ void pqVelodyneManager::pythonStartup()
     settings->value("VelodyneHDLPlugin/MeasurementGrid/Visibility", true);
 
   // Save the current main window state as its original state. This happens in
-  // two cases: The first time launching VeloView or when launching VeloView
+  // two cases: The first time launching the application or when launching it
   // with older/wrong settings which were cleared right before.
   bool shouldSave = true;
 
@@ -143,7 +143,7 @@ void pqVelodyneManager::pythonStartup()
 
   if (shouldSave)
   {
-    std::cout << "First time launching VeloView, "
+    std::cout << "First time launching the application, "
                  "saving current state as original state..."
               << std::endl;
 
@@ -212,7 +212,7 @@ void pqVelodyneManager::onResetDefaultSettings()
     // the settings
     settings->saveState(*mainWindow, "OriginalMainWindow");
 
-    // Quit the current VeloView instance and restart a new one.
+    // Quit the current application instance and restart a new one.
     qApp->quit();
     QProcess::startDetached(qApp->arguments()[0]);
   }
