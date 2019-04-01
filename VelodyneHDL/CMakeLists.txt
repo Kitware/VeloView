@@ -181,6 +181,7 @@ list(APPEND servermanager_sources
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/GPS-IMU/ArduPilotDataFlashLogReader/vtkArduPilotDataFlashLogReader.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/vtkTemporalTransformsReader.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/vtkTemporalTransformsWriter.cxx
+  ${CMAKE_CURRENT_SOURCE_DIR}/IO/vtkLASFileWriter.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/MotionDetector/vtkMotionDetector.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/BirdEyeViewSnap/vtkBirdEyeViewSnap.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/LidarRawSignalImage/vtkLidarRawSignalImage.cxx
@@ -234,6 +235,7 @@ list(APPEND servermanager_xml
   xml/TemporalTransformsWriter.xml
   xml/TemporalTransformsApplier.xml
   xml/TemporalTransformsRemapper.xml
+  xml/LASFileWriter.xml
   )
 
 if (ENABLE_PCL)
@@ -266,6 +268,7 @@ set(sources_which_do_not_inherit_from_vtkObject
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/GPS-IMU/Common/NMEAParser.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/GPS-IMU/Common/GPSProjectionUtils.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/vtkLASFileWriter.cxx
+  ${CMAKE_CURRENT_SOURCE_DIR}/IO/LASFileWriter.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/MotionDetector/vtkSphericalMap.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/Slam/KalmanFilter.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/Common/Network/vtkPacketFileWriter.cxx
