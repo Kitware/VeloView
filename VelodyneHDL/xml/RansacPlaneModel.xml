@@ -16,6 +16,29 @@
       </DataTypeDomain>
     </InputProperty>
 
+    <IntVectorProperty name="Max Iteration"
+                       default_values="500"
+                       command="SetMaxRansacIteration"
+                       number_of_elements="1">
+    </IntVectorProperty>
+
+    <DoubleVectorProperty name="Threshold"
+                          default_values="0.5"
+                          command="SetThreshold"
+                          number_of_elements="1">
+    </DoubleVectorProperty>
+
+    <DoubleVectorProperty name="Ratio Inliers Required"
+                          default_values="0.3"
+                          command="SetRatioInliersRequired"
+                          number_of_elements="1">
+    </DoubleVectorProperty>
+
+    <PropertyGroup label="Ransac Parameters">
+      <Property name="Max Iteration" />
+      <Property name="Threshold" />
+      <Property name="Ratio Inliers Required" />
+    </PropertyGroup>
 
     <IntVectorProperty
       name="AlignOutput"
@@ -60,6 +83,13 @@
                           panel_visibility="advanced">
       <Documentation>Set the previous estimation influence in the temporal averaging. </Documentation>
     </DoubleVectorProperty>
+
+    <PropertyGroup label="Ransac Parameters">
+      <Property name="AlignOutput" />
+      <Property name="TemporalAveraging" />
+      <Property name="MaxTemporalAngleChange" />
+      <Property name="PreviousEstimationWeight" />
+    </PropertyGroup>
 
     </SourceProxy>
   </ProxyGroup>
