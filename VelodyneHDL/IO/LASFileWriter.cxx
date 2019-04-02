@@ -308,7 +308,7 @@ void LASFileWriter::WriteFrame(vtkPolyData* data)
   vtkPoints* const points = data->GetPoints();
   vtkDataArray* const intensityData = data->GetPointData()->GetArray("intensity");
   vtkDataArray* const laserIdData = data->GetPointData()->GetArray("laser_id");
-  vtkDataArray* const timestampData = data->GetPointData()->GetArray("timestamp");
+  vtkDataArray* const timestampData = data->GetPointData()->GetArray("adjustedtime");
 
   const vtkIdType numPoints = points->GetNumberOfPoints();
   for (vtkIdType n = 0; n < numPoints; ++n)
