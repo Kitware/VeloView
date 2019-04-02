@@ -308,6 +308,15 @@
    </attribute>
    <widget class="pqPropertiesPanel" name="viewPropertiesPanel"/>
   </widget>
+  <widget class="QDockWidget" name="viewAnimationDock">
+   <property name="windowTitle">
+    <string>Animation</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>2</number>
+   </attribute>
+   <widget class="pqPVAnimationWidget" name="animationPanel"/>
+  </widget>
   <action name="actionE_xit">
    <property name="text">
     <string>E&amp;xit</string>
@@ -938,6 +947,12 @@
    <class>pqStatusBar</class>
    <extends>QStatusBar</extends>
    <header>pqStatusBar.h</header>
+  </customwidget>
+  <customwidget>
+   <class>pqPVAnimationWidget</class>
+   <extends>QWidget</extends>
+   <header>pqPVAnimationWidget.h</header>
+   <container>1</container>
   </customwidget>
  </customwidgets>
  <resources>
