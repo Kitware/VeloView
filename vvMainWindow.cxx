@@ -268,6 +268,7 @@ private:
     window->tabifyDockWidget(this->Ui.displayPropertiesDock, this->Ui.colorMapEditorDock);
     window->tabifyDockWidget(this->Ui.spreadSheetDock, this->Ui.informationDock);
     window->tabifyDockWidget(this->Ui.spreadSheetDock, this->Ui.memoryInspectorDock);
+    window->tabifyDockWidget(this->Ui.spreadSheetDock, this->Ui.viewAnimationDock);
 
     // hide docker by default
     this->Ui.pipelineBrowserDock->hide();
