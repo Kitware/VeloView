@@ -86,6 +86,7 @@ function (superbuild_find_projects var)
     pcl
     qhull
     flann
+    nanoflann
     )
 
   if (UNIX)
