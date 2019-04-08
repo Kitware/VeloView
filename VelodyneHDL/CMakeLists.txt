@@ -210,6 +210,7 @@ endif(ENABLE_PCL)
 if (ENABLE_PCL AND ENABLE_Ceres)
   list(APPEND servermanager_sources
     ${CMAKE_CURRENT_SOURCE_DIR}/Filter/Slam/vtkSlam.cxx
+    ${CMAKE_CURRENT_SOURCE_DIR}/Filter/Slam/vtkRotatingKeyPointsExtractor.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/Filter/Slam/vtkSlamManager.cxx
     )
 endif(ENABLE_PCL AND ENABLE_Ceres)
