@@ -187,6 +187,7 @@ list(APPEND servermanager_sources
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/LidarRawSignalImage/vtkLidarRawSignalImage.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/PointCloudLinearProjector/vtkPointCloudLinearProjector.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/LaplacianInfilling/vtkLaplacianInfilling.cxx
+  ${CMAKE_CURRENT_SOURCE_DIR}/Filter/MLSPosesSmoothing/vtkMLSPosesSmoothing.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/ProcessingSample/vtkProcessingSample.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/Ransac/vtkRansacPlaneModel.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/TemporalTransformsApplier/vtkTemporalTransformsApplier.cxx
@@ -227,6 +228,7 @@ list(APPEND servermanager_xml
   xml/LidarRawSignalImage.xml
   xml/PointCloudLinearProjector.xml
   xml/LaplacianInfilling.xml
+  xml/MLSPosesSmoothing.xml
   xml/RansacPlaneModel.xml
   xml/TrailingFrame.xml
   xml/ProcessingSample.xml
@@ -319,6 +321,7 @@ set(plugin_include_dirs
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/LidarRawSignalImage
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/PointCloudLinearProjector
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/LaplacianInfilling
+  ${CMAKE_CURRENT_SOURCE_DIR}/Filter/MLSPosesSmoothing
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/OldPlaneFitter
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/Ransac
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/TrailingFrame

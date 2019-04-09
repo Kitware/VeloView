@@ -217,3 +217,60 @@ Eigen::Matrix3d ComputeHomography(const std::vector<Eigen::Vector2d>& x,
        flattenH(6), flattenH(7), flattenH(8);
   return H;
 }
+
+//----------------------------------------------------------------------------
+void EuclideanMLSSmoothing(const std::vector<Eigen::VectorXd>& X,
+                           std::vector<Eigen::VectorXd>& Y,
+                           int polDeg, int kernelRadius)
+{
+  int dim = X[0].rows();
+  // initialize Y on X
+  Y = X;
+
+  // Loop over the points of the trajectory
+  for (int pointIndex = 0; pointIndex < Y.size(); ++pointIndex)
+  {
+    // neighborhood information
+    int minNeighIndex = std::max(0, pointIndex - kernelRadius);
+    int maxNeighIndex = std::min(static_cast<int>(Y.size()) - 1, pointIndex + kernelRadius);
+    int neighCardinal = maxNeighIndex - minNeighIndex + 1;
+
+    // Loop over neighborhood to compute the normal equations
+    Eigen::MatrixXd M(neighCardinal, polDeg + 1);
+    std::vector<Eigen::MatrixXd> U(dim, Eigen::MatrixXd(neighCardinal, 1));
+    for (int neighIndex = minNeighIndex; neighIndex <= maxNeighIndex; ++neighIndex)
+    {
+      // time value in [-1.0, 1.0]
+      double t = -1.0 + 2.0 * static_cast<double>(neighIndex - minNeighIndex) / static_cast<double>(maxNeighIndex - minNeighIndex);
+      // Loop over the polynomial degree
+      for (int power = 0; power <= polDeg; ++power)
+      {
+        M(neighIndex - minNeighIndex, power) = std::pow(t, power);
+      }
+      // loop over the coordinates
+      for (int coord = 0; coord < dim; ++coord)
+      {
+        U[coord](neighIndex - minNeighIndex) = X[neighIndex](coord);
+      }
+    }
+
+    // Solve the normals equation to get the polynomial parameters
+    std::vector<Eigen::MatrixXd> w(dim);
+    Eigen::MatrixXd MtM_1 = (M.transpose() * M).inverse();
+    for (int coord = 0; coord < dim; ++coord)
+    {
+      w[coord] =MtM_1 * M.transpose() * U[coord];
+    }
+
+    // Now, project the point on the approximated polynome
+    double t = -1.0 + 2.0 * static_cast<double>(pointIndex - minNeighIndex) / static_cast<double>(maxNeighIndex - minNeighIndex);
+    for (int coord = 0; coord < dim; ++coord)
+    {
+      Y[pointIndex](coord) = 0;
+      for (int power = 0; power <= polDeg; ++power)
+      {
+        Y[pointIndex](coord) += w[coord](power) * std::pow(t, power);
+      }
+    }
+  }
+}
