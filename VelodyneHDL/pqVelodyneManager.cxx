@@ -13,7 +13,7 @@
 // limitations under the License.
 #include "pqVelodyneManager.h"
 
-#include "vtkLASFileWriter.h"
+#include "LASFileWriter.h"
 #include "vtkPVConfig.h" //  needed for PARAVIEW_VERSION
 #include "vtkLidarReader.h"
 #include "vvPythonQtDecorators.h"
@@ -127,7 +127,7 @@ void pqVelodyneManager::pythonStartup()
     settings->value("VelodyneHDLPlugin/MeasurementGrid/Visibility", true);
 
   // Save the current main window state as its original state. This happens in
-  // two cases: The first time launching VeloView or when launching VeloView
+  // two cases: The first time launching the application or when launching it
   // with older/wrong settings which were cleared right before.
   bool shouldSave = true;
 
@@ -143,7 +143,7 @@ void pqVelodyneManager::pythonStartup()
 
   if (shouldSave)
   {
-    std::cout << "First time launching VeloView, "
+    std::cout << "First time launching the application, "
                  "saving current state as original state..."
               << std::endl;
 
@@ -212,7 +212,7 @@ void pqVelodyneManager::onResetDefaultSettings()
     // the settings
     settings->saveState(*mainWindow, "OriginalMainWindow");
 
-    // Quit the current VeloView instance and restart a new one.
+    // Quit the current application instance and restart a new one.
     qApp->quit();
     QProcess::startDetached(qApp->arguments()[0]);
   }
@@ -261,7 +261,8 @@ void pqVelodyneManager::saveFramesToLAS(vtkLidarReader* reader, vtkPolyData* pos
 
   bool isLatLon = false;
 
-  vtkLASFileWriter writer(qPrintable(filename));
+  LASFileWriter writer;
+  writer.Open(qPrintable(filename));
 
   // not sensor relative; it can be
   // relative registered data or
@@ -313,8 +314,8 @@ void pqVelodyneManager::saveFramesToLAS(vtkLidarReader* reader, vtkPolyData* pos
   std::cout << "gcs : " << gcs << std::endl;
 
   writer.SetPrecision(neTol, hTol);
-  writer.SetGeoConversion(in, out, utmZone, isLatLon);
-  writer.SetOrigin(gcs, easting, northing, height);
+  writer.SetGeoConversionUTM(utmZone, isLatLon);
+  writer.SetOrigin(easting, northing, height);
 
   QProgressDialog progress("Exporting LAS...", "Abort Export", startFrame,
     startFrame + (endFrame - startFrame) * 2, getMainWindow());

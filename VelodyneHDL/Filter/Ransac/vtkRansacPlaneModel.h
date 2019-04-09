@@ -17,102 +17,78 @@
 #ifndef VTK_RANSAC_PLANE_MODEL_H
 #define VTK_RANSAC_PLANE_MODEL_H
 
-// VTK
-#include <vtkPolyData.h>
 #include <vtkPolyDataAlgorithm.h>
-#include <vtkSmartPointer.h>
 
 class VTK_EXPORT vtkRansacPlaneModel : public vtkPolyDataAlgorithm
 {
-    public:
+public:
   static vtkRansacPlaneModel *New();
   vtkTypeMacro(vtkRansacPlaneModel, vtkPolyDataAlgorithm)
-  void PrintSelf(ostream& os, vtkIndent indent);
 
-  /// Get the maximum number of ransac iterations
+  /// Get/Set the maximum number of ransac iterations
   vtkGetMacro(MaxRansacIteration, unsigned int)
-
-  /// Set the maximum number of ransac iterations
   vtkSetMacro(MaxRansacIteration, unsigned int)
 
-  /// Get the distance to plane inlier / outlier threshold
+  /// Get/Set the distance to plane inlier / outlier threshold
   vtkGetMacro(Threshold, double)
-
-  /// Set the distance to plane inlier / outlier threshold
   vtkSetMacro(Threshold, double)
 
-  /// Get the ratio of inliers required to break the ransac algorithm loop
-  vtkGetMacro(RatioInliersRequired, double);
+  /// Get/Set the ratio of inliers required to break the ransac algorithm loop
+  vtkGetMacro(RatioInliersRequired, double)
+  vtkSetMacro(RatioInliersRequired, double)
 
-  /// Set the ratio of inliers required to break the ransac algorithm loop
-  vtkSetMacro(RatioInliersRequired, double);
-
-  /// Get the plane fitted parameters
+  /// Get/Set the plane fitted parameters
   vtkGetVector4Macro(PlaneParam, double)
-
-  /// Set the plane fitted parameters
   vtkSetVector4Macro(PlaneParam, double)
 
-  /// Get the option to apply alignment to the output polydata
+  /// Get/Set the option to apply alignment to the output polydata
   vtkGetMacro(AlignOutput, bool)
-
-  /// Set the option to apply alignment to the output polydata
   vtkSetMacro(AlignOutput, bool)
 
-  /// Get temporal averaging
+  /// Get/Set temporal averaging
   vtkGetMacro(TemporalAveraging, bool)
-
-  /// Set temporal averaging
   vtkSetMacro(TemporalAveraging, bool)
 
-  /// Get the maximal angle difference between the new plane estimate and the previous one
+  /// Get/Set the maximal angle difference between the new plane estimate and the previous one
   vtkGetMacro(MaxTemporalAngleChange, double)
-
-  /// Set the maximal angle difference between the new plane estimate and the previous one
   vtkSetMacro(MaxTemporalAngleChange, double)
 
-  /// Get how much the previous estimation is used in temporal averaging
+  /// Get/Set how much the previous estimation is used in temporal averaging
   vtkGetMacro(PreviousEstimationWeight, double)
-
-  /// Set how much the previous estimation is used in temporal averaging
   vtkSetMacro(PreviousEstimationWeight, double)
 
 protected:
-  // constructor / destructor
-  vtkRansacPlaneModel();
-  ~vtkRansacPlaneModel();
+  vtkRansacPlaneModel() = default;
 
-  // Request data
   int RequestData(vtkInformation *, vtkInformationVector **, vtkInformationVector *);
 
 private:
-  // copy operators
-  vtkRansacPlaneModel(const vtkRansacPlaneModel&);
-  void operator=(const vtkRansacPlaneModel&);
+  vtkRansacPlaneModel(const vtkRansacPlaneModel&) = delete;
+  void operator=(const vtkRansacPlaneModel&) = delete;
 
   /// maximum ransac iteration
-  unsigned int MaxRansacIteration;
+  unsigned int MaxRansacIteration = 500;
 
   /// distance to plane inlier / outlier threshold
-  double Threshold;
+  double Threshold = 0.5;
 
   /// ratio of inliers required to break the ransac algorithm loop
-  double RatioInliersRequired;
+  double RatioInliersRequired = 0.3;
 
   /// plane fitted parameters
-  double PlaneParam[4];
+  double PlaneParam[4] = {0, 0, 0, 0};
 
   /// apply alignment to the output polydata
-  bool AlignOutput;
+  bool AlignOutput = false;
 
   /// temporal averaging
-  bool TemporalAveraging;
+  bool TemporalAveraging = true;
 
   /// maximal angle difference between the new plane estimate and the previous one
-  double MaxTemporalAngleChange;
+  double MaxTemporalAngleChange = 45.0;
 
   /// how much the previous estimation is used in temporal averaging
-  double PreviousEstimationWeight;
+  double PreviousEstimationWeight = 0.9;
 };
 
 #endif // VTK_RANSAC_PLANE_MODEL_H

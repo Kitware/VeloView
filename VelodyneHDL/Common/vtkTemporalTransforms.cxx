@@ -77,6 +77,7 @@ vtkSmartPointer<vtkTemporalTransforms> vtkTemporalTransforms::CreateFromPolyData
   return temporalTransforms;
 }
 
+//-----------------------------------------------------------------------------
 vtkSmartPointer<vtkTransform> vtkTemporalTransforms::GetTransform(unsigned int transformNumber)
 {
   auto axisAngle = this->GetOrientationArray();
@@ -93,6 +94,7 @@ vtkSmartPointer<vtkTransform> vtkTemporalTransforms::GetTransform(unsigned int t
   return transform;
 }
 
+//-----------------------------------------------------------------------------
 vtkSmartPointer<vtkVelodyneTransformInterpolator> vtkTemporalTransforms::CreateInterpolator()
 {
   auto interpolator = vtkSmartPointer<vtkVelodyneTransformInterpolator>::New();
@@ -253,6 +255,64 @@ vtkSmartPointer<vtkTemporalTransforms> vtkTemporalTransforms::CycloidicTransform
     // Replace it
     xyzwArray->SetTuple4(transformIndex, newXyzw[0], newXyzw[1], newXyzw[2], newXyzw[3]);
     xyzArray->SetTuple3(transformIndex, T(0), T(1), T(2));
+  }
+  return outputPoses;
+}
+
+//-----------------------------------------------------------------------------
+vtkSmartPointer<vtkTemporalTransforms> vtkTemporalTransforms::MLSSmoothing(int polDeg, int kernelRadius)
+{
+  auto outputPoses = vtkSmartPointer<vtkTemporalTransforms>::New();
+  outputPoses->DeepCopy(this);
+
+  // We need to change the angle axis and position arrays
+  vtkDoubleArray* anglesAxisArray = vtkDoubleArray::SafeDownCast(this->GetOrientationArray());
+  vtkDoubleArray* xyzArray = vtkDoubleArray::SafeDownCast(this->GetTranslationArray());
+
+  // First, convert the positions coordinates and the orientation
+  // using Eigen container
+  std::vector<Eigen::VectorXd> X, Y;
+  std::vector<Eigen::VectorXd> Qin, Qout;
+  for (int k = 0; k < outputPoses->GetNumberOfPoints(); ++k)
+  {
+    Eigen::VectorXd x(3, 1);
+    Eigen::VectorXd q(4, 1);
+    double currPos[3];
+    // Positions
+    outputPoses->GetPoint(k, currPos);
+    x << currPos[0], currPos[1], currPos[2];
+    X.push_back(x);
+
+    // Orientations
+    double* xyzw = anglesAxisArray->GetTuple4(k);
+    Eigen::AngleAxisd angleAxis(xyzw[3], Eigen::Vector3d(xyzw[0], xyzw[1], xyzw[2]));
+    Eigen::Quaterniond quat(angleAxis);
+    q << quat.w(), quat.x(), quat.y(), quat.z();
+    Qin.push_back(q);
+  }
+
+  // Smooth the trajectory
+  EuclideanMLSSmoothing(X, Y, polDeg, kernelRadius);
+
+  // Smooth the orientations using an euclidean
+  // MLS algorithm and then reprojecting the points
+  // onto the unit quaternion sphere
+  EuclideanMLSSmoothing(Qin, Qout, polDeg, kernelRadius);
+
+  // Set the points
+  for (int k = 0; k < outputPoses->GetNumberOfPoints(); ++k)
+  {
+    // Positions
+    double pos[3] = {Y[k](0), Y[k](1), Y[k](2)};
+    outputPoses->GetPoints()->SetPoint(k, pos);
+    xyzArray->SetTuple3(k, pos[0], pos[1], pos[2]);
+
+    // Orientations
+    Eigen::Quaterniond quat(Qout[k](0), Qout[k](1), Qout[k](2), Qout[k](3));
+    quat.normalize();
+    Eigen::AngleAxisd axisAngle(quat);
+    double xyzw[4] = {axisAngle.axis()(0), axisAngle.axis()(1), axisAngle.axis()(2), axisAngle.angle()};
+    anglesAxisArray->SetTuple4(k, xyzw[0], xyzw[1], xyzw[2], xyzw[3]);
   }
   return outputPoses;
 }

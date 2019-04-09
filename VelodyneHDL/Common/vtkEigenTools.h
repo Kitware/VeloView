@@ -127,4 +127,18 @@ Eigen::Vector3d VelodyneHDLPlugin_EXPORT GetSphericalCoordinates(const Eigen::Ve
 Eigen::Matrix3d ComputeHomography(const std::vector<Eigen::Vector2d>& x,
                                   const std::vector<Eigen::Vector2d>& y);
 
+/**
+  * @brief EuclideanMLSSmoothing smooth the elements of a euclidean space
+  *        using a moving least square algorithm with a polynomial parametric
+  *        model function and using the euclidean metric. The kernel function
+  *        is a gate(=rectangular) function
+  * @param X trajectory to smooth
+  * @param Y trajectory smoothed
+  * @param polDeg Degree of the polynomial model
+  * @param kernelRadius radius of the gate kernel function
+  */
+void EuclideanMLSSmoothing(const std::vector<Eigen::VectorXd>& X,
+                           std::vector<Eigen::VectorXd>& Y,
+                           int polDeg, int kernelRadius);
+
 #endif // VTK_EIGEN_TOOLS_H

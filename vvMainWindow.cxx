@@ -60,6 +60,7 @@
 #include <pqStandardViewFrameActionsImplementation.h>
 #include <pqVelodyneManager.h>
 #include <pqParaViewMenuBuilders.h>
+#include <pqPythonManager.h>
 #include <pqTabbedMultiViewWidget.h>
 #include <pqSetName.h>
 #include <vtkPVPlugin.h>
@@ -126,6 +127,17 @@ private:
     QToolBar* axesToolbar = new pqAxesToolbar(window)
       << pqSetName("axesToolbar");
     window->addToolBar(Qt::TopToolBarArea, axesToolbar);
+
+    // Give the macros menu to the pqPythonMacroSupervisor
+    pqPythonManager* manager =
+      qobject_cast<pqPythonManager*>(pqApplicationCore::instance()->manager("PYTHON_MANAGER"));
+    if (manager)
+    {
+      QToolBar* macrosToolbar = new QToolBar("Macros Toolbars", window)
+        << pqSetName("MacrosToolbar");
+      manager->addWidgetForRunMacros(macrosToolbar);
+      window->addToolBar(Qt::TopToolBarArea, macrosToolbar);
+    }
 
     // Register ParaView interfaces.
     pqInterfaceTracker* pgm = core->interfaceTracker();
@@ -268,6 +280,7 @@ private:
     window->tabifyDockWidget(this->Ui.displayPropertiesDock, this->Ui.colorMapEditorDock);
     window->tabifyDockWidget(this->Ui.spreadSheetDock, this->Ui.informationDock);
     window->tabifyDockWidget(this->Ui.spreadSheetDock, this->Ui.memoryInspectorDock);
+    window->tabifyDockWidget(this->Ui.spreadSheetDock, this->Ui.viewAnimationDock);
 
     // hide docker by default
     this->Ui.pipelineBrowserDock->hide();

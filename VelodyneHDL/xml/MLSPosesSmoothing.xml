@@ -1,0 +1,42 @@
+<ServerManagerConfiguration>
+  <!-- Begin MSLPosesSmoothing -->
+  <ProxyGroup name="filters">
+    <SourceProxy name="MLSPosesSmoothing" class="vtkMLSPosesSmoothing" label="MLSPosesSmoothing">
+      <Documentation
+        short_help="Use a moving least square algorithm to smooth poses over time"
+        long_help="Use a moving least square algorithm to smooth poses over time">
+        Use a moving least square algorithm to smooth poses over time
+      </Documentation>
+
+    <InputProperty
+      name="Input"
+      command="SetInputConnection">
+      <DataTypeDomain name="input_type">
+        <DataType value="vtkPolyData"/>
+      </DataTypeDomain>
+    </InputProperty>
+
+    <IntVectorProperty
+      name="Kernel Size"
+      command="SetKernelSize"
+      default_values="10"
+      number_of_elements="1">
+      <Documentation>
+        Size of the kernel rectangular function used for MLS
+      </Documentation>
+    </IntVectorProperty>
+
+    <IntVectorProperty
+      name="Polynome Degree"
+      command="SetPolyDeg"
+      default_values="3"
+      number_of_elements="1">
+      <Documentation>
+        Degre of the polynomial parametric function used
+      </Documentation>
+    </IntVectorProperty>
+
+    </SourceProxy>
+  </ProxyGroup>
+  <!-- End MSLPosesSmoothing -->
+</ServerManagerConfiguration>

@@ -62,6 +62,17 @@ public:
   */
   vtkSmartPointer<vtkTemporalTransforms> CycloidicTransform(vtkSmartPointer<vtkTransform> H);
 
+  /**
+  * \brief This function apply a smoothing of the positions
+  *        and orientations over the time using a moving least
+  *        square algorithm and polynomial interpolation /
+  *        approximation parametric function
+  *
+  * \@param polDeg degree of the polynomial model
+  * \@param maskRadius radius of the kernel function
+  */
+  vtkSmartPointer<vtkTemporalTransforms> MLSSmoothing(int polDeg, int kernelRadius);
+
   //@{
   /// Get/Set the orientation array
   vtkDataArray* GetOrientationArray() { return this->GetPointData()->GetArray(OrientationArrayName); }
