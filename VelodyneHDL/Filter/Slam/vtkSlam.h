@@ -90,6 +90,8 @@
 #include "KalmanFilter.h"
 #include "vtkTemporalTransforms.h"
 
+class vtkRotatingKeyPointsExtractor;
+
 // This custom macro is needed to make the SlamManager time agnostic
 // The SlamManager need to know when RequestData is call, if it's due
 // to a new timestep been requested or due to Slam parameters been changed.
@@ -137,9 +139,6 @@ public:
   vtkGetMacro(MaxDistBetweenTwoFrames, double)
   vtkCustomSetMacro(MaxDistBetweenTwoFrames, double)
 
-  vtkGetMacro(AngleResolution, double)
-  vtkCustomSetMacro(AngleResolution, double)
-
   vtkGetMacro(MaxDistanceForICPMatching, double)
   vtkCustomSetMacro(MaxDistanceForICPMatching, double)
 
@@ -149,28 +148,15 @@ public:
   vtkSetMacro(Undistortion, bool)
   vtkGetMacro(Undistortion, bool)
 
+  vtkGetObjectMacro(KeyPointsExtractor, vtkRotatingKeyPointsExtractor)
+  virtual void SetKeyPointsExtractor(vtkRotatingKeyPointsExtractor *);
+
   // Set RollingGrid Parameters
   void SetVoxelGridLeafSizeEdges(double size);
   void SetVoxelGridLeafSizePlanes(double size);
   void SetVoxelGridLeafSizeBlobs(double size);
   void SetVoxelGridSize(unsigned int size);
   void SetVoxelGridResolution(double resolution);
-
-  // Get/Set Keypoint
-  vtkGetMacro(NeighborWidth, int)
-  vtkCustomSetMacro(NeighborWidth, int)
-
-  vtkGetMacro(MinDistanceToSensor, double)
-  vtkCustomSetMacro(MinDistanceToSensor, double)
-
-  vtkGetMacro(EdgeSinAngleThreshold, double)
-  vtkCustomSetMacro(EdgeSinAngleThreshold, double)
-
-  vtkGetMacro(PlaneSinAngleThreshold, double)
-  vtkCustomSetMacro(PlaneSinAngleThreshold, double)
-
-  vtkGetMacro(EdgeDepthGapThreshold, double)
-  vtkCustomSetMacro(EdgeDepthGapThreshold, double)
 
   // Get/Set EgoMotion
   vtkGetMacro(EgoMotionLMMaxIter, unsigned int)
@@ -260,17 +246,9 @@ private:
   // Current point cloud stored in two differents
   // formats: PCL-pointcloud and vtkPolyData
   vtkSmartPointer<vtkPolyData> vtkCurrentFrame;
-  vtkSmartPointer<vtkPolyData> vtkProcessedFrame;
-  pcl::PointCloud<Point>::Ptr pclCurrentFrame;
-  std::vector<pcl::PointCloud<Point>::Ptr> pclCurrentFrameByScan;
-  std::vector<std::pair<int, int> > FromVTKtoPCLMapping;
-  std::vector<std::vector<int > > FromPCLtoVTKMapping;
 
   // Mapping between keypoints and their corresponding
   // index in the vtk input frame
-  std::vector<std::pair<int, int> > EdgesIndex;
-  std::vector<std::pair<int, int> > PlanarIndex;
-  std::vector<std::pair<int, int> > BlobIndex;
   std::vector<int> EdgePointRejectionEgoMotion;
   std::vector<int> PlanarPointRejectionEgoMotion;
   std::vector<int> EdgePointRejectionMapping;
@@ -302,42 +280,8 @@ private:
   std::shared_ptr<RollingGrid> PlanarPointsLocalMap;
   std::shared_ptr<RollingGrid> BlobsPointsLocalMap;
 
-  // Mapping of the lasers id
-  std::vector<size_t> LaserIdMapping;
-
-  // Curvature and over differntial operations
-  // scan by scan; point by point
-  std::vector<std::vector<double> > Angles;
-  std::vector<std::vector<double> > DepthGap;
-  std::vector<std::vector<double> > BlobScore;
-  std::vector<std::vector<double> > LengthResolution;
-  std::vector<std::vector<double> > SaillantPoint;
-  std::vector<std::vector<double> > IntensityGap;
-  std::vector<std::vector<int> > IsPointValid;
-  std::vector<std::vector<int> > Label;
-
-  // with of the neighbor used to compute discrete
-  // differential operators
-  int NeighborWidth = 4;
-
-  // Number of lasers scan lines composing the pointcloud
-  unsigned int NLasers = 0;
-
-  // maximal angle resolution of the lidar
-  // azimutal resolution of the VLP-16. We add an extra 20 %
-  double AngleResolution = 0.00698132; // 0.4 degree
-
   // Number of frame that have been processed
   unsigned int NbrFrameProcessed = 0;
-
-  // minimal point/sensor sensor to consider a point as valid
-  double MinDistanceToSensor = 3.0;
-
-  // Sharpness threshold to select a point
-  double EdgeSinAngleThreshold = 0.86; // 60 degrees
-  double PlaneSinAngleThreshold = 0.5; // 30 degrees
-  double EdgeDepthGapThreshold = 0.15;
-  double DistToLineThreshold = 0.20;
 
   // The max distance allowed between two frames
   // If the distance is over this limit, the ICP
@@ -395,19 +339,11 @@ private:
   double EgoMotionMaxPlaneDistance = 0.2;
   double EgoMotionMaxLineDistance = 0.2;
 
-  // norm of the farest keypoints
-  double FarestKeypointDist;
+  vtkRotatingKeyPointsExtractor* KeyPointsExtractor = nullptr;
+  vtkTable* calib;
 
   // Use or not blobs
   bool UseBlob = false;
-
-  // Threshold upon sphricity of a neighborhood
-  // to select a blob point
-  double SphericityThreshold = 0.35;
-
-  // Coef to apply to the incertitude
-  // radius of the blob neighborhood
-  double IncertitudeCoef = 3.0;
 
   // The max distance allowed between two frames
   // If the distance is over this limit, the ICP
@@ -461,39 +397,6 @@ private:
 
   // Add a default point to the trajectories
   void AddDefaultPoint(double x, double y, double z, double rx, double ry, double rz, double t);
-
-  // Convert the input vtk-format pointcloud
-  // into a pcl-pointcloud format. scan lines
-  // will also be sorted by their vertical angles
-  void ConvertAndSortScanLines(vtkSmartPointer<vtkPolyData> input);
-
-  // Extract keypoints from the pointcloud. The key points
-  // will be separated in two classes : Edges keypoints which
-  // correspond to area with high curvature scan lines and
-  // planar keypoints which have small curvature
-  void ComputeKeyPoints(vtkSmartPointer<vtkPolyData> input);
-
-  // Compute the curvature of the scan lines
-  // The curvature is not the one of the surface
-  // that intersected the lines but the curvature
-  // of the scan lines taken in an isolated way
-  void ComputeCurvature(vtkSmartPointer<vtkPolyData> input);
-
-  // Invalid the points with bad criteria from
-  // the list of possible future keypoints.
-  // This points correspond to planar surface
-  // roughtly parallel to laser beam and points
-  // close to a gap created by occlusion
-  void InvalidPointWithBadCriteria();
-
-  // Labelizes point to be a keypoints or not
-  void SetKeyPointsLabels(vtkSmartPointer<vtkPolyData> input);
-
-  // Reset all mumbers variables that are
-  // used during the process of a frame.
-  // The map and the recovered transformations
-  // won't be reset.
-  void PrepareDataForNextFrame();
 
   // Find the ego motion of the sensor between
   // the current frame and the next one using
@@ -568,18 +471,8 @@ private:
   // world reference frame coordinate system
   void UpdateMapsUsingTworld();
 
-  // Display infos
-  template<typename T, typename Tvtk>
-  void AddVectorToPolydataPoints(const std::vector<std::vector<T>>& vec, const char* name, vtkPolyData* pd);
-  void DisplayLaserIdMapping(vtkSmartPointer<vtkPolyData> input);
-  void DisplayRelAdv(vtkSmartPointer<vtkPolyData> input);
-  void DisplayUsedKeypoints(vtkSmartPointer<vtkPolyData> input);
-
   // Set the lidar maximun range
   void SetLidarMaximunRange(const double maxRange);
-
-  // Create a correspondance map between laser id and laser vertical angle
-  void UpdateLaserIdMapping(vtkTable* calib);
 
   // Indicate if we are in display mode or not
   // Display mode will add arrays showing some
@@ -589,7 +482,6 @@ private:
 
   // Identity matrix
   Eigen::Matrix3d I3 = Eigen::Matrix3d::Identity();
-  Eigen::Matrix<double, 6, 6> I6 = Eigen::Matrix<double, 6, 6>::Identity();
 };
 
 #endif // VTK_SLAM_H

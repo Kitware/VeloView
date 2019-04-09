@@ -1,5 +1,5 @@
 <ServerManagerConfiguration>
-  <!-- Begin Slam Registration -->
+  <!-- Begin Online Slam -->
   <ProxyGroup name="filters">
     <SourceProxy name="Slam (Online)" class="vtkSlam" label="Slam (Online)">
       <Documentation
@@ -91,99 +91,14 @@
         <Property name="Undistortion Model" />
       </PropertyGroup>
 
-      <!-- ==================== KeyPoint Extraction Parameters ==================== -->
-      <IntVectorProperty
-          name="Neighbor Width"
-          command="SetNeighborWidth"
-          default_values="4"
-          number_of_elements="1"
-          panel_visibility="advanced">
-        <Documentation>
-          Number of neighbors used to estimate the scan lines
-          scores (curvature, angles, depth gap, ...)
-        </Documentation>
-      </IntVectorProperty>
-
-      <DoubleVectorProperty
-          name="Minimum Distance To Sensor"
-          command="SetMinDistanceToSensor"
-          default_values="3"
-          number_of_elements="1"
-          panel_visibility="advanced">
-        <Documentation>
-          Minimal distance between a point and the sensor to be
-          processed for the keypoint extraction. In other words,
-          all points too close from the sensor are automatically
-          rejected. In meters
-        </Documentation>
-      </DoubleVectorProperty>
-
-      <DoubleVectorProperty
-          name="Minimum Sinus To Be Considered As Edge"
-          command="SetEdgeSinAngleThreshold"
-          default_values="0.86"
-          number_of_elements="1"
-          panel_visibility="advanced">
-        <Documentation>
-          One strategy to consider a point as an edge keypoint is to compute
-          the angle between the two lines that fit its previous and next neighborhood.
-          If the angle is close enought to 90° (sin(Angle) high enought) we consider
-          the point as an edge keypoint.
-        </Documentation>
-      </DoubleVectorProperty>
-
-      <DoubleVectorProperty
-          name="Maximum Sinus To Be Considered As Planar"
-          command="SetPlaneSinAngleThreshold"
-          default_values="0.5"
-          number_of_elements="1"
-          panel_visibility="advanced">
-        <Documentation>
-          One strategy to consider a point as a planar keypoint is to compute
-          the angle between the two lines that fit its previous and next neighborhood.
-          If the angle is close enought to 0° or 180° (sin(Angle) low enought) we consider
-          the point as a planar keypoint.
-        </Documentation>
-      </DoubleVectorProperty>
-
-      <DoubleVectorProperty
-          name="Minimum Depth Gapt To Be Considered As Edge"
-          command="SetEdgeDepthGapThreshold"
-          default_values="0.15"
-          number_of_elements="1"
-          panel_visibility="advanced">
-        <Documentation>
-          One strategy to consider a point as an edge keypoint is to compute
-          the gap between the point and its neighborhood. Its left and right
-          neighborhood are fitted with a line and we then compute the gap as
-          being the distance between the point and the fitted lines. If the gap
-          is high enought, we consider the point as an edge keypoint
-        </Documentation>
-      </DoubleVectorProperty>
-
-      <DoubleVectorProperty
-          name="Angle Resolution Between Two Firing"
-          command="SetAngleResolution"
-          default_values="0.00698"
-          number_of_elements="1"
-          panel_visibility="advanced">
-        <Documentation>
-          Azimutal angle resolution of the Velodyne sensor. This angle
-          resolution is used to compute an expected distance between two
-          consecutives firing. From this expected distance, we can detect
-          if a point is a potential gap and launch more investigation
-        </Documentation>
-      </DoubleVectorProperty>
-
-      <PropertyGroup label="Keypoint Extraction Parameters">
-        <Property name="Neighbor Width" />
-        <Property name="Minimum Distance To Sensor" />
-        <Property name="Minimum Sinus To Be Considered As Edge" />
-        <Property name="Maximum Sinus To Be Considered As Planar" />
-        <Property name="Minimum Depth Gapt To Be Considered As Edge" />
-        <Property name="Angle Resolution Between Two Firing" />
-      </PropertyGroup>
-
+      <ProxyProperty
+        name="KeyPointsExtractor"
+        command="SetKeyPointsExtractor"
+        label="KeyPointsExtractor">
+        <ProxyListDomain name="proxy_list">
+          <Group name="KeyPointsExtractor"/>
+        </ProxyListDomain>
+      </ProxyProperty>
       <!-- ==================== Ego Motion Parameters ==================== -->
       <IntVectorProperty
           name="Lev-Mardt Maximum Iteration"
@@ -557,78 +472,184 @@
 
     </SourceProxy>
   </ProxyGroup>
-  <!-- End SLAM Registration -->
+  <!-- End Online Slam -->
 
-<ProxyGroup name="filters">
-  <SourceProxy
-    name="Slam (Offline)"
-    class="vtkSlamManager"
-    label="Slam (Offline)"
-    base_proxygroup="filters"
-    base_proxyname="Slam (Online)">
-    <Documentation
-      short_help="Performs SLAM algorithm based Velodyne's sensor outputted point cloud"
-      long_help="Performs SLAM algorithm based Velodyne's sensor outputted point cloud.
-                 The SLAM algorithm is composed of three sequential steps:
-                 - Sampling strategy: extract keypoints that provide strong geometric information
-                 - Ego Motion: Sensor motion estimation between two frames
-                 - Mapping: Map the frame in a environment map">
-      filter which performs slam on points data.
-    </Documentation>
-
-    <IntVectorProperty
-        name="All Frame"
-        command="SetAllFrame"
-        default_values="1"
-        number_of_elements="1">
-        <BooleanDomain name="bool" />
-      <Documentation>
-        Process all frame
+  <!-- Begin Offline Slam -->
+  <ProxyGroup name="filters">
+    <SourceProxy
+      name="Slam (Offline)"
+      class="vtkSlamManager"
+      label="Slam (Offline)"
+      base_proxygroup="filters"
+      base_proxyname="Slam (Online)">
+      <Documentation
+        short_help="Performs SLAM algorithm based Velodyne's sensor outputted point cloud"
+        long_help="Performs SLAM algorithm based Velodyne's sensor outputted point cloud.
+                   The SLAM algorithm is composed of three sequential steps:
+                   - Sampling strategy: extract keypoints that provide strong geometric information
+                   - Ego Motion: Sensor motion estimation between two frames
+                   - Mapping: Map the frame in a environment map">
+        filter which performs slam on points data.
       </Documentation>
-    </IntVectorProperty>
 
-    <IntVectorProperty
-        name="Start Frame"
-        command="SetStartFrame"
-        default_values="0"
-        number_of_elements="1">
-        <Hints>
-          <PropertyWidgetDecorator type="EnableWidgetDecorator">
-            <Property name="All Frame" function="boolean_invert" />
-          </PropertyWidgetDecorator>
-        </Hints>
-      <Documentation>
-        Set the first frame to process
-      </Documentation>
-    </IntVectorProperty>
+      <IntVectorProperty
+          name="All Frame"
+          command="SetAllFrame"
+          default_values="1"
+          number_of_elements="1">
+          <BooleanDomain name="bool" />
+        <Documentation>
+          Process all frame
+        </Documentation>
+      </IntVectorProperty>
 
-    <IntVectorProperty
-        name="End Frame"
-        command="SetEndFrame"
-        default_values="0"
-        number_of_elements="1">
-        <Hints>
-          <PropertyWidgetDecorator type="EnableWidgetDecorator">
-            <Property name="All Frame" function="boolean_invert" />
-          </PropertyWidgetDecorator>
-        </Hints>
-      <Documentation>
-        Set the last frame to process
-      </Documentation>
-    </IntVectorProperty>
+      <IntVectorProperty
+          name="Start Frame"
+          command="SetStartFrame"
+          default_values="0"
+          number_of_elements="1">
+          <Hints>
+            <PropertyWidgetDecorator type="EnableWidgetDecorator">
+              <Property name="All Frame" function="boolean_invert" />
+            </PropertyWidgetDecorator>
+          </Hints>
+        <Documentation>
+          Set the first frame to process
+        </Documentation>
+      </IntVectorProperty>
 
-    <IntVectorProperty
-        name="Step Size"
-        command="SetStepSize"
-        default_values="1"
-        number_of_elements="1"
-        panel_visibility="advanced">
-      <Documentation>
-        Set the first frame to process
-      </Documentation>
-    </IntVectorProperty>
+      <IntVectorProperty
+          name="End Frame"
+          command="SetEndFrame"
+          default_values="0"
+          number_of_elements="1">
+          <Hints>
+            <PropertyWidgetDecorator type="EnableWidgetDecorator">
+              <Property name="All Frame" function="boolean_invert" />
+            </PropertyWidgetDecorator>
+          </Hints>
+        <Documentation>
+          Set the last frame to process
+        </Documentation>
+      </IntVectorProperty>
 
-  </SourceProxy>
-</ProxyGroup>
+      <IntVectorProperty
+          name="Step Size"
+          command="SetStepSize"
+          default_values="1"
+          number_of_elements="1"
+          panel_visibility="advanced">
+        <Documentation>
+          Set the first frame to process
+        </Documentation>
+      </IntVectorProperty>
+
+    </SourceProxy>
+  </ProxyGroup>
+  <!-- End Online Slam -->
+
+
+
+  <!-- Begin KeyPointsExtractor -->
+  <ProxyGroup name="KeyPointsExtractor">
+    <Proxy
+      name="RotatingKeyPointsExtractor"
+      class="vtkRotatingKeyPointsExtractor"
+      label="RotatingKeyPointsExtractor">
+
+      <IntVectorProperty
+          name="Neighbor Width"
+          command="SetNeighborWidth"
+          default_values="4"
+          number_of_elements="1"
+          panel_visibility="advanced">
+        <Documentation>
+          Number of neighbors used to estimate the scan lines
+          scores (curvature, angles, depth gap, ...)
+        </Documentation>
+      </IntVectorProperty>
+
+      <DoubleVectorProperty
+          name="Minimum Distance To Sensor"
+          command="SetMinDistanceToSensor"
+          default_values="3"
+          number_of_elements="1"
+          panel_visibility="advanced">
+        <Documentation>
+          Minimal distance between a point and the sensor to be
+          processed for the keypoint extraction. In other words,
+          all points too close from the sensor are automatically
+          rejected. In meters
+        </Documentation>
+      </DoubleVectorProperty>
+
+      <DoubleVectorProperty
+          name="Minimum Sinus To Be Considered As Edge"
+          command="SetEdgeSinAngleThreshold"
+          default_values="0.86"
+          number_of_elements="1"
+          panel_visibility="advanced">
+        <Documentation>
+          One strategy to consider a point as an edge keypoint is to compute
+          the angle between the two lines that fit its previous and next neighborhood.
+          If the angle is close enought to 90° (sin(Angle) high enought) we consider
+          the point as an edge keypoint.
+        </Documentation>
+      </DoubleVectorProperty>
+
+      <DoubleVectorProperty
+          name="Maximum Sinus To Be Considered As Planar"
+          command="SetPlaneSinAngleThreshold"
+          default_values="0.5"
+          number_of_elements="1"
+          panel_visibility="advanced">
+        <Documentation>
+          One strategy to consider a point as a planar keypoint is to compute
+          the angle between the two lines that fit its previous and next neighborhood.
+          If the angle is close enought to 0° or 180° (sin(Angle) low enought) we consider
+          the point as a planar keypoint.
+        </Documentation>
+      </DoubleVectorProperty>
+
+      <DoubleVectorProperty
+          name="Minimum Depth Gapt To Be Considered As Edge"
+          command="SetEdgeDepthGapThreshold"
+          default_values="0.15"
+          number_of_elements="1"
+          panel_visibility="advanced">
+        <Documentation>
+          One strategy to consider a point as an edge keypoint is to compute
+          the gap between the point and its neighborhood. Its left and right
+          neighborhood are fitted with a line and we then compute the gap as
+          being the distance between the point and the fitted lines. If the gap
+          is high enought, we consider the point as an edge keypoint
+        </Documentation>
+      </DoubleVectorProperty>
+
+      <DoubleVectorProperty
+          name="Angle Resolution Between Two Firing"
+          command="SetAngleResolution"
+          default_values="0.00698"
+          number_of_elements="1"
+          panel_visibility="advanced">
+        <Documentation>
+          Azimutal angle resolution of the Velodyne sensor. This angle
+          resolution is used to compute an expected distance between two
+          consecutives firing. From this expected distance, we can detect
+          if a point is a potential gap and launch more investigation
+        </Documentation>
+      </DoubleVectorProperty>
+
+      <PropertyGroup label="Keypoint Extraction Parameters">
+        <Property name="Neighbor Width" />
+        <Property name="Minimum Distance To Sensor" />
+        <Property name="Minimum Sinus To Be Considered As Edge" />
+        <Property name="Maximum Sinus To Be Considered As Planar" />
+        <Property name="Minimum Depth Gapt To Be Considered As Edge" />
+        <Property name="Angle Resolution Between Two Firing" />
+      </PropertyGroup>
+    </Proxy>
+  </ProxyGroup>
+  <!-- End KeyPointsExtractor -->
 
 </ServerManagerConfiguration>
