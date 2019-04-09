@@ -7,6 +7,9 @@ set(veloview_python_files
   veloview/planefit.py
   veloview/timer.py
   veloview/aboutDialog.py
+  veloview/DTMFilter/__init__.py
+  veloview/DTMFilter/DTMPythonFilter_Script.py
+  veloview/DTMFilter/DTM.py
   )
 
 set(python_module_dir "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/site-packages")
