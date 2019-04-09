@@ -87,7 +87,7 @@ int vtkLidarProvider::RequestInformation(vtkInformation *request,
 {
   if (!this->Interpreter)
   {
-    vtkErrorMacro(<< "Please select an Packet Interpreter" << endl);
+    vtkErrorMacro("No packet interpreter selected.");
   }
 
   // load the calibration file only now to allow to set it before the interpreter.

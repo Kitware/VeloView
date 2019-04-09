@@ -107,14 +107,14 @@ int vtkLidarRawSignalImage::RequestData(vtkInformation *vtkNotUsed(request),
   vtkDataArray* arrayToUse = this->GetInputArrayToProcess(0, inputVector);
   if (!arrayToUse)
   {
-    vtkErrorMacro("No input array is selected!");
+    vtkErrorMacro("No input array selected!");
     return 0;
   }
   vtkDataArray* azimuth = input->GetPointData()->GetArray("azimuth");
   vtkDataArray* laserIndex = input->GetPointData()->GetArray("laser_id");
   if (!azimuth || !laserIndex)
   {
-    vtkErrorMacro("The input polydata must contain azimuth, laser idx data");
+    vtkErrorMacro("The input polydata must contain azimuth angles and laser idx data!");
     return 0;
   }
 
@@ -172,7 +172,7 @@ bool vtkLidarRawSignalImage::InitializationFromCalibration(vtkTable* calibration
   // check that the calibration is provided
   if (!calibration)
   {
-    vtkErrorMacro("Calibration is not provided, algorithm can not be initialized");
+    vtkErrorMacro("Calibration data has not been provided: the algorithm cannot be initialized!");
     return false;
   }
 
@@ -184,7 +184,7 @@ bool vtkLidarRawSignalImage::InitializationFromCalibration(vtkTable* calibration
         calibration->GetColumnByName("verticalCorrection"));
   if (!verticalCorrectionArray)
   {
-    vtkErrorMacro("Calibration does not provide the vertical angles correction");
+    vtkErrorMacro("Calibration data does not provide vertical angle corrections!");
     return false;
   }
 

@@ -16,8 +16,8 @@ int vtkLidarReader::ReadFrameInformation()
   vtkPacketFileReader reader;
   if (!reader.Open(this->FileName))
   {
-    vtkErrorMacro(<< "Failed to open packet file: " << this->FileName << endl
-                                          << reader.GetLastError());
+    vtkErrorMacro("Failed to open packet file: " << this->FileName << "!\n"
+                    << reader.GetLastError());
     return 0;
   }
 
@@ -72,7 +72,7 @@ int vtkLidarReader::ReadFrameInformation()
 
   if (!this->Interpreter->GetIsCalibrated())
   {
-    vtkErrorMacro( << "The calibration could not be loaded from the pcap file");
+    vtkErrorMacro("The calibration could not be determined from the pcap file!");
   }
   return this->GetNumberOfFrames();
 }
@@ -134,6 +134,8 @@ void vtkLidarReader::SetFileName(const std::string &filename)
 vtkSmartPointer<vtkPolyData> vtkLidarReader::GetFrame(int frameNumber)
 {
   this->Interpreter->ResetCurrentFrame();
+  this->Interpreter->ClearAllFramesAvailable();
+
   if (!this->Reader)
   {
     vtkErrorMacro("GetFrame() called but packet file reader is not open.");
@@ -141,7 +143,7 @@ vtkSmartPointer<vtkPolyData> vtkLidarReader::GetFrame(int frameNumber)
   }
   if (!this->Interpreter->GetIsCalibrated())
   {
-    vtkErrorMacro("Corrections have not been set");
+    vtkErrorMacro("Calibration data has not been loaded.");
     return 0;
   }
 
@@ -180,7 +182,7 @@ void vtkLidarReader::Open()
   this->Reader = new vtkPacketFileReader;
   if (!this->Reader->Open(this->FileName))
   {
-    vtkErrorMacro(<< "Failed to open packet file: " << this->FileName << endl
+    vtkErrorMacro(<< "Failed to open packet file: " << this->FileName << "!\n"
                                                  << this->Reader->GetLastError())
     this->Close();
   }

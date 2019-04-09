@@ -102,7 +102,7 @@ int vtkTemporalTransformsApplier::RequestData(vtkInformation* vtkNotUsed(request
     auto timestamp = this->GetInputArrayToProcess(0, inputVector);
     if (!timestamp)
     {
-      vtkErrorMacro(<<"No TimeStamp Array Selected")
+      vtkErrorMacro(<<"No TimeStamp array selected.")
       return 1;
     }
     for (vtkIdType i = 0; i < pointcloud->GetNumberOfPoints(); i++)

@@ -681,7 +681,7 @@ void vtkVelodyneHDLPositionReader::Open()
   this->Internal->Reader = new vtkPacketFileReader;
   if (!this->Internal->Reader->Open(this->FileName))
   {
-    vtkErrorMacro("Failed to open packet file: " << this->FileName << endl
+    vtkErrorMacro("Failed to open packet file: " << this->FileName << '\n'
                                                  << this->Internal->Reader->GetLastError());
     this->Close();
   }

@@ -108,7 +108,7 @@ int vtkTemporalTransformsReader::RequestData(vtkInformation* vtkNotUsed(request)
 {
   if (!this->FileName)
   {
-    vtkErrorMacro(<< "Please select the file to read")
+    vtkErrorMacro("Please select the file to read")
     return 1;
   }
 
@@ -125,7 +125,7 @@ int vtkTemporalTransformsReader::RequestData(vtkInformation* vtkNotUsed(request)
 
   if (table->GetNumberOfColumns() < 7)
   {
-    vtkErrorMacro( << "The file you try to read has only " << table->GetNumberOfColumns() << " colums."
+    vtkErrorMacro("The file you try to read has only " << table->GetNumberOfColumns() << " colums."
                    << "This reader needs to have a CVS file with the following colum:"
                    << "time, roll, pitch, yaw, X, Y, Z")
   }
