@@ -1145,6 +1145,8 @@ def close():
     resetCameraToForwardView()
     app.filenameLabel.setText('')
     app.statusLabel.setText('')
+    app.sensorInformationLabel.setText('')
+    app.positionPacketInfoLabel.setText('')
     disableSaveActions()
     app.actions['actionRecord'].setChecked(False)
     app.actions['actionDualReturnModeDual'].setChecked(True)
