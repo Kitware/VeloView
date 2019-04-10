@@ -38,6 +38,17 @@
         </Documentation>
     </DoubleVectorProperty>
 
+    <DoubleVectorProperty
+        name="Rank Percentil"
+        animateable="0"
+        default_values="0.5"
+        command="SetRankPercentil"
+        number_of_elements="1">
+        <Documentation>
+          The height value to keep for a voxel is the one that corresponds to this percentil.
+        </Documentation>
+    </DoubleVectorProperty>
+
     </SourceProxy>
   </ProxyGroup>
   <!-- End vtkPointCloudLinearProjector -->
