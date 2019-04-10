@@ -12,7 +12,7 @@
       name="Input"
       command="SetInputConnection">
       <DataTypeDomain name="input_type">
-        <DataType value="vtkPolyData"/>
+        <DataType value="vtkImageData"/>
       </DataTypeDomain>
     </InputProperty>
 

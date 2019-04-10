@@ -82,7 +82,7 @@ int vtkPointCloudLinearProjector::RequestData(vtkInformation *vtkNotUsed(request
   Eigen::Vector3d X;
 
   auto transformedPoints = vtkSmartPointer<vtkPoints>::New();
-  transformedPoints->Resize(input->GetNumberOfPoints());
+  transformedPoints->SetNumberOfPoints(input->GetNumberOfPoints());
   // Transform the input polydata
   for (vtkIdType pointIndex = 0; pointIndex < input->GetNumberOfPoints(); ++pointIndex)
   {
@@ -121,6 +121,15 @@ int vtkPointCloudLinearProjector::RequestData(vtkInformation *vtkNotUsed(request
     perPixelDistribution[xPixelCoord + this->Dimensions[0] * yPixelCoord].push_back(point[2]);
   }
 
+  // position to allow user to reposition the image on good position
+  // (for instance, below the point cloud)
+  double xPixelP0 = std::floor((0.0 - boundingBox[0]) * scaleX);
+  double yPixelP0 = std::floor((0.0 - boundingBox[2]) * scaleY);
+  double xCoordP0 = xPixelP0 * this->Spacing[0];
+  double yCoordP0 = yPixelP0  * this->Spacing[1];
+  std::cout << "Point (0,0,0) goes to pixel " << xPixelP0 << ", " << yPixelP0 << std::endl;
+  std::cout << "Point (0,0,0) goes to coord " << xCoordP0  << ", " << yCoordP0 << std::endl;
+
   // fill the image
   for (int x = 0; x < this->Dimensions[0]; ++x)
   {
@@ -136,10 +145,18 @@ int vtkPointCloudLinearProjector::RequestData(vtkInformation *vtkNotUsed(request
       std::sort(perPixelDistribution[x + this->Dimensions[0] * y].begin(),
                 perPixelDistribution[x + this->Dimensions[0] * y].end());
 
-      int rankIndex = std::floor((perPixelDistribution[x + this->Dimensions[0] * y].size() - 1) * this->RankPercentil);
-      double rankValue = perPixelDistribution[x + this->Dimensions[0] * y][rankIndex];
-      double value = rankValue - boundingBox[4];
-      image->SetScalarComponentFromDouble(x, y, 0, 0, value);
+      double value;
+      if (perPixelDistribution[x + this->Dimensions[0] * y].size() > 0)
+      {
+        int rankIndex = std::floor((perPixelDistribution[x + this->Dimensions[0] * y].size() - 1) * this->RankPercentil);
+        double rankValue = perPixelDistribution[x + this->Dimensions[0] * y][rankIndex];
+        value = rankValue - boundingBox[4]; // aim is to have the smallest value equal to 0.0. Makes sens is followed by laplacian smoothing wich expects 0.0 if no data
+      }
+      else
+      {
+        value = 0.0;
+      }
+      image->SetScalarComponentFromDouble(x, y, 0, 0, value); // height
     }
   }
 
