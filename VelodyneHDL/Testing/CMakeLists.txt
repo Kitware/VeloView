@@ -40,6 +40,11 @@ target_link_libraries(TestVelodynePPSIdentification VelodyneHDLPlugin)
 custom_add_executable(TestVtkEigenTools TestVtkEigenTools.cxx TestHelpers.cxx)
 target_link_libraries(TestVtkEigenTools VelodyneHDLPlugin)
 
+if (ENABLE_Ceres)
+  add_executable(TestCameraCalibration TestCameraCalibration.cxx)
+  target_link_libraries(TestCameraCalibration VelodyneHDLPlugin)
+endif (ENABLE_Ceres)
+
 if (ENABLE_PCL AND ENABLE_Ceres)
   add_executable(TestGeometricCalibration-MM TestGeometricCalibration-MM.cxx)
   target_link_libraries(TestGeometricCalibration-MM VelodyneHDLPlugin)
@@ -137,6 +142,13 @@ add_test(TestTrailingFrame
 add_test(TestRansacPlaneModel
   ${INSTALL_LOCAL_DIR}/TestRansacPlaneModel
 )
+
+if (ENABLE_Ceres)
+  add_test(TestCameraCalibration
+    ${INSTALL_LOCAL_DIR}/TestCameraCalibration
+    ${CMAKE_SOURCE_DIR}/TestData/Camera/MatchedPoints_3D_2D
+  )
+endif (ENABLE_Ceres)
 
 if (ENABLE_PCL AND ENABLE_Ceres)
   add_test(TestGeometricCalibration-MM
