@@ -39,12 +39,12 @@ NetworkSource::~NetworkSource()
 }
 
 //-----------------------------------------------------------------------------
-void NetworkSource::QueuePackets(std::string *packet)
+void NetworkSource::QueuePackets(NetworkPacket* packet)
 {
-  std::string* packet2 = 0;
+  NetworkPacket* packet2 = nullptr;
   if (this->Writer)
   {
-    packet2 = new std::string(*packet);
+    packet2 = new NetworkPacket(*packet);
   }
 
   if (this->Consumer)

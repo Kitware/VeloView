@@ -20,9 +20,7 @@
 
 // LOCAL
 #include "vtkPacketFileWriter.h"
-
-// STD
-#include <string>
+#include "NetworkPacket.h"
 
 /**
  * \class CrashAnalysisWriter
@@ -42,7 +40,7 @@ public:
   void SetFilename(const std::string& arg) {this->Filename = arg;}
 
   // Add a packet to the crash analyzer
-  void AddPacket(const std::string& packet);
+  void AddPacket(const NetworkPacket& packet);
 
   // Close the pcap writer if it is opened
   void CloseAnalyzer();
@@ -68,7 +66,7 @@ private:
   unsigned int PacketCount = 0;
   unsigned int FileToStore = 0;
 
-  void WriteLastPacket(const std::string& packet);
+  void WriteLastPacket(const NetworkPacket& packet);
 };
 
 #endif // CRASH_ANALYSING_H

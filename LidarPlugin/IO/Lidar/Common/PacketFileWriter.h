@@ -32,7 +32,7 @@ public:
 
   void Stop();
 
-  void Enqueue(std::string* packet);
+  void Enqueue(NetworkPacket* packet);
 
   bool IsOpen() { return this->PacketWriter.IsOpen(); }
 
@@ -41,7 +41,7 @@ public:
 private:
   vtkPacketFileWriter PacketWriter;
   boost::shared_ptr<boost::thread> Thread;
-  boost::shared_ptr<SynchronizedQueue<std::string*> > Packets;
+  boost::shared_ptr<SynchronizedQueue<NetworkPacket*>> Packets;
 };
 
 

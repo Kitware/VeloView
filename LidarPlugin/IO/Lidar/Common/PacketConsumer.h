@@ -21,6 +21,7 @@
 
 #include "vtkSmartPointer.h"
 #include "vtkLidarPacketInterpreter.h"
+#include "NetworkPacket.h"
 
 
 template<typename T>
@@ -43,7 +44,7 @@ public:
 
   void Stop();
 
-  void Enqueue(std::string* packet);
+  void Enqueue(NetworkPacket* packet);
 
   void SetInterpreter(vtkLidarPacketInterpreter* inter) { this->Interpreter = inter;}
 
@@ -58,7 +59,7 @@ protected:
   std::deque<vtkSmartPointer<vtkPolyData> > Frames;
   vtkLidarPacketInterpreter* Interpreter;
 
-  boost::shared_ptr<SynchronizedQueue<std::string*> > Packets;
+  boost::shared_ptr<SynchronizedQueue<NetworkPacket*>> Packets;
 
   boost::shared_ptr<boost::thread> Thread;
 };

@@ -77,6 +77,9 @@ private:
   /*!< Allow or not the forwarding of the packets */
   bool isForwarding;
 
+  /*!< EndPoint of the sender, contains only sender ip, sender port */
+  boost::asio::ip::udp::endpoint SenderEndpoint;
+
   /*!< EndPoint to forward to, contain information such as forward ip, forward port */
   boost::asio::ip::udp::endpoint ForwardEndpoint;
   
@@ -97,7 +100,7 @@ private:
 
   /*!< Buffer which will saved the data. Expecting exactly 1206 bytes, using a larger buffer
    *  so that if a larger packet arrives unexpectedly we'll notice it. */
-  char RXBuffer[BUFFER_SIZE];
+  unsigned char RXBuffer[BUFFER_SIZE];
 
   bool IsReceiving; /*!< Flag indicating if the socket is receiving packets */
   bool ShouldStop;  /*!< Flag indicating if we should stop the listening */

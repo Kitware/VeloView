@@ -18,6 +18,7 @@
 // LOCAL
 #include "PacketReceiver.h"
 #include "NetworkSource.h"
+#include "NetworkPacket.h"
 
 #include <vtkMath.h>
 
@@ -101,9 +102,10 @@ void PacketReceiver::StartReceive()
 
   // expecting exactly 1206 bytes, using a larger buffer so that if a
   // larger packet arrives unexpectedly we'll notice it.
-  this->Socket.async_receive(boost::asio::buffer(this->RXBuffer, BUFFER_SIZE),
-                             boost::bind(&PacketReceiver::SocketCallback, this, boost::asio::placeholders::error,
-                                         boost::asio::placeholders::bytes_transferred));
+  this->Socket.async_receive_from(boost::asio::buffer(this->RXBuffer, BUFFER_SIZE),
+                                  this->SenderEndpoint,
+                                  boost::bind(&PacketReceiver::SocketCallback, this, boost::asio::placeholders::error,
+                                              boost::asio::placeholders::bytes_transferred));
 }
 
 //-----------------------------------------------------------------------------
@@ -136,11 +138,33 @@ void PacketReceiver::SocketCallback(
 
     return;
   }
-  std::string* packet = new std::string(this->RXBuffer, numberOfBytes);
+
+
+  unsigned short ourPort = static_cast<unsigned short>(this->Port);
+  // endpoint::port() is in host byte order
+  unsigned short sourcePort = this->SenderEndpoint.port();
+  // warning: we make the assumption that network is ipv4
+  // sourceIP has network endianess (so big endian).
+  // this line is ugly but it is required (the array types are differents)
+  unsigned char sourceIP[4] = { this->SenderEndpoint.address().to_v4().to_bytes()[0],
+                                this->SenderEndpoint.address().to_v4().to_bytes()[1],
+                                this->SenderEndpoint.address().to_v4().to_bytes()[2],
+                                this->SenderEndpoint.address().to_v4().to_bytes()[3]};
+  NetworkPacket* packet = NetworkPacket::BuildEthernetIP4UDP(this->RXBuffer,
+                                                       numberOfBytes,
+                                                       sourceIP,
+                                                       sourcePort,
+                                                       ourPort);
+
+  // std::cout << this->Socket.remote_endpoint().address() << std::endl;
+
+  // I looked at the struct sockaddr* inside the sender endpoint, but no
+  // other data than ip source and port source is provided (which is normal,
+  // we are working at the application level).
 
   if (this->isForwarding)
   {
-    ForwardedSocket.send_to(boost::asio::buffer(packet->c_str(), numberOfBytes), ForwardEndpoint);
+    ForwardedSocket.send_to(boost::asio::buffer(packet->GetPayloadData(), packet->GetPayloadSize()), ForwardEndpoint);
   }
 
   if (this->IsCrashAnalysing)
@@ -155,7 +179,6 @@ void PacketReceiver::SocketCallback(
   if ((++this->PacketCounter % 5000) == 0)
   {
     std::cout << "RECV packets: " << this->PacketCounter << " on " << this->Port << std::endl;
-    ;
   }
 }
 
