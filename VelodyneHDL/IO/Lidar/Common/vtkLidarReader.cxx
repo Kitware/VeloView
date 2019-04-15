@@ -181,6 +181,44 @@ vtkSmartPointer<vtkPolyData> vtkLidarReader::GetFrame(int frameNumber)
 }
 
 //-----------------------------------------------------------------------------
+vtkSmartPointer<vtkPolyData> vtkLidarReader::GetFrameForPacketTime(double packetTime)
+{
+  return this->GetFrame(this->GetFrameIndexForPacketTime(packetTime));
+}
+
+//-----------------------------------------------------------------------------
+vtkSmartPointer<vtkPolyData> vtkLidarReader::GetFrameForDataTime(double dataTime)
+{
+  return this->GetFrame(this->GetFrameIndexForDataTime(dataTime));
+}
+
+//-----------------------------------------------------------------------------
+int vtkLidarReader::GetFrameIndexForPacketTime(double packetTime)
+{
+  // iterating over all timesteps until finding the first one with a greater time value
+  auto idx = std::lower_bound(this->FrameCatalog.begin(),
+                              this->FrameCatalog.end(),
+                              packetTime,
+                              [](FrameInformation& fp, double d)
+                                { return fp.FirstPacketNetworkTime < d; });
+  auto frameRequested = std::distance(this->FrameCatalog.begin(), idx);
+  return static_cast<int>(frameRequested);
+}
+
+//-----------------------------------------------------------------------------
+int vtkLidarReader::GetFrameIndexForDataTime(double dataTime)
+{
+  // iterating over all timesteps until finding the first one with a greater time value
+  auto idx = std::lower_bound(this->FrameCatalog.begin(),
+                              this->FrameCatalog.end(),
+                              dataTime,
+                              [](FrameInformation& fp, double d)
+                                { return fp.FirstPacketDataTime < d; });
+  auto frameRequested = std::distance(this->FrameCatalog.begin(), idx);
+  return static_cast<int>(frameRequested);
+}
+
+//-----------------------------------------------------------------------------
 void vtkLidarReader::Open()
 {
   this->Close();
