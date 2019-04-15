@@ -36,7 +36,7 @@ set(paraview_plugin_path "bin/${veloview_appname}/Contents/Plugins")
 # because superbuild_apple_create_app uses paraview_plugin_paths
 # this was copied from ParaView's superbuild
 # TODO: could/should be inside veloview.bundle.common ?
-set(paraview_plugins "PointCloudPlugin")
+set(paraview_plugins "PointCloudPlugin" "EyeDomeLightingView")
 set(paraview_plugin_paths)
 foreach (paraview_plugin IN LISTS paraview_plugins)
   if (EXISTS "${superbuild_install_location}/Applications/paraview.app/Contents/Plugins/lib${paraview_plugin}.dylib")

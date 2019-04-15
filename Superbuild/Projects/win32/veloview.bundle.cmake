@@ -142,7 +142,9 @@ install(FILES ${boost_bin_dll}
 )
 unset(boost_bin_dll)
 
-file(GLOB pointcloud_dll "${superbuild_install_location}/bin/PointCloudPlugin.dll")
+file(GLOB pointcloud_dll
+	"${superbuild_install_location}/bin/PointCloudPlugin.dll"
+	"${superbuild_install_location}/bin/EyeDomeLightingView.dll")
 install(FILES ${pointcloud_dll}
   DESTINATION "bin"
   COMPONENT superbuild
