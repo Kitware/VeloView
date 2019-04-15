@@ -5,6 +5,7 @@
 #include <vtkCellData.h>
 #include <vtkCell.h>
 #include <vtkPolyLine.h>
+#include <vtkLine.h>
 #include <vtkTransform.h>
 
 #include <cmath>
@@ -327,16 +328,21 @@ void vtkTemporalTransforms::PushBack(double time, const Eigen::AngleAxisd& orien
                                                 orientation.angle());
   this->GetTranslationArray()->InsertNextTuple(static_cast<const double*>(translation.data()));
 
-  // replace the cell by a line with one more point
-  auto polyLine = vtkSmartPointer<vtkPolyLine>::New();
-  polyLine->GetPointIds()->SetNumberOfIds(this->GetNumberOfPoints());
-  for (vtkIdType i = 0; i < this->GetNumberOfPoints(); i++)
+
+  if (this->GetNumberOfPoints() == 1)
   {
-    polyLine->GetPointIds()->SetId(i,i);
+    vtkSmartPointer<vtkCellArray> lines = vtkSmartPointer<vtkCellArray>::New();
+    this->SetLines(lines);
+    return; // not enough points (1) to create a new line
   }
-  auto cell = vtkSmartPointer<vtkCellArray>::New();
-  cell->InsertNextCell(polyLine);
-  this->SetLines(cell);
+
+  // if control reaches this line, we have at least two points,
+  // we append one small line between the new point and the previous one
+  vtkSmartPointer<vtkCellArray> lines = this->GetLines();
+  vtkSmartPointer<vtkLine> line = vtkSmartPointer<vtkLine>::New();
+  line->GetPointIds()->SetId(0, this->GetNumberOfPoints() - 2);
+  line->GetPointIds()->SetId(1, this->GetNumberOfPoints() - 1);
+  lines->InsertNextCell(line);
 }
 
 vtkSmartPointer<vtkTemporalTransforms> vtkTemporalTransforms::ExtractTimes(double tstart, double tend)
