@@ -108,6 +108,15 @@ if (ENABLE_Ceres)
   include_directories(${SYSTEM_OPTION} ${CERES_INCLUDE_DIRS})
 endif(ENABLE_Ceres)
 
+#--------------------------------------
+# Opencv dependency
+#--------------------------------------
+option(ENABLE_OpenCV OFF "OpenCV is required for handling lidar-camera multisensor systems")
+if (ENABLE_OpenCV)
+  find_package(OpenCV REQUIRED)
+  include_directories(${SYSTEM_OPTION} ${OpenCV_INCLUDE_DIRS})
+endif(ENABLE_OpenCV)
+
 #-----------------------------------------------------------------------------
 # Build Paraview Plugin
 #-----------------------------------------------------------------------------

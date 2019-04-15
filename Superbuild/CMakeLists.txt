@@ -72,6 +72,7 @@ function (superbuild_find_projects var)
     eigen
     liblas
     freetype
+    opencv
     paraview
     pcap
     png

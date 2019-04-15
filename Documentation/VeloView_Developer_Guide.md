@@ -157,6 +157,11 @@ The following packages are needed to build on Ubuntu 16.04:
 - freeglut3-dev
 - pkg-config
 
+### If opencv if enabled:
+- libavformat-dev
+- libavdevice-dev
+- libavcodec-dev
+
 
 ### Linux build instructions <a name="linux-build-instructions"></a>
 1. clone VeloView's source code repository to a directory of your chosing, for example:
