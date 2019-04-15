@@ -44,6 +44,32 @@ public:
   virtual vtkSmartPointer<vtkPolyData> GetFrame(int frameNumber);
 
   /**
+   * @brief GetFrameForPacketTime returns the requested frame
+   * @param packetTime udp packet time requested
+   */
+  virtual vtkSmartPointer<vtkPolyData> GetFrameForPacketTime(double packetTime);
+
+  /**
+   * @brief GetFrameForDataTime returns the requested frame
+   * @param dataTime data time requested
+   */
+  virtual vtkSmartPointer<vtkPolyData> GetFrameForDataTime(double dataTime);
+
+  /**
+   * @brief GetFrameIndexForPacketTime returns the frame index
+   *        corresponding to the packet time asked
+   * @param packetTime udp packet time requested
+   */
+  virtual int GetFrameIndexForPacketTime(double packetTime);
+
+  /**
+   * @brief GetFrameIndexForDataTime returns the frame index
+   *        corresponding to the packet time asked
+   * @param packetTime udp packet time requested
+   */
+  virtual int GetFrameIndexForDataTime(double dataTime);
+
+  /**
    * @brief Open open the pcap file
    * @todo a decition should be made if the opening/closing of the pcap should be handle by
    * the class itself of the class user. Currently this is not clear
