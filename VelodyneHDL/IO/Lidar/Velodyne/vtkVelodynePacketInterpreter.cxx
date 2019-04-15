@@ -464,6 +464,8 @@ vtkVelodynePacketInterpreter::vtkVelodynePacketInterpreter()
   this->ReportedFactoryField2 = 0;
   this->DistanceResolutionM = 0.002;
   this->WantIntensityCorrection = false;
+  this->lastGpsTimestamp = 0;
+  this->ParserMetaData.SpecificInformation = std::make_shared<VelodyneSpecificFrameInformation>();
 
   this->rollingCalibrationData = new vtkRollingDataAccumulator();
   this->Init();
@@ -714,7 +716,7 @@ void vtkVelodynePacketInterpreter::LoadCalibration(const std::string& filename)
 }
 
 //-----------------------------------------------------------------------------
-void vtkVelodynePacketInterpreter::ProcessPacket(unsigned char const * data, unsigned int dataLength, int startPosition)
+void vtkVelodynePacketInterpreter::ProcessPacket(unsigned char const * data, unsigned int dataLength)
 {
   if (!this->IsLidarPacket(data, dataLength))
   {
@@ -740,8 +742,16 @@ void vtkVelodynePacketInterpreter::ProcessPacket(unsigned char const * data, uns
     ShouldCheckSensor = false;
   }
 
+  // Check if the time has rolled during this packet
+  if (dataPacket->gpsTimestamp < this->ParserMetaData.FirstPacketDataTime)
+  {
+    reinterpret_cast<VelodyneSpecificFrameInformation*>
+        (this->ParserMetaData.SpecificInformation.get())->NbrOfRollingTime++;
+  }
+  this->ParserMetaData.FirstPacketDataTime = dataPacket->gpsTimestamp;
+
   const unsigned int rawtime = dataPacket->gpsTimestamp;
-  const double timestamp = this->ComputeTimestamp(dataPacket->gpsTimestamp);
+  const double timestamp = this->ComputeTimestamp(dataPacket->gpsTimestamp, this->ParserMetaData);
 
   // Update the rpm computation (by packets)
   this->RpmCalculator_->AddData(dataPacket, rawtime);
@@ -750,7 +760,10 @@ void vtkVelodynePacketInterpreter::ProcessPacket(unsigned char const * data, uns
   // transform
   if (SensorTransform) this->SensorTransform->Update();
 
-  int firingBlock = startPosition;
+  VelodyneSpecificFrameInformation* velodyneFrameInfo =
+      reinterpret_cast<VelodyneSpecificFrameInformation*>(this->ParserMetaData.SpecificInformation.get());
+  int firingBlock = velodyneFrameInfo->FiringToSkip;
+  velodyneFrameInfo->FiringToSkip = 0;
 
   bool isVLS128 = dataPacket->isVLS128();
   // Compute the list of total azimuth advanced during one full firing block
@@ -831,7 +844,6 @@ void vtkVelodynePacketInterpreter::ProcessPacket(unsigned char const * data, uns
     }
   }
 }
-
 
 //-----------------------------------------------------------------------------
 bool vtkVelodynePacketInterpreter::IsLidarPacket(unsigned char const * data, unsigned int dataLength)
@@ -1134,27 +1146,11 @@ void vtkVelodynePacketInterpreter::Init()
 }
 
 //-----------------------------------------------------------------------------
-double vtkVelodynePacketInterpreter::ComputeTimestamp(unsigned int tohTime)
+double vtkVelodynePacketInterpreter::ComputeTimestamp(unsigned int tohTime, const FrameInformation& frameInfo)
 {
+  VelodyneSpecificFrameInformation* velInfo = reinterpret_cast<VelodyneSpecificFrameInformation*>(frameInfo.SpecificInformation.get());
   static const double hourInMilliseconds = 3600.0 * 1e6;
-
-  if (tohTime < this->LastTimestamp)
-  {
-    if (!vtkMath::IsFinite(this->TimeAdjust))
-    {
-      // Ought to warn about this, but happens when applogic is checking that
-      // we can read the file :-(
-      this->TimeAdjust = 0;
-    }
-    else
-    {
-      // Hour has wrapped; add an hour to the update adjustment value
-      this->TimeAdjust += hourInMilliseconds;
-    }
-  }
-
-  this->LastTimestamp = tohTime;
-  return static_cast<double>(tohTime) + this->TimeAdjust;
+  return tohTime + velInfo->NbrOfRollingTime * hourInMilliseconds;
 }
 
 //-----------------------------------------------------------------------------
@@ -1395,7 +1391,9 @@ void vtkVelodynePacketInterpreter::ResetCurrentFrame()
 }
 
 //-----------------------------------------------------------------------------
-void vtkVelodynePacketInterpreter::PreProcessPacket(unsigned char const * data, unsigned int dataLength, bool &isNewFrame, int &framePositionInPacket)
+bool vtkVelodynePacketInterpreter::PreProcessPacket(unsigned char const * data, unsigned int dataLength,
+                                                    fpos_t filePosition, double packetNetworkTime,
+                                                    std::vector<FrameInformation>* frameCatalog)
 {
   const HDLDataPacket* dataPacket = reinterpret_cast<const HDLDataPacket*>(data);
   //! @todo don't use static value here this is ugly...
@@ -1405,10 +1403,8 @@ void vtkVelodynePacketInterpreter::PreProcessPacket(unsigned char const * data, 
   static int lastnumberOfFiringPackets = 0;
   static int frameNumber;
 
-  isNewFrame = false;
-  framePositionInPacket = 0;
-
   numberOfFiringPackets++;
+  bool isNewFrame = false;
 
   //! @todo this could be useful at a higher level
   if (this->ShouldCheckSensor)
@@ -1417,14 +1413,28 @@ void vtkVelodynePacketInterpreter::PreProcessPacket(unsigned char const * data, 
     this->ShouldCheckSensor = false;
   }
 
-
   //    unsigned int timeDiff = dataPacket->gpsTimestamp - lastTimestamp;
   //    if (timeDiff > 600 && lastTimestamp != 0)
   //      {
   //      printf("missed %d packets\n",  static_cast<int>(floor((timeDiff/553.0) + 0.5)));
   //      }
 
+  // Check if the time has rolled between this packet and
+  // the previous one. There is only one timestamp per packet
+  // this is why the check is not performed per firing or per laser
+  VelodyneSpecificFrameInformation* velFrameInfo =
+      reinterpret_cast<VelodyneSpecificFrameInformation*>(this->ParserMetaData.SpecificInformation.get());
+  if (dataPacket->gpsTimestamp < this->lastGpsTimestamp)
+  {
+    velFrameInfo->NbrOfRollingTime++;
+  }
+  this->lastGpsTimestamp = dataPacket->gpsTimestamp;
 
+  this->ParserMetaData.FilePosition = filePosition;
+
+  // update the timestamps information
+  this->ParserMetaData.FirstPacketDataTime = dataPacket->gpsTimestamp;
+  this->ParserMetaData.FirstPacketNetworkTime = packetNetworkTime;
 
   this->IsHDL64Data |= dataPacket->isHDL64();
 
@@ -1433,7 +1443,6 @@ void vtkVelodynePacketInterpreter::PreProcessPacket(unsigned char const * data, 
   for (int i = 0; i < HDL_FIRING_PER_PKT; ++i)
   {
     const HDLFiringData& firingData = dataPacket->firingData[i];
-
 
     // Skip dummy blocks of VLS-128 dual mode last 4 blocks
     if (IsVLS128 && (firingData.blockIdentifier == 0 || firingData.blockIdentifier == 0xFFFF))
@@ -1463,8 +1472,21 @@ void vtkVelodynePacketInterpreter::PreProcessPacket(unsigned char const * data, 
       // Add file position if the frame is not empty
       if (!isEmptyFrame || !this->IgnoreEmptyFrames)
       {
+        // update the firing to skip information
+        // and add the current frame information
+        // to the catalog
+        velFrameInfo->FiringToSkip = i;
+        if (frameCatalog)
+        {
+          frameCatalog->push_back(this->ParserMetaData);
+        }
         isNewFrame = true;
-        framePositionInPacket = i;
+
+        // Create a copy of the current meta data state
+        // at a different memory location than the one
+        // added to the catalog
+        this->ParserMetaData.SpecificInformation = this->ParserMetaData.SpecificInformation->CopyTo();
+
         frameNumber++;
         PacketProcessingDebugMacro(
           << "\n\nEnd of frame #" << frameNumber
@@ -1485,6 +1507,7 @@ void vtkVelodynePacketInterpreter::PreProcessPacket(unsigned char const * data, 
     this->rollingCalibrationData->appendData(dataPacket->gpsTimestamp, dataPacket->factoryField1, dataPacket->factoryField2);
     this->HDL64LoadCorrectionsFromStreamData();
   }
+  return isNewFrame;
 }
 
 //-----------------------------------------------------------------------------
@@ -1593,4 +1616,25 @@ void vtkVelodynePacketInterpreter::GetLaserCorrections(double verticalCorrection
     minIntensity[i] = this->laser_corrections_[i].minIntensity;
     maxIntensity[i] = this->laser_corrections_[i].maxIntensity;
   }
+}
+
+//-----------------------------------------------------------------------------
+void vtkVelodynePacketInterpreter::ResetParserMetaData()
+{
+  FrameInformation newFrameInfo;
+  newFrameInfo.SpecificInformation = std::make_shared<VelodyneSpecificFrameInformation>();
+  this->ParserMetaData = newFrameInfo;
+}
+
+//-----------------------------------------------------------------------------
+void vtkVelodynePacketInterpreter::SetParserMetaData(const FrameInformation& metaData)
+{
+  this->ParserMetaData = metaData.CopyTo();
+}
+
+//-----------------------------------------------------------------------------
+FrameInformation vtkVelodynePacketInterpreter::GetParserMetaData()
+{
+  FrameInformation frameInfo = this->ParserMetaData.CopyTo();
+  return frameInfo;
 }

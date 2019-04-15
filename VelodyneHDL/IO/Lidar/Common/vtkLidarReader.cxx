@@ -23,16 +23,22 @@ int vtkLidarReader::ReadFrameInformation()
 
   const unsigned char* data = 0;
   unsigned int dataLength = 0;
-  bool isNewFrame = false;
-  int framePositionInPacket = 0;
-  double timeSinceStart = 0;
-
-  this->FilePositions.clear();
-  fpos_t lastFilePosition;
-  reader.GetFilePosition(&lastFilePosition);
   bool firstIteration = true;
 
-  while (reader.NextPacket(data, dataLength, timeSinceStart))
+  // reset the frame catalog to build a new one
+  this->FrameCatalog.clear();
+
+  // reset the interpreter parser meta data
+  this->Interpreter->ResetParserMetaData();
+
+  // keep track of the file position
+  // and the network timestamp of the
+  // current udp packet to process
+  fpos_t lastFilePosition;
+  double lastPacketNetworkTime = 0;
+  reader.GetFilePosition(&lastFilePosition);
+
+  while (reader.NextPacket(data, dataLength, lastPacketNetworkTime))
   {
     // This command sends a signal that can be observed from outside
     // and that is used to diplay a Qt progress dialog from Python
@@ -40,7 +46,8 @@ int vtkLidarReader::ReadFrameInformation()
     // thus it is ok to pass 0.0
     this->UpdateProgress(0.0);
 
-
+    // If the current packet is not a lidar packet,
+    // skip it and update the file position
     if (!this->Interpreter->IsLidarPacket(data, dataLength))
     {
       reader.GetFilePosition(&lastFilePosition);
@@ -54,18 +61,13 @@ int vtkLidarReader::ReadFrameInformation()
       // (end and start of one), and as we rely on the packet header time
       // this 2 frames will have the same timestep. So to avoid that we
       // artificatially move the first timeStep back by one.
-      FramePosition newPosition(lastFilePosition, 0, timeSinceStart-1);
-      this->FilePositions.push_back(newPosition);
+      this->FrameCatalog.push_back(this->Interpreter->GetParserMetaData());
       firstIteration = false;
     }
 
-    // check if the packet content indicate a new frame should be created
-    this->Interpreter->PreProcessPacket(data, dataLength, isNewFrame, framePositionInPacket);
-    if (isNewFrame)
-    {
-      FramePosition newPosition(lastFilePosition,framePositionInPacket, timeSinceStart);
-      this->FilePositions.push_back(newPosition);
-    }
+    // Get information about the current packet
+    this->Interpreter->PreProcessPacket(data, dataLength, lastFilePosition,
+                                        lastPacketNetworkTime, &this->FrameCatalog);
 
     reader.GetFilePosition(&lastFilePosition);
   }
@@ -80,15 +82,15 @@ int vtkLidarReader::ReadFrameInformation()
 //-----------------------------------------------------------------------------
 void vtkLidarReader::SetTimestepInformation(vtkInformation *info)
 {
-  size_t numberOfTimesteps = this->FilePositions.size();
+  size_t numberOfTimesteps = this->FrameCatalog.size();
   std::vector<double> timesteps(numberOfTimesteps);
   double timeOffset = this->GetInterpreter()->GetTimeOffset();
   for (size_t i = 0; i < numberOfTimesteps; ++i)
   {
-    timesteps[i] = this->FilePositions[i].Time + timeOffset;
+    timesteps[i] = this->FrameCatalog[i].FirstPacketNetworkTime + timeOffset;
   }
 
-  if (this->FilePositions.size())
+  if (this->FrameCatalog.size())
   {
     double* firstTimestepPointer = &timesteps.front();
     double* lastTimestepPointer = &timesteps.back();
@@ -126,7 +128,7 @@ void vtkLidarReader::SetFileName(const std::string &filename)
   }
 
   this->FileName = filename;
-  this->FilePositions.clear();
+  this->FrameCatalog.clear();
   this->Modified();
 }
 
@@ -150,25 +152,28 @@ vtkSmartPointer<vtkPolyData> vtkLidarReader::GetFrame(int frameNumber)
   const unsigned char* data = 0;
   unsigned int dataLength = 0;
   double timeSinceStart;
-  int firstFramePositionInPacket = this->FilePositions[frameNumber].Skip;
 
-  this->Reader->SetFilePosition(&this->FilePositions[frameNumber].Position);
+  // Update the interpreter meta data according to the requested frame
+  FrameInformation currInfo = this->FrameCatalog[frameNumber];
+  this->Interpreter->SetParserMetaData(currInfo.CopyTo());
+  this->Reader->SetFilePosition(&currInfo.FilePosition);
+
   while (this->Reader->NextPacket(data, dataLength, timeSinceStart))
   {
-
+    // If the current packet is not a lidar packet,
+    // skip it and update the file position
     if (!this->Interpreter->IsLidarPacket(data, dataLength))
     {
       continue;
     }
 
-    this->Interpreter->ProcessPacket(data, dataLength, firstFramePositionInPacket);
-
-    // check if the required frames are ready
+    // Process the lidar packet and check
+    // if the required frame is ready
+    this->Interpreter->ProcessPacket(data, dataLength);
     if (this->Interpreter->IsNewFrameReady())
     {
       return this->Interpreter->GetLastFrameAvailable();
     }
-    firstFramePositionInPacket = 0;
   }
 
   this->Interpreter->SplitFrame(true);
@@ -214,7 +219,7 @@ void vtkLidarReader::SaveFrame(int startFrame, int endFrame, const std::string &
 
   // Ensure that frame indexes match between what is effectively shown
   // and what is present inside the PCAP
-  size_t numberOfTimesteps = this->FilePositions.size();
+  size_t numberOfTimesteps = this->FrameCatalog.size();
   if (!this->ShowFirstAndLastFrame && numberOfTimesteps >= 3)
   {
     startFrame++;
@@ -230,9 +235,6 @@ void vtkLidarReader::SaveFrame(int startFrame, int endFrame, const std::string &
   unsigned int dataHeaderLength = 0;
   double timeSinceStart = 0;
   int currentFrame = startFrame;
-
-  bool isNewFrame = false;
-  int notUsed = 0;
 
   // Explanation for why we need to allow currentFrame to go to endFrame + 1:
   // If '[]' represents a packet, '|' represents the separation between frames,
@@ -254,7 +256,12 @@ void vtkLidarReader::SaveFrame(int startFrame, int endFrame, const std::string &
   // In my test, writing all frames of the PCAP results in a .pcap file exactly
   // identical to the one that is read, if you enable "ShowFirstAndLastFrame".
 
-  this->Reader->SetFilePosition(&this->FilePositions[startFrame].Position);
+  this->Reader->SetFilePosition(&this->FrameCatalog[startFrame].FilePosition);
+
+  // Since the PreProcessPacket method of the interpreter can change
+  // its internal state, we store and then restore the contained meta
+  // data
+  FrameInformation storedMetaData = this->Interpreter->GetParserMetaData();
 
   while (this->Reader->NextPacket(
            data, dataLength, timeSinceStart, &header, &dataHeaderLength)
@@ -266,12 +273,14 @@ void vtkLidarReader::SaveFrame(int startFrame, int endFrame, const std::string &
     if (this->Interpreter->IsLidarPacket(data, dataLength))
     {
       // we need to count frames and some are split in multiple packets
-      this->Interpreter->PreProcessPacket(data, dataLength, isNewFrame, notUsed);
+      bool isNewFrame = this->Interpreter->PreProcessPacket(data, dataLength);
       currentFrame += static_cast<int>(isNewFrame);
       this->UpdateProgress(0.0);
     }
   }
-    writer.Close();
+  writer.Close();
+  // restore the meta data
+  this->Interpreter->SetParserMetaData(storedMetaData);
 }
 
 //-----------------------------------------------------------------------------
@@ -303,15 +312,15 @@ int vtkLidarReader::RequestData(vtkInformation *vtkNotUsed(request),
   }
 
   // iterating over all timesteps until finding the first one with a greater time value
-  auto idx = std::lower_bound(this->FilePositions.begin(),
-                              this->FilePositions.end(),
+  auto idx = std::lower_bound(this->FrameCatalog.begin(),
+                              this->FrameCatalog.end(),
                               timestep,
-                              [](FramePosition& fp, double d)
-                                { return fp.Time < d; });
+                              [](FrameInformation& fp, double d)
+                                { return fp.FirstPacketNetworkTime < d; });
 
-  auto frameRequested = std::distance(this->FilePositions.begin(), idx);
+  auto frameRequested = std::distance(this->FrameCatalog.begin(), idx);
 
-  if (idx == this->FilePositions.end())
+  if (idx == this->FrameCatalog.end())
   {
     vtkErrorMacro("Cannot meet timestep request: " << frameRequested << ".  Have "
                                                    << this->GetNumberOfFrames() << " datasets.");
@@ -349,7 +358,7 @@ int vtkLidarReader::RequestInformation(vtkInformation* request,
                                        vtkInformationVector* outputVector)
 {
   this->Superclass::RequestInformation(request, inputVector, outputVector);
-  if (!this->FileName.empty() && this->FilePositions.empty())
+  if (!this->FileName.empty() && this->FrameCatalog.empty())
   {
     this->ReadFrameInformation();
   }

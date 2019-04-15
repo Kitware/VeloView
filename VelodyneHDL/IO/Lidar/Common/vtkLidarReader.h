@@ -19,19 +19,16 @@
 #include "vtkLidarProvider.h"
 
 class vtkPacketFileReader;
-struct FramePosition;
+
 //! @todo a decition should be made if the opening/closing of the pcap should be handle by
 //! the class itself of the class user. Currently this is not clear
-
-class vtkLidarReaderInternal;
-
 class VTK_EXPORT vtkLidarReader : public vtkLidarProvider
 {
 public:
   static vtkLidarReader* New();
   vtkTypeMacro(vtkLidarReader, vtkLidarProvider)
 
-  int GetNumberOfFrames() override { return this->FilePositions.size(); }
+  int GetNumberOfFrames() override { return this->FrameCatalog.size(); }
 
   /**
    * @copydoc FileName
@@ -85,8 +82,11 @@ protected:
   //! Name of the pcap file to read
   std::string FileName = "";
 
-  //! frame index which enable to jump quickly to a given frame
-  std::vector<FramePosition> FilePositions;
+  //! Miscellaneous information about a frame that enable:
+  //! - Quick jump to a frame index
+  //! - Computation of an adjustedtimestamp
+  //! - ...
+  std::vector<FrameInformation> FrameCatalog;
 
   //! Show/Hide the first and last frame that most of the time are partial frames
   bool ShowFirstAndLastFrame = false;
@@ -109,25 +109,5 @@ private:
   vtkLidarReader(const vtkLidarReader&) = delete;
   void operator=(const vtkLidarReader&) = delete;
 };
-
-//-----------------------------------------------------------------------------
-// Internal structure
-//-----------------------------------------------------------------------------
-typedef struct FramePosition
-{
-  FramePosition(const fpos_t pos, const int skip, const double time)
-    : Position(pos), Skip(skip), Time(time) {}
-
-  //! position of the first packet of the given frame
-  fpos_t Position;
-  //! Offset specific to the lidar data format
-  //! Used as some frame start at the middle of a packet
-  int Skip;
-  //! To be agnostic to the underlying data, we rely on the first packet timestep to determine
-  //! the Time of frame. The packet timestep has no relation with the timesteps that are in the
-  //! payload of the packet. It's contained in the header, and indicate when a packet has been
-  //! received
-  double Time;
-} FramePosition;
 
 #endif // VTKLIDARREADER_H

@@ -21,8 +21,56 @@
 #include <vtkTable.h>
 #include <vtkPolyData.h>
 #include <vtkAlgorithm.h>
+#include <memory>
 
 class vtkTransform;
+
+/**
+ * @brief SpecificFrameInformation placeholder for
+ *        specific sensor implementation
+ */
+struct SpecificFrameInformation
+{
+  virtual ~SpecificFrameInformation() = default;
+
+  //! Deep copy the specific frame information
+  virtual std::shared_ptr<SpecificFrameInformation> CopyTo() = 0;
+};
+
+/**
+ * @brief FrameInformation contains information about a frame
+ */
+struct FrameInformation
+{
+  //! position of the first packet of the given frame
+  fpos_t FilePosition;
+
+  //! To be agnostic to the underlying data, we rely on the first packet timestep to determine
+  //! the Time of frame. The packet timestep has no relation with the timesteps that are in the
+  //! payload of the packet. It's contained in the header, and indicate when a packet has been
+  //! received
+  double FirstPacketNetworkTime = 0;
+
+  //! timestamp of data contained in the first packet
+  double FirstPacketDataTime = 0;
+
+  //! Packet information that are specific to a sensor
+  std::shared_ptr<SpecificFrameInformation> SpecificInformation = nullptr;
+
+  //! return a deep copy of the current object
+  FrameInformation CopyTo() const
+  {
+    FrameInformation copy;
+    copy.FilePosition = this->FilePosition;
+    copy.FirstPacketNetworkTime = this->FirstPacketNetworkTime;
+    copy.FirstPacketDataTime = this->FirstPacketDataTime;
+    if (this->SpecificInformation)
+    {
+      copy.SpecificInformation = this->SpecificInformation->CopyTo();
+    }
+    return copy;
+  }
+};
 
 class VTK_EXPORT  vtkLidarPacketInterpreter : public vtkAlgorithm
 {
@@ -65,7 +113,7 @@ public:
    * @param bytesReceived size of the data packet
    * @param startPosition offset in the data packet used when a frame start in the middle of a packet
    */
-  virtual void ProcessPacket(unsigned char const * data, unsigned int dataLength, int startPosition = 0) = 0;
+  virtual void ProcessPacket(unsigned char const * data, unsigned int dataLength) = 0;
 
   /**
    * @brief SplitFrame take the current frame under construction and place it in another buffer
@@ -86,11 +134,11 @@ public:
    * information does not match the data (ex: factory field, number of laser, ...)
    * @param data raw data packet
    * @param dataLength size of the data packet
-   * @param isNewFrame[out] indicate if a new frame should be created
-   * @param framePositionInPacket[out] indicate the offset of the new, I
+   * @param packetInfo[out] Miscellaneous information about the packet
    */
-  virtual void PreProcessPacket(unsigned char const * data, unsigned int dataLength,
-                         bool& isNewFrame, int& framePositionInPacket) = 0;
+  virtual bool PreProcessPacket(unsigned char const * data, unsigned int dataLength,
+                                fpos_t filePosition = fpos_t(), double packetNetworkTime = 0,
+                                std::vector<FrameInformation>* frameCatalog = nullptr) = 0;
 
   /**
    * @brief IsLidarPacket check if the given packet is really a lidar packet
@@ -126,6 +174,29 @@ public:
    * @return
    */
   virtual std::string GetSensorInformation() = 0;
+
+  /**
+   * @brief CreateNewFrameInformation create a new frame information
+   * @return
+   */
+  virtual FrameInformation GetParserMetaData() = 0;
+
+  /**
+   * @brief ResetParserMetaData reset the metadata used by the
+   *        interpreter during the parsing of the udp packets
+   *        within the function ProcessPacket
+   * @return
+   */
+  virtual void ResetParserMetaData() = 0;
+
+  /**
+   * @brief SetParserMetaData set the metadata
+   *        used by the interpreter during the parsing
+   *        of the udp packets within the function
+   *        ProcessPacket
+   * @return
+   */
+  virtual void SetParserMetaData(const FrameInformation& metaData) = 0;
 
   virtual int GetNumberOfChannels() { return this->CalibrationReportedNumLasers; }
 
@@ -238,6 +309,10 @@ protected:
   //! If true, the region outside of the area defined by CropRegion is cropped/removed.
   //! If false, the region within the area is cropped/removed.
   bool CropOutside = false;
+
+  //! Meta data required to correctly parse the
+  //! data contained within the udp packets
+  FrameInformation ParserMetaData;
 
   //! Depending on the :CropingMode select this can have different meaning:
   //! - vtkLidarProvider::CropModeEnum::Cartesian it correspond to [X_min, X_max, Y_min, Y_max, Z_min, Z_max]

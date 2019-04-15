@@ -34,7 +34,7 @@ public:
 
   void LoadCalibration(const std::string& filename) override;
 
-  void ProcessPacket(unsigned char const * data, unsigned int dataLength, int startPosition = 0) override;
+  void ProcessPacket(unsigned char const * data, unsigned int dataLength) override;
 
   bool SplitFrame(bool force = false) override;
 
@@ -44,9 +44,16 @@ public:
 
   void ResetCurrentFrame() override;
 
-  void PreProcessPacket(unsigned char const * data, unsigned int dataLength, bool &isNewFrame, int &framePositionInPacket) override;
+  bool PreProcessPacket(unsigned char const * data, unsigned int dataLength,
+                        fpos_t filePosition = fpos_t(), double packetNetworkTime = 0,
+                        std::vector<FrameInformation>* frameCatalog = nullptr) override;
 
   std::string GetSensorInformation() override;
+
+  FrameInformation GetParserMetaData() override;
+
+  void ResetParserMetaData() override;
+  void SetParserMetaData(const FrameInformation& metaData) override;
 
   void SetSelectedPointsWithDualReturn(double* data, int Npoints);
 
@@ -97,7 +104,7 @@ protected:
 
   void Init();
 
-  double ComputeTimestamp(unsigned int tohTime);
+  double ComputeTimestamp(unsigned int tohTime, const FrameInformation& frameInfo);
 
   void ComputeCorrectedValues(const unsigned short azimuth,
                               const HDLLaserReturn* laserReturn, const HDLLaserCorrection* correction, double pos[3],
@@ -180,6 +187,7 @@ protected:
   bool UseIntraFiringAdjustment;
 
   bool ShouldCheckSensor;
+  uint32_t lastGpsTimestamp = 0;
 
   unsigned int DualReturnFilter;
 
@@ -189,6 +197,37 @@ protected:
 private:
   vtkVelodynePacketInterpreter(const vtkVelodynePacketInterpreter&) = delete;
   void operator=(const vtkVelodynePacketInterpreter&) = delete;
+};
+
+/**
+ * @brief VelodyneSpecificFrameInformation frame information
+ *        that are specific to velodyne's sensor
+ */
+struct VelodyneSpecificFrameInformation : public SpecificFrameInformation
+{
+  //! Offset specific to the lidar data format
+  //! Used because some frames start at the middle of a packet
+  int FiringToSkip = 0;
+
+  //! Indicates the number of time rolled that has occured
+  //! since the beginning of the .pcap file. hence, to have
+  //! a non rolling timestamp one should add to the rolling
+  //! timestamp NbrOfRollingTime * MaxTimeBeforeRolling
+  int NbrOfRollingTime = 0;
+
+  //! Deep copy the specific frame information
+  std::shared_ptr<SpecificFrameInformation> CopyTo()
+  {
+    std::shared_ptr<SpecificFrameInformation> copiedInfo = std::make_shared<VelodyneSpecificFrameInformation>();
+
+    VelodyneSpecificFrameInformation* copiedPtr =
+        reinterpret_cast<VelodyneSpecificFrameInformation*>(copiedInfo.get());
+    VelodyneSpecificFrameInformation* toCopyPtr =
+        reinterpret_cast<VelodyneSpecificFrameInformation*>(this);
+    copiedPtr->FiringToSkip = toCopyPtr->FiringToSkip;
+    copiedPtr->NbrOfRollingTime = toCopyPtr->NbrOfRollingTime;
+    return copiedInfo;
+  }
 };
 
 #endif // VELODYNEPACKETINTERPRETOR_H
