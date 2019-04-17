@@ -331,7 +331,7 @@
   <action name="actionOpenPcap">
    <property name="icon">
     <iconset resource="VelodyneHDL/Ui/images/resources.qrc">
-     <normaloff>:/VelodyneHDLPlugin/WiresharkDoc-128.png</normaloff>:/VelodyneHDLPlugin/WiresharkDoc-128.png</iconset>
+     <normaloff>:/LidarViewPlugin/WiresharkDoc-128.png</normaloff>:/LidarViewPlugin/WiresharkDoc-128.png</iconset>
    </property>
    <property name="text">
     <string>&amp;Capture File...</string>
@@ -394,7 +394,7 @@
   <action name="actionOpen_Sensor_Stream">
    <property name="icon">
     <iconset resource="VelodyneHDL/Ui/images/resources.qrc">
-     <normaloff>:/VelodyneHDLPlugin/velodyne_hdl.png</normaloff>:/VelodyneHDLPlugin/velodyne_hdl.png</iconset>
+     <normaloff>:/LidarViewPlugin/velodyne_hdl.png</normaloff>:/LidarViewPlugin/velodyne_hdl.png</iconset>
    </property>
    <property name="text">
     <string>Sensor &amp;Stream...</string>
@@ -403,7 +403,7 @@
   <action name="actionChoose_Calibration_File">
    <property name="icon">
     <iconset resource="VelodyneHDL/Ui/images/resources.qrc">
-     <normaloff>:/VelodyneHDLPlugin/calibrate.png</normaloff>:/VelodyneHDLPlugin/calibrate.png</iconset>
+     <normaloff>:/LidarViewPlugin/calibrate.png</normaloff>:/LidarViewPlugin/calibrate.png</iconset>
    </property>
    <property name="text">
     <string>Choose &amp;Calibration File...</string>
@@ -412,7 +412,7 @@
   <action name="actionPause">
    <property name="icon">
     <iconset>
-     <normaloff>:/VelodyneHDLPlugin/media-playback-pause.png</normaloff>:/VelodyneHDLPlugin/media-playback-pause.png</iconset>
+     <normaloff>:/LidarViewPlugin/media-playback-pause.png</normaloff>:/LidarViewPlugin/media-playback-pause.png</iconset>
    </property>
    <property name="text">
     <string>Pause</string>
@@ -466,7 +466,7 @@
   <action name="actionSaveCSV">
    <property name="icon">
     <iconset resource="VelodyneHDL/Ui/images/resources.qrc">
-     <normaloff>:/VelodyneHDLPlugin/csv.png</normaloff>:/VelodyneHDLPlugin/csv.png</iconset>
+     <normaloff>:/LidarViewPlugin/csv.png</normaloff>:/LidarViewPlugin/csv.png</iconset>
    </property>
    <property name="text">
     <string>Save &amp;CSV...</string>
@@ -475,7 +475,7 @@
   <action name="actionExport_To_KiwiViewer">
    <property name="icon">
     <iconset resource="VelodyneHDL/Ui/images/resources.qrc">
-     <normaloff>:/VelodyneHDLPlugin/kiwi_200.png</normaloff>:/VelodyneHDLPlugin/kiwi_200.png</iconset>
+     <normaloff>:/LidarViewPlugin/kiwi_200.png</normaloff>:/LidarViewPlugin/kiwi_200.png</iconset>
    </property>
    <property name="text">
     <string>Export To &amp;KiwiViewer...</string>
@@ -492,7 +492,7 @@
   <action name="actionSavePCAP">
    <property name="icon">
     <iconset resource="VelodyneHDL/Ui/images/resources.qrc">
-     <normaloff>:/VelodyneHDLPlugin/WiresharkDoc-128.png</normaloff>:/VelodyneHDLPlugin/WiresharkDoc-128.png</iconset>
+     <normaloff>:/LidarViewPlugin/WiresharkDoc-128.png</normaloff>:/LidarViewPlugin/WiresharkDoc-128.png</iconset>
    </property>
    <property name="text">
     <string>Save PCAP...</string>
@@ -653,7 +653,7 @@
   <action name="actionSaveLAS">
    <property name="icon">
     <iconset resource="VelodyneHDL/Ui/images/resources.qrc">
-     <normaloff>:/VelodyneHDLPlugin/las.png</normaloff>:/VelodyneHDLPlugin/las.png</iconset>
+     <normaloff>:/LidarViewPlugin/las.png</normaloff>:/LidarViewPlugin/las.png</iconset>
    </property>
    <property name="text">
     <string>Save &amp;LAS</string>
@@ -665,7 +665,7 @@
   <action name="actionOpenApplanix">
    <property name="icon">
     <iconset resource="VelodyneHDL/Ui/images/resources.qrc">
-     <normaloff>:/VelodyneHDLPlugin/gps.png</normaloff>:/VelodyneHDLPlugin/gps.png</iconset>
+     <normaloff>:/LidarViewPlugin/gps.png</normaloff>:/LidarViewPlugin/gps.png</iconset>
    </property>
    <property name="text">
     <string>Capture File with External &amp;Geoposition</string>
@@ -677,7 +677,7 @@
   <action name="actionCropReturns">
    <property name="icon">
     <iconset resource="VelodyneHDL/Ui/images/resources.qrc">
-     <normaloff>:/VelodyneHDLPlugin/crop.png</normaloff>:/VelodyneHDLPlugin/crop.png</iconset>
+     <normaloff>:/LidarViewPlugin/crop.png</normaloff>:/LidarViewPlugin/crop.png</iconset>
    </property>
    <property name="text">
     <string>Crop Returns...</string>

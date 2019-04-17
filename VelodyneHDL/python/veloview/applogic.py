@@ -1877,7 +1877,7 @@ def setupActions():
         app.actions[a.objectName] = a
 
     app.actions['actionRecord'] = QtGui.QAction( \
-      QtGui.QIcon(QtGui.QPixmap(':/VelodyneHDLPlugin/media-record.png')), \
+      QtGui.QIcon(QtGui.QPixmap(':/LidarViewPlugin/media-record.png')), \
       "actionRecord",\
       mW)
     app.actions['actionRecord'].setCheckable(True)

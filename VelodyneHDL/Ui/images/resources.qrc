@@ -1,5 +1,5 @@
 <RCC>
-    <qresource prefix="/VelodyneHDLPlugin">
+    <qresource prefix="/LidarViewPlugin">
         <file>crop.png</file>
         <file>gps.png</file>
         <file>las.png</file>
