@@ -266,7 +266,7 @@ endif(ENABLE_PCL AND ENABLE_Ceres)
 # We make the distinction on that inherit from vtkObject as this one will be also wrap
 # in python later on
 set(sources_which_inherit_from_vtkObject
-  ${CMAKE_CURRENT_SOURCE_DIR}/Common/vtkVelodyneTransformInterpolator.cxx
+  ${CMAKE_CURRENT_SOURCE_DIR}/Common/vtkCustomTransformInterpolator.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/Common/vtkTemporalTransforms.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/OldPlaneFitter/vtkPlaneFitter.cxx
   )

@@ -1,7 +1,7 @@
 /*=========================================================================
 
   Program:   Visualization Toolkit
-  Module:    vtkVelodyneTransformInterpolator.cxx
+  Module:    vtkCustomTransformInterpolator.cxx
 
   Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
   All rights reserved.
@@ -12,7 +12,7 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-#include "vtkVelodyneTransformInterpolator.h"
+#include "vtkCustomTransformInterpolator.h"
 #include "vtkMath.h"
 #include "vtkMatrix4x4.h"
 #include "vtkObjectFactory.h"
@@ -27,7 +27,7 @@
 #include <algorithm>
 #include <iterator>
 
-vtkStandardNewMacro(vtkVelodyneTransformInterpolator);
+vtkStandardNewMacro(vtkCustomTransformInterpolator);
 
 // PIMPL STL encapsulation for list of transforms, and list of
 // quaternions. This just keeps track of all the data the user specifies,
@@ -87,7 +87,7 @@ class vtkTransformList : public std::list<vtkQTransform>
 typedef vtkTransformList::iterator TransformListIterator;
 
 //----------------------------------------------------------------------------
-std::vector<std::vector<double> > vtkVelodyneTransformInterpolator::GetTransformList()
+std::vector<std::vector<double> > vtkCustomTransformInterpolator::GetTransformList()
 {
   this->InitializeInterpolation();
 
@@ -116,7 +116,7 @@ std::vector<std::vector<double> > vtkVelodyneTransformInterpolator::GetTransform
 }
 
 //----------------------------------------------------------------------------
-vtkVelodyneTransformInterpolator::vtkVelodyneTransformInterpolator()
+vtkCustomTransformInterpolator::vtkCustomTransformInterpolator()
 {
   // Set up the interpolation
   this->InterpolationType = INTERPOLATION_TYPE_SPLINE;
@@ -132,7 +132,7 @@ vtkVelodyneTransformInterpolator::vtkVelodyneTransformInterpolator()
 }
 
 //----------------------------------------------------------------------------
-vtkVelodyneTransformInterpolator::~vtkVelodyneTransformInterpolator()
+vtkCustomTransformInterpolator::~vtkCustomTransformInterpolator()
 {
   delete this->TransformList;
 
@@ -151,7 +151,7 @@ vtkVelodyneTransformInterpolator::~vtkVelodyneTransformInterpolator()
 }
 
 //----------------------------------------------------------------------------
-vtkMTimeType vtkVelodyneTransformInterpolator::GetMTime()
+vtkMTimeType vtkCustomTransformInterpolator::GetMTime()
 {
   unsigned long mTime = this->Superclass::GetMTime();
   unsigned long posMTime, scaleMTime, rotMTime;
@@ -176,13 +176,13 @@ vtkMTimeType vtkVelodyneTransformInterpolator::GetMTime()
 }
 
 //----------------------------------------------------------------------------
-int vtkVelodyneTransformInterpolator::GetNumberOfTransforms()
+int vtkCustomTransformInterpolator::GetNumberOfTransforms()
 {
   return static_cast<int>(this->TransformList->size());
 }
 
 //----------------------------------------------------------------------------
-void vtkVelodyneTransformInterpolator::GetSample(int n,
+void vtkCustomTransformInterpolator::GetSample(int n,
                                               vtkTransform *xform,
                                               double& xformTime)
 {
@@ -210,7 +210,7 @@ void vtkVelodyneTransformInterpolator::GetSample(int n,
 }
 
 //----------------------------------------------------------------------------
-double vtkVelodyneTransformInterpolator::GetMinimumT()
+double vtkCustomTransformInterpolator::GetMinimumT()
 {
   if (this->TransformList->empty())
   {
@@ -223,7 +223,7 @@ double vtkVelodyneTransformInterpolator::GetMinimumT()
 }
 
 //----------------------------------------------------------------------------
-double vtkVelodyneTransformInterpolator::GetMaximumT()
+double vtkCustomTransformInterpolator::GetMaximumT()
 {
   if (this->TransformList->empty())
   {
@@ -236,19 +236,19 @@ double vtkVelodyneTransformInterpolator::GetMaximumT()
 }
 
 //----------------------------------------------------------------------------
-double vtkVelodyneTransformInterpolator::GetPeriod()
+double vtkCustomTransformInterpolator::GetPeriod()
 {
   return (this->GetMaximumT() - this->GetMinimumT()) / (this->GetNumberOfTransforms() - 1);
 }
 
 //----------------------------------------------------------------------------
-void vtkVelodyneTransformInterpolator::Initialize()
+void vtkCustomTransformInterpolator::Initialize()
 {
   this->TransformList->clear();
 }
 
 //----------------------------------------------------------------------------
-void vtkVelodyneTransformInterpolator::AddTransform(double t, vtkTransform* xform)
+void vtkCustomTransformInterpolator::AddTransform(double t, vtkTransform* xform)
 {
   int size = static_cast<int>(this->TransformList->size());
 
@@ -288,7 +288,7 @@ void vtkVelodyneTransformInterpolator::AddTransform(double t, vtkTransform* xfor
 }
 
 //----------------------------------------------------------------------------
-void vtkVelodyneTransformInterpolator::AddTransform(double t, vtkMatrix4x4* matrix)
+void vtkCustomTransformInterpolator::AddTransform(double t, vtkMatrix4x4* matrix)
 {
   vtkTransform* xform = vtkTransform::New();
   xform->SetMatrix(matrix);
@@ -297,13 +297,13 @@ void vtkVelodyneTransformInterpolator::AddTransform(double t, vtkMatrix4x4* matr
 }
 
 //----------------------------------------------------------------------------
-void vtkVelodyneTransformInterpolator::AddTransform(double t, vtkProp3D* prop3D)
+void vtkCustomTransformInterpolator::AddTransform(double t, vtkProp3D* prop3D)
 {
   this->AddTransform(t, prop3D->GetMatrix());
 }
 
 //----------------------------------------------------------------------------
-void vtkVelodyneTransformInterpolator::RemoveTransform(double t)
+void vtkCustomTransformInterpolator::RemoveTransform(double t)
 {
   if (t < this->TransformList->front().Time || t > this->TransformList->back().Time)
   {
@@ -321,7 +321,7 @@ void vtkVelodyneTransformInterpolator::RemoveTransform(double t)
 }
 
 //----------------------------------------------------------------------------
-void vtkVelodyneTransformInterpolator::SetPositionInterpolator(vtkVeloViewTupleInterpolator* pi)
+void vtkCustomTransformInterpolator::SetPositionInterpolator(vtkVeloViewTupleInterpolator* pi)
 {
   if (this->PositionInterpolator != pi)
   {
@@ -339,7 +339,7 @@ void vtkVelodyneTransformInterpolator::SetPositionInterpolator(vtkVeloViewTupleI
 }
 
 //----------------------------------------------------------------------------
-void vtkVelodyneTransformInterpolator::SetScaleInterpolator(vtkVeloViewTupleInterpolator* si)
+void vtkCustomTransformInterpolator::SetScaleInterpolator(vtkVeloViewTupleInterpolator* si)
 {
   if (this->ScaleInterpolator != si)
   {
@@ -357,7 +357,7 @@ void vtkVelodyneTransformInterpolator::SetScaleInterpolator(vtkVeloViewTupleInte
 }
 
 //----------------------------------------------------------------------------
-void vtkVelodyneTransformInterpolator::SetRotationInterpolator(vtkVeloViewQuaternionInterpolator* ri)
+void vtkCustomTransformInterpolator::SetRotationInterpolator(vtkVeloViewQuaternionInterpolator* ri)
 {
   if (this->RotationInterpolator != ri)
   {
@@ -375,7 +375,7 @@ void vtkVelodyneTransformInterpolator::SetRotationInterpolator(vtkVeloViewQuater
 }
 
 //----------------------------------------------------------------------------
-void vtkVelodyneTransformInterpolator::InitializeInterpolation()
+void vtkCustomTransformInterpolator::InitializeInterpolation()
 {
   if (this->TransformList->empty())
   {
@@ -480,7 +480,7 @@ void vtkVelodyneTransformInterpolator::InitializeInterpolation()
 }
 
 //----------------------------------------------------------------------------
-void vtkVelodyneTransformInterpolator::InterpolateTransform(double t, vtkTransform* xform)
+void vtkCustomTransformInterpolator::InterpolateTransform(double t, vtkTransform* xform)
 {
   if (this->TransformList->empty())
   {
@@ -522,7 +522,7 @@ void vtkVelodyneTransformInterpolator::InterpolateTransform(double t, vtkTransfo
 }
 
 //----------------------------------------------------------------------------
-void vtkVelodyneTransformInterpolator::InterpolateTransformNearest(double t,
+void vtkCustomTransformInterpolator::InterpolateTransformNearest(double t,
                                                     vtkTransform *xform)
 {
   if (this->TransformList->empty())
@@ -584,7 +584,7 @@ void vtkVelodyneTransformInterpolator::InterpolateTransformNearest(double t,
 }
 
 //----------------------------------------------------------------------------
-void vtkVelodyneTransformInterpolator::PrintSelf(ostream& os, vtkIndent indent)
+void vtkCustomTransformInterpolator::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 

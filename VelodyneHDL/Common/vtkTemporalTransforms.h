@@ -5,7 +5,7 @@
 #include <vtkDoubleArray.h>
 #include <vtkPointData.h>
 #include <vtkPolyData.h>
-#include <vtkVelodyneTransformInterpolator.h>
+#include <vtkCustomTransformInterpolator.h>
 
 #include <Eigen/Geometry>
 
@@ -29,11 +29,11 @@ public:
   vtkTypeMacro(vtkTemporalTransforms,vtkPolyData)
 
   static vtkSmartPointer<vtkTemporalTransforms> CreateFromPolyData(vtkPolyData* poly);
-//  static vtkSmartPointer<vtkTemporalTransforms> CreateFromInterpolator(const vtkVelodyneTransformInterpolator*);
+//  static vtkSmartPointer<vtkTemporalTransforms> CreateFromInterpolator(const vtkCustomTransformInterpolator*);
 
   vtkSmartPointer<vtkTransform> GetTransform(unsigned int transformNumber);
 
-  vtkSmartPointer<vtkVelodyneTransformInterpolator> CreateInterpolator();
+  vtkSmartPointer<vtkCustomTransformInterpolator> CreateInterpolator();
 
   /**
   * \brief This function apply an isometric affine

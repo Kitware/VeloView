@@ -35,7 +35,7 @@
 #include <vtkPolyDataAlgorithm.h>
 
 class vtkTransform;
-class vtkVelodyneTransformInterpolator;
+class vtkCustomTransformInterpolator;
 
 class VTK_EXPORT vtkApplanixPositionReader : public vtkPolyDataAlgorithm
 {
@@ -76,7 +76,7 @@ public:
   void SetCalibrationTransform(vtkTransform* transform);
 
   // Description:
-  vtkVelodyneTransformInterpolator* GetInterpolator() const;
+  vtkCustomTransformInterpolator* GetInterpolator() const;
 
 protected:
   vtkApplanixPositionReader();

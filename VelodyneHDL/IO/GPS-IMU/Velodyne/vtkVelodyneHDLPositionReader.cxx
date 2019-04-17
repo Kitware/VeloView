@@ -30,7 +30,7 @@
 
 #include "vtkPacketFileReader.h"
 #include "vtkPacketFileWriter.h"
-#include "vtkVelodyneTransformInterpolator.h"
+#include "vtkCustomTransformInterpolator.h"
 
 #include <vtkCellArray.h>
 #include <vtkCellData.h>
@@ -127,7 +127,7 @@ public:
   vtkPacketFileReader* Reader;
   double Offset[3];
 
-  vtkNew<vtkVelodyneTransformInterpolator> Interp;
+  vtkNew<vtkCustomTransformInterpolator> Interp;
   vtkNew<vtkTransform> CalibrationTransform;
 };
 
@@ -227,7 +227,7 @@ void vtkVelodyneHDLPositionReader::SetCalibrationTransform(vtkTransform* transfo
 }
 
 //-----------------------------------------------------------------------------
-vtkVelodyneTransformInterpolator* vtkVelodyneHDLPositionReader::GetInterpolator()
+vtkCustomTransformInterpolator* vtkVelodyneHDLPositionReader::GetInterpolator()
 {
   return this->Internal->Interp.GetPointer();
 }

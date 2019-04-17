@@ -26,7 +26,7 @@
 // alternated with relatively sharp turns (though not necessary Manatthan like).
 
 #include <vtkSmartPointer.h>
-#include <vtkVelodyneTransformInterpolator.h>
+#include <vtkCustomTransformInterpolator.h>
 #include <Eigen/SVD>
 
 #include "vvConfigure.h"
@@ -80,7 +80,7 @@
 * \param emptyIntersection if true, the turns detected will not intersect.
 */
 std::vector<std::vector<double>> ComputeTurns(
-        const vtkSmartPointer<vtkVelodyneTransformInterpolator> poseTrajectory,
+        const vtkSmartPointer<vtkCustomTransformInterpolator> poseTrajectory,
         double timeWindow,
         double curveTreshold,
         bool emptyIntersection,

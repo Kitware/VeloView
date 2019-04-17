@@ -15,7 +15,7 @@
 #include <Eigen/Eigenvalues>
 
 #include "vtkConversions.h"
-#include "vtkVelodyneTransformInterpolator.h"
+#include "vtkCustomTransformInterpolator.h"
 #include "vtkTimeCalibration.h"
 #include "statistics.h"
 #include "eigenFFTCorrelation.h"
@@ -51,7 +51,7 @@ std::string ToString(CorrelationStrategy correlationStrategy)
 }
 
 Interpolator1D<double> compute_speed_window(
-    const vtkSmartPointer<vtkVelodyneTransformInterpolator>& transform,
+    const vtkSmartPointer<vtkCustomTransformInterpolator>& transform,
     double window_width)
 {
   std::vector<double> times = std::vector<double>();
@@ -77,7 +77,7 @@ Interpolator1D<double> compute_speed_window(
 }
 
 Interpolator1D<double> compute_acc_window(
-    const vtkSmartPointer<vtkVelodyneTransformInterpolator>& transform,
+    const vtkSmartPointer<vtkCustomTransformInterpolator>& transform,
     double window_width)
 {
   std::vector<double> times = std::vector<double>();
@@ -107,7 +107,7 @@ Interpolator1D<double> compute_acc_window(
 }
 
 Interpolator1D<double> compute_jerk_window(
-    const vtkSmartPointer<vtkVelodyneTransformInterpolator>& transform,
+    const vtkSmartPointer<vtkCustomTransformInterpolator>& transform,
     double window_width)
 {
   std::vector<double> times = std::vector<double>();
@@ -141,7 +141,7 @@ Interpolator1D<double> compute_jerk_window(
 }
 
 Interpolator1D<double> compute_dPos(
-    const vtkSmartPointer<vtkVelodyneTransformInterpolator>& transform)
+    const vtkSmartPointer<vtkCustomTransformInterpolator>& transform)
 {
   std::vector<std::vector<double>> transforms = transform->GetTransformList();
   std::vector<double> t = std::vector<double>(transforms.size() - 1);
@@ -167,7 +167,7 @@ Interpolator1D<double> compute_dPos(
 }
 
 Interpolator1D<double> compute_length(
-    const vtkSmartPointer<vtkVelodyneTransformInterpolator>& transform)
+    const vtkSmartPointer<vtkCustomTransformInterpolator>& transform)
 {
   std::vector<std::vector<double>> transforms = transform->GetTransformList();
   std::vector<double> t = std::vector<double>(transforms.size());
@@ -190,7 +190,7 @@ Interpolator1D<double> compute_length(
 
 
 Interpolator1D<double> compute_derivated_length(
-    const vtkSmartPointer<vtkVelodyneTransformInterpolator>& transform,
+    const vtkSmartPointer<vtkCustomTransformInterpolator>& transform,
     double window_width)
 {
   Interpolator1D<double> length = compute_length(transform);
@@ -215,7 +215,7 @@ Interpolator1D<double> compute_derivated_length(
 }
 
 Interpolator1D<double> compute_dRot(
-    const vtkSmartPointer<vtkVelodyneTransformInterpolator>& transform)
+    const vtkSmartPointer<vtkCustomTransformInterpolator>& transform)
 {
   std::vector<std::vector<double>> transforms = transform->GetTransformList();
   std::vector<double> t = std::vector<double>(transforms.size() - 1);
@@ -242,7 +242,7 @@ Interpolator1D<double> compute_dRot(
 
 // TODO: handle case where real_sample_time(next) == real_sample_time(prev)
 Interpolator1D<double> compute_trajectory_angle(
-    const vtkSmartPointer<vtkVelodyneTransformInterpolator>& transform,
+    const vtkSmartPointer<vtkCustomTransformInterpolator>& transform,
     double window_width)
 {
   vtkSmartPointer<vtkTransform> prev = vtkSmartPointer<vtkTransform>::New();
@@ -271,7 +271,7 @@ Interpolator1D<double> compute_trajectory_angle(
 
 
 Interpolator1D<double> compute_orientation_arc(
-    const vtkSmartPointer<vtkVelodyneTransformInterpolator>& transform)
+    const vtkSmartPointer<vtkCustomTransformInterpolator>& transform)
 {
   std::vector<std::vector<double>> transforms = transform->GetTransformList();
   std::vector<double> t = std::vector<double>(transforms.size());
@@ -295,7 +295,7 @@ Interpolator1D<double> compute_orientation_arc(
 
 
 Interpolator1D<double> compute_derivated_orientation_arc(
-    const vtkSmartPointer<vtkVelodyneTransformInterpolator>& transform,
+    const vtkSmartPointer<vtkCustomTransformInterpolator>& transform,
     double window_width)
 {
   Interpolator1D<double> orientation_arc = compute_orientation_arc(transform);
@@ -323,7 +323,7 @@ Interpolator1D<double> compute_derivated_orientation_arc(
 
 // TODO: handle case where real_sample_time(next) == real_sample_time(prev)
 Interpolator1D<double> compute_orientation_angle(
-    const vtkSmartPointer<vtkVelodyneTransformInterpolator>& transform,
+    const vtkSmartPointer<vtkCustomTransformInterpolator>& transform,
     double window_width)
 {
   vtkSmartPointer<vtkTransform> prev = vtkSmartPointer<vtkTransform>::New();
@@ -353,10 +353,10 @@ double ComputeTimeShift(vtkSmartPointer<vtkTemporalTransforms> reference,
                       double time_window_width,
                       bool substract_mean)
 {
-  vtkSmartPointer<vtkVelodyneTransformInterpolator> referenceInterpolator
+  vtkSmartPointer<vtkCustomTransformInterpolator> referenceInterpolator
       = reference->CreateInterpolator();
   referenceInterpolator->SetInterpolationTypeToLinear();
-  vtkSmartPointer<vtkVelodyneTransformInterpolator> alignedInterpolator
+  vtkSmartPointer<vtkCustomTransformInterpolator> alignedInterpolator
       = aligned->CreateInterpolator();
   alignedInterpolator->SetInterpolationTypeToLinear();
   Interpolator1D<double> sig_reference;
@@ -461,8 +461,8 @@ double ComputeTimeShift(vtkSmartPointer<vtkTemporalTransforms> reference,
 
 void ShowTrajectoryInfo(vtkSmartPointer<vtkTemporalTransforms> reference, vtkSmartPointer<vtkTemporalTransforms> aligned)
 {
-  vtkSmartPointer<vtkVelodyneTransformInterpolator> referenceI = reference->CreateInterpolator();
-  vtkSmartPointer<vtkVelodyneTransformInterpolator> alignedI = aligned->CreateInterpolator();
+  vtkSmartPointer<vtkCustomTransformInterpolator> referenceI = reference->CreateInterpolator();
+  vtkSmartPointer<vtkCustomTransformInterpolator> alignedI = aligned->CreateInterpolator();
   std::cout << std::fixed;
   std::cout << std::setprecision(4);
   std::cout << "reference:                 " << referenceI->GetMaximumT() - referenceI->GetMinimumT()
@@ -474,8 +474,8 @@ void ShowTrajectoryInfo(vtkSmartPointer<vtkTemporalTransforms> reference, vtkSma
 }
 
 void DemoAllTimesyncMethods(vtkSmartPointer<vtkTemporalTransforms> reference, vtkSmartPointer<vtkTemporalTransforms> aligned) {
-  vtkSmartPointer<vtkVelodyneTransformInterpolator> referenceI = reference->CreateInterpolator();
-  vtkSmartPointer<vtkVelodyneTransformInterpolator> alignedI = aligned->CreateInterpolator();
+  vtkSmartPointer<vtkCustomTransformInterpolator> referenceI = reference->CreateInterpolator();
+  vtkSmartPointer<vtkCustomTransformInterpolator> alignedI = aligned->CreateInterpolator();
 
   std::cout << std::fixed;
   std::cout << std::setprecision(4);
@@ -499,9 +499,9 @@ double ComputeScale(vtkSmartPointer<vtkTemporalTransforms> reference,
                   double time_window_width)
 {
   const double div_epsilon = 1e-4;
-  vtkSmartPointer<vtkVelodyneTransformInterpolator> referenceInterpolator = reference->CreateInterpolator();
+  vtkSmartPointer<vtkCustomTransformInterpolator> referenceInterpolator = reference->CreateInterpolator();
   referenceInterpolator->SetInterpolationTypeToLinear();
-  vtkSmartPointer<vtkVelodyneTransformInterpolator> alignedInterpolator = aligned->CreateInterpolator();
+  vtkSmartPointer<vtkCustomTransformInterpolator> alignedInterpolator = aligned->CreateInterpolator();
   alignedInterpolator->SetInterpolationTypeToLinear();
   Interpolator1D<double> sig_reference;
   Interpolator1D<double> sig_aligned;

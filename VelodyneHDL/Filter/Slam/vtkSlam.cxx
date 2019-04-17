@@ -70,7 +70,7 @@
 
 // LOCAL
 #include "vtkSlam.h"
-#include "vtkVelodyneTransformInterpolator.h"
+#include "vtkCustomTransformInterpolator.h"
 #include "vtkPCLConversions.h"
 #include "CeresCostFunctions.h"
 // STD
@@ -1793,9 +1793,9 @@ void vtkSlam::FillEgoMotionInfoArrayWithDefaultValues()
 }
 
 //-----------------------------------------------------------------------------
-vtkSmartPointer<vtkVelodyneTransformInterpolator> vtkSlam::InitUndistortionInterpolatorEgoMotion()
+vtkSmartPointer<vtkCustomTransformInterpolator> vtkSlam::InitUndistortionInterpolatorEgoMotion()
 {
-  vtkSmartPointer<vtkVelodyneTransformInterpolator> resultInterp = vtkSmartPointer<vtkVelodyneTransformInterpolator>::New();
+  vtkSmartPointer<vtkCustomTransformInterpolator> resultInterp = vtkSmartPointer<vtkCustomTransformInterpolator>::New();
   resultInterp->SetInterpolationTypeToLinear();
 
   // Transforms representing the passage from the
@@ -1839,9 +1839,9 @@ vtkSmartPointer<vtkVelodyneTransformInterpolator> vtkSlam::InitUndistortionInter
 }
 
 //-----------------------------------------------------------------------------
-vtkSmartPointer<vtkVelodyneTransformInterpolator> vtkSlam::InitUndistortionInterpolatorMapping()
+vtkSmartPointer<vtkCustomTransformInterpolator> vtkSlam::InitUndistortionInterpolatorMapping()
 {
-  vtkSmartPointer<vtkVelodyneTransformInterpolator> resultInterp = vtkSmartPointer<vtkVelodyneTransformInterpolator>::New();
+  vtkSmartPointer<vtkCustomTransformInterpolator> resultInterp = vtkSmartPointer<vtkCustomTransformInterpolator>::New();
   resultInterp->SetInterpolationTypeToLinear();
 
   // Transforms representing the passage from the
@@ -1889,7 +1889,7 @@ vtkSmartPointer<vtkVelodyneTransformInterpolator> vtkSlam::InitUndistortionInter
 }
 
 //-----------------------------------------------------------------------------
-void vtkSlam::ExpressPointInOtherReferencial(Point& p, vtkSmartPointer<vtkVelodyneTransformInterpolator> transform)
+void vtkSlam::ExpressPointInOtherReferencial(Point& p, vtkSmartPointer<vtkCustomTransformInterpolator> transform)
 {
   // interpolate the transform
   vtkNew<vtkTransform> currTransform;

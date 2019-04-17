@@ -23,7 +23,7 @@
 #include <vtkObject.h>
 #include <vtkPolyDataAlgorithm.h>
 #include <vtkSmartPointer.h>
-#include <vtkVelodyneTransformInterpolator.h>
+#include <vtkCustomTransformInterpolator.h>
 
 #include <Eigen/Dense>
 #include <Eigen/Geometry>

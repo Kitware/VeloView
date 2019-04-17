@@ -18,7 +18,7 @@
 
 // LOCAL
 #include "vtkGeometricCalibration.h"
-#include "vtkVelodyneTransformInterpolator.h"
+#include "vtkCustomTransformInterpolator.h"
 #include "vtkEigenTools.h"
 #include "vtkConversions.h"
 #include "vtkTemporalTransformsReader.h"
@@ -66,8 +66,8 @@ std::pair<double, AnglePositionVector> EstimateCalibrationFromPoses(
   AnglePositionVector calibEstimation = AnglePositionVector::Zero();
 
   // Create the transforms interpolators
-  vtkSmartPointer<vtkVelodyneTransformInterpolator> sourceSensorTransforms = sourceSensor->CreateInterpolator();
-  vtkSmartPointer<vtkVelodyneTransformInterpolator> targetSensorTransforms = targetSensor->CreateInterpolator();
+  vtkSmartPointer<vtkCustomTransformInterpolator> sourceSensorTransforms = sourceSensor->CreateInterpolator();
+  vtkSmartPointer<vtkCustomTransformInterpolator> targetSensorTransforms = targetSensor->CreateInterpolator();
   sourceSensorTransforms->SetInterpolationTypeToLinear();
   targetSensorTransforms->SetInterpolationTypeToLinear();
   double tmin = std::max(sourceSensorTransforms->GetMinimumT(), targetSensorTransforms->GetMinimumT());
@@ -313,8 +313,8 @@ std::pair<double, AnglePositionVector> MatchTrajectoriesWithIsometry(vtkSmartPoi
                                                                      vtkSmartPointer<vtkTemporalTransforms> targetSensor)
 {
   // Create the transforms interpolators
-  vtkSmartPointer<vtkVelodyneTransformInterpolator> sourceSensorTransforms = sourceSensor->CreateInterpolator();
-  vtkSmartPointer<vtkVelodyneTransformInterpolator> targetSensorTransforms = targetSensor->CreateInterpolator();
+  vtkSmartPointer<vtkCustomTransformInterpolator> sourceSensorTransforms = sourceSensor->CreateInterpolator();
+  vtkSmartPointer<vtkCustomTransformInterpolator> targetSensorTransforms = targetSensor->CreateInterpolator();
   sourceSensorTransforms->SetInterpolationTypeToLinear();
   targetSensorTransforms->SetInterpolationTypeToLinear();
 

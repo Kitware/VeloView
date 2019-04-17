@@ -110,7 +110,7 @@ virtual void Set##name (type _arg) \
   } \
 }
 
-class vtkVelodyneTransformInterpolator;
+class vtkCustomTransformInterpolator;
 class RollingGrid;
 class vtkTable;
 typedef pcl::PointXYZINormal Point;
@@ -264,8 +264,8 @@ private:
   // The undistortion will improve the accuracy but
   // the computation speed will decrease
   bool Undistortion = false;
-  vtkSmartPointer<vtkVelodyneTransformInterpolator> EgoMotionInterpolator;
-  vtkSmartPointer<vtkVelodyneTransformInterpolator> MappingInterpolator;
+  vtkSmartPointer<vtkCustomTransformInterpolator> EgoMotionInterpolator;
+  vtkSmartPointer<vtkCustomTransformInterpolator> MappingInterpolator;
 
   // keypoints extracted
   pcl::PointCloud<Point>::Ptr CurrentEdgesPoints;
@@ -446,15 +446,15 @@ private:
   // at time t0. The referential at time of acquisition t is estimated
   // using the constant velocity hypothesis and the provided sensor
   // position estimation
-  void ExpressPointInOtherReferencial(Point& p, vtkSmartPointer<vtkVelodyneTransformInterpolator> transform);
+  void ExpressPointInOtherReferencial(Point& p, vtkSmartPointer<vtkCustomTransformInterpolator> transform);
 
   // Initialize the undistortion interpolator
   // for the EgoMotion part it is just an interpolation
   // between Id and Trelative
   // for the mapping part it is an interpolation between indentity
   // and the incremental transform between TworldPrevious and Tworld
-  vtkSmartPointer<vtkVelodyneTransformInterpolator> InitUndistortionInterpolatorEgoMotion();
-  vtkSmartPointer<vtkVelodyneTransformInterpolator> InitUndistortionInterpolatorMapping();
+  vtkSmartPointer<vtkCustomTransformInterpolator> InitUndistortionInterpolatorEgoMotion();
+  vtkSmartPointer<vtkCustomTransformInterpolator> InitUndistortionInterpolatorMapping();
 
   // Update the world transformation by integrating
   // the relative motion recover and the previous

@@ -96,9 +96,9 @@ vtkSmartPointer<vtkTransform> vtkTemporalTransforms::GetTransform(unsigned int t
 }
 
 //-----------------------------------------------------------------------------
-vtkSmartPointer<vtkVelodyneTransformInterpolator> vtkTemporalTransforms::CreateInterpolator()
+vtkSmartPointer<vtkCustomTransformInterpolator> vtkTemporalTransforms::CreateInterpolator()
 {
-  auto interpolator = vtkSmartPointer<vtkVelodyneTransformInterpolator>::New();
+  auto interpolator = vtkSmartPointer<vtkCustomTransformInterpolator>::New();
 
   auto timestamp = this->GetTimeArray();
 

@@ -1,7 +1,7 @@
 /*=========================================================================
 
   Program:   Visualization Toolkit
-  Module:    vtkVelodyneTransformInterpolator.h
+  Module:    vtkCustomTransformInterpolator.h
 
   Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
   All rights reserved.
@@ -12,7 +12,7 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkVelodyneTransformInterpolator - interpolate a series of transformation matrices
+// .NAME vtkCustomTransformInterpolator - interpolate a series of transformation matrices
 // .SECTION Description
 // This class is used to interpolate a series of 4x4 transformation
 // matrices. Position, scale and orientation (i.e., rotations) are
@@ -44,8 +44,8 @@
 // best performance is obtained by 1) configuring the interpolators, 2) adding
 // all the transforms, and 3) finally performing interpolation.
 
-#ifndef __vtkVelodyneTransformInterpolator_h
-#define __vtkVelodyneTransformInterpolator_h
+#ifndef __vtkCustomTransformInterpolator_h
+#define __vtkCustomTransformInterpolator_h
 
 #include <vtkObject.h>
 #include <vector>
@@ -58,15 +58,15 @@ class vtkVeloViewQuaternionInterpolator;
 class vtkTransformList;
 struct vtkQTransform;
 
-class VTK_EXPORT vtkVelodyneTransformInterpolator : public vtkObject
+class VTK_EXPORT vtkCustomTransformInterpolator : public vtkObject
 {
 public:
-  vtkTypeMacro(vtkVelodyneTransformInterpolator, vtkObject)
+  vtkTypeMacro(vtkCustomTransformInterpolator, vtkObject)
   void PrintSelf(ostream& os, vtkIndent indent);
 
   // Description:
   // Instantiate the class.
-  static vtkVelodyneTransformInterpolator* New();
+  static vtkCustomTransformInterpolator* New();
 
   // Description:
   // Return the number of transforms in the list of transforms.
@@ -173,8 +173,8 @@ public:
   vtkMTimeType GetMTime();
 
 protected:
-  vtkVelodyneTransformInterpolator();
-  virtual ~vtkVelodyneTransformInterpolator();
+  vtkCustomTransformInterpolator();
+  virtual ~vtkCustomTransformInterpolator();
 
   // Control the interpolation type
   int InterpolationType;
@@ -195,8 +195,8 @@ protected:
   std::vector<vtkQTransform> TransformVector;
 
 private:
-  vtkVelodyneTransformInterpolator(const vtkVelodyneTransformInterpolator&); // Not implemented.
-  void operator=(const vtkVelodyneTransformInterpolator&);                   // Not implemented.
+  vtkCustomTransformInterpolator(const vtkCustomTransformInterpolator&); // Not implemented.
+  void operator=(const vtkCustomTransformInterpolator&);                   // Not implemented.
 };
 
 #endif

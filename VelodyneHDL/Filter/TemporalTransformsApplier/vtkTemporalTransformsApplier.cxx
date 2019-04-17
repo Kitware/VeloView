@@ -34,7 +34,7 @@ vtkTemporalTransformsApplier::vtkTemporalTransformsApplier()
 {
   this->SetNumberOfInputPorts(2);
   this->SetNumberOfOutputPorts(1);
-  this->Interpolator = vtkSmartPointer<vtkVelodyneTransformInterpolator>::New();
+  this->Interpolator = vtkSmartPointer<vtkCustomTransformInterpolator>::New();
   this->Interpolator->SetInterpolationTypeToLinear();
   this->InterpolateEachPoint = true;
 }

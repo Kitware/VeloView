@@ -37,7 +37,7 @@
 #include <vtkSmartPointer.h>
 
 class vtkTransform;
-class vtkVelodyneTransformInterpolator;
+class vtkCustomTransformInterpolator;
 
 class VTK_EXPORT vtkVelodyneHDLPositionReader : public vtkPolyDataAlgorithm
 {
@@ -64,7 +64,7 @@ public:
   // (could be changed to height above geoid).
   void SetUseGPGGASentences(bool useGPGGASentences);
 
-  vtkVelodyneTransformInterpolator* GetInterpolator();
+  vtkCustomTransformInterpolator* GetInterpolator();
 
   // field names starts with PPS_ because accessed from python wrapping which
   // does not scope using the name of the enum

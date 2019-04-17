@@ -1,6 +1,6 @@
 #include "vtkLidarProvider.h"
 #include "vtkLidarPacketInterpreter.h"
-#include "vtkVelodyneTransformInterpolator.h"
+#include "vtkCustomTransformInterpolator.h"
 
 #include <vtkInformation.h>
 

@@ -13,7 +13,7 @@
 #include "vtkConversions.h"
 #include "vtkEigenTools.h"
 
-Eigen::Vector3d GetXYZ(const vtkSmartPointer<vtkVelodyneTransformInterpolator> trajectory,
+Eigen::Vector3d GetXYZ(const vtkSmartPointer<vtkCustomTransformInterpolator> trajectory,
                        double time)
 {
   vtkSmartPointer<vtkTransform> transform = vtkSmartPointer<vtkTransform>::New();
@@ -21,7 +21,7 @@ Eigen::Vector3d GetXYZ(const vtkSmartPointer<vtkVelodyneTransformInterpolator> t
   return PositionVectorFromTransform(transform);
 }
 
-Eigen::Matrix3d GetR(const vtkSmartPointer<vtkVelodyneTransformInterpolator> trajectory,
+Eigen::Matrix3d GetR(const vtkSmartPointer<vtkCustomTransformInterpolator> trajectory,
                      double time)
 {
   vtkSmartPointer<vtkTransform> transform = vtkSmartPointer<vtkTransform>::New();
@@ -56,7 +56,7 @@ enum class AVERAGE_ORIENTATION_METHOD
 };
 
 std::vector<std::vector<double>> ComputeTurns(
-        const vtkSmartPointer<vtkVelodyneTransformInterpolator> poseTrajectory,
+        const vtkSmartPointer<vtkCustomTransformInterpolator> poseTrajectory,
         double timeWindow,
         double curveTreshold,
         bool emptyIntersection,
@@ -421,8 +421,8 @@ std::vector<std::vector<double>> ComputeTurns(
 }
 
 bool ProcessTurn(
-        const vtkSmartPointer<vtkVelodyneTransformInterpolator> reference,
-        const vtkSmartPointer<vtkVelodyneTransformInterpolator> aligned,
+        const vtkSmartPointer<vtkCustomTransformInterpolator> reference,
+        const vtkSmartPointer<vtkCustomTransformInterpolator> aligned,
         double t0, double t1, double t2, double t3,
         DIRECTION_METHOD directionMethod,
         NORMAL_METHOD normalMethod,
@@ -550,8 +550,8 @@ bool ProcessTurn(
 }
 
 bool ProcessTurn(
-        const vtkSmartPointer<vtkVelodyneTransformInterpolator> reference,
-        const vtkSmartPointer<vtkVelodyneTransformInterpolator> aligned,
+        const vtkSmartPointer<vtkCustomTransformInterpolator> reference,
+        const vtkSmartPointer<vtkCustomTransformInterpolator> aligned,
         double t0, double t1, double t2, double t3,
         Eigen::Matrix3d& rotationBefore, // 1st result
         Eigen::Matrix3d& rotationAfter, // 2nd result
@@ -699,10 +699,10 @@ void ComputeCarCalibrationRotationScale(
         bool verbose
         )
 {
-  vtkSmartPointer<vtkVelodyneTransformInterpolator> referenceI
+  vtkSmartPointer<vtkCustomTransformInterpolator> referenceI
       = reference->CreateInterpolator();
   referenceI->SetInterpolationTypeToLinear();
-  vtkSmartPointer<vtkVelodyneTransformInterpolator> alignedI
+  vtkSmartPointer<vtkCustomTransformInterpolator> alignedI
       = aligned->CreateInterpolator();
   alignedI->SetInterpolationTypeToLinear();
   if (verbose)

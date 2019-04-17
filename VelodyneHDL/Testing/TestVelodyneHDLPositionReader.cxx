@@ -1,5 +1,5 @@
 #include "vtkVelodyneHDLPositionReader.h"
-#include "vtkVelodyneTransformInterpolator.h"
+#include "vtkCustomTransformInterpolator.h"
 #include "vtkPointData.h"
 #include "vtkTransform.h"
 

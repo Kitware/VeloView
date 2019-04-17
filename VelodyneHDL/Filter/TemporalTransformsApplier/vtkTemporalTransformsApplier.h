@@ -18,7 +18,7 @@
 #include <vtkNew.h>
 #include <vtkPolyDataAlgorithm.h>
 
-#include "vtkVelodyneTransformInterpolator.h"
+#include "vtkCustomTransformInterpolator.h"
 
 /**
  * @brief The vtkTemporalTransformsApplier take 2 inputs : a vtkTemporalTransforms which
@@ -73,7 +73,7 @@ private:
   bool InterpolateEachPoint;
 
   //! Interpolator used to get the right transform
-  vtkSmartPointer<vtkVelodyneTransformInterpolator> Interpolator;
+  vtkSmartPointer<vtkCustomTransformInterpolator> Interpolator;
 
   vtkTemporalTransformsApplier(const vtkTemporalTransformsApplier&) /*= delete*/;
   void operator =(const vtkTemporalTransformsApplier&) /*= delete*/;

@@ -28,7 +28,7 @@
 
 #include "vtkApplanixPositionReader.h"
 
-#include "vtkVelodyneTransformInterpolator.h"
+#include "vtkCustomTransformInterpolator.h"
 
 #include <vtkCellArray.h>
 #include <vtkDoubleArray.h>
@@ -61,7 +61,7 @@ class vtkApplanixPositionReader::vtkInternal
 public:
   void SetMapping(const std::string& fieldName, vtkNew<vtkDoubleArray>& array);
 
-  vtkNew<vtkVelodyneTransformInterpolator> Interpolator;
+  vtkNew<vtkCustomTransformInterpolator> Interpolator;
   vtkNew<vtkTransform> CalibrationTransform;
 
   FieldIndexMap Fields;
@@ -105,7 +105,7 @@ vtkApplanixPositionReader::~vtkApplanixPositionReader()
 }
 
 //-----------------------------------------------------------------------------
-vtkVelodyneTransformInterpolator* vtkApplanixPositionReader::GetInterpolator() const
+vtkCustomTransformInterpolator* vtkApplanixPositionReader::GetInterpolator() const
 {
   return this->Internal->Interpolator.GetPointer();
 }
