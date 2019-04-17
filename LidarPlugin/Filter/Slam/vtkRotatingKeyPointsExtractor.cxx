@@ -80,47 +80,35 @@ bool LineFitting::FitPCA(std::vector<Eigen::Vector3d >& points)
   {
     data.row(k) = points[k];
   }
-
-  Eigen::Vector3d mean = data.colwise().mean();
-  Eigen::MatrixXd centered = data.rowwise() - mean.transpose();
-  Eigen::MatrixXd cov = centered.transpose() * centered;
-  Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eig(cov);
-
-  // Eigen values
-  Eigen::MatrixXd D(1,3);
-  // Eigen vectors
-  Eigen::MatrixXd V(3,3);
-
-  D = eig.eigenvalues();
-  V = eig.eigenvectors();
+  // Position
+  this->Position = data.colwise().mean();
+  Eigen::MatrixXd centered = data.rowwise() - this->Position.transpose();
+  Eigen::Matrix3d varianceCovariance = centered.transpose() * centered;
+  Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> eig(varianceCovariance);
 
   // Direction
-  this->Direction = V.col(2).normalized();
-
-  // Position
-  this->Position = mean;
+  this->Direction = eig.eigenvectors().col(2).normalized();
 
   // Semi distance matrix
   // (polar form associated to
   // a bilineare symmetric positive
   // semi-definite matrix)
   this->SemiDist = (this->I3 - this->Direction * this->Direction.transpose());
-  this->SemiDist = this->SemiDist.transpose() * this->SemiDist;
 
   bool isLineFittingAccurate = true;
 
   // if a point of the neighborhood is too far from
   // the fitting line we considere the neighborhood as
   // non flat
+  double squaredMaxDistance = std::pow(this->MaxDistance, 2);
   for (unsigned int k = 0; k < points.size(); k++)
   {
-    double d = std::sqrt((points[k] - this->Position).transpose() * this->SemiDist * (points[k] - this->Position));
-    if (d > this->MaxDistance)
+    double d = (points[k] - this->Position).transpose() * this->SemiDist * (points[k] - this->Position);
+    if (d > squaredMaxDistance)
     {
       isLineFittingAccurate = false;
     }
   }
-
   return isLineFittingAccurate;
 }
 
@@ -195,16 +183,12 @@ void vtkRotatingKeyPointsExtractor::PrepareDataForNextFrame()
   this->FromPCLtoVTKMapping.resize(this->NLasers);
   this->Angles.clear();
   this->Angles.resize(this->NLasers);
-  this->LengthResolution.clear();
-  this->LengthResolution.resize(this->NLasers);
   this->SaillantPoint.clear();
   this->SaillantPoint.resize(this->NLasers);
   this->DepthGap.clear();
   this->DepthGap.resize(this->NLasers);
   this->IntensityGap.clear();
   this->IntensityGap.resize(this->NLasers);
-  this->BlobScore.clear();
-  this->BlobScore.resize(this->NLasers);
   this->IsPointValid.clear();
   this->IsPointValid.resize(this->NLasers);
   this->Label.clear();
@@ -288,11 +272,9 @@ void vtkRotatingKeyPointsExtractor::ComputeKeyPoints(vtkPolyData* input, vtkTabl
     this->IsPointValid[k].resize(this->pclCurrentFrameByScan[k]->size(), 1);
     this->Label[k].resize(this->pclCurrentFrameByScan[k]->size(), 0);
     this->Angles[k].resize(this->pclCurrentFrameByScan[k]->size(),0);
-    this->LengthResolution[k].resize(this->pclCurrentFrameByScan[k]->size(),0);
     this->SaillantPoint[k].resize(this->pclCurrentFrameByScan[k]->size(),0);
     this->DepthGap[k].resize(this->pclCurrentFrameByScan[k]->size(), 0);
     this->IntensityGap[k].resize(this->pclCurrentFrameByScan[k]->size(), 0);
-    this->BlobScore[k].resize(this->pclCurrentFrameByScan[k]->size(), 0);
   }
 
   // compute keypoints scores
@@ -311,11 +293,9 @@ void vtkRotatingKeyPointsExtractor::AddDisplayInformation(vtkSmartPointer<vtkPol
   this->DisplayLaserIdMapping(input);
   this->DisplayRelAdv(input);
   AddVectorToPolydataPoints<double, vtkDoubleArray>(this->Angles, "angles_line", input);
-  AddVectorToPolydataPoints<double, vtkDoubleArray>(this->LengthResolution, "length_resolution", input);
   AddVectorToPolydataPoints<double, vtkDoubleArray>(this->SaillantPoint, "saillant_point", input);
   AddVectorToPolydataPoints<double, vtkDoubleArray>(this->DepthGap, "depth_gap", input);
   AddVectorToPolydataPoints<double, vtkDoubleArray>(this->IntensityGap, "intensity_gap", input);
-  AddVectorToPolydataPoints<double, vtkDoubleArray>(this->BlobScore, "blob_score", input);
   AddVectorToPolydataPoints<int, vtkIntArray>(this->IsPointValid, "is_point_valid", input);
   AddVectorToPolydataPoints<int, vtkIntArray>(this->Label, "keypoint_label", input);
 }
@@ -323,13 +303,24 @@ void vtkRotatingKeyPointsExtractor::AddDisplayInformation(vtkSmartPointer<vtkPol
 //-----------------------------------------------------------------------------
 void vtkRotatingKeyPointsExtractor::ComputeCurvature()
 {
-  Point currentPoint, nextPoint, previousPoint;
-  Eigen::Vector3d X, centralPoint;
-  LineFitting leftLine, rightLine, farNeighborsLine;
-
+  double squaredDistToLineThreshold = std::pow(this->DistToLineThreshold, 2);
   // loop over scans lines
   for (unsigned int scanLine = 0; scanLine < this->NLasers; ++scanLine)
   {
+    Point currentPoint, nextPoint, previousPoint;
+    Eigen::Vector3d X, centralPoint;
+    LineFitting leftLine, rightLine, farNeighborsLine;
+
+    // We will compute the line that fit the neighbors located
+    // previously the current. We will do the same for the
+    // neighbors located after the current points. We will then
+    // compute the angle between these two lines as an approximation
+    // of the "sharpness" of the current point.
+    std::vector<Eigen::Vector3d> leftNeighbor(this->NeighborWidth);
+    std::vector<Eigen::Vector3d> rightNeighbor(this->NeighborWidth);
+    std::vector<Eigen::Vector3d> farNeighbors;
+    farNeighbors.reserve(3 * this->NeighborWidth);
+
     // loop over points in the current scan line
     int Npts = this->pclCurrentFrameByScan[scanLine]->size();
 
@@ -349,27 +340,20 @@ void vtkRotatingKeyPointsExtractor::ComputeCurvature()
       nextPoint = this->pclCurrentFrameByScan[scanLine]->points[index + 1];
       previousPoint = this->pclCurrentFrameByScan[scanLine]->points[index - 1];
       this->IntensityGap[scanLine][index] = std::abs(nextPoint.normal_z - previousPoint.normal_z);
-      // We will compute the line that fit the neighbors located
-      // previously the current. We will do the same for the
-      // neighbors located after the current points. We will then
-      // compute the angle between these two lines as an approximation
-      // of the "sharpness" of the current point.
-      std::vector<Eigen::Vector3d > leftNeighbor;
-      std::vector<Eigen::Vector3d > rightNeighbor;
-      std::vector<Eigen::Vector3d > farNeighbors;
 
       // Fill right and left neighborhood
       // /!\ The way the neighbors are added
       // to the vectors matters. Especially when
       // computing the saillancy
-      for (int j = index - this->NeighborWidth; j <= index + this->NeighborWidth; ++j)
+      for (int j = index - this->NeighborWidth; j < index; ++j)
       {
         currentPoint = this->pclCurrentFrameByScan[scanLine]->points[j];
-        X << currentPoint.x, currentPoint.y, currentPoint.z;
-        if (j < index)
-          leftNeighbor.push_back(X);
-        if (j > index)
-          rightNeighbor.push_back(X);
+        leftNeighbor[j -index + this->NeighborWidth] << currentPoint.x, currentPoint.y, currentPoint.z;
+      }
+      for (int j = index + 1; j <= index + this->NeighborWidth; ++j)
+      {
+        currentPoint = this->pclCurrentFrameByScan[scanLine]->points[j];
+        rightNeighbor[j - index - 1] << currentPoint.x, currentPoint.y, currentPoint.z;
       }
 
       // Fit line on the neighborhood and
@@ -389,10 +373,10 @@ void vtkRotatingKeyPointsExtractor::ComputeCurvature()
         // We check that the current point is not too far from its
         // neighborhood lines. This is because we don't want a point
         // to be considered as a angles point if it is due to gap
-        dist1 = std::sqrt((centralPoint - leftLine.Position).transpose() * leftLine.SemiDist * (centralPoint - leftLine.Position));
-        dist2 = std::sqrt((centralPoint - rightLine.Position).transpose() * rightLine.SemiDist * (centralPoint - rightLine.Position));
+        dist1 = (centralPoint - leftLine.Position).transpose() * leftLine.SemiDist * (centralPoint - leftLine.Position);
+        dist2 = (centralPoint - rightLine.Position).transpose() * rightLine.SemiDist * (centralPoint - rightLine.Position);
 
-        if ((dist1 < this->DistToLineThreshold) && (dist2 < this->DistToLineThreshold))
+        if ((dist1 < squaredDistToLineThreshold) && (dist2 < squaredDistToLineThreshold))
           this->Angles[scanLine][index] = std::abs((leftLine.Direction.cross(rightLine.Direction)).norm()); // sin of angle actually
       }
       // Here one side of the neighborhood is non flat
@@ -400,23 +384,23 @@ void vtkRotatingKeyPointsExtractor::ComputeCurvature()
       // Only the gap will be considered here.
       else if (rightFlat && !leftFlat)
       {
-        dist1 = 1000.0;
+        dist1 = std::numeric_limits<double>::max();
         for (unsigned int neighIndex = 0; neighIndex < leftNeighbor.size(); ++neighIndex)
         {
           dist1 = std::min(dist1,
-                  std::sqrt((leftNeighbor[neighIndex] - rightLine.Position).transpose() * rightLine.SemiDist * (leftNeighbor[neighIndex] - rightLine.Position)));
+                  ((leftNeighbor[neighIndex] - rightLine.Position).transpose() * rightLine.SemiDist * (leftNeighbor[neighIndex] - rightLine.Position))(0));
         }
-        dist1 = 0.5 * dist1;
+        dist1 = 0.25 * dist1;
       }
       else if (!rightFlat && leftFlat)
       {
-        dist2 = 1000.0;
+        dist2 = std::numeric_limits<double>::max();
         for (unsigned int neighIndex = 0; neighIndex < leftNeighbor.size(); ++neighIndex)
         {
           dist2 = std::min(dist2,
-                  std::sqrt((rightNeighbor[neighIndex] - leftLine.Position).transpose() * leftLine.SemiDist * (rightNeighbor[neighIndex] - leftLine.Position)));
+                  ((rightNeighbor[neighIndex] - leftLine.Position).transpose() * leftLine.SemiDist * (rightNeighbor[neighIndex] - leftLine.Position))(0));
         }
-        dist2 = 0.5 * dist2;
+        dist2 = 0.25 * dist2;
       }
       else
       {
@@ -428,6 +412,7 @@ void vtkRotatingKeyPointsExtractor::ComputeCurvature()
 
         // The saillant point score is the distance between the current point
         // and the points that have a depth gap with the current point
+        farNeighbors.resize(0);
         for (unsigned int neighIndex = 0; neighIndex < leftNeighbor.size(); ++neighIndex)
         {
           // Left neighborhood depth gap computation
@@ -435,7 +420,7 @@ void vtkRotatingKeyPointsExtractor::ComputeCurvature()
           {
             hasLeftEncounteredDepthGap = true;
             diffDepth++;
-            farNeighbors.push_back(leftNeighbor[neighIndex]);
+            farNeighbors.emplace_back(leftNeighbor[neighIndex]);
           }
           else
           {
@@ -449,7 +434,7 @@ void vtkRotatingKeyPointsExtractor::ComputeCurvature()
           {
             hasRightEncounteredDepthGap = true;
             diffDepth++;
-            farNeighbors.push_back(rightNeighbor[neighIndex]);
+            farNeighbors.emplace_back(rightNeighbor[neighIndex]);
           }
           else
           {
@@ -467,13 +452,10 @@ void vtkRotatingKeyPointsExtractor::ComputeCurvature()
         if (static_cast<double>(diffDepth) / (2.0 * this->NeighborWidth) > 0.5)
         {
           farNeighborsLine.FitPCA(farNeighbors);
-          this->SaillantPoint[scanLine][index] = std::sqrt(
-            (centralPoint - farNeighborsLine.Position).transpose() * farNeighborsLine.SemiDist * (centralPoint - farNeighborsLine.Position));
+          this->SaillantPoint[scanLine][index] =
+            (centralPoint - farNeighborsLine.Position).transpose() * farNeighborsLine.SemiDist * (centralPoint - farNeighborsLine.Position);
         }
-
-        this->BlobScore[scanLine][index] = 1;
       }
-
       this->DepthGap[scanLine][index] = std::max(dist1, dist2);
     }
   }
@@ -614,6 +596,7 @@ void vtkRotatingKeyPointsExtractor::SetKeyPointsLabels()
   this->EdgesIndex.clear(); this->EdgesIndex.resize(0);
   this->PlanarIndex.clear(); this->PlanarIndex.resize(0);
   this->BlobIndex.clear(); this->BlobIndex.resize(0);
+  double squaredEdgeDepthGapThreshold = std::pow(this->EdgeDepthGapThreshold, 2);
 
   // loop over the scan lines
   for (unsigned int scanLine = 0; scanLine < this->NLasers; ++scanLine)
@@ -650,7 +633,7 @@ void vtkRotatingKeyPointsExtractor::SetKeyPointsLabels()
       depthGap = this->DepthGap[scanLine][index];
 
       // thresh
-      if (depthGap < this->EdgeDepthGapThreshold)
+      if (depthGap < squaredEdgeDepthGapThreshold)
       {
         break;
       }
@@ -720,7 +703,7 @@ void vtkRotatingKeyPointsExtractor::SetKeyPointsLabels()
       saillancy = this->SaillantPoint[scanLine][index];
 
       // thresh
-      if (saillancy < 1.5)
+      if (saillancy < 2.25) // square of 1.5 meters
       {
         break;
       }
@@ -848,20 +831,21 @@ void vtkRotatingKeyPointsExtractor::SetKeyPointsLabels()
   {
     p = this->pclCurrentFrameByScan[this->EdgesIndex[k].first]->points[this->EdgesIndex[k].second];
     this->EdgesPoints->push_back(p);
-    this->FarestKeypointDist = std::max(this->FarestKeypointDist, static_cast<double>(std::sqrt(std::pow(p.x, 2) + std::pow(p.y, 2) + std::pow(p.z, 2))));
+    this->FarestKeypointDist = std::max(this->FarestKeypointDist, static_cast<double>(std::pow(p.x, 2) + std::pow(p.y, 2) + std::pow(p.z, 2)));
   }
   for (unsigned int k = 0; k < this->PlanarIndex.size(); ++k)
   {
     p = this->pclCurrentFrameByScan[this->PlanarIndex[k].first]->points[this->PlanarIndex[k].second];
     this->PlanarsPoints->push_back(p);
-    this->FarestKeypointDist = std::max(this->FarestKeypointDist, static_cast<double>(std::sqrt(std::pow(p.x, 2) + std::pow(p.y, 2) + std::pow(p.z, 2))));
+    this->FarestKeypointDist = std::max(this->FarestKeypointDist, static_cast<double>(std::pow(p.x, 2) + std::pow(p.y, 2) + std::pow(p.z, 2)));
   }
   for (unsigned int k = 0; k < this->BlobIndex.size();  ++k)
   {
     p = this->pclCurrentFrameByScan[this->BlobIndex[k].first]->points[this->BlobIndex[k].second];
     this->BlobsPoints->push_back(p);
-    this->FarestKeypointDist = std::max(this->FarestKeypointDist, static_cast<double>(std::sqrt(std::pow(p.x, 2) + std::pow(p.y, 2) + std::pow(p.z, 2))));
+    this->FarestKeypointDist = std::max(this->FarestKeypointDist, static_cast<double>(std::pow(p.x, 2) + std::pow(p.y, 2) + std::pow(p.z, 2)));
   }
+  this->FarestKeypointDist = std::sqrt(this->FarestKeypointDist);
 
   // keypoints extraction informations
   std::cout << "Extracted Edges: " << this->EdgesPoints->size() << " Planars: "

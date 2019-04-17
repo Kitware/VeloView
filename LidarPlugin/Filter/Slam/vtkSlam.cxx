@@ -774,48 +774,31 @@ void vtkSlam::TransformToWorld(Point& p)
 
 //-----------------------------------------------------------------------------
 int vtkSlam::ComputeLineDistanceParameters(pcl::KdTreeFLANN<Point>::Ptr kdtreePreviousEdges, Eigen::Matrix3d& R,
-                                                   Eigen::Vector3d& dT, Point p, std::string step)
+                                           Eigen::Vector3d& dT, Point p, MatchingMode matchingMode)
 {
   // number of neighbors edge points required to approximate
   // the corresponding egde line
   unsigned int requiredNearest;
   unsigned int eigenValuesRatio;
+  std::vector<int> nearestIndex;
+  std::vector<float> nearestDist;
 
   // maximum distance between keypoints
   // and their computed line
-  double maxDist;
+  double squaredMaxDist;
 
-  if (step == "egoMotion")
-  {
-    requiredNearest = this->EgoMotionLineDistanceNbrNeighbors;
-    eigenValuesRatio = this->EgoMotionLineDistancefactor;
-    maxDist = std::pow(this->EgoMotionMaxLineDistance, 2);
-  }
-  else if (step == "mapping")
-  {
-    requiredNearest = this->MappingLineDistanceNbrNeighbors;
-    eigenValuesRatio = this->MappingLineDistancefactor;
-    maxDist = std::pow(this->MappingMaxLineDistance, 2);
-  }
-  else
-  {
-    throw "ComputeLineDistanceParameters function got invalide step parameter";
-  }
-
-
-  Eigen::Vector3d P0, P, n;
-  Eigen::Matrix3d A;
 
   // Transform the point using the current pose estimation
-  P0 << p.x, p.y, p.z;
-
+  Eigen::Vector3d P0(p.x, p.y, p.z);
+  Eigen::Vector3d P, n;
+  Eigen::Matrix3d A;
   if (this->Undistortion) // linear interpolated transform
   {
-    if (step == "egoMotion")
+    if (matchingMode == MatchingMode::EgoMotion)
     {
       this->ExpressPointInOtherReferencial(p, this->EgoMotionInterpolator);
     }
-    else if (step == "mapping")
+    else if (matchingMode == MatchingMode::Mapping)
     {
       this->ExpressPointInOtherReferencial(p, this->MappingInterpolator);
     }
@@ -826,11 +809,11 @@ int vtkSlam::ComputeLineDistanceParameters(pcl::KdTreeFLANN<Point>::Ptr kdtreePr
     p.x = P(0); p.y = P(1); p.z = P(2);
   }
 
-  std::vector<int> nearestIndex;
-  std::vector<float> nearestDist;
-
-  if (step == "egoMotion")
+  if (matchingMode == MatchingMode::EgoMotion)
   {
+    requiredNearest = this->EgoMotionLineDistanceNbrNeighbors;
+    eigenValuesRatio = this->EgoMotionLineDistancefactor;
+    squaredMaxDist = std::pow(this->EgoMotionMaxLineDistance, 2);
     GetEgoMotionLineSpecificNeighbor(nearestIndex, nearestDist, requiredNearest, kdtreePreviousEdges, p);
     if (nearestIndex.size() < this->EgoMotionMinimumLineNeighborRejection)
     {
@@ -838,15 +821,21 @@ int vtkSlam::ComputeLineDistanceParameters(pcl::KdTreeFLANN<Point>::Ptr kdtreePr
     }
     requiredNearest = nearestIndex.size();
   }
-  else if (step == "mapping")
+  else if (matchingMode == MatchingMode::Mapping)
   {
+    requiredNearest = this->MappingLineDistanceNbrNeighbors;
+    eigenValuesRatio = this->MappingLineDistancefactor;
+    squaredMaxDist = std::pow(this->MappingMaxLineDistance, 2);
     GetMappingLineSpecificNeigbbor(nearestIndex, nearestDist, this->MappingLineMaxDistInlier, requiredNearest, kdtreePreviousEdges, p);
     if (nearestIndex.size() < this->MappingMinimumLineNeighborRejection)
     {
       return 0;
     }
     requiredNearest = nearestIndex.size();
-    //kdtreePreviousEdges->nearestKSearch(p, requiredNearest, nearestIndex, nearestDist);
+  }
+  else
+  {
+    throw "ComputeLineDistanceParameters function got invalide step parameter";
   }
 
   // if the nearest edges are too far from the
@@ -861,7 +850,6 @@ int vtkSlam::ComputeLineDistanceParameters(pcl::KdTreeFLANN<Point>::Ptr kdtreePr
   // Thans to the PCA we will check the shape of the neighborhood
   // and keep it if it is distributed along a line
   Eigen::MatrixXd data(requiredNearest, 3);
-
   for (unsigned int k = 0; k < requiredNearest; k++)
   {
     Point pt = kdtreePreviousEdges->getInputCloud()->points[nearestIndex[k]];
@@ -870,16 +858,11 @@ int vtkSlam::ComputeLineDistanceParameters(pcl::KdTreeFLANN<Point>::Ptr kdtreePr
 
   Eigen::Vector3d mean = data.colwise().mean();
   Eigen::MatrixXd centered = data.rowwise() - mean.transpose();
-  Eigen::MatrixXd cov = centered.transpose() * centered;
-  Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eig(cov);
+  Eigen::Matrix3d varianceCovariance = centered.transpose() * centered;
+  Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> eig(varianceCovariance);
 
   // Eigen values
-  Eigen::MatrixXd D(1,3);
-  // Eigen vectors
-  Eigen::MatrixXd V(3,3);
-
-  D = eig.eigenvalues();
-  V = eig.eigenvectors();
+  Eigen::MatrixXd D = eig.eigenvalues();
 
   // if the first eigen value is significantly higher than
   // the second one, it means the sourrounding points are
@@ -887,8 +870,7 @@ int vtkSlam::ComputeLineDistanceParameters(pcl::KdTreeFLANN<Point>::Ptr kdtreePr
   if (D(2) > eigenValuesRatio * D(1))
   {
     // n is the director vector of the line
-    n = V.col(2);
-    n.normalized();
+    n = eig.eigenvectors().col(2);
   }
   else
   {
@@ -905,7 +887,6 @@ int vtkSlam::ComputeLineDistanceParameters(pcl::KdTreeFLANN<Point>::Ptr kdtreePr
   // Then it comes A (I-n*n.t)^2 = (I-n*n.t) since
   // A is the matrix of a projection endomorphism
   A = (this->I3 - n * n.transpose());
-  A = A.transpose() * A;
 
   // it would be the case if P1 = P2 For instance
   // if the sensor has some dual returns that hit the same point
@@ -924,22 +905,22 @@ int vtkSlam::ComputeLineDistanceParameters(pcl::KdTreeFLANN<Point>::Ptr kdtreePr
     pt = kdtreePreviousEdges->getInputCloud()->points[nearestIndex[k]];
     Xtemp(0) = pt.x; Xtemp(1) = pt.y; Xtemp(2) = pt.z;
     double squaredDist = (Xtemp - mean).transpose() * A * (Xtemp - mean);
-    if (squaredDist > maxDist)
+    if (squaredDist > squaredMaxDist)
     {
       return 4;
     }
     meanSquaredDist += squaredDist;
   }
   meanSquaredDist /= static_cast<double>(requiredNearest);
-  double fitQualityCoeff = 1.0 - std::sqrt(std::abs(meanSquaredDist) / maxDist);
+  double fitQualityCoeff = 1.0 - std::sqrt(std::abs(meanSquaredDist) / squaredMaxDist);
 
   // distance between current point and the corresponding matching line
   double s = 1.0;
-  if (step == "mapping")
+  if (matchingMode == MatchingMode::Mapping)
   {
     s = 0.5 * fitQualityCoeff + 0.5 * linearityCoeff;
   }
-  else if (step == "egoMotion")
+  else if (matchingMode == MatchingMode::EgoMotion)
   {
     double orthogonalityCoeff = 0.5 + 0.5 * n(2) * n(2); // score the match by its angle with ez
     // Score the point - line matching by the angle of the
@@ -953,18 +934,17 @@ int vtkSlam::ComputeLineDistanceParameters(pcl::KdTreeFLANN<Point>::Ptr kdtreePr
     return 5;
 
   // store the distance parameters values
-  this->Avalues.push_back(A);
-  this->Pvalues.push_back(mean);
-  this->Xvalues.push_back(P0);
-  this->TimeValues.push_back(p.intensity);
-  this->residualCoefficient.push_back(s);
-  this->RadiusIncertitude.push_back(0.0);
+  this->Avalues.emplace_back(A);
+  this->Pvalues.emplace_back(mean);
+  this->Xvalues.emplace_back(P0);
+  this->TimeValues.emplace_back(p.intensity);
+  this->residualCoefficient.emplace_back(s);
   return 6;
 }
 
 //-----------------------------------------------------------------------------
 int vtkSlam::ComputePlaneDistanceParameters(pcl::KdTreeFLANN<Point>::Ptr kdtreePreviousPlanes, Eigen::Matrix3d& R,
-                                                    Eigen::Vector3d& dT, Point p, std::string step)
+                                            Eigen::Vector3d& dT, Point p, MatchingMode matchingMode)
 {
   // number of neighbors edge points required to approximate
   // the corresponding egde line
@@ -973,40 +953,40 @@ int vtkSlam::ComputePlaneDistanceParameters(pcl::KdTreeFLANN<Point>::Ptr kdtreeP
 
   // maximum distance between keypoints
   // and their computed plane
-  double maxDist;
+  double squaredMaxDist;
 
-  if (step == "egoMotion")
+  if (matchingMode == MatchingMode::EgoMotion)
   {
     significantlyFactor1 = this->EgoMotionPlaneDistancefactor1;
     significantlyFactor2 = this->EgoMotionPlaneDistancefactor2;
     requiredNearest = this->EgoMotionPlaneDistanceNbrNeighbors;
-    maxDist = std::pow(this->EgoMotionMaxPlaneDistance, 2);
+    squaredMaxDist = std::pow(this->EgoMotionMaxPlaneDistance, 2);
   }
-  else if (step == "mapping")
+  else if (matchingMode == MatchingMode::Mapping)
   {
     significantlyFactor1 = this->MappingPlaneDistancefactor1;
     significantlyFactor2 = this->MappingPlaneDistancefactor2;
     requiredNearest = this->MappingPlaneDistanceNbrNeighbors;
-    maxDist = std::pow(this->MappingMaxPlaneDistance, 2);
+    squaredMaxDist = std::pow(this->MappingMaxPlaneDistance, 2);
   }
   else
   {
     throw "ComputeLineDistanceParameters function got invalide step parameter";
   }
 
-  Eigen::Vector3d P0, P, n;
+  Eigen::Vector3d P, n;
   Eigen::Matrix3d A;
 
   // Transform the point using the current pose estimation
-  P0 << p.x, p.y, p.z;
+  Eigen::Vector3d P0(p.x, p.y, p.z);
 
   if (this->Undistortion) // linear interpolated transform
   {
-    if (step == "egoMotion")
+    if (matchingMode == MatchingMode::EgoMotion)
     {
       this->ExpressPointInOtherReferencial(p, this->EgoMotionInterpolator);
     }
-    else if (step == "mapping")
+    else if (matchingMode == MatchingMode::Mapping)
     {
       this->ExpressPointInOtherReferencial(p, this->MappingInterpolator);
     }
@@ -1039,34 +1019,25 @@ int vtkSlam::ComputePlaneDistanceParameters(pcl::KdTreeFLANN<Point>::Ptr kdtreeP
   // Thanks to the PCA we will check the shape of the neighborhood
   // and keep it if it is distributed along a line
   Eigen::MatrixXd data(requiredNearest,3);
-
   for (unsigned int k = 0; k < requiredNearest; k++)
   {
     Point pt = kdtreePreviousPlanes->getInputCloud()->points[nearestIndex[k]];
     data.row(k) << pt.x, pt.y, pt.z;
   }
-
   Eigen::Vector3d mean = data.colwise().mean();
   Eigen::MatrixXd centered = data.rowwise() - mean.transpose();
-  Eigen::MatrixXd cov = centered.transpose() * centered;
-  Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eig(cov);
+  Eigen::Matrix3d varianceCovariance = centered.transpose() * centered;
+  Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> eig(varianceCovariance);
 
-  // Eigen values
-  Eigen::MatrixXd D(1,3);
-  // Eigen vectors
-  Eigen::MatrixXd V(3,3);
-
-  D = eig.eigenvalues();
-  V = eig.eigenvectors();
+  // Eigenvalues
+  Eigen::VectorXd D = eig.eigenvalues();
 
   // if the second eigen value is close to the highest one
   // and bigger than the smallest one it means that the points
   // are distributed among a plane
-  Eigen::Vector3d u, v;
   if ( (significantlyFactor2 * D(1) > D(2)) && (D(1) > significantlyFactor1 * D(0)) )
   {
-    u = V.col(2);
-    v = V.col(1);
+    n = eig.eigenvectors().col(0);
   }
   else
   {
@@ -1075,9 +1046,6 @@ int vtkSlam::ComputePlaneDistanceParameters(pcl::KdTreeFLANN<Point>::Ptr kdtreeP
 
   // Compute a coefficient based on the planarity of the neighborhood.
   double planarityCoeff = (D(1) - D(0)) / D(2);
-
-  n = u.cross(v);
-  n.normalized();
 
   // A = n*n.t
   A = n * n.transpose();
@@ -1098,14 +1066,14 @@ int vtkSlam::ComputePlaneDistanceParameters(pcl::KdTreeFLANN<Point>::Ptr kdtreeP
     pt = kdtreePreviousPlanes->getInputCloud()->points[nearestIndex[k]];
     Xtemp(0) = pt.x; Xtemp(1) = pt.y; Xtemp(2) = pt.z;
     double squaredDist = (Xtemp - mean).transpose() * A * (Xtemp - mean);
-    if (squaredDist > maxDist)
+    if (squaredDist > squaredMaxDist)
     {
       return 4;
     }
     meanSquaredDist += squaredDist;
   }
   meanSquaredDist /= static_cast<double>(requiredNearest);
-  double fitQualityCoeff = 1.0 - std::sqrt(std::abs(meanSquaredDist) / maxDist);
+  double fitQualityCoeff = 1.0 - std::sqrt(std::abs(meanSquaredDist) / squaredMaxDist);
 
   // distance between current point and the corresponding matching plane
   double s = 0.5 * fitQualityCoeff + 0.5 * planarityCoeff;
@@ -1114,18 +1082,17 @@ int vtkSlam::ComputePlaneDistanceParameters(pcl::KdTreeFLANN<Point>::Ptr kdtreeP
     return 5;
 
   // store the distance parameters values
-  this->Avalues.push_back(A);
-  this->Pvalues.push_back(mean);
-  this->Xvalues.push_back(P0);
-  this->residualCoefficient.push_back(s);
-  this->TimeValues.push_back(p.intensity);
-  this->RadiusIncertitude.push_back(0.0);
+  this->Avalues.emplace_back(A);
+  this->Pvalues.emplace_back(mean);
+  this->Xvalues.emplace_back(P0);
+  this->residualCoefficient.emplace_back(s);
+  this->TimeValues.emplace_back(p.intensity);
   return 6;
 }
 
 //-----------------------------------------------------------------------------
 int vtkSlam::ComputeBlobsDistanceParameters(pcl::KdTreeFLANN<Point>::Ptr kdtreePreviousBlobs, Eigen::Matrix3d& R,
-                                                    Eigen::Vector3d& dT, Point p, std::string vtkNotUsed(step))
+                                            Eigen::Vector3d& dT, Point p, MatchingMode vtkNotUsed(matchingMode))
 {
   // number of neighbors blobs points required to approximate
   // the corresponding ellipsoide
@@ -1199,17 +1166,17 @@ int vtkSlam::ComputeBlobsDistanceParameters(pcl::KdTreeFLANN<Point>::Ptr kdtreeP
 
   Eigen::Vector3d mean = data.colwise().mean();
   Eigen::MatrixXd centered = data.rowwise() - mean.transpose();
-  Eigen::MatrixXd cov = centered.transpose() * centered;
+  Eigen::Matrix3d varianceCovariance = centered.transpose() * centered;
 
   // Sigma is the inverse of the covariance
   // Matrix encoding the mahalanobis distance
   // check that the covariance matrix is inversible
-  if (std::abs(cov.determinant()) < 1e-6)
+  if (std::abs(varianceCovariance.determinant()) < 1e-6)
   {
     return 3;
   }
-  Eigen::MatrixXd sigma = cov.inverse();
-  Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eig(sigma);
+  Eigen::Matrix3d sigma = varianceCovariance.inverse();
+  Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> eig(sigma);
 
   // rescale the variance covariance matrix to preserve the
   // shape of the mahalanobis distance but removing the
@@ -1234,11 +1201,10 @@ int vtkSlam::ComputeBlobsDistanceParameters(pcl::KdTreeFLANN<Point>::Ptr kdtreeP
   double s = 1.0;//1.0 - nearestDist[requiredNearest - 1] / maxDist;
 
   // store the distance parameters values
-  this->Avalues.push_back(A);
-  this->Pvalues.push_back(mean);
-  this->Xvalues.push_back(P0);
-  this->residualCoefficient.push_back(s);
-  this->RadiusIncertitude.push_back(0.0);
+  this->Avalues.emplace_back(A);
+  this->Pvalues.emplace_back(mean);
+  this->Xvalues.emplace_back(P0);
+  this->residualCoefficient.emplace_back(s);
   return 5;
 }
 
@@ -1404,6 +1370,14 @@ void vtkSlam::ComputeEgoMotion()
   unsigned int usedPlanes = 0;
   Point currentPoint;
 
+  unsigned int toReserve =   this->CurrentEdgesPoints->size()
+                           + this->CurrentPlanarsPoints->size();
+  this->Xvalues.reserve(toReserve);
+  this->Avalues.resize(toReserve);
+  this->Pvalues.resize(toReserve);
+  this->TimeValues.resize(toReserve);
+  this->residualCoefficient.resize(toReserve);
+
   // ICP - Levenberg-Marquardt loop:
   // At each step of this loop an ICP matching is performed
   // Once the keypoints matched, we estimate the the 6-DOF
@@ -1434,7 +1408,7 @@ void vtkSlam::ComputeEgoMotion()
         // i.e A = (I - n*n.t)^2 with n being the director vector
         // and P a point of the line
         currentPoint = this->CurrentEdgesPoints->points[edgeIndex];
-        int rejectionIndex = this->ComputeLineDistanceParameters(kdtreePreviousEdges, R, T, currentPoint, "egoMotion");
+        int rejectionIndex = this->ComputeLineDistanceParameters(kdtreePreviousEdges, R, T, currentPoint, MatchingMode::EgoMotion);
         this->EdgePointRejectionEgoMotion[edgeIndex] = rejectionIndex;
         this->MatchRejectionHistogramLine[rejectionIndex] += 1;
       }
@@ -1450,7 +1424,7 @@ void vtkSlam::ComputeEgoMotion()
         // i.e A = n * n.t with n being a normal of the plane
         // and is a point of the plane
         currentPoint = this->CurrentPlanarsPoints->points[planarIndex];
-        int rejectionIndex = this->ComputePlaneDistanceParameters(kdtreePreviousPlanes, R, T, currentPoint, "egoMotion");
+        int rejectionIndex = this->ComputePlaneDistanceParameters(kdtreePreviousPlanes, R, T, currentPoint, MatchingMode::EgoMotion);
         this->PlanarPointRejectionEgoMotion[planarIndex] = rejectionIndex;
         this->MatchRejectionHistogramPlane[rejectionIndex] += 1;
       }
@@ -1576,6 +1550,15 @@ void vtkSlam::Mapping()
   Eigen::MatrixXd estimatorCovariance(6, 6);
   Point currentPoint;
 
+  unsigned int toReserve =   this->CurrentEdgesPoints->size()
+                           + this->CurrentPlanarsPoints->size()
+                           + this->CurrentBlobsPoints->size();
+  this->Xvalues.reserve(toReserve);
+  this->Avalues.resize(toReserve);
+  this->Pvalues.resize(toReserve);
+  this->TimeValues.resize(toReserve);
+  this->residualCoefficient.resize(toReserve);
+
   // ICP - Levenberg-Marquardt loop:
   // At each step of this loop an ICP matching is performed
   // Once the keypoints matched, we estimate the the 6-DOF
@@ -1603,7 +1586,7 @@ void vtkSlam::Mapping()
       {
         // Find the closest correspondence edge line of the current edge point
         currentPoint = this->CurrentEdgesPoints->points[edgeIndex];
-        int rejectionIndex = this->ComputeLineDistanceParameters(kdtreeEdges, R, T, currentPoint, "mapping");
+        int rejectionIndex = this->ComputeLineDistanceParameters(kdtreeEdges, R, T, currentPoint, MatchingMode::Mapping);
         this->EdgePointRejectionMapping[edgeIndex] = rejectionIndex;
         this->MatchRejectionHistogramLine[rejectionIndex] += 1;
         usedEdges = this->Xvalues.size();
@@ -1616,7 +1599,7 @@ void vtkSlam::Mapping()
       {
         // Find the closest correspondence plane of the current planar point
         currentPoint = this->CurrentPlanarsPoints->points[planarIndex];
-        int rejectionIndex = this->ComputePlaneDistanceParameters(kdtreePlanes, R, T, currentPoint, "mapping");
+        int rejectionIndex = this->ComputePlaneDistanceParameters(kdtreePlanes, R, T, currentPoint, MatchingMode::Mapping);
         this->PlanarPointRejectionMapping[planarIndex] = rejectionIndex;
         this->MatchRejectionHistogramPlane[rejectionIndex] += 1;
         usedPlanes = this->Xvalues.size() - usedEdges;
@@ -1630,7 +1613,7 @@ void vtkSlam::Mapping()
       {
         // Find the closest correspondence plane of the current planar point
         currentPoint = this->CurrentBlobsPoints->points[blobIndex];
-        this->ComputeBlobsDistanceParameters(kdtreeBlobs, R, T, currentPoint, "mapping");
+        this->ComputeBlobsDistanceParameters(kdtreeBlobs, R, T, currentPoint, MatchingMode::Mapping);
         usedBlobs = this->Xvalues.size() - usedPlanes - usedEdges;
       }
     }
@@ -1912,7 +1895,6 @@ void vtkSlam::ResetDistanceParameters()
   this->Pvalues.resize(0);
   this->TimeValues.resize(0);
   this->residualCoefficient.resize(0);
-  this->RadiusIncertitude.resize(0);
   this->MatchRejectionHistogramLine.clear();
   this->MatchRejectionHistogramLine.resize(this->NrejectionCauses, 0);
   this->MatchRejectionHistogramPlane.clear();

@@ -115,6 +115,12 @@ class RollingGrid;
 class vtkTable;
 typedef pcl::PointXYZINormal Point;
 
+enum MatchingMode
+{
+  EgoMotion = 0,
+  Mapping = 1
+};
+
 class VTK_EXPORT vtkSlam : public vtkPolyDataAlgorithm
 {
 public:
@@ -380,7 +386,6 @@ private:
   std::vector<Eigen::Matrix3d > Avalues;
   std::vector<Eigen::Vector3d > Pvalues;
   std::vector<Eigen::Vector3d > Xvalues;
-  std::vector<double> RadiusIncertitude;
   std::vector<double> residualCoefficient;
   std::vector<double> TimeValues;
 
@@ -418,11 +423,11 @@ private:
   // Where P is the mean point of the neighborhood and A is the symmetric
   // variance-covariance matrix encoding the shape of the neighborhood
   int ComputeLineDistanceParameters(pcl::KdTreeFLANN<Point>::Ptr kdtreePreviousEdges, Eigen::Matrix3d& R,
-                                             Eigen::Vector3d& dT, Point p, std::string step);
+                                             Eigen::Vector3d& dT, Point p, MatchingMode matchingMode);
   int ComputePlaneDistanceParameters(pcl::KdTreeFLANN<Point>::Ptr kdtreePreviousPlanes, Eigen::Matrix3d& R,
-                                              Eigen::Vector3d& dT, Point p, std::string step);
+                                              Eigen::Vector3d& dT, Point p, MatchingMode matchingMode);
   int ComputeBlobsDistanceParameters(pcl::KdTreeFLANN<Point>::Ptr kdtreePreviousBlobs, Eigen::Matrix3d& R,
-                                              Eigen::Vector3d& dT, Point p, std::string step);
+                                              Eigen::Vector3d& dT, Point p, MatchingMode matchingMode);
 
   // Instead of taking the k-nearest neigbors in the odometry
   // step we will take specific neighbor using the particularities

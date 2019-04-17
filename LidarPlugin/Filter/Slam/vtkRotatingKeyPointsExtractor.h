@@ -150,8 +150,6 @@ protected:
   // scan by scan; point by point
   std::vector<std::vector<double> > Angles;
   std::vector<std::vector<double> > DepthGap;
-  std::vector<std::vector<double> > BlobScore;
-  std::vector<std::vector<double> > LengthResolution;
   std::vector<std::vector<double> > SaillantPoint;
   std::vector<std::vector<double> > IntensityGap;
   std::vector<std::vector<int> > IsPointValid;
