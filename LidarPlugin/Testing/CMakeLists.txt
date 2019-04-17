@@ -81,7 +81,7 @@ foreach(sensor ${sensors})
       ${CMAKE_SOURCE_DIR}/share/${sensor}.xml
     )
 
-    # VelodyneHDLReader test
+    # LidarReader test
     add_test(TestLidarReader_${sensor}_Single
       ${INSTALL_LOCAL_DIR}/TestLidarReader
       ${CMAKE_SOURCE_DIR}/TestData/${sensor}_Single.pcap
@@ -112,7 +112,7 @@ add_test(TestLidarStream_HDL-64_Dual-autocalib
   ""
 )
 
-# VelodyneHDLReader test
+# LidarReader test
 add_test(TestLidarReader_HDL-64_Single-autocalib
   ${INSTALL_LOCAL_DIR}/TestLidarReader
   ${CMAKE_SOURCE_DIR}/TestData/HDL-64_Single-autocalib.pcap
