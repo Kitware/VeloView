@@ -30,7 +30,7 @@ int main(int argc, char* argv[])
 {
   if (argc < 4)
   {
-    std::cerr << "Wrong number of arguments. Usage: TestVelodyneHDLReader <pcapFileName> <referenceFileName> <correctionFileName>" << std::endl;
+    std::cerr << "Wrong number of arguments. Usage: TestLidarReader <pcapFileName> <referenceFileName> <correctionFileName>" << std::endl;
 
     return 1;
   }
