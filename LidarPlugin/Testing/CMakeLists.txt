@@ -67,7 +67,7 @@ configure_file(generateTestData.py.in ${INSTALL_LOCAL_DIR}/generateTestData.py)
 # add test
 foreach(sensor ${sensors})
 
-    # VelodyneHDLSource test
+    # LidarStream test
     add_test(TestLidarStream_${sensor}_Single
       ${INSTALL_LOCAL_DIR}/TestLidarStream
       ${CMAKE_SOURCE_DIR}/TestData/${sensor}_Single.pcap
@@ -98,7 +98,7 @@ foreach(sensor ${sensors})
 endforeach(sensor)
 
 # add special test for HDL-64 in autocalibration mode
-# VelodyneHDLSource test
+# LidarStream test
 add_test(TestLidarStream_HDL-64_Single-autocalib
   ${INSTALL_LOCAL_DIR}/TestLidarStream
   ${CMAKE_SOURCE_DIR}/TestData/HDL-64_Single-autocalib.pcap
