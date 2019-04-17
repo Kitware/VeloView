@@ -1,5 +1,4 @@
 <ServerManagerConfiguration>
-  <!-- Begin VelodyneHDLReader -->
   <ProxyGroup name="sources">
     <SourceProxy name="VelodyneHDLPositionReader" class="vtkVelodyneHDLPositionReader" label="Velodyne HDL Position Reader">
       <Documentation
@@ -26,5 +25,4 @@
 
     </SourceProxy>
   </ProxyGroup>
-  <!-- End VelodyneHDLReader -->
 </ServerManagerConfiguration>
