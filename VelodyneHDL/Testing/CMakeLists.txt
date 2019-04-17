@@ -14,9 +14,9 @@ function(custom_add_executable)
   endif(WIN32)
 endfunction(custom_add_executable)
 
-custom_add_executable(TestVelodyneHDLSource TestHelpers.cxx TestVelodyneHDLSource.cxx)
-target_include_directories(TestVelodyneHDLSource PRIVATE ${plugin_include_dirs})
-target_link_libraries(TestVelodyneHDLSource LINK_PUBLIC VelodyneHDLPlugin)
+custom_add_executable(TestLidarStream TestHelpers.cxx TestLidarStream.cxx)
+target_include_directories(TestLidarStream PRIVATE ${plugin_include_dirs})
+target_link_libraries(TestLidarStream LINK_PUBLIC VelodyneHDLPlugin)
 
 custom_add_executable(TestVelodyneHDLReader TestVelodyneHDLReader.cxx TestHelpers.cxx)
 target_include_directories(TestVelodyneHDLReader PRIVATE ${plugin_include_dirs})
@@ -68,14 +68,14 @@ configure_file(generateTestData.py.in ${INSTALL_LOCAL_DIR}/generateTestData.py)
 foreach(sensor ${sensors})
 
     # VelodyneHDLSource test
-    add_test(TestVelodyneHDLSource_${sensor}_Single
-      ${INSTALL_LOCAL_DIR}/TestVelodyneHDLSource
+    add_test(TestLidarStream_${sensor}_Single
+      ${INSTALL_LOCAL_DIR}/TestLidarStream
       ${CMAKE_SOURCE_DIR}/TestData/${sensor}_Single.pcap
       ${CMAKE_SOURCE_DIR}/TestData/${sensor}_Single/files.txt
       ${CMAKE_SOURCE_DIR}/share/${sensor}.xml
     )
-    add_test(TestVelodyneHDLSource_${sensor}_Dual
-      ${CMAKE_BINARY_DIR}/bin/TestVelodyneHDLSource
+    add_test(TestLidarStream_${sensor}_Dual
+      ${CMAKE_BINARY_DIR}/bin/TestLidarStream
       ${CMAKE_SOURCE_DIR}/TestData/${sensor}_Dual.pcap
       ${CMAKE_SOURCE_DIR}/TestData/${sensor}_Dual/files.txt
       ${CMAKE_SOURCE_DIR}/share/${sensor}.xml
@@ -99,14 +99,14 @@ endforeach(sensor)
 
 # add special test for HDL-64 in autocalibration mode
 # VelodyneHDLSource test
-add_test(TestVelodyneHDLSource_HDL-64_Single-autocalib
-  ${INSTALL_LOCAL_DIR}/TestVelodyneHDLSource
+add_test(TestLidarStream_HDL-64_Single-autocalib
+  ${INSTALL_LOCAL_DIR}/TestLidarStream
   ${CMAKE_SOURCE_DIR}/TestData/HDL-64_Single-autocalib.pcap
   ${CMAKE_SOURCE_DIR}/TestData/HDL-64_Single-autocalib/files.txt
   ""
 )
-add_test(TestVelodyneHDLSource_HDL-64_Dual-autocalib
-  ${INSTALL_LOCAL_DIR}/TestVelodyneHDLSource
+add_test(TestLidarStream_HDL-64_Dual-autocalib
+  ${INSTALL_LOCAL_DIR}/TestLidarStream
   ${CMAKE_SOURCE_DIR}/TestData/HDL-64_Dual-autocalib.pcap
   ${CMAKE_SOURCE_DIR}/TestData/HDL-64_Dual-autocalib/files.txt
   ""

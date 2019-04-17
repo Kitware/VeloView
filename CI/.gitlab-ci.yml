@@ -19,7 +19,7 @@ variables:
   cmake_option_CMAKE_OSX_DEPLOYMENT_TARGET: "10.12"
   cmake_option_CMAKE_OSX_SYSROOT: "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.12.sdk"
 
-  test_blacklist: "TestVelodyneHDLSource"
+  test_blacklist: "TestLidarStream"
   # it is also possible to use: -DCMAKE_OSX_SDK:STRING=macosx10.12
 
   slash_separator: "/"
