@@ -16,29 +16,29 @@ endfunction(custom_add_executable)
 
 custom_add_executable(TestLidarStream TestHelpers.cxx TestLidarStream.cxx)
 target_include_directories(TestLidarStream PRIVATE ${plugin_include_dirs})
-target_link_libraries(TestLidarStream LINK_PUBLIC VelodyneHDLPlugin)
+target_link_libraries(TestLidarStream LINK_PUBLIC LidarPlugin)
 
 custom_add_executable(TestLidarReader TestLidarReader.cxx TestHelpers.cxx)
 target_include_directories(TestLidarReader PRIVATE ${plugin_include_dirs})
-target_link_libraries(TestLidarReader LINK_PUBLIC VelodyneHDLPlugin)
+target_link_libraries(TestLidarReader LINK_PUBLIC LidarPlugin)
 
 custom_add_executable(TestVelodyneHDLPositionReader TestVelodyneHDLPositionReader.cxx)
-target_link_libraries(TestVelodyneHDLPositionReader VelodyneHDLPlugin)
+target_link_libraries(TestVelodyneHDLPositionReader LidarPlugin)
 
 custom_add_executable(TestNMEAParser TestNMEAParser.cxx TestHelpers.cxx)
-target_link_libraries(TestNMEAParser VelodyneHDLPlugin)
+target_link_libraries(TestNMEAParser LidarPlugin)
 
 custom_add_executable(TestTrailingFrame TestTrailingFrame.cxx)
-target_link_libraries(TestTrailingFrame VelodyneHDLPlugin)
+target_link_libraries(TestTrailingFrame LidarPlugin)
 
 custom_add_executable(TestRansacPlaneModel TestRansacPlaneModel.cxx)
-target_link_libraries(TestRansacPlaneModel VelodyneHDLPlugin)
+target_link_libraries(TestRansacPlaneModel LidarPlugin)
 
 custom_add_executable(TestVelodynePPSIdentification TestVelodynePPSIdentification.cxx)
-target_link_libraries(TestVelodynePPSIdentification VelodyneHDLPlugin)
+target_link_libraries(TestVelodynePPSIdentification LidarPlugin)
 
 custom_add_executable(TestVtkEigenTools TestVtkEigenTools.cxx TestHelpers.cxx)
-target_link_libraries(TestVtkEigenTools VelodyneHDLPlugin)
+target_link_libraries(TestVtkEigenTools LidarPlugin)
 
 if (ENABLE_Ceres)
   add_executable(TestCameraCalibration TestCameraCalibration.cxx)
@@ -47,14 +47,14 @@ endif (ENABLE_Ceres)
 
 if (ENABLE_PCL AND ENABLE_Ceres)
   add_executable(TestGeometricCalibration-MM TestGeometricCalibration-MM.cxx)
-  target_link_libraries(TestGeometricCalibration-MM VelodyneHDLPlugin)
+  target_link_libraries(TestGeometricCalibration-MM LidarPlugin)
 
   add_executable(TestGeometricCalibration-LaDoua TestGeometricCalibration-LaDoua.cxx)
-  target_link_libraries(TestGeometricCalibration-LaDoua VelodyneHDLPlugin)
+  target_link_libraries(TestGeometricCalibration-LaDoua LidarPlugin)
 endif(ENABLE_PCL AND ENABLE_Ceres)
 
 custom_add_executable(TestTemporalTransformsReaderWriter TestTemporalTransformsReaderWriter.cxx TestHelpers.cxx)
-target_link_libraries(TestTemporalTransformsReaderWriter VelodyneHDLPlugin)
+target_link_libraries(TestTemporalTransformsReaderWriter LidarPlugin)
 
 set(sensors "HDL-64"
             "VLP-16"
@@ -170,21 +170,21 @@ add_test(TestVelodynePPSIdentification
 )
 
 custom_add_executable(TestScaleCalibration-MM TestScaleCalibration-MM.cxx)
-target_link_libraries(TestScaleCalibration-MM VelodyneHDLPlugin)
+target_link_libraries(TestScaleCalibration-MM LidarPlugin)
 add_test(TestScaleCalibration-MM
   ${INSTALL_LOCAL_DIR}/TestScaleCalibration-MM
   ${CMAKE_SOURCE_DIR}/TestData/trajectories
 )
 
 custom_add_executable(TestTimeCalibration-LaDoua TestTimeCalibration-LaDoua.cxx)
-target_link_libraries(TestTimeCalibration-LaDoua VelodyneHDLPlugin)
+target_link_libraries(TestTimeCalibration-LaDoua LidarPlugin)
 add_test(TestTimeCalibration-LaDoua
   ${INSTALL_LOCAL_DIR}/TestTimeCalibration-LaDoua
   ${CMAKE_SOURCE_DIR}/TestData/trajectories/la_doua_dataset
 )
 
 custom_add_executable(TestTimeCalibration-MM TestTimeCalibration-MM.cxx)
-target_link_libraries(TestTimeCalibration-MM VelodyneHDLPlugin)
+target_link_libraries(TestTimeCalibration-MM LidarPlugin)
 
 add_test(TestTimeCalibration-MM
   ${INSTALL_LOCAL_DIR}/TestTimeCalibration-MM
@@ -192,14 +192,14 @@ add_test(TestTimeCalibration-MM
 )
 
 custom_add_executable(TestCarGeometricCalibration-LaDoua TestCarGeometricCalibration-LaDoua.cxx)
-target_link_libraries(TestCarGeometricCalibration-LaDoua VelodyneHDLPlugin)
+target_link_libraries(TestCarGeometricCalibration-LaDoua LidarPlugin)
 add_test(TestCarGeometricCalibration-LaDoua
   ${INSTALL_LOCAL_DIR}/TestCarGeometricCalibration-LaDoua
   ${CMAKE_SOURCE_DIR}/TestData/trajectories/la_doua_dataset
 )
 
 custom_add_executable(TestCarGeometricCalibration-MM TestCarGeometricCalibration-MM.cxx)
-target_link_libraries(TestCarGeometricCalibration-MM VelodyneHDLPlugin)
+target_link_libraries(TestCarGeometricCalibration-MM LidarPlugin)
 add_test(TestCarGeometricCalibration-MM
   ${INSTALL_LOCAL_DIR}/TestCarGeometricCalibration-MM
   ${CMAKE_SOURCE_DIR}/TestData/trajectories

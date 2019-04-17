@@ -58,7 +58,7 @@ Eigen::Matrix3d AvgRotation(const std::vector<Eigen::Matrix3d>& rotations);
    * with (X, Y, Z) being an orthonormal basis of R^3
    * @param rotation input rotation to decompose
    */
-Eigen::Vector3d VelodyneHDLPlugin_EXPORT MatrixToRollPitchYaw(const Eigen::Matrix3d& rotation);
+Eigen::Vector3d LidarPlugin_EXPORT MatrixToRollPitchYaw(const Eigen::Matrix3d& rotation);
 
 /**
    * @brief RollPitchYawToMatrix Computes the rotation matrix from Euler
@@ -73,8 +73,8 @@ Eigen::Vector3d VelodyneHDLPlugin_EXPORT MatrixToRollPitchYaw(const Eigen::Matri
    * @param pitch is the angle around Y-axis (in radian)
    * @param yaw is the angle around Z-axis (in radian)
    */
-Eigen::Matrix3d VelodyneHDLPlugin_EXPORT RollPitchYawToMatrix(double roll, double pitch, double yaw);
-Eigen::Matrix3d VelodyneHDLPlugin_EXPORT RollPitchYawToMatrix(const Eigen::Vector3d& angles);
+Eigen::Matrix3d LidarPlugin_EXPORT RollPitchYawToMatrix(double roll, double pitch, double yaw);
+Eigen::Matrix3d LidarPlugin_EXPORT RollPitchYawToMatrix(const Eigen::Vector3d& angles);
 
 /**
   * @brief RollPitchYawInDegreeToMatrix Computes the rotation matrix from Euler
@@ -89,20 +89,20 @@ Eigen::Matrix3d VelodyneHDLPlugin_EXPORT RollPitchYawToMatrix(const Eigen::Vecto
   * @param pitch is the angle around Y-axis (in dedgree)
   * @param yaw is the angle around Z-axis (in dedgree)
   */
-Eigen::Matrix3d VelodyneHDLPlugin_EXPORT RollPitchYawInDegreeToMatrix(double roll, double pitch, double yaw);
+Eigen::Matrix3d LidarPlugin_EXPORT RollPitchYawInDegreeToMatrix(double roll, double pitch, double yaw);
 
 /**
   * @brief SignedAngle Computes the signed angle between two vectors
   * @param v1 first vector
   * @param v2 second vector
   */
-double VelodyneHDLPlugin_EXPORT SignedAngle(const Eigen::Vector3d& v1, const Eigen::Vector3d& v2);
+double LidarPlugin_EXPORT SignedAngle(const Eigen::Vector3d& v1, const Eigen::Vector3d& v2);
 
 /**
   * @brief IsMatrixFinite Check if all the coefficients of a matrix are finite
   * @param M matrix to checkr
   */
-bool VelodyneHDLPlugin_EXPORT IsMatrixFinite(const Eigen::Matrix3d& M);
+bool LidarPlugin_EXPORT IsMatrixFinite(const Eigen::Matrix3d& M);
 
 /**
   * @brief GetSphericalCoordinates compute the spherical coordinates
@@ -113,10 +113,10 @@ bool VelodyneHDLPlugin_EXPORT IsMatrixFinite(const Eigen::Matrix3d& M);
   *        (basis of the direction vector space)
   * @param Origin origin of the affine space reference frame
   */
-Eigen::Vector3d VelodyneHDLPlugin_EXPORT GetSphericalCoordinates(const Eigen::Vector3d& X,
+Eigen::Vector3d LidarPlugin_EXPORT GetSphericalCoordinates(const Eigen::Vector3d& X,
                                                                  const Eigen::Matrix3d& Basis,
                                                                  const Eigen::Vector3d& Origin);
-Eigen::Vector3d VelodyneHDLPlugin_EXPORT GetSphericalCoordinates(const Eigen::Vector3d& X);
+Eigen::Vector3d LidarPlugin_EXPORT GetSphericalCoordinates(const Eigen::Vector3d& X);
 
 /**
   * @brief ComputeHomography compute the best homography (minimizing

@@ -33,7 +33,7 @@ import planefit
 import bisect
 
 from PythonQt.paraview import vvCalibrationDialog, vvCropReturnsDialog, vvSelectFramesDialog
-from VelodyneHDLPluginPython import vtkVelodynePacketInterpreter
+from LidarPluginPython import vtkVelodynePacketInterpreter
 
 _repCache = {}
 
@@ -844,7 +844,7 @@ def getTimeStamp():
 def getSaveFileName(title, extension, defaultFileName=None):
 
     settings = getPVSettings()
-    defaultDir = settings.value('VelodyneHDLPlugin/OpenData/DefaultDir', QtCore.QDir.homePath())
+    defaultDir = settings.value('LidarPlugin/OpenData/DefaultDir', QtCore.QDir.homePath())
     defaultFileName = defaultDir if not defaultFileName else os.path.join(defaultDir, defaultFileName)
 
     nativeDialog = 0 if app.actions['actionNative_File_Dialogs'].isChecked() else QtGui.QFileDialog.DontUseNativeDialog
@@ -855,18 +855,18 @@ def getSaveFileName(title, extension, defaultFileName=None):
                         defaultFileName, filters, selectedFilter, nativeDialog)
 
     if fileName:
-        settings.setValue('VelodyneHDLPlugin/OpenData/DefaultDir', QtCore.QFileInfo(fileName).absoluteDir().absolutePath())
+        settings.setValue('LidarPlugin/OpenData/DefaultDir', QtCore.QFileInfo(fileName).absoluteDir().absolutePath())
         return fileName
 
 
 def restoreNativeFileDialogsAction():
     settings = getPVSettings()
-    app.actions['actionNative_File_Dialogs'].setChecked(int(settings.value('VelodyneHDLPlugin/NativeFileDialogs', 1)))
+    app.actions['actionNative_File_Dialogs'].setChecked(int(settings.value('LidarPlugin/NativeFileDialogs', 1)))
 
 
 def onNativeFileDialogsAction():
     settings = getPVSettings()
-    defaultDir = settings.setValue('VelodyneHDLPlugin/NativeFileDialogs', int(app.actions['actionNative_File_Dialogs'].isChecked()))
+    defaultDir = settings.setValue('LidarPlugin/NativeFileDialogs', int(app.actions['actionNative_File_Dialogs'].isChecked()))
 
 
 def getFrameSelectionFromUser(frameStrideVisibility=False, framePackVisibility=False, frameTransformVisibility=False):
@@ -1634,8 +1634,8 @@ def addRecentFile(filename):
 
     # workaround to get system-locale to unicode conversion of filename
     recentFiles.insert(0, filename)
-    getPVSettings().setValue('VelodyneHDLPlugin/RecentFiles', recentFiles)
-    unicodeFilename = getPVSettings().value('VelodyneHDLPlugin/RecentFiles')[0]
+    getPVSettings().setValue('LidarPlugin/RecentFiles', recentFiles)
+    unicodeFilename = getPVSettings().value('LidarPlugin/RecentFiles')[0]
     recentFiles = recentFiles[1:]
 
     try:
@@ -1646,7 +1646,7 @@ def addRecentFile(filename):
     recentFiles = recentFiles[:maxRecentFiles]
     recentFiles.insert(0, unicodeFilename)
 
-    getPVSettings().setValue('VelodyneHDLPlugin/RecentFiles', recentFiles)
+    getPVSettings().setValue('LidarPlugin/RecentFiles', recentFiles)
 
     updateRecentFiles()
 
@@ -1663,7 +1663,7 @@ def openRecentFile(filename):
 
 
 def getRecentFiles():
-    return list(getPVSettings().value('VelodyneHDLPlugin/RecentFiles', []) or [])
+    return list(getPVSettings().value('LidarPlugin/RecentFiles', []) or [])
 
 
 def updateRecentFiles():
@@ -1689,7 +1689,7 @@ def updateRecentFiles():
 
 def onClearMenu():
     settings = getPVSettings()
-    settings.setValue('VelodyneHDLPlugin/RecentFiles', [])
+    settings.setValue('LidarPlugin/RecentFiles', [])
     updateRecentFiles()
 
 def toggleProjectionType():
@@ -1852,8 +1852,8 @@ def onToogleAdvancedGUI(updateSettings = True):
   # update the UserSettings
   if updateSettings:
     # booleans must be store as int
-    newValue = int(not int(getPVSettings().value("VelodyneHDLPlugin/AdvanceFeature/Enable", 0)))
-    getPVSettings().setValue("VelodyneHDLPlugin/AdvanceFeature/Enable", newValue)
+    newValue = int(not int(getPVSettings().value("LidarPlugin/AdvanceFeature/Enable", 0)))
+    getPVSettings().setValue("LidarPlugin/AdvanceFeature/Enable", newValue)
 
 def switchVisibility(Proxy):
     """ Invert the Proxy visibility int the current view """
@@ -1924,12 +1924,12 @@ def setupActions():
 
     # Restore action states from settings
     settings = getPVSettings()
-    app.actions['actionIgnoreZeroDistances'].setChecked(int(settings.value('VelodyneHDLPlugin/IgnoreZeroDistances', 1)))
-    app.actions['actionIntraFiringAdjust'].setChecked(int(settings.value('VelodyneHDLPlugin/IntraFiringAdjust', 1)))
-    app.actions['actionIgnoreEmptyFrames'].setChecked(int(settings.value('VelodyneHDLPlugin/IgnoreEmptyFrames', 1)))
+    app.actions['actionIgnoreZeroDistances'].setChecked(int(settings.value('LidarPlugin/IgnoreZeroDistances', 1)))
+    app.actions['actionIntraFiringAdjust'].setChecked(int(settings.value('LidarPlugin/IntraFiringAdjust', 1)))
+    app.actions['actionIgnoreEmptyFrames'].setChecked(int(settings.value('LidarPlugin/IgnoreEmptyFrames', 1)))
 
 
-    advanceMode = int(settings.value("VelodyneHDLPlugin/AdvanceFeature/Enable", 0))
+    advanceMode = int(settings.value("LidarPlugin/AdvanceFeature/Enable", 0))
     if not advanceMode:
       app.actions['actionAdvanceFeature'].checked = False
       onToogleAdvancedGUI(updateSettings=False)
@@ -2038,7 +2038,7 @@ def onIgnoreZeroDistances():
     IgnoreZeroDistances = int(app.actions['actionIgnoreZeroDistances'].isChecked())
 
     # Save the setting for future session
-    getPVSettings().setValue('VelodyneHDLPlugin/IgnoreZeroDistances', IgnoreZeroDistances)
+    getPVSettings().setValue('LidarPlugin/IgnoreZeroDistances', IgnoreZeroDistances)
 
     # Apply it to the current source if any
     lidarInterpreter = getLidarPacketInterpreter()
@@ -2051,7 +2051,7 @@ def onIntraFiringAdjust():
     intraFiringAdjust = int(app.actions['actionIntraFiringAdjust'].isChecked())
 
     # Save the setting for future session
-    getPVSettings().setValue('VelodyneHDLPlugin/IntraFiringAdjust', intraFiringAdjust)
+    getPVSettings().setValue('LidarPlugin/IntraFiringAdjust', intraFiringAdjust)
 
     # Apply it to the current source if any
     lidarInterpreter = getLidarPacketInterpreter()
@@ -2065,7 +2065,7 @@ def onIgnoreEmptyFrames():
     ignoreEmptyFrames = int(app.actions['actionIgnoreEmptyFrames'].isChecked())
 
     # Save the setting for future session
-    getPVSettings().setValue('VelodyneHDLPlugin/IgnoreEmptyFrames', ignoreEmptyFrames)
+    getPVSettings().setValue('LidarPlugin/IgnoreEmptyFrames', ignoreEmptyFrames)
 
     # Apply it to the current source if any
     lidarInterpreter = getLidarPacketInterpreter()

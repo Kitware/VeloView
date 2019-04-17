@@ -14,7 +14,7 @@ struct NMEALocation;
  * If the sentence can be parsed, the result is stored inside a NMEALocation
  * structure.
  */
-class VelodyneHDLPlugin_EXPORT NMEAParser
+class LidarPlugin_EXPORT NMEAParser
 {
 public:
   std::vector<std::string> SplitWords(const std::string& sentence);

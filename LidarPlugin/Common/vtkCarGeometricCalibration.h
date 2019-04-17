@@ -108,7 +108,7 @@ std::vector<std::vector<double>> ComputeTurns(
 * \param ransacValidationRatio between 0 and 1, should be taken as big as
 * possible but I had to lower it down to 0.15 for some real life datasets.
 **/
-void VelodyneHDLPlugin_EXPORT ComputeCarCalibrationRotationScale(
+void LidarPlugin_EXPORT ComputeCarCalibrationRotationScale(
         const vtkSmartPointer<vtkTemporalTransforms> reference,
         const vtkSmartPointer<vtkTemporalTransforms> aligned,
         double curveTreshold,

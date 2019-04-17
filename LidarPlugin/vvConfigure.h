@@ -16,21 +16,21 @@
 
 #if defined(_WIN32)
 
-#if defined(VelodyneHDLPlugin_EXPORTS)
-#define VelodyneHDLPlugin_EXPORT __declspec(dllexport)
+#if defined(LidarPlugin_EXPORTS)
+#define LidarPlugin_EXPORT __declspec(dllexport)
 #else
-#define VelodyneHDLPlugin_EXPORT __declspec(dllimport)
+#define LidarPlugin_EXPORT __declspec(dllimport)
 #endif
 
-#if defined(VelodyneHDLPythonQT_EXPORTS)
-#define VelodyneHDLPythonQT_EXPORT __declspec(dllexport)
+#if defined(LidarPythonQT_EXPORTS)
+#define LidarPythonQT_EXPORT __declspec(dllexport)
 #else
-#define VelodyneHDLPythonQT_EXPORT __declspec(dllimport)
+#define LidarPythonQT_EXPORT __declspec(dllimport)
 #endif
 
 #else
-#define VelodyneHDLPlugin_EXPORT
-#define VelodyneHDLPythonQT_EXPORT
+#define LidarPlugin_EXPORT
+#define LidarPythonQT_EXPORT
 #endif
 
 #endif // __vvConfigure_h

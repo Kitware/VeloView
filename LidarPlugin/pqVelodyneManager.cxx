@@ -124,7 +124,7 @@ void pqVelodyneManager::pythonStartup()
 
   pqSettings* const settings = pqApplicationCore::instance()->settings();
   const QVariant& gridVisible =
-    settings->value("VelodyneHDLPlugin/MeasurementGrid/Visibility", true);
+    settings->value("LidarPlugin/MeasurementGrid/Visibility", true);
 
   // Save the current main window state as its original state. This happens in
   // two cases: The first time launching the application or when launching it
@@ -181,7 +181,7 @@ void pqVelodyneManager::runPython(const QString& statements)
 void pqVelodyneManager::onEnableCrashAnalysis(bool crashAnalysisEnabled)
 {
   pqSettings* const Settings = pqApplicationCore::instance()->settings();
-  Settings->setValue("VelodyneHDLPlugin/MainWindow/EnableCrashAnalysis", crashAnalysisEnabled);
+  Settings->setValue("LidarPlugin/MainWindow/EnableCrashAnalysis", crashAnalysisEnabled);
 }
 
 //-----------------------------------------------------------------------------
@@ -382,7 +382,7 @@ void pqVelodyneManager::openData(const QString& filename, const QString& positio
 void pqVelodyneManager::onMeasurementGrid(bool gridVisible)
 {
   pqSettings* settings = pqApplicationCore::instance()->settings();
-  settings->setValue("VelodyneHDLPlugin/MeasurementGrid/Visibility", gridVisible);
+  settings->setValue("LidarPlugin/MeasurementGrid/Visibility", gridVisible);
 
   if (gridVisible)
   {

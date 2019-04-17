@@ -158,8 +158,8 @@ endforeach()
 # by superbuild_apple_create_app because there is no path leading to
 # them in binary VeloView or in any of its .dylib dependencies
 set(my_modules)
-list(APPEND my_modules "VelodyneHDLPluginPython.so")
-list(APPEND my_modules "libVelodyneHDLPluginPythonD.dylib")
+list(APPEND my_modules "LidarPluginPython.so")
+list(APPEND my_modules "libLidarPluginPythonD.dylib")
 foreach (module ${my_modules})
   superbuild_apple_install_module(
     "\${CMAKE_INSTALL_PREFIX}"

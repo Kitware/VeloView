@@ -88,20 +88,20 @@ void vvCalibrationDialog::pqInternal::saveFileList()
     files << this->ListWidget->item(i)->data(Qt::UserRole).toString();
   }
 
-  this->Settings->setValue("VelodyneHDLPlugin/CalibrationFileDialog/Files", files);
+  this->Settings->setValue("LidarPlugin/CalibrationFileDialog/Files", files);
 }
 
 //-----------------------------------------------------------------------------
 void vvCalibrationDialog::pqInternal::saveSelectedRow()
 {
   this->Settings->setValue(
-    "VelodyneHDLPlugin/CalibrationFileDialog/CurrentRow", this->ListWidget->currentRow());
+    "LidarPlugin/CalibrationFileDialog/CurrentRow", this->ListWidget->currentRow());
 }
 
 //-----------------------------------------------------------------------------
 void vvCalibrationDialog::pqInternal::restoreSelectedRow()
 {
-  int row = this->Settings->value("VelodyneHDLPlugin/CalibrationFileDialog/CurrentRow").toInt();
+  int row = this->Settings->value("LidarPlugin/CalibrationFileDialog/CurrentRow").toInt();
   this->ListWidget->setCurrentRow(row);
 }
 
@@ -109,85 +109,85 @@ void vvCalibrationDialog::pqInternal::restoreSelectedRow()
 void vvCalibrationDialog::pqInternal::saveSensorTransform()
 {
   this->Settings->setValue(
-    "VelodyneHDLPlugin/CalibrationFileDialog/LidarOriginX", this->LidarXSpinBox->value());
+    "LidarPlugin/CalibrationFileDialog/LidarOriginX", this->LidarXSpinBox->value());
   this->Settings->setValue(
-    "VelodyneHDLPlugin/CalibrationFileDialog/lidarOriginY", this->LidarYSpinBox->value());
+    "LidarPlugin/CalibrationFileDialog/lidarOriginY", this->LidarYSpinBox->value());
   this->Settings->setValue(
-    "VelodyneHDLPlugin/CalibrationFileDialog/LidarOriginZ", this->LidarZSpinBox->value());
+    "LidarPlugin/CalibrationFileDialog/LidarOriginZ", this->LidarZSpinBox->value());
   this->Settings->setValue(
-    "VelodyneHDLPlugin/CalibrationFileDialog/LidarYaw", this->LidarYawSpinBox->value());
+    "LidarPlugin/CalibrationFileDialog/LidarYaw", this->LidarYawSpinBox->value());
   this->Settings->setValue(
-    "VelodyneHDLPlugin/CalibrationFileDialog/LidarPitch", this->LidarPitchSpinBox->value());
+    "LidarPlugin/CalibrationFileDialog/LidarPitch", this->LidarPitchSpinBox->value());
   this->Settings->setValue(
-    "VelodyneHDLPlugin/CalibrationFileDialog/LidarRoll", this->LidarRollSpinBox->value());
+    "LidarPlugin/CalibrationFileDialog/LidarRoll", this->LidarRollSpinBox->value());
   this->Settings->setValue(
-    "VelodyneHDLPlugin/CalibrationFileDialog/LidarTimeOffset", this->lidarTimeOffsetSpinBox->value());
+    "LidarPlugin/CalibrationFileDialog/LidarTimeOffset", this->lidarTimeOffsetSpinBox->value());
 }
 
 //-----------------------------------------------------------------------------
 void vvCalibrationDialog::pqInternal::saveGpsTransform()
 {
   this->Settings->setValue(
-    "VelodyneHDLPlugin/CalibrationFileDialog/GpsOriginX", this->GpsXSpinBox->value());
+    "LidarPlugin/CalibrationFileDialog/GpsOriginX", this->GpsXSpinBox->value());
   this->Settings->setValue(
-    "VelodyneHDLPlugin/CalibrationFileDialog/GpsOriginY", this->GpsYSpinBox->value());
+    "LidarPlugin/CalibrationFileDialog/GpsOriginY", this->GpsYSpinBox->value());
   this->Settings->setValue(
-    "VelodyneHDLPlugin/CalibrationFileDialog/GpsOriginZ", this->GpsZSpinBox->value());
+    "LidarPlugin/CalibrationFileDialog/GpsOriginZ", this->GpsZSpinBox->value());
   this->Settings->setValue(
-    "VelodyneHDLPlugin/CalibrationFileDialog/GpsYaw", this->GpsYawSpinBox->value());
+    "LidarPlugin/CalibrationFileDialog/GpsYaw", this->GpsYawSpinBox->value());
   this->Settings->setValue(
-    "VelodyneHDLPlugin/CalibrationFileDialog/GpsRoll", this->GpsRollSpinBox->value());
+    "LidarPlugin/CalibrationFileDialog/GpsRoll", this->GpsRollSpinBox->value());
   this->Settings->setValue(
-    "VelodyneHDLPlugin/CalibrationFileDialog/GpsPitch", this->GpsPitchSpinBox->value());
+    "LidarPlugin/CalibrationFileDialog/GpsPitch", this->GpsPitchSpinBox->value());
   this->Settings->setValue(
-    "VelodyneHDLPlugin/CalibrationFileDialog/GpsX", this->GpsXSpinBox->value());
+    "LidarPlugin/CalibrationFileDialog/GpsX", this->GpsXSpinBox->value());
   this->Settings->setValue(
-    "VelodyneHDLPlugin/CalibrationFileDialog/GpsY", this->GpsYSpinBox->value());
+    "LidarPlugin/CalibrationFileDialog/GpsY", this->GpsYSpinBox->value());
   this->Settings->setValue(
-    "VelodyneHDLPlugin/CalibrationFileDialog/GpsZ", this->GpsZSpinBox->value());
+    "LidarPlugin/CalibrationFileDialog/GpsZ", this->GpsZSpinBox->value());
   this->Settings->setValue(
-    "VelodyneHDLPlugin/CalibrationFileDialog/GpsTimeOffset", this->gpsTimeOffsetSpinBox->value());
+    "LidarPlugin/CalibrationFileDialog/GpsTimeOffset", this->gpsTimeOffsetSpinBox->value());
 }
 
 //-----------------------------------------------------------------------------
 void vvCalibrationDialog::pqInternal::saveLidarPort()
 {
   this->Settings->setValue(
-    "VelodyneHDLPlugin/CalibrationFileDialog/LidarPort", this->LidarPortSpinBox->value());
+    "LidarPlugin/CalibrationFileDialog/LidarPort", this->LidarPortSpinBox->value());
 }
 
 //-----------------------------------------------------------------------------
 void vvCalibrationDialog::pqInternal::saveGpsPort()
 {
   this->Settings->setValue(
-    "VelodyneHDLPlugin/CalibrationFileDialog/GpsPort", this->GPSPortSpinBox->value());
+    "LidarPlugin/CalibrationFileDialog/GpsPort", this->GPSPortSpinBox->value());
 }
 
 //-----------------------------------------------------------------------------
 void vvCalibrationDialog::pqInternal::saveGPSForwardingPort()
 {
-  this->Settings->setValue("VelodyneHDLPlugin/CalibrationFileDialog/GpsForwardingPort",
+  this->Settings->setValue("LidarPlugin/CalibrationFileDialog/GpsForwardingPort",
     this->GPSForwardingPortSpinBox->value());
 }
 
 //-----------------------------------------------------------------------------
 void vvCalibrationDialog::pqInternal::saveLidarForwardingPort()
 {
-  this->Settings->setValue("VelodyneHDLPlugin/CalibrationFileDialog/LidarForwardingPort",
+  this->Settings->setValue("LidarPlugin/CalibrationFileDialog/LidarForwardingPort",
     this->LidarForwardingPortSpinBox->value());
 }
 
 //-----------------------------------------------------------------------------
 void vvCalibrationDialog::pqInternal::saveEnableForwarding()
 {
-  this->Settings->setValue("VelodyneHDLPlugin/CalibrationFileDialog/EnableForwarding",
+  this->Settings->setValue("LidarPlugin/CalibrationFileDialog/EnableForwarding",
     this->EnableForwardingCheckBox->isChecked());
 }
 
 //-----------------------------------------------------------------------------
 void vvCalibrationDialog::pqInternal::saveAdvancedConfiguration()
 {
-  this->Settings->setValue("VelodyneHDLPlugin/CalibrationFileDialog/AdvancedConfiguration",
+  this->Settings->setValue("LidarPlugin/CalibrationFileDialog/AdvancedConfiguration",
     this->AdvancedConfiguration->isChecked());
 }
 
@@ -195,7 +195,7 @@ void vvCalibrationDialog::pqInternal::saveAdvancedConfiguration()
 void vvCalibrationDialog::pqInternal::saveForwardIpAddress()
 {
   this->Settings->setValue(
-    "VelodyneHDLPlugin/CalibrationFileDialog/ForwardIpAddress", this->ipAddresslineEdit->text());
+    "LidarPlugin/CalibrationFileDialog/ForwardIpAddress", this->ipAddresslineEdit->text());
 }
 
 //-----------------------------------------------------------------------------
@@ -205,7 +205,7 @@ void vvCalibrationDialog::pqInternal::saveIsCrashAnalysing()
   if (this->CrashAnalysisCheckBox->isEnabled())
   {
     this->Settings->setValue(
-      "VelodyneHDLPlugin/CalibrationFileDialog/IsCrashAnalysing", this->CrashAnalysisCheckBox->isChecked());
+      "LidarPlugin/CalibrationFileDialog/IsCrashAnalysing", this->CrashAnalysisCheckBox->isChecked());
   }
 }
 
@@ -216,7 +216,7 @@ void vvCalibrationDialog::pqInternal::restoreCrashAnalysing()
   if (this->CrashAnalysisCheckBox->isEnabled())
   {
     this->CrashAnalysisCheckBox->setChecked(this->Settings
-                                   ->value("VelodyneHDLPlugin/CalibrationFileDialog/IsCrashAnalysing",
+                                   ->value("LidarPlugin/CalibrationFileDialog/IsCrashAnalysing",
                                      this->CrashAnalysisCheckBox->isChecked())
                                    .toBool());
   }
@@ -226,33 +226,33 @@ void vvCalibrationDialog::pqInternal::restoreCrashAnalysing()
 void vvCalibrationDialog::pqInternal::restoreSensorTransform()
 {
   this->LidarXSpinBox->setValue(this->Settings
-                                   ->value("VelodyneHDLPlugin/CalibrationFileDialog/LidarOriginX",
+                                   ->value("LidarPlugin/CalibrationFileDialog/LidarOriginX",
                                      this->LidarXSpinBox->value())
                                    .toDouble());
   this->LidarYSpinBox->setValue(this->Settings
-                                   ->value("VelodyneHDLPlugin/CalibrationFileDialog/LidarOriginY",
+                                   ->value("LidarPlugin/CalibrationFileDialog/LidarOriginY",
                                      this->LidarYSpinBox->value())
                                    .toDouble());
   this->LidarZSpinBox->setValue(this->Settings
-                                   ->value("VelodyneHDLPlugin/CalibrationFileDialog/LidarOriginZ",
+                                   ->value("LidarPlugin/CalibrationFileDialog/LidarOriginZ",
                                      this->LidarZSpinBox->value())
                                    .toDouble());
   this->LidarYawSpinBox->setValue(
     this->Settings
-      ->value("VelodyneHDLPlugin/CalibrationFileDialog/LidarYaw", this->LidarYawSpinBox->value())
+      ->value("LidarPlugin/CalibrationFileDialog/LidarYaw", this->LidarYawSpinBox->value())
       .toDouble());
   this->LidarPitchSpinBox->setValue(
     this->Settings
-      ->value("VelodyneHDLPlugin/CalibrationFileDialog/LidarPitch", this->LidarPitchSpinBox->value())
+      ->value("LidarPlugin/CalibrationFileDialog/LidarPitch", this->LidarPitchSpinBox->value())
       .toDouble());
   this->LidarRollSpinBox->setValue(
     this->Settings
-      ->value("VelodyneHDLPlugin/CalibrationFileDialog/LidarRoll", this->LidarRollSpinBox->value())
+      ->value("LidarPlugin/CalibrationFileDialog/LidarRoll", this->LidarRollSpinBox->value())
       .toDouble());
 
   this->lidarTimeOffsetSpinBox->setValue(
     this->Settings
-      ->value("VelodyneHDLPlugin/CalibrationFileDialog/LidarTimeOffset", this->lidarTimeOffsetSpinBox->value())
+      ->value("LidarPlugin/CalibrationFileDialog/LidarTimeOffset", this->lidarTimeOffsetSpinBox->value())
       .toDouble());
 }
 
@@ -260,34 +260,34 @@ void vvCalibrationDialog::pqInternal::restoreSensorTransform()
 void vvCalibrationDialog::pqInternal::restoreGpsTransform()
 {
   this->GpsXSpinBox->setValue(this->Settings
-                                   ->value("VelodyneHDLPlugin/CalibrationFileDialog/GpsOriginX",
+                                   ->value("LidarPlugin/CalibrationFileDialog/GpsOriginX",
                                      this->GpsXSpinBox->value())
                                    .toDouble());
   this->GpsYSpinBox->setValue(this->Settings
-                                   ->value("VelodyneHDLPlugin/CalibrationFileDialog/GpsOriginY",
+                                   ->value("LidarPlugin/CalibrationFileDialog/GpsOriginY",
                                      this->GpsYSpinBox->value())
                                    .toDouble());
   this->GpsZSpinBox->setValue(this->Settings
-                                   ->value("VelodyneHDLPlugin/CalibrationFileDialog/GpsOriginZ",
+                                   ->value("LidarPlugin/CalibrationFileDialog/GpsOriginZ",
                                      this->GpsZSpinBox->value())
                                    .toDouble());
 
   this->GpsYawSpinBox->setValue(
     this->Settings
-      ->value("VelodyneHDLPlugin/CalibrationFileDialog/GpsYaw", this->GpsYawSpinBox->value())
+      ->value("LidarPlugin/CalibrationFileDialog/GpsYaw", this->GpsYawSpinBox->value())
       .toDouble());
   this->GpsRollSpinBox->setValue(
     this->Settings
-      ->value("VelodyneHDLPlugin/CalibrationFileDialog/GpsRoll", this->GpsRollSpinBox->value())
+      ->value("LidarPlugin/CalibrationFileDialog/GpsRoll", this->GpsRollSpinBox->value())
       .toDouble());
   this->GpsPitchSpinBox->setValue(
     this->Settings
-      ->value("VelodyneHDLPlugin/CalibrationFileDialog/GpsPitch", this->GpsPitchSpinBox->value())
+      ->value("LidarPlugin/CalibrationFileDialog/GpsPitch", this->GpsPitchSpinBox->value())
       .toDouble());
 
   this->gpsTimeOffsetSpinBox->setValue(
     this->Settings
-      ->value("VelodyneHDLPlugin/CalibrationFileDialog/GpsTimeOffset", this->gpsTimeOffsetSpinBox->value())
+      ->value("LidarPlugin/CalibrationFileDialog/GpsTimeOffset", this->gpsTimeOffsetSpinBox->value())
       .toDouble());
 }
 
@@ -296,7 +296,7 @@ void vvCalibrationDialog::pqInternal::restoreLidarPort()
 {
   this->LidarPortSpinBox->setValue(
     this->Settings
-      ->value("VelodyneHDLPlugin/CalibrationFileDialog/LidarPort", this->LidarPortSpinBox->value())
+      ->value("LidarPlugin/CalibrationFileDialog/LidarPort", this->LidarPortSpinBox->value())
       .toInt());
 }
 
@@ -305,7 +305,7 @@ void vvCalibrationDialog::pqInternal::restoreGpsPort()
 {
   this->GPSPortSpinBox->setValue(
     this->Settings
-      ->value("VelodyneHDLPlugin/CalibrationFileDialog/GpsPort", this->GPSPortSpinBox->value())
+      ->value("LidarPlugin/CalibrationFileDialog/GpsPort", this->GPSPortSpinBox->value())
       .toInt());
 }
 
@@ -314,7 +314,7 @@ void vvCalibrationDialog::pqInternal::restoreGPSForwardingPort()
 {
   this->GPSForwardingPortSpinBox->setValue(
     this->Settings
-      ->value("VelodyneHDLPlugin/CalibrationFileDialog/GpsForwardingPort",
+      ->value("LidarPlugin/CalibrationFileDialog/GpsForwardingPort",
         this->GPSForwardingPortSpinBox->value())
       .toInt());
 }
@@ -324,7 +324,7 @@ void vvCalibrationDialog::pqInternal::restoreLidarForwardingPort()
 {
   this->LidarForwardingPortSpinBox->setValue(
     this->Settings
-      ->value("VelodyneHDLPlugin/CalibrationFileDialog/LidarForwardingPort",
+      ->value("LidarPlugin/CalibrationFileDialog/LidarForwardingPort",
         this->LidarForwardingPortSpinBox->value())
       .toInt());
 }
@@ -333,7 +333,7 @@ void vvCalibrationDialog::pqInternal::restoreLidarForwardingPort()
 void vvCalibrationDialog::pqInternal::restoreEnableForwarding()
 {
   bool tempIsChecked =
-    this->Settings->value("VelodyneHDLPlugin/CalibrationFileDialog/EnableForwarding").toBool();
+    this->Settings->value("LidarPlugin/CalibrationFileDialog/EnableForwarding").toBool();
   this->EnableForwardingCheckBox->setChecked(tempIsChecked);
 }
 
@@ -341,7 +341,7 @@ void vvCalibrationDialog::pqInternal::restoreEnableForwarding()
 void vvCalibrationDialog::pqInternal::restoreAdvancedConfiguration()
 {
   bool tempIsChecked =
-    this->Settings->value("VelodyneHDLPlugin/CalibrationFileDialog/AdvancedConfiguration").toBool();
+    this->Settings->value("LidarPlugin/CalibrationFileDialog/AdvancedConfiguration").toBool();
   this->AdvancedConfiguration->setChecked(tempIsChecked);
 }
 
@@ -349,7 +349,7 @@ void vvCalibrationDialog::pqInternal::restoreAdvancedConfiguration()
 void vvCalibrationDialog::pqInternal::restoreForwardIpAddress()
 {
   this->ipAddresslineEdit->setText(
-    this->Settings->value("VelodyneHDLPlugin/CalibrationFileDialog/ForwardIpAddress").toString());
+    this->Settings->value("LidarPlugin/CalibrationFileDialog/ForwardIpAddress").toString());
 }
 
 //-----------------------------------------------------------------------------
@@ -445,7 +445,7 @@ vvCalibrationDialog::vvCalibrationDialog(QWidget* p)
   this->Internal->restoreAdvancedConfiguration();
 
   const QVariant& geometry =
-    this->Internal->Settings->value("VelodyneHDLPlugin/CalibrationFileDialog/Geometry");
+    this->Internal->Settings->value("LidarPlugin/CalibrationFileDialog/Geometry");
   this->restoreGeometry(geometry.toByteArray());
 }
 
@@ -453,7 +453,7 @@ vvCalibrationDialog::vvCalibrationDialog(QWidget* p)
 vvCalibrationDialog::~vvCalibrationDialog()
 {
   this->Internal->Settings->setValue(
-    "VelodyneHDLPlugin/CalibrationFileDialog/Geometry", this->saveGeometry());
+    "LidarPlugin/CalibrationFileDialog/Geometry", this->saveGeometry());
 }
 
 //-----------------------------------------------------------------------------
@@ -506,7 +506,7 @@ void vvCalibrationDialog::setDefaultConfiguration()
 //-----------------------------------------------------------------------------
 QStringList vvCalibrationDialog::calibrationFiles() const
 {
-  return this->Internal->Settings->value("VelodyneHDLPlugin/CalibrationFileDialog/Files")
+  return this->Internal->Settings->value("LidarPlugin/CalibrationFileDialog/Files")
     .toStringList();
 }
 
@@ -739,7 +739,7 @@ void vvCalibrationDialog::onCurrentRowChanged(int row)
 void vvCalibrationDialog::addFile()
 {
   QString defaultDir =
-    this->Internal->Settings->value("VelodyneHDLPlugin/OpenData/DefaultDir", QDir::homePath())
+    this->Internal->Settings->value("LidarPlugin/OpenData/DefaultDir", QDir::homePath())
       .toString();
 
   QString selectedFiler("*.xml");
@@ -756,7 +756,7 @@ void vvCalibrationDialog::addFile()
   this->Internal->saveFileList();
 
   this->Internal->Settings->setValue(
-    "VelodyneHDLPlugin/OpenData/DefaultDir", QFileInfo(fileName).absoluteDir().absolutePath());
+    "LidarPlugin/OpenData/DefaultDir", QFileInfo(fileName).absoluteDir().absolutePath());
 }
 
 //-----------------------------------------------------------------------------

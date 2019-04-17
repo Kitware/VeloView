@@ -1,4 +1,4 @@
-project(VelodyneHDLPlugin)
+project(LidarPlugin)
 cmake_minimum_required(VERSION 3.1 FATAL_ERROR)
 
 include_directories("ctk")
@@ -347,7 +347,7 @@ set(plugin_include_dirs
 
 # give default target name if not specify otherwise
 if (NOT VV_PLUGIN_LIBRARY)
-  set(VV_PLUGIN_LIBRARY VelodyneHDLPlugin) # veloview plugin
+  set(VV_PLUGIN_LIBRARY LidarPlugin) # veloview plugin
 endif()
 
 # create pluging
@@ -399,7 +399,7 @@ list(APPEND gui_sources
 
 # give default target name if not specify otherwise
 if (NOT VV_NONE_PLUGIN_LIBRARY)
-  set(VV_NONE_PLUGIN_LIBRARY VelodyneHDLPythonQT)
+  set(VV_NONE_PLUGIN_LIBRARY LidarPythonQT)
 endif()
 
 add_library(${VV_NONE_PLUGIN_LIBRARY} ${gui_sources})

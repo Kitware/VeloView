@@ -120,8 +120,8 @@ unset(shared_files)
 # They should be installed automatically because of paraview/vtk's cmake lists
 file(GLOB vtk_dlls
   "${superbuild_install_location}/bin/vtk*.dll"
-  "${superbuild_install_location}/bin/VelodyneHDLPluginPython.pyd"
-  "${superbuild_install_location}/bin/VelodyneHDLPluginPythonD.dll")
+  "${superbuild_install_location}/bin/LidarPluginPython.pyd"
+  "${superbuild_install_location}/bin/LidarPluginPythonD.dll")
 install(FILES ${vtk_dlls}
   DESTINATION "bin"
   COMPONENT superbuild

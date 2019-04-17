@@ -67,12 +67,12 @@ void vvLaserSelectionDialog::pqInternal::saveSettings()
 
     bool checked = item->checkState() == Qt::Checked;
     this->Settings->setValue(
-      QString("VelodyneHDLPlugin/LaserSelectionDialog%1").arg(channel), checked);
+      QString("LidarPlugin/LaserSelectionDialog%1").arg(channel), checked);
   }
   this->Settings->setValue(
-    QString("VelodyneHDLPlugin/LaserSelectionDialogSortingColumnId"), this->sortingColumnId);
+    QString("LidarPlugin/LaserSelectionDialogSortingColumnId"), this->sortingColumnId);
   this->Settings->setValue(
-    QString("VelodyneHDLPlugin/LaserSelectionDialogSortingColumnOrder"), this->sortingColumnOrder);
+    QString("LidarPlugin/LaserSelectionDialogSortingColumnOrder"), this->sortingColumnOrder);
 }
 
 //-----------------------------------------------------------------------------
@@ -90,7 +90,7 @@ void vvLaserSelectionDialog::pqInternal::restoreSettings()
   for (int c = 0; c < NUM_LASER_MAX; ++c)
   {
     bool checked = this->Settings
-                     ->value(QString("VelodyneHDLPlugin/LaserSelectionDialog%1").arg(c),
+                     ->value(QString("LidarPlugin/LaserSelectionDialog%1").arg(c),
                        QVariant::fromValue(true))
                      .toBool();
     int index = channel2index[c];
@@ -100,9 +100,9 @@ void vvLaserSelectionDialog::pqInternal::restoreSettings()
   }
 
   int sortingColumnId =
-    this->Settings->value(QString("VelodyneHDLPlugin/LaserSelectionDialogSortingColumnId")).toInt();
+    this->Settings->value(QString("LidarPlugin/LaserSelectionDialogSortingColumnId")).toInt();
   Qt::SortOrder sortingColumnOrder = Qt::SortOrder(
-    this->Settings->value(QString("VelodyneHDLPlugin/LaserSelectionDialogSortingColumnOrder"))
+    this->Settings->value(QString("LidarPlugin/LaserSelectionDialogSortingColumnOrder"))
       .toInt());
 
   if (sortingColumnId > 0)

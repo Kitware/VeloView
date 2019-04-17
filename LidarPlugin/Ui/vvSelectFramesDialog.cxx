@@ -268,13 +268,13 @@ void vvSelectFramesDialog::showEvent(QShowEvent* e)
 void vvSelectFramesDialog::saveState()
 {
   pqSettings* settings = pqApplicationCore::instance()->settings();
-  settings->setValue("VelodyneHDLPlugin/SelectFramesDialog/Mode", this->frameMode());
-  settings->setValue("VelodyneHDLPlugin/SelectFramesDialog/Start", this->frameStart());
-  settings->setValue("VelodyneHDLPlugin/SelectFramesDialog/Stop", this->frameStop());
-  settings->setValue("VelodyneHDLPlugin/SelectFramesDialog/Stride", this->frameStride());
-  settings->setValue("VelodyneHDLPlugin/SelectFramesDialog/Pack", this->framePack());
-  settings->setValue("VelodyneHDLPlugin/SelectFramesDialog/Transform", this->frameTransform());
-  settings->setValue("VelodyneHDLPlugin/SelectFramesDialog/Geometry", this->saveGeometry());
+  settings->setValue("LidarPlugin/SelectFramesDialog/Mode", this->frameMode());
+  settings->setValue("LidarPlugin/SelectFramesDialog/Start", this->frameStart());
+  settings->setValue("LidarPlugin/SelectFramesDialog/Stop", this->frameStop());
+  settings->setValue("LidarPlugin/SelectFramesDialog/Stride", this->frameStride());
+  settings->setValue("LidarPlugin/SelectFramesDialog/Pack", this->framePack());
+  settings->setValue("LidarPlugin/SelectFramesDialog/Transform", this->frameTransform());
+  settings->setValue("LidarPlugin/SelectFramesDialog/Geometry", this->saveGeometry());
 }
 
 //-----------------------------------------------------------------------------
@@ -282,14 +282,14 @@ void vvSelectFramesDialog::restoreState()
 {
   pqSettings* settings = pqApplicationCore::instance()->settings();
   this->restoreGeometry(
-    settings->value("VelodyneHDLPlugin/SelectFramesDialog/Geometry").toByteArray());
+    settings->value("LidarPlugin/SelectFramesDialog/Geometry").toByteArray());
   this->setFrameMode(
-    settings->value("VelodyneHDLPlugin/SelectFramesDialog/Mode", CURRENT_FRAME).toInt());
-  this->setFrameStart(settings->value("VelodyneHDLPlugin/SelectFramesDialog/Start", 0).toInt());
-  this->setFrameStop(settings->value("VelodyneHDLPlugin/SelectFramesDialog/Stop", 10).toInt());
-  this->setFrameStride(settings->value("VelodyneHDLPlugin/SelectFramesDialog/Stride", 1).toInt());
+    settings->value("LidarPlugin/SelectFramesDialog/Mode", CURRENT_FRAME).toInt());
+  this->setFrameStart(settings->value("LidarPlugin/SelectFramesDialog/Start", 0).toInt());
+  this->setFrameStop(settings->value("LidarPlugin/SelectFramesDialog/Stop", 10).toInt());
+  this->setFrameStride(settings->value("LidarPlugin/SelectFramesDialog/Stride", 1).toInt());
   this->setFramePack(
-    settings->value("VelodyneHDLPlugin/SelectFramesDialog/Pack", SINGLE_FILE).toInt());
+    settings->value("LidarPlugin/SelectFramesDialog/Pack", SINGLE_FILE).toInt());
   this->setFrameTransform(
-    settings->value("VelodyneHDLPlugin/SelectFramesDialog/Transform", SENSOR).toInt());
+    settings->value("LidarPlugin/SelectFramesDialog/Transform", SENSOR).toInt());
 }

@@ -22,7 +22,7 @@ class QTableWidgetItem;
 template<typename T>
 class QVector;
 
-class VelodyneHDLPlugin_EXPORT vvLaserSelectionDialog : public QDialog
+class LidarPlugin_EXPORT vvLaserSelectionDialog : public QDialog
 {
   Q_OBJECT
 public:

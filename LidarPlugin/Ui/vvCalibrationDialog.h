@@ -19,7 +19,7 @@
 #include <QDialog>
 #include <QMatrix4x4>
 
-class VelodyneHDLPlugin_EXPORT vvCalibrationDialog : public QDialog
+class LidarPlugin_EXPORT vvCalibrationDialog : public QDialog
 {
   Q_OBJECT
 

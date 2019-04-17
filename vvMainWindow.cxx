@@ -82,7 +82,7 @@
 #include "vvPlayerControlsToolbar.h"
 
 // Declare the plugin to load.
-PV_PLUGIN_IMPORT_INIT(VelodyneHDLPlugin);
+PV_PLUGIN_IMPORT_INIT(LidarPlugin);
 PV_PLUGIN_IMPORT_INIT(PythonQtPlugin);
 
 class vvMainWindow::pqInternals
@@ -345,7 +345,7 @@ private:
 
     pqSettings* const settings = pqApplicationCore::instance()->settings();
     const QVariant& gridVisible =
-      settings->value("VelodyneHDLPlugin/MeasurementGrid/Visibility", true);
+      settings->value("LidarPlugin/MeasurementGrid/Visibility", true);
     this->Ui.actionMeasurement_Grid->setChecked(gridVisible.toBool());
 
     new vvLoadDataReaction(this->Ui.actionOpenPcap, false);
@@ -373,7 +373,7 @@ vvMainWindow::vvMainWindow()
     "COLOR_EDITOR_PANEL", this->Internals->Ui.colorMapEditorDock);
   this->Internals->Ui.colorMapEditorDock->hide();
 
-  PV_PLUGIN_IMPORT(VelodyneHDLPlugin);
+  PV_PLUGIN_IMPORT(LidarPlugin);
   PV_PLUGIN_IMPORT(PythonQtPlugin);
 
   // Branding

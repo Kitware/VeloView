@@ -18,7 +18,7 @@
 
 #include "vvConfigure.h"
 
-class VelodyneHDLPlugin_EXPORT vvSelectFramesDialog : public QDialog
+class LidarPlugin_EXPORT vvSelectFramesDialog : public QDialog
 {
   Q_OBJECT
   Q_PROPERTY(int frameMode READ frameMode WRITE setFrameMode)

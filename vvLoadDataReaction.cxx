@@ -108,7 +108,7 @@ pqPipelineSource* vvLoadDataReaction::loadData()
 
   pqSettings* settings = pqApplicationCore::instance()->settings();
   QString defaultDir =
-    settings->value("VelodyneHDLPlugin/OpenData/DefaultDir", QDir::homePath()).toString();
+    settings->value("LidarPlugin/OpenData/DefaultDir", QDir::homePath()).toString();
 
   QString positionFileName;
   QString fileName;
@@ -144,7 +144,7 @@ pqPipelineSource* vvLoadDataReaction::loadData()
   }
 
   settings->setValue(
-    "VelodyneHDLPlugin/OpenData/DefaultDir", QFileInfo(fileName).absoluteDir().absolutePath());
+    "LidarPlugin/OpenData/DefaultDir", QFileInfo(fileName).absoluteDir().absolutePath());
 
   pqVelodyneManager::instance()->openData(fileName, positionFileName);
 

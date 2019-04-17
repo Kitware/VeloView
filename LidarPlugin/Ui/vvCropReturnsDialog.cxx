@@ -67,28 +67,28 @@ public:
 void vvCropReturnsDialog::pqInternal::saveSettings()
 {
   this->Settings->setValue(
-    "VelodyneHDLPlugin/CropReturnsDialog/EnableCropping", this->CropGroupBox->isChecked());
+    "LidarPlugin/CropReturnsDialog/EnableCropping", this->CropGroupBox->isChecked());
 
   this->Settings->setValue(
-    "VelodyneHDLPlugin/CropReturnsDialog/CropOutside", this->CropOutsideCheckBox->isChecked());
+    "LidarPlugin/CropReturnsDialog/CropOutside", this->CropOutsideCheckBox->isChecked());
 
-  this->Settings->setValue("VelodyneHDLPlugin/CropReturnsDialog/FirstCornerX", xRange[0]);
-  this->Settings->setValue("VelodyneHDLPlugin/CropReturnsDialog/FirstCornerY", yRange[0]);
-  this->Settings->setValue("VelodyneHDLPlugin/CropReturnsDialog/FirstCornerZ", zRange[0]);
-  this->Settings->setValue("VelodyneHDLPlugin/CropReturnsDialog/SecondCornerX", xRange[1]);
-  this->Settings->setValue("VelodyneHDLPlugin/CropReturnsDialog/SecondCornerY", yRange[1]);
-  this->Settings->setValue("VelodyneHDLPlugin/CropReturnsDialog/SecondCornerZ", zRange[1]);
+  this->Settings->setValue("LidarPlugin/CropReturnsDialog/FirstCornerX", xRange[0]);
+  this->Settings->setValue("LidarPlugin/CropReturnsDialog/FirstCornerY", yRange[0]);
+  this->Settings->setValue("LidarPlugin/CropReturnsDialog/FirstCornerZ", zRange[0]);
+  this->Settings->setValue("LidarPlugin/CropReturnsDialog/SecondCornerX", xRange[1]);
+  this->Settings->setValue("LidarPlugin/CropReturnsDialog/SecondCornerY", yRange[1]);
+  this->Settings->setValue("LidarPlugin/CropReturnsDialog/SecondCornerZ", zRange[1]);
 }
 
 //-----------------------------------------------------------------------------
 void vvCropReturnsDialog::pqInternal::restoreSettings()
 {
   this->sphericalRadioButton->setChecked(
-    this->Settings->value("VelodyneHDLPlugin/CropReturnsDialog/sphericalRadioButton", false)
+    this->Settings->value("LidarPlugin/CropReturnsDialog/sphericalRadioButton", false)
       .toBool());
 
   this->cartesianRadioButton->setChecked(
-    this->Settings->value("VelodyneHDLPlugin/CropReturnsDialog/cartesianRadioButton", false)
+    this->Settings->value("LidarPlugin/CropReturnsDialog/cartesianRadioButton", false)
       .toBool());
 
   if (this->cartesianRadioButton->isChecked())
@@ -102,36 +102,36 @@ void vvCropReturnsDialog::pqInternal::restoreSettings()
   }
 
   this->CropGroupBox->setChecked(
-    this->Settings->value("VelodyneHDLPlugin/CropReturnsDialog/EnableCropping", false).toBool());
+    this->Settings->value("LidarPlugin/CropReturnsDialog/EnableCropping", false).toBool());
 
   this->CropOutsideCheckBox->setChecked(this->Settings
-                                          ->value("VelodyneHDLPlugin/CropReturnsDialog/CropOutside",
+                                          ->value("LidarPlugin/CropReturnsDialog/CropOutside",
                                             this->CropOutsideCheckBox->isChecked())
                                           .toBool());
 
   this->X1SpinBox->setValue(
     this->Settings
-      ->value("VelodyneHDLPlugin/CropReturnsDialog/FirstCornerX", this->X1SpinBox->value())
+      ->value("LidarPlugin/CropReturnsDialog/FirstCornerX", this->X1SpinBox->value())
       .toDouble());
   this->Y1SpinBox->setValue(
     this->Settings
-      ->value("VelodyneHDLPlugin/CropReturnsDialog/FirstCornerY", this->Y1SpinBox->value())
+      ->value("LidarPlugin/CropReturnsDialog/FirstCornerY", this->Y1SpinBox->value())
       .toDouble());
   this->Z1SpinBox->setValue(
     this->Settings
-      ->value("VelodyneHDLPlugin/CropReturnsDialog/FirstCornerZ", this->Z1SpinBox->value())
+      ->value("LidarPlugin/CropReturnsDialog/FirstCornerZ", this->Z1SpinBox->value())
       .toDouble());
   this->X2SpinBox->setValue(
     this->Settings
-      ->value("VelodyneHDLPlugin/CropReturnsDialog/SecondCornerX", this->X2SpinBox->value())
+      ->value("LidarPlugin/CropReturnsDialog/SecondCornerX", this->X2SpinBox->value())
       .toDouble());
   this->Y2SpinBox->setValue(
     this->Settings
-      ->value("VelodyneHDLPlugin/CropReturnsDialog/SecondCornerY", this->Y2SpinBox->value())
+      ->value("LidarPlugin/CropReturnsDialog/SecondCornerY", this->Y2SpinBox->value())
       .toDouble());
   this->Z2SpinBox->setValue(
     this->Settings
-      ->value("VelodyneHDLPlugin/CropReturnsDialog/SecondCornerZ", this->Z2SpinBox->value())
+      ->value("LidarPlugin/CropReturnsDialog/SecondCornerZ", this->Z2SpinBox->value())
       .toDouble());
 
   xRange[0] = this->X1SpinBox->value();
@@ -285,9 +285,9 @@ void vvCropReturnsDialog::accept()
     this->Internal->saveSettings();
   }
 
-  this->Internal->Settings->setValue("VelodyneHDLPlugin/CropReturnsDialog/cartesianRadioButton",
+  this->Internal->Settings->setValue("LidarPlugin/CropReturnsDialog/cartesianRadioButton",
     this->Internal->cartesianRadioButton->isChecked());
-  this->Internal->Settings->setValue("VelodyneHDLPlugin/CropReturnsDialog/sphericalRadioButton",
+  this->Internal->Settings->setValue("LidarPlugin/CropReturnsDialog/sphericalRadioButton",
     this->Internal->sphericalRadioButton->isChecked());
 
   QDialog::accept();

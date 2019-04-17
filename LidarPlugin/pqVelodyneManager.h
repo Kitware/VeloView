@@ -34,7 +34,7 @@ class QAction;
 class QLabel;
 class QWidget;
 
-class VelodyneHDLPythonQT_EXPORT pqVelodyneManager : public QObject
+class LidarPythonQT_EXPORT pqVelodyneManager : public QObject
 {
 
   Q_OBJECT

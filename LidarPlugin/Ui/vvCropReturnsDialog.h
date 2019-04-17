@@ -19,7 +19,7 @@
 #include <QDialog>
 #include <QVector3D>
 
-class VelodyneHDLPlugin_EXPORT vvCropReturnsDialog : public QDialog
+class LidarPlugin_EXPORT vvCropReturnsDialog : public QDialog
 {
   Q_OBJECT
   Q_PROPERTY(bool croppingEnabled READ croppingEnabled WRITE setCroppingEnabled)

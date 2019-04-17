@@ -17,7 +17,7 @@ import math
 def showDialog(mainWindow, grid, gridProperties):
 
     loader = QtUiTools.QUiLoader()
-    uifile = QtCore.QFile(':/VelodyneHDLPlugin/vvGridAdjustmentDialog.ui')
+    uifile = QtCore.QFile(':/LidarViewPlugin/vvGridAdjustmentDialog.ui')
     if not uifile.open(uifile.ReadOnly):
         print 'error opening file'
         return

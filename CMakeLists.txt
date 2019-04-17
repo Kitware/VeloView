@@ -183,10 +183,10 @@ if (APPLE)
 endif()
 
 # Add the reader plugin and any other plugins.
-set(VV_PLUGIN_LIBRARY VelodyneHDLPlugin) # veloview plugin
-set(VV_NONE_PLUGIN_LIBRARY VelodyneHDLPythonQT) # code needed by veloview but that is not part of the plugin
-add_subdirectory(VelodyneHDL)
-include_directories(VelodyneHDL)
+set(VV_PLUGIN_LIBRARY LidarPlugin) # veloview plugin
+set(VV_NONE_PLUGIN_LIBRARY LidarPythonQT) # code needed by veloview but that is not part of the plugin
+add_subdirectory(LidarPlugin)
+include_directories(LidarPlugin)
 
 
 # Install data files
