@@ -349,7 +349,6 @@ private:
     this->Ui.actionMeasurement_Grid->setChecked(gridVisible.toBool());
 
     new vvLoadDataReaction(this->Ui.actionOpenPcap, false);
-    new vvLoadDataReaction(this->Ui.actionOpenApplanix, true);
 
     connect(this->Ui.actionOpen_Sensor_Stream, SIGNAL(triggered()), pqVelodyneManager::instance(),
       SLOT(onOpenSensor()));
