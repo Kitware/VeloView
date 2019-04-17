@@ -111,6 +111,10 @@ int vtkLASFileWriter::RequestInformation(vtkInformation* vtkNotUsed(request),
   }
 
   this->NumberOfFrames = inInfo->Length(vtkStreamingDemandDrivenPipeline::TIME_STEPS());
+#ifdef DEBUG_VTKLASFILEWRITER
+  std::cout << "vtkLASFileWriter::RequestInformation: Seen "
+            << this->NumberOfFrames << " frames." << std::endl;
+#endif
   if (this->LastFrame < 0)
   {
     this->LastFrame += this->NumberOfFrames;
