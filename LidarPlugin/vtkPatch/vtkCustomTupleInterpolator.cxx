@@ -12,17 +12,17 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-#include "vtkVeloViewTupleInterpolator.h"
+#include "vtkCustomTupleInterpolator.h"
 #include "vtkObjectFactory.h"
 #include "vtkSpline.h"
 #include "vtkKochanekSpline.h"
-#include "vtkVeloViewPiecewiseFunction.h"
+#include "vtkCustomPiecewiseFunction.h"
 #include "vtkMath.h"
 
-vtkStandardNewMacro(vtkVeloViewTupleInterpolator);
+vtkStandardNewMacro(vtkCustomTupleInterpolator);
 
 //----------------------------------------------------------------------------
-vtkVeloViewTupleInterpolator::vtkVeloViewTupleInterpolator()
+vtkCustomTupleInterpolator::vtkCustomTupleInterpolator()
 {
   // Set up the interpolation
   this->NumberOfComponents = 0;
@@ -34,7 +34,7 @@ vtkVeloViewTupleInterpolator::vtkVeloViewTupleInterpolator()
 }
 
 //----------------------------------------------------------------------------
-vtkVeloViewTupleInterpolator::~vtkVeloViewTupleInterpolator()
+vtkCustomTupleInterpolator::~vtkCustomTupleInterpolator()
 {
   this->Initialize();
   if ( this->InterpolatingSpline )
@@ -44,7 +44,7 @@ vtkVeloViewTupleInterpolator::~vtkVeloViewTupleInterpolator()
 }
 
 //----------------------------------------------------------------------------
-void vtkVeloViewTupleInterpolator::SetNumberOfComponents(int numComp)
+void vtkCustomTupleInterpolator::SetNumberOfComponents(int numComp)
 {
   numComp = (numComp < 1 ? 1 : numComp);
   if ( numComp != this->NumberOfComponents )
@@ -58,7 +58,7 @@ void vtkVeloViewTupleInterpolator::SetNumberOfComponents(int numComp)
 
 
 //----------------------------------------------------------------------------
-int vtkVeloViewTupleInterpolator::GetNumberOfTuples()
+int vtkCustomTupleInterpolator::GetNumberOfTuples()
 {
   if ( this->Spline )
     {
@@ -76,7 +76,7 @@ int vtkVeloViewTupleInterpolator::GetNumberOfTuples()
 
 
 //----------------------------------------------------------------------------
-double vtkVeloViewTupleInterpolator::GetMinimumT()
+double vtkCustomTupleInterpolator::GetMinimumT()
 {
   if ( this->Spline )
     {
@@ -96,7 +96,7 @@ double vtkVeloViewTupleInterpolator::GetMinimumT()
 
 
 //----------------------------------------------------------------------------
-double vtkVeloViewTupleInterpolator::GetMaximumT()
+double vtkCustomTupleInterpolator::GetMaximumT()
 {
   if ( this->Spline )
     {
@@ -116,7 +116,7 @@ double vtkVeloViewTupleInterpolator::GetMaximumT()
 
 
 //----------------------------------------------------------------------------
-void vtkVeloViewTupleInterpolator::Initialize()
+void vtkCustomTupleInterpolator::Initialize()
 {
   int i;
 
@@ -145,7 +145,7 @@ void vtkVeloViewTupleInterpolator::Initialize()
 
 
 //----------------------------------------------------------------------------
-void vtkVeloViewTupleInterpolator::InitializeInterpolation()
+void vtkCustomTupleInterpolator::InitializeInterpolation()
 {
   // Prepare for new data
   if ( this->NumberOfComponents <= 0 )
@@ -156,10 +156,10 @@ void vtkVeloViewTupleInterpolator::InitializeInterpolation()
   int i;
   if ( this->InterpolationType == INTERPOLATION_TYPE_LINEAR )
     {
-    this->Linear = new vtkVeloViewPiecewiseFunction* [this->NumberOfComponents];
+    this->Linear = new vtkCustomPiecewiseFunction* [this->NumberOfComponents];
     for (i=0; i<this->NumberOfComponents; i++)
       {
-      this->Linear[i] = vtkVeloViewPiecewiseFunction::New();
+      this->Linear[i] = vtkCustomPiecewiseFunction::New();
       }
     }
 
@@ -180,7 +180,7 @@ void vtkVeloViewTupleInterpolator::InitializeInterpolation()
 }
 
 //----------------------------------------------------------------------------
-void vtkVeloViewTupleInterpolator::SetInterpolationType(int type)
+void vtkCustomTupleInterpolator::SetInterpolationType(int type)
 {
   type = (type < INTERPOLATION_TYPE_LINEAR ? INTERPOLATION_TYPE_LINEAR :
          (type > INTERPOLATION_TYPE_SPLINE ? INTERPOLATION_TYPE_SPLINE : type));
@@ -194,7 +194,7 @@ void vtkVeloViewTupleInterpolator::SetInterpolationType(int type)
 }
 
 //----------------------------------------------------------------------------
-void vtkVeloViewTupleInterpolator::SetInterpolatingSpline(vtkSpline *spline)
+void vtkCustomTupleInterpolator::SetInterpolatingSpline(vtkSpline *spline)
 {
   if ( this->InterpolatingSpline == spline )
     {
@@ -214,7 +214,7 @@ void vtkVeloViewTupleInterpolator::SetInterpolatingSpline(vtkSpline *spline)
 }
 
 //----------------------------------------------------------------------------
-void vtkVeloViewTupleInterpolator::FillFromData(int nb, double *t, double **data)
+void vtkCustomTupleInterpolator::FillFromData(int nb, double *t, double **data)
 {
   int i;
   if ( this->InterpolationType == INTERPOLATION_TYPE_LINEAR )
@@ -237,7 +237,7 @@ void vtkVeloViewTupleInterpolator::FillFromData(int nb, double *t, double **data
 }
 
 //----------------------------------------------------------------------------
-void vtkVeloViewTupleInterpolator::AddTuple(double t, double tuple[])
+void vtkCustomTupleInterpolator::AddTuple(double t, double tuple[])
 {
   int i;
   if ( this->InterpolationType == INTERPOLATION_TYPE_LINEAR )
@@ -260,7 +260,7 @@ void vtkVeloViewTupleInterpolator::AddTuple(double t, double tuple[])
 }
 
 //----------------------------------------------------------------------------
-void vtkVeloViewTupleInterpolator::RemoveTuple(double t)
+void vtkCustomTupleInterpolator::RemoveTuple(double t)
 {
   int i;
   if ( this->InterpolationType == INTERPOLATION_TYPE_LINEAR )
@@ -283,7 +283,7 @@ void vtkVeloViewTupleInterpolator::RemoveTuple(double t)
 }
 
 //----------------------------------------------------------------------------
-void vtkVeloViewTupleInterpolator::InterpolateTuple(double t, double tuple[])
+void vtkCustomTupleInterpolator::InterpolateTuple(double t, double tuple[])
 {
   if ( this->NumberOfComponents <= 0 )
     {
@@ -310,7 +310,7 @@ void vtkVeloViewTupleInterpolator::InterpolateTuple(double t, double tuple[])
     }
 }
 
-void vtkVeloViewTupleInterpolator::InterpolateTupleDichotomic(double t, double tuple[])
+void vtkCustomTupleInterpolator::InterpolateTupleDichotomic(double t, double tuple[])
 {
   if ( this->NumberOfComponents <= 0 )
   {
@@ -338,7 +338,7 @@ void vtkVeloViewTupleInterpolator::InterpolateTupleDichotomic(double t, double t
 }
 
 //----------------------------------------------------------------------------
-void vtkVeloViewTupleInterpolator::PrintSelf(ostream& os, vtkIndent indent)
+void vtkCustomTupleInterpolator::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 

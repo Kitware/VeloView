@@ -38,25 +38,25 @@
 // point is lost. Bisection methods are used to speed up the search for the
 // interpolation interval.
 
-#ifndef vtkVeloViewTupleInterpolator_h
-#define vtkVeloViewTupleInterpolator_h
+#ifndef vtkCustomTupleInterpolator_h
+#define vtkCustomTupleInterpolator_h
 
 #include "vtkRenderingCoreModule.h" // For export macro
 #include "vtkObject.h"
 
 class vtkSpline;
-class vtkVeloViewPiecewiseFunction;
+class vtkCustomPiecewiseFunction;
 
 
-class vtkVeloViewTupleInterpolator : public vtkObject
+class vtkCustomTupleInterpolator : public vtkObject
 {
 public:
-  vtkTypeMacro(vtkVeloViewTupleInterpolator, vtkObject);
+  vtkTypeMacro(vtkCustomTupleInterpolator, vtkObject);
   void PrintSelf(ostream& os, vtkIndent indent);
 
   // Description:
   // Instantiate the class.
-  static vtkVeloViewTupleInterpolator* New();
+  static vtkCustomTupleInterpolator* New();
 
   // Description:
   // Specify the number of tuple components to interpolate. Note that setting
@@ -150,8 +150,8 @@ public:
   vtkGetObjectMacro(InterpolatingSpline,vtkSpline);
 
 protected:
-  vtkVeloViewTupleInterpolator();
-  virtual ~vtkVeloViewTupleInterpolator();
+  vtkCustomTupleInterpolator();
+  virtual ~vtkCustomTupleInterpolator();
 
   // The number of components being interpolated
   int NumberOfComponents;
@@ -164,13 +164,13 @@ protected:
 
   // Internal variables for interpolation functions
   void InitializeInterpolation();
-  vtkVeloViewPiecewiseFunction    **Linear;
+  vtkCustomPiecewiseFunction    **Linear;
   vtkSpline               **Spline;
 
 
 private:
-  vtkVeloViewTupleInterpolator(const vtkVeloViewTupleInterpolator&);  // Not implemented.
-  void operator=(const vtkVeloViewTupleInterpolator&);  // Not implemented.
+  vtkCustomTupleInterpolator(const vtkCustomTupleInterpolator&);  // Not implemented.
+  void operator=(const vtkCustomTupleInterpolator&);  // Not implemented.
 
 };
 

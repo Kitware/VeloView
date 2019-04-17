@@ -9,9 +9,9 @@ include_directories("ctk")
 
 message(AUTHOR_WARNING "Until the 'Speedup interpolator' merge request is integrated to VTK, we provide the patch")
 set(interpolator_pach_until_vtk_update
-  vtkPatchVeloView/vtkVeloViewPiecewiseFunction.cxx
-  vtkPatchVeloView/vtkVeloViewQuaternionInterpolator.cxx
-  vtkPatchVeloView/vtkVeloViewTupleInterpolator.cxx
+  vtkPatch/vtkCustomPiecewiseFunction.cxx
+  vtkPatch/vtkCustomQuaternionInterpolator.cxx
+  vtkPatch/vtkCustomTupleInterpolator.cxx
 )
 
 #-----------------------------------------------------------------------------

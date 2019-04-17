@@ -31,19 +31,19 @@
 // will default to Midpoint = 0.5 (halfway between the control points) and
 // Sharpness = 0.0 (linear).
 
-#ifndef vtkVeloViewPiecewiseFunction_h
-#define vtkVeloViewPiecewiseFunction_h
+#ifndef vtkCustomPiecewiseFunction_h
+#define vtkCustomPiecewiseFunction_h
 
 #include "vtkCommonDataModelModule.h" // For export macro
 #include "vtkDataObject.h"
 
 class vtkPiecewiseFunctionInternals;
 
-class vtkVeloViewPiecewiseFunction : public vtkDataObject
+class vtkCustomPiecewiseFunction : public vtkDataObject
 {
 public:
-  static vtkVeloViewPiecewiseFunction *New();
-  vtkTypeMacro(vtkVeloViewPiecewiseFunction,vtkDataObject);
+  static vtkCustomPiecewiseFunction *New();
+  vtkTypeMacro(vtkCustomPiecewiseFunction,vtkDataObject);
   void PrintSelf(ostream& os, vtkIndent indent);
 
   void DeepCopy( vtkDataObject *f );
@@ -158,8 +158,8 @@ public:
   //BTX
   // Description:
   // Retrieve an instance of this class from an information object.
-  static vtkVeloViewPiecewiseFunction* GetData(vtkInformation* info);
-  static vtkVeloViewPiecewiseFunction* GetData(vtkInformationVector* v, int i=0);
+  static vtkCustomPiecewiseFunction* GetData(vtkInformation* info);
+  static vtkCustomPiecewiseFunction* GetData(vtkInformationVector* v, int i=0);
   //ETX
 
   // Description:
@@ -170,8 +170,8 @@ public:
   vtkBooleanMacro(AllowDuplicateScalars, int);
 
 protected:
-  vtkVeloViewPiecewiseFunction();
-  ~vtkVeloViewPiecewiseFunction();
+  vtkCustomPiecewiseFunction();
+  ~vtkCustomPiecewiseFunction();
 
   // The internal STL structures
   vtkPiecewiseFunctionInternals *Internal;
@@ -198,8 +198,8 @@ protected:
   int AllowDuplicateScalars;
 
 private:
-  vtkVeloViewPiecewiseFunction(const vtkVeloViewPiecewiseFunction&);  // Not implemented.
-  void operator=(const vtkVeloViewPiecewiseFunction&);  // Not implemented.
+  vtkCustomPiecewiseFunction(const vtkCustomPiecewiseFunction&);  // Not implemented.
+  void operator=(const vtkCustomPiecewiseFunction&);  // Not implemented.
 };
 
 #endif

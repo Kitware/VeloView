@@ -1,7 +1,7 @@
 /*=========================================================================
 
   Program:   Visualization Toolkit
-  Module:    vtkVeloViewQuaternionInterpolator.h
+  Module:    vtkCustomQuaternionInterpolator.h
 
   Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
   All rights reserved.
@@ -12,7 +12,7 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkVeloViewQuaternionInterpolator - interpolate a quaternion
+// .NAME vtkCustomQuaternionInterpolator - interpolate a quaternion
 // .SECTION Description
 // This class is used to interpolate a series of quaternions representing
 // the rotations of a 3D object.  The interpolation may be linear in form
@@ -49,24 +49,24 @@
 // vtkMasterMindQuaternion
 
 
-#ifndef vtkVeloViewQuaternionInterpolator_h
-#define vtkVeloViewQuaternionInterpolator_h
+#ifndef vtkCustomQuaternionInterpolator_h
+#define vtkCustomQuaternionInterpolator_h
 
 #include "vtkCommonMathModule.h" // For export macro
 #include "vtkObject.h"
 
-class vtkVeloViewQuaterniond;
-class vtkVeloViewQuaternionList;
+class vtkCustomQuaterniond;
+class vtkCustomQuaternionList;
 
-class vtkVeloViewQuaternionInterpolator : public vtkObject
+class vtkCustomQuaternionInterpolator : public vtkObject
 {
 public:
-  vtkTypeMacro(vtkVeloViewQuaternionInterpolator, vtkObject);
+  vtkTypeMacro(vtkCustomQuaternionInterpolator, vtkObject);
   void PrintSelf(ostream& os, vtkIndent indent);
 
   // Description:
   // Instantiate the class.
-  static vtkVeloViewQuaternionInterpolator* New();
+  static vtkCustomQuaternionInterpolator* New();
 
   // Description:
   // Return the number of quaternions in the list of quaternions to be
@@ -91,7 +91,7 @@ public:
   // Note that using the same time t value more than once replaces the
   // previous quaternion at t. At least one quaternions must be added to
   // define an interpolation functios.
-  void AddQuaternion(double t, const vtkVeloViewQuaterniond& q);
+  void AddQuaternion(double t, const vtkCustomQuaterniond& q);
   void AddQuaternion(double t, double q[4]);
 
   // Description:
@@ -103,7 +103,7 @@ public:
   // Interpolate the list of quaternions and determine a new quaternion
   // (i.e., fill in the quaternion provided). If t is outside the range of
   // (min,max) values, then t is clamped to lie within the range.
-  void InterpolateQuaternion(double t, vtkVeloViewQuaterniond& q);
+  void InterpolateQuaternion(double t, vtkCustomQuaterniond& q);
   void InterpolateQuaternion(double t, double q[4]);
 
 //BTX
@@ -129,18 +129,18 @@ public:
     {this->SetInterpolationType(INTERPOLATION_TYPE_SPLINE);}
 
 protected:
-  vtkVeloViewQuaternionInterpolator();
-  virtual ~vtkVeloViewQuaternionInterpolator();
+  vtkCustomQuaternionInterpolator();
+  virtual ~vtkCustomQuaternionInterpolator();
 
   // Specify the type of interpolation to use
   int InterpolationType;
 
   // Internal variables for interpolation functions
-  vtkVeloViewQuaternionList *QuaternionList; //used for linear quaternion interpolation
+  vtkCustomQuaternionList *QuaternionList; //used for linear quaternion interpolation
 
 private:
-  vtkVeloViewQuaternionInterpolator(const vtkVeloViewQuaternionInterpolator&);  // Not implemented.
-  void operator=(const vtkVeloViewQuaternionInterpolator&);  // Not implemented.
+  vtkCustomQuaternionInterpolator(const vtkCustomQuaternionInterpolator&);  // Not implemented.
+  void operator=(const vtkCustomQuaternionInterpolator&);  // Not implemented.
 
 };
 

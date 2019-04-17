@@ -27,31 +27,31 @@
 // .SECTION See also
 // vtkQuaternionInterpolator
 
-#ifndef vtkVeloViewQuaternion_h
-#define vtkVeloViewQuaternion_h
+#ifndef vtkCustomQuaternion_h
+#define vtkCustomQuaternion_h
 
 #include "vtkTuple.h"
 
-template<typename T> class vtkVeloViewQuaternion : public vtkTuple<T, 4>
+template<typename T> class vtkCustomQuaternion : public vtkTuple<T, 4>
 {
 public:
   // Description:
   // Default constructor. Creates an identity quaternion.
-  vtkVeloViewQuaternion();
+  vtkCustomQuaternion();
 
   // Description:
   // Initialize all of the quaternion's elements with the supplied scalar.
-  explicit vtkVeloViewQuaternion(const T& scalar) : vtkTuple<T, 4>(scalar) {}
+  explicit vtkCustomQuaternion(const T& scalar) : vtkTuple<T, 4>(scalar) {}
 
   // Description:
   // Initalize the quaternion's elements with the elements of the supplied array.
   // Note that the supplied pointer must contain at least as many elements as
   // the quaternion, or it will result in access to out of bounds memory.
-  explicit vtkVeloViewQuaternion(const T* init) : vtkTuple<T, 4>(init) {}
+  explicit vtkCustomQuaternion(const T* init) : vtkTuple<T, 4>(init) {}
 
   // Description:
   // Initialize the quaternion element explicitly.
-  vtkVeloViewQuaternion(const T& w, const T& x, const T& y, const T& z);
+  vtkCustomQuaternion(const T& w, const T& x, const T& y, const T& z);
 
   // Description:
   // Get the squared norm of the quaternion.
@@ -68,7 +68,7 @@ public:
   // Description:
   // Return the identity quaternion.
   // Note that the default constructor also creates an identity quaternion.
-  static vtkVeloViewQuaternion<T> Identity();
+  static vtkCustomQuaternion<T> Identity();
 
   // Description:
   // Normalize the quaternion in place.
@@ -77,7 +77,7 @@ public:
 
   // Description:
   // Return the normalized form of this quaternion.
-  vtkVeloViewQuaternion<T> Normalized() const;
+  vtkCustomQuaternion<T> Normalized() const;
 
   // Description:
   // Conjugate the quaternion in place.
@@ -85,7 +85,7 @@ public:
 
   // Description:
   // Return the conjugate form of this quaternion.
-  vtkVeloViewQuaternion<T> Conjugated() const;
+  vtkCustomQuaternion<T> Conjugated() const;
 
   // Description:
   // Invert the quaternion in place.
@@ -95,7 +95,7 @@ public:
 
   // Description:
   // Return the inverted form of this quaternion.
-  vtkVeloViewQuaternion<T> Inverse() const;
+  vtkCustomQuaternion<T> Inverse() const;
 
   // Description:
   // Convert this quaternion to a unit log quaternion.
@@ -107,7 +107,7 @@ public:
   // Return the unit log version of this quaternion.
   // The unit log quaternion is defined by:
   // [w, x, y, z] =  [0.0, v*sin(theta)].
-  vtkVeloViewQuaternion<T> UnitLog() const;
+  vtkCustomQuaternion<T> UnitLog() const;
 
   // Description:
   // Convert this quaternion to a unit exponential quaternion.
@@ -119,7 +119,7 @@ public:
   // Return the unit exponential version of this quaternion.
   // The unit exponential quaternion is defined by:
   // [w, x, y, z] =  [cos(theta), v*sin(theta)].
-  vtkVeloViewQuaternion<T> UnitExp() const;
+  vtkCustomQuaternion<T> UnitExp() const;
 
   // Description:
   // Normalize a quaternion in place and transform it to
@@ -129,7 +129,7 @@ public:
   // Description:
   // Returns a quaternion normalized and transformed
   // so its angle is in degrees and its axis normalized.
-  vtkVeloViewQuaternion<T> NormalizedWithAngleInDegrees() const;
+  vtkCustomQuaternion<T> NormalizedWithAngleInDegrees() const;
 
   // Description:
   // Set/Get the w, x, y and z components of the quaternion.
@@ -167,7 +167,7 @@ public:
 
   // Description:
   // Cast the quaternion to the specified type and return the result.
-  template<typename CastTo> vtkVeloViewQuaternion<CastTo> Cast() const;
+  template<typename CastTo> vtkCustomQuaternion<CastTo> Cast() const;
 
   // Description:
   // Convert a quaternion to a 3x3 rotation matrix. The quaternion
@@ -186,31 +186,31 @@ public:
   // Interpolate quaternions using spherical linear interpolation between
   // this quaternion and q1 to produce the output.
   // The parametric coordinate t belongs to [0,1] and lies between (this,q1).
-  // @sa vtkVeloViewQuaternionInterpolator
-  vtkVeloViewQuaternion<T> Slerp(T t, const vtkVeloViewQuaternion<T>& q) const;
+  // @sa vtkCustomQuaternionInterpolator
+  vtkCustomQuaternion<T> Slerp(T t, const vtkCustomQuaternion<T>& q) const;
 
   // Description:
   // Interpolates between quaternions, using spherical quadrangle
   // interpolation.
-  // @sa vtkVeloViewQuaternionInterpolator
-  vtkVeloViewQuaternion<T> InnerPoint(const vtkVeloViewQuaternion<T>& q1,
-    const vtkVeloViewQuaternion<T>& q2) const;
+  // @sa vtkCustomQuaternionInterpolator
+  vtkCustomQuaternion<T> InnerPoint(const vtkCustomQuaternion<T>& q1,
+    const vtkCustomQuaternion<T>& q2) const;
 
   // Description:
   // Performs addition of quaternion of the same basic type.
-  vtkVeloViewQuaternion<T> operator+(const vtkVeloViewQuaternion<T>& q) const;
+  vtkCustomQuaternion<T> operator+(const vtkCustomQuaternion<T>& q) const;
 
   // Description:
   // Performs subtraction of quaternions of the same basic type.
-  vtkVeloViewQuaternion<T> operator-(const vtkVeloViewQuaternion<T>& q) const;
+  vtkCustomQuaternion<T> operator-(const vtkCustomQuaternion<T>& q) const;
 
   // Description:
   // Performs multiplication of quaternion of the same basic type.
-  vtkVeloViewQuaternion<T> operator*(const vtkVeloViewQuaternion<T>& q) const;
+  vtkCustomQuaternion<T> operator*(const vtkCustomQuaternion<T>& q) const;
 
   // Description:
   // Performs multiplication of the quaternions by a scalar value.
-  vtkVeloViewQuaternion<T> operator*(const T& scalar) const;
+  vtkCustomQuaternion<T> operator*(const T& scalar) const;
 
   // Description:
   // Performs in place multiplication of the quaternions by a scalar value.
@@ -218,11 +218,11 @@ public:
 
   // Description:
   // Performs division of quaternions of the same type.
-  vtkVeloViewQuaternion<T> operator/(const vtkVeloViewQuaternion<T>& q) const;
+  vtkCustomQuaternion<T> operator/(const vtkCustomQuaternion<T>& q) const;
 
   // Description:
   // Performs division of the quaternions by a scalar value.
-  vtkVeloViewQuaternion<T> operator/(const T& scalar) const;
+  vtkCustomQuaternion<T> operator/(const T& scalar) const;
 
   // Description:
   // Performs in place division of the quaternions by a scalar value.
@@ -232,152 +232,152 @@ public:
 // Description:
 // Several macros to define the various operator overloads for the quaternions.
 // These are necessary for the derived classes that are commonly used.
-#define vtkVeloViewQuaternionIdentity(quaternionType, type) \
+#define vtkCustomQuaternionIdentity(quaternionType, type) \
 quaternionType Identity() const \
 { \
-  return quaternionType(vtkVeloViewQuaternion<type>::Identity().GetData()); \
+  return quaternionType(vtkCustomQuaternion<type>::Identity().GetData()); \
 }
-#define vtkVeloViewQuaternionNormalized(quaternionType, type) \
+#define vtkCustomQuaternionNormalized(quaternionType, type) \
 quaternionType Normalized() const \
 { \
-  return quaternionType(vtkVeloViewQuaternion<type>::Normalized().GetData()); \
+  return quaternionType(vtkCustomQuaternion<type>::Normalized().GetData()); \
 }
-#define vtkVeloViewQuaternionConjugated(quaternionType, type) \
+#define vtkCustomQuaternionConjugated(quaternionType, type) \
 quaternionType Conjugated() const \
 { \
-  return quaternionType(vtkVeloViewQuaternion<type>::Conjugated().GetData()); \
+  return quaternionType(vtkCustomQuaternion<type>::Conjugated().GetData()); \
 }
-#define vtkVeloViewQuaternionInverse(quaternionType, type) \
+#define vtkCustomQuaternionInverse(quaternionType, type) \
 quaternionType Inverse() const \
 { \
-  return quaternionType(vtkVeloViewQuaternion<type>::Inverse().GetData()); \
+  return quaternionType(vtkCustomQuaternion<type>::Inverse().GetData()); \
 }
-#define vtkVeloViewQuaternionUnitLog(quaternionType, type) \
+#define vtkCustomQuaternionUnitLog(quaternionType, type) \
 quaternionType UnitLog() const \
 { \
   return quaternionType( \
-    vtkVeloViewQuaternion<type>::UnitLog().GetData()); \
+    vtkCustomQuaternion<type>::UnitLog().GetData()); \
 }
-#define vtkVeloViewQuaternionUnitExp(quaternionType, type) \
+#define vtkCustomQuaternionUnitExp(quaternionType, type) \
 quaternionType UnitExp() const \
 { \
   return quaternionType( \
-    vtkVeloViewQuaternion<type>::UnitExp().GetData()); \
+    vtkCustomQuaternion<type>::UnitExp().GetData()); \
 }
-#define vtkVeloViewQuaternionNormalizedWithAngleInDegrees(quaternionType, type) \
+#define vtkCustomQuaternionNormalizedWithAngleInDegrees(quaternionType, type) \
 quaternionType NormalizedWithAngleInDegrees() const \
 { \
   return quaternionType( \
-    vtkVeloViewQuaternion<type>::NormalizedWithAngleInDegrees().GetData()); \
+    vtkCustomQuaternion<type>::NormalizedWithAngleInDegrees().GetData()); \
 }
-#define vtkVeloViewQuaternionSlerp(quaternionType, type) \
+#define vtkCustomQuaternionSlerp(quaternionType, type) \
 quaternionType Slerp(type t, const quaternionType& q) const \
 { \
   return quaternionType( \
-    vtkVeloViewQuaternion<type>::Slerp(t, q).GetData()); \
+    vtkCustomQuaternion<type>::Slerp(t, q).GetData()); \
 }
-#define vtkVeloViewQuaternionInnerPoint(quaternionType, type) \
+#define vtkCustomQuaternionInnerPoint(quaternionType, type) \
 quaternionType InnerPoint(const quaternionType& q1, \
                           const quaternionType& q2) const \
 { \
   return quaternionType( \
-    vtkVeloViewQuaternion<type>::InnerPoint(q1, q2).GetData()); \
+    vtkCustomQuaternion<type>::InnerPoint(q1, q2).GetData()); \
 }
-#define vtkVeloViewQuaternionOperatorPlus(quaternionType, type) \
+#define vtkCustomQuaternionOperatorPlus(quaternionType, type) \
 inline quaternionType operator+(const quaternionType& q) const \
 { \
   return quaternionType( ( \
-    static_cast< vtkVeloViewQuaternion<type> > (*this) + \
-    static_cast< vtkVeloViewQuaternion<type> > (q)).GetData()); \
+    static_cast< vtkCustomQuaternion<type> > (*this) + \
+    static_cast< vtkCustomQuaternion<type> > (q)).GetData()); \
 }
-#define vtkVeloViewQuaternionOperatorMinus(quaternionType, type) \
+#define vtkCustomQuaternionOperatorMinus(quaternionType, type) \
 inline quaternionType operator-(const quaternionType& q) const \
 { \
   return quaternionType( ( \
-    static_cast< vtkVeloViewQuaternion<type> > (*this) - \
-    static_cast< vtkVeloViewQuaternion<type> > (q)).GetData()); \
+    static_cast< vtkCustomQuaternion<type> > (*this) - \
+    static_cast< vtkCustomQuaternion<type> > (q)).GetData()); \
 }
-#define vtkVeloViewQuaternionOperatorMultiply(quaternionType, type) \
+#define vtkCustomQuaternionOperatorMultiply(quaternionType, type) \
 inline quaternionType operator*(const quaternionType& q) const \
 { \
   return quaternionType( ( \
-    static_cast< vtkVeloViewQuaternion<type> > (*this) * \
-    static_cast< vtkVeloViewQuaternion<type> > (q)).GetData()); \
+    static_cast< vtkCustomQuaternion<type> > (*this) * \
+    static_cast< vtkCustomQuaternion<type> > (q)).GetData()); \
 }
-#define vtkVeloViewQuaternionOperatorMultiplyScalar(quaternionType, type) \
+#define vtkCustomQuaternionOperatorMultiplyScalar(quaternionType, type) \
 inline quaternionType operator*(const type& scalar) const \
 { \
   return quaternionType( ( \
-    static_cast< vtkVeloViewQuaternion<type> > (*this) * \
+    static_cast< vtkCustomQuaternion<type> > (*this) * \
     scalar).GetData()); \
 }
-#define vtkVeloViewQuaternionOperatorDivide(quaternionType, type) \
+#define vtkCustomQuaternionOperatorDivide(quaternionType, type) \
 inline quaternionType operator/(const quaternionType& q) const \
 { \
   return quaternionType( ( \
-    static_cast< vtkVeloViewQuaternion<type> > (*this) / \
-    static_cast< vtkVeloViewQuaternion<type> > (q)).GetData()); \
+    static_cast< vtkCustomQuaternion<type> > (*this) / \
+    static_cast< vtkCustomQuaternion<type> > (q)).GetData()); \
 }
-#define vtkVeloViewQuaternionOperatorDivideScalar(quaternionType, type) \
+#define vtkCustomQuaternionOperatorDivideScalar(quaternionType, type) \
 inline quaternionType operator/(const type& scalar) const \
 { \
   return quaternionType( ( \
-    static_cast< vtkVeloViewQuaternion<type> > (*this) / \
+    static_cast< vtkCustomQuaternion<type> > (*this) / \
     scalar).GetData()); \
 }
 
-#define vtkVeloViewQuaternionOperatorMacro(quaternionType, type) \
-vtkVeloViewQuaternionIdentity(quaternionType, type) \
-vtkVeloViewQuaternionNormalized(quaternionType, type) \
-vtkVeloViewQuaternionConjugated(quaternionType, type) \
-vtkVeloViewQuaternionInverse(quaternionType, type) \
-vtkVeloViewQuaternionUnitLog(quaternionType, type) \
-vtkVeloViewQuaternionUnitExp(quaternionType, type) \
-vtkVeloViewQuaternionNormalizedWithAngleInDegrees(quaternionType, type) \
-vtkVeloViewQuaternionSlerp(quaternionType, type) \
-vtkVeloViewQuaternionInnerPoint(quaternionType, type) \
-vtkVeloViewQuaternionOperatorPlus(quaternionType, type) \
-vtkVeloViewQuaternionOperatorMinus(quaternionType, type) \
-vtkVeloViewQuaternionOperatorMultiply(quaternionType, type) \
-vtkVeloViewQuaternionOperatorMultiplyScalar(quaternionType, type) \
-vtkVeloViewQuaternionOperatorDivide(quaternionType, type) \
-vtkVeloViewQuaternionOperatorDivideScalar(quaternionType, type)
+#define vtkCustomQuaternionOperatorMacro(quaternionType, type) \
+vtkCustomQuaternionIdentity(quaternionType, type) \
+vtkCustomQuaternionNormalized(quaternionType, type) \
+vtkCustomQuaternionConjugated(quaternionType, type) \
+vtkCustomQuaternionInverse(quaternionType, type) \
+vtkCustomQuaternionUnitLog(quaternionType, type) \
+vtkCustomQuaternionUnitExp(quaternionType, type) \
+vtkCustomQuaternionNormalizedWithAngleInDegrees(quaternionType, type) \
+vtkCustomQuaternionSlerp(quaternionType, type) \
+vtkCustomQuaternionInnerPoint(quaternionType, type) \
+vtkCustomQuaternionOperatorPlus(quaternionType, type) \
+vtkCustomQuaternionOperatorMinus(quaternionType, type) \
+vtkCustomQuaternionOperatorMultiply(quaternionType, type) \
+vtkCustomQuaternionOperatorMultiplyScalar(quaternionType, type) \
+vtkCustomQuaternionOperatorDivide(quaternionType, type) \
+vtkCustomQuaternionOperatorDivideScalar(quaternionType, type)
 
-// .NAME vtkVeloViewQuaternionf - Float quaternion type.
+// .NAME vtkCustomQuaternionf - Float quaternion type.
 //
 // .SECTION Description
-// This class is uses vtkVeloViewQuaternion with float type data.
-// For futher description, see the templated class vtkVeloViewQuaternion.
-// @sa vtkVeloViewQuaterniond vtkVeloViewQuaternion
-class vtkVeloViewQuaternionf : public vtkVeloViewQuaternion<float>
+// This class is uses vtkCustomQuaternion with float type data.
+// For futher description, see the templated class vtkCustomQuaternion.
+// @sa vtkCustomQuaterniond vtkCustomQuaternion
+class vtkCustomQuaternionf : public vtkCustomQuaternion<float>
 {
 public:
-  vtkVeloViewQuaternionf() {}
-  explicit vtkVeloViewQuaternionf(float w, float x, float y, float z)
-    : vtkVeloViewQuaternion<float>(w, x, y, z) {}
-  explicit vtkVeloViewQuaternionf(float scalar) : vtkVeloViewQuaternion<float>(scalar) {}
-  explicit vtkVeloViewQuaternionf(const float *init) : vtkVeloViewQuaternion<float>(init) {}
-  vtkVeloViewQuaternionOperatorMacro(vtkVeloViewQuaternionf, float)
+  vtkCustomQuaternionf() {}
+  explicit vtkCustomQuaternionf(float w, float x, float y, float z)
+    : vtkCustomQuaternion<float>(w, x, y, z) {}
+  explicit vtkCustomQuaternionf(float scalar) : vtkCustomQuaternion<float>(scalar) {}
+  explicit vtkCustomQuaternionf(const float *init) : vtkCustomQuaternion<float>(init) {}
+  vtkCustomQuaternionOperatorMacro(vtkCustomQuaternionf, float)
 };
 
-// .NAME vtkVeloViewQuaterniond - Double quaternion type.
+// .NAME vtkCustomQuaterniond - Double quaternion type.
 //
 // .SECTION Description
-// This class is uses vtkVeloViewQuaternion with double type data.
-// For futher description, seethe templated class vtkVeloViewQuaternion.
-// @sa vtkVeloViewQuaternionf vtkVeloViewQuaternion
-class vtkVeloViewQuaterniond : public vtkVeloViewQuaternion<double>
+// This class is uses vtkCustomQuaternion with double type data.
+// For futher description, seethe templated class vtkCustomQuaternion.
+// @sa vtkCustomQuaternionf vtkCustomQuaternion
+class vtkCustomQuaterniond : public vtkCustomQuaternion<double>
 {
 public:
-  vtkVeloViewQuaterniond() {}
-  explicit vtkVeloViewQuaterniond(double w, double x, double y, double z)
-    : vtkVeloViewQuaternion<double>(w, x, y, z) {}
-  explicit vtkVeloViewQuaterniond(double scalar) : vtkVeloViewQuaternion<double>(scalar) {}
-  explicit vtkVeloViewQuaterniond(const double *init) : vtkVeloViewQuaternion<double>(init) {}
-  vtkVeloViewQuaternionOperatorMacro(vtkVeloViewQuaterniond, double);
+  vtkCustomQuaterniond() {}
+  explicit vtkCustomQuaterniond(double w, double x, double y, double z)
+    : vtkCustomQuaternion<double>(w, x, y, z) {}
+  explicit vtkCustomQuaterniond(double scalar) : vtkCustomQuaternion<double>(scalar) {}
+  explicit vtkCustomQuaterniond(const double *init) : vtkCustomQuaternion<double>(init) {}
+  vtkCustomQuaternionOperatorMacro(vtkCustomQuaterniond, double);
 };
 
-#include "vtkVeloViewQuaternion.txx"
+#include "vtkCustomQuaternion.txx"
 
 #endif // vtkQuaternion_h
 // VTK-HeaderTest-Exclude: vtkQuaternion.h

@@ -1,7 +1,7 @@
 /*=========================================================================
 
   Program:   Visualization Toolkit
-  Module:    vtkVeloViewQuaternion.txx
+  Module:    vtkCustomQuaternion.txx
 
   Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
   All rights reserved.
@@ -13,24 +13,24 @@
 
 =========================================================================*/
 
-#include "vtkVeloViewQuaternion.h"
+#include "vtkCustomQuaternion.h"
 
-#ifndef vtkVeloViewQuaternion_txx
-#define vtkVeloViewQuaternion_txx
+#ifndef vtkCustomQuaternion_txx
+#define vtkCustomQuaternion_txx
 
 #include "vtkMath.h"
 
 #include <cmath>
 
 //----------------------------------------------------------------------------
-template<typename T> vtkVeloViewQuaternion<T>::vtkVeloViewQuaternion()
+template<typename T> vtkCustomQuaternion<T>::vtkCustomQuaternion()
 {
   this->ToIdentity();
 }
 
 //----------------------------------------------------------------------------
-template<typename T> vtkVeloViewQuaternion<T>
-::vtkVeloViewQuaternion(const T& w, const T& x, const T& y, const T& z)
+template<typename T> vtkCustomQuaternion<T>
+::vtkCustomQuaternion(const T& w, const T& x, const T& y, const T& z)
 {
   this->Data[0] = w;
   this->Data[1] = x;
@@ -39,7 +39,7 @@ template<typename T> vtkVeloViewQuaternion<T>
 }
 
 //----------------------------------------------------------------------------
-template<typename T> T vtkVeloViewQuaternion<T>::SquaredNorm() const
+template<typename T> T vtkCustomQuaternion<T>::SquaredNorm() const
 {
   T result = 0.0;
   for (int i = 0; i < 4; ++i)
@@ -50,26 +50,26 @@ template<typename T> T vtkVeloViewQuaternion<T>::SquaredNorm() const
 }
 
 //----------------------------------------------------------------------------
-template<typename T> T vtkVeloViewQuaternion<T>::Norm() const
+template<typename T> T vtkCustomQuaternion<T>::Norm() const
 {
   return sqrt(this->SquaredNorm());
 }
 
 //----------------------------------------------------------------------------
-template<typename T> void vtkVeloViewQuaternion<T>::ToIdentity()
+template<typename T> void vtkCustomQuaternion<T>::ToIdentity()
 {
   this->Set(1.0, 0.0 ,0.0, 0.0);
 }
 
 //----------------------------------------------------------------------------
-template<typename T> vtkVeloViewQuaternion<T> vtkVeloViewQuaternion<T>::Identity()
+template<typename T> vtkCustomQuaternion<T> vtkCustomQuaternion<T>::Identity()
 {
-  vtkVeloViewQuaternion<T> identity(1.0, 0.0, 0.0, 0.0);
+  vtkCustomQuaternion<T> identity(1.0, 0.0, 0.0, 0.0);
   return identity;
 }
 
 //----------------------------------------------------------------------------
-template<typename T> T vtkVeloViewQuaternion<T>::Normalize()
+template<typename T> T vtkCustomQuaternion<T>::Normalize()
 {
   T norm = this->Norm();
   if (norm != 0.0)
@@ -83,15 +83,15 @@ template<typename T> T vtkVeloViewQuaternion<T>::Normalize()
 }
 
 //----------------------------------------------------------------------------
-template<typename T> vtkVeloViewQuaternion<T> vtkVeloViewQuaternion<T>::Normalized() const
+template<typename T> vtkCustomQuaternion<T> vtkCustomQuaternion<T>::Normalized() const
 {
-  vtkVeloViewQuaternion<T> temp(*this);
+  vtkCustomQuaternion<T> temp(*this);
   temp.Normalize();
   return temp;
 }
 
 //----------------------------------------------------------------------------
-template<typename T> void vtkVeloViewQuaternion<T>::Conjugate()
+template<typename T> void vtkCustomQuaternion<T>::Conjugate()
 {
   for (int i = 1; i < 4; ++i)
     {
@@ -100,15 +100,15 @@ template<typename T> void vtkVeloViewQuaternion<T>::Conjugate()
 }
 
 //----------------------------------------------------------------------------
-template<typename T> vtkVeloViewQuaternion<T> vtkVeloViewQuaternion<T>::Conjugated() const
+template<typename T> vtkCustomQuaternion<T> vtkCustomQuaternion<T>::Conjugated() const
 {
-  vtkVeloViewQuaternion<T> ret(*this);
+  vtkCustomQuaternion<T> ret(*this);
   ret.Conjugate();
   return ret;
 }
 
 //----------------------------------------------------------------------------
-template<typename T> void vtkVeloViewQuaternion<T>::Invert()
+template<typename T> void vtkCustomQuaternion<T>::Invert()
 {
   T squareNorm = this->SquaredNorm();
   if (squareNorm != 0.0)
@@ -122,18 +122,18 @@ template<typename T> void vtkVeloViewQuaternion<T>::Invert()
 }
 
 //----------------------------------------------------------------------------
-template<typename T> vtkVeloViewQuaternion<T> vtkVeloViewQuaternion<T>::Inverse() const
+template<typename T> vtkCustomQuaternion<T> vtkCustomQuaternion<T>::Inverse() const
 {
-  vtkVeloViewQuaternion<T> ret(*this);
+  vtkCustomQuaternion<T> ret(*this);
   ret.Invert();
   return ret;
 }
 
 //----------------------------------------------------------------------------
 template<typename T>
-template<typename CastTo> vtkVeloViewQuaternion<CastTo> vtkVeloViewQuaternion<T>::Cast() const
+template<typename CastTo> vtkCustomQuaternion<CastTo> vtkCustomQuaternion<T>::Cast() const
 {
-  vtkVeloViewQuaternion<CastTo> result;
+  vtkCustomQuaternion<CastTo> result;
   for (int i = 0; i < 4; ++i)
     {
     result[i] = static_cast<CastTo>(this->Data[i]);
@@ -143,7 +143,7 @@ template<typename CastTo> vtkVeloViewQuaternion<CastTo> vtkVeloViewQuaternion<T>
 
 //----------------------------------------------------------------------------
 template<typename T>
-void vtkVeloViewQuaternion<T>::Set(const T& w, const T& x, const T& y, const T& z)
+void vtkCustomQuaternion<T>::Set(const T& w, const T& x, const T& y, const T& z)
 {
   this->Data[0] = w;
   this->Data[1] = x;
@@ -152,7 +152,7 @@ void vtkVeloViewQuaternion<T>::Set(const T& w, const T& x, const T& y, const T& 
 }
 
 //----------------------------------------------------------------------------
-template<typename T> void vtkVeloViewQuaternion<T>::Set(T quat[4])
+template<typename T> void vtkCustomQuaternion<T>::Set(T quat[4])
 {
   for(int i = 0; i < 4; ++i)
     {
@@ -161,7 +161,7 @@ template<typename T> void vtkVeloViewQuaternion<T>::Set(T quat[4])
 }
 
 //----------------------------------------------------------------------------
-template<typename T> void vtkVeloViewQuaternion<T>::Get(T quat[4]) const
+template<typename T> void vtkCustomQuaternion<T>::Get(T quat[4]) const
 {
   for(int i = 0; i < 4; ++i)
     {
@@ -170,58 +170,58 @@ template<typename T> void vtkVeloViewQuaternion<T>::Get(T quat[4]) const
 }
 
 //----------------------------------------------------------------------------
-template<typename T> void vtkVeloViewQuaternion<T>::SetW(const T& w)
+template<typename T> void vtkCustomQuaternion<T>::SetW(const T& w)
 {
   this->Data[0] = w;
 }
 
 //----------------------------------------------------------------------------
-template<typename T> const T& vtkVeloViewQuaternion<T>::GetW() const
+template<typename T> const T& vtkCustomQuaternion<T>::GetW() const
 {
   return this->Data[0];
 }
 
 //----------------------------------------------------------------------------
-template<typename T> void vtkVeloViewQuaternion<T>::SetX(const T& x)
+template<typename T> void vtkCustomQuaternion<T>::SetX(const T& x)
 {
   this->Data[1] = x;
 }
 
 //----------------------------------------------------------------------------
-template<typename T> const T& vtkVeloViewQuaternion<T>::GetX() const
+template<typename T> const T& vtkCustomQuaternion<T>::GetX() const
 {
   return this->Data[1];
 }
 
 //----------------------------------------------------------------------------
-template<typename T> void vtkVeloViewQuaternion<T>::SetY(const T& y)
+template<typename T> void vtkCustomQuaternion<T>::SetY(const T& y)
 {
   this->Data[2] = y;
 }
 
 //----------------------------------------------------------------------------
-template<typename T> const T& vtkVeloViewQuaternion<T>::GetY() const
+template<typename T> const T& vtkCustomQuaternion<T>::GetY() const
 {
   return this->Data[2];
 }
 
 //----------------------------------------------------------------------------
-template<typename T> void vtkVeloViewQuaternion<T>::SetZ(const T& z)
+template<typename T> void vtkCustomQuaternion<T>::SetZ(const T& z)
 {
   this->Data[3] = z;
 }
 
 //----------------------------------------------------------------------------
-template<typename T> const T& vtkVeloViewQuaternion<T>::GetZ() const
+template<typename T> const T& vtkCustomQuaternion<T>::GetZ() const
 {
   return this->Data[3];
 }
 
 //----------------------------------------------------------------------------
 template<typename T>
-T vtkVeloViewQuaternion<T>::GetRotationAngleAndAxis(T axis[3]) const
+T vtkCustomQuaternion<T>::GetRotationAngleAndAxis(T axis[3]) const
 {
-  vtkVeloViewQuaternion<T> normedQuat(*this);
+  vtkCustomQuaternion<T> normedQuat(*this);
   normedQuat.Normalize();
 
   T angle = acos(normedQuat.GetW()) * 2.0;
@@ -244,14 +244,14 @@ T vtkVeloViewQuaternion<T>::GetRotationAngleAndAxis(T axis[3]) const
 
 //----------------------------------------------------------------------------
 template<typename T>
-void vtkVeloViewQuaternion<T>::SetRotationAngleAndAxis (T angle, T axis[3])
+void vtkCustomQuaternion<T>::SetRotationAngleAndAxis (T angle, T axis[3])
 {
   this->SetRotationAngleAndAxis(angle, axis[0], axis[1], axis[2]);
 }
 
 //----------------------------------------------------------------------------
 template<typename T> void
-vtkVeloViewQuaternion<T>::SetRotationAngleAndAxis (const T& angle,
+vtkCustomQuaternion<T>::SetRotationAngleAndAxis (const T& angle,
                                            const T& x,
                                            const T& y,
                                            const T& z)
@@ -275,9 +275,9 @@ vtkVeloViewQuaternion<T>::SetRotationAngleAndAxis (const T& angle,
 
 //----------------------------------------------------------------------------
 template<typename T>
-vtkVeloViewQuaternion<T> vtkVeloViewQuaternion<T>::operator+(const vtkVeloViewQuaternion<T>& q) const
+vtkCustomQuaternion<T> vtkCustomQuaternion<T>::operator+(const vtkCustomQuaternion<T>& q) const
 {
-  vtkVeloViewQuaternion<T> ret;
+  vtkCustomQuaternion<T> ret;
   for (int i = 0; i < 4; ++i)
     {
     ret[i] = this->Data[i] + q[i];
@@ -287,9 +287,9 @@ vtkVeloViewQuaternion<T> vtkVeloViewQuaternion<T>::operator+(const vtkVeloViewQu
 
 //----------------------------------------------------------------------------
 template<typename T>
-vtkVeloViewQuaternion<T> vtkVeloViewQuaternion<T>::operator-(const vtkVeloViewQuaternion<T>& q) const
+vtkCustomQuaternion<T> vtkCustomQuaternion<T>::operator-(const vtkCustomQuaternion<T>& q) const
 {
-  vtkVeloViewQuaternion<T> ret;
+  vtkCustomQuaternion<T> ret;
   for (int i = 0; i < 4; ++i)
     {
     ret[i] = this->Data[i] - q[i];
@@ -299,9 +299,9 @@ vtkVeloViewQuaternion<T> vtkVeloViewQuaternion<T>::operator-(const vtkVeloViewQu
 
 //----------------------------------------------------------------------------
 template<typename T>
-vtkVeloViewQuaternion<T> vtkVeloViewQuaternion<T>::operator*(const vtkVeloViewQuaternion<T>& q) const
+vtkCustomQuaternion<T> vtkCustomQuaternion<T>::operator*(const vtkCustomQuaternion<T>& q) const
 {
-  vtkVeloViewQuaternion<T> ret;
+  vtkCustomQuaternion<T> ret;
   T ww = this->Data[0]*q[0];
   T wx = this->Data[0]*q[1];
   T wy = this->Data[0]*q[2];
@@ -331,9 +331,9 @@ vtkVeloViewQuaternion<T> vtkVeloViewQuaternion<T>::operator*(const vtkVeloViewQu
 
 //----------------------------------------------------------------------------
 template<typename T>
-vtkVeloViewQuaternion<T> vtkVeloViewQuaternion<T>::operator*(const T& scalar) const
+vtkCustomQuaternion<T> vtkCustomQuaternion<T>::operator*(const T& scalar) const
 {
-  vtkVeloViewQuaternion<T> ret;
+  vtkCustomQuaternion<T> ret;
   for (int i = 0; i < 4; ++i)
     {
     ret[i] = this->Data[i] * scalar;
@@ -343,7 +343,7 @@ vtkVeloViewQuaternion<T> vtkVeloViewQuaternion<T>::operator*(const T& scalar) co
 
 //----------------------------------------------------------------------------
 template<typename T>
-void vtkVeloViewQuaternion<T>::operator*=(const T& scalar) const
+void vtkCustomQuaternion<T>::operator*=(const T& scalar) const
 {
   for (int i = 0; i < 4; ++i)
     {
@@ -353,17 +353,17 @@ void vtkVeloViewQuaternion<T>::operator*=(const T& scalar) const
 
 //----------------------------------------------------------------------------
 template<typename T>
-vtkVeloViewQuaternion<T> vtkVeloViewQuaternion<T>::operator/(const vtkVeloViewQuaternion<T>& q) const
+vtkCustomQuaternion<T> vtkCustomQuaternion<T>::operator/(const vtkCustomQuaternion<T>& q) const
 {
-  vtkVeloViewQuaternion<T> inverseQuaternion = q.Inverse();
+  vtkCustomQuaternion<T> inverseQuaternion = q.Inverse();
   return (*this)*inverseQuaternion;
 }
 
 //----------------------------------------------------------------------------
 template<typename T>
-vtkVeloViewQuaternion<T> vtkVeloViewQuaternion<T>::operator/(const T& scalar) const
+vtkCustomQuaternion<T> vtkCustomQuaternion<T>::operator/(const T& scalar) const
 {
-  vtkVeloViewQuaternion<T> ret;
+  vtkCustomQuaternion<T> ret;
   for (int i = 0; i < 4; ++i)
     {
     ret[i] = this->Data[i] / scalar;
@@ -372,7 +372,7 @@ vtkVeloViewQuaternion<T> vtkVeloViewQuaternion<T>::operator/(const T& scalar) co
 }
 
 //----------------------------------------------------------------------------
-template<typename T> void vtkVeloViewQuaternion<T>::operator/=(const T& scalar)
+template<typename T> void vtkCustomQuaternion<T>::operator/=(const T& scalar)
 {
   for (int i = 0; i < 4; ++i)
     {
@@ -381,7 +381,7 @@ template<typename T> void vtkVeloViewQuaternion<T>::operator/=(const T& scalar)
 }
 
 //----------------------------------------------------------------------------
-template<typename T> void vtkVeloViewQuaternion<T>::ToMatrix3x3(T A[3][3]) const
+template<typename T> void vtkCustomQuaternion<T>::ToMatrix3x3(T A[3][3]) const
 {
   T ww = this->Data[0]*this->Data[0];
   T wx = this->Data[0]*this->Data[1];
@@ -429,7 +429,7 @@ template<typename T> void vtkVeloViewQuaternion<T>::ToMatrix3x3(T A[3][3]) const
 //  Berthold K. P. Horn (1987),
 //  "Closed-form solution of absolute orientation using unit quaternions,"
 //  Journal of the Optical Society of America A, 4:629-642
-template<typename T> void vtkVeloViewQuaternion<T>::FromMatrix3x3(const T A[3][3])
+template<typename T> void vtkCustomQuaternion<T>::FromMatrix3x3(const T A[3][3])
 {
   T n[4][4];
 
@@ -470,8 +470,8 @@ template<typename T> void vtkVeloViewQuaternion<T>::FromMatrix3x3(const T A[3][3
 }
 
 //----------------------------------------------------------------------------
-template<typename T> vtkVeloViewQuaternion<T> vtkVeloViewQuaternion<T>
-::Slerp(T t, const vtkVeloViewQuaternion<T>& q1) const
+template<typename T> vtkCustomQuaternion<T> vtkCustomQuaternion<T>
+::Slerp(T t, const vtkCustomQuaternion<T>& q1) const
 {
   T axis0[3], axis1[3];
   this->GetRotationAngleAndAxis(axis0);
@@ -489,7 +489,7 @@ template<typename T> vtkVeloViewQuaternion<T> vtkVeloViewQuaternion<T>
   // is superior to 90 we take the opposite quaternion which
   // is closer and represents the same rotation
 
-  vtkVeloViewQuaternion<T> qClosest = q1;
+  vtkCustomQuaternion<T> qClosest = q1;
 
   if(dot < 0)
   {
@@ -522,26 +522,26 @@ template<typename T> vtkVeloViewQuaternion<T> vtkVeloViewQuaternion<T>
 }
 
 //----------------------------------------------------------------------------
-template<typename T> vtkVeloViewQuaternion<T> vtkVeloViewQuaternion<T>
-::InnerPoint(const vtkVeloViewQuaternion<T>& q1, const vtkVeloViewQuaternion<T>& q2) const
+template<typename T> vtkCustomQuaternion<T> vtkCustomQuaternion<T>
+::InnerPoint(const vtkCustomQuaternion<T>& q1, const vtkCustomQuaternion<T>& q2) const
 {
-  vtkVeloViewQuaternion<T> qInv = q1.Inverse();
-  vtkVeloViewQuaternion<T> qL = qInv*q2;
-  vtkVeloViewQuaternion<T> qR = qInv*(*this);
+  vtkCustomQuaternion<T> qInv = q1.Inverse();
+  vtkCustomQuaternion<T> qL = qInv*q2;
+  vtkCustomQuaternion<T> qR = qInv*(*this);
 
-  vtkVeloViewQuaternion<T> qLLog = qL.UnitLog();
-  vtkVeloViewQuaternion<T> qRLog = qR.UnitLog();
-  vtkVeloViewQuaternion<T> qSum = qLLog + qRLog;
+  vtkCustomQuaternion<T> qLLog = qL.UnitLog();
+  vtkCustomQuaternion<T> qRLog = qR.UnitLog();
+  vtkCustomQuaternion<T> qSum = qLLog + qRLog;
   T w = qSum.GetW();
   qSum /= -4.0;
   qSum.SetW(w);
 
-  vtkVeloViewQuaternion<T> qExp = qSum.UnitExp();
+  vtkCustomQuaternion<T> qExp = qSum.UnitExp();
   return q1*qExp;
 }
 
 //----------------------------------------------------------------------------
-template<typename T> void vtkVeloViewQuaternion<T>::ToUnitLog()
+template<typename T> void vtkCustomQuaternion<T>::ToUnitLog()
 {
   T axis[3];
   T angle = this->GetRotationAngleAndAxis(axis);
@@ -551,15 +551,15 @@ template<typename T> void vtkVeloViewQuaternion<T>::ToUnitLog()
 }
 
 //----------------------------------------------------------------------------
-template<typename T> vtkVeloViewQuaternion<T> vtkVeloViewQuaternion<T>::UnitLog() const
+template<typename T> vtkCustomQuaternion<T> vtkCustomQuaternion<T>::UnitLog() const
 {
-  vtkVeloViewQuaternion<T> unitLog(*this);
+  vtkCustomQuaternion<T> unitLog(*this);
   unitLog.ToUnitLog();
   return unitLog;
 }
 
 //----------------------------------------------------------------------------
-template<typename T> void vtkVeloViewQuaternion<T>::ToUnitExp()
+template<typename T> void vtkCustomQuaternion<T>::ToUnitExp()
 {
   T axis[3];
   T angle = this->GetRotationAngleAndAxis(axis);
@@ -569,15 +569,15 @@ template<typename T> void vtkVeloViewQuaternion<T>::ToUnitExp()
 }
 
 //----------------------------------------------------------------------------
-template<typename T> vtkVeloViewQuaternion<T> vtkVeloViewQuaternion<T>::UnitExp() const
+template<typename T> vtkCustomQuaternion<T> vtkCustomQuaternion<T>::UnitExp() const
 {
-  vtkVeloViewQuaternion<T> unitExp(*this);
+  vtkCustomQuaternion<T> unitExp(*this);
   unitExp.ToUnitExp();
   return unitExp;
 }
 
 //----------------------------------------------------------------------------
-template<typename T> void vtkVeloViewQuaternion<T>::NormalizeWithAngleInDegrees()
+template<typename T> void vtkCustomQuaternion<T>::NormalizeWithAngleInDegrees()
 {
   this->Normalize();
   this->SetW( vtkMath::DegreesFromRadians(this->GetW()) );
@@ -585,9 +585,9 @@ template<typename T> void vtkVeloViewQuaternion<T>::NormalizeWithAngleInDegrees(
 
 //----------------------------------------------------------------------------
 template<typename T>
-vtkVeloViewQuaternion<T> vtkVeloViewQuaternion<T>::NormalizedWithAngleInDegrees() const
+vtkCustomQuaternion<T> vtkCustomQuaternion<T>::NormalizedWithAngleInDegrees() const
 {
-  vtkVeloViewQuaternion<T> unitVTK(*this);
+  vtkCustomQuaternion<T> unitVTK(*this);
   unitVTK.Normalize();
   unitVTK.SetW( vtkMath::DegreesFromRadians( unitVTK.GetW() ) );
   return unitVTK;

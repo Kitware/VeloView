@@ -53,8 +53,8 @@
 class vtkTransform;
 class vtkMatrix4x4;
 class vtkProp3D;
-class vtkVeloViewTupleInterpolator;
-class vtkVeloViewQuaternionInterpolator;
+class vtkCustomTupleInterpolator;
+class vtkCustomQuaternionInterpolator;
 class vtkTransformList;
 struct vtkQTransform;
 
@@ -148,24 +148,24 @@ public:
   // of the transformation matrix. Note that you can modify the behavior of
   // the interpolator (linear vs spline interpolation; change spline basis)
   // by manipulating the interpolator instances.
-  virtual void SetPositionInterpolator(vtkVeloViewTupleInterpolator*);
-  vtkGetObjectMacro(PositionInterpolator, vtkVeloViewTupleInterpolator);
+  virtual void SetPositionInterpolator(vtkCustomTupleInterpolator*);
+  vtkGetObjectMacro(PositionInterpolator, vtkCustomTupleInterpolator);
 
   // Description:
   // Set/Get the tuple interpolator used to interpolate the scale portion
   // of the transformation matrix. Note that you can modify the behavior of
   // the interpolator (linear vs spline interpolation; change spline basis)
   // by manipulating the interpolator instances.
-  virtual void SetScaleInterpolator(vtkVeloViewTupleInterpolator*);
-  vtkGetObjectMacro(ScaleInterpolator, vtkVeloViewTupleInterpolator);
+  virtual void SetScaleInterpolator(vtkCustomTupleInterpolator*);
+  vtkGetObjectMacro(ScaleInterpolator, vtkCustomTupleInterpolator);
 
   // Description:
   // Set/Get the tuple interpolator used to interpolate the orientation portion
   // of the transformation matrix. Note that you can modify the behavior of
   // the interpolator (linear vs spline interpolation; change spline basis)
   // by manipulating the interpolator instances.
-  virtual void SetRotationInterpolator(vtkVeloViewQuaternionInterpolator*);
-  vtkGetObjectMacro(RotationInterpolator, vtkVeloViewQuaternionInterpolator);
+  virtual void SetRotationInterpolator(vtkCustomQuaternionInterpolator*);
+  vtkGetObjectMacro(RotationInterpolator, vtkCustomQuaternionInterpolator);
 
   // Description:
   // Override GetMTime() because we depend on the interpolators which may be
@@ -181,9 +181,9 @@ protected:
   void InterpolateTransformNearest(double t, vtkTransform *xform);
 
   // Interpolators
-  vtkVeloViewTupleInterpolator* PositionInterpolator;
-  vtkVeloViewTupleInterpolator* ScaleInterpolator;
-  vtkVeloViewQuaternionInterpolator* RotationInterpolator;
+  vtkCustomTupleInterpolator* PositionInterpolator;
+  vtkCustomTupleInterpolator* ScaleInterpolator;
+  vtkCustomQuaternionInterpolator* RotationInterpolator;
 
   // Initialize the interpolating splines
   int Initialized;

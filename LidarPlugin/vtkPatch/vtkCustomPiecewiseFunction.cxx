@@ -12,7 +12,7 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-#include "vtkVeloViewPiecewiseFunction.h"
+#include "vtkCustomPiecewiseFunction.h"
 
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
@@ -24,7 +24,7 @@
 #include <algorithm>
 #include <iterator>
 
-vtkStandardNewMacro(vtkVeloViewPiecewiseFunction);
+vtkStandardNewMacro(vtkCustomPiecewiseFunction);
 
 // The Node structure
 class vtkPiecewiseFunctionNode
@@ -96,7 +96,7 @@ public:
 };
 
 // Construct a new vtkPiecewiseFunction with default values
-vtkVeloViewPiecewiseFunction::vtkVeloViewPiecewiseFunction()
+vtkCustomPiecewiseFunction::vtkCustomPiecewiseFunction()
 {
   this->Clamping = 1;
   this->Range[0] = 0;
@@ -110,7 +110,7 @@ vtkVeloViewPiecewiseFunction::vtkVeloViewPiecewiseFunction()
 }
 
 // Destruct a vtkPiecewiseFunction
-vtkVeloViewPiecewiseFunction::~vtkVeloViewPiecewiseFunction()
+vtkCustomPiecewiseFunction::~vtkCustomPiecewiseFunction()
 {
   delete [] this->Function;
 
@@ -122,9 +122,9 @@ vtkVeloViewPiecewiseFunction::~vtkVeloViewPiecewiseFunction()
   delete this->Internal;
 }
 
-void vtkVeloViewPiecewiseFunction::DeepCopy( vtkDataObject *o )
+void vtkCustomPiecewiseFunction::DeepCopy( vtkDataObject *o )
 {
-  vtkVeloViewPiecewiseFunction *f = vtkVeloViewPiecewiseFunction::SafeDownCast(o);
+  vtkCustomPiecewiseFunction *f = vtkCustomPiecewiseFunction::SafeDownCast(o);
 
   if (f != NULL)
     {
@@ -145,9 +145,9 @@ void vtkVeloViewPiecewiseFunction::DeepCopy( vtkDataObject *o )
   this->Superclass::DeepCopy(o);
 }
 
-void vtkVeloViewPiecewiseFunction::ShallowCopy( vtkDataObject *o )
+void vtkCustomPiecewiseFunction::ShallowCopy( vtkDataObject *o )
 {
-  vtkVeloViewPiecewiseFunction *f = vtkVeloViewPiecewiseFunction::SafeDownCast(o);
+  vtkCustomPiecewiseFunction *f = vtkCustomPiecewiseFunction::SafeDownCast(o);
 
   if (f != NULL)
     {
@@ -169,12 +169,12 @@ void vtkVeloViewPiecewiseFunction::ShallowCopy( vtkDataObject *o )
 }
 
 // This is a legacy method that is no longer needed
-void vtkVeloViewPiecewiseFunction::Initialize()
+void vtkCustomPiecewiseFunction::Initialize()
 {
   this->RemoveAllPoints();
 }
 
-void vtkVeloViewPiecewiseFunction::GetTableDichotomic( double xStart, double xEnd,
+void vtkCustomPiecewiseFunction::GetTableDichotomic( double xStart, double xEnd,
                                      int size, double* table,
                                      int stride )
  {
@@ -354,7 +354,7 @@ void vtkVeloViewPiecewiseFunction::GetTableDichotomic( double xStart, double xEn
  }
 
  // Return the value of the function at a position
-double vtkVeloViewPiecewiseFunction::GetValueDichotomic( double x )
+double vtkCustomPiecewiseFunction::GetValueDichotomic( double x )
 {
   double table[1];
   this->GetTableDichotomic( x, x, 1, table );
@@ -362,7 +362,7 @@ double vtkVeloViewPiecewiseFunction::GetValueDichotomic( double x )
 }
 
 // Return the number of points which specify this function
-int vtkVeloViewPiecewiseFunction::GetSize()
+int vtkCustomPiecewiseFunction::GetSize()
 {
   return static_cast<int>(this->Internal->Nodes.size());
 }
@@ -375,7 +375,7 @@ int vtkVeloViewPiecewiseFunction::GetSize()
 //    3 : Varied          (Contains both decreasing and increasing slopes)
 //    4 : Unknown         (Error condition)
 //
-const char *vtkVeloViewPiecewiseFunction::GetType()
+const char *vtkCustomPiecewiseFunction::GetType()
 {
   unsigned int   i;
   double value;
@@ -451,7 +451,7 @@ const char *vtkVeloViewPiecewiseFunction::GetType()
 // Since we no longer store the data in an array, we must
 // copy out of the vector into an array. No modified check -
 // could be added if performance is a problem
-double *vtkVeloViewPiecewiseFunction::GetDataPointer()
+double *vtkCustomPiecewiseFunction::GetDataPointer()
 {
   int size = static_cast<int>(this->Internal->Nodes.size());
 
@@ -473,7 +473,7 @@ double *vtkVeloViewPiecewiseFunction::GetDataPointer()
 
 // Returns the first point location which starts a non-zero segment of the
 // function. Note that the value at this point may be zero.
-double vtkVeloViewPiecewiseFunction::GetFirstNonZeroValue()
+double vtkCustomPiecewiseFunction::GetFirstNonZeroValue()
 {
   // Check if no points specified
   if( this->Internal->Nodes.size() == 0 )
@@ -526,7 +526,7 @@ double vtkVeloViewPiecewiseFunction::GetFirstNonZeroValue()
 }
 
 // For a specified index value, get the node parameters
-int vtkVeloViewPiecewiseFunction::GetNodeValue( int index, double val[4] )
+int vtkCustomPiecewiseFunction::GetNodeValue( int index, double val[4] )
 {
   int size = static_cast<int>(this->Internal->Nodes.size());
 
@@ -545,7 +545,7 @@ int vtkVeloViewPiecewiseFunction::GetNodeValue( int index, double val[4] )
 }
 
 // For a specified index value, get the node parameters
-int vtkVeloViewPiecewiseFunction::SetNodeValue( int index, double val[4] )
+int vtkCustomPiecewiseFunction::SetNodeValue( int index, double val[4] )
 {
   int size = static_cast<int>(this->Internal->Nodes.size());
 
@@ -581,13 +581,13 @@ int vtkVeloViewPiecewiseFunction::SetNodeValue( int index, double val[4] )
 // then the function value at that location is set to the new value.
 // This is the legacy version that assumes midpoint = 0.5 and
 // sharpness = 0.0
-int vtkVeloViewPiecewiseFunction::AddPoint( double x, double y )
+int vtkCustomPiecewiseFunction::AddPoint( double x, double y )
 {
   return this->AddPoint( x, y, 0.5, 0.0 );
 }
 
 // Adds a point to the function and returns the array index of the point.
-int vtkVeloViewPiecewiseFunction::AddPoint( double x, double y,
+int vtkCustomPiecewiseFunction::AddPoint( double x, double y,
                                     double midpoint, double sharpness )
 {
   // Error check
@@ -648,7 +648,7 @@ int vtkVeloViewPiecewiseFunction::AddPoint( double x, double y,
 
 // Sort the vector in increasing order, then fill in
 // the Range
-void vtkVeloViewPiecewiseFunction::SortAndUpdateRange()
+void vtkCustomPiecewiseFunction::SortAndUpdateRange()
 {
   std::sort( this->Internal->Nodes.begin(),
                 this->Internal->Nodes.end(),
@@ -662,7 +662,7 @@ void vtkVeloViewPiecewiseFunction::SortAndUpdateRange()
 }
 
 //----------------------------------------------------------------------------
-bool vtkVeloViewPiecewiseFunction::UpdateRange()
+bool vtkCustomPiecewiseFunction::UpdateRange()
 {
   double oldRange[2];
   oldRange[0] = this->Range[0];
@@ -691,7 +691,7 @@ bool vtkVeloViewPiecewiseFunction::UpdateRange()
 
 // Removes a point from the function. If no point is found then function
 // remains the same.
-int vtkVeloViewPiecewiseFunction::RemovePoint( double x )
+int vtkCustomPiecewiseFunction::RemovePoint( double x )
 {
   // First find the node since we need to know its
   // index as our return value
@@ -753,7 +753,7 @@ int vtkVeloViewPiecewiseFunction::RemovePoint( double x )
 }
 
 // Removes all points from the function.
-void vtkVeloViewPiecewiseFunction::RemoveAllPoints()
+void vtkCustomPiecewiseFunction::RemoveAllPoints()
 {
   for(unsigned int i=0;i<this->Internal->Nodes.size();i++)
     {
@@ -766,7 +766,7 @@ void vtkVeloViewPiecewiseFunction::RemoveAllPoints()
 
 // Add in end points of line and remove any points between them
 // Legacy method with no way to specify midpoint and sharpness
-void vtkVeloViewPiecewiseFunction::AddSegment( double x1, double y1,
+void vtkCustomPiecewiseFunction::AddSegment( double x1, double y1,
                                        double x2, double y2 )
 {
   int done;
@@ -800,7 +800,7 @@ void vtkVeloViewPiecewiseFunction::AddSegment( double x1, double y1,
 }
 
 // Return the value of the function at a position
-double vtkVeloViewPiecewiseFunction::GetValue( double x )
+double vtkCustomPiecewiseFunction::GetValue( double x )
 {
   double table[1];
   this->GetTable( x, x, 1, table );
@@ -810,7 +810,7 @@ double vtkVeloViewPiecewiseFunction::GetValue( double x )
 // Remove all points outside the range, and make sure a point
 // exists at each end of the range. Used as a convenience method
 // for transfer function editors
-int vtkVeloViewPiecewiseFunction::AdjustRange(double range[2])
+int vtkCustomPiecewiseFunction::AdjustRange(double range[2])
 {
   if (!range)
     {
@@ -869,7 +869,7 @@ int vtkVeloViewPiecewiseFunction::AdjustRange(double range[2])
 }
 
 // Returns a table of function values evaluated at regular intervals
-void vtkVeloViewPiecewiseFunction::GetTable( double xStart, double xEnd,
+void vtkCustomPiecewiseFunction::GetTable( double xStart, double xEnd,
                                      int size, double* table,
                                      int stride )
 {
@@ -1053,7 +1053,7 @@ void vtkVeloViewPiecewiseFunction::GetTable( double xStart, double xEnd,
 }
 
 // Copy from double table to float
-void vtkVeloViewPiecewiseFunction::GetTable( double xStart, double xEnd,
+void vtkCustomPiecewiseFunction::GetTable( double xStart, double xEnd,
                                      int size, float* table,
                                      int stride )
 {
@@ -1076,7 +1076,7 @@ void vtkVeloViewPiecewiseFunction::GetTable( double xStart, double xEnd,
 
 // Given a table of values, build the piecewise function. Legacy method
 // that does not allow for midpoint and sharpness control
-void vtkVeloViewPiecewiseFunction::BuildFunctionFromTable( double xStart, double xEnd,
+void vtkCustomPiecewiseFunction::BuildFunctionFromTable( double xStart, double xEnd,
                                                    int size, double* table,
                                                    int stride )
 {
@@ -1109,7 +1109,7 @@ void vtkVeloViewPiecewiseFunction::BuildFunctionFromTable( double xStart, double
 
 // Given a pointer to an array of values, build the piecewise function.
 // Legacy method that does not allow for midpoint and sharpness control
-void vtkVeloViewPiecewiseFunction::FillFromDataPointer(int nb, double *ptr)
+void vtkCustomPiecewiseFunction::FillFromDataPointer(int nb, double *ptr)
 {
   if (nb <= 0 || !ptr)
     {
@@ -1137,21 +1137,21 @@ void vtkVeloViewPiecewiseFunction::FillFromDataPointer(int nb, double *ptr)
 }
 
 //----------------------------------------------------------------------------
-vtkVeloViewPiecewiseFunction* vtkVeloViewPiecewiseFunction::GetData(vtkInformation* info)
+vtkCustomPiecewiseFunction* vtkCustomPiecewiseFunction::GetData(vtkInformation* info)
 {
   return
-    info? vtkVeloViewPiecewiseFunction::SafeDownCast(info->Get(DATA_OBJECT())) : 0;
+    info? vtkCustomPiecewiseFunction::SafeDownCast(info->Get(DATA_OBJECT())) : 0;
 }
 
 //----------------------------------------------------------------------------
-vtkVeloViewPiecewiseFunction* vtkVeloViewPiecewiseFunction::GetData(vtkInformationVector* v,
+vtkCustomPiecewiseFunction* vtkCustomPiecewiseFunction::GetData(vtkInformationVector* v,
                                                     int i)
 {
-  return vtkVeloViewPiecewiseFunction::GetData(v->GetInformationObject(i));
+  return vtkCustomPiecewiseFunction::GetData(v->GetInformationObject(i));
 }
 
 // Print method for tkPiecewiseFunction
-void vtkVeloViewPiecewiseFunction::PrintSelf(ostream& os, vtkIndent indent)
+void vtkCustomPiecewiseFunction::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 

@@ -17,10 +17,10 @@
 #include "vtkMatrix4x4.h"
 #include "vtkObjectFactory.h"
 #include "vtkProp3D.h"
-#include "vtkPatchVeloView/vtkVeloViewQuaternion.h"
-#include "vtkPatchVeloView/vtkVeloViewQuaternionInterpolator.h"
+#include "vtkPatch/vtkCustomQuaternion.h"
+#include "vtkPatch/vtkCustomQuaternionInterpolator.h"
 #include "vtkTransform.h"
-#include "vtkPatchVeloView/vtkVeloViewTupleInterpolator.h"
+#include "vtkPatch/vtkCustomTupleInterpolator.h"
 #include <list>
 #include <vector>
 #include <set>
@@ -37,7 +37,7 @@ struct vtkQTransform
   double Time;
   double P[3];
   double S[3];
-  vtkVeloViewQuaterniond Q;
+  vtkCustomQuaterniond Q;
 
   vtkQTransform()
   {
@@ -122,9 +122,9 @@ vtkCustomTransformInterpolator::vtkCustomTransformInterpolator()
   this->InterpolationType = INTERPOLATION_TYPE_SPLINE;
 
   // Spline interpolation
-  this->PositionInterpolator = vtkVeloViewTupleInterpolator::New();
-  this->ScaleInterpolator = vtkVeloViewTupleInterpolator::New();
-  this->RotationInterpolator = vtkVeloViewQuaternionInterpolator::New();
+  this->PositionInterpolator = vtkCustomTupleInterpolator::New();
+  this->ScaleInterpolator = vtkCustomTupleInterpolator::New();
+  this->RotationInterpolator = vtkCustomQuaternionInterpolator::New();
 
   // Quaternion interpolation
   this->TransformList = new vtkTransformList;
@@ -321,7 +321,7 @@ void vtkCustomTransformInterpolator::RemoveTransform(double t)
 }
 
 //----------------------------------------------------------------------------
-void vtkCustomTransformInterpolator::SetPositionInterpolator(vtkVeloViewTupleInterpolator* pi)
+void vtkCustomTransformInterpolator::SetPositionInterpolator(vtkCustomTupleInterpolator* pi)
 {
   if (this->PositionInterpolator != pi)
   {
@@ -339,7 +339,7 @@ void vtkCustomTransformInterpolator::SetPositionInterpolator(vtkVeloViewTupleInt
 }
 
 //----------------------------------------------------------------------------
-void vtkCustomTransformInterpolator::SetScaleInterpolator(vtkVeloViewTupleInterpolator* si)
+void vtkCustomTransformInterpolator::SetScaleInterpolator(vtkCustomTupleInterpolator* si)
 {
   if (this->ScaleInterpolator != si)
   {
@@ -357,7 +357,7 @@ void vtkCustomTransformInterpolator::SetScaleInterpolator(vtkVeloViewTupleInterp
 }
 
 //----------------------------------------------------------------------------
-void vtkCustomTransformInterpolator::SetRotationInterpolator(vtkVeloViewQuaternionInterpolator* ri)
+void vtkCustomTransformInterpolator::SetRotationInterpolator(vtkCustomQuaternionInterpolator* ri)
 {
   if (this->RotationInterpolator != ri)
   {
@@ -387,15 +387,15 @@ void vtkCustomTransformInterpolator::InitializeInterpolation()
   {
     if (!this->PositionInterpolator)
     {
-      this->PositionInterpolator = vtkVeloViewTupleInterpolator::New();
+      this->PositionInterpolator = vtkCustomTupleInterpolator::New();
     }
     if (!this->ScaleInterpolator)
     {
-      this->ScaleInterpolator = vtkVeloViewTupleInterpolator::New();
+      this->ScaleInterpolator = vtkCustomTupleInterpolator::New();
     }
     if (!this->RotationInterpolator)
     {
-      this->RotationInterpolator = vtkVeloViewQuaternionInterpolator::New();
+      this->RotationInterpolator = vtkCustomQuaternionInterpolator::New();
     }
 
     if (this->InterpolationType == INTERPOLATION_TYPE_LINEAR
@@ -510,7 +510,7 @@ void vtkCustomTransformInterpolator::InterpolateTransform(double t, vtkTransform
   }
 
   double P[3], S[3], Q[4];
-  vtkVeloViewQuaterniond q;
+  vtkCustomQuaterniond q;
   this->PositionInterpolator->InterpolateTupleDichotomic(t, P);
   this->ScaleInterpolator->InterpolateTupleDichotomic(t, S);
   this->RotationInterpolator->InterpolateQuaternion(t, q);

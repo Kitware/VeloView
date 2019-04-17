@@ -1,7 +1,7 @@
 /*=========================================================================
 
   Program:   Visualization Toolkit
-  Module:    vtkVeloViewQuaternionInterpolator.cxx
+  Module:    vtkCustomQuaternionInterpolator.cxx
 
   Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
   All rights reserved.
@@ -14,11 +14,11 @@
 =========================================================================*/
 #include "vtkMath.h"
 #include "vtkObjectFactory.h"
-#include "vtkVeloViewQuaternion.h"
-#include "vtkVeloViewQuaternionInterpolator.h"
+#include "vtkCustomQuaternion.h"
+#include "vtkCustomQuaternionInterpolator.h"
 #include <vector>
 
-vtkStandardNewMacro(vtkVeloViewQuaternionInterpolator);
+vtkStandardNewMacro(vtkCustomQuaternionInterpolator);
 
 //----------------------------------------------------------------------------
 // PIMPL STL encapsulation for list of quaternions. The list is sorted on
@@ -28,14 +28,14 @@ vtkStandardNewMacro(vtkVeloViewQuaternionInterpolator);
 struct TimedQuaternion
 {
   double Time;
-  vtkVeloViewQuaterniond Q;     //VTK's quaternion: unit rotation axis with angles in degrees
+  vtkCustomQuaterniond Q;     //VTK's quaternion: unit rotation axis with angles in degrees
 
   TimedQuaternion()
     : Q(0.0)
     {
     this->Time = 0.0;
     }
-  TimedQuaternion(double t, vtkVeloViewQuaterniond q)
+  TimedQuaternion(double t, vtkCustomQuaterniond q)
     {
     this->Time = t;
     this->Q = q;
@@ -43,33 +43,33 @@ struct TimedQuaternion
 };
 
 // The list is arranged in increasing order in T
-class vtkVeloViewQuaternionList : public std::vector<TimedQuaternion> {};
-typedef vtkVeloViewQuaternionList::iterator QuaternionListIterator;
+class vtkCustomQuaternionList : public std::vector<TimedQuaternion> {};
+typedef vtkCustomQuaternionList::iterator QuaternionListIterator;
 
 //----------------------------------------------------------------------------
-vtkVeloViewQuaternionInterpolator::vtkVeloViewQuaternionInterpolator()
+vtkCustomQuaternionInterpolator::vtkCustomQuaternionInterpolator()
 {
   // Set up the interpolation
-  this->QuaternionList = new vtkVeloViewQuaternionList;
+  this->QuaternionList = new vtkCustomQuaternionList;
   this->InterpolationType = INTERPOLATION_TYPE_SPLINE;
 }
 
 //----------------------------------------------------------------------------
-vtkVeloViewQuaternionInterpolator::~vtkVeloViewQuaternionInterpolator()
+vtkCustomQuaternionInterpolator::~vtkCustomQuaternionInterpolator()
 {
   this->Initialize();
   delete this->QuaternionList;
 }
 
 //----------------------------------------------------------------------------
-int vtkVeloViewQuaternionInterpolator::GetNumberOfQuaternions()
+int vtkCustomQuaternionInterpolator::GetNumberOfQuaternions()
 {
   return static_cast<int>(this->QuaternionList->size());
 }
 
 
 //----------------------------------------------------------------------------
-double vtkVeloViewQuaternionInterpolator::GetMinimumT()
+double vtkCustomQuaternionInterpolator::GetMinimumT()
 {
   if (this->QuaternionList->size() > 0)
     {
@@ -83,7 +83,7 @@ double vtkVeloViewQuaternionInterpolator::GetMinimumT()
 
 
 //----------------------------------------------------------------------------
-double vtkVeloViewQuaternionInterpolator::GetMaximumT()
+double vtkCustomQuaternionInterpolator::GetMaximumT()
 {
   if (this->QuaternionList->size() > 0)
     {
@@ -97,22 +97,22 @@ double vtkVeloViewQuaternionInterpolator::GetMaximumT()
 
 
 //----------------------------------------------------------------------------
-void vtkVeloViewQuaternionInterpolator::Initialize()
+void vtkCustomQuaternionInterpolator::Initialize()
 {
   // Wipe out old data
   this->QuaternionList->clear();
 }
 
 //----------------------------------------------------------------------------
-void vtkVeloViewQuaternionInterpolator::AddQuaternion(double t, double q[4])
+void vtkCustomQuaternionInterpolator::AddQuaternion(double t, double q[4])
 {
-  vtkVeloViewQuaterniond quat(q);
+  vtkCustomQuaterniond quat(q);
   this->AddQuaternion(t, quat);
 }
 
 //----------------------------------------------------------------------------
-void vtkVeloViewQuaternionInterpolator::AddQuaternion(double t,
-                                              const vtkVeloViewQuaterniond& q)
+void vtkCustomQuaternionInterpolator::AddQuaternion(double t,
+                                              const vtkCustomQuaterniond& q)
 {
   int size = static_cast<int>(this->QuaternionList->size());
 
@@ -154,7 +154,7 @@ void vtkVeloViewQuaternionInterpolator::AddQuaternion(double t,
 }
 
 //----------------------------------------------------------------------------
-void vtkVeloViewQuaternionInterpolator::RemoveQuaternion(double t)
+void vtkCustomQuaternionInterpolator::RemoveQuaternion(double t)
 {
   if ( t < this->QuaternionList->front().Time ||
        t > this->QuaternionList->back().Time )
@@ -175,9 +175,9 @@ void vtkVeloViewQuaternionInterpolator::RemoveQuaternion(double t)
 }
 
 //----------------------------------------------------------------------------
-void vtkVeloViewQuaternionInterpolator::InterpolateQuaternion(double t, double q[4])
+void vtkCustomQuaternionInterpolator::InterpolateQuaternion(double t, double q[4])
 {
-  vtkVeloViewQuaterniond quat(q);
+  vtkCustomQuaterniond quat(q);
   this->InterpolateQuaternion(t, quat);
   for (int i = 0; i < 4; ++i)
     {
@@ -186,8 +186,8 @@ void vtkVeloViewQuaternionInterpolator::InterpolateQuaternion(double t, double q
 }
 
 //----------------------------------------------------------------------------
-void vtkVeloViewQuaternionInterpolator::InterpolateQuaternion(double t,
-                                                      vtkVeloViewQuaterniond& q)
+void vtkCustomQuaternionInterpolator::InterpolateQuaternion(double t,
+                                                      vtkCustomQuaterniond& q)
 {
   // The quaternion may be clamped if it is outside the range specified
   if ( t <= this->QuaternionList->front().Time )
@@ -240,7 +240,7 @@ void vtkVeloViewQuaternionInterpolator::InterpolateQuaternion(double t,
         }
       }
 
-    vtkVeloViewQuaterniond ai, bi, qc, qd;
+    vtkCustomQuaterniond ai, bi, qc, qd;
     if ( i == 0 ) //initial interval
       {
       iter1 = iter;
@@ -248,7 +248,7 @@ void vtkVeloViewQuaternionInterpolator::InterpolateQuaternion(double t,
       iter3 = nextIter + 1;
 
       ai = iter1->Q.Normalized(); //just duplicate first quaternion
-      vtkVeloViewQuaterniond q1 = iter1->Q.Normalized();
+      vtkCustomQuaterniond q1 = iter1->Q.Normalized();
       bi = q1.InnerPoint(iter2->Q.Normalized(), iter3->Q.Normalized());
       }
     else if ( i == (numQuats-2) ) //final interval
@@ -257,7 +257,7 @@ void vtkVeloViewQuaternionInterpolator::InterpolateQuaternion(double t,
       iter1 = iter;
       iter2 = nextIter;
 
-      vtkVeloViewQuaterniond q0 = iter0->Q.Normalized();
+      vtkCustomQuaterniond q0 = iter0->Q.Normalized();
       ai = q0.InnerPoint(iter1->Q.Normalized(), iter2->Q.Normalized());
 
       bi = iter2->Q.Normalized(); //just duplicate last quaternion
@@ -269,15 +269,15 @@ void vtkVeloViewQuaternionInterpolator::InterpolateQuaternion(double t,
       iter2 = nextIter;
       iter3 = nextIter + 1;
 
-      vtkVeloViewQuaterniond q0 = iter0->Q.Normalized();
+      vtkCustomQuaterniond q0 = iter0->Q.Normalized();
       ai = q0.InnerPoint(iter1->Q.Normalized(), iter2->Q.Normalized());
 
-      vtkVeloViewQuaterniond q1 = iter1->Q.Normalized();
+      vtkCustomQuaterniond q1 = iter1->Q.Normalized();
       bi = q1.InnerPoint(iter2->Q.Normalized(), iter3->Q.Normalized());
       }
 
     // These three Slerp operations implement a Squad interpolation
-    vtkVeloViewQuaterniond q1 = iter1->Q.Normalized();
+    vtkCustomQuaterniond q1 = iter1->Q.Normalized();
     qc = q1.Slerp(T,iter2->Q.Normalized());
     qd = ai.Slerp(T,bi);
     q = qc.Slerp(2.0*T*(1.0-T),qd);
@@ -288,7 +288,7 @@ void vtkVeloViewQuaternionInterpolator::InterpolateQuaternion(double t,
 }
 
 //----------------------------------------------------------------------------
-void vtkVeloViewQuaternionInterpolator::PrintSelf(ostream& os, vtkIndent indent)
+void vtkCustomQuaternionInterpolator::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 
