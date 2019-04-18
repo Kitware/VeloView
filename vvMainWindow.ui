@@ -337,7 +337,7 @@
     <string>&amp;Capture File...</string>
    </property>
    <property name="toolTip">
-    <string>Open a Wireshark-format capture file with data collected from a Velodyne sensor</string>
+    <string>Open a Wireshark-format capture file with data collected from a lidar sensor</string>
    </property>
    <property name="statusTip">
     <string>Open Data File</string>
@@ -394,7 +394,7 @@
   <action name="actionOpen_Sensor_Stream">
    <property name="icon">
     <iconset resource="LidarPlugin/Ui/images/resources.qrc">
-     <normaloff>:/LidarViewPlugin/velodyne_hdl.png</normaloff>:/LidarViewPlugin/velodyne_hdl.png</iconset>
+     <normaloff>:/LidarViewPlugin/lidar.png</normaloff>:/LidarViewPlugin/lidar.png</iconset>
    </property>
    <property name="text">
     <string>Sensor &amp;Stream...</string>

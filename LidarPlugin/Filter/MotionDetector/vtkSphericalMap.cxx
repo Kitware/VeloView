@@ -125,7 +125,7 @@ void GaussianMixture::AddPoint(double x)
   if (maxProba < threshProb)
   {
     // Create new gaussian, centered on x and with a starting
-    // sigma of 2cm (specific to velodyne sensors)
+    // sigma of 2cm (specific to the Lidar sensors)
     Gaussian newGaussian;
     newGaussian.SetMean(x);
     this->Gaussians.push_back(newGaussian);

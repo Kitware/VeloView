@@ -69,7 +69,7 @@ public:
   // Description:
   // Set/Get the time offset adjustment to apply to the time values. This is
   // meant to correct the offset between GPS time (as provided by the Applanix
-  // sensor) and UTC time (as used by the Velodyne sensor).
+  // sensor) and UTC time (as used by the lidar sensor).
   vtkSetMacro(TimeOffset, double);
   vtkGetMacro(TimeOffset, double);
 

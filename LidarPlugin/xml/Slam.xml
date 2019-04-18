@@ -3,8 +3,8 @@
   <ProxyGroup name="filters">
     <SourceProxy name="Slam (Online)" class="vtkSlam" label="Slam (Online)">
       <Documentation
-        short_help="Performs SLAM algorithm based Velodyne's sensor outputted point cloud"
-        long_help="Performs SLAM algorithm based Velodyne's sensor outputted point cloud.
+        short_help="Performs SLAM algorithm based on lidar sensor outputted point cloud"
+        long_help="Performs SLAM algorithm based on lidar sensor outputted point cloud.
                    The SLAM algorithm is composed of three sequential steps:
                    - Sampling strategy: extract keypoints that provide strong geometric information
                    - Ego Motion: Sensor motion estimation between two frames

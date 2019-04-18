@@ -276,7 +276,7 @@ void vtkLidarReader::SaveFrame(int startFrame, int endFrame, const std::string &
 
   // Explanation for why we need to allow currentFrame to go to endFrame + 1:
   // If '[]' represents a packet, '|' represents the separation between frames,
-  // Then the contents of a Velodyne Lidar PCAP is in general*:
+  // Then the most generic form of a Lidar PCAP is*:
   // [-- incomplete frame --|-- begin frame 0 --]
   // [-- content of frame 0 --]
   // ... many packets ...
@@ -306,7 +306,7 @@ void vtkLidarReader::SaveFrame(int startFrame, int endFrame, const std::string &
          && currentFrame <= endFrame + 1) // see explanation above for "+ 1"
   {
     // writing all packets, even those that do not contain lidar frames,
-    // such as the 512 bytes packets of Velodyne IMU data + forwarded GPS data
+    // such as IMU data or GPS data
     writer.WritePacket(header, const_cast<unsigned char*>(data) - dataHeaderLength);
     if (this->Interpreter->IsLidarPacket(data, dataLength))
     {

@@ -106,9 +106,6 @@ namespace {
     }
     double latDeg = std::floor(latDec / 100.0);
     double lonDeg = std::floor(lonDec / 100.0);
-    // was written in existing code (vtkVelodyneHDLPositionReader):
-    // double latMin = 100.0 * (latDec / 100.0 - latDeg);
-    // TODO: check it would improve precision
     double latMin = latDec - 100.0 * latDeg;
     double lonMin = lonDec - 100.0 * lonDeg;
     double lat = latDeg + latMin / 60.0;
@@ -627,8 +624,6 @@ bool NMEAParser::ParseLocation(const std::string& sentence, NMEALocation& locati
   // and check that their length is correct.
   // There can be multiple possible length because "FAA mode indicator" is
   // present in NMEA 2.3 and later.
-  // This "FAA mode indicator" is not present in Velodyne relay packets of
-  // file "HDL32-V2_R into Butterfield into Digital Drive.pcap".
   if (IsGPRMC(w))
   {
     return ParseGPRMC(w, location);

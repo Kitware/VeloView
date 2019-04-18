@@ -424,9 +424,9 @@ private:
   int ComputeBlobsDistanceParameters(pcl::KdTreeFLANN<Point>::Ptr kdtreePreviousBlobs, Eigen::Matrix3d& R,
                                               Eigen::Vector3d& dT, Point p, std::string step);
 
-  // Instead of taking the k-nearest neigbirs in the odometry
+  // Instead of taking the k-nearest neigbors in the odometry
   // step we will take specific neighbor using the particularities
-  // of the velodyne's lidar sensor
+  // of the lidar sensor
   void GetEgoMotionLineSpecificNeighbor(std::vector<int>& nearestValid, std::vector<float>& nearestValidDist,
                                         unsigned int nearestSearch, pcl::KdTreeFLANN<Point>::Ptr kdtreePreviousEdges, Point p);
 
