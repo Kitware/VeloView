@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include "pqVelodyneManager.h"
+#include "pqLidarViewManager.h"
 
 #include "LASFileWriter.h"
 #include "vtkPVConfig.h" //  needed for PARAVIEW_VERSION
@@ -55,39 +55,39 @@
 #include <sstream>
 
 //-----------------------------------------------------------------------------
-class pqVelodyneManager::pqInternal
+class pqLidarViewManager::pqInternal
 {
 };
 
 //-----------------------------------------------------------------------------
-QPointer<pqVelodyneManager> pqVelodyneManagerInstance = NULL;
+QPointer<pqLidarViewManager> pqLidarViewManagerInstance = NULL;
 
 //-----------------------------------------------------------------------------
-pqVelodyneManager* pqVelodyneManager::instance()
+pqLidarViewManager* pqLidarViewManager::instance()
 {
-  if (!pqVelodyneManagerInstance)
+  if (!pqLidarViewManagerInstance)
   {
-    pqVelodyneManagerInstance = new pqVelodyneManager(pqApplicationCore::instance());
+    pqLidarViewManagerInstance = new pqLidarViewManager(pqApplicationCore::instance());
   }
 
-  return pqVelodyneManagerInstance;
+  return pqLidarViewManagerInstance;
 }
 
 //-----------------------------------------------------------------------------
-pqVelodyneManager::pqVelodyneManager(QObject* p)
+pqLidarViewManager::pqLidarViewManager(QObject* p)
   : QObject(p)
 {
   this->Internal = new pqInternal;
 }
 
 //-----------------------------------------------------------------------------
-pqVelodyneManager::~pqVelodyneManager()
+pqLidarViewManager::~pqLidarViewManager()
 {
   delete this->Internal;
 }
 
 //-----------------------------------------------------------------------------
-void pqVelodyneManager::pythonStartup()
+void pqLidarViewManager::pythonStartup()
 {
   QStringList pythonDirs;
   pythonDirs << QCoreApplication::applicationDirPath()  + "/../Python" // MacOSX application bundle
@@ -169,7 +169,7 @@ void pqVelodyneManager::pythonStartup()
 }
 
 //-----------------------------------------------------------------------------
-void pqVelodyneManager::runPython(const QString& statements)
+void pqLidarViewManager::runPython(const QString& statements)
 {
   // printf("runPython(\"%s\")\n", qPrintable(statements));
   pqPythonManager* manager = pqPVApplicationCore::instance()->pythonManager();
@@ -178,14 +178,14 @@ void pqVelodyneManager::runPython(const QString& statements)
 }
 
 //-----------------------------------------------------------------------------
-void pqVelodyneManager::onEnableCrashAnalysis(bool crashAnalysisEnabled)
+void pqLidarViewManager::onEnableCrashAnalysis(bool crashAnalysisEnabled)
 {
   pqSettings* const Settings = pqApplicationCore::instance()->settings();
   Settings->setValue("LidarPlugin/MainWindow/EnableCrashAnalysis", crashAnalysisEnabled);
 }
 
 //-----------------------------------------------------------------------------
-void pqVelodyneManager::onResetDefaultSettings()
+void pqLidarViewManager::onResetDefaultSettings()
 {
   QMessageBox messageBox;
   messageBox.setIcon(QMessageBox::Warning);
@@ -219,7 +219,7 @@ void pqVelodyneManager::onResetDefaultSettings()
 }
 
 //-----------------------------------------------------------------------------
-void pqVelodyneManager::saveFramesToPCAP(
+void pqLidarViewManager::saveFramesToPCAP(
   vtkSMSourceProxy* proxy, int startFrame, int endFrame, const QString& filename)
 {
   if (!proxy)
@@ -239,7 +239,7 @@ void pqVelodyneManager::saveFramesToPCAP(
 }
 
 //-----------------------------------------------------------------------------
-void pqVelodyneManager::saveFramesToLAS(vtkLidarReader* reader, vtkPolyData* position,
+void pqLidarViewManager::saveFramesToLAS(vtkLidarReader* reader, vtkPolyData* position,
   int startFrame, int endFrame, const QString& filename, int positionMode)
 {
   if (!reader || (positionMode > 0 && !position))
@@ -356,13 +356,13 @@ void pqVelodyneManager::saveFramesToLAS(vtkLidarReader* reader, vtkPolyData* pos
 }
 
 //-----------------------------------------------------------------------------
-void pqVelodyneManager::setup()
+void pqLidarViewManager::setup()
 {
   QTimer::singleShot(0, this, SLOT(pythonStartup()));
 }
 
 //-----------------------------------------------------------------------------
-void pqVelodyneManager::openData(const QString& filename, const QString& positionFilename)
+void pqLidarViewManager::openData(const QString& filename, const QString& positionFilename)
 {
   if (!positionFilename.isEmpty())
   {
@@ -379,7 +379,7 @@ void pqVelodyneManager::openData(const QString& filename, const QString& positio
 }
 
 //-----------------------------------------------------------------------------
-void pqVelodyneManager::onMeasurementGrid(bool gridVisible)
+void pqLidarViewManager::onMeasurementGrid(bool gridVisible)
 {
   pqSettings* settings = pqApplicationCore::instance()->settings();
   settings->setValue("LidarPlugin/MeasurementGrid/Visibility", gridVisible);
@@ -395,13 +395,13 @@ void pqVelodyneManager::onMeasurementGrid(bool gridVisible)
 }
 
 //-----------------------------------------------------------------------------
-void pqVelodyneManager::onOpenSensor()
+void pqLidarViewManager::onOpenSensor()
 {
   this->runPython("vv.openSensor()\n");
 }
 
 //-----------------------------------------------------------------------------
-pqServer* pqVelodyneManager::getActiveServer()
+pqServer* pqLidarViewManager::getActiveServer()
 {
   pqApplicationCore* app = pqApplicationCore::instance();
   pqServerManagerModel* smModel = app->getServerManagerModel();
@@ -410,7 +410,7 @@ pqServer* pqVelodyneManager::getActiveServer()
 }
 
 //-----------------------------------------------------------------------------
-QWidget* pqVelodyneManager::getMainWindow()
+QWidget* pqLidarViewManager::getMainWindow()
 {
   foreach (QWidget* topWidget, QApplication::topLevelWidgets())
   {

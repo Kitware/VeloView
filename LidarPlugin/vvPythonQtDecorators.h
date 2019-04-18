@@ -5,7 +5,7 @@
 #include "PythonQt.h"
 #include <QObject>
 
-#include "pqVelodyneManager.h"
+#include "pqLidarViewManager.h"
 #include "Ui/vvCalibrationDialog.h"
 #include "Ui/vvCropReturnsDialog.h"
 #include "Ui/vvLaserSelectionDialog.h"
@@ -19,7 +19,7 @@ public:
   vvPythonQtDecorators(QObject* parent = 0)
     : QObject(parent)
   {
-    this->registerClassForPythonQt(&pqVelodyneManager::staticMetaObject);
+    this->registerClassForPythonQt(&pqLidarViewManager::staticMetaObject);
     this->registerClassForPythonQt(&vvCalibrationDialog::staticMetaObject);
     this->registerClassForPythonQt(&vvCropReturnsDialog::staticMetaObject);
     this->registerClassForPythonQt(&vvLaserSelectionDialog::staticMetaObject);
@@ -83,16 +83,16 @@ public slots:
       arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11);
   }
 
-  void static_pqVelodyneManager_saveFramesToPCAP(
+  void static_pqLidarViewManager_saveFramesToPCAP(
     vtkSMSourceProxy* arg0, int arg1, int arg2, const QString& arg3)
   {
-    pqVelodyneManager::saveFramesToPCAP(arg0, arg1, arg2, arg3);
+    pqLidarViewManager::saveFramesToPCAP(arg0, arg1, arg2, arg3);
   }
 
-  void static_pqVelodyneManager_saveFramesToLAS(vtkLidarReader* arg0, vtkPolyData* arg1,
+  void static_pqLidarViewManager_saveFramesToLAS(vtkLidarReader* arg0, vtkPolyData* arg1,
     int arg2, int arg3, const QString& arg4, int arg5)
   {
-    pqVelodyneManager::saveFramesToLAS(arg0, arg1, arg2, arg3, arg4, arg5);
+    pqLidarViewManager::saveFramesToLAS(arg0, arg1, arg2, arg3, arg4, arg5);
   }
 };
 

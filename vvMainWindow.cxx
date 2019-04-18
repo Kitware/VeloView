@@ -58,7 +58,7 @@
 #include <pqSpreadSheetVisibilityBehavior.h>
 #include <pqStandardPropertyWidgetInterface.h>
 #include <pqStandardViewFrameActionsImplementation.h>
-#include <pqVelodyneManager.h>
+#include <pqLidarViewManager.h>
 #include <pqParaViewMenuBuilders.h>
 #include <pqPythonManager.h>
 #include <pqTabbedMultiViewWidget.h>
@@ -341,7 +341,7 @@ private:
 
     new pqPythonShellReaction(this->Ui.actionPython_Console);
 
-    pqVelodyneManager::instance()->setup();
+    pqLidarViewManager::instance()->setup();
 
     pqSettings* const settings = pqApplicationCore::instance()->settings();
     const QVariant& gridVisible =
@@ -350,14 +350,14 @@ private:
 
     new vvLoadDataReaction(this->Ui.actionOpenPcap, false);
 
-    connect(this->Ui.actionOpen_Sensor_Stream, SIGNAL(triggered()), pqVelodyneManager::instance(),
+    connect(this->Ui.actionOpen_Sensor_Stream, SIGNAL(triggered()), pqLidarViewManager::instance(),
       SLOT(onOpenSensor()));
 
-    connect(this->Ui.actionMeasurement_Grid, SIGNAL(toggled(bool)), pqVelodyneManager::instance(),
+    connect(this->Ui.actionMeasurement_Grid, SIGNAL(toggled(bool)), pqLidarViewManager::instance(),
       SLOT(onMeasurementGrid(bool)));
 
     connect(this->Ui.actionResetDefaultSettings, SIGNAL(triggered()),
-      pqVelodyneManager::instance(), SLOT(onResetDefaultSettings()));
+      pqLidarViewManager::instance(), SLOT(onResetDefaultSettings()));
 
     connect(this->Ui.actionShowErrorDialog, SIGNAL(triggered()), pqApplicationCore::instance(),
       SLOT(showOutputWindow()));
@@ -446,7 +446,7 @@ void vvMainWindow::dropEvent(QDropEvent* evt)
 
   if (files[0].endsWith(".pcap"))
   {
-    pqVelodyneManager::instance()->runPython(QString("vv.openPCAP('" + files[0] + "')"));
+    pqLidarViewManager::instance()->runPython(QString("vv.openPCAP('" + files[0] + "')"));
   }
   else {
     pqLoadDataReaction::loadData(files);

@@ -760,11 +760,11 @@ def saveLASFrames(filename, first, last, transform = 0):
     if getPosition() is not None:
         position = getPosition().GetClientSideObject().GetOutput()
 
-        PythonQt.paraview.pqVelodyneManager.saveFramesToLAS(
+        PythonQt.paraview.pqLidarViewManager.saveFramesToLAS(
             reader, position, first, last, filename, transform)
 
     else:
-        PythonQt.paraview.pqVelodyneManager.saveFramesToLAS(
+        PythonQt.paraview.pqLidarViewManager.saveFramesToLAS(
             reader, None, first, last, filename, transform)
 
 
@@ -1017,7 +1017,7 @@ def onSavePCAP():
     if not fileName:
         return
 
-    PythonQt.paraview.pqVelodyneManager.saveFramesToPCAP(getReader().SMProxy, frameOptions.start, frameOptions.stop, fileName)
+    PythonQt.paraview.pqLidarViewManager.saveFramesToPCAP(getReader().SMProxy, frameOptions.start, frameOptions.stop, fileName)
 
 
 def onSaveScreenshot():

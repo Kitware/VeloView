@@ -384,7 +384,7 @@ endif(WIN32)
 # we create another target which contain all the code "glue" code.
 #-----------------------------------------------------------------------------
 set(MOC_HEADERS
-  pqVelodyneManager.h
+  pqLidarViewManager.h
   vvPythonQtDecorators.h
   )
 
@@ -394,7 +394,7 @@ qt5_wrap_cpp(moc_srcs "${MOC_HEADERS}")
 set(gui_sources)
 list(APPEND gui_sources
   ${moc_srcs}
-  pqVelodyneManager.cxx
+  pqLidarViewManager.cxx
   )
 
 # give default target name if not specify otherwise

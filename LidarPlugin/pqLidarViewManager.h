@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef __pqVelodyneManager_h
-#define __pqVelodyneManager_h
+#ifndef __pqLidarViewManager_h
+#define __pqLidarViewManager_h
 
 #include <QObject>
 
@@ -34,15 +34,15 @@ class QAction;
 class QLabel;
 class QWidget;
 
-class LidarPythonQT_EXPORT pqVelodyneManager : public QObject
+class LidarPythonQT_EXPORT pqLidarViewManager : public QObject
 {
 
   Q_OBJECT
 
 public:
-  static pqVelodyneManager* instance();
+  static pqLidarViewManager* instance();
 
-  virtual ~pqVelodyneManager();
+  virtual ~pqLidarViewManager();
 
   /// Convenience function for getting the current server.
   static pqServer* getActiveServer();
@@ -87,12 +87,12 @@ signals:
   void sourceCreated();
 
 private:
-  pqVelodyneManager(QObject* p);
+  pqLidarViewManager(QObject* p);
 
   class pqInternal;
   pqInternal* Internal;
 
-  Q_DISABLE_COPY(pqVelodyneManager);
+  Q_DISABLE_COPY(pqLidarViewManager);
 };
 
 #endif
