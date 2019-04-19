@@ -27,7 +27,6 @@ include(${LidarViewSuperBuild_SOURCE_DIR}/../SoftwareInformation/branding.cmake)
 # - is visible in the macOS GUI when opening the .dmg
 # - MUST end with .app (else its tree is not considered as an app by macOS)
 set(lidarview_appname "${SOFTWARE_NAME}.app")
-set(lidarview_executables "${SOFTWARE_NAME}")
 
 # LidarView is based on ParaView and can load ParaView plugins
 set(paraview_plugin_path "bin/${lidarview_appname}/Contents/Plugins")

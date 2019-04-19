@@ -394,6 +394,16 @@ if (APPLE)
   target_compile_definitions(${VV_PLUGIN_LIBRARY} PRIVATE -DBOOST_PROGRAM_OPTIONS_DYN_LINK=1)
 endif(APPLE)
 
+# The main application executable uses a "forward exectuable"
+# that sets LD_LIBRARY_PATH to the appropriate location before calling the
+# original executable, so that dynamic libraries can be found.
+# For the executanles of the standalone tools it is simpler to modify rpaths:
+set(CMAKE_SKIP_RPATH FALSE)
+SET(CMAKE_SKIP_BUILD_RPATH  FALSE)
+SET(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
+SET(CMAKE_INSTALL_RPATH "$ORIGIN/../${VV_INSTALL_LIBRARY_DIR}")
+SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+
 #-----------------------------------------------------------------------------
 # Build PacketFileSender target which enable to playback a recorded pcap on the network
 #-----------------------------------------------------------------------------
@@ -460,18 +470,28 @@ WRAP_PLUGIN_FOR_PYTHON(${VV_PLUGIN_LIBRARY} "${towrap}" "NOTTHERE")
 # Install targets and ressources
 #-----------------------------------------------------------------------------
 
-set(target_to_install
+set(libraries_to_install
   ${VV_PLUGIN_LIBRARY}
   ${VV_NONE_PLUGIN_LIBRARY}
   ${VV_PLUGIN_LIBRARY}Python
   ${VV_PLUGIN_LIBRARY}PythonD
   )
 
+set(executables_to_install
+  PacketFileSender
+  )
+
 if (APPLE)
 
-  # install target
-  install(TARGETS ${target_to_install}
+  # install libraries
+  install(TARGETS ${libraries_to_install}
           RUNTIME DESTINATION ${VV_INSTALL_RUNTIME_DIR}/${SOFTWARE_NAME}.app/Contents/Libraries
+          LIBRARY DESTINATION ${VV_INSTALL_RUNTIME_DIR}/${SOFTWARE_NAME}.app/Contents/Libraries
+          COMPONENT Runtime)
+
+  # install executables
+  install(TARGETS ${executables_to_install}
+          RUNTIME DESTINATION ${VV_INSTALL_RUNTIME_DIR}/${SOFTWARE_NAME}.app/Contents/bin
           LIBRARY DESTINATION ${VV_INSTALL_RUNTIME_DIR}/${SOFTWARE_NAME}.app/Contents/Libraries
           COMPONENT Runtime)
 
@@ -488,12 +508,17 @@ if (APPLE)
   configure_file(${LidarView_SOURCE_DIR}/Documentation/LidarView_User_Guide.pdf ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${SOFTWARE_NAME}.app/Contents/Resources/LidarView_User_Guide.pdf)
 
 else()
-  # install target
-  install(TARGETS ${target_to_install}
+  # install libraries
+  install(TARGETS ${libraries_to_install}
           RUNTIME DESTINATION ${VV_INSTALL_RUNTIME_DIR}
           LIBRARY DESTINATION ${VV_INSTALL_LIBRARY_DIR}
           COMPONENT Runtime)
 
+  # install executables
+  install(TARGETS ${executables_to_install}
+          RUNTIME DESTINATION ${VV_INSTALL_RUNTIME_DIR}
+          LIBRARY DESTINATION ${VV_INSTALL_LIBRARY_DIR}
+          COMPONENT Runtime)
 endif()
 
 #-----------------------------------------------------------------------------
