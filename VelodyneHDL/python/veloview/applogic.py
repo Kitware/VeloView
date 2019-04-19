@@ -282,7 +282,7 @@ def colorByIntensity(sourceProxy):
 
 
 def getTimeStamp():
-    format = '%Y-%m-%d-%H-%M-%S'
+    format = '%Y-%m-%d-%H-%M-%S.%f'
     return datetime.datetime.now().strftime(format)
 
 
@@ -835,12 +835,6 @@ def saveLAS(filename, timesteps, transform = 0):
 
     kiwiviewerExporter.zipDir(outDir, filename)
     kiwiviewerExporter.shutil.rmtree(tempDir)
-
-
-def getTimeStamp():
-    format = '%Y-%m-%d-%H-%M-%S'
-    return datetime.datetime.now().strftime(format)
-
 
 def getSaveFileName(title, extension, defaultFileName=None):
 
