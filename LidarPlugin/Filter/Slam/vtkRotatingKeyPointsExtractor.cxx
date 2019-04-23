@@ -277,11 +277,11 @@ void vtkRotatingKeyPointsExtractor::ComputeKeyPoints(vtkPolyData* input, vtkTabl
     this->IntensityGap[k].resize(this->pclCurrentFrameByScan[k]->size(), 0);
   }
 
-  // compute keypoints scores
-  this->ComputeCurvature();
-
   // Invalid points with bad criteria
   this->InvalidPointWithBadCriteria();
+
+  // compute keypoints scores
+  this->ComputeCurvature();
 
   // labelize keypoints
   this->SetKeyPointsLabels();
@@ -304,6 +304,7 @@ void vtkRotatingKeyPointsExtractor::AddDisplayInformation(vtkSmartPointer<vtkPol
 void vtkRotatingKeyPointsExtractor::ComputeCurvature()
 {
   double squaredDistToLineThreshold = std::pow(this->DistToLineThreshold, 2);
+  double squaredDepthDistCoeff = 0.25;
   // loop over scans lines
   for (unsigned int scanLine = 0; scanLine < this->NLasers; ++scanLine)
   {
@@ -332,6 +333,12 @@ void vtkRotatingKeyPointsExtractor::ComputeCurvature()
 
     for (int index = this->NeighborWidth; (index + this->NeighborWidth) < Npts; ++index)
     {
+      // Skip curvature computation for invalid points
+      if (this->IsPointValid[scanLine][index] == 0)
+      {
+        continue;
+      }
+
       // central point
       currentPoint = this->pclCurrentFrameByScan[scanLine]->points[index];
       centralPoint << currentPoint.x, currentPoint.y, currentPoint.z;
@@ -390,7 +397,7 @@ void vtkRotatingKeyPointsExtractor::ComputeCurvature()
           dist1 = std::min(dist1,
                   ((leftNeighbor[neighIndex] - rightLine.Position).transpose() * rightLine.SemiDist * (leftNeighbor[neighIndex] - rightLine.Position))(0));
         }
-        dist1 = 0.25 * dist1;
+        dist1 = squaredDepthDistCoeff * dist1;
       }
       else if (!rightFlat && leftFlat)
       {
@@ -400,7 +407,7 @@ void vtkRotatingKeyPointsExtractor::ComputeCurvature()
           dist2 = std::min(dist2,
                   ((rightNeighbor[neighIndex] - leftLine.Position).transpose() * leftLine.SemiDist * (rightNeighbor[neighIndex] - leftLine.Position))(0));
         }
-        dist2 = 0.25 * dist2;
+        dist2 = squaredDepthDistCoeff * dist2;
       }
       else
       {
@@ -703,7 +710,7 @@ void vtkRotatingKeyPointsExtractor::SetKeyPointsLabels()
       saillancy = this->SaillantPoint[scanLine][index];
 
       // thresh
-      if (saillancy < 2.25) // square of 1.5 meters
+      if (saillancy < this->SaillancyThreshold)
       {
         break;
       }

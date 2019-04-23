@@ -871,11 +871,6 @@ int vtkSlam::ComputeLineDistanceParameters(KDTreePCLAdaptor& kdtreePreviousEdges
     return 2;
   }
 
-  // Compute a coefficient based on the linearity of the neighborhood.
-  // We reject the neighborhood if D(2) < k * D(1) and we want our coefficient
-  // varying from 0 to 1.0 with 0 being reached when D(2) = 5 * D(1)
-  double linearityCoeff = 1.0 - eigenValuesRatio * D(1) / D(2);
-
   // A = (I-n*n.t).t * (I-n*n.t) = (I - n*n.t)^2
   // since (I-n*n.t) is a symmetric matrix
   // Then it comes A (I-n*n.t)^2 = (I-n*n.t) since
@@ -908,24 +903,8 @@ int vtkSlam::ComputeLineDistanceParameters(KDTreePCLAdaptor& kdtreePreviousEdges
   meanSquaredDist /= static_cast<double>(requiredNearest);
   double fitQualityCoeff = 1.0 - std::sqrt(std::abs(meanSquaredDist) / squaredMaxDist);
 
-  // distance between current point and the corresponding matching line
-  double s = 1.0;
-  if (matchingMode == MatchingMode::Mapping)
-  {
-    s = 0.5 * fitQualityCoeff + 0.5 * linearityCoeff;
-  }
-  else if (matchingMode == MatchingMode::EgoMotion)
-  {
-    double orthogonalityCoeff = 0.5 + 0.5 * n(2) * n(2); // score the match by its angle with ez
-    // Score the point - line matching by the angle of the
-    // line with ez. The idea is that the lidar is more accurate
-    // in line detection when those lines are colinear with the
-    // azimutal rotation axis.
-    s = 0.33 * fitQualityCoeff + 0.33 * linearityCoeff + 0.33 * orthogonalityCoeff;
-  }
-
-  if (s <= 0 || !vtkMath::IsFinite(s))
-    return 5;
+  // s represents the quality of the match
+  double s = fitQualityCoeff;
 
   // store the distance parameters values
   this->Avalues.emplace_back(A);
@@ -1038,9 +1017,6 @@ int vtkSlam::ComputePlaneDistanceParameters(KDTreePCLAdaptor& kdtreePreviousPlan
     return 2;
   }
 
-  // Compute a coefficient based on the planarity of the neighborhood.
-  double planarityCoeff = (D(1) - D(0)) / D(2);
-
   // A = n*n.t
   A = n * n.transpose();
 
@@ -1069,11 +1045,8 @@ int vtkSlam::ComputePlaneDistanceParameters(KDTreePCLAdaptor& kdtreePreviousPlan
   meanSquaredDist /= static_cast<double>(requiredNearest);
   double fitQualityCoeff = 1.0 - std::sqrt(std::abs(meanSquaredDist) / squaredMaxDist);
 
-  // distance between current point and the corresponding matching plane
-  double s = 0.5 * fitQualityCoeff + 0.5 * planarityCoeff;
-
-  if (s <= 0 || !vtkMath::IsFinite(s))
-    return 5;
+  // s represents the quality of the match
+  double s = fitQualityCoeff;
 
   // store the distance parameters values
   this->Avalues.emplace_back(A);
@@ -1370,6 +1343,9 @@ void vtkSlam::ComputeEgoMotion()
   this->TimeValues.resize(toReserve);
   this->residualCoefficient.resize(toReserve);
 
+  double initLossScale = 2.0; // saturation around 5 meters
+  double finalLossScale = 0.2; // saturation around 1.5 meters
+
   // ICP - Levenberg-Marquardt loop:
   // At each step of this loop an ICP matching is performed
   // Once the keypoints matched, we estimate the the 6-DOF
@@ -1431,6 +1407,7 @@ void vtkSlam::ComputeEgoMotion()
       vtkGenericWarningMacro("Too few geometric features, frame skipped");
       break;
     }
+    double lossScale = initLossScale + static_cast<double>(icpCount) * (finalLossScale - initLossScale) / (1.0 * this->EgoMotionICPMaxIter);
 
     // We want to estimate our 6-DOF parameters using a non
     // linear least square minimization. The non linear part
@@ -1448,14 +1425,14 @@ void vtkSlam::ComputeEgoMotion()
                                                 Eigen::Matrix<double, 3, 1>::Zero(),
                                                 Eigen::Matrix<double, 3, 3>::Identity(),
                                                 this->TimeValues[k], this->residualCoefficient[k]));
-        problem.AddResidualBlock(cost_function, new ceres::ArctanLoss(2.0), this->Trelative.data());
+        problem.AddResidualBlock(cost_function, new ceres::ScaledLoss(new ceres::ArctanLoss(lossScale), this->residualCoefficient[k], ceres::TAKE_OWNERSHIP), this->Trelative.data());
       }
       else
       {
         ceres::CostFunction* cost_function = new ceres::AutoDiffCostFunction<CostFunctions::MahalanobisDistanceAffineIsometryResidual, 1, 6>(
                                              new CostFunctions::MahalanobisDistanceAffineIsometryResidual(this->Avalues[k], this->Pvalues[k],
                                                                                                           this->Xvalues[k], this->residualCoefficient[k]));
-        problem.AddResidualBlock(cost_function, new ceres::ArctanLoss(2.0), this->Trelative.data());
+        problem.AddResidualBlock(cost_function, new ceres::ScaledLoss(new ceres::ArctanLoss(lossScale), this->residualCoefficient[k], ceres::TAKE_OWNERSHIP), this->Trelative.data());
       }
     }
 
@@ -1551,6 +1528,9 @@ void vtkSlam::Mapping()
   this->TimeValues.resize(toReserve);
   this->residualCoefficient.resize(toReserve);
 
+  double initLossScale = 0.7; // saturation around 2.5 meters
+  double finalLossScale = 0.05; // saturation around 0.4 meters
+
   // ICP - Levenberg-Marquardt loop:
   // At each step of this loop an ICP matching is performed
   // Once the keypoints matched, we estimate the the 6-DOF
@@ -1618,6 +1598,8 @@ void vtkSlam::Mapping()
       break;
     }
 
+    double lossScale = initLossScale + static_cast<double>(icpCount) * (finalLossScale - initLossScale) / (1.0 * this->MappingICPMaxIter);
+
     // We want to estimate our 6-DOF parameters using a non
     // linear least square minimization. The non linear part
     // comes from the Euler Angle parametrization of the rotation
@@ -1632,14 +1614,14 @@ void vtkSlam::Mapping()
                                               new CostFunctions::MahalanobisDistanceLinearDistortionResidual(
                                                 this->Avalues[k], this->Pvalues[k], this->Xvalues[k], T0, R0,
                                                 this->TimeValues[k], this->residualCoefficient[k]));
-        problem.AddResidualBlock(cost_function, new ceres::ArctanLoss(2.0), this->Tworld.data());
+        problem.AddResidualBlock(cost_function, new ceres::ScaledLoss(new ceres::ArctanLoss(lossScale), this->residualCoefficient[k], ceres::TAKE_OWNERSHIP), this->Tworld.data());
       }
       else
       {
         ceres::CostFunction* cost_function = new ceres::AutoDiffCostFunction<CostFunctions::MahalanobisDistanceAffineIsometryResidual, 1, 6>(
                                              new CostFunctions::MahalanobisDistanceAffineIsometryResidual(this->Avalues[k], this->Pvalues[k],
                                                                                                           this->Xvalues[k], this->residualCoefficient[k]));
-        problem.AddResidualBlock(cost_function, new ceres::ArctanLoss(2.0), this->Tworld.data());
+        problem.AddResidualBlock(cost_function, new ceres::ScaledLoss(new ceres::ArctanLoss(lossScale), this->residualCoefficient[k], ceres::TAKE_OWNERSHIP), this->Tworld.data());
       }
     }
 

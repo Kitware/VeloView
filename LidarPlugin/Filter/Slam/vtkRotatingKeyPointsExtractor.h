@@ -57,6 +57,9 @@ public:
   vtkGetMacro(AngleResolution, double)
   vtkSetMacro(AngleResolution, double)
 
+  vtkGetMacro(SaillancyThreshold, double)
+  vtkSetMacro(SaillancyThreshold, double)
+
   vtkGetMacro(FarestKeypointDist, double)
 
   int GetNLasers() const {return this->NLasers;}
@@ -132,6 +135,10 @@ protected:
   // Threshold upon sphricity of a neighborhood
   // to select a blob point
   double SphericityThreshold = 0.35;
+
+  // Threshold upon saillancy of a neighborhood
+  // to select an edge keypoint
+  double SaillancyThreshold = 2.25;
 
   // Coef to apply to the incertitude
   // radius of the blob neighborhood
