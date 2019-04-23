@@ -130,7 +130,7 @@ int main(int argc, char* argv[])
   std::cout << "Integrity tests..." << std::endl;
 
   // Integrity tests.
-  // Checks in the default VeloView environment that everything can be read correctly.
+  // Checks in the default LidarView environment that everything can be read correctly.
 
   retVal += TestFrameCount(GetNumberOfTimesteps(HDLsource.Get()), referenceFilesList.size());
 

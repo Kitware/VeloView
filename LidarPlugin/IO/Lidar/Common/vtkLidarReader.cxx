@@ -285,8 +285,8 @@ void vtkLidarReader::SaveFrame(int startFrame, int endFrame, const std::string &
   // Here we see that the first separation between two frame happens in the
   // first packet. We do need to see one more separation than the number of
   // packets to write. This is due to the fact that the first incomplete frame
-  // is hidden by VeloView.
-  // A possible improvement to VeloView would be to not always hide this first
+  // is hidden by LidarView.
+  // A possible improvement to LidarView would be to not always hide this first
   // frame, depending on a flag set on the reader.
   // *if you are very lucky the first frame will start at the begining of the
   // first packet, and there will be no "incomplete frame".

@@ -37,7 +37,7 @@
  * - yaw   : expresses the sensor rotation around the Z axis and is in degree
  * - the rotation matrix can be recomposed this way: R = Rz(z)*Ry(y)*Rx(x)
  *
- * Remark: if you get from VeloView UI the error:
+ * Remark: if you get from LidarView UI the error:
  * "vtkSIProxyDefinitionManager: No proxy that matches: group= and proxy= were found."
  * when you tried to open a file with a ".csv" extension and was asked to chose
  * between standard "Delimited Text" and "pose trajectory" then it means you

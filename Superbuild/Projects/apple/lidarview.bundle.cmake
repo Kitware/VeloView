@@ -7,35 +7,35 @@
 #   then try with: ctest -R cpack -V > package.log (very useful to grep the log)
 # - to test if the application has correct paths and patched executable/libraries:
 #   inside build directory:
-#   `open _CPack_Packages/Darwin/DragNDrop/VeloView-3.6.0-196-g3490e1d-20190109-Darwin-64bit/veloview.app`
+#   `open _CPack_Packages/Darwin/DragNDrop/LidarView-3.6.0-196-g3490e1d-20190109-Darwin-64bit/lidarview.app`
 #   (much, much faster than having to mount the .dmg using the finder)
 # - testing the .dmg on another computer (that does not have Qt) is important because that is our target
-# - testing the .dmg on another computer + executing VeloView from terminal
-#   (with `/Volume/something.dmg/veloview.app/Contents/MacOS/VeloView`) will sometime give you much
+# - testing the .dmg on another computer + executing LidarView from terminal
+#   (with `/Volume/something.dmg/lidarview.app/Contents/MacOS/LidarView`) will sometime give you much
 #   very clear indications about absolute path that have not been fixed / missing files
 # - to have a hint at "should this file really by inside the .dmg ?", look inside Paraview's .dmg
-#   or (better) recent working VeloView's .dmg
+#   or (better) recent working LidarView's .dmg
 # - do not hesistate to hack inside ../common-superbuild/cmake/scripts/fixup_bundle.apple.py
 #   to print/modify/add paths, then get rid of your hack using only this file
 #   (we do not want to modify the common-superbuild)
 
-include(veloview.bundle.common)
-include(${VeloViewSuperBuild_SOURCE_DIR}/../SoftwareInformation/branding.cmake)
+include(lidarview.bundle.common)
+include(${LidarViewSuperBuild_SOURCE_DIR}/../SoftwareInformation/branding.cmake)
 
-# the variable veloview_appname:
+# the variable lidarview_appname:
 # - must be a valid dirname: will be a directory at the top of the .dmg
 # - is visible in the macOS GUI when opening the .dmg
 # - MUST end with .app (else its tree is not considered as an app by macOS)
-set(veloview_appname "${SOFTWARE_NAME}.app")
-set(veloview_executables "${SOFTWARE_NAME}")
+set(lidarview_appname "${SOFTWARE_NAME}.app")
+set(lidarview_executables "${SOFTWARE_NAME}")
 
-# VeloView is based on ParaView and can load ParaView plugins
-set(paraview_plugin_path "bin/${veloview_appname}/Contents/Plugins")
+# LidarView is based on ParaView and can load ParaView plugins
+set(paraview_plugin_path "bin/${lidarview_appname}/Contents/Plugins")
 
 # this must be done before calling superbuild_apple_create_app,
 # because superbuild_apple_create_app uses paraview_plugin_paths
 # this was copied from ParaView's superbuild
-# TODO: could/should be inside veloview.bundle.common ?
+# TODO: could/should be inside lidarview.bundle.common ?
 set(paraview_plugins "PointCloudPlugin" "EyeDomeLightingView")
 set(paraview_plugin_paths)
 foreach (paraview_plugin IN LISTS paraview_plugins)
@@ -57,11 +57,11 @@ endforeach ()
 
 superbuild_apple_create_app(
   "\${CMAKE_INSTALL_PREFIX}"
-  "${veloview_appname}"
-  "${superbuild_install_location}/bin/${veloview_appname}/Contents/MacOS/${SOFTWARE_NAME}"
+  "${lidarview_appname}"
+  "${superbuild_install_location}/bin/${lidarview_appname}/Contents/MacOS/${SOFTWARE_NAME}"
   CLEAN
   PLUGINS ${paraview_plugin_paths}
-  SEARCH_DIRECTORIES "${superbuild_install_location}/lib" "${superbuild_install_location}/bin/${veloview_appname}/Contents/Libraries"
+  SEARCH_DIRECTORIES "${superbuild_install_location}/lib" "${superbuild_install_location}/bin/${lidarview_appname}/Contents/Libraries"
   INCLUDE_REGEXES     ${include_regexes})
 
 
@@ -77,33 +77,33 @@ function (paraview_add_plugin output)
   endforeach ()
   file(WRITE "${output}" "${contents}")
 endfunction ()
-set(plugins_file "${CMAKE_CURRENT_BINARY_DIR}/veloview.plugins")
+set(plugins_file "${CMAKE_CURRENT_BINARY_DIR}/lidarview.plugins")
 paraview_add_plugin("${plugins_file}" ${paraview_plugins})
 
 install(
   FILES       "${plugins_file}"
-  DESTINATION "${veloview_appname}/Contents/Plugins"
+  DESTINATION "${lidarview_appname}/Contents/Plugins"
   COMPONENT   superbuild
   RENAME      ".plugins")
 
 install(
   FILES       "${superbuild_install_location}/Applications/paraview.app/Contents/Resources/pvIcon.icns"
-  DESTINATION "${veloview_appname}/Contents/Resources"
+  DESTINATION "${lidarview_appname}/Contents/Resources"
   COMPONENT   superbuild)
 install(
-  FILES       "${superbuild_install_location}/bin/${veloview_appname}/Contents/Info.plist"
-  DESTINATION "${veloview_appname}/Contents"
+  FILES       "${superbuild_install_location}/bin/${lidarview_appname}/Contents/Info.plist"
+  DESTINATION "${lidarview_appname}/Contents"
   COMPONENT   superbuild)
 
-# Remove "VeloView" from the list since we just installed it above.
-list(REMOVE_ITEM veloview_executables
+# Remove "LidarView" from the list since we just installed it above.
+list(REMOVE_ITEM lidarview_executables
   ${SOFTWARE_NAME})
 
-foreach (executable IN LISTS veloview_executables)
+foreach (executable IN LISTS lidarview_executables)
   superbuild_apple_install_utility(
     "\${CMAKE_INSTALL_PREFIX}"
-    "${veloview_appname}"
-    "${superbuild_install_location}/bin/${veloview_appname}/Contents/bin/${executable}"
+    "${lidarview_appname}"
+    "${superbuild_install_location}/bin/${lidarview_appname}/Contents/bin/${executable}"
     SEARCH_DIRECTORIES "${superbuild_install_location}/lib"
     INCLUDE_REGEXES     ${include_regexes})
 endforeach ()
@@ -112,30 +112,30 @@ if (qt5_enabled)
   file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/qt.conf" "[Paths]\nPlugins = Plugins\n")
   install(
     FILES       "${CMAKE_CURRENT_BINARY_DIR}/qt.conf"
-    DESTINATION "${veloview_appname}/Contents/Resources"
+    DESTINATION "${lidarview_appname}/Contents/Resources"
     COMPONENT   superbuild)
 endif ()
 
 if (python_enabled)
   superbuild_apple_install_python(
     "\${CMAKE_INSTALL_PREFIX}"
-    "${veloview_appname}"
+    "${lidarview_appname}"
     MODULES paraview
-    	    veloview
+    	    lidarview
 	    vtk
             vtkmodules
             ${python_modules}
     MODULE_DIRECTORIES
-            "${superbuild_install_location}/bin/${veloview_appname}/Contents/Python"
+            "${superbuild_install_location}/bin/${lidarview_appname}/Contents/Python"
             "${superbuild_install_location}/lib/python2.7/site-packages"
     SEARCH_DIRECTORIES
-            "${superbuild_install_location}/bin/${veloview_appname}/Contents/Libraries"
+            "${superbuild_install_location}/bin/${lidarview_appname}/Contents/Libraries"
             "${superbuild_install_location}/lib")
 
   if (matplotlib_enabled)
     install(
       DIRECTORY   "${superbuild_install_location}/lib/python2.7/site-packages/matplotlib/mpl-data/"
-      DESTINATION "${veloview_appname}/Contents/Python/matplotlib/mpl-data"
+      DESTINATION "${lidarview_appname}/Contents/Python/matplotlib/mpl-data"
       COMPONENT   superbuild)
   endif ()
 endif ()
@@ -145,26 +145,26 @@ endif ()
 # it could be that I failed to find the correct name(s) to add in parameter
 # "MODULE" but I do not think so because there are 86 such files, and because
 # they seem to be part of vtk which is already specified like that in ParaView
-file(GLOB missing_python_so "${superbuild_install_location}/bin/${veloview_appname}/Contents/Libraries/vtk*Python.so")
+file(GLOB missing_python_so "${superbuild_install_location}/bin/${lidarview_appname}/Contents/Libraries/vtk*Python.so")
 foreach (python_so ${missing_python_so})
   superbuild_apple_install_module(
     "\${CMAKE_INSTALL_PREFIX}"
-    "${veloview_appname}"
+    "${lidarview_appname}"
     "${python_so}"
     "Contents/Libraries") # destination path inside bundle
 endforeach()
 
 # My understanding is that these module are not processed automatically
 # by superbuild_apple_create_app because there is no path leading to
-# them in binary VeloView or in any of its .dylib dependencies
+# them in binary LidarView or in any of its .dylib dependencies
 set(my_modules)
 list(APPEND my_modules "LidarPluginPython.so")
 list(APPEND my_modules "libLidarPluginPythonD.dylib")
 foreach (module ${my_modules})
   superbuild_apple_install_module(
     "\${CMAKE_INSTALL_PREFIX}"
-    "${veloview_appname}"
-    "${superbuild_install_location}/bin/${veloview_appname}/Contents/Libraries/${module}"
+    "${lidarview_appname}"
+    "${superbuild_install_location}/bin/${lidarview_appname}/Contents/Libraries/${module}"
     "Contents/Libraries") # destination path inside bundle
 endforeach()
 
@@ -184,13 +184,13 @@ foreach (qt5_plugin_path IN LISTS qt5_plugin_paths)
 
   superbuild_apple_install_module(
     "\${CMAKE_INSTALL_PREFIX}"
-    "${veloview_appname}"
+    "${lidarview_appname}"
     "${qt5_plugin_path}"
     "Contents/Plugins/${qt5_plugin_group}"
     SEARCH_DIRECTORIES  "${library_paths}")
 endforeach ()
 
 
-install(DIRECTORY "${superbuild_install_location}/bin/${veloview_appname}/Contents/Resources"
-  DESTINATION "${veloview_appname}/Contents"
+install(DIRECTORY "${superbuild_install_location}/bin/${lidarview_appname}/Contents/Resources"
+  DESTINATION "${lidarview_appname}/Contents"
   COMPONENT superbuild)

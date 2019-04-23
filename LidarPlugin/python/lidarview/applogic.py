@@ -1100,7 +1100,7 @@ def getVersionString():
 def onDeveloperGuide():
     basePath = PythonQt.QtGui.QApplication.instance().applicationDirPath()
 
-    paths = ['../Resources/VeloView_Developer_Guide.pdf']
+    paths = ['../Resources/LidarView_Developer_Guide.pdf']
 
     for path in paths:
         filename = os.path.join(basePath, path)
@@ -1110,7 +1110,7 @@ def onDeveloperGuide():
 def onUserGuide():
     basePath = PythonQt.QtGui.QApplication.instance().applicationDirPath()
 
-    paths = ['../Resources/VeloView_User_Guide.pdf']
+    paths = ['../Resources/LidarView_User_Guide.pdf']
 
     for path in paths:
         filename = os.path.join(basePath, path)
@@ -1903,8 +1903,8 @@ def setupActions():
     app.actions['actionChoose_Calibration_File'].connect('triggered()', onChooseCalibrationFile)
     app.actions['actionCropReturns'].connect('triggered()', onCropReturns)
     app.actions['actionNative_File_Dialogs'].connect('triggered()', onNativeFileDialogsAction)
-    app.actions['actionAbout_VeloView'].connect('triggered()', onAbout)
-    app.actions['actionVeloViewDeveloperGuide'].connect('triggered()', onDeveloperGuide)
+    app.actions['actionAbout_LidarView'].connect('triggered()', onAbout)
+    app.actions['actionLidarViewDeveloperGuide'].connect('triggered()', onDeveloperGuide)
     app.actions['actionClear_Menu'].connect('triggered()', onClearMenu)
 
     app.actions['actionToggleProjection'].connect('triggered()', toggleProjectionType)

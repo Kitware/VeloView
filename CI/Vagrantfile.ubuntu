@@ -37,7 +37,7 @@ Vagrant.configure("2") do |config|
   SHELL
 
   # Install packages
-  config.vm.provision "shell", name: "Install Veloview dependencies", inline: <<-SHELL
+  config.vm.provision "shell", name: "Install LidarView dependencies", inline: <<-SHELL
     apt-get install -y -q \
     git \
     cmake-curses-gui \

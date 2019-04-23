@@ -161,7 +161,7 @@ private:
 
     // Check if the settings are well formed i.e. if an OriginalMainWindow
     // state was previously saved. If not, we don't want to automatically
-    // restore the settings state nor save it on quitting VeloView.
+    // restore the settings state nor save it on quitting LidarView.
     // An OriginalMainWindow state will be force saved once the UI is completly
     // set up.
     pqSettings* const settings = pqApplicationCore::instance()->settings();
@@ -202,7 +202,7 @@ private:
 
       // As pqPersistentMainWindowStateBehavior is not created right now,
       // we can clear the settings as the current bad state won't be saved on
-      // closing VeloView
+      // closing LidarView
       settings->clear();
     }
 
@@ -391,19 +391,19 @@ vvMainWindow::vvMainWindow()
 
   ss << "About " << SOFTWARE_NAME;
   text = QString(ss.str().c_str());
-  this->Internals->Ui.actionAbout_VeloView->setText(text);
+  this->Internals->Ui.actionAbout_LidarView->setText(text);
   ss.str("");
   ss.clear();
 
   ss << SOFTWARE_NAME << " Developer Guide";
   text = QString(ss.str().c_str());
-  this->Internals->Ui.actionVeloViewDeveloperGuide->setText(text);
+  this->Internals->Ui.actionLidarViewDeveloperGuide->setText(text);
   ss.str("");
   ss.clear();
 
   ss << SOFTWARE_NAME << " User Guide";
   text = QString(ss.str().c_str());
-  this->Internals->Ui.actionVeloViewUserGuide->setText(text);
+  this->Internals->Ui.actionLidarViewUserGuide->setText(text);
 }
 
 //-----------------------------------------------------------------------------

@@ -347,7 +347,7 @@ set(plugin_include_dirs
 
 # give default target name if not specify otherwise
 if (NOT VV_PLUGIN_LIBRARY)
-  set(VV_PLUGIN_LIBRARY LidarPlugin) # veloview plugin
+  set(VV_PLUGIN_LIBRARY LidarPlugin) # lidarview plugin
 endif()
 
 # create pluging
@@ -455,11 +455,11 @@ if (APPLE)
   install(FILES ${python_libs} DESTINATION ${VV_INSTALL_RUNTIME_DIR}/${SOFTWARE_NAME}.app/Contents/Libraries)
 
   # install some pdf
-  install(FILES ${VeloView_SOURCE_DIR}/Documentation/VeloView_Developer_Guide.pdf DESTINATION ${VV_INSTALL_RUNTIME_DIR}/${SOFTWARE_NAME}.app/Contents/Resources)
-  configure_file(${VeloView_SOURCE_DIR}/Documentation/VeloView_Developer_Guide.pdf ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${SOFTWARE_NAME}.app/Contents/Resources/VeloView_Developer_Guide.pdf)
+  install(FILES ${LidarView_SOURCE_DIR}/Documentation/LidarView_Developer_Guide.pdf DESTINATION ${VV_INSTALL_RUNTIME_DIR}/${SOFTWARE_NAME}.app/Contents/Resources)
+  configure_file(${LidarView_SOURCE_DIR}/Documentation/LidarView_Developer_Guide.pdf ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${SOFTWARE_NAME}.app/Contents/Resources/LidarView_Developer_Guide.pdf)
 
-  install(FILES ${VeloView_SOURCE_DIR}/Documentation/VeloView_User_Guide.pdf DESTINATION ${VV_INSTALL_RUNTIME_DIR}/${SOFTWARE_NAME}.app/Contents/Resources)
-  configure_file(${VeloView_SOURCE_DIR}/Documentation/VeloView_User_Guide.pdf ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${SOFTWARE_NAME}.app/Contents/Resources/VeloView_User_Guide.pdf)
+  install(FILES ${LidarView_SOURCE_DIR}/Documentation/LidarView_User_Guide.pdf DESTINATION ${VV_INSTALL_RUNTIME_DIR}/${SOFTWARE_NAME}.app/Contents/Resources)
+  configure_file(${LidarView_SOURCE_DIR}/Documentation/LidarView_User_Guide.pdf ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${SOFTWARE_NAME}.app/Contents/Resources/LidarView_User_Guide.pdf)
 
 else()
   # install target

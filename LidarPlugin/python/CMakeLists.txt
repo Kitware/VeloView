@@ -1,22 +1,22 @@
 
-set(veloview_python_files
-  veloview/__init__.py
-  veloview/applogic.py
-  veloview/gridAdjustmentDialog.py
-  veloview/kiwiviewerExporter.py
-  veloview/planefit.py
-  veloview/timer.py
-  veloview/aboutDialog.py
-  veloview/DTMFilter/__init__.py
-  veloview/DTMFilter/DTMPythonFilter_Script.py
-  veloview/DTMFilter/DTM.py
+set(lidarview_python_files
+  lidarview/__init__.py
+  lidarview/applogic.py
+  lidarview/gridAdjustmentDialog.py
+  lidarview/kiwiviewerExporter.py
+  lidarview/planefit.py
+  lidarview/timer.py
+  lidarview/aboutDialog.py
+  lidarview/DTMFilter/__init__.py
+  lidarview/DTMFilter/DTMPythonFilter_Script.py
+  lidarview/DTMFilter/DTM.py
   )
 
 set(python_module_dir "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/site-packages")
 
 # Copy python files
 set(copied_python_files)
-foreach(file ${veloview_python_files})
+foreach(file ${lidarview_python_files})
   set(src "${CMAKE_CURRENT_SOURCE_DIR}/${file}")
   set(tgt "${python_module_dir}/${file}")
   set(copied_python_files ${copied_python_files} ${tgt})
@@ -51,7 +51,7 @@ if (APPLE)
   set(install_destination ${VV_INSTALL_RUNTIME_DIR}/${SOFTWARE_NAME}.app/Contents/Python)
 endif()
 
-install(DIRECTORY  ${python_module_dir}/veloview
+install(DIRECTORY  ${python_module_dir}/lidarview
         DESTINATION ${install_destination}
         COMPONENT Runtime
         USE_SOURCE_PERMISSIONS)

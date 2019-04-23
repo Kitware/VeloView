@@ -1,4 +1,4 @@
-# HOW TO: Use VeloView testing
+# HOW TO: Use LidarView testing
 
 
 ### Reader tests definition
@@ -8,17 +8,17 @@ The tests are based on the comparaison of the processing of a reference recordin
 **pcap** file with the baseline **vtp** file, that have been generate on a **stable version** of the Reader.
 
 
-### Enable VeloView testing
+### Enable LidarView testing
 
 
-In VeloView CMAKE options, enable option `BUILD_TESTING`. Then rebuild Veloview.
+In LidarView CMAKE options, enable option `BUILD_TESTING`. Then rebuild LidarView.
 
 
 ### Get test data and baseline
 
 
 The Test Data (**.pcap** file) and the baseline (**.vtp** file) are store on another 
-gitlab repository. This repository is a submodule of Veloview, to get this data simply run:
+gitlab repository. This repository is a submodule of LidarView, to get this data simply run:
 ```
 git submodule update --init
 ```
@@ -27,7 +27,7 @@ This may took some minutes. Finally the test data and baseline could be found in
 
 ### Run the tests
 
-To launch a test, use the program CTest. CTest needs to be run from the VeloView
+To launch a test, use the program CTest. CTest needs to be run from the LidarView
 build directory.
 
 To use CTest from the command line on Linux or MacOS, do:
@@ -45,25 +45,25 @@ ctest -R <REGEX_TEST_NAME> [-VV]
 
 ### Update test data
 
-**Disclaimer:** In some rare cases, the functionality added to VeloView modifies
+**Disclaimer:** In some rare cases, the functionality added to LidarView modifies
 some properties of the 3D points tested above, and thus the tests will return a 
 failure even if the values tested match the ones intended. Please run all the 
 tests and ensure that just the one intended to fail fails for your modifications
 before generating updated test data.
 
-To generate updated test data automatically, go to your VeloView build directory
-and launch VeloView with the option --script.
+To generate updated test data automatically, go to your LidarView build directory
+and launch LidarView with the option --script.
 On Linux:
 ```
-BUILD_DIR/veloview/src/veloview-build/bin/VeloView --script=BUILD_DIR/veloview/src/veloview-build/bin/generateTestData.py
+BUILD_DIR/lidarview/src/lidarview-build/bin/LidarView --script=BUILD_DIR/lidarview/src/lidarview-build/bin/generateTestData.py
 ```
 On Windows:
 ```
-INSTALL_DIR/bin/VeloView.exe --script=INSTALL_DIR/bin/generateTestData.py
+INSTALL_DIR/bin/LidarView.exe --script=INSTALL_DIR/bin/generateTestData.py
 ```
 On MacOS:
 ```
-open PACKAGE_DIR/VeloView.app --args --script=BUILD_DIR/veloview/src/veloview-build/bin/generateTestData.py
+open PACKAGE_DIR/LidarView.app --args --script=BUILD_DIR/lidarview/src/lidarview-build/bin/generateTestData.py
 ```
 Updated test data will be generated in `/TestData`. Commit your changes in the
 submodule `TestData` fisrt and then commit them on this repository.
@@ -72,12 +72,12 @@ submodule `TestData` fisrt and then commit them on this repository.
 ### Adding new test data
 
 Adding new test data means adding a PCAP file and associated VTP baseline files to
-VeloView-TestData. It has to be saved under `TestData`. If you need a custom
+LidarView-TestData. It has to be saved under `TestData`. If you need a custom
 calibration file, it has to be in the `share` directory. Then, edit
 `generateTestData.py.in` in order to add your PCAP and its associated calibration
 file to the list of tests data to generate.
 
-Finaly re generate Veloview with cmake, in order to create a new 'generateTestData.py' file
+Finaly re generate LidarView with cmake, in order to create a new 'generateTestData.py' file
 and add a new test in the `CMakeList.txt`.
 
 Don't forget to commit your change!
@@ -87,5 +87,5 @@ Don't forget to commit your change!
 least 12480 packets for it to works. The live calibration mode computes the
 calibration from appended received data packet and it's the minimum required
 to compute it correctly (the rolling calibration data span 4160 datapacket, but
-VeloView requires some redondancy to be on the safe side).
+LidarView requires some redondancy to be on the safe side).
 

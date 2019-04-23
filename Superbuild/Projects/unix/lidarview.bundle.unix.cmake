@@ -9,7 +9,7 @@ endif ()
 set(include_regexes)
 set(exclude_regexes)
 
-foreach (executable IN LISTS veloview_executables)
+foreach (executable IN LISTS lidarview_executables)
   superbuild_unix_install_program_fwd("${executable}"
     "bin"
     SEARCH_DIRECTORIES  "${library_paths}"
@@ -18,7 +18,7 @@ foreach (executable IN LISTS veloview_executables)
 endforeach ()
 
 # this was present in ParaView's paraview.bundle.unix.cmake,
-# delete when it is certain that this is not needed for VeloView:
+# delete when it is certain that this is not needed for LidarView:
 if (python_enabled)
   include(python.functions)
   superbuild_install_superbuild_python(
@@ -52,7 +52,7 @@ if (qt5_enabled)
 endif ()
 
 # this was present in ParaView's paraview.bundle.unix.cmake,
-# delete when it is certain that this is not needed for VeloView:
+# delete when it is certain that this is not needed for LidarView:
 message(STATUS "TOP: qt5_plugin_paths is: ${qt5_plugin_path}")
 # foreach (qt5_plugin_path IN LISTS qt5_plugin_paths)
 #   get_filename_component(qt5_plugin_group "${qt5_plugin_path}" DIRECTORY)

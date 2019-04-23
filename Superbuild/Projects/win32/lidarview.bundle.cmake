@@ -1,4 +1,4 @@
-include(veloview.bundle.common)
+include(lidarview.bundle.common)
 
 # Set NSIS install specific stuff.
 if (CMAKE_CL_64)
@@ -6,8 +6,8 @@ if (CMAKE_CL_64)
   set(CPACK_NSIS_INSTALL_ROOT "$PROGRAMFILES64")
 endif ()
 
-set(CPACK_NSIS_HELP_LINK "https://www.paraview.org/veloview/")
-set(${SOFTWARE_NAME}_description "${SOFTWARE_NAME} ${veloview_version_full}")
+set(CPACK_NSIS_HELP_LINK "https://www.paraview.org/lidarview/")
+set(${SOFTWARE_NAME}_description "${SOFTWARE_NAME} ${lidarview_version_full}")
 set(CPACK_NSIS_MUI_ICON "${CMAKE_CURRENT_LIST_DIR}/../../../SoftwareInformation/logo.ico")
 
 
@@ -18,8 +18,8 @@ if (Qt5_DIR)
     "${Qt5_DIR}/../../../bin")
 endif ()
 
-# Install veloview executables to bin.
-foreach (executable IN LISTS veloview_executables)
+# Install lidarview executables to bin.
+foreach (executable IN LISTS lidarview_executables)
   if (DEFINED "${executable}_description")
     list(APPEND CPACK_NSIS_MENU_LINKS
       "bin/${executable}.exe" "${${executable}_description}")

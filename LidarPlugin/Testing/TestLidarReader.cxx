@@ -70,7 +70,7 @@ int main(int argc, char* argv[])
   }
 
   // Integrity tests.
-  // Checks in the default VeloView environment that everything can be read correctly.
+  // Checks in the default LidarView environment that everything can be read correctly.
   std::cout << "Integrity tests..." << std::endl;
 
   // Checks frame count
@@ -105,7 +105,7 @@ int main(int argc, char* argv[])
   }
 
   // Runtime tests
-  // Modifies VeloView's processing options and check that everything run correctly
+  // Modifies LidarView's processing options and check that everything run correctly
   std::cout << "Runtime tests..." << std::endl;
 
   // Check processing options

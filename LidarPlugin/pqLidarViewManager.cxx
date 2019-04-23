@@ -113,13 +113,13 @@ void pqLidarViewManager::pythonStartup()
 
   vtkPythonInterpreter::RunSimpleString("import PythonQt");
   PythonQt::self()->addDecorators(new vvPythonQtDecorators());
-  vtkPythonInterpreter::RunSimpleString("import veloview");
+  vtkPythonInterpreter::RunSimpleString("import lidarview");
 
   this->runPython(QString(
       "import PythonQt\n"
       "QtGui = PythonQt.QtGui\n"
       "QtCore = PythonQt.QtCore\n"
-      "import veloview.applogic as vv\n"
+      "import lidarview.applogic as vv\n"
       "vv.start()\n"));
 
   pqSettings* const settings = pqApplicationCore::instance()->settings();

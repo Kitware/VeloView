@@ -129,16 +129,16 @@
     </property>
     <action name="actionResetDefaultSettings">
      <property name="text">
-      <string>Reset Veloview settings</string>
+      <string>Reset LidarView settings</string>
      </property>
      <property name="iconText">
-      <string>This will reset all veloview settings by default</string>
+      <string>This will reset all LidarView settings by default</string>
      </property>
     </action>
-    <addaction name="actionAbout_VeloView"/>
+    <addaction name="actionAbout_LidarView"/>
     <addaction name="separator"/>
-    <addaction name="actionVeloViewUserGuide"/>
-    <addaction name="actionVeloViewDeveloperGuide"/>
+    <addaction name="actionLidarViewUserGuide"/>
+    <addaction name="actionLidarViewDeveloperGuide"/>
     <addaction name="actionResetDefaultSettings"/>
     <addaction name="actionAdvanceFeature"/>
    </widget>
@@ -504,12 +504,12 @@
     <string>Save PCAP</string>
    </property>
   </action>
-  <action name="actionAbout_VeloView">
+  <action name="actionAbout_LidarView">
    <property name="text">
     <string>About ...</string>
    </property>
   </action>
-  <action name="actionVeloViewDeveloperGuide">
+  <action name="actionLidarViewDeveloperGuide">
    <property name="text">
     <string>Developer's Guide</string>
    </property>
@@ -571,7 +571,7 @@
     <string>Toggle between projective and orthogonal view</string>
    </property>
   </action>
-  <action name="actionVeloViewUserGuide">
+  <action name="actionLidarViewUserGuide">
    <property name="text">
     <string>User's Guide</string>
    </property>

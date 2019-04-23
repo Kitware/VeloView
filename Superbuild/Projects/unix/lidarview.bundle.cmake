@@ -1,9 +1,9 @@
 # include(paraview-version)
 
-include(veloview.bundle.common)
+include(lidarview.bundle.common)
 
-set(veloview_component "${SOFTWARE_NAME}")
-include(veloview.bundle.unix)
+set(lidarview_component "${SOFTWARE_NAME}")
+include(lidarview.bundle.unix)
 
 install(DIRECTORY "${superbuild_install_location}/lib/paraview-${PARAVIEW_VERSION}"
   DESTINATION "lib"
@@ -11,7 +11,7 @@ install(DIRECTORY "${superbuild_install_location}/lib/paraview-${PARAVIEW_VERSIO
   COMPONENT superbuild)
 
 # install all libraries
-install(DIRECTORY "${superbuild_install_location}/lib/veloview-${VV_VERSION}"
+install(DIRECTORY "${superbuild_install_location}/lib/lidarview-${VV_VERSION}"
   DESTINATION "lib"
   USE_SOURCE_PERMISSIONS
   COMPONENT superbuild)
@@ -41,17 +41,17 @@ install(DIRECTORY
   # FIXME: we can reconfigure Qt to be built with inbuilt sqllite support to
   # avoid the need for plugins.
   "${superbuild_install_location}/plugins/"
-  DESTINATION "lib/veloview-${VV_VERSION}"
+  DESTINATION "lib/lidarview-${VV_VERSION}"
   COMPONENT superbuild
   PATTERN "*.a" EXCLUDE
-  PATTERN "veloview-${VV_VERSION}" EXCLUDE
+  PATTERN "lidarview-${VV_VERSION}" EXCLUDE
   PATTERN "fontconfig" EXCLUDE
   PATTERN "*.jar" EXCLUDE
   PATTERN "*.debug.*" EXCLUDE
   PATTERN "libboost*" EXCLUDE)
 
 install(FILES ${lib_files_so}
-  DESTINATION "lib/veloview-${VV_VERSION}"
+  DESTINATION "lib/lidarview-${VV_VERSION}"
   COMPONENT superbuild)
 unset(lib_files_so)
 

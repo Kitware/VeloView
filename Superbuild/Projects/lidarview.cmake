@@ -1,4 +1,4 @@
-superbuild_add_project(veloview
+superbuild_add_project(lidarview
   DEPENDS paraview qt5 pcap boost eigen liblas
   DEFAULT_ON
   CMAKE_ARGS

@@ -5,7 +5,7 @@ import os
 # unusual dependencies:
 # scipy
 
-# To instantiate this filter: do "import veloview.DTMFilter" from VeloView's
+# To instantiate this filter: do "import lidarview.DTMFilter" from LidarView's
 # python console.
 # notes: if executed from PV python with execfile(), __file__ is not defined
 

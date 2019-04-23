@@ -1,6 +1,6 @@
 import os, re, shutil
 
-# Get the VeloView source directory from CMake
+# Get the LidarView source directory from CMake
 sourceDir = "@CMAKE_SOURCE_DIR@"
 pcapFolder= sourceDir + "/TestData/"
 calibFolder= sourceDir + "/share/"
@@ -76,5 +76,5 @@ for pcap, conf in tests.iteritems():
 
   vtpList.close()
 
-print "Everything was generated successfully, VeloView will close now."
+print "Everything was generated successfully, LidarView will close now."
 vv.quit()

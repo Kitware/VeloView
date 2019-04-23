@@ -1,15 +1,15 @@
 # Enable CPack packaging.
-set(VeloViewSuperBuild_SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/../")
-include(${VeloViewSuperBuild_SOURCE_DIR}/../SoftwareInformation/branding.cmake)
+set(LidarViewSuperBuild_SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/../")
+include(${LidarViewSuperBuild_SOURCE_DIR}/../SoftwareInformation/branding.cmake)
 
 # Include CMake scripts for geting the version from Git
 include(Git)
 include(ParaViewDetermineVersion)
 # Sets VV_VERSION_{MAJOR,MINOR,PATCH} for git
-set(VV_VERSION_FILE ${VeloViewSuperBuild_SOURCE_DIR}/../version.txt)
+set(VV_VERSION_FILE ${LidarViewSuperBuild_SOURCE_DIR}/../version.txt)
 file(STRINGS "${VV_VERSION_FILE}" version_txt)
 extract_version_components("${version_txt}" "VV")
-determine_version(${VeloViewSuperBuild_SOURCE_DIR} ${GIT_EXECUTABLE} "VV")
+determine_version(${LidarViewSuperBuild_SOURCE_DIR} ${GIT_EXECUTABLE} "VV")
 # Update the hard-coded version
 extract_version_components("${version_txt}" "VV_file")
 if((version_txt VERSION_LESS VV_VERSION_FULL)
@@ -23,11 +23,11 @@ if(NOT (version_txt STREQUAL VV_VERSION_FULL))
 endif()
 
 # Sets GD_YEAR, GD_MONTH, GD_DAY
-include(${VeloViewSuperBuild_SOURCE_DIR}/Projects/getdate.cmake)
+include(${LidarViewSuperBuild_SOURCE_DIR}/Projects/getdate.cmake)
 GET_DATE()
 set(PACKAGE_TIMESTAMP "${GD_YEAR}${GD_MONTH}${GD_DAY}")
 
-set(CPACK_COMPONENT_VELOVIEW_DISPLAY_NAME ${SOFTWARE_NAME})
+set(CPACK_COMPONENT_LIDARVIEW_DISPLAY_NAME ${SOFTWARE_NAME})
 set(CPACK_PACKAGE_VERSION_MAJOR ${VV_VERSION_MAJOR})
 set(CPACK_PACKAGE_VERSION_MINOR ${VV_VERSION_MINOR})
 set(CPACK_PACKAGE_VERSION_PATCH ${VV_VERSION_PATCH})
@@ -46,9 +46,9 @@ endif()
 message(STATUS "Bundled package name will be: ${CPACK_PACKAGE_FILE_NAME}" )
 
 # Set the license file.
-set(CPACK_RESOURCE_FILE_LICENSE "${VeloViewSuperBuild_SOURCE_DIR}/LICENSE")
+set(CPACK_RESOURCE_FILE_LICENSE "${LidarViewSuperBuild_SOURCE_DIR}/LICENSE")
 
-set(veloview_executables
+set(lidarview_executables
 	${SOFTWARE_NAME})
 
 
