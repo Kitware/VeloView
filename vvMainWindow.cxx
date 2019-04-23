@@ -58,7 +58,7 @@
 #include <pqSpreadSheetVisibilityBehavior.h>
 #include <pqStandardPropertyWidgetInterface.h>
 #include <pqStandardViewFrameActionsImplementation.h>
-#include <pqVelodyneManager.h>
+#include <pqLidarViewManager.h>
 #include <pqParaViewMenuBuilders.h>
 #include <pqPythonManager.h>
 #include <pqTabbedMultiViewWidget.h>
@@ -82,7 +82,7 @@
 #include "vvPlayerControlsToolbar.h"
 
 // Declare the plugin to load.
-PV_PLUGIN_IMPORT_INIT(VelodyneHDLPlugin);
+PV_PLUGIN_IMPORT_INIT(LidarPlugin);
 PV_PLUGIN_IMPORT_INIT(PythonQtPlugin);
 
 class vvMainWindow::pqInternals
@@ -161,7 +161,7 @@ private:
 
     // Check if the settings are well formed i.e. if an OriginalMainWindow
     // state was previously saved. If not, we don't want to automatically
-    // restore the settings state nor save it on quitting VeloView.
+    // restore the settings state nor save it on quitting LidarView.
     // An OriginalMainWindow state will be force saved once the UI is completly
     // set up.
     pqSettings* const settings = pqApplicationCore::instance()->settings();
@@ -202,7 +202,7 @@ private:
 
       // As pqPersistentMainWindowStateBehavior is not created right now,
       // we can clear the settings as the current bad state won't be saved on
-      // closing VeloView
+      // closing LidarView
       settings->clear();
     }
 
@@ -341,24 +341,23 @@ private:
 
     new pqPythonShellReaction(this->Ui.actionPython_Console);
 
-    pqVelodyneManager::instance()->setup();
+    pqLidarViewManager::instance()->setup();
 
     pqSettings* const settings = pqApplicationCore::instance()->settings();
     const QVariant& gridVisible =
-      settings->value("VelodyneHDLPlugin/MeasurementGrid/Visibility", true);
+      settings->value("LidarPlugin/MeasurementGrid/Visibility", true);
     this->Ui.actionMeasurement_Grid->setChecked(gridVisible.toBool());
 
     new vvLoadDataReaction(this->Ui.actionOpenPcap, false);
-    new vvLoadDataReaction(this->Ui.actionOpenApplanix, true);
 
-    connect(this->Ui.actionOpen_Sensor_Stream, SIGNAL(triggered()), pqVelodyneManager::instance(),
+    connect(this->Ui.actionOpen_Sensor_Stream, SIGNAL(triggered()), pqLidarViewManager::instance(),
       SLOT(onOpenSensor()));
 
-    connect(this->Ui.actionMeasurement_Grid, SIGNAL(toggled(bool)), pqVelodyneManager::instance(),
+    connect(this->Ui.actionMeasurement_Grid, SIGNAL(toggled(bool)), pqLidarViewManager::instance(),
       SLOT(onMeasurementGrid(bool)));
 
     connect(this->Ui.actionResetDefaultSettings, SIGNAL(triggered()),
-      pqVelodyneManager::instance(), SLOT(onResetDefaultSettings()));
+      pqLidarViewManager::instance(), SLOT(onResetDefaultSettings()));
 
     connect(this->Ui.actionShowErrorDialog, SIGNAL(triggered()), pqApplicationCore::instance(),
       SLOT(showOutputWindow()));
@@ -373,7 +372,7 @@ vvMainWindow::vvMainWindow()
     "COLOR_EDITOR_PANEL", this->Internals->Ui.colorMapEditorDock);
   this->Internals->Ui.colorMapEditorDock->hide();
 
-  PV_PLUGIN_IMPORT(VelodyneHDLPlugin);
+  PV_PLUGIN_IMPORT(LidarPlugin);
   PV_PLUGIN_IMPORT(PythonQtPlugin);
 
   // Branding
@@ -392,19 +391,19 @@ vvMainWindow::vvMainWindow()
 
   ss << "About " << SOFTWARE_NAME;
   text = QString(ss.str().c_str());
-  this->Internals->Ui.actionAbout_VeloView->setText(text);
+  this->Internals->Ui.actionAbout_LidarView->setText(text);
   ss.str("");
   ss.clear();
 
   ss << SOFTWARE_NAME << " Developer Guide";
   text = QString(ss.str().c_str());
-  this->Internals->Ui.actionVeloViewDeveloperGuide->setText(text);
+  this->Internals->Ui.actionLidarViewDeveloperGuide->setText(text);
   ss.str("");
   ss.clear();
 
   ss << SOFTWARE_NAME << " User Guide";
   text = QString(ss.str().c_str());
-  this->Internals->Ui.actionVeloViewUserGuide->setText(text);
+  this->Internals->Ui.actionLidarViewUserGuide->setText(text);
 }
 
 //-----------------------------------------------------------------------------
@@ -447,7 +446,7 @@ void vvMainWindow::dropEvent(QDropEvent* evt)
 
   if (files[0].endsWith(".pcap"))
   {
-    pqVelodyneManager::instance()->runPython(QString("vv.openPCAP('" + files[0] + "')"));
+    pqLidarViewManager::instance()->runPython(QString("vv.openPCAP('" + files[0] + "')"));
   }
   else {
     pqLoadDataReaction::loadData(files);

@@ -1,4 +1,4 @@
-set(SOFTWARE_NAME "VeloView")
+set(SOFTWARE_NAME "LidarView")
 set(VENDOR "Velodyne Lidar")
 set(PROJECT_NAME "${SOFTWARE_NAME}")
 
@@ -11,7 +11,7 @@ set(PARAVIEW_BUNDLE_ICON logo.icns)	# (bunbled app icon)
 set(PARAVIEW_APPLICATION_ICON logo.ico)	# (app icon)
 
 # Please make sure to adapt the AboutDialog text in the followin file
-#  VelodyneHDL\python\veloview\aboutDialog.py
+#  Lidar\python\lidarview\aboutDialog.py
 # You also need to change:
 #   - bottom_logo.png (bottom logo)
 

@@ -13,7 +13,7 @@
 // limitations under the License.
 #include "vvLoadDataReaction.h"
 
-#include "pqVelodyneManager.h"
+#include "pqLidarViewManager.h"
 
 #include "pqActiveObjects.h"
 #include "pqApplicationCore.h"
@@ -108,7 +108,7 @@ pqPipelineSource* vvLoadDataReaction::loadData()
 
   pqSettings* settings = pqApplicationCore::instance()->settings();
   QString defaultDir =
-    settings->value("VelodyneHDLPlugin/OpenData/DefaultDir", QDir::homePath()).toString();
+    settings->value("LidarPlugin/OpenData/DefaultDir", QDir::homePath()).toString();
 
   QString positionFileName;
   QString fileName;
@@ -144,9 +144,9 @@ pqPipelineSource* vvLoadDataReaction::loadData()
   }
 
   settings->setValue(
-    "VelodyneHDLPlugin/OpenData/DefaultDir", QFileInfo(fileName).absoluteDir().absolutePath());
+    "LidarPlugin/OpenData/DefaultDir", QFileInfo(fileName).absoluteDir().absolutePath());
 
-  pqVelodyneManager::instance()->openData(fileName, positionFileName);
+  pqLidarViewManager::instance()->openData(fileName, positionFileName);
 
   return NULL;
 }

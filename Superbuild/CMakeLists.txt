@@ -1,9 +1,9 @@
 cmake_minimum_required(VERSION 2.8.8)
 
-project(VeloViewSuperBuild)
+project(LidarViewSuperBuild)
 set (SuperBuild_CMAKE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/CMake")
 set (SuperBuild_PROJECTS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/Projects")
-set (SuperBuild_BINARY_DIR ${VeloViewSuperBuild_BINARY_DIR}) # required to do FindPackage(ParaView) inside Veloview's CMakeLists
+set (SuperBuild_BINARY_DIR ${LidarViewSuperBuild_BINARY_DIR}) # required to do FindPackage(ParaView) inside LidarView's CMakeLists
 
 set(qt_version 5)
 
@@ -79,7 +79,7 @@ function (superbuild_find_projects var)
     python
     pythonqt
     qt5
-    veloview
+    lidarview
     zlib
     ceres
     glog
@@ -150,10 +150,10 @@ function (superbuild_add_packaging)
     package_suffix
     )
 
-  set(default_package veloview)
+  set(default_package lidarview)
   foreach (generator IN LISTS generators)
-      superbuild_add_extra_package_test(veloview "${generator}"
-      LABELS  "VeloView" # does not have to be ${SOFTWARE_NAME} I think
+      superbuild_add_extra_package_test(lidarview "${generator}"
+      LABELS  "LidarView" # does not have to be ${SOFTWARE_NAME} I think
       TIMEOUT 6400)
   endforeach ()
 

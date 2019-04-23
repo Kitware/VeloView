@@ -19,7 +19,7 @@ variables:
   cmake_option_CMAKE_OSX_DEPLOYMENT_TARGET: "10.12"
   cmake_option_CMAKE_OSX_SYSROOT: "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.12.sdk"
 
-  test_blacklist: "TestVelodyneHDLSource"
+  test_blacklist: "TestLidarStream"
   # it is also possible to use: -DCMAKE_OSX_SDK:STRING=macosx10.12
 
   slash_separator: "/"
@@ -85,8 +85,8 @@ stages:
       ${CI_PROJECT_DIR}/Superbuild
     # compile
     - make -j8
-    # remove Veloview
-    - rm -rf common-superbuild/veloview
+    # remove lidarview
+    - rm -rf common-superbuild/lidarview
     # - cd ${CI_PROJECT_DIR}
     # create a symbolic link, inside the source tree else "push" will not work
     # - ln -s ../Superbuild-build Superbuild-build # not working witth
@@ -111,7 +111,7 @@ stages:
   script:
     - git submodule update --init Superbuild/common-superbuild
     - cd ../Superbuild-build/ # created by extracting cache in "unix_get_superbuild"
-    - make veloview -j8
+    - make lidarview -j8
 
 .linux_test: &linux_test
   stage: test
@@ -121,8 +121,8 @@ stages:
     - git submodule update --init Superbuild/common-superbuild
     - git submodule update --init TestData
     - cd ../Superbuild-build/ # created by extracting cache in "unix_get_superbuild"
-    - make veloview -j8
-    - cd ../Superbuild-build/common-superbuild/veloview/build
+    - make lidarview -j8
+    - cd ../Superbuild-build/common-superbuild/lidarview/build
     - cmake . -DBUILD_TESTING=True
     - make
     # excluding packaging test targets (packaging is done later)
@@ -136,8 +136,8 @@ stages:
   script:
     - git submodule update --init Superbuild/common-superbuild
     - cd ../Superbuild-build/ # created by extracting cache in "unix_get_superbuild"
-    - make veloview -j8
-    - ctest -R cpack-veloview-TGZ -V
+    - make lidarview -j8
+    - ctest -R cpack-lidarview-TGZ -V
 
 .linux_package_manual: &linux_package_manual
   when: manual
@@ -213,8 +213,8 @@ ubuntu16.04_package_schedule:
       ${CI_PROJECT_DIR}/Superbuild
     # compile
     - make -j8
-    # remove Veloview
-    - rm -rf common-superbuild/veloview
+    # remove lidarview
+    - rm -rf common-superbuild/lidarview
     # upload superbuild, Apple's Zip Utility, which I guess is use by gilab-ci
     # produce corrupted file for large file, so we need to upload the cache manually 
     - cd ..
@@ -237,10 +237,10 @@ ubuntu16.04_package_schedule:
   before_script: *unix_get_superbuild
   script:
     - cd Superbuild-build/
-    - make veloview -j8
+    - make lidarview -j8
   artifacts:
     paths:
-     - Superbuild-build/veloview
+     - Superbuild-build/lidarview
     expire_in: 1 hr
 
 .OSX_test: &OSX_test
@@ -337,8 +337,8 @@ ubuntu16.04_package_schedule:
     - chmod +x superbuild.bat
     - ./superbuild.bat
     - echo "build terminated"
-    - echo "removing common-superbuild/veloview"
-    - rm -rf common-superbuild/veloview
+    - echo "removing common-superbuild/lidarview"
+    - rm -rf common-superbuild/lidarview
     - echo "compressing and uploading Superbuild. This take some time..."
     - cd ..
     - tar zcf archive Superbuild-build/
@@ -366,7 +366,7 @@ windows_build:
     - git submodule update --init Superbuild/common-superbuild
     - cd /cygdrive/c/Superbuild-build # provided by windows_get_superbuild
     - echo "call \"C:\\Users\\vagrant\\Desktop\\cmd-env-variables.cmd\"" > build.bat
-    - echo "ninja veloview" >> build.bat
+    - echo "ninja lidarview" >> build.bat
     - chmod +x build.bat
     - ./build.bat
 
@@ -383,10 +383,10 @@ windows_test:
     - git submodule update --init TestData
     - cd /cygdrive/c/Superbuild-build # provided by windows_get_superbuild
     - echo "call \"C:\\Users\\vagrant\\Desktop\\cmd-env-variables.cmd\"" > test.bat
-    - echo "ninja veloview" >> test.bat
+    - echo "ninja lidarview" >> test.bat
     - chmod +x test.bat
     - ./test.bat
-    - cd common-superbuild/veloview/build
+    - cd common-superbuild/lidarview/build
     - echo "call \"C:\\Users\\vagrant\\Desktop\\cmd-env-variables.cmd\"" > test.bat
     - echo "cmake -DBUILD_TESTING=True ." >> test.bat
     - echo "ninja install" >> test.bat
@@ -406,7 +406,7 @@ windows_test:
     - git submodule update --init Superbuild/common-superbuild
     - cd /cygdrive/c/Superbuild-build # provided by windows_get_superbuild
     - echo "call \"C:\\Users\\vagrant\\Desktop\\cmd-env-variables.cmd\"" > package.bat
-    - echo "ninja veloview" >> package.bat
+    - echo "ninja lidarview" >> package.bat
     - echo "ctest -V -R cpack" >> package.bat
     - chmod +x package.bat
     - ./package.bat
