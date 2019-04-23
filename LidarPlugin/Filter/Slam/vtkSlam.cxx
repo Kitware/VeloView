@@ -73,12 +73,16 @@
 #include "vtkCustomTransformInterpolator.h"
 #include "vtkPCLConversions.h"
 #include "CeresCostFunctions.h"
+#include "vtkTemporalTransforms.h"
+#include "vtkRotatingKeyPointsExtractor.h"
+#include "KDTreePCLAdaptor.h"
 // STD
 #include <sstream>
 #include <algorithm>
 #include <cmath>
 #include <cfloat>
 #include <ctime>
+#include <iomanip>
 // VTK
 #include <vtkCellArray.h>
 #include <vtkCellData.h>
@@ -111,17 +115,8 @@
 // CERES
 #include <ceres/ceres.h>
 #include <glog/logging.h>
-
-#include "vtkTemporalTransforms.h"
-#include "vtkRotatingKeyPointsExtractor.h"
-
-
-#include <iomanip>
-
-#include <ctime>
-
-
-
+// NANOFLANN
+#include <nanoflann.hpp>
 
 
 
@@ -773,7 +768,7 @@ void vtkSlam::TransformToWorld(Point& p)
 }
 
 //-----------------------------------------------------------------------------
-int vtkSlam::ComputeLineDistanceParameters(pcl::KdTreeFLANN<Point>::Ptr kdtreePreviousEdges, Eigen::Matrix3d& R,
+int vtkSlam::ComputeLineDistanceParameters(KDTreePCLAdaptor& kdtreePreviousEdges, Eigen::Matrix3d& R,
                                            Eigen::Vector3d& dT, Point p, MatchingMode matchingMode)
 {
   // number of neighbors edge points required to approximate
@@ -786,7 +781,6 @@ int vtkSlam::ComputeLineDistanceParameters(pcl::KdTreeFLANN<Point>::Ptr kdtreePr
   // maximum distance between keypoints
   // and their computed line
   double squaredMaxDist;
-
 
   // Transform the point using the current pose estimation
   Eigen::Vector3d P0(p.x, p.y, p.z);
@@ -852,7 +846,7 @@ int vtkSlam::ComputeLineDistanceParameters(pcl::KdTreeFLANN<Point>::Ptr kdtreePr
   Eigen::MatrixXd data(requiredNearest, 3);
   for (unsigned int k = 0; k < requiredNearest; k++)
   {
-    Point pt = kdtreePreviousEdges->getInputCloud()->points[nearestIndex[k]];
+    Point pt = kdtreePreviousEdges.getInputCloud()->points[nearestIndex[k]];
     data.row(k) << pt.x, pt.y, pt.z;
   }
 
@@ -902,7 +896,7 @@ int vtkSlam::ComputeLineDistanceParameters(pcl::KdTreeFLANN<Point>::Ptr kdtreePr
   double meanSquaredDist = 0;
   for (unsigned int k = 0; k < requiredNearest; ++k)
   {
-    pt = kdtreePreviousEdges->getInputCloud()->points[nearestIndex[k]];
+    pt = kdtreePreviousEdges.getInputCloud()->points[nearestIndex[k]];
     Xtemp(0) = pt.x; Xtemp(1) = pt.y; Xtemp(2) = pt.z;
     double squaredDist = (Xtemp - mean).transpose() * A * (Xtemp - mean);
     if (squaredDist > squaredMaxDist)
@@ -943,7 +937,7 @@ int vtkSlam::ComputeLineDistanceParameters(pcl::KdTreeFLANN<Point>::Ptr kdtreePr
 }
 
 //-----------------------------------------------------------------------------
-int vtkSlam::ComputePlaneDistanceParameters(pcl::KdTreeFLANN<Point>::Ptr kdtreePreviousPlanes, Eigen::Matrix3d& R,
+int vtkSlam::ComputePlaneDistanceParameters(KDTreePCLAdaptor& kdtreePreviousPlanes, Eigen::Matrix3d& R,
                                             Eigen::Vector3d& dT, Point p, MatchingMode matchingMode)
 {
   // number of neighbors edge points required to approximate
@@ -997,12 +991,12 @@ int vtkSlam::ComputePlaneDistanceParameters(pcl::KdTreeFLANN<Point>::Ptr kdtreeP
     p.x = P(0); p.y = P(1); p.z = P(2);
   }
 
-  std::vector<int> nearestIndex;
-  std::vector<float> nearestDist;
-  kdtreePreviousPlanes->nearestKSearch(p, requiredNearest, nearestIndex, nearestDist);
+  std::vector<int> nearestIndex(requiredNearest, -1);
+  std::vector<double> nearestDist(requiredNearest, -1.0);
+  kdtreePreviousPlanes.query(p, requiredNearest, nearestIndex.data(), nearestDist.data());
 
   // It means that there is not enought keypoints in the neighbohood
-  if (nearestIndex.size() < requiredNearest)
+  if (nearestIndex[requiredNearest - 1] == -1)
   {
     return 0;
   }
@@ -1021,7 +1015,7 @@ int vtkSlam::ComputePlaneDistanceParameters(pcl::KdTreeFLANN<Point>::Ptr kdtreeP
   Eigen::MatrixXd data(requiredNearest,3);
   for (unsigned int k = 0; k < requiredNearest; k++)
   {
-    Point pt = kdtreePreviousPlanes->getInputCloud()->points[nearestIndex[k]];
+    Point pt = kdtreePreviousPlanes.getInputCloud()->points[nearestIndex[k]];
     data.row(k) << pt.x, pt.y, pt.z;
   }
   Eigen::Vector3d mean = data.colwise().mean();
@@ -1063,7 +1057,7 @@ int vtkSlam::ComputePlaneDistanceParameters(pcl::KdTreeFLANN<Point>::Ptr kdtreeP
   double meanSquaredDist = 0;
   for (unsigned int k = 0; k < requiredNearest; ++k)
   {
-    pt = kdtreePreviousPlanes->getInputCloud()->points[nearestIndex[k]];
+    pt = kdtreePreviousPlanes.getInputCloud()->points[nearestIndex[k]];
     Xtemp(0) = pt.x; Xtemp(1) = pt.y; Xtemp(2) = pt.z;
     double squaredDist = (Xtemp - mean).transpose() * A * (Xtemp - mean);
     if (squaredDist > squaredMaxDist)
@@ -1210,7 +1204,7 @@ int vtkSlam::ComputeBlobsDistanceParameters(pcl::KdTreeFLANN<Point>::Ptr kdtreeP
 
 //-----------------------------------------------------------------------------
 void vtkSlam::GetEgoMotionLineSpecificNeighbor(std::vector<int>& nearestValid, std::vector<float>& nearestValidDist,
-                                               unsigned int nearestSearch, pcl::KdTreeFLANN<Point>::Ptr kdtreePreviousEdges, Point p)
+                                               unsigned int nearestSearch, KDTreePCLAdaptor& kdtreePreviousEdges, Point p)
 {
   // clear vector
   nearestValid.clear();
@@ -1219,13 +1213,13 @@ void vtkSlam::GetEgoMotionLineSpecificNeighbor(std::vector<int>& nearestValid, s
   nearestValidDist.resize(0);
 
   // get nearest neighbor of the query point
-  std::vector<int> nearestIndex;
-  std::vector<float> nearestDist;
-  kdtreePreviousEdges->nearestKSearch(p, nearestSearch, nearestIndex, nearestDist);
+  std::vector<int> nearestIndex(nearestSearch, -1);
+  std::vector<double> nearestDist(nearestSearch, -1.0);
+  kdtreePreviousEdges.query(p, nearestSearch, nearestIndex.data(), nearestDist.data());
 
   // take the closest point
   std::vector<int> idAlreadyTook(this->KeyPointsExtractor->GetNLasers(), 0);
-  Point closest = kdtreePreviousEdges->getInputCloud()->points[nearestIndex[0]];
+  Point closest = kdtreePreviousEdges.getInputCloud()->points[nearestIndex[0]];
   nearestValid.push_back(nearestIndex[0]);
   nearestValidDist.push_back(nearestDist[0]);
 
@@ -1250,7 +1244,7 @@ void vtkSlam::GetEgoMotionLineSpecificNeighbor(std::vector<int>& nearestValid, s
   int id;
   for (unsigned int k = 1; k < nearestIndex.size(); ++k)
   {
-    id = kdtreePreviousEdges->getInputCloud()->points[nearestIndex[k]].normal_y;
+    id = kdtreePreviousEdges.getInputCloud()->points[nearestIndex[k]].normal_y;
     if ( (idAlreadyTook[id] < 1) && (nearestDist[k] < this->MaxDistanceForICPMatching))
     {
       idAlreadyTook[id] = 1;
@@ -1262,7 +1256,7 @@ void vtkSlam::GetEgoMotionLineSpecificNeighbor(std::vector<int>& nearestValid, s
 
 //-----------------------------------------------------------------------------
 void vtkSlam::GetMappingLineSpecificNeigbbor(std::vector<int>& nearestValid, std::vector<float>& nearestValidDist, double maxDistInlier,
-                                             unsigned int nearestSearch, pcl::KdTreeFLANN<Point>::Ptr kdtreePreviousEdges, Point p)
+                                             unsigned int nearestSearch, KDTreePCLAdaptor& kdtreePreviousEdges, Point p)
 {
   // reset vectors
   nearestValid.clear();
@@ -1275,13 +1269,13 @@ void vtkSlam::GetMappingLineSpecificNeigbbor(std::vector<int>& nearestValid, std
 
   // Take the neighborhood of the query point
   // get nearest neighbor of the query point
-  std::vector<int> nearestIndex;
-  std::vector<float> nearestDist;
-  kdtreePreviousEdges->nearestKSearch(p, nearestSearch, nearestIndex, nearestDist);
+  std::vector<int> nearestIndex(nearestSearch, -1);
+  std::vector<double> nearestDist(nearestSearch, -1.0);
+  kdtreePreviousEdges.query(p, nearestSearch, nearestIndex.data(), nearestDist.data());
 
   // take the closest point
   std::vector<std::vector<int> > inliersList;
-  Point closest = kdtreePreviousEdges->getInputCloud()->points[nearestIndex[0]];
+  Point closest = kdtreePreviousEdges.getInputCloud()->points[nearestIndex[0]];
   nearestValid.push_back(nearestIndex[0]);
   nearestValidDist.push_back(nearestDist[0]);
 
@@ -1298,7 +1292,7 @@ void vtkSlam::GetMappingLineSpecificNeigbbor(std::vector<int>& nearestValid, std
   for (unsigned int ptIndex = 1; ptIndex < nearestIndex.size(); ++ptIndex)
   {
     std::vector<int> inlierIndex;
-    pclP2 = kdtreePreviousEdges->getInputCloud()->points[nearestIndex[ptIndex]];
+    pclP2 = kdtreePreviousEdges.getInputCloud()->points[nearestIndex[ptIndex]];
     P2 << pclP2.x, pclP2.y, pclP2.z;
     dir = (P2 - P1).normalized();
     D = this->I3 - dir * dir.transpose();
@@ -1306,7 +1300,7 @@ void vtkSlam::GetMappingLineSpecificNeigbbor(std::vector<int>& nearestValid, std
 
     for (unsigned int candidateIndex = 1; candidateIndex < nearestIndex.size(); ++candidateIndex)
     {
-      inlierCandidate = kdtreePreviousEdges->getInputCloud()->points[nearestIndex[candidateIndex]];
+      inlierCandidate = kdtreePreviousEdges.getInputCloud()->points[nearestIndex[candidateIndex]];
       Pcdt << inlierCandidate.x, inlierCandidate.y, inlierCandidate.z;
       if ( (Pcdt - P1).transpose() * D * (Pcdt - P1) < maxDistInlier)
       {
@@ -1357,10 +1351,8 @@ void vtkSlam::ComputeEgoMotion()
 
   // kd-tree to process fast nearest neighbor
   // among the keypoints of the previous pointcloud
-  pcl::KdTreeFLANN<Point>::Ptr kdtreePreviousEdges(new pcl::KdTreeFLANN<Point>());
-  pcl::KdTreeFLANN<Point>::Ptr kdtreePreviousPlanes(new pcl::KdTreeFLANN<Point>());
-  kdtreePreviousEdges->setInputCloud(this->PreviousEdgesPoints);
-  kdtreePreviousPlanes->setInputCloud(this->PreviousPlanarsPoints);
+  KDTreePCLAdaptor kdtreePreviousEdges(this->PreviousEdgesPoints);
+  KDTreePCLAdaptor kdtreePreviousPlanes(this->PreviousPlanarsPoints);
 
   std::cout << "========== Ego-Motion ==========" << std::endl;
   std::cout << "previous edges: " << this->PreviousEdgesPoints->size() << " current edges: " << this->CurrentEdgesPoints->size() << std::endl;
@@ -1517,14 +1509,14 @@ void vtkSlam::Mapping()
   // Set the FarestPoint to reduce the map to the minimum size
   this->SetLidarMaximunRange(this->KeyPointsExtractor->GetFarestKeypointDist());
 
-  // contruct kd-tree for fast closest points search
-  pcl::KdTreeFLANN<Point>::Ptr kdtreeEdges(new pcl::KdTreeFLANN<Point>());
-  pcl::KdTreeFLANN<Point>::Ptr kdtreePlanes(new pcl::KdTreeFLANN<Point>());
-  pcl::KdTreeFLANN<Point>::Ptr kdtreeBlobs;
+  // get keypoints from the map
   pcl::PointCloud<Point>::Ptr subEdgesPointsLocalMap = this->EdgesPointsLocalMap->Get(this->Tworld);
   pcl::PointCloud<Point>::Ptr subPlanarPointsLocalMap = this->PlanarPointsLocalMap->Get(this->Tworld);
-  kdtreeEdges->setInputCloud(subEdgesPointsLocalMap);
-  kdtreePlanes->setInputCloud(subPlanarPointsLocalMap);
+
+  // contruct kd-tree for fast closest points search
+  KDTreePCLAdaptor kdtreeEdges(subEdgesPointsLocalMap);
+  KDTreePCLAdaptor kdtreePlanes(subPlanarPointsLocalMap);
+  pcl::KdTreeFLANN<Point>::Ptr kdtreeBlobs;
 
   std::cout << "========== Mapping ==========" << std::endl;
   std::cout << "Edges extracted from map: " << subEdgesPointsLocalMap->points.size()

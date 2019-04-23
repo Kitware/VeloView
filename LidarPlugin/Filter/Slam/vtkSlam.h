@@ -73,6 +73,7 @@
 
 // LOCAL
 #include "vtkPCLConversions.h"
+#include "KDTreePCLAdaptor.h"
 // STD
 #include <string>
 #include <ctime>
@@ -422,24 +423,24 @@ private:
   // (R * X + T - P).t * A * (R * X + T - P)
   // Where P is the mean point of the neighborhood and A is the symmetric
   // variance-covariance matrix encoding the shape of the neighborhood
-  int ComputeLineDistanceParameters(pcl::KdTreeFLANN<Point>::Ptr kdtreePreviousEdges, Eigen::Matrix3d& R,
-                                             Eigen::Vector3d& dT, Point p, MatchingMode matchingMode);
-  int ComputePlaneDistanceParameters(pcl::KdTreeFLANN<Point>::Ptr kdtreePreviousPlanes, Eigen::Matrix3d& R,
-                                              Eigen::Vector3d& dT, Point p, MatchingMode matchingMode);
+  int ComputeLineDistanceParameters(KDTreePCLAdaptor& kdtreePreviousEdges, Eigen::Matrix3d& R,
+                                    Eigen::Vector3d& dT, Point p, MatchingMode matchingMode);
+  int ComputePlaneDistanceParameters(KDTreePCLAdaptor& kdtreePreviousPlanes, Eigen::Matrix3d& R,
+                                     Eigen::Vector3d& dT, Point p, MatchingMode matchingMode);
   int ComputeBlobsDistanceParameters(pcl::KdTreeFLANN<Point>::Ptr kdtreePreviousBlobs, Eigen::Matrix3d& R,
-                                              Eigen::Vector3d& dT, Point p, MatchingMode matchingMode);
+                                     Eigen::Vector3d& dT, Point p, MatchingMode matchingMode);
 
   // Instead of taking the k-nearest neigbors in the odometry
   // step we will take specific neighbor using the particularities
   // of the lidar sensor
   void GetEgoMotionLineSpecificNeighbor(std::vector<int>& nearestValid, std::vector<float>& nearestValidDist,
-                                        unsigned int nearestSearch, pcl::KdTreeFLANN<Point>::Ptr kdtreePreviousEdges, Point p);
+                                        unsigned int nearestSearch, KDTreePCLAdaptor& kdtreePreviousEdges, Point p);
 
   // Instead of taking the k-nearest neighbors in the mapping
   // step we will take specific neighbor using a sample consensus
   // model
   void GetMappingLineSpecificNeigbbor(std::vector<int>& nearestValid, std::vector<float>& nearestValidDist, double maxDistInlier,
-                                        unsigned int nearestSearch, pcl::KdTreeFLANN<Point>::Ptr kdtreePreviousEdges, Point p);
+                                        unsigned int nearestSearch, KDTreePCLAdaptor& kdtreePreviousEdges, Point p);
 
   // All points of the current frame has been
   // acquired at a different timestamp. The goal

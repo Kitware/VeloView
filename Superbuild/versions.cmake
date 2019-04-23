@@ -72,4 +72,4 @@ superbuild_set_revision(opencv
 
 superbuild_set_revision(nanoflann
   GIT_REPOSITORY https://github.com/jlblancoc/nanoflann.git
-  GIT_TAG master)
+  GIT_TAG v1.3.0)
