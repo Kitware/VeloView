@@ -126,8 +126,8 @@ std::pair<double, AnglePositionVector> EstimateCalibrationFromPoses(
 std::pair<double, AnglePositionVector> EstimateCalibrationFromPoses(const std::string& sourceSensorFilename,
                                                                     const std::string& targetSensorFilename);
 vtkSmartPointer<vtkTemporalTransforms> EstimateCalibrationFromPosesAndApply(
-                                            vtkSmartPointer<vtkTemporalTransforms> targetSensor,
-                                            vtkSmartPointer<vtkTemporalTransforms> sourceSensor);
+                                            vtkSmartPointer<vtkTemporalTransforms> sourceSensor,
+                                            vtkSmartPointer<vtkTemporalTransforms> targetSensor);
 
 /**
 * \function MatchTrajectoriesWithIsometry
@@ -153,8 +153,8 @@ std::pair<double, AnglePositionVector> MatchTrajectoriesWithIsometry(
 std::pair<double, AnglePositionVector> MatchTrajectoriesWithIsometry(const std::string& sourceSensorFilename,
                                                                      const std::string& targetSensorFilename);
 vtkSmartPointer<vtkTemporalTransforms> MatchTrajectoriesWithIsometryAndApply(
-                                                         vtkSmartPointer<vtkTemporalTransforms> targetSensor,
-                                                         vtkSmartPointer<vtkTemporalTransforms> sourceSensor);
+                                                         vtkSmartPointer<vtkTemporalTransforms> sourceSensor,
+                                                         vtkSmartPointer<vtkTemporalTransforms> targetSensor);
 
 /**
 * \function CreateSyntheticPosesData

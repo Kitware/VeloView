@@ -288,8 +288,8 @@ set(sources_which_do_not_inherit_from_vtkObject
   ${CMAKE_CURRENT_SOURCE_DIR}/Common/vtkEigenTools.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/${interpolator_pach_until_vtk_update}
   ${CMAKE_CURRENT_SOURCE_DIR}/Common/vtkConversions.cxx
-  ${CMAKE_CURRENT_SOURCE_DIR}/Common/vtkTimeCalibration.cxx
-  ${CMAKE_CURRENT_SOURCE_DIR}/Common/vtkCarGeometricCalibration.cxx
+  ${CMAKE_CURRENT_SOURCE_DIR}/Common/Calib/Temporal/vtkTimeCalibration.cxx
+  ${CMAKE_CURRENT_SOURCE_DIR}/Common/Calib/Geometric/vtkCarGeometricCalibration.cxx
   )
 if (ENABLE_PCL)
   list(APPEND sources_which_do_not_inherit_from_vtkObject
@@ -298,8 +298,8 @@ if (ENABLE_PCL)
 endif(ENABLE_PCL)
 if (ENABLE_Ceres)
   list(APPEND sources_which_do_not_inherit_from_vtkObject
-      ${CMAKE_CURRENT_SOURCE_DIR}/Common/vtkGeometricCalibration.cxx
-      ${CMAKE_CURRENT_SOURCE_DIR}/Common/Camera/vtkCameraCalibration.cxx
+      ${CMAKE_CURRENT_SOURCE_DIR}/Common/Calib/Geometric/vtkGeometricCalibration.cxx
+      ${CMAKE_CURRENT_SOURCE_DIR}/Common/Calib/Camera/vtkCameraCalibration.cxx
       )
 endif (ENABLE_Ceres)
 
@@ -319,7 +319,9 @@ list(APPEND deps
 set(plugin_include_dirs
   ${CMAKE_CURRENT_SOURCE_DIR}/Common
   ${CMAKE_CURRENT_SOURCE_DIR}/Common/Network
-  ${CMAKE_CURRENT_SOURCE_DIR}/Common/Camera
+  ${CMAKE_CURRENT_SOURCE_DIR}/Common/Calib/Camera
+  ${CMAKE_CURRENT_SOURCE_DIR}/Common/Calib/Geometric
+  ${CMAKE_CURRENT_SOURCE_DIR}/Common/Calib/Temporal
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/Lidar/Common
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/Lidar/KITTIDataSet
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/Lidar/Velodyne
