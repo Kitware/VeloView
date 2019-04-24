@@ -1,4 +1,5 @@
 superbuild_add_project(opencv
+  DEPENDS eigen
   
   CMAKE_ARGS
   -DCMAKE_CXX_STANDARD=11
