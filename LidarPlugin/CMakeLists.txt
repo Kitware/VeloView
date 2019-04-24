@@ -117,6 +117,17 @@ if (ENABLE_OpenCV)
   include_directories(${SYSTEM_OPTION} ${OpenCV_INCLUDE_DIRS})
 endif(ENABLE_OpenCV)
 
+#--------------------------------------
+# nanoflann dependency
+#--------------------------------------
+option(ENABLE_NANOFLANN OFF "Nanoflann will be required for filters using some optimized kdtree (DBSCAN, ...)")
+  if (ENABLE_NANOFLANN)
+  # because nanoflann use modern C++, no need to specify the include dir or anything else
+  # you just need to link against the target nanoflann::nanoflann
+  find_package(nanoflann REQUIRED)
+  list(APPEND deps nanoflann::nanoflann)
+endif(ENABLE_NANOFLANN)
+
 #-----------------------------------------------------------------------------
 # Build Paraview Plugin
 #-----------------------------------------------------------------------------
@@ -318,6 +329,7 @@ list(APPEND deps
 # folder where to look for header file
 set(plugin_include_dirs
   ${CMAKE_CURRENT_SOURCE_DIR}/Common
+  ${CMAKE_CURRENT_SOURCE_DIR}/Common/ML
   ${CMAKE_CURRENT_SOURCE_DIR}/Common/Network
   ${CMAKE_CURRENT_SOURCE_DIR}/Common/Calib/Camera
   ${CMAKE_CURRENT_SOURCE_DIR}/Common/Calib/Geometric
