@@ -53,7 +53,7 @@ int main(int argc, char* argv[])
   r = vtkTemporalTransformsReader::OpenTemporalTransforms(referenceFile);
   a = vtkTemporalTransformsReader::OpenTemporalTransforms(alignedFile)->ApplyTimeshift(- mm03_gt);
 
-  std::pair<double, AnglePositionVector> calib = EstimateCalibrationFromPoses(r, a);
+  std::pair<double, AnglePositionVector> calib = EstimateCalibrationFromPoses(a, r);
   Eigen::Matrix3d R1 = RollPitchYawToMatrix(calib.second(0), calib.second(1), calib.second(2));
   Eigen::Matrix3d difference1 = R1 * R_gt.transpose();
   auto aa1 = Eigen::AngleAxisd(difference1);
@@ -74,7 +74,7 @@ int main(int argc, char* argv[])
   r = vtkTemporalTransformsReader::OpenTemporalTransforms(referenceFile);
   a = vtkTemporalTransformsReader::OpenTemporalTransforms(alignedFile)->ApplyTimeshift(- mm04_gt);
 
-  calib = EstimateCalibrationFromPoses(r, a);
+  calib = EstimateCalibrationFromPoses(a, r);
   Eigen::Matrix3d R2 = RollPitchYawToMatrix(calib.second(0), calib.second(1), calib.second(2));
   Eigen::Matrix3d difference2 = R2 * R_gt.transpose();
   auto aa2 = Eigen::AngleAxisd(difference2);

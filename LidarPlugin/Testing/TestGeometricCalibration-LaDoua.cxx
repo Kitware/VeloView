@@ -36,7 +36,7 @@ int main(int argc, char* argv[])
 
   a = a->ApplyScale(1.0 / 0.0120337);
 
-  std::pair<double, AnglePositionVector> calib = EstimateCalibrationFromPoses(r, a);
+  std::pair<double, AnglePositionVector> calib = EstimateCalibrationFromPoses(a, r);
   Eigen::Matrix3d R1 = RollPitchYawToMatrix(calib.second(0), calib.second(1), calib.second(2));
   Eigen::Matrix3d difference1 = R1 * R_gt.transpose();
   auto aa1 = Eigen::AngleAxisd(difference1);
@@ -59,7 +59,7 @@ int main(int argc, char* argv[])
       ->ApplyTimeshift(1302.343);
   a = a->ApplyScale(1.0 / 0.0291194);
 
-  calib = EstimateCalibrationFromPoses(r, a);
+  calib = EstimateCalibrationFromPoses(a, r);
   Eigen::Matrix3d R2 = RollPitchYawToMatrix(calib.second(0), calib.second(1), calib.second(2));
   Eigen::Matrix3d difference2 = R2 * R_gt.transpose();
   auto aa2 = Eigen::AngleAxisd(difference2);

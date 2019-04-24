@@ -97,21 +97,21 @@ std::pair<double, AnglePositionVector> EstimateCalibrationFromPoses(
       // Sensor 1
       sourceSensorTransforms->InterpolateTransform(t0, transform);
       std::pair<Eigen::Vector3d, Eigen::Vector3d> sensor1T0Pose = GetPoseParamsFromTransform(transform);
-      Q1 = RollPitchYawToMatrix(sensor1T0Pose.first); U1 = sensor1T0Pose.second;
+      P1 = RollPitchYawToMatrix(sensor1T0Pose.first); V1 = sensor1T0Pose.second;
       // Sensor 2
       targetSensorTransforms->InterpolateTransform(t0, transform);
       std::pair<Eigen::Vector3d, Eigen::Vector3d> sensor2T0Pose = GetPoseParamsFromTransform(transform);
-      P1 = RollPitchYawToMatrix(sensor2T0Pose.first); V1 = sensor2T0Pose.second;
+      Q1 = RollPitchYawToMatrix(sensor2T0Pose.first); U1 = sensor2T0Pose.second;
 
       //======================== Time: t1 ==================================
       // Sensor 1
       sourceSensorTransforms->InterpolateTransform(t1, transform);
       std::pair<Eigen::Vector3d, Eigen::Vector3d> sensor1T1Pose = GetPoseParamsFromTransform(transform);
-      Q2 = RollPitchYawToMatrix(sensor1T1Pose.first); U2 = sensor1T1Pose.second;
+      P2 = RollPitchYawToMatrix(sensor1T1Pose.first); V2 = sensor1T1Pose.second;
       // Sensor 2
       targetSensorTransforms->InterpolateTransform(t1, transform);
       std::pair<Eigen::Vector3d, Eigen::Vector3d> sensor2T1Pose = GetPoseParamsFromTransform(transform);
-      P2 = RollPitchYawToMatrix(sensor2T1Pose.first); V2 = sensor2T1Pose.second;
+      Q2 = RollPitchYawToMatrix(sensor2T1Pose.first); U2 = sensor2T1Pose.second;
 
       // add this geometric constraint non-linear least square residu to the global
       // cost function that is the sum of all residuals functions
@@ -137,11 +137,11 @@ std::pair<double, AnglePositionVector> EstimateCalibrationFromPoses(
 
 //----------------------------------------------------------------------------
 vtkSmartPointer<vtkTemporalTransforms> EstimateCalibrationFromPosesAndApply(
-                                            vtkSmartPointer<vtkTemporalTransforms> targetSensor,
-                                            vtkSmartPointer<vtkTemporalTransforms> sourceSensor)
+                                            vtkSmartPointer<vtkTemporalTransforms> sourceSensor,
+                                            vtkSmartPointer<vtkTemporalTransforms> targetSensor)
 {
   // Estimate the cycloidic transform that match the source trajectory on the target one
-  std::pair<double, AnglePositionVector> estimation = EstimateCalibrationFromPoses(targetSensor, sourceSensor);
+  std::pair<double, AnglePositionVector> estimation = EstimateCalibrationFromPoses(sourceSensor, targetSensor);
   // Transform the source trajectory
   std::pair<Eigen::Vector3d, Eigen::Vector3d> dof6(estimation.second.segment(0, 3), estimation.second.segment(3, 3));
   vtkSmartPointer<vtkTransform> transform = GetTransformFromPosesParams(dof6);
@@ -335,10 +335,10 @@ std::pair<double, AnglePositionVector> MatchTrajectoriesWithIsometry(vtkSmartPoi
   {
     // Get the position of the sensor 1 for time
     sourceSensorTransforms->InterpolateTransform(time, currTransform);
-    Y = GetPoseParamsFromTransform(currTransform).second;
+    X = GetPoseParamsFromTransform(currTransform).second;
     // Get the position of the sensor 2 for time
     targetSensorTransforms->InterpolateTransform(time, currTransform);
-    X = GetPoseParamsFromTransform(currTransform).second;
+    Y = GetPoseParamsFromTransform(currTransform).second;
 
     // Add the geometric contraint residual function
     // to the non-linear least square problem
@@ -375,11 +375,11 @@ std::pair<double, AnglePositionVector> MatchTrajectoriesWithIsometry(const std::
 
 //----------------------------------------------------------------------------
 vtkSmartPointer<vtkTemporalTransforms> MatchTrajectoriesWithIsometryAndApply(
-                                                         vtkSmartPointer<vtkTemporalTransforms> targetSensor,
-                                                         vtkSmartPointer<vtkTemporalTransforms> sourceSensor)
+                                                         vtkSmartPointer<vtkTemporalTransforms> sourceSensor,
+                                                         vtkSmartPointer<vtkTemporalTransforms> targetSensor)
 {
   // Estimate the isometry that match the source trajectory on the target one
-  std::pair<double, AnglePositionVector> estimation = MatchTrajectoriesWithIsometry(targetSensor, sourceSensor);
+  std::pair<double, AnglePositionVector> estimation = MatchTrajectoriesWithIsometry(sourceSensor, targetSensor);
   // Transform the source trajectory
   std::pair<Eigen::Vector3d, Eigen::Vector3d> dof6(estimation.second.segment(0, 3), estimation.second.segment(3, 3));
   vtkSmartPointer<vtkTransform> transform = GetTransformFromPosesParams(dof6);
@@ -448,7 +448,7 @@ void CreateSyntheticPosesData(const std::string& vehiclePosesFilename,
   Eigen::Vector3d Sensor2T_t0;
 
   for (double t = timeBounds[0]; t <= timeBounds[1]; t += dt)
-  { 
+  {
     double u = (t - timeBounds[0]) / (timeBounds[1] - timeBounds[0]);
     double s = (1.0 - u);
     double ss = s * s; double uu = u * u;
