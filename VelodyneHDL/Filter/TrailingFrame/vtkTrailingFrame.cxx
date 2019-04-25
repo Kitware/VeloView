@@ -8,17 +8,6 @@
 vtkStandardNewMacro(vtkTrailingFrame)
 
 //----------------------------------------------------------------------------
-vtkTrailingFrame::vtkTrailingFrame()
-  : NumberOfTrailingFrames(0),
-    PipelineTime(0),
-    LastTimeProcessedIndex(-1),
-    FirstFilterIteration(true)
-{
-  this->CacheTimeRange[0] = -1;
-  this->CacheTimeRange[1] = -1;
-}
-
-//----------------------------------------------------------------------------
 void vtkTrailingFrame::SetNumberOfTrailingFrames(const unsigned int value)
 {
   if (this->NumberOfTrailingFrames != value)
@@ -43,11 +32,10 @@ int vtkTrailingFrame::FillOutputPortInformation(int port, vtkInformation *info)
 }
 
 //----------------------------------------------------------------------------
-int vtkTrailingFrame::RequestUpdateExtent(vtkInformation* vtkNotUsed(request),
-                                      vtkInformationVector** inputVector,
-                                      vtkInformationVector* vtkNotUsed(outputVector))
+int vtkTrailingFrame::RequestInformation(vtkInformation *request, vtkInformationVector **inputVector, vtkInformationVector *outputVector)
 {
-  vtkInformation *inInfo = inputVector[0]->GetInformationObject(0);
+  vtkInformation* inInfo = inputVector[0]->GetInformationObject(0);
+  vtkInformation* outInfo = inputVector[0]->GetInformationObject(0);
   // get the available time steps from source (only once)
   if (this->TimeSteps.size() == 0)
   {
@@ -55,6 +43,25 @@ int vtkTrailingFrame::RequestUpdateExtent(vtkInformation* vtkNotUsed(request),
     int nb_time_steps = inInfo->Length(vtkStreamingDemandDrivenPipeline::TIME_STEPS());
     this->TimeSteps.assign(time_steps, time_steps + nb_time_steps);
   }
+  outInfo->Set(vtkStreamingDemandDrivenPipeline::TIME_STEPS(),
+               &this->TimeSteps[0], this->TimeSteps.size());
+  return 1;
+}
+
+//----------------------------------------------------------------------------
+int vtkTrailingFrame::RequestUpdateExtent(vtkInformation* request,
+                                      vtkInformationVector** inputVector,
+                                      vtkInformationVector* vtkNotUsed(outputVector))
+{
+  vtkInformation *inInfo = inputVector[0]->GetInformationObject(0);
+
+  // Workaround to handle that multiple RequestUpdateExtent can be call
+  // The filter made the assumption that each RequestUpdateExtent is follow by a RequestData
+  if (this->LastCallWasRequestUpdateExtentCall)
+  {
+    return 1;
+  }
+  this->LastCallWasRequestUpdateExtentCall = true;
 
   // first loop
   if (this->FirstFilterIteration)
@@ -132,6 +139,10 @@ int vtkTrailingFrame::RequestData(vtkInformation* request,
   vtkPolyData* input = vtkPolyData::GetData(inputVector[0],0);
   vtkInformation *inInfo = inputVector[0]->GetInformationObject(0);
   vtkMultiBlockDataSet* output = vtkMultiBlockDataSet::GetData(outputVector);
+
+  // Workaround to handle that multiple RequestUpdateExtent can be call
+  // The filter made the assumption that each RequestUpdateExtent is follow by a RequestData
+  LastCallWasRequestUpdateExtentCall = false;
 
   if ((this->LastTimeProcessedIndex == this->CacheTimeRange[0] && this->Direction == -1)
       || (this->LastTimeProcessedIndex == this->CacheTimeRange[1]-1 && this->Direction == 1))
