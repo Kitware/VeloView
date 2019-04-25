@@ -732,7 +732,7 @@ void vvCalibrationDialog::accept()
 //-----------------------------------------------------------------------------
 void vvCalibrationDialog::onCurrentRowChanged(int row)
 {
-  this->Internal->RemoveButton->setEnabled(row > this->Internal->BuiltInCalibrationFiles.size());
+  this->Internal->RemoveButton->setEnabled(row >= this->Internal->BuiltInCalibrationFiles.size());
 }
 
 //-----------------------------------------------------------------------------
@@ -763,7 +763,7 @@ void vvCalibrationDialog::addFile()
 void vvCalibrationDialog::removeSelectedFile()
 {
   const int row = this->Internal->ListWidget->currentRow();
-  if (row > this->Internal->BuiltInCalibrationFiles.size())
+  if (row >= this->Internal->BuiltInCalibrationFiles.size())
   {
     delete this->Internal->ListWidget->takeItem(row);
     this->Internal->saveFileList();
