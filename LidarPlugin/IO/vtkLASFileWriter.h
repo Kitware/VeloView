@@ -50,6 +50,8 @@ public:
   vtkSetStringMacro(FileName)
   vtkGetStringMacro(FileName)
 
+  vtkSetMacro(SkipMetaDataPass, bool)
+
   vtkSetMacro(FirstFrame, int)
   vtkGetMacro(FirstFrame, int)
 
@@ -103,6 +105,7 @@ private:
   int NumberOfFrames = 0;
   int CurrentFrame = 0;
   int InOutSignedUTMZone = 0;
+  bool SkipMetaDataPass = false;
   int CurrentPass = 0; // pass 0 is to compute the header, pass 1 is to write
   static const int PassCount = 2;
   // This Offset must be applied to the coordinates of the points inside the

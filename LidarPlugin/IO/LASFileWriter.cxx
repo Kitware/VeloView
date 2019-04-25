@@ -395,3 +395,16 @@ void LASFileWriter::UpdateMetaData(vtkPolyData* data)
     }
   }
 }
+
+void LASFileWriter::SetMaxPt(double const* pt)
+{
+  this->MaxPt[0] = pt[0];
+  this->MaxPt[1] = pt[1];
+  this->MaxPt[2] = pt[2];
+}
+void LASFileWriter::SetMinPt(double const* pt)
+{
+  this->MinPt[0] = pt[0];
+  this->MinPt[1] = pt[1];
+  this->MinPt[2] = pt[2];
+}

@@ -130,6 +130,18 @@ int vtkLASFileWriter::RequestInformation(vtkInformation* vtkNotUsed(request),
 
   this->CurrentFrame = this->FirstFrame;
 
+  if (this->SkipMetaDataPass)
+  {
+#ifdef DEBUG_VTKLASFILEWRITER
+    std::cout << "vtkLASFileWriter::RequestInformation: skipping metadata pass"
+              << std::endl;
+#endif
+    this->CurrentPass = 1;
+    const double zero[3] = {0.0, 0.0, 0.0};
+    this->LASWriter.SetMinPt(zero);
+    this->LASWriter.SetMaxPt(zero);
+  }
+
   return 1;
 }
 
@@ -172,7 +184,9 @@ int vtkLASFileWriter::RequestData(vtkInformation *request,
             << std::endl;
 #endif
 
-  if (this->CurrentFrame == this->FirstFrame && this->CurrentPass == 0)
+  if (this->CurrentFrame == this->FirstFrame &&
+      (this->CurrentPass == 0
+       || (this->CurrentPass == 1 && this->SkipMetaDataPass)))
   {
 #ifdef DEBUG_VTKLASFILEWRITER
     std::cout << "Setting CONTINUE_EXECUTING" << std::endl;

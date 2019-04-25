@@ -72,6 +72,9 @@ public:
   // - Count the number of points
   void UpdateMetaData(vtkPolyData* data);
 
+  void SetMaxPt(double const* pt);
+  void SetMinPt(double const* pt);
+
   // Sets the metadata into the LAS header
   void FlushMetaData();
 
