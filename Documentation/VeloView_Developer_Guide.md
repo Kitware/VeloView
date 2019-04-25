@@ -127,6 +127,7 @@ Some dependencies, on certain platforms, must be compiled by the superbuild, and
     `ninja`
 
     * Building from scratch can take from 45 minutes to 3 hours depending on your hardware.
+    * Once complete, the application Veloview.exe can be found in `<work-directory>\VeloView-build\install\bin`.
     * By default ninja will use all cores on your machine, but you can restrict the number of cores used by using `ninja -jN` (replace N by the number of cores to use).
 
 
