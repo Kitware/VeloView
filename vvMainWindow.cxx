@@ -67,6 +67,8 @@
 #include "pqAxesToolbar.h"
 #include "pqCameraToolbar.h"
 #include <pqLiveSourceBehavior.h>
+#include <pqMultiViewWidget.h>
+#include <vtkSMViewLayoutProxy.h>
 
 #include <QToolBar>
 #include <QShortcut>
@@ -217,12 +219,19 @@ private:
         (builder->createView(pqSpreadSheetView::spreadsheetViewType(), server, true));
     spreadsheetView->rename("main spreadsheet view");
     assert(spreadsheetView);
-    this->Ui.spreadSheetDock->setWidget(spreadsheetView->widget());
-    spreadsheetView->getProxy()->UpdateVTKObjects();
+
+    vtkSMViewLayoutProxy* ssvl = static_cast<vtkSMViewLayoutProxy*>(builder->createProxy(
+          "misc", "ViewLayout", server, ""));
+    pqMultiViewWidget* ssmv = new pqMultiViewWidget;
+    ssmv->setLayoutManager(ssvl);
+    ssmv->assignToFrame(spreadsheetView);
+    ssmv->hideDecorations(); // hide the decoration to split the widget
+    this->Ui.spreadSheetDock->setWidget(ssmv);
+
+
+
     new vvToggleSpreadSheetReaction(this->Ui.actionSpreadsheet, spreadsheetView);
-    pqSpreadSheetViewDecorator* dec = new pqSpreadSheetViewDecorator(spreadsheetView);
-    dec->setPrecision(3);
-    dec->setFixedRepresentation(true);
+
 
     pqRenderView* view =
       qobject_cast<pqRenderView*>(builder->createView(pqRenderView::renderViewType(), server));

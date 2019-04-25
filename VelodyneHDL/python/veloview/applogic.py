@@ -143,8 +143,6 @@ def openData(filename):
 
     showSourceInSpreadSheet(reader)
 
-    smp.GetActiveView().ViewTime = 0.0
-
     app.reader = reader
     app.filenameLabel.setText('File: %s' % os.path.basename(filename))
 
@@ -412,8 +410,6 @@ def openSensor():
     if SAMPLE_PROCESSING_MODE:
         processor = smp.ProcessingSample(sensor)
 
-    smp.GetActiveView().ViewTime = 0.0
-
     app.sensor = sensor
     app.trailingFramesSpinBox.enabled = False
     app.colorByInitialized = False
@@ -520,8 +516,6 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
     handler.SetProgressFrequency(freq)
     progressDialog.close()
 
-    smp.GetActiveView().ViewTime = 0.0
-
     if SAMPLE_PROCESSING_MODE:
         prep = smp.Show(processor)
     app.scene.UpdateAnimationUsingDataTimeSteps()
@@ -621,29 +615,29 @@ def createRuler():
     pxm = servermanager.ProxyManager()
     distancerep = pxm.NewProxy('representations', 'DistanceWidgetRepresentation')
     distancerepeasy = servermanager._getPyProxy(distancerep)
-    smp.GetActiveView().Representations.append(distancerepeasy)
+    app.mainView.Representations.append(distancerepeasy)
     distancerepeasy.Visibility = False
-    smp.Render()
+    smp.Render(app.mainView)
 
     return distancerepeasy
 
 
 def hideRuler():
     app.ruler.Visibility = False
-    smp.Render()
+    smp.Render(app.mainView)
 
 
 def showRuler():
     app.ruler.Visibility = True
-    smp.Render()
+    smp.Render(app.mainView)
 
 def getPointFromCoordinate(coord, midPlaneDistance = 0.5):
     assert len(coord) == 2
 
-    windowHeight = smp.GetActiveView().ViewSize[1]
+    windowHeight = app.mainView.ViewSize[1]
 
     displayPoint = [coord[0], windowHeight - coord[1], midPlaneDistance]
-    renderer = smp.GetActiveView().GetRenderer()
+    renderer = app.mainView.GetRenderer()
     renderer.SetDisplayPoint(displayPoint)
     renderer.DisplayToWorld()
     world1 = renderer.GetWorldPoint()
@@ -669,7 +663,7 @@ def toggleRulerContext():
 
 def setRulerCoordinates(mouseEvent):
 
-    pqView = smp.GetActiveView()
+    pqView = app.mainView
     rW = pqView.GetRenderWindow()
     windowInteractor = rW.GetInteractor()
     currentMouseState = mouseEvent.buttons()
@@ -1061,7 +1055,7 @@ def saveToKiwiViewer(filename, timesteps):
 
     filenames = exportToDirectory(outDir, timesteps)
 
-    kiwiviewerExporter.writeJsonData(outDir, smp.GetActiveView(), smp.GetDisplayProperties(), filenames)
+    kiwiviewerExporter.writeJsonData(outDir, app.mainView, smp.GetDisplayProperties(), filenames)
 
     kiwiviewerExporter.zipDir(outDir, filename)
     kiwiviewerExporter.shutil.rmtree(tempDir)
@@ -1362,7 +1356,7 @@ def onCropReturns(show = True):
 
 def resetCameraToBirdsEyeView(view=None):
 
-    view = view or smp.GetActiveView()
+    view = view or smp.app.mainView
     view.CameraFocalPoint = [0, 0, 0]
     view.CameraViewUp = [0, 1, 0]
     view.CameraPosition = [0, 0, 40]
@@ -1372,7 +1366,7 @@ def resetCameraToBirdsEyeView(view=None):
 
 def resetCameraToForwardView(view=None):
 
-    view = view or smp.GetActiveView()
+    view = view or app.mainView
     view.CameraFocalPoint = [0,0,0]
     view.CameraViewUp = [0, 0.27, 0.96]
     view.CameraPosition = [0, -72, 18.0]
@@ -1421,7 +1415,7 @@ def showSourceInSpreadSheet(source):
 
 def createGrid(view=None):
 
-    view = view or smp.GetActiveView()
+    view = view or app.mainView
     grid = smp.VelodyneHDLGridSource(guiName='Measurement Grid')
 
     if app.gridProperties.Persist == False:
@@ -1710,7 +1704,9 @@ def onClearMenu():
 
 def toggleProjectionType():
 
-    view = smp.GetActiveView()
+    view = app.mainView
+    print (view)
+    print "toto"
 
     view.CameraParallelProjection = not view.CameraParallelProjection
     if app.actions['actionMeasure'].isChecked():
@@ -1721,7 +1717,7 @@ def toggleProjectionType():
     if not view.CameraParallelProjection:
         app.actions['actionMeasure'].setChecked(False)
 
-    smp.Render()
+    smp.Render(app.mainView)
 
 def toggleRPM():
     rpm = smp.FindSource("RPM")
