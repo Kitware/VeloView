@@ -434,7 +434,7 @@ def openSensor():
         prep = smp.Show(processor)
     smp.Render()
 
-    showSourceInSpreadSheet(sensor)
+    showSourceInSpreadSheet(app.trailingFrame)
     colorByIntensity(sensor)
 
     app.actions['actionShowRPM'].enabled = True
@@ -571,7 +571,7 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
 
     colorByIntensity(app.trailingFrame)
 
-    showSourceInSpreadSheet(reader)
+    showSourceInSpreadSheet(app.trailingFrame)
 
     enableSaveActions()
     addRecentFile(filename)
