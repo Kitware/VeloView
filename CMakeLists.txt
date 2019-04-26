@@ -263,3 +263,6 @@ build_paraview_client(${SOFTWARE_NAME}
 
 # We directly link against the plugin and import them statically.
 target_link_libraries(${SOFTWARE_NAME} LINK_PUBLIC ${VV_PLUGIN_LIBRARY} ${VV_NONE_PLUGIN_LIBRARY} ${PYTHONQTPLUGIN_LIBRARY} ${PYTHONQT_LIBRARIES})
+
+# Add subdirectory containing python script for animation
+add_subdirectory("Utilities/Animation")
