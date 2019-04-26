@@ -57,6 +57,9 @@ public:
   vtkGetMacro(AngleResolution, double)
   vtkSetMacro(AngleResolution, double)
 
+  vtkGetMacro(SaillancyThreshold, double)
+  vtkSetMacro(SaillancyThreshold, double)
+
   vtkGetMacro(FarestKeypointDist, double)
 
   int GetNLasers() const {return this->NLasers;}
@@ -133,6 +136,10 @@ protected:
   // to select a blob point
   double SphericityThreshold = 0.35;
 
+  // Threshold upon saillancy of a neighborhood
+  // to select an edge keypoint
+  double SaillancyThreshold = 2.25;
+
   // Coef to apply to the incertitude
   // radius of the blob neighborhood
   double IncertitudeCoef = 3.0;
@@ -150,8 +157,6 @@ protected:
   // scan by scan; point by point
   std::vector<std::vector<double> > Angles;
   std::vector<std::vector<double> > DepthGap;
-  std::vector<std::vector<double> > BlobScore;
-  std::vector<std::vector<double> > LengthResolution;
   std::vector<std::vector<double> > SaillantPoint;
   std::vector<std::vector<double> > IntensityGap;
   std::vector<std::vector<int> > IsPointValid;

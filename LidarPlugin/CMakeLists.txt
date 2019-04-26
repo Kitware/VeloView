@@ -120,7 +120,7 @@ endif(ENABLE_OpenCV)
 #--------------------------------------
 # nanoflann dependency
 #--------------------------------------
-option(ENABLE_NANOFLANN OFF "Nanoflann will be required for filters using some optimized kdtree (DBSCAN, ...)")
+option(ENABLE_NANOFLANN OFF "Nanoflann will be required for filters using some optimized kdtree (SLAM, DBSCAN, ...)")
   if (ENABLE_NANOFLANN)
   # because nanoflann use modern C++, no need to specify the include dir or anything else
   # you just need to link against the target nanoflann::nanoflann
@@ -227,14 +227,13 @@ if (ENABLE_PCL)
     )
 
 endif(ENABLE_PCL)
-if (ENABLE_PCL AND ENABLE_Ceres)
+if (ENABLE_PCL AND ENABLE_Ceres AND ENABLE_NANOFLANN)
   list(APPEND servermanager_sources
     ${CMAKE_CURRENT_SOURCE_DIR}/Filter/Slam/vtkSlam.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/Filter/Slam/vtkRotatingKeyPointsExtractor.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/Filter/Slam/vtkSlamManager.cxx
     )
-endif(ENABLE_PCL AND ENABLE_Ceres)
-
+endif(ENABLE_PCL AND ENABLE_Ceres AND ENABLE_NANOFLANN)
 
 # xml file that describe the proxy of the wrap sources in paraview
 list(APPEND servermanager_xml
@@ -267,11 +266,11 @@ if (ENABLE_PCL)
     )
 endif(ENABLE_PCL)
 
-if (ENABLE_PCL AND ENABLE_Ceres)
+if (ENABLE_PCL AND ENABLE_Ceres AND ENABLE_NANOFLANN)
   list(APPEND servermanager_xml
     xml/Slam.xml
     )
-endif(ENABLE_PCL AND ENABLE_Ceres)
+endif(ENABLE_PCL AND ENABLE_Ceres AND ENABLE_NANOFLANN)
 
 # other source code than won't be wrap by paraview but are needed to create the plugin
 # We make the distinction on that inherit from vtkObject as this one will be also wrap
@@ -334,6 +333,7 @@ set(plugin_include_dirs
   ${CMAKE_CURRENT_SOURCE_DIR}/Common/Calib/Camera
   ${CMAKE_CURRENT_SOURCE_DIR}/Common/Calib/Geometric
   ${CMAKE_CURRENT_SOURCE_DIR}/Common/Calib/Temporal
+  ${CMAKE_CURRENT_SOURCE_DIR}/Common/NanoflannAdaptor
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/Lidar/Common
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/Lidar/KITTIDataSet
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/Lidar/Velodyne

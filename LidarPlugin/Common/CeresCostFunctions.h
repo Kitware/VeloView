@@ -55,27 +55,38 @@ public:
   template <typename T>
   bool operator()(const T* const w, T* residual) const
   {
+    // Create sin / cos evaluation variables in static way.
+    // The idea is that all residual function will need to
+    // evaluate those sin / cos so we will only compute then
+    // once each time the parameters values change
+    static T crx, cry, crz, srx, sry, srz;
+    static T lastWValues[6] = {T(-1.0), T(-1.0), T(-1.0), T(-1.0), T(-1.0), T(-1.0)};
+    if ((w[0] != lastWValues[0]) || (w[1] != lastWValues[1]) || (w[2] != lastWValues[2]) ||
+        (w[3] != lastWValues[3]) || (w[4] != lastWValues[4]) || (w[5] != lastWValues[5]))
+    {
+      // store sin / cos values for this angle
+      crx = ceres::cos(w[0]); srx = ceres::sin(w[0]);
+      cry = ceres::cos(w[1]); sry = ceres::sin(w[1]);
+      crz = ceres::cos(w[2]); srz = ceres::sin(w[2]);
+
+      for (int k = 0; k < 6; ++k)
+        lastWValues[k] = w[k];
+    }
+
     // Convert internal double matrix
     // to a Jet matrix for auto diff calculous
     Eigen::Matrix<T, 3, 3> Ac;
-    for (int i = 0; i < 3; ++i)
-      for (int j = 0; j < 3; ++j)
-        Ac(i, j) = T(this->A(i, j));
-
-    // store sin / cos values for this angle
-    T crx = ceres::cos(w[0]); T srx = ceres::sin(w[0]);
-    T cry = ceres::cos(w[1]); T sry = ceres::sin(w[1]);
-    T crz = ceres::cos(w[2]); T srz = ceres::sin(w[2]);
+    for (int i = 0; i < 9; ++i)
+        Ac(i) = T(this->A(i));
 
     // Compute Y = R(theta) * X + T - C
-    T Yx = cry*crz*T(X(0)) + (srx*sry*crz-crx*srz)*T(X(1)) + (crx*sry*crz+srx*srz)*T(X(2)) + w[3] - T(C(0));
-    T Yy = cry*srz*T(X(0)) + (srx*sry*srz+crx*crz)*T(X(1)) + (crx*sry*srz-srx*crz)*T(X(2)) + w[4] - T(C(1));
-    T Yz = -sry*T(X(0)) + srx*cry*T(X(1)) + crx*cry*T(X(2)) + w[5] - T(C(2));
+    Eigen::Matrix<T, 3, 1> Y;
+    Y(0) = cry*crz*T(X(0)) + (srx*sry*crz-crx*srz)*T(X(1)) + (crx*sry*crz+srx*srz)*T(X(2)) + w[3] - T(C(0));
+    Y(1) = cry*srz*T(X(0)) + (srx*sry*srz+crx*crz)*T(X(1)) + (crx*sry*srz-srx*crz)*T(X(2)) + w[4] - T(C(1));
+    Y(2) = -sry*T(X(0)) + srx*cry*T(X(1)) + crx*cry*T(X(2)) + w[5] - T(C(2));
 
     // Compute final residual value which is:
     // Ht * A * H with H = R(theta)X + T
-    Eigen::Matrix<T, 3, 1> Y;
-    Y << Yx, Yy, Yz;
     T squaredResidual = T(lambda) * (Y.transpose() * Ac * Y)(0);
 
     // since t -> sqrt(t) is not differentiable
@@ -91,7 +102,6 @@ public:
     {
       residual[0] = ceres::sqrt(squaredResidual);
     }
-
     return true;
   }
 
