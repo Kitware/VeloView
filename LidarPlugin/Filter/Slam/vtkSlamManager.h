@@ -20,6 +20,25 @@
 #include <vtkSetGet.h>
 #include "vtkSlam.h"
 
+// This custom macro is needed to make the SlamManager time agnostic
+// The SlamManager needs to know when RequestData is called and if it's due
+// to a new timestep being requested or due to Slam parameters being changed.
+// By keeping track of the last time the parameters were modified there is
+// no ambiguty anymore. This mecanimsm is similar to the one used by the ParaView filter
+// PlotDataOverTime
+#undef vtkCustomSetMacro/*(name,type)*/
+#define vtkCustomSetMacro(name,type) \
+virtual void Set##name (type _arg) \
+{ \
+  vtkDebugMacro(<< this->GetClassName() << " (" << this << "): setting " #name " to " << _arg); \
+  if (this->name != _arg) \
+  { \
+    this->name = _arg; \
+    this->Modified(); \
+    this->ParametersModificationTime.Modified(); \
+  } \
+}
+
 class VTK_EXPORT vtkSlamManager : public vtkSlam
 {
 public:

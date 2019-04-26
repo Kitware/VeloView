@@ -3,7 +3,7 @@
 // Copyright 2018 Kitware, Inc.
 // Author: Guilbert Pierre (spguilbert@gmail.com)
 //         Laurenson Nick (nlaurenson5@gmail.com)
-// Data: 03-27-2018
+// Date: 03-27-2018
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,16 +17,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //=========================================================================
-#include "vtkRotatingKeyPointsExtractor.h"
+#include "SpinningSensorKeypointExtractor.h"
 
 #include <numeric>
 
 #include <Eigen/Dense>
 #include <Eigen/Geometry>
-
-#include <vtkDoubleArray.h>
-#include <vtkPointData.h>
-#include <vtkTable.h>
 
 namespace {
 //-----------------------------------------------------------------------------
@@ -158,14 +154,11 @@ void LineFitting::FitFast(std::vector<Eigen::Vector3d >& points)
 }
 }
 
-//-----------------------------------------------------------------------------
-vtkStandardNewMacro(vtkRotatingKeyPointsExtractor)
 
 //-----------------------------------------------------------------------------
-void vtkRotatingKeyPointsExtractor::PrepareDataForNextFrame()
+void SpinningSensorKeypointExtractor::PrepareDataForNextFrame()
 {
   // Reset the pcl format pointcloud to store the new frame
-  this->pclCurrentFrame.reset(new pcl::PointCloud<Point>());
   this->pclCurrentFrameByScan.resize(this->NLasers);
   for (unsigned int k = 0; k < this->NLasers; ++k)
   {
@@ -176,11 +169,6 @@ void vtkRotatingKeyPointsExtractor::PrepareDataForNextFrame()
   this->PlanarsPoints.reset(new pcl::PointCloud<Point>());
   this->BlobsPoints.reset(new pcl::PointCloud<Point>());
 
-  // reset vtk <-> pcl id mapping
-  this->FromVTKtoPCLMapping.clear();
-  this->FromVTKtoPCLMapping.resize(0);
-  this->FromPCLtoVTKMapping.clear();
-  this->FromPCLtoVTKMapping.resize(this->NLasers);
   this->Angles.clear();
   this->Angles.resize(this->NLasers);
   this->SaillantPoint.clear();
@@ -196,85 +184,49 @@ void vtkRotatingKeyPointsExtractor::PrepareDataForNextFrame()
 }
 
 //-----------------------------------------------------------------------------
-void vtkRotatingKeyPointsExtractor::ConvertAndSortScanLines()
+void SpinningSensorKeypointExtractor::ConvertAndSortScanLines()
 {
-  // temp var
-  double xL[3]; // in {L}
-  Point yL; // in {L}
+  int nbPoints = this->pclCurrentFrame->size();
+  double frameStartTime = this->pclCurrentFrame->points[0].time;
+  double frameDuration = this->pclCurrentFrame->points[nbPoints-1].time - frameStartTime;
 
-  // Get informations about input pointcloud
-  vtkDataArray* lasersId = this->Frame->GetPointData()->GetArray("laser_id");
-  vtkDataArray* time = this->Frame->GetPointData()->GetArray("timestamp");
-  vtkDataArray* reflectivity = this->Frame->GetPointData()->GetArray("intensity");
-  vtkPoints* Points = this->Frame->GetPoints();
-  unsigned int Npts = this->Frame->GetNumberOfPoints();
-  double t0 = static_cast<double>(time->GetTuple1(0));
-  double t1 = static_cast<double>(time->GetTuple1(Npts - 1));
-  this->FromVTKtoPCLMapping.resize(Npts);
-
-
-  for (unsigned int index = 0; index < Npts; ++index)
+  for (size_t index = 0; index < nbPoints; ++index)
   {
-    // Get information about current point
-    Points->GetPoint(index, xL);
-    yL.x = xL[0]; yL.y = xL[1]; yL.z = xL[2];
-
-    double relAdv = (static_cast<double>(time->GetTuple1(index)) - t0) / (t1 - t0);
-    unsigned int id = static_cast<int>(lasersId->GetTuple1(index));
-    double reflec = static_cast<double>(reflectivity->GetTuple1(index));
-    id = this->LaserIdMapping[id];
-    yL.intensity = relAdv;
-    yL.normal_y = id;
-    yL.normal_z = reflec;
+    const Point& oldPoint = this->pclCurrentFrame->points[index];
+    int id = this->LaserIdMapping[oldPoint.laserId];
+    // modify the point so that:
+    // - laserId is corrected with the laserIdMapping
+    // - time become a relative advancement time (between 0 and 1)
+    Point newPoint(oldPoint);
+    newPoint.laserId = id;
+    newPoint.time = (oldPoint.time - frameStartTime) / frameDuration;
 
     // add the current point to its corresponding laser scan
-    this->pclCurrentFrame->push_back(yL);
-    this->pclCurrentFrameByScan[id]->push_back(yL);
-    this->FromVTKtoPCLMapping[index] = std::pair<int, int>(id, this->pclCurrentFrameByScan[id]->size() - 1);
-    this->FromPCLtoVTKMapping[id].push_back(index);
+    this->pclCurrentFrameByScan[id]->push_back(newPoint);
   }
 }
 
 //-----------------------------------------------------------------------------
-void vtkRotatingKeyPointsExtractor::UpdateLaserIdMapping(vtkTable *calib)
+void SpinningSensorKeypointExtractor::ComputeKeyPoints(pcl::PointCloud<Point>::Ptr pc, std::vector<size_t> laserIdMapping)
 {
-  this->NLasers = calib->GetNumberOfRows();
-  auto array = vtkDataArray::SafeDownCast(calib->GetColumnByName("verticalCorrection"));
-  if (array)
-  {
-    std::vector<double> verticalCorrection;
-    verticalCorrection.resize(array->GetNumberOfTuples());
-    for (int i =0; i < array->GetNumberOfTuples(); ++i)
-    {
-      verticalCorrection[i] = array->GetTuple1(i);
-    }
-    this->LaserIdMapping = sortIdx(verticalCorrection);
-  }
-  else
-  {
-    vtkErrorMacro("<< The calibration data has no colomn named 'verticalCorrection'");
-  }
-}
-
-//-----------------------------------------------------------------------------
-void vtkRotatingKeyPointsExtractor::ComputeKeyPoints(vtkPolyData* input, vtkTable* calib)
-{
-  this->Frame = input;
   if (this->LaserIdMapping.empty())
   {
-    this->UpdateLaserIdMapping(calib);
+    this->NLasers = laserIdMapping.size();
+    this->LaserIdMapping = laserIdMapping;
   }
+  this->pclCurrentFrame = pc;
   this->PrepareDataForNextFrame();
   this->ConvertAndSortScanLines();
   // Initialize the vectors with the correct length
   for (unsigned int k = 0; k < this->NLasers; ++k)
   {
-    this->IsPointValid[k].resize(this->pclCurrentFrameByScan[k]->size(), 1);
-    this->Label[k].resize(this->pclCurrentFrameByScan[k]->size(), 0);
-    this->Angles[k].resize(this->pclCurrentFrameByScan[k]->size(),0);
-    this->SaillantPoint[k].resize(this->pclCurrentFrameByScan[k]->size(),0);
-    this->DepthGap[k].resize(this->pclCurrentFrameByScan[k]->size(), 0);
-    this->IntensityGap[k].resize(this->pclCurrentFrameByScan[k]->size(), 0);
+    size_t nbPoint = this->pclCurrentFrameByScan[k]->size();
+    this->IsPointValid[k].resize(nbPoint, 1);
+    this->Label[k].resize(nbPoint, 0);
+    this->Angles[k].resize(nbPoint, 0);
+    this->SaillantPoint[k].resize(nbPoint, 0);
+    this->DepthGap[k].resize(nbPoint, 0);
+    this->IntensityGap[k].resize(nbPoint, 0);
   }
 
   // Invalid points with bad criteria
@@ -288,20 +240,7 @@ void vtkRotatingKeyPointsExtractor::ComputeKeyPoints(vtkPolyData* input, vtkTabl
 }
 
 //-----------------------------------------------------------------------------
-void vtkRotatingKeyPointsExtractor::AddDisplayInformation(vtkSmartPointer<vtkPolyData> input)
-{
-  this->DisplayLaserIdMapping(input);
-  this->DisplayRelAdv(input);
-  AddVectorToPolydataPoints<double, vtkDoubleArray>(this->Angles, "angles_line", input);
-  AddVectorToPolydataPoints<double, vtkDoubleArray>(this->SaillantPoint, "saillant_point", input);
-  AddVectorToPolydataPoints<double, vtkDoubleArray>(this->DepthGap, "depth_gap", input);
-  AddVectorToPolydataPoints<double, vtkDoubleArray>(this->IntensityGap, "intensity_gap", input);
-  AddVectorToPolydataPoints<int, vtkIntArray>(this->IsPointValid, "is_point_valid", input);
-  AddVectorToPolydataPoints<int, vtkIntArray>(this->Label, "keypoint_label", input);
-}
-
-//-----------------------------------------------------------------------------
-void vtkRotatingKeyPointsExtractor::ComputeCurvature()
+void SpinningSensorKeypointExtractor::ComputeCurvature()
 {
   double squaredDistToLineThreshold = std::pow(this->DistToLineThreshold, 2);
   double squaredDepthDistCoeff = 0.25;
@@ -346,7 +285,7 @@ void vtkRotatingKeyPointsExtractor::ComputeCurvature()
       // compute intensity gap
       nextPoint = this->pclCurrentFrameByScan[scanLine]->points[index + 1];
       previousPoint = this->pclCurrentFrameByScan[scanLine]->points[index - 1];
-      this->IntensityGap[scanLine][index] = std::abs(nextPoint.normal_z - previousPoint.normal_z);
+      this->IntensityGap[scanLine][index] = std::abs(nextPoint.intensity - previousPoint.intensity);
 
       // Fill right and left neighborhood
       // /!\ The way the neighbors are added
@@ -469,7 +408,7 @@ void vtkRotatingKeyPointsExtractor::ComputeCurvature()
 }
 
 //-----------------------------------------------------------------------------
-void vtkRotatingKeyPointsExtractor::InvalidPointWithBadCriteria()
+void SpinningSensorKeypointExtractor::InvalidPointWithBadCriteria()
 {
   // Temporary variables used in the next loop
   Eigen::Vector3d dX, X, Xn, Xp, Xproj, dXproj;
@@ -598,7 +537,7 @@ void vtkRotatingKeyPointsExtractor::InvalidPointWithBadCriteria()
 }
 
 //-----------------------------------------------------------------------------
-void vtkRotatingKeyPointsExtractor::SetKeyPointsLabels()
+void SpinningSensorKeypointExtractor::SetKeyPointsLabels()
 {
   this->EdgesIndex.clear(); this->EdgesIndex.resize(0);
   this->PlanarIndex.clear(); this->PlanarIndex.resize(0);
@@ -616,7 +555,7 @@ void vtkRotatingKeyPointsExtractor::SetKeyPointsLabels()
     // keypoints and planar keypoints. This allows to take
     // some points as planar keypoints even if they are close
     // to an edge keypoint.
-    std::vector<int> IsPointValidForPlanar = this->IsPointValid[scanLine];
+    std::vector<double> IsPointValidForPlanar = this->IsPointValid[scanLine];
 
     // if the line is almost empty, skip it
     if (Npts < 3 * this->NeighborWidth)
@@ -861,105 +800,27 @@ void vtkRotatingKeyPointsExtractor::SetKeyPointsLabels()
 }
 
 //-----------------------------------------------------------------------------
-void vtkRotatingKeyPointsExtractor::DisplayUsedKeypoints(vtkSmartPointer<vtkPolyData> input,
-                                                         const std::vector<int>& EdgePointRejectionEgoMotion,
-                                                         const std::vector<int>& EdgePointRejectionMapping,
-                                                         const std::vector<int>& PlanarPointRejectionEgoMotion,
-                                                         const std::vector<int>& PlanarPointRejectionMapping)
+std::unordered_map<std::string, std::vector<double> >
+SpinningSensorKeypointExtractor::GetDebugArray()
 {
-  vtkSmartPointer<vtkIntArray> edgeUsedEgoMotion = vtkSmartPointer<vtkIntArray>::New();
-  edgeUsedEgoMotion->Allocate(input->GetNumberOfPoints());
-  edgeUsedEgoMotion->SetName("Edges_Used_EgoMotion");
+  auto get1DVector =  [this](std::vector<std::vector<double>> array) {
+    std::vector<double> v (this->pclCurrentFrame->size());
+    std::vector<int> indexPerByScanLine(this->NLasers, 0);
+    for (int i = 0; i < this->pclCurrentFrame->size(); i++)
+    {
+      double laserId = this->LaserIdMapping[this->pclCurrentFrame->points[i].laserId];
+      v[i] = array[laserId][indexPerByScanLine[laserId]];
+      indexPerByScanLine[laserId]++;
+    }
+    return v;
+  }; // end of lambda expression
 
-  vtkSmartPointer<vtkIntArray> edgeUsedMapping = vtkSmartPointer<vtkIntArray>::New();
-  edgeUsedMapping->Allocate(input->GetNumberOfPoints());
-  edgeUsedMapping->SetName("Edges_Used_Mapping");
-
-  vtkSmartPointer<vtkIntArray> planarUsedEgoMotion = vtkSmartPointer<vtkIntArray>::New();
-  planarUsedEgoMotion->Allocate(input->GetNumberOfPoints());
-  planarUsedEgoMotion->SetName("Planes_Used_EgoMotion");
-
-  vtkSmartPointer<vtkIntArray> planarUsedMapping = vtkSmartPointer<vtkIntArray>::New();
-  planarUsedMapping->Allocate(input->GetNumberOfPoints());
-  planarUsedMapping->SetName("Planes_Used_Mapping");
-
-  // fill with -1 for points that are not keypoints
-  for (unsigned int k = 0; k < input->GetNumberOfPoints(); ++k)
-  {
-    edgeUsedEgoMotion->InsertNextTuple1(-1);
-    edgeUsedMapping->InsertNextTuple1(-1);
-    planarUsedEgoMotion->InsertNextTuple1(-1);
-    planarUsedMapping->InsertNextTuple1(-1);
-  }
-
-  // fill with 1 if the point is a keypoint
-  // fill with 2 if the point is a used keypoint
-  for (unsigned int k = 0; k < this->EdgesIndex.size(); ++k)
-  {
-    unsigned int scan = this->EdgesIndex[k].first;
-    unsigned int index = this->EdgesIndex[k].second;
-
-    edgeUsedEgoMotion->SetTuple1(this->FromPCLtoVTKMapping[scan][index], EdgePointRejectionEgoMotion[k]);
-    edgeUsedMapping->SetTuple1(this->FromPCLtoVTKMapping[scan][index], EdgePointRejectionMapping[k]);
-  }
-  for (unsigned int k = 0; k < this->PlanarIndex.size(); ++k)
-  {
-    unsigned int scan = this->PlanarIndex[k].first;
-    unsigned int index = this->PlanarIndex[k].second;
-
-    planarUsedEgoMotion->SetTuple1(this->FromPCLtoVTKMapping[scan][index], PlanarPointRejectionEgoMotion[k]);
-    planarUsedMapping->SetTuple1(this->FromPCLtoVTKMapping[scan][index], PlanarPointRejectionMapping[k]);
-  }
-
-  input->GetPointData()->AddArray(edgeUsedEgoMotion);
-  input->GetPointData()->AddArray(edgeUsedMapping);
-  input->GetPointData()->AddArray(planarUsedEgoMotion);
-  input->GetPointData()->AddArray(planarUsedMapping);
-}
-
-//-----------------------------------------------------------------------------
-void vtkRotatingKeyPointsExtractor::DisplayLaserIdMapping(vtkSmartPointer<vtkPolyData> input)
-{
-  vtkDataArray* idsArray = input->GetPointData()->GetArray("laser_id");
-  vtkSmartPointer<vtkIntArray> laserMappingArray = vtkSmartPointer<vtkIntArray>::New();
-  laserMappingArray->Allocate(input->GetNumberOfPoints());
-  laserMappingArray->SetName("laser_mapping");
-  for (unsigned int k = 0; k < input->GetNumberOfPoints(); ++k)
-  {
-    int id = static_cast<int>(idsArray->GetTuple1(k));
-    id = this->LaserIdMapping[id];
-    laserMappingArray->InsertNextTuple1(id);
-  }
-  input->GetPointData()->AddArray(laserMappingArray);
-}
-
-//-----------------------------------------------------------------------------
-void vtkRotatingKeyPointsExtractor::DisplayRelAdv(vtkSmartPointer<vtkPolyData> input)
-{
-  vtkSmartPointer<vtkDoubleArray> relAdvArray = vtkSmartPointer<vtkDoubleArray>::New();
-  relAdvArray->Allocate(input->GetNumberOfPoints());
-  relAdvArray->SetName("relative_adv");
-  for (unsigned int k = 0; k < input->GetNumberOfPoints(); ++k)
-  {
-    unsigned int scan = this->FromVTKtoPCLMapping[k].first;
-    unsigned int index = this->FromVTKtoPCLMapping[k].second;
-    relAdvArray->InsertNextTuple1(this->pclCurrentFrameByScan[scan]->points[index].intensity);
-  }
-  input->GetPointData()->AddArray(relAdvArray);
-}
-
-//-----------------------------------------------------------------------------
-template <typename T, typename Tvtk>
-void vtkRotatingKeyPointsExtractor::AddVectorToPolydataPoints(const std::vector<std::vector<T>>& vec, const char* name, vtkPolyData* pd)
-{
-  vtkSmartPointer<Tvtk> array = vtkSmartPointer<Tvtk>::New();
-  array->Allocate(pd->GetNumberOfPoints());
-  array->SetName(name);
-  for (unsigned int k = 0; k < pd->GetNumberOfPoints(); ++k)
-  {
-    unsigned int scan = this->FromVTKtoPCLMapping[k].first;
-    unsigned int index = this->FromVTKtoPCLMapping[k].second;
-    array->InsertNextTuple1(vec[scan][index]);
-  }
-  pd->GetPointData()->AddArray(array);
+  std::unordered_map<std::string, std::vector<double> > map;
+  map["angles_line"]    = get1DVector(this->Angles);
+  map["saillant_point"] = get1DVector(this->SaillantPoint);
+  map["depth_gap"]      = get1DVector(this->DepthGap);
+  map["intensity_gap"]  = get1DVector(this->IntensityGap);
+  map["is_point_valid"] = get1DVector(this->IsPointValid);
+  map["keypoint_label"] = get1DVector(this->Label);
+  return map;
 }

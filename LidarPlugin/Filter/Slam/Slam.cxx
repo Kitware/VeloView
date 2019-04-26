@@ -2,7 +2,7 @@
 //
 // Copyright 2018 Kitware, Inc.
 // Author: Guilbert Pierre (spguilbert@gmail.com)
-// Data: 03-27-2018
+// Date: 03-27-2018
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -61,67 +61,30 @@
 // map has been refined from the first estimation it is then possible to update the map by
 // adding the keypoints of the current frame into the map.
 //
-// In the following programs : "vtkSlam.h" and "vtkSlam.cxx" the lidar
+// In the following programs : "slam" and "slam.cxx" the lidar
 // coordinate system {L} is a 3D coordinate system with its origin at the
 // geometric center of the lidar. The world coordinate system {W} is a 3D
 // coordinate system which coinciding with {L] at the initial position. The
 // points will be denoted by the ending letter L or W if they belong to
 // the corresponding coordinate system
 
-// LOCAL
-#include "vtkSlam.h"
-#include "vtkCustomTransformInterpolator.h"
-#include "vtkPCLConversions.h"
-#include "CeresCostFunctions.h"
-#include "vtkTemporalTransforms.h"
-#include "vtkRotatingKeyPointsExtractor.h"
-#include "KDTreePCLAdaptor.h"
-// STD
+
+#include "Slam.h"
+
 #include <sstream>
 #include <algorithm>
 #include <cmath>
-#include <cfloat>
 #include <ctime>
-#include <iomanip>
-// VTK
-#include <vtkCellArray.h>
-#include <vtkCellData.h>
-#include <vtkDataArray.h>
-#include <vtkDoubleArray.h>
-#include <vtkFloatArray.h>
-#include <vtkInformation.h>
-#include <vtkInformationVector.h>
-#include <vtkMath.h>
-#include <vtkNew.h>
-#include <vtkObjectFactory.h>
-#include <vtkPointData.h>
-#include <vtkPoints.h>
-#include <vtkPolyData.h>
-#include <vtkPolyLine.h>
-#include <vtkSmartPointer.h>
-#include <vtkStreamingDemandDrivenPipeline.h>
-#include <vtkUnsignedCharArray.h>
-#include <vtkUnsignedShortArray.h>
-#include <vtkTransform.h>
-#include <vtkPoints.h>
-#include <vtkTransform.h>
-#include <vtkTransformPolyDataFilter.h>
-#include <vtkTable.h>
-// EIGEN
+
 #include <Eigen/Dense>
-// PCL
-#include <pcl/point_types.h>
+
 #include <pcl/filters/voxel_grid.h>
-// CERES
+
 #include <ceres/ceres.h>
-#include <glog/logging.h>
-// NANOFLANN
+
 #include <nanoflann.hpp>
 
-
-
-vtkStandardNewMacro(vtkSlam);
-
+#include "CeresCostFunctions.h"
 
 namespace {
 //-----------------------------------------------------------------------------
@@ -131,22 +94,6 @@ Eigen::Matrix3d GetRotationMatrix(Eigen::Matrix<double, 6, 1> T)
           Eigen::AngleAxisd(T(2), Eigen::Vector3d::UnitZ())     /* rotation around Z-axis */
         * Eigen::AngleAxisd(T(1), Eigen::Vector3d::UnitY())     /* rotation around Y-axis */
         * Eigen::AngleAxisd(T(0), Eigen::Vector3d::UnitX()));   /* rotation around X-axis */
-}
-
-//-----------------------------------------------------------------------------
-template <typename T>
-vtkSmartPointer<T> CreateDataArray(const char* name, vtkIdType np, vtkPolyData* pd)
-{
-  vtkSmartPointer<T> array = vtkSmartPointer<T>::New();
-  array->Allocate(np);
-  array->SetName(name);
-
-  if (pd)
-    {
-    pd->GetPointData()->AddArray(array);
-    }
-
-  return array;
 }
 
 //-----------------------------------------------------------------------------
@@ -169,7 +116,7 @@ void StopTimeAndDisplay(std::string functionName)
 //-----------------------------------------------------------------------------
 double Rad2Deg(double val)
 {
-  return val / vtkMath::Pi() * 180;
+  return val / M_PI * 180;
 }
 }
 
@@ -181,6 +128,7 @@ double Rad2Deg(double val)
 // and to move the voxel grid in a closest region of the sensor position. This is used
 // to decrease the memory used by the algorithm
 class RollingGrid {
+
 public:
   RollingGrid() {}
 
@@ -213,7 +161,7 @@ public:
           {
             this->grid[i][j][k] = this->grid[i-1][j][k];
           }
-          this->grid[0][j][k].reset(new pcl::PointCloud<Point>());
+          this->grid[0][j][k].reset(new pcl::PointCloud<Slam::Point>());
         }
       }
       frameCenterX++;
@@ -231,7 +179,7 @@ public:
           {
             this->grid[i][j][k] = this->grid[i+1][j][k];
           }
-          this->grid[VoxelSize-1][j][k].reset(new pcl::PointCloud<Point>());
+          this->grid[VoxelSize-1][j][k].reset(new pcl::PointCloud<Slam::Point>());
         }
       }
       frameCenterX--;
@@ -249,7 +197,7 @@ public:
           {
             this->grid[i][j][k] = this->grid[i][j-1][k];
           }
-          this->grid[i][0][k].reset(new pcl::PointCloud<Point>());
+          this->grid[i][0][k].reset(new pcl::PointCloud<Slam::Point>());
         }
       }
       frameCenterY++;
@@ -268,7 +216,7 @@ public:
           {
             this->grid[i][j][k] = this->grid[i][j+1][k];
           }
-          this->grid[i][VoxelSize-1][k].reset(new pcl::PointCloud<Point>());
+          this->grid[i][VoxelSize-1][k].reset(new pcl::PointCloud<Slam::Point>());
         }
       }
       frameCenterY--;
@@ -286,7 +234,7 @@ public:
           {
             this->grid[i][j][k] = this->grid[i][j][k-1];
           }
-          this->grid[i][j][0].reset(new pcl::PointCloud<Point>());
+          this->grid[i][j][0].reset(new pcl::PointCloud<Slam::Point>());
         }
       }
       frameCenterZ++;
@@ -304,7 +252,7 @@ public:
           {
             this->grid[i][j][k] = this->grid[i][j][k+1];
           }
-          this->grid[i][j][VoxelSize-1].reset(new pcl::PointCloud<Point>());
+          this->grid[i][j][VoxelSize-1].reset(new pcl::PointCloud<Slam::Point>());
         }
       }
       frameCenterZ--;
@@ -313,14 +261,14 @@ public:
   }
 
   // get points arround T
-  pcl::PointCloud<Point>::Ptr Get(Eigen::Matrix<double, 6, 1> &T)
+  pcl::PointCloud<Slam::Point>::Ptr Get(Eigen::Matrix<double, 6, 1> &T)
   {
     // compute the position of the new frame center in the grid
     int frameCenterX = std::floor(T[3] / this->VoxelSize) - this->VoxelGridPosition[0];
     int frameCenterY = std::floor(T[4] / this->VoxelSize) - this->VoxelGridPosition[1];
     int frameCenterZ = std::floor(T[5] / this->VoxelSize) - this->VoxelGridPosition[2];
 
-    pcl::PointCloud<Point>::Ptr intersection(new pcl::PointCloud<Point>);
+    pcl::PointCloud<Slam::Point>::Ptr intersection(new pcl::PointCloud<Slam::Point>);
 
     // Get all voxel in intersection should use ceil here
     for (int i = frameCenterX - std::ceil(this->PointCloudSize / 2); i <= frameCenterX + std::ceil(this->PointCloudSize / 2); i++)
@@ -335,7 +283,7 @@ public:
           {
             continue;
           }
-          pcl::PointCloud<Point>:: Ptr voxel = this->grid[i][j][k];
+          pcl::PointCloud<Slam::Point>:: Ptr voxel = this->grid[i][j][k];
           for (unsigned int l = 0; l < voxel->size(); l++)
           {
             intersection->push_back(voxel->at(l));
@@ -347,9 +295,9 @@ public:
   }
 
   // get all points
-  pcl::PointCloud<Point>::Ptr Get()
+  pcl::PointCloud<Slam::Point>::Ptr Get()
   {
-    pcl::PointCloud<Point>::Ptr intersection(new pcl::PointCloud<Point>);
+    pcl::PointCloud<Slam::Point>::Ptr intersection(new pcl::PointCloud<Slam::Point>);
 
     // Get all voxel in intersection should use ceil here
     for (int i = 0; i < VoxelSize; i++)
@@ -358,7 +306,7 @@ public:
       {
         for (int k = 0; k < VoxelSize; k++)
         {
-          pcl::PointCloud<Point>:: Ptr voxel = this->grid[i][j][k];
+          pcl::PointCloud<Slam::Point>:: Ptr voxel = this->grid[i][j][k];
           for (unsigned int l = 0; l < voxel->size(); l++)
           {
             intersection->push_back(voxel->at(l));
@@ -370,11 +318,12 @@ public:
   }
 
   // add some points to the grid
-  void Add(pcl::PointCloud<Point>::Ptr pointcloud)
+  void Add(pcl::PointCloud<Slam::Point>::Ptr pointcloud)
   {
     if (pointcloud->size() == 0)
     {
-      vtkGenericWarningMacro("Pointcloud empty, voxel grid not updated");
+//      vtkGenericWarningMacro("Pointcloud empty, voxel grid not updated");
+      std::cout << "Pointcloud empty, voxel grid not updated" << std::endl;
       return;
     }
 
@@ -385,7 +334,7 @@ public:
     int outlier = 0; // point who are not in the rolling grid
     for (unsigned int i = 0; i < pointcloud->size(); i++)
     {
-      Point pts = pointcloud->points[i];
+      Slam::Point pts = pointcloud->points[i];
       // find the closest coordinate
       int cubeIdxX = std::floor(pts.x / this->VoxelSize) - this->VoxelGridPosition[0];
       int cubeIdxY = std::floor(pts.y / this->VoxelSize) - this->VoxelGridPosition[1];
@@ -406,7 +355,7 @@ public:
     }
 
     // Filter the modified pointCloud
-    pcl::VoxelGrid<Point> downSizeFilter;
+    pcl::VoxelGrid<Slam::Point> downSizeFilter;
     downSizeFilter.setLeafSize(this->LeafSize, this->LeafSize, this->LeafSize);
     for (int i = 0; i < this->VoxelSize; i++)
     {
@@ -416,7 +365,7 @@ public:
         {
           if (voxelToFilter[i][j][k] == 1)
           {
-            pcl::PointCloud<Point>::Ptr tmp(new pcl::PointCloud<Point>());
+            pcl::PointCloud<Slam::Point>::Ptr tmp(new pcl::PointCloud<Slam::Point>());
             downSizeFilter.setInputCloud(grid[i][j][k]);
             downSizeFilter.filter(*tmp);
             grid[i][j][k] = tmp;
@@ -444,7 +393,7 @@ public:
         grid[i][j].resize(this->VoxelSize);
         for (int k = 0; k < this->VoxelSize; k++)
         {
-          grid[i][j][k].reset(new pcl::PointCloud<Point>());
+          grid[i][j][k].reset(new pcl::PointCloud<Slam::Point>());
         }
       }
     }
@@ -468,112 +417,20 @@ private:
   double LeafSize = 0.2;
 
   //! VoxelGrid of pointcloud
-  std::vector<std::vector<std::vector<pcl::PointCloud<Point>::Ptr> > > grid;
+  std::vector<std::vector<std::vector<pcl::PointCloud<Slam::Point>::Ptr> > > grid;
 
   // Position of the VoxelGrid
   int VoxelGridPosition[3] = {0,0,0};
 };
 
 //-----------------------------------------------------------------------------
-vtkCxxSetObjectMacro(vtkSlam, KeyPointsExtractor, vtkRotatingKeyPointsExtractor)
-
-//-----------------------------------------------------------------------------
-int vtkSlam::RequestData(vtkInformation *vtkNotUsed(request),
-vtkInformationVector **inputVector, vtkInformationVector *outputVector)
+Slam::Slam()
 {
-
-  // Get the input
-  vtkPolyData *input = vtkPolyData::GetData(inputVector[0]->GetInformationObject(0));
-  this->calib = vtkTable::GetData(inputVector[1]->GetInformationObject(0));
-
-  this->AddFrame(input);
-  // output 0 - Current Frame
-  vtkInformation *outInfo0 = outputVector->GetInformationObject(0);
-  vtkPolyData *output0 = vtkPolyData::SafeDownCast(
-      outInfo0->Get(vtkDataObject::DATA_OBJECT()));
-  // add all debug information if displayMode == True
-  if (this->DisplayMode == true)
-  {
-    this->KeyPointsExtractor->AddDisplayInformation(input);
-    if (this->NbrFrameProcessed > 1)
-    {
-      this->KeyPointsExtractor->DisplayUsedKeypoints(this->vtkCurrentFrame,
-                               this->EdgePointRejectionEgoMotion,
-                               this->EdgePointRejectionMapping,
-                               this->PlanarPointRejectionEgoMotion,
-                               this->PlanarPointRejectionMapping);
-    }
-  }
-  // get transform
-  vtkSmartPointer<vtkTransform> transform = vtkSmartPointer<vtkTransform>::New();
-  transform->PostMultiply();
-  transform->RotateX(Rad2Deg(Tworld[0]));
-  transform->RotateY(Rad2Deg(Tworld[1]));
-  transform->RotateZ(Rad2Deg(Tworld[2]));
-  transform->Translate(Tworld[3], Tworld[4], Tworld[5]);
-  // create transform filter and transformt the current frame
-  vtkSmartPointer<vtkTransformPolyDataFilter> transformFilter = vtkSmartPointer<vtkTransformPolyDataFilter>::New();
-  transformFilter->SetInputData(this->vtkCurrentFrame);
-  transformFilter->SetTransform(transform);
-  transformFilter->Update();
-  output0->ShallowCopy(transformFilter->GetOutput());
-
-  // output 1 - Trajectory
-  auto *output1 = vtkPolyData::GetData(outputVector->GetInformationObject(1));
-  output1->ShallowCopy(this->Trajectory);
-
-  // output 2 - Edges Points Map
-  auto *output2 = vtkPolyData::GetData(outputVector->GetInformationObject(2));
-  auto EdgeMap = vtkPCLConversions::PolyDataFromPointCloud(this->EdgesPointsLocalMap->Get());
-  output2->ShallowCopy(EdgeMap);
-
-  // output 3 - Planar Points Map
-  auto *output3 = vtkPolyData::GetData(outputVector->GetInformationObject(3));
-  auto PlanarMap = vtkPCLConversions::PolyDataFromPointCloud(this->PlanarPointsLocalMap->Get());
-  output3->ShallowCopy(PlanarMap);
-
-  // output 4 - Blob Points Map
-  auto *output4 = vtkPolyData::GetData(outputVector->GetInformationObject(4));
-  auto BlobMap = vtkPCLConversions::PolyDataFromPointCloud(this->BlobsPointsLocalMap->Get());
-  output4->ShallowCopy(BlobMap);
-
-  return 1;
-}
-
-//-----------------------------------------------------------------------------
-void vtkSlam::PrintSelf(ostream& os, vtkIndent indent)
-{
-  this->Superclass::PrintSelf(os, indent);
-  os << indent << "Slam Parameters: " << std::endl;
-  vtkIndent paramIndent = indent.GetNextIndent();
-  #define PrintParameter(param) os << paramIndent << #param << "\t" << this->param << std::endl;
-  PrintParameter(EgoMotionLMMaxIter)
-  PrintParameter(EgoMotionICPMaxIter)
-  PrintParameter(MappingLMMaxIter)
-  PrintParameter(MappingICPMaxIter)
-  PrintParameter(EgoMotionLineDistanceNbrNeighbors)
-  PrintParameter(EgoMotionLineDistancefactor)
-  PrintParameter(MappingMaxLineDistance)
-  PrintParameter(MappingPlaneDistanceNbrNeighbors)
-  PrintParameter(MappingPlaneDistancefactor1)
-  PrintParameter(MappingPlaneDistancefactor2)
-  PrintParameter(MappingMaxPlaneDistance)
-  PrintParameter(MaxDistanceForICPMatching)
-  PrintParameter(EgoMotionMinimumLineNeighborRejection)
-  PrintParameter(MappingMinimumLineNeighborRejection)
-  PrintParameter(MappingLineMaxDistInlier)
-}
-
-//-----------------------------------------------------------------------------
-vtkSlam::vtkSlam()
-{
-  this->SetNumberOfInputPorts(2);
-  this->SetNumberOfOutputPorts(5);
   this->Reset();
 }
 
 //-----------------------------------------------------------------------------
-void vtkSlam::Reset()
+void Slam::Reset()
 {
   this->EdgesPointsLocalMap = std::make_shared<RollingGrid>();
   this->PlanarPointsLocalMap = std::make_shared<RollingGrid>();
@@ -587,88 +444,74 @@ void vtkSlam::Reset()
   this->PlanarPointsLocalMap->SetSize(50);
   this->BlobsPointsLocalMap->SetSize(50);
 
-  // output of the vtk filter
-
-  this->Trajectory = vtkSmartPointer<vtkTemporalTransforms>::New();
-  Tworld = Eigen::Matrix<double, 6, 1>::Zero();
-
   this->NbrFrameProcessed = 0;
   this->Tworld = Eigen::Matrix<double, 6, 1>::Zero();
-
-  // add the required array in the trajectory
-  CreateDataArray<vtkDoubleArray>("Variance Error", 0, this->Trajectory);
-  CreateDataArray<vtkIntArray>("Mapping: edges used", 0, this->Trajectory);
-  CreateDataArray<vtkIntArray>("Mapping: planes used", 0, this->Trajectory);
-  CreateDataArray<vtkIntArray>("Mapping: blobs used", 0, this->Trajectory);
-  CreateDataArray<vtkIntArray>("Mapping: total keypoints used", 0, this->Trajectory);
-  CreateDataArray<vtkIntArray>("EgoMotion: edges used", 0, this->Trajectory);
-  CreateDataArray<vtkIntArray>("EgoMotion: planes used", 0, this->Trajectory);
-  CreateDataArray<vtkIntArray>("EgoMotion: total keypoints used", 0, this->Trajectory);
 }
 
 //-----------------------------------------------------------------------------
-vtkSlam::~vtkSlam()
+Transform Slam::GetWorldTransform()
 {
+  Transform t;
 
+  t.x = this->Tworld(3);
+  t.y = this->Tworld(4);
+  t.z = this->Tworld(5);
+
+  Eigen::Matrix3d Rw = GetRotationMatrix(this->Tworld);
+  t.rx = std::atan2(Rw(2, 1), Rw(2, 2));
+  t.ry = -std::asin(Rw(2, 0));
+  t.rz = std::atan2(Rw(1, 0), Rw(0, 0));
+
+  return t;
 }
 
 //-----------------------------------------------------------------------------
-int vtkSlam::FillInputPortInformation(int port, vtkInformation *info)
+std::unordered_map<std::string, double> Slam::GetDebugInformation()
 {
-  if ( port == 0 )
+  std::unordered_map<std::string, double> map;
+  map["EgoMotion: edges used"] = this->EgoMotionEdgesPointsUsed;
+  map["EgoMotion: planes used"] = this->EgoMotionPlanesPointsUsed;
+  map["Mapping: edges used"] = this->MappingEdgesPointsUsed;
+  map["Mapping: planes used"] = this->MappingPlanesPointsUsed;
+  map["Mapping: blobs used"] = this->MappingBlobsPointsUsed;
+  map["Variance Error"] = this->MappingVarianceError;
+  return map;
+}
+
+//-----------------------------------------------------------------------------
+pcl::PointCloud<PointXYZTIId>::Ptr Slam::GetEdgesMap()
+{
+  return this->EdgesPointsLocalMap->Get();
+}
+
+//-----------------------------------------------------------------------------
+pcl::PointCloud<Slam::Point>::Ptr Slam::GetPlanarsMap()
+{
+  return this->PlanarPointsLocalMap->Get();
+}
+
+//-----------------------------------------------------------------------------
+pcl::PointCloud<Slam::Point>::Ptr Slam::GetBlobsMap()
+{
+  return this->BlobsPointsLocalMap->Get();
+}
+
+//-----------------------------------------------------------------------------
+void Slam::AddFrame(pcl::PointCloud<Slam::Point>::Ptr pc, std::vector<size_t> laserIdMapping)
+{
+  if (pc->size() == 0)
   {
-    info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkPolyData" );
-    return 1;
-  }
-  if ( port == 1 )
-  {
-    info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkTable" );
-    return 1;
-  }
-  return 0;
-}
-
-//-----------------------------------------------------------------------------
-void vtkSlam::GetWorldTransform(double* Tworld)
-{
-  // Rotation and translation relative
-  Eigen::Matrix3d Rw;
-
-  // full rotation
-  Rw = GetRotationMatrix(this->Tworld);
-
-  double rx = std::atan2(Rw(2, 1), Rw(2, 2));
-  double ry = -std::asin(Rw(2, 0));
-  double rz = std::atan2(Rw(1, 0), Rw(0, 0));
-//  std::vector<double> res(6, 0);
-
-  Tworld[0] = rx;
-  Tworld[1] = ry;
-  Tworld[2] = rz;
-  Tworld[3] = this->Tworld(3);
-  Tworld[4] = this->Tworld(4);
-  Tworld[5] = this->Tworld(5);
-
-//  return res;
-}
-
-//-----------------------------------------------------------------------------
-void vtkSlam::AddFrame(vtkPolyData* newFrame)
-{
-  if (!newFrame)
-  {
-    vtkGenericWarningMacro("Slam entry is a null pointer data");
+//    vtkGenericWarningMacro("Slam entry is a null pointer data");
+    std::cout << "Slam entry is an empty pointcloud" << std::endl;
     return;
   }
-  this->vtkCurrentFrame = newFrame;
 
   std::cout << "#########################################################" << std::endl
             << "Processing frame : " << this->NbrFrameProcessed << std:: endl
             << "#########################################################" << std::endl
             << std::endl;
 
-  // Update the kalman filter time
-  double time = newFrame->GetPointData()->GetArray("adjustedtime")->GetTuple1(0) * 1e-6;
+  double time = pc->points[0].time * 1e-6;
 
   // If the new frame is the first one we just add the
   // extracted keypoints into the map without running
@@ -676,7 +519,7 @@ void vtkSlam::AddFrame(vtkPolyData* newFrame)
   if (this->NbrFrameProcessed == 0)
   {
     // Compute the edges and planars keypoints
-    this->KeyPointsExtractor->ComputeKeyPoints(newFrame, calib);
+    this->KeyPointsExtractor->ComputeKeyPoints(pc, laserIdMapping);
     this->CurrentEdgesPoints = this->KeyPointsExtractor->GetEdgePoints();
     this->CurrentPlanarsPoints = this->KeyPointsExtractor->GetPlanarPoints();
     this->CurrentBlobsPoints = this->KeyPointsExtractor->GetBlobPoints();
@@ -694,7 +537,7 @@ void vtkSlam::AddFrame(vtkPolyData* newFrame)
 
   // Compute the edges and planars keypoints
   InitTime();
-  this->KeyPointsExtractor->ComputeKeyPoints(newFrame, calib);
+  this->KeyPointsExtractor->ComputeKeyPoints(pc, laserIdMapping);
   this->CurrentEdgesPoints = this->KeyPointsExtractor->GetEdgePoints();
   this->CurrentPlanarsPoints = this->KeyPointsExtractor->GetPlanarPoints();
   this->CurrentBlobsPoints = this->KeyPointsExtractor->GetBlobPoints();
@@ -733,23 +576,18 @@ void vtkSlam::AddFrame(vtkPolyData* newFrame)
             << std::endl << std::endl << std::endl;
 
   // Update Trajectory
-  Eigen::AngleAxisd orientation = Eigen::AngleAxisd(GetRotationMatrix(this->Tworld));
-  this->Trajectory->PushBack(time, orientation, Tworld.tail(3));
-
-  // Indicate the filter has been modify
-  this->Modified();
-  return;
+  this->Trajectory.emplace_back(Transform(time, this->Tworld));
 }
 
 //-----------------------------------------------------------------------------
-void vtkSlam::TransformToWorld(Point& p)
+void Slam::TransformToWorld(Point& p)
 {
-  if (this->Undistortion)
-  {
-    this->ExpressPointInOtherReferencial(p, this->MappingInterpolator);
-  }
-  else
-  {
+//  if (this->Undistortion)
+//  {
+//    this->ExpressPointInOtherReferencial(p, this->MappingInterpolator);
+//  }
+//  else
+//  {
     // Rotation and translation and points
     Eigen::Matrix3d Rw;
     Eigen::Vector3d Tw;
@@ -764,11 +602,11 @@ void vtkSlam::TransformToWorld(Point& p)
     p.x = P(0);
     p.y = P(1);
     p.z = P(2);
-  }
+//  }
 }
 
 //-----------------------------------------------------------------------------
-int vtkSlam::ComputeLineDistanceParameters(KDTreePCLAdaptor& kdtreePreviousEdges, Eigen::Matrix3d& R,
+int Slam::ComputeLineDistanceParameters(KDTreePCLAdaptor& kdtreePreviousEdges, Eigen::Matrix3d& R,
                                            Eigen::Vector3d& dT, Point p, MatchingMode matchingMode)
 {
   // number of neighbors edge points required to approximate
@@ -786,22 +624,22 @@ int vtkSlam::ComputeLineDistanceParameters(KDTreePCLAdaptor& kdtreePreviousEdges
   Eigen::Vector3d P0(p.x, p.y, p.z);
   Eigen::Vector3d P, n;
   Eigen::Matrix3d A;
-  if (this->Undistortion) // linear interpolated transform
-  {
-    if (matchingMode == MatchingMode::EgoMotion)
-    {
-      this->ExpressPointInOtherReferencial(p, this->EgoMotionInterpolator);
-    }
-    else if (matchingMode == MatchingMode::Mapping)
-    {
-      this->ExpressPointInOtherReferencial(p, this->MappingInterpolator);
-    }
-  }
-  else // rigid transform
-  {
+//  if (this->Undistortion) // linear interpolated transform
+//  {
+//    if (matchingMode == MatchingMode::EgoMotion)
+//    {
+//      this->ExpressPointInOtherReferencial(p, this->EgoMotionInterpolator);
+//    }
+//    else if (matchingMode == MatchingMode::Mapping)
+//    {
+//      this->ExpressPointInOtherReferencial(p, this->MappingInterpolator);
+//    }
+//  }
+//  else // rigid transform
+//  {
     P = R * P0 + dT;
     p.x = P(0); p.y = P(1); p.z = P(2);
-  }
+//  }
 
   if (matchingMode == MatchingMode::EgoMotion)
   {
@@ -879,7 +717,7 @@ int vtkSlam::ComputeLineDistanceParameters(KDTreePCLAdaptor& kdtreePreviousEdges
 
   // it would be the case if P1 = P2 For instance
   // if the sensor has some dual returns that hit the same point
-  if (!vtkMath::IsFinite(A(0, 0)))
+  if (!std::isfinite(A(0, 0)))
   {
     return 3;
   }
@@ -916,7 +754,7 @@ int vtkSlam::ComputeLineDistanceParameters(KDTreePCLAdaptor& kdtreePreviousEdges
 }
 
 //-----------------------------------------------------------------------------
-int vtkSlam::ComputePlaneDistanceParameters(KDTreePCLAdaptor& kdtreePreviousPlanes, Eigen::Matrix3d& R,
+int Slam::ComputePlaneDistanceParameters(KDTreePCLAdaptor& kdtreePreviousPlanes, Eigen::Matrix3d& R,
                                             Eigen::Vector3d& dT, Point p, MatchingMode matchingMode)
 {
   // number of neighbors edge points required to approximate
@@ -953,22 +791,22 @@ int vtkSlam::ComputePlaneDistanceParameters(KDTreePCLAdaptor& kdtreePreviousPlan
   // Transform the point using the current pose estimation
   Eigen::Vector3d P0(p.x, p.y, p.z);
 
-  if (this->Undistortion) // linear interpolated transform
-  {
-    if (matchingMode == MatchingMode::EgoMotion)
-    {
-      this->ExpressPointInOtherReferencial(p, this->EgoMotionInterpolator);
-    }
-    else if (matchingMode == MatchingMode::Mapping)
-    {
-      this->ExpressPointInOtherReferencial(p, this->MappingInterpolator);
-    }
-  }
-  else // rigid transform
-  {
+//  if (this->Undistortion) // linear interpolated transform
+//  {
+//    if (matchingMode == MatchingMode::EgoMotion)
+//    {
+//      this->ExpressPointInOtherReferencial(p, this->EgoMotionInterpolator);
+//    }
+//    else if (matchingMode == MatchingMode::Mapping)
+//    {
+//      this->ExpressPointInOtherReferencial(p, this->MappingInterpolator);
+//    }
+//  }
+//  else // rigid transform
+//  {
     P = R * P0 + dT;
     p.x = P(0); p.y = P(1); p.z = P(2);
-  }
+//  }
 
   std::vector<int> nearestIndex(requiredNearest, -1);
   std::vector<double> nearestDist(requiredNearest, -1.0);
@@ -1023,7 +861,7 @@ int vtkSlam::ComputePlaneDistanceParameters(KDTreePCLAdaptor& kdtreePreviousPlan
   // it would be the case if P1 = P2, P1 = P3
   // or P3 = P2. For instance if the sensor has
   // some dual returns that hit the same point
-  if (!vtkMath::IsFinite(A(0, 0)))
+  if (!std::isfinite(A(0, 0)))
   {
     return 3;
   }
@@ -1058,8 +896,8 @@ int vtkSlam::ComputePlaneDistanceParameters(KDTreePCLAdaptor& kdtreePreviousPlan
 }
 
 //-----------------------------------------------------------------------------
-int vtkSlam::ComputeBlobsDistanceParameters(pcl::KdTreeFLANN<Point>::Ptr kdtreePreviousBlobs, Eigen::Matrix3d& R,
-                                            Eigen::Vector3d& dT, Point p, MatchingMode vtkNotUsed(matchingMode))
+int Slam::ComputeBlobsDistanceParameters(pcl::KdTreeFLANN<Slam::Point>::Ptr kdtreePreviousBlobs, Eigen::Matrix3d& R,
+                                            Eigen::Vector3d& dT, Point p, MatchingMode /*matchingMode*/)
 {
   // number of neighbors blobs points required to approximate
   // the corresponding ellipsoide
@@ -1155,7 +993,7 @@ int vtkSlam::ComputeBlobsDistanceParameters(pcl::KdTreeFLANN<Point>::Ptr kdtreeP
   diagD(0, 0) = D(0); diagD(1, 1) = D(1); diagD(2, 2) = D(2);
   A = U * diagD * U.transpose();
 
-  if (!vtkMath::IsFinite(A.determinant()))
+  if (!std::isfinite(A.determinant()))
   {
     return 4;
   }
@@ -1176,7 +1014,7 @@ int vtkSlam::ComputeBlobsDistanceParameters(pcl::KdTreeFLANN<Point>::Ptr kdtreeP
 }
 
 //-----------------------------------------------------------------------------
-void vtkSlam::GetEgoMotionLineSpecificNeighbor(std::vector<int>& nearestValid, std::vector<float>& nearestValidDist,
+void Slam::GetEgoMotionLineSpecificNeighbor(std::vector<int>& nearestValid, std::vector<float>& nearestValidDist,
                                                unsigned int nearestSearch, KDTreePCLAdaptor& kdtreePreviousEdges, Point p)
 {
   // clear vector
@@ -1199,13 +1037,13 @@ void vtkSlam::GetEgoMotionLineSpecificNeighbor(std::vector<int>& nearestValid, s
   // invalid all possible points that
   // are on the same scan line than the
   // closest one
-  idAlreadyTook[(int)closest.normal_y] = 1;
+  idAlreadyTook[(int)closest.laserId] = 1;
 
   // invalid all possible points from scan
   // lines that are too far from the closest one
-  for (unsigned int k = 0; k < this->KeyPointsExtractor->GetNLasers(); ++k)
+  for (int k = 0; k < this->KeyPointsExtractor->GetNLasers(); ++k)
   {
-    if (std::abs(closest.normal_y - k) > 4.0)
+    if (std::abs(int(closest.laserId) - k) > 4.0)
     {
       idAlreadyTook[k] = 1;
     }
@@ -1217,7 +1055,7 @@ void vtkSlam::GetEgoMotionLineSpecificNeighbor(std::vector<int>& nearestValid, s
   int id;
   for (unsigned int k = 1; k < nearestIndex.size(); ++k)
   {
-    id = kdtreePreviousEdges.getInputCloud()->points[nearestIndex[k]].normal_y;
+    id = kdtreePreviousEdges.getInputCloud()->points[nearestIndex[k]].laserId;
     if ( (idAlreadyTook[id] < 1) && (nearestDist[k] < this->MaxDistanceForICPMatching))
     {
       idAlreadyTook[id] = 1;
@@ -1228,7 +1066,7 @@ void vtkSlam::GetEgoMotionLineSpecificNeighbor(std::vector<int>& nearestValid, s
 }
 
 //-----------------------------------------------------------------------------
-void vtkSlam::GetMappingLineSpecificNeigbbor(std::vector<int>& nearestValid, std::vector<float>& nearestValidDist, double maxDistInlier,
+void Slam::GetMappingLineSpecificNeigbbor(std::vector<int>& nearestValid, std::vector<float>& nearestValidDist, double maxDistInlier,
                                              unsigned int nearestSearch, KDTreePCLAdaptor& kdtreePreviousEdges, Point p)
 {
   // reset vectors
@@ -1305,7 +1143,7 @@ void vtkSlam::GetMappingLineSpecificNeigbbor(std::vector<int>& nearestValid, std
 }
 
 //-----------------------------------------------------------------------------
-void vtkSlam::ComputeEgoMotion()
+void Slam::ComputeEgoMotion()
 {
   // Initialize the IsKeypointUsed vectors
   this->EdgePointRejectionEgoMotion.clear(); this->EdgePointRejectionEgoMotion.resize(this->CurrentEdgesPoints->size());
@@ -1314,8 +1152,10 @@ void vtkSlam::ComputeEgoMotion()
   if ((this->CurrentEdgesPoints->size() == 0 || this->PreviousEdgesPoints->size() == 0) &&
       (this->CurrentPlanarsPoints->size() == 0 || this->PreviousPlanarsPoints->size() == 0))
   {
-    this->FillEgoMotionInfoArrayWithDefaultValues();
-    vtkGenericWarningMacro("Not enought keypoints, EgoMotion skipped for this frame");
+    this->EgoMotionEdgesPointsUsed = 0;
+    this->EgoMotionPlanesPointsUsed = 0;
+//    vtkGenericWarningMacro("Not enought keypoints, EgoMotion skipped for this frame");
+    std::cout << "Not enought keypoints, EgoMotion skipped for this frame" << std::endl;
     return;
   }
 
@@ -1361,10 +1201,10 @@ void vtkSlam::ComputeEgoMotion()
     this->ResetDistanceParameters();
 
     // Init the undistortion interpolator
-    if (this->Undistortion)
-    {
-      this->EgoMotionInterpolator = this->InitUndistortionInterpolatorEgoMotion();
-    }
+//    if (this->Undistortion)
+//    {
+//      this->EgoMotionInterpolator = this->InitUndistortionInterpolatorEgoMotion();
+//    }
 
     // loop over edges if there is engought previous edge keypoints
     if (this->PreviousEdgesPoints->size() > this->EgoMotionLineDistanceNbrNeighbors)
@@ -1404,7 +1244,8 @@ void vtkSlam::ComputeEgoMotion()
     // keypoints matched
     if ((usedPlanes + usedEdges) < 20)
     {
-      vtkGenericWarningMacro("Too few geometric features, frame skipped");
+//      vtkGenericWarningMacro("Too few geometric features, frame skipped");
+      std::cout << "Too few geometric features, frame skipped" << std::endl;
       break;
     }
     double lossScale = initLossScale + static_cast<double>(icpCount) * (finalLossScale - initLossScale) / (1.0 * this->EgoMotionICPMaxIter);
@@ -1417,23 +1258,23 @@ void vtkSlam::ComputeEgoMotion()
     ceres::Problem problem;
     for (unsigned int k = 0; k < Xvalues.size(); ++k)
     {
-      if (this->Undistortion)
-      {
-        ceres::CostFunction* cost_function = new ceres::AutoDiffCostFunction<CostFunctions::MahalanobisDistanceLinearDistortionResidual, 1, 6>(
-                                              new CostFunctions::MahalanobisDistanceLinearDistortionResidual(
-                                                this->Avalues[k], this->Pvalues[k], this->Xvalues[k],
-                                                Eigen::Matrix<double, 3, 1>::Zero(),
-                                                Eigen::Matrix<double, 3, 3>::Identity(),
-                                                this->TimeValues[k], this->residualCoefficient[k]));
-        problem.AddResidualBlock(cost_function, new ceres::ScaledLoss(new ceres::ArctanLoss(lossScale), this->residualCoefficient[k], ceres::TAKE_OWNERSHIP), this->Trelative.data());
-      }
-      else
-      {
+//      if (this->Undistortion)
+//      {
+//        ceres::CostFunction* cost_function = new ceres::AutoDiffCostFunction<CostFunctions::MahalanobisDistanceLinearDistortionResidual, 1, 6>(
+//                                              new CostFunctions::MahalanobisDistanceLinearDistortionResidual(
+//                                                this->Avalues[k], this->Pvalues[k], this->Xvalues[k],
+//                                                Eigen::Matrix<double, 3, 1>::Zero(),
+//                                                Eigen::Matrix<double, 3, 3>::Identity(),
+//                                                this->TimeValues[k], this->residualCoefficient[k]));
+//        problem.AddResidualBlock(cost_function, new ceres::ScaledLoss(new ceres::ArctanLoss(lossScale), this->residualCoefficient[k], ceres::TAKE_OWNERSHIP), this->Trelative.data());
+//      }
+//      else
+//      {
         ceres::CostFunction* cost_function = new ceres::AutoDiffCostFunction<CostFunctions::MahalanobisDistanceAffineIsometryResidual, 1, 6>(
                                              new CostFunctions::MahalanobisDistanceAffineIsometryResidual(this->Avalues[k], this->Pvalues[k],
                                                                                                           this->Xvalues[k], this->residualCoefficient[k]));
         problem.AddResidualBlock(cost_function, new ceres::ScaledLoss(new ceres::ArctanLoss(lossScale), this->residualCoefficient[k], ceres::TAKE_OWNERSHIP), this->Trelative.data());
-      }
+//      }
     }
 
     ceres::Solver::Options options;
@@ -1454,12 +1295,8 @@ void vtkSlam::ComputeEgoMotion()
     }
   }
 
-  // Provide information about keypoints-neighborhood matching rejections
-  this->RejectionInformationDisplay();
-
-  static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("EgoMotion: edges used"))->InsertNextValue(usedEdges);
-  static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("EgoMotion: planes used"))->InsertNextValue(usedPlanes);
-  static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("EgoMotion: total keypoints used"))->InsertNextValue(this->Xvalues.size());
+  this->EgoMotionEdgesPointsUsed = usedEdges;
+  this->EgoMotionPlanesPointsUsed  = usedPlanes;
   std::cout << "used keypoints : " << this->Xvalues.size() << std::endl;
   std::cout << "edges : " << usedEdges << " planes : " << usedPlanes << std::endl;
 
@@ -1469,15 +1306,19 @@ void vtkSlam::ComputeEgoMotion()
 }
 
 //-----------------------------------------------------------------------------
-void vtkSlam::Mapping()
+void Slam::Mapping()
 {
   // Check that there is enought key-points to compute the Mapping
   if (this->CurrentEdgesPoints->size() == 0 && this->CurrentPlanarsPoints->size() == 0)
   {
-    this->FillMappingInfoArrayWithDefaultValues();
+    this->MappingVarianceError = 10;
+    this->MappingEdgesPointsUsed = 0;
+    this->MappingPlanesPointsUsed = 0;
+    this->MappingBlobsPointsUsed = 0;
     // update maps
     this->UpdateMapsUsingTworld();
-    vtkGenericWarningMacro("Not enought keypoints, Mapping skipped for this frame");
+//    vtkGenericWarningMacro("Not enought keypoints, Mapping skipped for this frame");
+    std::cout << "Not enought keypoints, Mapping skipped for this frame" << std::endl;
     return;
   }
     this->EdgePointRejectionMapping.clear(); this->EdgePointRejectionMapping.resize(this->CurrentEdgesPoints->size());
@@ -1487,13 +1328,13 @@ void vtkSlam::Mapping()
   this->SetLidarMaximunRange(this->KeyPointsExtractor->GetFarestKeypointDist());
 
   // get keypoints from the map
-  pcl::PointCloud<Point>::Ptr subEdgesPointsLocalMap = this->EdgesPointsLocalMap->Get(this->Tworld);
-  pcl::PointCloud<Point>::Ptr subPlanarPointsLocalMap = this->PlanarPointsLocalMap->Get(this->Tworld);
+  pcl::PointCloud<Slam::Point>::Ptr subEdgesPointsLocalMap = this->EdgesPointsLocalMap->Get(this->Tworld);
+  pcl::PointCloud<Slam::Point>::Ptr subPlanarPointsLocalMap = this->PlanarPointsLocalMap->Get(this->Tworld);
 
   // contruct kd-tree for fast closest points search
   KDTreePCLAdaptor kdtreeEdges(subEdgesPointsLocalMap);
   KDTreePCLAdaptor kdtreePlanes(subPlanarPointsLocalMap);
-  pcl::KdTreeFLANN<Point>::Ptr kdtreeBlobs;
+  pcl::KdTreeFLANN<Slam::Point>::Ptr kdtreeBlobs;
 
   std::cout << "========== Mapping ==========" << std::endl;
   std::cout << "Edges extracted from map: " << subEdgesPointsLocalMap->points.size()
@@ -1501,15 +1342,12 @@ void vtkSlam::Mapping()
 
   if (!this->FastSlam)
   {
-    pcl::PointCloud<Point>::Ptr subBlobPointsLocalMap = this->BlobsPointsLocalMap->Get(this->Tworld);
-    kdtreeBlobs.reset(new pcl::KdTreeFLANN<Point>());
+    pcl::PointCloud<Slam::Point>::Ptr subBlobPointsLocalMap = this->BlobsPointsLocalMap->Get(this->Tworld);
+    kdtreeBlobs.reset(new pcl::KdTreeFLANN<Slam::Point>());
     kdtreeBlobs->setInputCloud(subBlobPointsLocalMap);
     std::cout << "blobs map: " << subBlobPointsLocalMap->points.size() << std::endl;
   }
 
-  // Get the previous sensor pose
-  Eigen::Matrix3d R0 = GetRotationMatrix(this->PreviousTworld);
-  Eigen::Vector3d T0(this->PreviousTworld[3], this->PreviousTworld[4], this->PreviousTworld[5]);
   // Information about matches
   unsigned int usedEdges = 0;
   unsigned int usedPlanes = 0;
@@ -1541,11 +1379,11 @@ void vtkSlam::Mapping()
     // clear all keypoints matching data
     this->ResetDistanceParameters();
 
-    // Init the undistortion interpolator
-    if (this->Undistortion)
-    {
-      this->MappingInterpolator = this->InitUndistortionInterpolatorMapping();
-    }
+//    // Init the undistortion interpolator
+//    if (this->Undistortion)
+//    {
+//      this->MappingInterpolator = this->InitUndistortionInterpolatorMapping();
+//    }
 
     // Rotation and position at this step
     Eigen::Matrix3d R = GetRotationMatrix(this->Tworld);
@@ -1593,7 +1431,8 @@ void vtkSlam::Mapping()
     // Skip this frame if there is too few geometric keypoints matched
     if ((usedPlanes + usedEdges + usedBlobs) < 20)
     {
-      vtkGenericWarningMacro("Too few geometric features, loop breaked");
+//      vtkGenericWarningMacro("Too few geometric features, loop breaked");
+      std::cout << "Too few geometric features, loop breaked" << std::endl;
       std::cout << "planes: " << usedPlanes << " edges: " << usedEdges << " Blobs: " << usedBlobs << std::endl;
       break;
     }
@@ -1608,21 +1447,21 @@ void vtkSlam::Mapping()
     ceres::Problem problem;
     for (unsigned int k = 0; k < Xvalues.size(); ++k)
     {
-      if (this->Undistortion)
-      {
-        ceres::CostFunction* cost_function = new ceres::AutoDiffCostFunction<CostFunctions::MahalanobisDistanceLinearDistortionResidual, 1, 6>(
-                                              new CostFunctions::MahalanobisDistanceLinearDistortionResidual(
-                                                this->Avalues[k], this->Pvalues[k], this->Xvalues[k], T0, R0,
-                                                this->TimeValues[k], this->residualCoefficient[k]));
-        problem.AddResidualBlock(cost_function, new ceres::ScaledLoss(new ceres::ArctanLoss(lossScale), this->residualCoefficient[k], ceres::TAKE_OWNERSHIP), this->Tworld.data());
-      }
-      else
-      {
+//      if (this->Undistortion)
+//      {
+//        ceres::CostFunction* cost_function = new ceres::AutoDiffCostFunction<CostFunctions::MahalanobisDistanceLinearDistortionResidual, 1, 6>(
+//                                              new CostFunctions::MahalanobisDistanceLinearDistortionResidual(
+//                                                this->Avalues[k], this->Pvalues[k], this->Xvalues[k], T0, R0,
+//                                                this->TimeValues[k], this->residualCoefficient[k]));
+//        problem.AddResidualBlock(cost_function, new ceres::ScaledLoss(new ceres::ArctanLoss(lossScale), this->residualCoefficient[k], ceres::TAKE_OWNERSHIP), this->Tworld.data());
+//      }
+//      else
+//      {
         ceres::CostFunction* cost_function = new ceres::AutoDiffCostFunction<CostFunctions::MahalanobisDistanceAffineIsometryResidual, 1, 6>(
                                              new CostFunctions::MahalanobisDistanceAffineIsometryResidual(this->Avalues[k], this->Pvalues[k],
                                                                                                           this->Xvalues[k], this->residualCoefficient[k]));
         problem.AddResidualBlock(cost_function, new ceres::ScaledLoss(new ceres::ArctanLoss(lossScale), this->residualCoefficient[k], ceres::TAKE_OWNERSHIP), this->Tworld.data());
-      }
+//      }
     }
 
     ceres::Solver::Options options;
@@ -1661,17 +1500,13 @@ void vtkSlam::Mapping()
       }
   }
 
-  // Provide information about keypoints-neighborhood matching rejections
-  this->RejectionInformationDisplay();
-
   Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eig(estimatorCovariance);
   Eigen::MatrixXd D = eig.eigenvalues();
 
-  static_cast<vtkDoubleArray*>(this->Trajectory->GetPointData()->GetArray("Variance Error"))->InsertNextValue(D(5));
-  static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("Mapping: edges used"))->InsertNextValue(usedEdges);
-  static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("Mapping: planes used"))->InsertNextValue(usedPlanes);
-  static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("Mapping: blobs used"))->InsertNextValue(usedBlobs);
-  static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("Mapping: total keypoints used"))->InsertNextValue(this->Xvalues.size());
+  this->MappingVarianceError = D(5);
+  this->MappingEdgesPointsUsed = usedEdges;
+  this->MappingPlanesPointsUsed = usedPlanes;
+  this->MappingBlobsPointsUsed = usedBlobs;
 
   std::cout << "Matches used: Total: " << this->Xvalues.size()
             << " edges: " << usedEdges << " planes: " << usedPlanes << " blobs: " << usedBlobs << std::endl;
@@ -1689,180 +1524,149 @@ void vtkSlam::Mapping()
 }
 
 //-----------------------------------------------------------------------------
-void vtkSlam::UpdateMapsUsingTworld()
+void Slam::UpdateMapsUsingTworld()
 {
   // Init the mapping interpolator
-  if (this->Undistortion)
-  {
-    this->MappingInterpolator = this->InitUndistortionInterpolatorMapping();
-  }
+//  if (this->Undistortion)
+//  {
+//    this->MappingInterpolator = this->InitUndistortionInterpolatorMapping();
+//  }
 
-  // Update EdgeMap
-  pcl::PointCloud<Point>::Ptr MapEdgesPoints(new pcl::PointCloud<Point>());
-  for (unsigned int i = 0; i < this->CurrentEdgesPoints->size(); ++i)
-  {
-    MapEdgesPoints->push_back(this->CurrentEdgesPoints->at(i));
-    this->TransformToWorld(MapEdgesPoints->at(i));
-  }
-  EdgesPointsLocalMap->Roll(this->Tworld);
-  EdgesPointsLocalMap->Add(MapEdgesPoints);
+  // it would nice to add the point frome the frame directly to the map
+  auto updateMap = [this] (std::shared_ptr<RollingGrid> map, pcl::PointCloud<Slam::Point>::Ptr frame) {
+    pcl::PointCloud<Slam::Point>::Ptr temporaryMap(new pcl::PointCloud<Slam::Point>());
+    for (size_t i = 0; i < frame->size(); ++i)
+    {
+      temporaryMap->push_back(frame->at(i));
+      this->TransformToWorld(temporaryMap->at(i));
+    }
+    map->Roll(this->Tworld);
+    map->Add(temporaryMap);
+  };
 
-  // Update PlanarMap
-  pcl::PointCloud<Point>::Ptr MapPlanarsPoints(new pcl::PointCloud<Point>());
-  for (unsigned int i = 0; i < this->CurrentPlanarsPoints->size(); ++i)
-  {
-    MapPlanarsPoints->push_back(this->CurrentPlanarsPoints->at(i));
-    this->TransformToWorld(MapPlanarsPoints->at(i));
-  }
-  PlanarPointsLocalMap->Roll(this->Tworld);
-  PlanarPointsLocalMap->Add(MapPlanarsPoints);
-
-  // Update BlobsMap. The all current frame is added
+  updateMap(this->EdgesPointsLocalMap, this->CurrentEdgesPoints);
+  updateMap(this->PlanarPointsLocalMap, this->CurrentPlanarsPoints);
   if (!this->FastSlam)
   {
-    pcl::PointCloud<Point>::Ptr MapBlobsPoints(new pcl::PointCloud<Point>());
-    for (unsigned int i = 0; i < this->CurrentBlobsPoints->size(); ++i)
-    {
-      MapBlobsPoints->push_back(this->CurrentBlobsPoints->at(i));
-      this->TransformToWorld(MapBlobsPoints->at(i));
-    }
-    BlobsPointsLocalMap->Roll(this->Tworld);
-    BlobsPointsLocalMap->Add(MapBlobsPoints);
+    updateMap(this->BlobsPointsLocalMap, this->CurrentBlobsPoints);
   }
+
 }
 
-//-----------------------------------------------------------------------------
-void vtkSlam::FillMappingInfoArrayWithDefaultValues()
-{
-  static_cast<vtkDoubleArray*>(this->Trajectory->GetPointData()->GetArray("Variance Error"))->InsertNextValue(10.0);
-  static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("Mapping: edges used"))->InsertNextValue(0);
-  static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("Mapping: planes used"))->InsertNextValue(0);
-  static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("Mapping: blobs used"))->InsertNextValue(0);
-  static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("Mapping: total keypoints used"))->InsertNextValue(0);
-}
+////-----------------------------------------------------------------------------
+//vtkSmartPointer<vtkCustomTransformInterpolator> Slam::InitUndistortionInterpolatorEgoMotion()
+//{
+//  vtkSmartPointer<vtkCustomTransformInterpolator> resultInterp = vtkSmartPointer<vtkCustomTransformInterpolator>::New();
+//  resultInterp->SetInterpolationTypeToLinear();
+
+//  // Transforms representing the passage from the
+//  // referential of the sensor at time t0 resp t1
+//  // to the referential of the sensor at the time 0
+//  vtkNew<vtkTransform> transform0, transform1;
+
+//  // transform 0 is identity
+//  transform0->Identity();
+//  transform0->Modified();
+//  transform0->Update();
+
+//  // transform 1 is the delta transform
+//  // between T0 and T1 computed in the EgoMotion
+//  // i.e Trelative
+//  Eigen::Matrix3d R = GetRotationMatrix(this->Trelative);
+//  Eigen::Vector3d T(this->Trelative(3), this->Trelative(4), this->Trelative(5));
+
+//  vtkNew<vtkMatrix4x4> M;
+//  for (unsigned int i = 0; i < 3; ++i)
+//  {
+//    for (unsigned int j = 0; j < 3; ++j)
+//    {
+//      M->Element[i][j] = R(i, j);
+//    }
+//    M->Element[i][3] = T(i);
+//    M->Element[3][i] = 0;
+//  }
+//  M->Element[3][3] = 1.0;
+
+//  transform1->SetMatrix(M.Get());
+//  transform1->Modified();
+//  transform1->Update();
+
+//  // Add the transforms and update
+//  resultInterp->AddTransform(0.0, transform0.GetPointer());
+//  resultInterp->AddTransform(1.0, transform1.GetPointer());
+//  resultInterp->Modified();
+
+//  return resultInterp;
+//}
+
+////-----------------------------------------------------------------------------
+//vtkSmartPointer<vtkCustomTransformInterpolator> Slam::InitUndistortionInterpolatorMapping()
+//{
+//  vtkSmartPointer<vtkCustomTransformInterpolator> resultInterp = vtkSmartPointer<vtkCustomTransformInterpolator>::New();
+//  resultInterp->SetInterpolationTypeToLinear();
+
+//  // Transforms representing the passage from the
+//  // referential of the sensor at time t0 resp t1
+//  // to the referential of the sensor at the time 0
+//  vtkNew<vtkTransform> transform0, transform1;
+
+//  // transform 1 is the delta transform
+//  // between T0 and T1
+//  Eigen::Matrix3d R0 = GetRotationMatrix(this->PreviousTworld);
+//  Eigen::Matrix3d R1 = GetRotationMatrix(this->Tworld);
+//  Eigen::Vector3d T0(this->PreviousTworld(3), this->PreviousTworld(4), this->PreviousTworld(5));
+//  Eigen::Vector3d T1(this->Tworld(3), this->Tworld(4), this->Tworld(5));
+
+//  vtkNew<vtkMatrix4x4> M0, M1;
+//  for (unsigned int i = 0; i < 3; ++i)
+//  {
+//    for (unsigned int j = 0; j < 3; ++j)
+//    {
+//      M0->Element[i][j] = R0(i, j);
+//      M1->Element[i][j] = R1(i, j);
+//    }
+//    M0->Element[i][3] = T0(i);
+//    M0->Element[3][i] = 0;
+//    M1->Element[i][3] = T1(i);
+//    M1->Element[3][i] = 0;
+//  }
+//  M0->Element[3][3] = 1.0;
+//  M1->Element[3][3] = 1.0;
+
+//  transform0->SetMatrix(M0.Get());
+//  transform0->Modified();
+//  transform0->Update();
+
+//  transform1->SetMatrix(M1.Get());
+//  transform1->Modified();
+//  transform1->Update();
+
+//  // Add the transforms and update
+//  resultInterp->AddTransform(0.0, transform0.GetPointer());
+//  resultInterp->AddTransform(1.0, transform1.GetPointer());
+//  resultInterp->Modified();
+
+//  return resultInterp;
+//}
+
+////-----------------------------------------------------------------------------
+//void Slam::ExpressPointInOtherReferencial(Point& p, vtkSmartPointer<vtkCustomTransformInterpolator> transform)
+//{
+//  // interpolate the transform
+//  vtkNew<vtkTransform> currTransform;
+//  transform->InterpolateTransform(p.intensity, currTransform.GetPointer());
+//  currTransform->Modified();
+//  currTransform->Update();
+
+//  double pos[3] = {p.x, p.y, p.z};
+//  currTransform->InternalTransformPoint(pos, pos);
+//  p.x = pos[0];
+//  p.y = pos[1];
+//  p.z = pos[2];
+//}
 
 //-----------------------------------------------------------------------------
-void vtkSlam::FillEgoMotionInfoArrayWithDefaultValues()
-{
-  static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("EgoMotion: edges used"))->InsertNextValue(0);
-  static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("EgoMotion: planes used"))->InsertNextValue(0);
-  static_cast<vtkIntArray*>(this->Trajectory->GetPointData()->GetArray("EgoMotion: total keypoints used"))->InsertNextValue(0);
-}
-
-//-----------------------------------------------------------------------------
-vtkSmartPointer<vtkCustomTransformInterpolator> vtkSlam::InitUndistortionInterpolatorEgoMotion()
-{
-  vtkSmartPointer<vtkCustomTransformInterpolator> resultInterp = vtkSmartPointer<vtkCustomTransformInterpolator>::New();
-  resultInterp->SetInterpolationTypeToLinear();
-
-  // Transforms representing the passage from the
-  // referential of the sensor at time t0 resp t1
-  // to the referential of the sensor at the time 0
-  vtkNew<vtkTransform> transform0, transform1;
-
-  // transform 0 is identity
-  transform0->Identity();
-  transform0->Modified();
-  transform0->Update();
-
-  // transform 1 is the delta transform
-  // between T0 and T1 computed in the EgoMotion
-  // i.e Trelative
-  Eigen::Matrix3d R = GetRotationMatrix(this->Trelative);
-  Eigen::Vector3d T(this->Trelative(3), this->Trelative(4), this->Trelative(5));
-
-  vtkNew<vtkMatrix4x4> M;
-  for (unsigned int i = 0; i < 3; ++i)
-  {
-    for (unsigned int j = 0; j < 3; ++j)
-    {
-      M->Element[i][j] = R(i, j);
-    }
-    M->Element[i][3] = T(i);
-    M->Element[3][i] = 0;
-  }
-  M->Element[3][3] = 1.0;
-
-  transform1->SetMatrix(M.Get());
-  transform1->Modified();
-  transform1->Update();
-
-  // Add the transforms and update
-  resultInterp->AddTransform(0.0, transform0.GetPointer());
-  resultInterp->AddTransform(1.0, transform1.GetPointer());
-  resultInterp->Modified();
-
-  return resultInterp;
-}
-
-//-----------------------------------------------------------------------------
-vtkSmartPointer<vtkCustomTransformInterpolator> vtkSlam::InitUndistortionInterpolatorMapping()
-{
-  vtkSmartPointer<vtkCustomTransformInterpolator> resultInterp = vtkSmartPointer<vtkCustomTransformInterpolator>::New();
-  resultInterp->SetInterpolationTypeToLinear();
-
-  // Transforms representing the passage from the
-  // referential of the sensor at time t0 resp t1
-  // to the referential of the sensor at the time 0
-  vtkNew<vtkTransform> transform0, transform1;
-
-  // transform 1 is the delta transform
-  // between T0 and T1
-  Eigen::Matrix3d R0 = GetRotationMatrix(this->PreviousTworld);
-  Eigen::Matrix3d R1 = GetRotationMatrix(this->Tworld);
-  Eigen::Vector3d T0(this->PreviousTworld(3), this->PreviousTworld(4), this->PreviousTworld(5));
-  Eigen::Vector3d T1(this->Tworld(3), this->Tworld(4), this->Tworld(5));
-
-  vtkNew<vtkMatrix4x4> M0, M1;
-  for (unsigned int i = 0; i < 3; ++i)
-  {
-    for (unsigned int j = 0; j < 3; ++j)
-    {
-      M0->Element[i][j] = R0(i, j);
-      M1->Element[i][j] = R1(i, j);
-    }
-    M0->Element[i][3] = T0(i);
-    M0->Element[3][i] = 0;
-    M1->Element[i][3] = T1(i);
-    M1->Element[3][i] = 0;
-  }
-  M0->Element[3][3] = 1.0;
-  M1->Element[3][3] = 1.0;
-
-  transform0->SetMatrix(M0.Get());
-  transform0->Modified();
-  transform0->Update();
-
-  transform1->SetMatrix(M1.Get());
-  transform1->Modified();
-  transform1->Update();
-
-  // Add the transforms and update
-  resultInterp->AddTransform(0.0, transform0.GetPointer());
-  resultInterp->AddTransform(1.0, transform1.GetPointer());
-  resultInterp->Modified();
-
-  return resultInterp;
-}
-
-//-----------------------------------------------------------------------------
-void vtkSlam::ExpressPointInOtherReferencial(Point& p, vtkSmartPointer<vtkCustomTransformInterpolator> transform)
-{
-  // interpolate the transform
-  vtkNew<vtkTransform> currTransform;
-  transform->InterpolateTransform(p.intensity, currTransform.GetPointer());
-  currTransform->Modified();
-  currTransform->Update();
-
-  double pos[3] = {p.x, p.y, p.z};
-  currTransform->InternalTransformPoint(pos, pos);
-  p.x = pos[0];
-  p.y = pos[1];
-  p.z = pos[2];
-}
-
-//-----------------------------------------------------------------------------
-void vtkSlam::ResetDistanceParameters()
+void Slam::ResetDistanceParameters()
 {
   this->Xvalues.resize(0);
   this->Avalues.resize(0);
@@ -1878,7 +1682,7 @@ void vtkSlam::ResetDistanceParameters()
 }
 
 //-----------------------------------------------------------------------------
-void vtkSlam::UpdateTworldUsingTrelative()
+void Slam::UpdateTworldUsingTrelative()
 {
   // Rotation and translation relative
   Eigen::Matrix3d Rr, Rw;
@@ -1917,72 +1721,43 @@ void vtkSlam::UpdateTworldUsingTrelative()
 }
 
 //-----------------------------------------------------------------------------
-void vtkSlam::SetVoxelGridLeafSizeEdges(double size)
+void Slam::SetVoxelGridLeafSizeEdges(double size)
 {
   this->EdgesPointsLocalMap->SetLeafSize(size);
-  this->ParametersModificationTime.Modified();
 }
 
 //-----------------------------------------------------------------------------
-void vtkSlam::SetVoxelGridLeafSizePlanes(double size)
+void Slam::SetVoxelGridLeafSizePlanes(double size)
 {
   this->PlanarPointsLocalMap->SetLeafSize(size);
-  this->ParametersModificationTime.Modified();
 }
 
 //-----------------------------------------------------------------------------
-void vtkSlam::SetVoxelGridLeafSizeBlobs(double size)
+void Slam::SetVoxelGridLeafSizeBlobs(double size)
 {
   this->BlobsPointsLocalMap->SetLeafSize(size);
-  this->ParametersModificationTime.Modified();
 }
 
 //-----------------------------------------------------------------------------
-void vtkSlam::SetVoxelGridSize(unsigned int size)
+void Slam::SetVoxelGridSize(unsigned int size)
 {
   this->EdgesPointsLocalMap->SetSize(size);
   this->PlanarPointsLocalMap->SetSize(size);
   this->BlobsPointsLocalMap->SetSize(size);
-  this->ParametersModificationTime.Modified();
 }
 
 //-----------------------------------------------------------------------------
-void vtkSlam::SetVoxelGridResolution(double resolution)
+void Slam::SetVoxelGridResolution(double resolution)
 {
   this->EdgesPointsLocalMap->SetResolution(resolution);
   this->PlanarPointsLocalMap->SetResolution(resolution);
   this->BlobsPointsLocalMap->SetResolution(resolution);
-  this->ParametersModificationTime.Modified();
 }
 
 //-----------------------------------------------------------------------------
-void vtkSlam::SetLidarMaximunRange(const double maxRange)
+void Slam::SetLidarMaximunRange(const double maxRange)
 {
   this->EdgesPointsLocalMap->SetPointCoudMaxRange(maxRange);
   this->PlanarPointsLocalMap->SetPointCoudMaxRange(maxRange);
   this->BlobsPointsLocalMap->SetPointCoudMaxRange(maxRange);
-}
-
-//-----------------------------------------------------------------------------
-void vtkSlam::RejectionInformationDisplay()
-{
-  double totalRejectionsLine = 0;
-  double totalRejectionsPlane = 0;
-  for (int k = 0; k < this->NrejectionCauses; ++k)
-  {
-    totalRejectionsLine += this->MatchRejectionHistogramLine[k];
-    totalRejectionsPlane += this->MatchRejectionHistogramPlane[k];
-  }
-  std::cout << "Rejection frequencies lines: [";
-  for (int k = 0; k < this->NrejectionCauses; ++k)
-  {
-    std::cout << this->MatchRejectionHistogramLine[k] / totalRejectionsLine * 100.0 << ", ";
-  }
-  std::cout << std::endl;
-  std::cout << "Rejection frequencies planes: [";
-  for (int k = 0; k < this->NrejectionCauses; ++k)
-  {
-    std::cout << this->MatchRejectionHistogramPlane[k] / totalRejectionsPlane * 100.0 << ", ";
-  }
-  std::cout << std::endl;
 }

@@ -3,7 +3,7 @@
 // Copyright 2018 Kitware, Inc.
 // Author: Guilbert Pierre (spguilbert@gmail.com)
 //         Laurenson Nick (nlaurenson5@gmail.com)
-// Data: 03-27-2018
+// Date: 03-27-2018
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,52 +17,49 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //=========================================================================
-#ifndef VTKROTATINGKEYPOINTSEXTRACTOR_H
-#define VTKROTATINGKEYPOINTSEXTRACTOR_H
+#ifndef SpinningSensorKeypointExtractor_H
+#define SpinningSensorKeypointExtractor_H
 
 #include <vector>
+#include <unordered_map>
 
-#include "vtkObject.h"
-#include "vtkSmartPointer.h"
-#include "vtkPolyData.h"
-
-#include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
 
-class vtkTable;
+#include "LidarPoint.h"
 
-using Point = pcl::PointXYZINormal;
+#define SetMacro(name,type) void Set##name (type _arg) { name = _arg; }
+#define GetMacro(name,type) type Get##name () const { return name; }
 
-class VTK_EXPORT vtkRotatingKeyPointsExtractor : public vtkObject
+
+class SpinningSensorKeypointExtractor
 {
 public:
-  static vtkRotatingKeyPointsExtractor *New();
-  vtkTypeMacro(vtkRotatingKeyPointsExtractor, vtkObject)
+  using Point = PointXYZTIId;
 
-  vtkGetMacro(NeighborWidth, int)
-  vtkSetMacro(NeighborWidth, int)
+  GetMacro(NeighborWidth, int)
+  SetMacro(NeighborWidth, int)
 
-  vtkGetMacro(MinDistanceToSensor, double)
-  vtkSetMacro(MinDistanceToSensor, double)
+  GetMacro(MinDistanceToSensor, double)
+  SetMacro(MinDistanceToSensor, double)
 
-  vtkGetMacro(EdgeSinAngleThreshold, double)
-  vtkSetMacro(EdgeSinAngleThreshold, double)
+  GetMacro(EdgeSinAngleThreshold, double)
+  SetMacro(EdgeSinAngleThreshold, double)
 
-  vtkGetMacro(PlaneSinAngleThreshold, double)
-  vtkSetMacro(PlaneSinAngleThreshold, double)
+  GetMacro(PlaneSinAngleThreshold, double)
+  SetMacro(PlaneSinAngleThreshold, double)
 
-  vtkGetMacro(EdgeDepthGapThreshold, double)
-  vtkSetMacro(EdgeDepthGapThreshold, double)
+  GetMacro(EdgeDepthGapThreshold, double)
+  SetMacro(EdgeDepthGapThreshold, double)
 
-  vtkGetMacro(AngleResolution, double)
-  vtkSetMacro(AngleResolution, double)
+  GetMacro(AngleResolution, double)
+  SetMacro(AngleResolution, double)
 
-  vtkGetMacro(SaillancyThreshold, double)
-  vtkSetMacro(SaillancyThreshold, double)
+  GetMacro(SaillancyThreshold, double)
+  SetMacro(SaillancyThreshold, double)
 
-  vtkGetMacro(FarestKeypointDist, double)
+  GetMacro(FarestKeypointDist, double)
 
-  int GetNLasers() const {return this->NLasers;}
+  GetMacro(NLasers, int)
 
   pcl::PointCloud<Point>::Ptr GetEdgePoints() { return this->EdgesPoints; }
   pcl::PointCloud<Point>::Ptr GetPlanarPoints() { return this->PlanarsPoints; }
@@ -72,13 +69,11 @@ public:
   // will be separated in two classes : Edges keypoints which
   // correspond to area with high curvature scan lines and
   // planar keypoints which have small curvature
-  void ComputeKeyPoints(vtkPolyData* input, vtkTable* calib);
+  void ComputeKeyPoints(pcl::PointCloud<Point>::Ptr pc, std::vector<size_t> laserIdMapping);
 
-  void AddDisplayInformation(vtkSmartPointer<vtkPolyData> input);
-
-  void DisplayUsedKeypoints(vtkSmartPointer<vtkPolyData> input, const std::vector<int> &EdgePointRejectionEgoMotion, const std::vector<int> &EdgePointRejectionMapping, const std::vector<int> &PlanarPointRejectionEgoMotion, const std::vector<int> &PlanarPointRejectionMapping);
-protected:
-  vtkRotatingKeyPointsExtractor() = default;
+  // Function to enable to have some inside on why a given point was detected as a keypoint
+  std::unordered_map<std::string, std::vector<double>> GetDebugArray();
+private:
 
   // Reset all mumbers variables that are
   // used during the process of a frame.
@@ -88,9 +83,6 @@ protected:
   // into a pcl-pointcloud format. scan lines
   // will also be sorted by their vertical angles
   void ConvertAndSortScanLines();
-
-  // Create a correspondance map between laser id and laser vertical angle
-  void UpdateLaserIdMapping(vtkTable* calib);
 
   // Compute the curvature of the scan lines
   // The curvature is not the one of the surface
@@ -107,13 +99,6 @@ protected:
 
   // Labelizes point to be a keypoints or not
   void SetKeyPointsLabels();
-
-  // Add some debug array
-  template<typename T, typename Tvtk>
-  void AddVectorToPolydataPoints(const std::vector<std::vector<T>>& vec, const char* name, vtkPolyData* pd);
-  void DisplayLaserIdMapping(vtkSmartPointer<vtkPolyData> input);
-  void DisplayRelAdv(vtkSmartPointer<vtkPolyData> input);
-
 
   // with of the neighbor used to compute discrete
   // differential operators
@@ -155,35 +140,26 @@ protected:
 
   // Curvature and over differntial operations
   // scan by scan; point by point
-  std::vector<std::vector<double> > Angles;
-  std::vector<std::vector<double> > DepthGap;
-  std::vector<std::vector<double> > SaillantPoint;
-  std::vector<std::vector<double> > IntensityGap;
-  std::vector<std::vector<int> > IsPointValid;
-  std::vector<std::vector<int> > Label;
+  std::vector<std::vector<double>> Angles;
+  std::vector<std::vector<double>> DepthGap;
+  std::vector<std::vector<double>> SaillantPoint;
+  std::vector<std::vector<double>> IntensityGap;
+  std::vector<std::vector<double>> IsPointValid;
+  std::vector<std::vector<double>> Label;
 
   // Mapping between keypoints and their corresponding
   // index in the vtk input frame
-  std::vector<std::pair<int, int> > EdgesIndex;
-  std::vector<std::pair<int, int> > PlanarIndex;
-  std::vector<std::pair<int, int> > BlobIndex;
+  std::vector<std::pair<int, int>> EdgesIndex;
+  std::vector<std::pair<int, int>> PlanarIndex;
+  std::vector<std::pair<int, int>> BlobIndex;
 
   pcl::PointCloud<Point>::Ptr EdgesPoints;
   pcl::PointCloud<Point>::Ptr PlanarsPoints;
   pcl::PointCloud<Point>::Ptr BlobsPoints;
 
-  // Current point cloud stored in two differents
-  // formats: PCL-pointcloud and vtkPolyData
-  vtkSmartPointer<vtkPolyData> Frame;
+  // Current point cloud stored in two differents formats
   pcl::PointCloud<Point>::Ptr pclCurrentFrame;
-
   std::vector<pcl::PointCloud<Point>::Ptr> pclCurrentFrameByScan;
-  std::vector<std::pair<int, int> > FromVTKtoPCLMapping;
-  std::vector<std::vector<int > > FromPCLtoVTKMapping;
-
-private:
-  vtkRotatingKeyPointsExtractor(const vtkRotatingKeyPointsExtractor&) = delete;
-  void operator = (const vtkRotatingKeyPointsExtractor&) = delete;
 };
 
-#endif // VTKROTATINGKEYPOINTSEXTRACTOR_H
+#endif // SpinningSensorKeypointExtractor_H
