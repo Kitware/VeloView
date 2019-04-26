@@ -17,6 +17,7 @@
 
 #include <vtkDataObjectAlgorithm.h>
 #include <vtkPolyData.h>
+#include <chrono>
 
 #include "LASFileWriter.h"
 
@@ -111,6 +112,9 @@ private:
   // This Offset must be applied to the coordinates of the points inside the
   // vtkPolyData in order to find their correct position.
   double Offset[3]; // TODO: decide if should be named "Origin"
+
+  std::chrono::steady_clock::time_point Start;
+  std::chrono::steady_clock::time_point End;
 
   int PolyFirstPass(vtkPolyData *polyData);
   int PolySecondPass(vtkPolyData *polyData);

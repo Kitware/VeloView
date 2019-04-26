@@ -192,6 +192,7 @@ int vtkLASFileWriter::RequestData(vtkInformation *request,
     std::cout << "Setting CONTINUE_EXECUTING" << std::endl;
 #endif
     request->Set(vtkStreamingDemandDrivenPipeline::CONTINUE_EXECUTING(), 1);
+    this->Start = std::chrono::steady_clock::now();
   }
 
   vtkInformation *inInfo = inputVector[0]->GetInformationObject(0);
@@ -224,6 +225,11 @@ int vtkLASFileWriter::RequestData(vtkInformation *request,
     if (this->CurrentPass == this->PassCount - 1)
     {
       request->Remove(vtkStreamingDemandDrivenPipeline::CONTINUE_EXECUTING());
+      this->End = std::chrono::steady_clock::now();
+      double dt = 1e-6 * std::chrono::duration_cast<std::chrono::microseconds>(this->End - this->Start).count();
+#ifdef DEBUG_VTKLASFILEWRITER
+      std::cout << "Exported LAS in " << dt << " seconds" << std::endl;
+#endif
     }
     else
     {
