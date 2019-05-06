@@ -23,6 +23,7 @@
 
 // VTK
 #include <vtkPoints.h>
+#include <vtkPolyData.h>
 #include <vtkSmartPointer.h>
 #include <vtkTransform.h>
 

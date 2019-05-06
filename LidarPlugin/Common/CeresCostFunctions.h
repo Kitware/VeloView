@@ -636,7 +636,7 @@ private:
 *
 * Let's t in R be the current time
 * Let's X be the position of the sensor 1 at time t
-* Met's Y be the position of the sensor 2 at time t
+* Let's Y be the position of the sensor 2 at time t
 *
 * We want to estimate R0 in SO(3) and T0 in R^3 such that
 * Y = RX + T
@@ -683,6 +683,87 @@ public:
              -sry,               srx*cry,               crx*cry;
 
     Eigen::Matrix<T, 3, 1> L = R0 * Xj + dX - Yj;
+    T squaredResidual = (L.transpose() * L)(0);
+
+    // since t -> sqrt(t) is not differentiable
+    // in 0, we check the value of the distance
+    // infenitesimale part. If it is not finite
+    // it means that the first order derivative
+    // has been evaluated in 0
+    if (squaredResidual < T(1e-6))
+    {
+      residual[0] = T(0);
+    }
+    else
+    {
+      residual[0] = ceres::sqrt(squaredResidual);
+    }
+
+    return true;
+  }
+
+private:
+  Eigen::Vector3d X, Y;
+};
+
+/**
+* \class SimilitudeResidual
+* \brief Cost function to minimize to estimate the rotation, translation and scale
+*        between that maps a set of input points to output points
+*
+* Let's X be an input point
+* Met's Y be an out put point
+*
+* We want to estimate R in SO(3) and T in R^3 and S in R^3 such that
+* Y = diag(S) * (RX + T)
+*
+* This lead to a non-linear least square problem that can be solved using a
+* levenberg-marquardt algorithm. The non-linearity comes from R belonging to
+* SO(3) manifold. We estimate R using the Euler-Angle mapping between R^3 and SO(3)
+* R(rx, ry, rz) = Rz(rz) * Ry(ry) * Rx(rx)
+*/
+//-----------------------------------------------------------------------------
+struct SimilitudeResidual
+{
+public:
+  SimilitudeResidual(const Eigen::Vector3d& argX, const Eigen::Vector3d& argY)
+  {
+    this->X = argX;
+    this->Y = argY;
+  }
+
+  // w = [rx, ry, rz, tx, ty, tz]
+  template <typename T>
+  bool operator()(const T* const w, T* residual) const
+  {
+    // Convert internal double matrix
+    // to a Jet matrix for auto diff calculous
+    Eigen::Matrix<T, 3, 1> Xj, Yj;
+    for (int i = 0; i < 3; ++i)
+    {
+      Xj(i) = T(this->X(i));
+      Yj(i) = T(this->Y(i));
+    }
+
+    Eigen::Matrix<T, 3, 1> dX;
+    dX << T(w[3]), T(w[4]), T(w[5]);
+
+    // store sin / cos values for this angle
+    T crx = ceres::cos(w[0]); T srx = ceres::sin(w[0]);
+    T cry = ceres::cos(w[1]); T sry = ceres::sin(w[1]);
+    T crz = ceres::cos(w[2]); T srz = ceres::sin(w[2]);
+
+    // Create current rotation
+    Eigen::Matrix<T, 3, 3> R0;
+    R0 << cry*crz, (srx*sry*crz-crx*srz), (crx*sry*crz+srx*srz),
+          cry*srz, (srx*sry*srz+crx*crz), (crx*sry*srz-srx*crz),
+             -sry,               srx*cry,               crx*cry;
+
+    // Create scale matrix
+    Eigen::Matrix<T, 3, 3> S = Eigen::Matrix<T, 3, 3>::Zero();
+    S(0, 0) = w[6]; S(1, 1) = w[7]; S(2, 2) = w[8];
+
+    Eigen::Matrix<T, 3, 1> L = S * (R0 * Xj + dX) - Yj;
     T squaredResidual = (L.transpose() * L)(0);
 
     // since t -> sqrt(t) is not differentiable
