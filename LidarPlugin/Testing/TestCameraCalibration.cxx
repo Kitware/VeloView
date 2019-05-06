@@ -1,4 +1,5 @@
-#include "vtkCameraCalibration.h"
+#include "CameraCalibration.h"
+#include "CameraProjection.h"
 #include "vtkEigenTools.h"
 
 #include <Eigen/Dense>

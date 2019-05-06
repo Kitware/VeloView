@@ -17,8 +17,8 @@
 // limitations under the License.
 //=========================================================================
 
-#ifndef VTK_CAMERA_CALIBRATION_H
-#define VTK_CAMERA_CALIBRATION_H
+#ifndef CAMERA_CALIBRATION_H
+#define CAMERA_CALIBRATION_H
 
 // STD
 #include <string>
@@ -27,7 +27,16 @@
 // EIGEN
 #include <Eigen/Dense>
 
-void LoadCameraParamsFromCSV(std::string filename, Eigen::VectorXd& W);
+/**
+   * @brief LoadMatchesFromCSV Load 2D - 3D matches from a .csv file. These matches are
+   *        then used to estimate the geometric and optic calibration of the camera. The
+   *        optic (or intrinsic) parameters of the camera will be estimated according to
+   *        the chosen camera model
+   *
+   * @param filename csv file containing the matches
+   * @param X 3D keypoints associated to the 2D keypoints
+   * @param x 2D keypoints associated to the 3D keypoints
+   */
 void LoadMatchesFromCSV(std::string filename, std::vector<Eigen::Vector3d>& X, std::vector<Eigen::Vector2d>& x);
 
 /**
@@ -103,18 +112,15 @@ void CalibrationMatrixDecomposition(const Eigen::Matrix<double, 3, 4>& P, Eigen:
    * @param W pinhole model parameters
    */
 void GetParametersFromMatrix(const Eigen::Matrix3d& K, const Eigen::Matrix3d& R, const Eigen::Vector3d& T, Eigen::Matrix<double, 11, 1>& W);
+
+/**
+   * @brief GetMatrixFromParameters Compose the pinhole camera model
+   *        projection matrox from the parameters
+   *
+   * @param W pinhole model parameters
+   * @param P camera projection matrix
+   */
 void GetMatrixFromParameters(const Eigen::Matrix<double, 11, 1>& W, Eigen::Matrix<double, 3, 4>& P);
 Eigen::Matrix<double, 3, 4> GetMatrixFromParameters(const Eigen::Matrix<double, 11, 1>& W);
 
-/**
-   * @brief FisheyeProjection Project a 3D point using a fisheye camera model
-   *        the projected 2D points will be expressed in pixel coordinates
-   *
-   * @param W fisheye camera model parameters
-   * @param X 3D point to project
-   * @param T position of the camera (extrinsic parameters)
-   * @param W pinhole model parameters
-   */
-Eigen::Vector2d FisheyeProjection(const Eigen::Matrix<double, 15, 1>& W, const Eigen::Vector3d& X);
-
-#endif // VTK_CAMERA_CALIBRATION_H
+#endif // CAMERA_CALIBRATION_H
