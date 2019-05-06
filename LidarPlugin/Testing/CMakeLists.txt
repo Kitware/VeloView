@@ -42,7 +42,7 @@ target_link_libraries(TestVtkEigenTools LidarPlugin)
 
 if (ENABLE_Ceres)
   add_executable(TestCameraCalibration TestCameraCalibration.cxx)
-  target_link_libraries(TestCameraCalibration VelodyneHDLPlugin)
+  target_link_libraries(TestCameraCalibration LidarPlugin)
 endif (ENABLE_Ceres)
 
 if (ENABLE_PCL AND ENABLE_Ceres)
