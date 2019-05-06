@@ -1,6 +1,7 @@
 //=========================================================================
 //
 // Copyright 2019 Kitware, Inc.
+// Author: Guilbert Pierre (spguilbert@gmail.com)
 // Data: 01-23-2019
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -39,7 +40,10 @@
 
 //----------------------------------------------------------------------------
 std::pair<double, AnglePositionVector> EstimateCalibrationFromPoses(const std::string& sourceSensorFilename,
-                                                                    const std::string& targetSensorFilename)
+                                                                    const std::string& targetSensorFilename,
+                                                                    const double timeScaleAnalysisBound,
+                                                                    const double timeScaleAnalysisStep,
+                                                                    const double timeStep)
 {
   vtkSmartPointer<vtkTemporalTransforms> trans1, trans2;
   trans1 = vtkTemporalTransformsReader::OpenTemporalTransforms(sourceSensorFilename);
@@ -50,13 +54,11 @@ std::pair<double, AnglePositionVector> EstimateCalibrationFromPoses(const std::s
 //----------------------------------------------------------------------------
 std::pair<double, AnglePositionVector> EstimateCalibrationFromPoses(
                                               vtkSmartPointer<vtkTemporalTransforms> sourceSensor,
-                                              vtkSmartPointer<vtkTemporalTransforms> targetSensor)
+                                              vtkSmartPointer<vtkTemporalTransforms> targetSensor,
+                                              const double timeScaleAnalysisBound,
+                                              const double timeScaleAnalysisStep,
+                                              const double timeStep)
 {
-  // Multi resolution time analysis parameters
-  const double multipleScaleTimeBound = 5.0; // in seconds
-  const double deltaScaleTime = 0.2; // in seconds
-  const double timeStep = 0.4; // in seconds
-
   Eigen::Matrix3d P1, P2, Q1, Q2;
   Eigen::Vector3d U1, U2, V1, V2;
 
@@ -82,10 +84,10 @@ std::pair<double, AnglePositionVector> EstimateCalibrationFromPoses(
   ceres::Problem problem;
 
   // Loop over the time index
-  for (double time = tmin + multipleScaleTimeBound; time < tmax - multipleScaleTimeBound; time += timeStep)
+  for (double time = tmin + timeScaleAnalysisBound; time < tmax - timeScaleAnalysisBound; time += timeStep)
   {
     // Loop over the deltaTime multi-resolution "solid-system" assumption constraint
-    for (double dt = 0; dt <= multipleScaleTimeBound;  dt += deltaScaleTime)
+    for (double dt = 0; dt <= timeScaleAnalysisBound;  dt += timeScaleAnalysisStep)
     {
       // The two time positions that will be used to express
       // the solid-system geometric constraints that link
@@ -138,7 +140,10 @@ std::pair<double, AnglePositionVector> EstimateCalibrationFromPoses(
 //----------------------------------------------------------------------------
 vtkSmartPointer<vtkTemporalTransforms> EstimateCalibrationFromPosesAndApply(
                                             vtkSmartPointer<vtkTemporalTransforms> sourceSensor,
-                                            vtkSmartPointer<vtkTemporalTransforms> targetSensor)
+                                            vtkSmartPointer<vtkTemporalTransforms> targetSensor,
+                                            const double timeScaleAnalysisBound,
+                                            const double timeScaleAnalysisStep,
+                                            const double timeStep)
 {
   // Estimate the cycloidic transform that match the source trajectory on the target one
   std::pair<double, AnglePositionVector> estimation = EstimateCalibrationFromPoses(sourceSensor, targetSensor);
