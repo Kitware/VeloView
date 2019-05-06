@@ -176,6 +176,11 @@ int vtkLASFileWriter::RequestData(vtkInformation *request,
                                   vtkInformationVector **inputVector,
                                   vtkInformationVector *vtkNotUsed(outputVector))
 {
+  const int framesPerPass = (this->LastFrame - this->FirstFrame + 1);
+  const int stepsToDo = (this->SkipMetaDataPass ? 1 : 2) * framesPerPass;
+  const int actualPass = this->SkipMetaDataPass ? this->CurrentPass - 1 : this->CurrentPass;
+  const int stepsDone = actualPass * framesPerPass + (this->CurrentFrame - this->FirstFrame);
+  this->UpdateProgress(static_cast<double>(stepsDone) / static_cast<double>(stepsToDo));
 #ifdef DEBUG_VTKLASFILEWRITER
   std::cout << "vtkLASFileWriter::RequestData"
             << " pass: " << this->CurrentPass
