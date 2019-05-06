@@ -1,6 +1,7 @@
 //=========================================================================
 //
 // Copyright 2019 Kitware, Inc.
+// Author: Guilbert Pierre (spguilbert@gmail.com)
 // Data: 01-23-2019
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -114,20 +115,46 @@ void EstimateEulerAngleConvention(const std::string& sourceSensorFilename,
 *        calibration of two sensors using the 'solid-system"
 *        assumption and the poses trajectories of these two
 *        sensors.
+*
 *        The geometric calibration is the pose of the sensor source
 *        according to the sensor target reference frame
 *
+*        Note that the "solid-system" geometric contraint is
+*        described using relative reference frame of the sensors
+*        between two acquisitions time. This is to avoid that poses
+*        providers such as SLAM or odometry result in poor geometric
+*        calibration due to drift over time effect.
+*
+*        Hence, for an acquisition time t, the geometric contraints
+*        will be derived using two time of acquisition that are close
+*        to t, let's say t - dt and t + dt. For a same acquisition time
+*        t, we can use different time resolution dt to have a multiple
+*        scale analysis.
+*
 * \@param targetSensor Poses trajectory of the first sensor
 * \@param sourceSensor Poses trajectory of the second sensor
+* \@param timeScaleAnalysisBound multiple scale analysis boundary
+* \@param timeScaleAnalysisStep Step between two consecutive scale analysis
+* \@param timeStep time step between two consecutives acquisitions time
+*                  to derived the "solid-system" equations
 */
 std::pair<double, AnglePositionVector> EstimateCalibrationFromPoses(
                                             vtkSmartPointer<vtkTemporalTransforms> sourceSensor,
-                                            vtkSmartPointer<vtkTemporalTransforms> targetSensor);
+                                            vtkSmartPointer<vtkTemporalTransforms> targetSensor,
+                                            const double timeScaleAnalysisBound = 5.0,
+                                            const double timeScaleAnalysisStep = 0.2,
+                                            const double timeStep = 0.4);
 std::pair<double, AnglePositionVector> EstimateCalibrationFromPoses(const std::string& sourceSensorFilename,
-                                                                    const std::string& targetSensorFilename);
+                                                                    const std::string& targetSensorFilename,
+                                                                    const double timeScaleAnalysisBound = 5.0,
+                                                                    const double timeScaleAnalysisStep = 0.2,
+                                                                    const double timeStep = 0.4);
 vtkSmartPointer<vtkTemporalTransforms> EstimateCalibrationFromPosesAndApply(
                                             vtkSmartPointer<vtkTemporalTransforms> sourceSensor,
-                                            vtkSmartPointer<vtkTemporalTransforms> targetSensor);
+                                            vtkSmartPointer<vtkTemporalTransforms> targetSensor,
+                                            const double timeScaleAnalysisBound = 5.0,
+                                            const double timeScaleAnalysisStep = 0.2,
+                                            const double timeStep = 0.4);
 
 /**
 * \function MatchTrajectoriesWithIsometry

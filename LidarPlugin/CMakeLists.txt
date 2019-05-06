@@ -218,6 +218,7 @@ list(APPEND servermanager_sources
 
 if (ENABLE_Ceres)
   list(APPEND servermanager_sources
+    ${CMAKE_CURRENT_SOURCE_DIR}/Filter/CalibrationFromPoses/vtkCalibrationFromPoses.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/Filter/TemporalTransformsRemapper/vtkTemporalTransformsRemapper.cxx
     )
 endif(ENABLE_Ceres)
@@ -267,6 +268,12 @@ if (ENABLE_PCL)
     xml/PCLRansacModel.xml
     )
 endif(ENABLE_PCL)
+
+if (ENABLE_Ceres)
+  list(APPEND servermanager_xml
+    xml/CalibrationFromPoses.xml
+    )
+endif(ENABLE_Ceres)
 
 if (ENABLE_PCL AND ENABLE_Ceres AND ENABLE_NANOFLANN)
   list(APPEND servermanager_xml
@@ -345,6 +352,7 @@ set(plugin_include_dirs
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/GPS-IMU/Velodyne
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/GPS-IMU/Common
   ${CMAKE_CURRENT_SOURCE_DIR}/IO
+  ${CMAKE_CURRENT_SOURCE_DIR}/Filter/CalibrationFromPoses
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/MotionDetector
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/BirdEyeViewSnap
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/FishEyeProjector

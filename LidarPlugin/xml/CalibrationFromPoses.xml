@@ -1,0 +1,70 @@
+<ServerManagerConfiguration>
+  <!-- Begin CalibrationFromPoses -->
+  <ProxyGroup name="filters">
+    <SourceProxy name="CalibrationFromPoses" class="vtkCalibrationFromPoses" label="CalibrationFromPoses">
+      <Documentation
+        short_help="Estimate calibration between two sensors using their poses over time"
+        long_help="Estimate calibration between two sensors using their poses over time">
+        Estimate calibration between two sensors using their poses over time
+      </Documentation>
+
+       <InputProperty
+         name="reference"
+         port_index="0"
+         command="SetInputConnection">
+        <DataTypeDomain name="input_type">
+          <DataType value="vtkPolyData"/>
+        </DataTypeDomain>
+        <Documentation>
+          Set the input reference poses
+        </Documentation>
+      </InputProperty>
+
+      <InputProperty
+         name="to calibrate"
+         port_index="1"
+         command="SetInputConnection">
+        <DataTypeDomain name="input_type">
+          <DataType value="vtkPolyData"/>
+        </DataTypeDomain>
+        <Documentation>
+          Set the input to calibrate poses
+        </Documentation>
+      </InputProperty>
+
+      <DoubleVectorProperty
+          name="Time Step"
+          command="SetTimeStep"
+          default_values="0.4"
+          number_of_elements="1">
+        <Documentation>
+          Time step between two acquisition times to add a residual
+          function derived from the "solid-system" using relative reference
+          frames equations
+        </Documentation>
+      </DoubleVectorProperty>
+
+      <DoubleVectorProperty
+          name="Time Scale Analysis Bound"
+          command="SetTimeScaleAnalysisBound"
+          default_values="5.0"
+          number_of_elements="1">
+        <Documentation>
+          Maximum time scale used for the multiple scale analysis
+        </Documentation>
+      </DoubleVectorProperty>
+
+     <DoubleVectorProperty
+          name="Time Scale Analysis Step"
+          command="SetTimeScaleAnalysisStep"
+          default_values="0.2"
+          number_of_elements="1">
+        <Documentation>
+          step between two consecutives scale
+        </Documentation>
+      </DoubleVectorProperty>
+
+    </SourceProxy>
+  </ProxyGroup>
+  <!-- End CalibrationFromPoses -->
+</ServerManagerConfiguration>
