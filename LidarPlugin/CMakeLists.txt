@@ -204,6 +204,7 @@ list(APPEND servermanager_sources
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/vtkLASFileWriter.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/MotionDetector/vtkMotionDetector.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/BirdEyeViewSnap/vtkBirdEyeViewSnap.cxx
+  ${CMAKE_CURRENT_SOURCE_DIR}/Filter/FishEyeProjector/vtkFishEyeProjector.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/LidarRawSignalImage/vtkLidarRawSignalImage.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/PointCloudLinearProjector/vtkPointCloudLinearProjector.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/LaplacianInfilling/vtkLaplacianInfilling.cxx
@@ -252,6 +253,7 @@ list(APPEND servermanager_xml
   xml/RansacPlaneModel.xml
   xml/TrailingFrame.xml
   xml/ProcessingSample.xml
+  xml/FishEyeProjector.xml
   xml/GridSource.xml
   xml/TemporalTransformsReader.xml
   xml/TemporalTransformsWriter.xml
@@ -296,6 +298,7 @@ set(sources_which_do_not_inherit_from_vtkObject
   ${CMAKE_CURRENT_SOURCE_DIR}/Common/Network/vtkPacketFileWriter.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/Common/Network/vvPacketSender.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/Common/vtkEigenTools.cxx
+  ${CMAKE_CURRENT_SOURCE_DIR}/Common/CameraProjection.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/${interpolator_pach_until_vtk_update}
   ${CMAKE_CURRENT_SOURCE_DIR}/Common/vtkConversions.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/Common/Calib/Temporal/vtkTimeCalibration.cxx
@@ -309,7 +312,7 @@ endif(ENABLE_PCL)
 if (ENABLE_Ceres)
   list(APPEND sources_which_do_not_inherit_from_vtkObject
       ${CMAKE_CURRENT_SOURCE_DIR}/Common/Calib/Geometric/vtkGeometricCalibration.cxx
-      ${CMAKE_CURRENT_SOURCE_DIR}/Common/Calib/Camera/vtkCameraCalibration.cxx
+      ${CMAKE_CURRENT_SOURCE_DIR}/Common/Calib/Camera/CameraCalibration.cxx
       )
 endif (ENABLE_Ceres)
 
@@ -344,6 +347,7 @@ set(plugin_include_dirs
   ${CMAKE_CURRENT_SOURCE_DIR}/IO
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/MotionDetector
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/BirdEyeViewSnap
+  ${CMAKE_CURRENT_SOURCE_DIR}/Filter/FishEyeProjector
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/LidarRawSignalImage
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/PointCloudLinearProjector
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/LaplacianInfilling
