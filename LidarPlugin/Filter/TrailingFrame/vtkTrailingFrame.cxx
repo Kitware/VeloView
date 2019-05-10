@@ -56,6 +56,20 @@ int vtkTrailingFrame::RequestUpdateExtent(vtkInformation* vtkNotUsed(request),
     this->TimeSteps.assign(time_steps, time_steps + nb_time_steps);
   }
 
+  // If the TimeSteps size is still zero, it means
+  // that no time_steps has been filled by the reader /
+  // stream. Hence, either no lidar data was stored in the
+  // .pcap or received throught ethernet
+  if (this->TimeSteps.size() == 0)
+  {
+    vtkGenericWarningMacro("no time steps are enabled.\n If you are in playback mode"
+                           << " it means that no lidar data was present in the .pcap file"
+                           << " or LidarView was not able to parse it.\n If you are in"
+                           << " stream mode, it means that no data have been received throught"
+                           << " ethernet or LidarView was not able to parse it");
+    return 1;
+  }
+
   // first loop
   if (this->FirstFilterIteration)
   {
@@ -132,6 +146,17 @@ int vtkTrailingFrame::RequestData(vtkInformation* request,
   vtkPolyData* input = vtkPolyData::GetData(inputVector[0],0);
   vtkInformation *inInfo = inputVector[0]->GetInformationObject(0);
   vtkMultiBlockDataSet* output = vtkMultiBlockDataSet::GetData(outputVector);
+
+  // If the TimeSteps size is still zero, it means
+  // that no time_steps has been filled by the reader /
+  // stream. Hence, either no lidar data was stored in the
+  // .pcap or received throught ethernet
+  if (this->TimeSteps.size() == 0)
+  {
+    // Stop the pipeline loop
+    request->Remove(vtkStreamingDemandDrivenPipeline::CONTINUE_EXECUTING());
+    return 1;
+  }
 
   if ((this->LastTimeProcessedIndex == this->CacheTimeRange[0] && this->Direction == -1)
       || (this->LastTimeProcessedIndex == this->CacheTimeRange[1]-1 && this->Direction == 1))
