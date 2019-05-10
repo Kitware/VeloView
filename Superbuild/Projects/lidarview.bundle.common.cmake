@@ -48,8 +48,10 @@ message(STATUS "Bundled package name will be: ${CPACK_PACKAGE_FILE_NAME}" )
 # Set the license file.
 set(CPACK_RESOURCE_FILE_LICENSE "${LidarViewSuperBuild_SOURCE_DIR}/LICENSE")
 
-set(lidarview_executables
-	${SOFTWARE_NAME})
+list(APPEND lidarview_executables
+	"${SOFTWARE_NAME}"
+	"PacketFileSender"
+	)
 
 
 if (qt5_enabled)
