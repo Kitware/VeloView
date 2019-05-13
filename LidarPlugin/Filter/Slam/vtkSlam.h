@@ -2,7 +2,7 @@
 //
 // Copyright 2018 Kitware, Inc.
 // Author: Guilbert Pierre (spguilbert@gmail.com)
-// Data: 03-27-2018
+// Date: 03-27-2018
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -71,27 +71,19 @@
 #ifndef VTK_SLAM_H
 #define VTK_SLAM_H
 
-// LOCAL
 #include "vtkPCLConversions.h"
-#include "KDTreePCLAdaptor.h"
-// STD
-#include <string>
-#include <ctime>
-// VTK
+
+
 #include <vtkPolyDataAlgorithm.h>
 #include <vtkSmartPointer.h>
-#include <vtkNew.h>
-// EIGEN
-#include <Eigen/Dense>
-// PCL
-#include <pcl/point_types.h>
-#include <pcl/filters/voxel_grid.h>
-#include <pcl/kdtree/kdtree_flann.h>
 
+#include <Eigen/Dense>
+
+#include "Slam.h"
 #include "KalmanFilter.h"
 #include "vtkTemporalTransforms.h"
 
-class vtkRotatingKeyPointsExtractor;
+
 
 // This custom macro is needed to make the SlamManager time agnostic
 // The SlamManager need to know when RequestData is call, if it's due
@@ -103,60 +95,48 @@ class vtkRotatingKeyPointsExtractor;
 virtual void Set##name (type _arg) \
 { \
   vtkDebugMacro(<< this->GetClassName() << " (" << this << "): setting " #name " to " << _arg); \
-  if (this->name != _arg) \
+  if (this->SlamAlgo.Get##name() != _arg) \
   { \
-    this->name = _arg; \
+    this->SlamAlgo.Set##name(_arg); \
     this->Modified(); \
     this->ParametersModificationTime.Modified(); \
   } \
 }
 
-class vtkCustomTransformInterpolator;
-class RollingGrid;
-class vtkTable;
-typedef pcl::PointXYZINormal Point;
+#define vtkCustomGetMacro(name,type) \
+virtual type Get##name () { \
+  vtkDebugMacro(<< this->GetClassName() << " (" << this << "): returning " << #name " of " << this->name ); \
+  return this->SlamAlgo.Get##name(); \
+}
 
-enum MatchingMode
-{
-  EgoMotion = 0,
-  Mapping = 1
-};
+class vtkSpinningSensorKeypointExtractor;
+class vtkTable;
 
 class VTK_EXPORT vtkSlam : public vtkPolyDataAlgorithm
 {
 public:
-  // vtkPolyDataAlgorithm functions
   static vtkSlam *New();
-  vtkTypeMacro(vtkSlam, vtkPolyDataAlgorithm);
+  vtkTypeMacro(vtkSlam, vtkPolyDataAlgorithm)
   void PrintSelf(ostream& os, vtkIndent indent);
-
-  // Add a new frame to process to the slam algorithm
-  // From this frame; keypoints will be computed and extracted
-  // in order to recover the ego-motion of the lidar sensor
-  // and to update the map using keypoints and ego-motion
-  void AddFrame(vtkPolyData* newFrame);
-
-  // Get the computed world transform so far
-  void GetWorldTransform(double* Tworld);
 
   // Get/Set General
   vtkGetMacro(DisplayMode, bool)
-  vtkCustomSetMacro(DisplayMode, bool)
+  vtkSetMacro(DisplayMode, bool)
 
-  vtkGetMacro(MaxDistBetweenTwoFrames, double)
+  vtkCustomGetMacro(MaxDistBetweenTwoFrames, double)
   vtkCustomSetMacro(MaxDistBetweenTwoFrames, double)
 
-  vtkGetMacro(MaxDistanceForICPMatching, double)
+  vtkCustomGetMacro(MaxDistanceForICPMatching, double)
   vtkCustomSetMacro(MaxDistanceForICPMatching, double)
 
-  vtkGetMacro(FastSlam, bool)
+  vtkCustomGetMacro(FastSlam, bool)
   vtkCustomSetMacro(FastSlam, bool)
 
-  vtkSetMacro(Undistortion, bool)
-  vtkGetMacro(Undistortion, bool)
+//  vtkGetMacro(Undistortion, bool)
+//  vtkCustomSetMacro(Undistortion, bool)
 
-  vtkGetObjectMacro(KeyPointsExtractor, vtkRotatingKeyPointsExtractor)
-  virtual void SetKeyPointsExtractor(vtkRotatingKeyPointsExtractor *);
+  vtkGetObjectMacro(KeyPointsExtractor, vtkSpinningSensorKeypointExtractor)
+  virtual void SetKeyPointsExtractor(vtkSpinningSensorKeypointExtractor *);
 
   // Set RollingGrid Parameters
   void SetVoxelGridLeafSizeEdges(double size);
@@ -166,75 +146,73 @@ public:
   void SetVoxelGridResolution(double resolution);
 
   // Get/Set EgoMotion
-  vtkGetMacro(EgoMotionLMMaxIter, unsigned int)
+  vtkCustomGetMacro(EgoMotionLMMaxIter, unsigned int)
   vtkCustomSetMacro(EgoMotionLMMaxIter, unsigned int)
 
-  vtkGetMacro(EgoMotionICPMaxIter, unsigned int)
+  vtkCustomGetMacro(EgoMotionICPMaxIter, unsigned int)
   vtkCustomSetMacro(EgoMotionICPMaxIter, unsigned int)
 
-  vtkGetMacro(EgoMotionLineDistanceNbrNeighbors, unsigned int)
+  vtkCustomGetMacro(EgoMotionLineDistanceNbrNeighbors, unsigned int)
   vtkCustomSetMacro(EgoMotionLineDistanceNbrNeighbors, unsigned int)
 
-  vtkGetMacro(EgoMotionMinimumLineNeighborRejection, unsigned int)
+  vtkCustomGetMacro(EgoMotionMinimumLineNeighborRejection, unsigned int)
   vtkCustomSetMacro(EgoMotionMinimumLineNeighborRejection, unsigned int)
 
-  vtkGetMacro(EgoMotionLineDistancefactor, double)
+  vtkCustomGetMacro(EgoMotionLineDistancefactor, double)
   vtkCustomSetMacro(EgoMotionLineDistancefactor, double)
 
-  vtkGetMacro(EgoMotionPlaneDistanceNbrNeighbors, unsigned int)
+  vtkCustomGetMacro(EgoMotionPlaneDistanceNbrNeighbors, unsigned int)
   vtkCustomSetMacro(EgoMotionPlaneDistanceNbrNeighbors, unsigned int)
 
-  vtkGetMacro(EgoMotionPlaneDistancefactor1, double)
+  vtkCustomGetMacro(EgoMotionPlaneDistancefactor1, double)
   vtkCustomSetMacro(EgoMotionPlaneDistancefactor1, double)
 
-  vtkGetMacro(EgoMotionPlaneDistancefactor2, double)
+  vtkCustomGetMacro(EgoMotionPlaneDistancefactor2, double)
   vtkCustomSetMacro(EgoMotionPlaneDistancefactor2, double)
 
-  vtkGetMacro(EgoMotionMaxLineDistance, double)
+  vtkCustomGetMacro(EgoMotionMaxLineDistance, double)
   vtkCustomSetMacro(EgoMotionMaxLineDistance, double)
 
-  vtkGetMacro(EgoMotionMaxPlaneDistance, double)
+  vtkCustomGetMacro(EgoMotionMaxPlaneDistance, double)
   vtkCustomSetMacro(EgoMotionMaxPlaneDistance, double)
 
   // Get/Set Mapping
-  vtkGetMacro(MappingLMMaxIter, unsigned int)
+  vtkCustomGetMacro(MappingLMMaxIter, unsigned int)
   vtkCustomSetMacro(MappingLMMaxIter, unsigned int)
 
-  vtkGetMacro(MappingICPMaxIter, unsigned int)
+  vtkCustomGetMacro(MappingICPMaxIter, unsigned int)
   vtkCustomSetMacro(MappingICPMaxIter, unsigned int)
 
-  vtkGetMacro(MappingLineDistanceNbrNeighbors, unsigned int)
+  vtkCustomGetMacro(MappingLineDistanceNbrNeighbors, unsigned int)
   vtkCustomSetMacro(MappingLineDistanceNbrNeighbors, unsigned int)
 
-  vtkGetMacro(MappingMinimumLineNeighborRejection, unsigned int)
+  vtkCustomGetMacro(MappingMinimumLineNeighborRejection, unsigned int)
   vtkCustomSetMacro(MappingMinimumLineNeighborRejection, unsigned int)
 
-  vtkGetMacro(MappingLineDistancefactor, double)
+  vtkCustomGetMacro(MappingLineDistancefactor, double)
   vtkCustomSetMacro(MappingLineDistancefactor, double)
 
-  vtkGetMacro(MappingPlaneDistanceNbrNeighbors, unsigned int)
+  vtkCustomGetMacro(MappingPlaneDistanceNbrNeighbors, unsigned int)
   vtkCustomSetMacro(MappingPlaneDistanceNbrNeighbors, unsigned int)
 
-  vtkGetMacro(MappingPlaneDistancefactor1, double)
+  vtkCustomGetMacro(MappingPlaneDistancefactor1, double)
   vtkCustomSetMacro(MappingPlaneDistancefactor1, double)
 
-  vtkGetMacro(MappingPlaneDistancefactor2, double)
+  vtkCustomGetMacro(MappingPlaneDistancefactor2, double)
   vtkCustomSetMacro(MappingPlaneDistancefactor2, double)
 
-  vtkGetMacro(MappingMaxLineDistance, double)
+  vtkCustomGetMacro(MappingMaxLineDistance, double)
   vtkCustomSetMacro(MappingMaxLineDistance, double)
 
-  vtkGetMacro(MappingMaxPlaneDistance, double)
+  vtkCustomGetMacro(MappingMaxPlaneDistance, double)
   vtkCustomSetMacro(MappingMaxPlaneDistance, double)
 
-  vtkGetMacro(MappingLineMaxDistInlier, double)
+  vtkCustomGetMacro(MappingLineMaxDistInlier, double)
   vtkCustomSetMacro(MappingLineMaxDistInlier, double)
 
 protected:
-  // vtkPolyDataAlgorithm functions
   vtkSlam();
   void Reset();
-  ~vtkSlam();
 
   int FillInputPortInformation(int port, vtkInformation* info) override;
   int RequestData(vtkInformation *, vtkInformationVector **, vtkInformationVector *) override;
@@ -244,250 +222,23 @@ protected:
   // MTime is a much more general mecanism so we can't rely on it
   vtkTimeStamp ParametersModificationTime;
 
+  Slam SlamAlgo;
+  vtkSpinningSensorKeypointExtractor* KeyPointsExtractor = nullptr;
+
 private:
-  vtkSlam(const vtkSlam&);
-  void operator = (const vtkSlam&);
+  vtkSlam(const vtkSlam&) = delete;
+  void operator = (const vtkSlam&) = delete;
+
   // Polydata which represents the trajectory computed
   vtkSmartPointer<vtkTemporalTransforms> Trajectory;
 
-  // Current point cloud stored in two differents
-  // formats: PCL-pointcloud and vtkPolyData
-  vtkSmartPointer<vtkPolyData> vtkCurrentFrame;
-
-  // Mapping between keypoints and their corresponding
-  // index in the vtk input frame
-  std::vector<int> EdgePointRejectionEgoMotion;
-  std::vector<int> PlanarPointRejectionEgoMotion;
-  std::vector<int> EdgePointRejectionMapping;
-  std::vector<int> PlanarPointRejectionMapping;
-
-  // If set to true the mapping planars keypoints used
-  // will be the same than the EgoMotion one. If set to false
-  // all points that are not set to invalid will be used
-  // as mapping planars points.
-  bool FastSlam = true;
-
-  // Should the algorithm undistord the frame or not
-  // The undistortion will improve the accuracy but
-  // the computation speed will decrease
-  bool Undistortion = false;
-  vtkSmartPointer<vtkCustomTransformInterpolator> EgoMotionInterpolator;
-  vtkSmartPointer<vtkCustomTransformInterpolator> MappingInterpolator;
-
-  // keypoints extracted
-  pcl::PointCloud<Point>::Ptr CurrentEdgesPoints;
-  pcl::PointCloud<Point>::Ptr CurrentPlanarsPoints;
-  pcl::PointCloud<Point>::Ptr CurrentBlobsPoints;
-  pcl::PointCloud<Point>::Ptr PreviousEdgesPoints;
-  pcl::PointCloud<Point>::Ptr PreviousPlanarsPoints;
-  pcl::PointCloud<Point>::Ptr PreviousBlobsPoints;
-
-  // keypoints local map
-  std::shared_ptr<RollingGrid> EdgesPointsLocalMap;
-  std::shared_ptr<RollingGrid> PlanarPointsLocalMap;
-  std::shared_ptr<RollingGrid> BlobsPointsLocalMap;
-
-  // Number of frame that have been processed
-  unsigned int NbrFrameProcessed = 0;
-
-  // The max distance allowed between two frames
-  // If the distance is over this limit, the ICP
-  // matching will not match point and the odometry
-  // will fail. It has to be setted according to the
-  // maximum speed of the vehicule used
-  // Represent the distance that the lidar has made during one sweep
-  // if it is moving at a speed of 90 km/h and spinning at a rpm
-  // of 600 rotation per minute
-  double MaxDistBetweenTwoFrames = (90.0 / 3.6) * (60.0 / 600.0);
-
-  // Maximum number of iteration
-  // in the ego motion optimization step
-  unsigned int EgoMotionLMMaxIter = 15;
-
-  // Maximum number of iteration
-  // in the mapping optimization step
-  unsigned int MappingLMMaxIter = 15;
-
-  // During the Levenberg-Marquardt algoritm
-  // keypoints will have to be match with planes
-  // and lines of the previous frame. This parameter
-  // indicates how many times we want to do the
-  // the ICP matching
-  unsigned int EgoMotionICPMaxIter = 4;
-  unsigned int MappingICPMaxIter = 3;
-
-  // When computing the point<->line and point<->plane distance
-  // in the ICP, the kNearest edges/planes points of the current
-  // points are selected to approximate the line/plane using a PCA
-  // If the one of the k-nearest points is too far the neigborhood
-  // is rejected. We also make a filter upon the ratio of the eigen
-  // values of the variance-covariance matrix of the neighborhood
-  // to check if the points are distributed upon a line or a plane
-  unsigned int MappingLineDistanceNbrNeighbors = 15;
-  unsigned int MappingMinimumLineNeighborRejection = 4;
-  double MappingLineDistancefactor = 5.0;
-
-  unsigned int MappingPlaneDistanceNbrNeighbors = 5;
-  double MappingPlaneDistancefactor1 = 35.0;
-  double MappingPlaneDistancefactor2 = 8.0;
-
-  double MappingMaxPlaneDistance = 0.2;
-  double MappingMaxLineDistance = 0.2;
-  double MappingLineMaxDistInlier = 0.2;
-
-  unsigned int EgoMotionLineDistanceNbrNeighbors = 8;
-  unsigned int EgoMotionMinimumLineNeighborRejection = 3;
-  double EgoMotionLineDistancefactor = 5.;
-
-  unsigned int EgoMotionPlaneDistanceNbrNeighbors = 5;
-  double EgoMotionPlaneDistancefactor1 = 35.0;
-  double EgoMotionPlaneDistancefactor2 = 8.0;
-
-  double EgoMotionMaxPlaneDistance = 0.2;
-  double EgoMotionMaxLineDistance = 0.2;
-
-  vtkRotatingKeyPointsExtractor* KeyPointsExtractor = nullptr;
-  vtkTable* calib;
-
-  // Use or not blobs
-  bool UseBlob = false;
-
-  // The max distance allowed between two frames
-  // If the distance is over this limit, the ICP
-  // matching will not match point and the odometry
-  // will fail. It has to be setted according to the
-  // maximum speed of the vehicule used
-  double MaxDistanceForICPMatching = 20.0;
-
-  // Transformation to map the current pointcloud
-  // in the referential of the previous one
-  Eigen::Matrix<double, 6, 1> Trelative;
-
-  // Transformation to map the current pointcloud
-  // in the world (i.e first frame) one
-  Eigen::Matrix<double, 6, 1> Tworld = Eigen::Matrix<double, 6, 1>::Zero();
-  Eigen::Matrix<double, 6, 1> PreviousTworld = Eigen::Matrix<double, 6, 1>::Zero();
-
-  // Computed trajectory of the sensor
-  // i.e the list of transforms computed
-  std::vector<Eigen::Matrix<double, 6, 1> > TworldList;
-
-  // To recover the ego-motion we have to minimize the function
-  // f(R, T) = sum(d(point, line)^2) + sum(d(point, plane)^2). In both
-  // case the distance between the point and the line / plane can be
-  // writen (R*X+T - P).t * A * (R*X+T - P). Where X is the key point
-  // P is a point on the line / plane. A = (n*n.t) for a plane with n
-  // being the normal and A = (I - n*n.t)^2 for a line with n being
-  // a director vector of the line
-  // - Avalues will store the A matrix
-  // - Pvalues will store the P points
-  // - Xvalues will store the W points
-  // - residualCoefficient will attenuate the distance function for outliers
-  // - TimeValues store the time acquisition
-  std::vector<Eigen::Matrix3d > Avalues;
-  std::vector<Eigen::Vector3d > Pvalues;
-  std::vector<Eigen::Vector3d > Xvalues;
-  std::vector<double> residualCoefficient;
-  std::vector<double> TimeValues;
-
-  // Histogram of the ICP matching rejection causes
-  std::vector<double> MatchRejectionHistogramPlane;
-  std::vector<double> MatchRejectionHistogramLine;
-  std::vector<double> MatchRejectionHistogramBlob;
-  int NrejectionCauses = 7;
-  void ResetDistanceParameters();
-
-  // Display information about the keypoints - neighborhood
-  // mathching rejections
-  void RejectionInformationDisplay();
-
-  // Add a default point to the trajectories
-  void AddDefaultPoint(double x, double y, double z, double rx, double ry, double rz, double t);
-
-  // Find the ego motion of the sensor between
-  // the current frame and the next one using
-  // the keypoints extracted.
-  void ComputeEgoMotion();
-
-  // Map the position of the sensor from
-  // the current frame in the world referential
-  // using the map and the keypoints extracted.
-  void Mapping();
-
-  // Transform the input point already undistort into Tworld.
-  void TransformToWorld(Point& p);
-
-  // Match the current keypoint with its neighborhood in the map / previous
-  // frames. From this match we compute the point-to-neighborhood distance
-  // function: 
-  // (R * X + T - P).t * A * (R * X + T - P)
-  // Where P is the mean point of the neighborhood and A is the symmetric
-  // variance-covariance matrix encoding the shape of the neighborhood
-  int ComputeLineDistanceParameters(KDTreePCLAdaptor& kdtreePreviousEdges, Eigen::Matrix3d& R,
-                                    Eigen::Vector3d& dT, Point p, MatchingMode matchingMode);
-  int ComputePlaneDistanceParameters(KDTreePCLAdaptor& kdtreePreviousPlanes, Eigen::Matrix3d& R,
-                                     Eigen::Vector3d& dT, Point p, MatchingMode matchingMode);
-  int ComputeBlobsDistanceParameters(pcl::KdTreeFLANN<Point>::Ptr kdtreePreviousBlobs, Eigen::Matrix3d& R,
-                                     Eigen::Vector3d& dT, Point p, MatchingMode matchingMode);
-
-  // Instead of taking the k-nearest neigbors in the odometry
-  // step we will take specific neighbor using the particularities
-  // of the lidar sensor
-  void GetEgoMotionLineSpecificNeighbor(std::vector<int>& nearestValid, std::vector<float>& nearestValidDist,
-                                        unsigned int nearestSearch, KDTreePCLAdaptor& kdtreePreviousEdges, Point p);
-
-  // Instead of taking the k-nearest neighbors in the mapping
-  // step we will take specific neighbor using a sample consensus
-  // model
-  void GetMappingLineSpecificNeigbbor(std::vector<int>& nearestValid, std::vector<float>& nearestValidDist, double maxDistInlier,
-                                        unsigned int nearestSearch, KDTreePCLAdaptor& kdtreePreviousEdges, Point p);
-
-  // All points of the current frame has been
-  // acquired at a different timestamp. The goal
-  // is to express them in a same referential
-  // This can be done using estimated egomotion and assuming
-  // a constant angular velocity and velocity during a sweep
-
-  // Express the provided point into the referential of the sensor
-  // at time t0. The referential at time of acquisition t is estimated
-  // using the constant velocity hypothesis and the provided sensor
-  // position estimation
-  void ExpressPointInOtherReferencial(Point& p, vtkSmartPointer<vtkCustomTransformInterpolator> transform);
-
-  // Initialize the undistortion interpolator
-  // for the EgoMotion part it is just an interpolation
-  // between Id and Trelative
-  // for the mapping part it is an interpolation between indentity
-  // and the incremental transform between TworldPrevious and Tworld
-  vtkSmartPointer<vtkCustomTransformInterpolator> InitUndistortionInterpolatorEgoMotion();
-  vtkSmartPointer<vtkCustomTransformInterpolator> InitUndistortionInterpolatorMapping();
-
-  // Update the world transformation by integrating
-  // the relative motion recover and the previous
-  // world transformation
-  void UpdateTworldUsingTrelative();
-
-  // Fill the information array with default value
-  // it is used if a mapping step is skipped for example
-  void FillMappingInfoArrayWithDefaultValues();
-  void FillEgoMotionInfoArrayWithDefaultValues();
-
-  // Update the maps by populate the rolling grids
-  // using the current keypoints expressed in the
-  // world reference frame coordinate system
-  void UpdateMapsUsingTworld();
-
-  // Set the lidar maximun range
-  void SetLidarMaximunRange(const double maxRange);
+  std::vector<size_t> GetLaserIdMapping(vtkTable *calib);
 
   // Indicate if we are in display mode or not
   // Display mode will add arrays showing some
   // results of the slam algorithm such as
   // the keypoints extracted, curvature etc
   bool DisplayMode = false;
-
-  // Identity matrix
-  Eigen::Matrix3d I3 = Eigen::Matrix3d::Identity();
 };
 
 #endif // VTK_SLAM_H

@@ -70,7 +70,7 @@
         </Documentation>
       </IntVectorProperty>
 
-      <IntVectorProperty
+<!--      <IntVectorProperty
           name="Undistortion Model"
           command="SetUndistortion"
           default_values="0"
@@ -83,12 +83,12 @@
           transform that will be applied to the all frame without taking
           into acocunt the distortion due to the liadr motion during a sweep
         </Documentation>
-      </IntVectorProperty>
+      </IntVectorProperty>-->
 
       <PropertyGroup label="General Parameters">
         <Property name="Display Mode" />
         <Property name="Fast Slam" />
-        <Property name="Undistortion Model" />
+<!--        <Property name="Undistortion Model" />-->
       </PropertyGroup>
 
       <ProxyProperty
@@ -553,9 +553,9 @@
   <!-- Begin KeyPointsExtractor -->
   <ProxyGroup name="KeyPointsExtractor">
     <Proxy
-      name="RotatingKeyPointsExtractor"
-      class="vtkRotatingKeyPointsExtractor"
-      label="RotatingKeyPointsExtractor">
+      name="SpinningSensorKeypointExtractor"
+      class="vtkSpinningSensorKeypointExtractor"
+      label="SpinningSensorKeypointExtractor">
 
       <IntVectorProperty
           name="Neighbor Width"

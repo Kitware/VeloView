@@ -30,10 +30,11 @@
 // NANOFLANN
 #include <nanoflann.hpp>
 
-typedef pcl::PointXYZINormal Point;
+#include <LidarPoint.h>
 
 class KDTreePCLAdaptor
 {
+  using Point = PointXYZTIId;
   typedef typename nanoflann::metric_L2::template traits<double, KDTreePCLAdaptor>::distance_t metric_t;
   typedef nanoflann::KDTreeSingleIndexAdaptor<metric_t, KDTreePCLAdaptor, 3, int> index_t;
 public:
@@ -58,7 +59,7 @@ public:
     *  The user can also call index->... methods as desired.
     * \note nChecks_IGNORED is ignored but kept for compatibility with the original FLANN interface.
     */
-  inline void query(const Point& query_point, int knearest, int* out_indices, double* out_distances_sq, const int nChecks_IGNORED = 10) const
+  inline void query(const Point& query_point, int knearest, int* out_indices, double* out_distances_sq/*, const int nChecks_IGNORED = 10*/) const
   {
     double pt[3] = {query_point.x, query_point.y, query_point.z};
     nanoflann::KNNResultSet<double, int> resultSet(knearest);

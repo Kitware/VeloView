@@ -185,10 +185,6 @@
         number_of_elements="1"
         panel_visibility="advanced">
       <BooleanDomain name="bool" />
-      <Documentation>
-        If fast slam is enable we remove the extraction of
-        blobs point in the Keypoint extraction step
-      </Documentation>
     </IntVectorProperty>
 
     <Hints>
