@@ -5,7 +5,7 @@
 //----------------------------------------------------------------------------
 PacketConsumer::PacketConsumer()
 {
-  this->Packets.reset(new SynchronizedQueue<std::string*>);
+  this->Packets.reset(new SynchronizedQueue<NetworkPacket*>);
 }
 
 //----------------------------------------------------------------------------
@@ -37,12 +37,11 @@ int PacketConsumer::CheckForNewData()
 //----------------------------------------------------------------------------
 void PacketConsumer::ThreadLoop()
 {
-  std::string* packet = 0;
+  NetworkPacket* packet = nullptr;
   this->Interpreter->ResetCurrentFrame();
   while (this->Packets->dequeue(packet))
   {
-    this->HandleSensorData(
-          reinterpret_cast<const unsigned char*>(packet->c_str()), packet->length());
+    this->HandleSensorData(packet->GetPayloadData(), packet->GetPayloadSize());
     delete packet;
   }
 }
@@ -55,7 +54,7 @@ void PacketConsumer::Start()
     return;
   }
 
-  this->Packets.reset(new SynchronizedQueue<std::string*>);
+  this->Packets.reset(new SynchronizedQueue<NetworkPacket*>);
   this->Thread = boost::shared_ptr<boost::thread>(
         new boost::thread(boost::bind(&PacketConsumer::ThreadLoop, this)));
 }
@@ -73,7 +72,7 @@ void PacketConsumer::Stop()
 }
 
 //----------------------------------------------------------------------------
-void PacketConsumer::Enqueue(std::string *packet)
+void PacketConsumer::Enqueue(NetworkPacket* packet)
 {
   this->Packets->enqueue(packet);
 }

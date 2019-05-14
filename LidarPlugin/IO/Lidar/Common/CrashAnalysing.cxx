@@ -28,7 +28,7 @@
 #include <vtkInformation.h>
 
 //-----------------------------------------------------------------------------
-void CrashAnalysisWriter::AddPacket(const std::string& packet)
+void CrashAnalysisWriter::AddPacket(const NetworkPacket& packet)
 {
   // The idea is to store 2 .pcap files. One corresponding
   // to the last N packets received and one corresponding to
@@ -63,7 +63,7 @@ void CrashAnalysisWriter::AddPacket(const std::string& packet)
 }
 
 //-----------------------------------------------------------------------------
-void CrashAnalysisWriter::WriteLastPacket(const std::string& packet)
+void CrashAnalysisWriter::WriteLastPacket(const NetworkPacket& packet)
 {
   // check that the writer is opened
   if (!this->Writer.IsOpen())
@@ -72,8 +72,7 @@ void CrashAnalysisWriter::WriteLastPacket(const std::string& packet)
     return;
   }
 
-  this->Writer.WritePacket(
-          reinterpret_cast<const unsigned char*>(packet.c_str()), packet.length());
+  this->Writer.WritePacket(packet);
 }
 
 //-----------------------------------------------------------------------------

@@ -19,6 +19,8 @@
 #include <boost/filesystem.hpp>
 #include <boost/thread/thread.hpp>
 
+#include "NetworkPacket.h"
+
 #include <deque>
 #include <queue>
 
@@ -57,7 +59,7 @@ public:
 
   ~NetworkSource();
 
-  void QueuePackets(std::string* packet);
+  void QueuePackets(NetworkPacket* packet);
 
   void Start();
 

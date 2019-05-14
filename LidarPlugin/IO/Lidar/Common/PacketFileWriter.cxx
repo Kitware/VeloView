@@ -6,12 +6,10 @@
 //-----------------------------------------------------------------------------
 void PacketFileWriter::ThreadLoop()
 {
-  std::string* packet = 0;
+  NetworkPacket* packet = nullptr;
   while (this->Packets->dequeue(packet))
   {
-    this->PacketWriter.WritePacket(
-          reinterpret_cast<const unsigned char*>(packet->c_str()), packet->length());
-
+    this->PacketWriter.WritePacket(*packet);
     delete packet;
   }
 }
@@ -38,7 +36,7 @@ void PacketFileWriter::Start(const std::string &filename)
     }
   }
 
-  this->Packets.reset(new SynchronizedQueue<std::string*>);
+  this->Packets.reset(new SynchronizedQueue<NetworkPacket*>);
   this->Thread = boost::shared_ptr<boost::thread>(
         new boost::thread(boost::bind(&PacketFileWriter::ThreadLoop, this)));
 }
@@ -56,7 +54,7 @@ void PacketFileWriter::Stop()
 }
 
 //-----------------------------------------------------------------------------
-void PacketFileWriter::Enqueue(std::string *packet)
+void PacketFileWriter::Enqueue(NetworkPacket* packet)
 {
   // TODO
   // After capturing a stream and stoping the recording, Packets is NULL

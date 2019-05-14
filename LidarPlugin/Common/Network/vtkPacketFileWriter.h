@@ -36,6 +36,8 @@
 #include <string>
 #include <vector>
 
+#include "NetworkPacket.h"
+
 class vtkPacketFileWriter
 {
 public:
@@ -59,8 +61,7 @@ public:
 
   const std::string& GetFileName();
 
-  bool WritePacket(const unsigned char* data, unsigned int dataLength);
-
+  bool WritePacket(const NetworkPacket& packet);
   bool WritePacket(pcap_pkthdr* packetHeader, unsigned char* packetData);
 
 protected:
