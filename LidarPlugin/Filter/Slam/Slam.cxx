@@ -511,7 +511,7 @@ void Slam::AddFrame(pcl::PointCloud<Slam::Point>::Ptr pc, std::vector<size_t> la
             << "#########################################################" << std::endl
             << std::endl;
 
-  double time = pc->points[0].time * 1e-6;
+  double time = pc->points[0].time;
 
   // If the new frame is the first one we just add the
   // extracted keypoints into the map without running
