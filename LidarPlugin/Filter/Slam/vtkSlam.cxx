@@ -147,7 +147,7 @@ std::vector<size_t> sortIdx(const std::vector<T> &v)
 void PointCloudFromPolyData(vtkPolyData* poly, pcl::PointCloud<Slam::Point>::Ptr pc)
 {
   auto arrayPosition = poly->GetPoints() ;
-  auto arrayTime = poly->GetPointData()->GetArray("timestamp");
+  auto arrayTime = poly->GetPointData()->GetArray("adjustedtime");
   auto arrayLaserId = poly->GetPointData()->GetArray("laser_id");
   auto arrayIntensity = poly->GetPointData()->GetArray("intensity");
   for (vtkIdType i = 0; i < poly->GetNumberOfPoints(); i++)
@@ -158,7 +158,7 @@ void PointCloudFromPolyData(vtkPolyData* poly, pcl::PointCloud<Slam::Point>::Ptr
     p.x = pos[0];
     p.y = pos[1];
     p.z = pos[2];
-    p.time = arrayTime->GetTuple1(i);
+    p.time = arrayTime->GetTuple1(i) * 1e-6; // time in second
     p.laserId = arrayLaserId->GetTuple1(i);
     p.intensity = arrayIntensity->GetTuple1(i);
     pc->push_back(p);
@@ -277,7 +277,7 @@ vtkInformationVector **inputVector, vtkInformationVector *outputVector)
   m = Eigen::AngleAxisd(Tworld.rz, Eigen::Vector3d::UnitX())
     * Eigen::AngleAxisd(Tworld.ry,  Eigen::Vector3d::UnitY())
     * Eigen::AngleAxisd(Tworld.rx, Eigen::Vector3d::UnitZ());
-  this->Trajectory->PushBack(0, m, Eigen::Vector3d(Tworld.position));
+  this->Trajectory->PushBack(pc->points[0].time, m, Eigen::Vector3d(Tworld.position));
   auto *output1 = vtkPolyData::GetData(outputVector->GetInformationObject(1));
   output1->ShallowCopy(this->Trajectory);
 

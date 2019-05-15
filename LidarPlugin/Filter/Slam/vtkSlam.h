@@ -105,7 +105,7 @@ virtual void Set##name (type _arg) \
 
 #define vtkCustomGetMacro(name,type) \
 virtual type Get##name () { \
-  vtkDebugMacro(<< this->GetClassName() << " (" << this << "): returning " << #name " of " << this->name ); \
+  vtkDebugMacro(<< this->GetClassName() << " (" << this << "): returning " << #name " of " << this->SlamAlgo.Get##name() ); \
   return this->SlamAlgo.Get##name(); \
 }
 
