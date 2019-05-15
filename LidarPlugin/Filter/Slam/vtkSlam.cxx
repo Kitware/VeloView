@@ -73,6 +73,7 @@
 #include "vtkCustomTransformInterpolator.h"
 #include "vtkTemporalTransforms.h"
 #include "vtkSpinningSensorKeypointExtractor.h"
+#include "vtkEigenTools.h"
 // STD
 #include <algorithm>
 #include <numeric>
@@ -273,10 +274,7 @@ vtkInformationVector **inputVector, vtkInformationVector *outputVector)
   }
 
   // output 1 - Trajectory
-  Eigen::AngleAxisd m;
-  m = Eigen::AngleAxisd(Tworld.rz, Eigen::Vector3d::UnitX())
-    * Eigen::AngleAxisd(Tworld.ry,  Eigen::Vector3d::UnitY())
-    * Eigen::AngleAxisd(Tworld.rx, Eigen::Vector3d::UnitZ());
+  Eigen::AngleAxisd m(RollPitchYawToMatrix(Tworld.rx, Tworld.ry, Tworld.rz));
   this->Trajectory->PushBack(pc->points[0].time, m, Eigen::Vector3d(Tworld.position));
   auto *output1 = vtkPolyData::GetData(outputVector->GetInformationObject(1));
   output1->ShallowCopy(this->Trajectory);
