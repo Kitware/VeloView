@@ -59,6 +59,8 @@ public:
   Q_INVOKABLE bool isCrashAnalysing() const;
   Q_INVOKABLE QString ipAddressForwarding() const;
 
+  Q_INVOKABLE int interpreterType() const;
+
 protected:
   void setDefaultConfiguration();
 

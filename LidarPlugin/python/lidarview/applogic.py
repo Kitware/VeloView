@@ -327,6 +327,7 @@ def chooseCalibration(calibrationFilename=None):
             self.sensorTransform = vtk.vtkTransform()
             self.gpsTransform = vtk.vtkTransform()
             self.isCrashAnalysing = dialog.isCrashAnalysing()
+            self.interpreterType = dialog.interpreterType()
 
             qm = dialog.sensorTransform()
             vmLidar = vtk.vtkMatrix4x4()
@@ -387,6 +388,11 @@ def openSensor():
     GPSForwardingPort = calibration.gpsForwardingPort
     isForwarding = calibration.isForwarding
     ipAddressForwarding = calibration.ipAddressForwarding
+
+    # Get the interpreter type that should be used
+    # - 0: Legacy Packet Format
+    # - 1: Advanced Packet Format
+    interpreterType = calibration.interpreterType
 
     close()
     app.grid = createGrid()
@@ -467,6 +473,11 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
 
     calibrationFile = calibration.calibrationFile
     sensorTransform = calibration.sensorTransform
+
+    # Get the interpreter type that should be used
+    # - 0: Legacy Packet Format
+    # - 1: Advanced Packet Format
+    interpreterType = calibration.interpreterType
 
     close()
 

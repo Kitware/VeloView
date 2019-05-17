@@ -63,6 +63,7 @@ public:
   void saveAdvancedConfiguration();
   void saveForwardIpAddress();
   void saveIsCrashAnalysing();
+  void saveInterpreterType();
 
   void restoreSensorTransform();
   void restoreGpsTransform();
@@ -74,6 +75,7 @@ public:
   void restoreAdvancedConfiguration();
   void restoreForwardIpAddress();
   void restoreCrashAnalysing();
+  void restoreInterpreterType();
 
   pqSettings* const Settings;
   QStringList BuiltInCalibrationFiles;
@@ -154,6 +156,13 @@ void vvCalibrationDialog::pqInternal::saveLidarPort()
 {
   this->Settings->setValue(
     "LidarPlugin/CalibrationFileDialog/LidarPort", this->LidarPortSpinBox->value());
+}
+
+//-----------------------------------------------------------------------------
+void vvCalibrationDialog::pqInternal::saveInterpreterType()
+{
+  this->Settings->setValue(
+    "LidarPlugin/CalibrationFileDialog/InterpreterType", this->InterpreterSelectionComboBox->currentIndex());
 }
 
 //-----------------------------------------------------------------------------
@@ -301,6 +310,15 @@ void vvCalibrationDialog::pqInternal::restoreLidarPort()
 }
 
 //-----------------------------------------------------------------------------
+void vvCalibrationDialog::pqInternal::restoreInterpreterType()
+{
+  this->InterpreterSelectionComboBox->setCurrentIndex(
+    this->Settings
+      ->value("LidarPlugin/CalibrationFileDialog/InterpreterType")
+      .toInt());
+}
+
+//-----------------------------------------------------------------------------
 void vvCalibrationDialog::pqInternal::restoreGpsPort()
 {
   this->GPSPortSpinBox->setValue(
@@ -443,6 +461,7 @@ vvCalibrationDialog::vvCalibrationDialog(QWidget* p)
   this->Internal->restoreForwardIpAddress();
   this->Internal->restoreCrashAnalysing();
   this->Internal->restoreAdvancedConfiguration();
+  this->Internal->restoreInterpreterType();
 
   const QVariant& geometry =
     this->Internal->Settings->value("LidarPlugin/CalibrationFileDialog/Geometry");
@@ -713,6 +732,12 @@ QString vvCalibrationDialog::ipAddressForwarding() const
 }
 
 //-----------------------------------------------------------------------------
+int vvCalibrationDialog::interpreterType() const
+{
+  return this->Internal->InterpreterSelectionComboBox->currentIndex();
+}
+
+//-----------------------------------------------------------------------------
 void vvCalibrationDialog::accept()
 {
   this->Internal->saveSelectedRow();
@@ -726,6 +751,7 @@ void vvCalibrationDialog::accept()
   this->Internal->saveAdvancedConfiguration();
   this->Internal->saveForwardIpAddress();
   this->Internal->saveIsCrashAnalysing();
+  this->Internal->saveInterpreterType();
   QDialog::accept();
 }
 
