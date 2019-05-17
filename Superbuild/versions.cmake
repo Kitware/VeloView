@@ -38,7 +38,7 @@ superbuild_set_revision(boost
   URL "https://sourceforge.net/projects/boost/files/boost/1.63.0/boost_1_63_0.tar.gz"
   URL_MD5 7b493c08bc9557bbde7e29091f28b605)
 
-add_revision(eigen
+superbuild_set_revision(eigen
   GIT_REPOSITORY https://github.com/eigenteam/eigen-git-mirror.git
   GIT_TAG 3.3.0)
 
