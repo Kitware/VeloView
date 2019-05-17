@@ -1,5 +1,6 @@
-#include "VelodyneAdvancedPacketInterpreter.h"
+#include "vtkVelodyneAdvancedPacketInterpreter.h"
 
+#include <vtkObjectFactory.h>
 #include <vtkPoints.h>
 #include <vtkPointData.h>
 #include <vtkDoubleArray.h>
@@ -961,9 +962,14 @@ public:
 
 
 //------------------------------------------------------------------------------
-// VelodyneAdvancedPacketInterpreter methods.
+// vtkVelodyneAdvancedPacketInterpreter methods.
 //------------------------------------------------------------------------------
-VelodyneAdvancedPacketInterpreter::VelodyneAdvancedPacketInterpreter()
+
+//-----------------------------------------------------------------------------
+vtkStandardNewMacro(vtkVelodyneAdvancedPacketInterpreter)
+
+//----------------------------------------------------------------------------
+vtkVelodyneAdvancedPacketInterpreter::vtkVelodyneAdvancedPacketInterpreter()
 {
   this->CurrentFrameTracker = new FrameTracker();
   this->MaxFrameSize = MEM_STEP_SIZE;
@@ -987,13 +993,13 @@ VelodyneAdvancedPacketInterpreter::VelodyneAdvancedPacketInterpreter()
 }
 
 //------------------------------------------------------------------------------
-VelodyneAdvancedPacketInterpreter::~VelodyneAdvancedPacketInterpreter()
+vtkVelodyneAdvancedPacketInterpreter::~vtkVelodyneAdvancedPacketInterpreter()
 {
   delete this->CurrentFrameTracker;
 }
 
 //------------------------------------------------------------------------------
-void VelodyneAdvancedPacketInterpreter::ProcessPacket(unsigned char const * data, unsigned int dataLength, int startPosition)
+void vtkVelodyneAdvancedPacketInterpreter::ProcessPacket(unsigned char const * data, unsigned int dataLength, int startPosition)
 {
   decltype(dataLength) index = 0;
   PayloadHeader const * payloadHeader = reinterpretCastWithChecks<PayloadHeader>(data, dataLength, index);
@@ -1218,7 +1224,7 @@ void VelodyneAdvancedPacketInterpreter::ProcessPacket(unsigned char const * data
 }
 
 //------------------------------------------------------------------------------
-bool VelodyneAdvancedPacketInterpreter::IsLidarPacket(unsigned char const * data, unsigned int dataLength)
+bool vtkVelodyneAdvancedPacketInterpreter::IsLidarPacket(unsigned char const * data, unsigned int dataLength)
 {
   PayloadHeader const * payloadHeader = reinterpretCastWithChecks<PayloadHeader>(data, dataLength, 0);
   return ((payloadHeader != nullptr) && (payloadHeader->GetHlen() <= dataLength));
@@ -1254,7 +1260,7 @@ void InitializeDataArrayForPolyData(
 }
 
 //------------------------------------------------------------------------------
-vtkSmartPointer<vtkPolyData> VelodyneAdvancedPacketInterpreter::CreateNewEmptyFrame(vtkIdType numberOfPoints, vtkIdType prereservedNumberOfPoints)
+vtkSmartPointer<vtkPolyData> vtkVelodyneAdvancedPacketInterpreter::CreateNewEmptyFrame(vtkIdType numberOfPoints, vtkIdType prereservedNumberOfPoints)
 {
   vtkSmartPointer<vtkPolyData> polyData = vtkSmartPointer<vtkPolyData>::New();
 
@@ -1304,7 +1310,7 @@ vtkSmartPointer<vtkPolyData> VelodyneAdvancedPacketInterpreter::CreateNewEmptyFr
 }
 
 //------------------------------------------------------------------------------
-// vtkSmartPointer<vtkPolyData> VelodyneAdvancedPacketInterpreter::PreparePolyData()
+// vtkSmartPointer<vtkPolyData> vtkVelodyneAdvancedPacketInterpreter::PreparePolyData()
 // {
 //   vtkSmartPointer<vtkPolyData> polyData = vtkSmartPointer<vtkPolyData>::New();
 //   polyData->SetPoints(this->Points);
@@ -1321,13 +1327,13 @@ vtkSmartPointer<vtkPolyData> VelodyneAdvancedPacketInterpreter::CreateNewEmptyFr
 
 //------------------------------------------------------------------------------
 // TODO: Revisit this if the frequency still needs to be calculated here.
-bool VelodyneAdvancedPacketInterpreter::SplitFrame(bool force)
+bool vtkVelodyneAdvancedPacketInterpreter::SplitFrame(bool force)
 {
   auto numberOfAllocatedPoints = this->Points->GetNumberOfPoints();
   // Update the MaxId to the current number of points.
   this->SetNumberOfItems(this->NumberOfPointsInCurrentFrame);
   // this->CurrentFrame->Modified();
-  bool wasSplit = this->LidarPacketInterpreter::SplitFrame(force);
+  bool wasSplit = this->vtkLidarPacketInterpreter::SplitFrame(force);
   // If the frame was split then CreateNewEmptyDataFrame was called and the
   // array sizes have already been adjusted. If not, we need to reset the MaxId
   // to allow for further insertions.
@@ -1339,7 +1345,7 @@ bool VelodyneAdvancedPacketInterpreter::SplitFrame(bool force)
 }
 
 //------------------------------------------------------------------------------
-void VelodyneAdvancedPacketInterpreter::ResetCurrentFrame()
+void vtkVelodyneAdvancedPacketInterpreter::ResetCurrentFrame()
 {
   this->CurrentFrame = this->CreateNewEmptyFrame(0);
   this->CurrentFrameTracker->Reset();
@@ -1347,7 +1353,7 @@ void VelodyneAdvancedPacketInterpreter::ResetCurrentFrame()
 }
 
 //------------------------------------------------------------------------------
-void VelodyneAdvancedPacketInterpreter::PreProcessPacket(
+void vtkVelodyneAdvancedPacketInterpreter::PreProcessPacket(
   unsigned char const * data,
   unsigned int dataLength,
   bool & isNewFrame,
@@ -1425,7 +1431,7 @@ void VelodyneAdvancedPacketInterpreter::PreProcessPacket(
 //-----------------------------------------------------------------------------
 // Code from the legacy packet format interpreter.
 //-----------------------------------------------------------------------------
-void VelodyneAdvancedPacketInterpreter::InitTrigonometricTables()
+void vtkVelodyneAdvancedPacketInterpreter::InitTrigonometricTables()
 {
   if (cos_lookup_table_.size() == 0 || sin_lookup_table_.size() == 0)
   {
@@ -1441,7 +1447,7 @@ void VelodyneAdvancedPacketInterpreter::InitTrigonometricTables()
 }
 
 //-----------------------------------------------------------------------------
-void VelodyneAdvancedPacketInterpreter::PrecomputeCorrectionCosSin()
+void vtkVelodyneAdvancedPacketInterpreter::PrecomputeCorrectionCosSin()
 {
 
   for (int i = 0; i < HDL_MAX_NUM_LASERS; i++)
@@ -1461,7 +1467,7 @@ void VelodyneAdvancedPacketInterpreter::PrecomputeCorrectionCosSin()
 }
 
 //-----------------------------------------------------------------------------
-void VelodyneAdvancedPacketInterpreter::Init()
+void vtkVelodyneAdvancedPacketInterpreter::Init()
 {
   this->InitTrigonometricTables();
   // this->SensorTransform->Identity()
@@ -1469,7 +1475,7 @@ void VelodyneAdvancedPacketInterpreter::Init()
 }
 
 //-----------------------------------------------------------------------------
-void VelodyneAdvancedPacketInterpreter::LoadCalibration(const std::string& filename)
+void vtkVelodyneAdvancedPacketInterpreter::LoadCalibration(const std::string& filename)
 {
   boost::property_tree::ptree pt;
   try
@@ -1664,7 +1670,7 @@ void VelodyneAdvancedPacketInterpreter::LoadCalibration(const std::string& filen
 
 //-----------------------------------------------------------------------------
 template <typename TAzm, typename TDist>
-void VelodyneAdvancedPacketInterpreter::ComputeCorrectedValues(
+void vtkVelodyneAdvancedPacketInterpreter::ComputeCorrectedValues(
   TAzm const azimuth,
   size_t const correctionIndex,
   double pos[3],
@@ -1708,7 +1714,7 @@ void VelodyneAdvancedPacketInterpreter::ComputeCorrectedValues(
 }
 
 //-----------------------------------------------------------------------------
-void VelodyneAdvancedPacketInterpreter::UpdateMaxFrameSize(size_t frameSize)
+void vtkVelodyneAdvancedPacketInterpreter::UpdateMaxFrameSize(size_t frameSize)
 {
   if (frameSize > this->MaxFrameSize)
   {
@@ -1720,7 +1726,7 @@ void VelodyneAdvancedPacketInterpreter::UpdateMaxFrameSize(size_t frameSize)
 //-----------------------------------------------------------------------------
 // Macro-based methods.
 //-----------------------------------------------------------------------------
-void VelodyneAdvancedPacketInterpreter::ResizeArrays()
+void vtkVelodyneAdvancedPacketInterpreter::ResizeArrays()
 {
   size_t newSize = this->MaxFrameSize;
   size_t currentSize = this->CurrentArraySize;
@@ -1740,7 +1746,7 @@ void VelodyneAdvancedPacketInterpreter::ResizeArrays()
   this->CurrentArraySize = newSize;
 }
 //-----------------------------------------------------------------------------
-void VelodyneAdvancedPacketInterpreter::SetNumberOfItems(size_t numberOfItems)
+void vtkVelodyneAdvancedPacketInterpreter::SetNumberOfItems(size_t numberOfItems)
 {
   this->UpdateMaxFrameSize(numberOfItems);
   if (numberOfItems > this->Points->GetNumberOfPoints())

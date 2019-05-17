@@ -1,7 +1,7 @@
 #ifndef VELODYNE_ADVANCED_PACKET_INTERPRETOR_H
 #define VELODYNE_ADVANCED_PACKET_INTERPRETOR_H
 
-#include "LidarPacketInterpreter.h"
+#include "vtkLidarPacketInterpreter.h"
 #include <vtkUnsignedCharArray.h>
 #include <vtkUnsignedIntArray.h>
 #include <vtkDoubleArray.h>
@@ -19,7 +19,7 @@ using namespace DataPacketFixedLength;
 class FrameTracker;
 
 //------------------------------------------------------------------------------
-class VelodyneAdvancedPacketInterpreter : public LidarPacketInterpreter
+class vtkVelodyneAdvancedPacketInterpreter : public vtkLidarPacketInterpreter
 {
 //------------------------------------------------------------------------------
 private:
@@ -57,8 +57,9 @@ private:
 
 //------------------------------------------------------------------------------
 public:
-  VelodyneAdvancedPacketInterpreter();
-  ~VelodyneAdvancedPacketInterpreter();
+  static vtkVelodyneAdvancedPacketInterpreter* New();
+  vtkTypeMacro(vtkVelodyneAdvancedPacketInterpreter, vtkLidarPacketInterpreter)
+
 
   void LoadCalibration(const std::string& filename) override;
 
@@ -103,6 +104,10 @@ public:
 
   vtkSmartPointer<vtkUnsignedIntArray>    INFO_Pseqs;
   vtkSmartPointer<vtkUnsignedIntArray>    INFO_TimeFractionOffsets;
+
+protected:
+  vtkVelodyneAdvancedPacketInterpreter();
+  ~vtkVelodyneAdvancedPacketInterpreter();
 
 //------------------------------------------------------------------------------
 // Code from legacy packet format interpreter.

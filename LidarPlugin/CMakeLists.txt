@@ -245,6 +245,7 @@ endif(ENABLE_PCL AND ENABLE_Ceres AND ENABLE_NANOFLANN)
 list(APPEND servermanager_xml
   xml/Lidar.xml
   xml/VelodyneLidarPacketInterpreter.xml
+  xml/VelodyneLidarAdvancedPacketInterpreter.xml
   xml/LidarKITTIDataSetReader.xml
   xml/VelodyneHDLPositionReader.xml
   xml/ApplanixPositionReader.xml
@@ -300,7 +301,7 @@ list(APPEND sources_which_do_not_inherit_from_vtkObject
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/Lidar/Common/PacketFileWriter.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/Lidar/Common/PacketConsumer.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/Common/Network/NetworkPacket.cxx
-  ${CMAKE_CURRENT_SOURCE_DIR}/IO/Lidar/Velodyne/VelodyneAdvancedPacketInterpreter.cxx
+  ${CMAKE_CURRENT_SOURCE_DIR}/IO/Lidar/Velodyne/vtkVelodyneAdvancedPacketInterpreter.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/Lidar/Velodyne/vtkRollingDataAccumulator.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/GPS-IMU/Common/NMEAParser.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/GPS-IMU/Common/GPSProjectionUtils.cxx
