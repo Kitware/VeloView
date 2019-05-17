@@ -195,6 +195,7 @@ list(APPEND servermanager_sources
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/Lidar/Common/vtkLidarStream.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/Lidar/Common/vtkLidarPacketInterpreter.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/Lidar/Velodyne/vtkVelodynePacketInterpreter.cxx
+  ${CMAKE_CURRENT_SOURCE_DIR}/IO/Lidar/Velodyne/vtkVelodyneAdvancedPacketInterpreter.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/Lidar/KITTIDataSet/vtkLidarKITTIDataSetReader.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/GPS-IMU/Velodyne/vtkVelodyneHDLPositionReader.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/GPS-IMU/Applanix/vtkApplanixPositionReader.cxx
@@ -301,7 +302,6 @@ list(APPEND sources_which_do_not_inherit_from_vtkObject
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/Lidar/Common/PacketFileWriter.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/Lidar/Common/PacketConsumer.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/Common/Network/NetworkPacket.cxx
-  ${CMAKE_CURRENT_SOURCE_DIR}/IO/Lidar/Velodyne/vtkVelodyneAdvancedPacketInterpreter.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/Lidar/Velodyne/vtkRollingDataAccumulator.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/GPS-IMU/Common/NMEAParser.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/GPS-IMU/Common/GPSProjectionUtils.cxx

@@ -454,11 +454,11 @@ T const * reinterpretCastWithChecks(
  * @brief Advance the index by a header's HLEN if there is enough data,
  *        otherwise return.
  */
-#define ADVANCE_INDEX_BY_HLEN_OR_RETURN(dataLength, index, objectPtr) \
+#define ADVANCE_INDEX_BY_HLEN_OR_RETURN(dataLength, index, objectPtr, returnValue) \
   auto hlen = objectPtr->GetHlen();                                   \
   if (hlen > (dataLength - index))                                    \
   {                                                                   \
-    return;                                                           \
+    return returnValue;                                                           \
   }                                                                   \
   else                                                                \
   {                                                                   \
@@ -990,6 +990,7 @@ vtkVelodyneAdvancedPacketInterpreter::vtkVelodyneAdvancedPacketInterpreter()
   this->ShouldAddDualReturnArray = false;
   this->WantIntensityCorrection = false;
   this->LaserSelection.resize(HDL_MAX_NUM_LASERS, true);
+  this->ParserMetaData.SpecificInformation = std::make_shared<VelodyneAdvancedSpecificFrameInformation>();
 }
 
 //------------------------------------------------------------------------------
@@ -999,7 +1000,7 @@ vtkVelodyneAdvancedPacketInterpreter::~vtkVelodyneAdvancedPacketInterpreter()
 }
 
 //------------------------------------------------------------------------------
-void vtkVelodyneAdvancedPacketInterpreter::ProcessPacket(unsigned char const * data, unsigned int dataLength, int startPosition)
+void vtkVelodyneAdvancedPacketInterpreter::ProcessPacket(const unsigned char *data, unsigned int dataLength)
 {
   decltype(dataLength) index = 0;
   PayloadHeader const * payloadHeader = reinterpretCastWithChecks<PayloadHeader>(data, dataLength, index);
@@ -1007,7 +1008,7 @@ void vtkVelodyneAdvancedPacketInterpreter::ProcessPacket(unsigned char const * d
   {
     return;
   }
-  ADVANCE_INDEX_BY_HLEN_OR_RETURN(dataLength, index, payloadHeader)
+  ADVANCE_INDEX_BY_HLEN_OR_RETURN(dataLength, index, payloadHeader, void())
 
   uint8_t distanceCount = payloadHeader->GetDistanceCount();
 
@@ -1043,7 +1044,7 @@ void vtkVelodyneAdvancedPacketInterpreter::ProcessPacket(unsigned char const * d
     {
       return;
     }
-    ADVANCE_INDEX_BY_HLEN_OR_RETURN(dataLength, index, extensionHeader)
+    ADVANCE_INDEX_BY_HLEN_OR_RETURN(dataLength, index, extensionHeader, void())
     nxhdr = extensionHeader->GetNxhdr();
   }
 
@@ -1105,7 +1106,7 @@ void vtkVelodyneAdvancedPacketInterpreter::ProcessPacket(unsigned char const * d
     index += numberOfBytesPerFiringGroupHeader;
 
     // Skip the firings and jump to the next firing group header.
-    if ((loopCount++) < startPosition)
+    if ((loopCount++) < reinterpret_cast<VelodyneAdvancedSpecificFrameInformation*>(this->ParserMetaData.SpecificInformation.get())->FiringToSkip)
     {
       index += numberOfBytesPerFiring * firingGroupHeader->GetFcnt();
       continue;
@@ -1353,23 +1354,31 @@ void vtkVelodyneAdvancedPacketInterpreter::ResetCurrentFrame()
 }
 
 //------------------------------------------------------------------------------
-void vtkVelodyneAdvancedPacketInterpreter::PreProcessPacket(
-  unsigned char const * data,
+bool vtkVelodyneAdvancedPacketInterpreter::PreProcessPacket(
+  const unsigned char *data,
   unsigned int dataLength,
-  bool & isNewFrame,
-  int & framePositionInPacket
+  fpos_t filePosition,
+  double packetNetworkTime,
+    std::vector<FrameInformation> *frameCatalog
 )
 {
-  isNewFrame = false;
-  framePositionInPacket = 0;
+  this->ParserMetaData.FilePosition = filePosition;
+  this->ParserMetaData.FirstPacketNetworkTime = packetNetworkTime;
+  //! @todo
+//  this->ParserMetaData.FirstPacketDataTime = packetNetworkTime;
+  auto* velFrameInfo = reinterpret_cast<VelodyneAdvancedSpecificFrameInformation*>(this->ParserMetaData.SpecificInformation.get());
+//  if (dataPacket->gpsTimestamp < this->lastGpsTimestamp)
+//  {
+//    velFrameInfo->NbrOfRollingTime++;
+//  }
 
   decltype(dataLength) index = 0;
   PayloadHeader const * payloadHeader = reinterpretCastWithChecks<PayloadHeader>(data, dataLength, index);
   if ((payloadHeader == nullptr) || (payloadHeader->GetDistanceCount() == 0))
   {
-    return;
+    return false;
   }
-  ADVANCE_INDEX_BY_HLEN_OR_RETURN(dataLength, index, payloadHeader)
+  ADVANCE_INDEX_BY_HLEN_OR_RETURN(dataLength, index, payloadHeader, false)
 
   // Skip optional extension headers.
   auto nxhdr = payloadHeader->GetNxhdr();
@@ -1378,35 +1387,43 @@ void vtkVelodyneAdvancedPacketInterpreter::PreProcessPacket(
     ExtensionHeader const * extensionHeader = reinterpretCastWithChecks<ExtensionHeader>(data, dataLength, index);
     if (extensionHeader == nullptr)
     {
-      return;
+      return false;
     }
-    ADVANCE_INDEX_BY_HLEN_OR_RETURN(dataLength, index, extensionHeader)
+    ADVANCE_INDEX_BY_HLEN_OR_RETURN(dataLength, index, extensionHeader, false)
     nxhdr = extensionHeader->GetNxhdr();
   }
 
   // Loop through firing groups until a frame shift is detected.
   size_t numberOfBytesPerFiringGroupHeader = payloadHeader->GetGlen();
   size_t numberOfBytesPerFiring = payloadHeader->GetNumberOfBytesPerFiring();
-  isNewFrame = false;
+  int firingCount = 0;
+  bool isNewFrame = false;
   while (index < dataLength)
   {
     FiringGroupHeader const * firingGroupHeader = reinterpretCastWithChecks<FiringGroupHeader>(data, dataLength, index);
     if (firingGroupHeader == nullptr)
     {
-      return;
+      return isNewFrame;
     }
     // The payload header checks above ensure that this value is non-zero and
     // that the loop will therefore eventually terminate.
     this->CurrentFrameTracker->Update(firingGroupHeader, isNewFrame);
     if (isNewFrame)
     {
-      framePositionInPacket = index;
-      return;
+      frameCatalog->push_back(this->ParserMetaData);
+      velFrameInfo->FiringToSkip = firingCount;
+      // Create a copy of the current meta data state
+      // at a different memory location than the one
+      // added to the catalog
+      this->ParserMetaData.SpecificInformation = this->ParserMetaData.SpecificInformation->CopyTo();
+      return isNewFrame;
     }
+    firingCount++;
     index +=
       (numberOfBytesPerFiring * firingGroupHeader->GetFcnt()) +
       numberOfBytesPerFiringGroupHeader;
   }
+  return isNewFrame;
 }
 
 
@@ -1761,5 +1778,26 @@ void vtkVelodyneAdvancedPacketInterpreter::SetNumberOfItems(size_t numberOfItems
 
   // "data" is an unused placeholder
   VAPI_FOREACH_INFO_ARRAY(VAPI_SET_NUMBER_OF_VALUES, data)
+}
+
+//-----------------------------------------------------------------------------
+void vtkVelodyneAdvancedPacketInterpreter::ResetParserMetaData()
+{
+  FrameInformation newFrameInfo;
+  newFrameInfo.SpecificInformation = std::make_shared<VelodyneAdvancedSpecificFrameInformation>();
+  this->ParserMetaData = newFrameInfo;
+}
+
+//-----------------------------------------------------------------------------
+void vtkVelodyneAdvancedPacketInterpreter::SetParserMetaData(const FrameInformation& metaData)
+{
+  this->ParserMetaData = metaData.CopyTo();
+}
+
+//-----------------------------------------------------------------------------
+FrameInformation vtkVelodyneAdvancedPacketInterpreter::GetParserMetaData()
+{
+  FrameInformation frameInfo = this->ParserMetaData.CopyTo();
+  return frameInfo;
 }
 
