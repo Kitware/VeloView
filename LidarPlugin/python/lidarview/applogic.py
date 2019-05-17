@@ -268,14 +268,16 @@ def setDefaultLookupTables(sourceProxy):
           RGBPoints=rgbRaw)
 
 def colorByIntensity(sourceProxy):
-
-    if not hasArrayName(sourceProxy, 'intensity'):
-        return False
+    arrayName = "intensity"
+    if hasattr(sourceProxy.Interpreter, 'UseIntraFiringAdjustment'):
+        arrayName =  "intensity"
+    else: #hasArrayName(sourceProxy, 'Intensity'):
+        arrayName = "Intensity"
 
     setDefaultLookupTables(sourceProxy)
     rep = smp.GetDisplayProperties(sourceProxy)
-    rep.ColorArrayName = 'intensity'
-    rep.LookupTable = smp.GetLookupTableForArray('intensity', 1)
+    rep.ColorArrayName = arrayName
+    rep.LookupTable = smp.GetLookupTableForArray(arrayName, 1)
     return True
 
 
@@ -398,6 +400,11 @@ def openSensor():
     app.grid = createGrid()
 
     sensor = smp.LidarStream(guiName='Data', CalibrationFile=calibrationFile)
+    if (interpreterType == 0): # Legacy
+        sensor.Interpreter = 'Velodyne Interpreter'
+        sensor.Interpreter.UseIntraFiringAdjustment = app.actions['actionIntraFiringAdjust'].isChecked()
+    else: # Advanced
+        sensor.Interpreter = 'Velodyne Advanced Interpreter'
     sensor.GetClientSideObject().SetLIDARPort(LIDARPort)
     sensor.GetClientSideObject().EnableGPSListening(True)
     sensor.GetClientSideObject().SetGPSPort(GPSPort)
@@ -408,7 +415,6 @@ def openSensor():
     sensor.GetClientSideObject().SetForwardedIpAddress(ipAddressForwarding)
     sensor.Interpreter.GetClientSideObject().SetSensorTransform(sensorTransform)
     sensor.Interpreter.IgnoreZeroDistances = app.actions['actionIgnoreZeroDistances'].isChecked()
-    sensor.Interpreter.UseIntraFiringAdjustment = app.actions['actionIntraFiringAdjust'].isChecked()
     sensor.Interpreter.IgnoreEmptyFrames = app.actions['actionIgnoreEmptyFrames'].isChecked()
     sensor.UpdatePipeline()
     sensor.Start()
@@ -458,6 +464,8 @@ def openSensor():
     app.actions['actionRecord'].enabled = True
 
     updateUIwithNewLidar()
+    smp.Render()
+    colorByIntensity(sensor)
 
 
 def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrationUIArgs=None):
@@ -500,6 +508,11 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
     reader = smp.LidarReader(guiName='Data',
                              FileName = filename,
                              CalibrationFile = calibrationFile)
+    if (interpreterType == 0): # Legacy
+        reader.Interpreter = 'Velodyne Interpreter'
+        reader.Interpreter.UseIntraFiringAdjustment = app.actions['actionIntraFiringAdjust'].isChecked()
+    else: # Advanced
+      reader.Interpreter = 'Velodyne Advanced Interpreter'
 
     app.reader = reader
     app.trailingFramesSpinBox.enabled = True
@@ -517,7 +530,6 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
 
     lidarPacketInterpreter = getLidarPacketInterpreter()
     lidarPacketInterpreter.IgnoreZeroDistances = app.actions['actionIgnoreZeroDistances'].isChecked()
-    lidarPacketInterpreter.UseIntraFiringAdjustment = app.actions['actionIntraFiringAdjust'].isChecked()
     lidarPacketInterpreter.IgnoreEmptyFrames = app.actions['actionIgnoreEmptyFrames'].isChecked()
 
     if SAMPLE_PROCESSING_MODE:
@@ -1415,7 +1427,8 @@ def createGrid(view=None):
     grid = smp.GridSource(guiName='Measurement Grid')
 
     if app.gridProperties.Persist == False:
-        grid.GridNbTicks = (int(math.ceil(50000 * app.DistanceResolutionM/ grid.Scale )))
+         grid.GridNbTicks = 10
+#        grid.GridNbTicks = (int(math.ceil(50000 * app.DistanceResolutionM/ grid.Scale )))
     else:
         # Restore grid properties
         grid.Normal = app.gridProperties.Normal
@@ -1521,7 +1534,7 @@ def onTrailingFramesChanged(numFrames):
 
 def onFiringsSkipChanged(pr):
     lidarPacketInterpreter = getLidarPacketInterpreter()
-    if lidarPacketInterpreter:
+    if lidarPacketInterpreter and hasattr(lidarPacketInterpreter, "FiringsSkip"):
         lidarPacketInterpreter.FiringsSkip = pr
         smp.Render()
         smp.Render(getSpreadSheetViewProxy())
@@ -1565,7 +1578,7 @@ def onLaserSelection(show = True):
 
     lidar = getLidar()
     lidarPacketInterpreter = getLidarPacketInterpreter()
-    if lidarPacketInterpreter:
+    if lidarPacketInterpreter and hasattr(lidarPacketInterpreter.GetClientSideObject(), "GetLaserCorrections") :
         lidarPacketInterpreter.GetClientSideObject().GetLaserSelection(oldmask)
         lidarPacketInterpreter.GetClientSideObject().GetLaserCorrections(verticalCorrection,
             rotationalCorrection,
@@ -1701,8 +1714,6 @@ def onClearMenu():
 def toggleProjectionType():
 
     view = app.mainView
-    print (view)
-    print "toto"
 
     view.CameraParallelProjection = not view.CameraParallelProjection
     if app.actions['actionMeasure'].isChecked():
@@ -1739,6 +1750,9 @@ def toggleSelectDualReturn():
     #If no data are available
     if not source :
         return
+    if not hasattr(lidarPacketInterpreter.GetClientSideObject(), "GetHasDualReturn"):
+      QtGui.QMessageBox.warning(getMainWindow(), 'Warning', 'This function is not implemented for the Advanced Packet Format')
+      return
 
     if not lidarPacketInterpreter.GetClientSideObject().GetHasDualReturn() :
         QtGui.QMessageBox.warning(getMainWindow(), 'Dual returns not found',
@@ -1788,7 +1802,10 @@ def setFilterTo(mask):
 
     interp = getLidarPacketInterpreter()
     if interp:
-        if interp.GetClientSideObject().GetHasDualReturn():
+        if not hasattr(interp, "GetHasDualReturn"):
+          QtGui.QMessageBox.warning(getMainWindow(), 'Warning', 'This function is not implemented for the Advanced Packet Format')
+          return
+        elif interp.GetClientSideObject().GetHasDualReturn():
             interp.GetClientSideObject().SetDualReturnFilter(mask)
             smp.Render()
             smp.Render(getSpreadSheetViewProxy())
@@ -2060,6 +2077,9 @@ def onIgnoreZeroDistances():
         smp.Render()
 
 def onIntraFiringAdjust():
+    if not hasattr(getLidarPacketInterpreter(), "UseIntraFiringAdjustment"):
+        QtGui.QMessageBox.warning(getMainWindow(), 'Warning', 'This function is not implemented for the Advanced Packet Format')
+        return
     # Get the check box value as an int to save it into the PV settings (there's incompatibility with python booleans)
     intraFiringAdjust = int(app.actions['actionIntraFiringAdjust'].isChecked())
 
