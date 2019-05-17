@@ -1,6 +1,6 @@
 # Continuous Integration
 
-[![pipeline status](https://gitlab.kitware.com/bjacquet/VeloView-kwinternal/badges/master/pipeline.svg)](https://gitlab.kitware.com/bjacquet/VeloView-kwinternal/commits/master)
+[![pipeline status](https://gitlab.kitware.com/bjacquet/LidarView-kwinternal/badges/master/pipeline.svg)](https://gitlab.kitware.com/bjacquet/LidarView-kwinternal/commits/master)
 
 ## Important note
 
@@ -37,7 +37,7 @@ GitLab CI/CD is the fully integrated continuous integration service offered by G
 
 A `.gitlab-ci.yml` file describe an [Integration Pipeline] which describe different [Jobs], in our case:
 - a **superbuild** job per OS
-- a (veloview) **build** job per OS
+- a (lidarview) **build** job per OS
 - a **test** job per OS
 - a (superbuild) **package** job per OS
 - ...
@@ -90,7 +90,7 @@ sudo apt-get install gitlab-runner
 > It's very important to set **builds_dir** and **cache_dir**, otherwise you would have a weird error like ***Skipping cache extraction due to empty cache key***
 
 The [Runners] are describe in the `.gitlab-runner/config.toml` file
-KEU one can be found on Wheezy/Project/VeloView/Internal/CI/.gitlab-runner/config.toml
+KEU one can be found on Wheezy/Project/LidarView/Internal/CI/.gitlab-runner/config.toml
 
 ```bash
 concurrent = 1
@@ -119,7 +119,7 @@ check_interval = 0
     Path = "minio"
     Shared = true
 ```
-Then you need to add the machine [tags](https://docs.gitlab.com/ee/ci/yaml/#tags) via  [Runners settings](https://gitlab.kitware.com/bjacquet/VeloView-kwinternal/settings/ci_cd) in section 
+Then you need to add the machine [tags](https://docs.gitlab.com/ee/ci/yaml/#tags) via  [Runners settings](https://gitlab.kitware.com/bjacquet/LidarView-kwinternal/settings/ci_cd) in section 
 
 ### Create a new Minio server
 

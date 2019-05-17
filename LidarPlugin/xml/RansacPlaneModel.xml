@@ -1,0 +1,97 @@
+<ServerManagerConfiguration>
+  <!-- Begin vtkRansacPlaneModel -->
+  <ProxyGroup name="filters">
+    <SourceProxy name="RansacPlaneModel" class="vtkRansacPlaneModel" label="RansacPlaneModel">
+      <Documentation
+        short_help="FIt a plane to the data using a Ransac algorithm to remove outliers"
+        long_help="FIt a plane to the data using a Ransac algorithm to remove outliers">
+        Fit a plane to the data using a Ransac algorithm to remove outliers
+      </Documentation>
+
+    <InputProperty
+      name="Input"
+      command="SetInputConnection">
+      <DataTypeDomain name="input_type">
+        <DataType value="vtkPolyData"/>
+      </DataTypeDomain>
+    </InputProperty>
+
+    <IntVectorProperty name="Max Iteration"
+                       default_values="500"
+                       command="SetMaxRansacIteration"
+                       number_of_elements="1">
+    </IntVectorProperty>
+
+    <DoubleVectorProperty name="Threshold"
+                          default_values="0.5"
+                          command="SetThreshold"
+                          number_of_elements="1">
+    </DoubleVectorProperty>
+
+    <DoubleVectorProperty name="Ratio Inliers Required"
+                          default_values="0.3"
+                          command="SetRatioInliersRequired"
+                          number_of_elements="1">
+    </DoubleVectorProperty>
+
+    <PropertyGroup label="Ransac Parameters">
+      <Property name="Max Iteration" />
+      <Property name="Threshold" />
+      <Property name="Ratio Inliers Required" />
+    </PropertyGroup>
+
+    <IntVectorProperty
+      name="AlignOutput"
+      animateable="0"
+      command="SetAlignOutput"
+      default_values="0"
+      number_of_elements="1">
+        <BooleanDomain name="AlignOutputBool" />
+            <Documentation>
+                Align the fitted plane to XY.
+            </Documentation>
+    </IntVectorProperty>
+
+
+    <IntVectorProperty
+      name="TemporalAveraging"
+      animateable="0"
+      command="SetTemporalAveraging"
+      default_values="1"
+      number_of_elements="1">
+        <BooleanDomain name="TemporalAveragingBool" />
+            <Documentation>
+                Smooth plane fitting over time.
+            </Documentation>
+    </IntVectorProperty>
+
+
+    <DoubleVectorProperty command="SetMaxTemporalAngleChange"
+                          default_values="45.0"
+                          name="MaxTemporalAngleChange"
+                          number_of_elements="1"
+                          panel_visibility="advanced">
+      <Documentation>Set the maximal angle change allowed between between two successive plane estimations.
+      This has effects only if the temporal averaging is enabled. </Documentation>
+    </DoubleVectorProperty>
+
+
+    <DoubleVectorProperty command="SetPreviousEstimationWeight"
+                          default_values="0.9"
+                          name="PreviousEstimationWeight"
+                          number_of_elements="1"
+                          panel_visibility="advanced">
+      <Documentation>Set the previous estimation influence in the temporal averaging. </Documentation>
+    </DoubleVectorProperty>
+
+    <PropertyGroup label="Ransac Parameters">
+      <Property name="AlignOutput" />
+      <Property name="TemporalAveraging" />
+      <Property name="MaxTemporalAngleChange" />
+      <Property name="PreviousEstimationWeight" />
+    </PropertyGroup>
+
+    </SourceProxy>
+  </ProxyGroup>
+  <!-- End vtkRansacPlaneModel -->
+</ServerManagerConfiguration>

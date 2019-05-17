@@ -1,0 +1,17 @@
+<RCC>
+    <qresource prefix="/LidarViewPlugin">
+        <file>crop.png</file>
+        <file>gps.png</file>
+        <file>las.png</file>
+        <file>trailingframes.png</file>
+        <file>media-eject.png</file>
+        <file>media-record.png</file>
+        <file>WiresharkDoc-128.png</file>
+        <file>lidar.png</file>
+        <file>kiwi_200.png</file>
+        <file>preferences-system-64.png</file>
+        <file>calibrate.png</file>
+        <file>csv.png</file>
+        <file>vvGridAdjustmentDialog.ui</file>
+    </qresource>
+</RCC>

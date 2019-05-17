@@ -129,16 +129,16 @@
     </property>
     <action name="actionResetDefaultSettings">
      <property name="text">
-      <string>Reset Veloview settings</string>
+      <string>Reset LidarView settings</string>
      </property>
      <property name="iconText">
-      <string>This will reset all veloview settings by default</string>
+      <string>This will reset all LidarView settings by default</string>
      </property>
     </action>
-    <addaction name="actionAbout_VeloView"/>
+    <addaction name="actionAbout_LidarView"/>
     <addaction name="separator"/>
-    <addaction name="actionVeloViewUserGuide"/>
-    <addaction name="actionVeloViewDeveloperGuide"/>
+    <addaction name="actionLidarViewUserGuide"/>
+    <addaction name="actionLidarViewDeveloperGuide"/>
     <addaction name="actionResetDefaultSettings"/>
     <addaction name="actionAdvanceFeature"/>
    </widget>
@@ -308,6 +308,15 @@
    </attribute>
    <widget class="pqPropertiesPanel" name="viewPropertiesPanel"/>
   </widget>
+  <widget class="QDockWidget" name="viewAnimationDock">
+   <property name="windowTitle">
+    <string>Animation</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>2</number>
+   </attribute>
+   <widget class="pqPVAnimationWidget" name="animationPanel"/>
+  </widget>
   <action name="actionE_xit">
    <property name="text">
     <string>E&amp;xit</string>
@@ -321,14 +330,14 @@
   </action>
   <action name="actionOpenPcap">
    <property name="icon">
-    <iconset resource="VelodyneHDL/Ui/images/resources.qrc">
-     <normaloff>:/VelodyneHDLPlugin/WiresharkDoc-128.png</normaloff>:/VelodyneHDLPlugin/WiresharkDoc-128.png</iconset>
+    <iconset resource="LidarPlugin/Ui/images/resources.qrc">
+     <normaloff>:/LidarViewPlugin/WiresharkDoc-128.png</normaloff>:/LidarViewPlugin/WiresharkDoc-128.png</iconset>
    </property>
    <property name="text">
     <string>&amp;Capture File...</string>
    </property>
    <property name="toolTip">
-    <string>Open a Wireshark-format capture file with data collected from a Velodyne sensor</string>
+    <string>Open a Wireshark-format capture file with data collected from a lidar sensor</string>
    </property>
    <property name="statusTip">
     <string>Open Data File</string>
@@ -384,17 +393,20 @@
   </action>
   <action name="actionOpen_Sensor_Stream">
    <property name="icon">
-    <iconset resource="VelodyneHDL/Ui/images/resources.qrc">
-     <normaloff>:/VelodyneHDLPlugin/velodyne_hdl.png</normaloff>:/VelodyneHDLPlugin/velodyne_hdl.png</iconset>
+    <iconset resource="LidarPlugin/Ui/images/resources.qrc">
+     <normaloff>:/LidarViewPlugin/lidar.png</normaloff>:/LidarViewPlugin/lidar.png</iconset>
    </property>
    <property name="text">
     <string>Sensor &amp;Stream...</string>
    </property>
+   <property name="shortcut">
+    <string>Ctrl+K</string>
+   </property>
   </action>
   <action name="actionChoose_Calibration_File">
    <property name="icon">
-    <iconset resource="VelodyneHDL/Ui/images/resources.qrc">
-     <normaloff>:/VelodyneHDLPlugin/calibrate.png</normaloff>:/VelodyneHDLPlugin/calibrate.png</iconset>
+    <iconset resource="LidarPlugin/Ui/images/resources.qrc">
+     <normaloff>:/LidarViewPlugin/calibrate.png</normaloff>:/LidarViewPlugin/calibrate.png</iconset>
    </property>
    <property name="text">
     <string>Choose &amp;Calibration File...</string>
@@ -403,7 +415,7 @@
   <action name="actionPause">
    <property name="icon">
     <iconset>
-     <normaloff>:/VelodyneHDLPlugin/media-playback-pause.png</normaloff>:/VelodyneHDLPlugin/media-playback-pause.png</iconset>
+     <normaloff>:/LidarViewPlugin/media-playback-pause.png</normaloff>:/LidarViewPlugin/media-playback-pause.png</iconset>
    </property>
    <property name="text">
     <string>Pause</string>
@@ -456,8 +468,8 @@
   </action>
   <action name="actionSaveCSV">
    <property name="icon">
-    <iconset resource="VelodyneHDL/Ui/images/resources.qrc">
-     <normaloff>:/VelodyneHDLPlugin/csv.png</normaloff>:/VelodyneHDLPlugin/csv.png</iconset>
+    <iconset resource="LidarPlugin/Ui/images/resources.qrc">
+     <normaloff>:/LidarViewPlugin/csv.png</normaloff>:/LidarViewPlugin/csv.png</iconset>
    </property>
    <property name="text">
     <string>Save &amp;CSV...</string>
@@ -465,8 +477,8 @@
   </action>
   <action name="actionExport_To_KiwiViewer">
    <property name="icon">
-    <iconset resource="VelodyneHDL/Ui/images/resources.qrc">
-     <normaloff>:/VelodyneHDLPlugin/kiwi_200.png</normaloff>:/VelodyneHDLPlugin/kiwi_200.png</iconset>
+    <iconset resource="LidarPlugin/Ui/images/resources.qrc">
+     <normaloff>:/LidarViewPlugin/kiwi_200.png</normaloff>:/LidarViewPlugin/kiwi_200.png</iconset>
    </property>
    <property name="text">
     <string>Export To &amp;KiwiViewer...</string>
@@ -482,8 +494,8 @@
   </action>
   <action name="actionSavePCAP">
    <property name="icon">
-    <iconset resource="VelodyneHDL/Ui/images/resources.qrc">
-     <normaloff>:/VelodyneHDLPlugin/WiresharkDoc-128.png</normaloff>:/VelodyneHDLPlugin/WiresharkDoc-128.png</iconset>
+    <iconset resource="LidarPlugin/Ui/images/resources.qrc">
+     <normaloff>:/LidarViewPlugin/WiresharkDoc-128.png</normaloff>:/LidarViewPlugin/WiresharkDoc-128.png</iconset>
    </property>
    <property name="text">
     <string>Save PCAP...</string>
@@ -495,12 +507,12 @@
     <string>Save PCAP</string>
    </property>
   </action>
-  <action name="actionAbout_VeloView">
+  <action name="actionAbout_LidarView">
    <property name="text">
     <string>About ...</string>
    </property>
   </action>
-  <action name="actionVeloViewDeveloperGuide">
+  <action name="actionLidarViewDeveloperGuide">
    <property name="text">
     <string>Developer's Guide</string>
    </property>
@@ -562,7 +574,7 @@
     <string>Toggle between projective and orthogonal view</string>
    </property>
   </action>
-  <action name="actionVeloViewUserGuide">
+  <action name="actionLidarViewUserGuide">
    <property name="text">
     <string>User's Guide</string>
    </property>
@@ -643,8 +655,8 @@
   </action>
   <action name="actionSaveLAS">
    <property name="icon">
-    <iconset resource="VelodyneHDL/Ui/images/resources.qrc">
-     <normaloff>:/VelodyneHDLPlugin/las.png</normaloff>:/VelodyneHDLPlugin/las.png</iconset>
+    <iconset resource="LidarPlugin/Ui/images/resources.qrc">
+     <normaloff>:/LidarViewPlugin/las.png</normaloff>:/LidarViewPlugin/las.png</iconset>
    </property>
    <property name="text">
     <string>Save &amp;LAS</string>
@@ -653,22 +665,10 @@
     <string>Save to ASPRS LAS format</string>
    </property>
   </action>
-  <action name="actionOpenApplanix">
-   <property name="icon">
-    <iconset resource="VelodyneHDL/Ui/images/resources.qrc">
-     <normaloff>:/VelodyneHDLPlugin/gps.png</normaloff>:/VelodyneHDLPlugin/gps.png</iconset>
-   </property>
-   <property name="text">
-    <string>Capture File with External &amp;Geoposition</string>
-   </property>
-   <property name="toolTip">
-    <string>Open a text file with POSPAC text-format position data collected from an Applanix sensor, and Wireshark-format capture file with data collected from a Velodyne sensor</string>
-   </property>
-  </action>
   <action name="actionCropReturns">
    <property name="icon">
-    <iconset resource="VelodyneHDL/Ui/images/resources.qrc">
-     <normaloff>:/VelodyneHDLPlugin/crop.png</normaloff>:/VelodyneHDLPlugin/crop.png</iconset>
+    <iconset resource="LidarPlugin/Ui/images/resources.qrc">
+     <normaloff>:/LidarViewPlugin/crop.png</normaloff>:/LidarViewPlugin/crop.png</iconset>
    </property>
    <property name="text">
     <string>Crop Returns...</string>
@@ -939,9 +939,15 @@
    <extends>QStatusBar</extends>
    <header>pqStatusBar.h</header>
   </customwidget>
+  <customwidget>
+   <class>pqPVAnimationWidget</class>
+   <extends>QWidget</extends>
+   <header>pqPVAnimationWidget.h</header>
+   <container>1</container>
+  </customwidget>
  </customwidgets>
  <resources>
-  <include location="VelodyneHDL/Ui/images/resources.qrc"/>
+  <include location="LidarPlugin/Ui/images/resources.qrc"/>
   <include location="vvResources.qrc"/>
  </resources>
  <connections>

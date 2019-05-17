@@ -14,9 +14,9 @@
 
 cmake_minimum_required(VERSION 3.1 FATAL_ERROR)
 include("SoftwareInformation/branding.cmake")
-project(VeloView)
+project(LidarView)
 
-set (CMAKE_CXX_STANDARD 11)
+set (CMAKE_CXX_STANDARD 14)
 
 if (MSVC)
     # warning level all
@@ -27,7 +27,7 @@ else()
 endif()
 
 # Disallow in-source build
-if ("${VeloView_SOURCE_DIR}"  STREQUAL "${VeloView_BINARY_DIR}")
+if ("${LidarView_SOURCE_DIR}"  STREQUAL "${LidarView_BINARY_DIR}")
   message(FATAL_ERROR
     "${SOFTWARE_NAME} requires an out of source Build. "
     "Please create a separate binary directory and run CMake there.")
@@ -71,15 +71,15 @@ if(BUILD_DOC)
 endif()
 
 #-------------------------------------------------------------------------------
-set (VeloView_CMAKE_DIR "${VeloView_SOURCE_DIR}/CMake")
-set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${VeloView_CMAKE_DIR})
+set (LidarView_CMAKE_DIR "${LidarView_SOURCE_DIR}/CMake")
+set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${LidarView_CMAKE_DIR})
 
 include(Git)
 include(ParaViewDetermineVersion)
 # Sets VV_VERSION_{MAJOR,MINOR,PATCH} using PARAVIEW determine_version
 file(STRINGS version.txt version_txt)
 extract_version_components("${version_txt}" "VV")
-determine_version(${VeloView_SOURCE_DIR} ${GIT_EXECUTABLE} "VV")
+determine_version(${LidarView_SOURCE_DIR} ${GIT_EXECUTABLE} "VV")
 
 # Is this a 32 bit or 64bit build. Display this in about dialog.
 if ("${CMAKE_SIZEOF_VOID_P}" EQUAL 8)
@@ -121,10 +121,10 @@ if (WIN32)
   set(VV_INSTALL_LIBRARY_DIR bin)
 else()
   set(VV_INSTALL_LIBRARY_DIR
-    lib/veloview-${VV_VERSION_MAJOR}.${VV_VERSION_MINOR})
+    lib/lidarview-${VV_VERSION_MAJOR}.${VV_VERSION_MINOR})
 endif()
 set(VV_INSTALL_ARCHIVE_DIR
-    lib/veloview-${VV_VERSION_MAJOR}.${VV_VERSION_MINOR})
+    lib/lidarview-${VV_VERSION_MAJOR}.${VV_VERSION_MINOR})
 
 # Find and include PythonQt
 find_package(PythonQt REQUIRED)
@@ -183,10 +183,10 @@ if (APPLE)
 endif()
 
 # Add the reader plugin and any other plugins.
-set(VV_PLUGIN_LIBRARY VelodyneHDLPlugin) # veloview plugin
-set(VV_NONE_PLUGIN_LIBRARY VelodyneHDLPythonQT) # code needed by veloview but that is not part of the plugin
-add_subdirectory(VelodyneHDL)
-include_directories(VelodyneHDL)
+set(VV_PLUGIN_LIBRARY LidarPlugin) # lidarview plugin
+set(VV_NONE_PLUGIN_LIBRARY LidarPythonQT) # code needed by lidarview but that is not part of the plugin
+add_subdirectory(LidarPlugin)
+include_directories(LidarPlugin)
 
 
 # Install data files
@@ -224,6 +224,10 @@ if (WIN32)
   install(DIRECTORY "${Qt5_DIR}/../../../plugins/platforms"
     DESTINATION "bin"
   )
+  # see comment in: Superbuild/Projects/win32/lidarview.bundle.cmake
+  install(DIRECTORY "${Qt5_DIR}/../../../plugins/styles"
+    DESTINATION "bin"
+  )
 endif ()
 
 
@@ -240,7 +244,7 @@ build_paraview_client(${SOFTWARE_NAME}
   PVMAIN_WINDOW vvMainWindow
   PVMAIN_WINDOW_INCLUDE vvMainWindow.h
   SPLASH_IMAGE "${CMAKE_CURRENT_SOURCE_DIR}/SoftwareInformation/${PARAVIEW_SPLASH_IMAGE}"
-  # right now the bundle's logo.icns file must be at the root of VeloView sources
+  # right now the bundle's logo.icns file must be at the root of LidarView sources
   # this problem is due to paraview/src/CMake/ParaViewBranding.cmake,
   # on line: GET_FILENAME_COMPONENT(bundle_icon_file "${BPC_BUNDLE_ICON}" NAME)
   BUNDLE_ICON "${CMAKE_CURRENT_SOURCE_DIR}/${PARAVIEW_BUNDLE_ICON}"
@@ -259,3 +263,6 @@ build_paraview_client(${SOFTWARE_NAME}
 
 # We directly link against the plugin and import them statically.
 target_link_libraries(${SOFTWARE_NAME} LINK_PUBLIC ${VV_PLUGIN_LIBRARY} ${VV_NONE_PLUGIN_LIBRARY} ${PYTHONQTPLUGIN_LIBRARY} ${PYTHONQT_LIBRARIES})
+
+# Add subdirectory containing python script for animation
+add_subdirectory("Utilities/Animation")
