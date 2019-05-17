@@ -28,9 +28,6 @@ protected:
   vtkTrailingFrame() = default;
 
   int FillOutputPortInformation(int port, vtkInformation* info) override;
-  int RequestInformation(vtkInformation *request,
-                         vtkInformationVector **inputVector,
-                         vtkInformationVector *outputVector) override;
   int RequestUpdateExtent(vtkInformation*,
                           vtkInformationVector**,
                           vtkInformationVector*) override;
