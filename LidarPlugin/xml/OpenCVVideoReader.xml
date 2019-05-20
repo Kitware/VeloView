@@ -1,0 +1,38 @@
+<ServerManagerConfiguration>
+  <!-- Begin OpenCVVideoReader -->
+  <ProxyGroup name="sources">
+    <SourceProxy name="OpenCVVideoReader" class="vtkOpenCVVideoReader" label="OpenCVVideoReader">
+      <Documentation
+        short_help="Read a video stream file using opencv"
+        long_help="Read a video stream file using opencv">
+        Read a video stream file using opencv
+      </Documentation>
+
+      <OutputPort name="Current_Video_Frame" index="0" id="port0" />
+
+      <StringVectorProperty
+          name="FileName"
+          animateable="0"
+          command="SetFileName"
+          number_of_elements="1">
+          <FileListDomain name="files"/>
+          <Documentation>
+            This property specifies the file name for the reader.
+          </Documentation>
+      </StringVectorProperty>
+
+      <DoubleVectorProperty
+          name="Time Offset"
+          command="SetTimeOffset"
+          default_values="0.0"
+          number_of_elements="1">
+        <Documentation>
+          This property specifies the time offset of the camera
+        </Documentation>
+      </DoubleVectorProperty>
+
+    </SourceProxy>
+  </ProxyGroup>
+  <!-- End OpenCVVideoReader -->
+</ServerManagerConfiguration>
+
