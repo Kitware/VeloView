@@ -10,6 +10,7 @@ set(lidarview_python_files
   lidarview/DTMFilter/__init__.py
   lidarview/DTMFilter/DTMPythonFilter_Script.py
   lidarview/DTMFilter/DTM.py
+  lidarview/visualizationTools.py
   )
 
 set(python_module_dir "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/site-packages")
