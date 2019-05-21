@@ -29,12 +29,9 @@ class vtkTransform;
  * @brief SpecificFrameInformation placeholder for
  *        specific sensor implementation
  */
-struct SpecificFrameInformation
-{
-  virtual ~SpecificFrameInformation() = default;
-
-  //! Deep copy the specific frame information
-  virtual std::shared_ptr<SpecificFrameInformation> CopyTo() = 0;
+struct SpecificFrameInformation {
+  virtual void reset() = 0;
+  virtual std::unique_ptr<SpecificFrameInformation> clone() = 0;
 };
 
 /**
@@ -57,19 +54,26 @@ struct FrameInformation
   //! Packet information that are specific to a sensor
   std::shared_ptr<SpecificFrameInformation> SpecificInformation = nullptr;
 
-  //! return a deep copy of the current object
-  FrameInformation CopyTo() const
-  {
-    FrameInformation copy;
-    copy.FilePosition = this->FilePosition;
-    copy.FirstPacketNetworkTime = this->FirstPacketNetworkTime;
-    copy.FirstPacketDataTime = this->FirstPacketDataTime;
-    if (this->SpecificInformation)
-    {
-      copy.SpecificInformation = this->SpecificInformation->CopyTo();
-    }
-    return copy;
+  void Reset() {
+    this->FirstPacketDataTime = 0;
+    this->FirstPacketNetworkTime = 0;
+    this->SpecificInformation->reset();
   }
+
+  FrameInformation() = default;
+
+  FrameInformation(const FrameInformation& arg) { *this = arg; }
+
+  void operator=(const FrameInformation& arg) {
+    this->FilePosition = arg.FilePosition;
+    this->FirstPacketNetworkTime = arg.FirstPacketNetworkTime;
+    this->FirstPacketDataTime = arg.FirstPacketDataTime;
+    if(arg.SpecificInformation != nullptr)
+    {
+      this->SpecificInformation = arg.SpecificInformation->clone();
+    }
+  }
+
 };
 
 class VTK_EXPORT  vtkLidarPacketInterpreter : public vtkAlgorithm
@@ -179,7 +183,7 @@ public:
    * @brief CreateNewFrameInformation create a new frame information
    * @return
    */
-  virtual FrameInformation GetParserMetaData() = 0;
+  FrameInformation GetParserMetaData() { return this->ParserMetaData; }
 
   /**
    * @brief ResetParserMetaData reset the metadata used by the
@@ -187,7 +191,7 @@ public:
    *        within the function ProcessPacket
    * @return
    */
-  virtual void ResetParserMetaData() = 0;
+  virtual void ResetParserMetaData() { this->ParserMetaData.Reset(); }
 
   /**
    * @brief SetParserMetaData set the metadata
@@ -196,7 +200,7 @@ public:
    *        ProcessPacket
    * @return
    */
-  virtual void SetParserMetaData(const FrameInformation& metaData) = 0;
+  virtual void SetParserMetaData(const FrameInformation& metaData) { this->ParserMetaData = metaData; }
 
   virtual int GetNumberOfChannels() { return this->CalibrationReportedNumLasers; }
 
