@@ -32,7 +32,7 @@
         name="UseIntraFiringAdjustment"
         animateable="0"
         command="SetUseIntraFiringAdjustment"
-        default_values="0"
+        default_values="1"
         number_of_elements="1">
         <BooleanDomain name="bool" />
       </IntVectorProperty>
