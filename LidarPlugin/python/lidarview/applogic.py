@@ -33,7 +33,6 @@ import planefit
 import bisect
 
 from PythonQt.paraview import vvCalibrationDialog, vvCropReturnsDialog, vvSelectFramesDialog
-from LidarPluginPython import vtkVelodynePacketInterpreter
 
 _repCache = {}
 
@@ -1762,26 +1761,26 @@ def toggleCrashAnalysis():
     app.EnableCrashAnalysis = app.actions['actionEnableCrashAnalysis'].isChecked()
 
 def setFilterToDual():
-    setFilterTo(0)
+    setFilterTo("Dual")
 
 def setFilterToDistanceNear():
-    setFilterTo(vtkVelodynePacketInterpreter.DUAL_DISTANCE_NEAR)
+    setFilterTo("Near Distance")
 
 def setFilterToDistanceFar():
-    setFilterTo(vtkVelodynePacketInterpreter.DUAL_DISTANCE_FAR)
+    setFilterTo("Far Distance")
 
 def setFilterToIntensityHigh():
-    setFilterTo(vtkVelodynePacketInterpreter.DUAL_INTENSITY_HIGH)
+    setFilterTo("High Intensity")
 
 def setFilterToIntensityLow():
-    setFilterTo(vtkVelodynePacketInterpreter.DUAL_INTENSITY_LOW)
+    setFilterTo("Low Intensity")
 
 def setFilterTo(mask):
 
     interp = getLidarPacketInterpreter()
     if interp:
         if interp.GetClientSideObject().GetHasDualReturn():
-            interp.GetClientSideObject().SetDualReturnFilter(mask)
+            interp.DualReturnFilter = mask
             smp.Render()
             smp.Render(getSpreadSheetViewProxy())
         else:
