@@ -68,23 +68,23 @@
 // points will be denoted by the ending letter L or W if they belong to
 // the corresponding coordinate system
 
-
+// LOCAL
 #include "Slam.h"
-
+#include "CeresCostFunctions.h"
+#include "vtkEigenTools.h"
+// STD
 #include <sstream>
 #include <algorithm>
 #include <cmath>
 #include <ctime>
-
+// EIGEN
 #include <Eigen/Dense>
-
+// PCL
 #include <pcl/filters/voxel_grid.h>
-
+// CERES
 #include <ceres/ceres.h>
-
+// NANOFLANN
 #include <nanoflann.hpp>
-
-#include "CeresCostFunctions.h"
 
 namespace {
 //-----------------------------------------------------------------------------
@@ -322,7 +322,6 @@ public:
   {
     if (pointcloud->size() == 0)
     {
-//      vtkGenericWarningMacro("Pointcloud empty, voxel grid not updated");
       std::cout << "Pointcloud empty, voxel grid not updated" << std::endl;
       return;
     }
@@ -445,7 +444,12 @@ void Slam::Reset()
   this->BlobsPointsLocalMap->SetSize(50);
 
   this->NbrFrameProcessed = 0;
+
+  // n-DoF parameters
   this->Tworld = Eigen::Matrix<double, 6, 1>::Zero();
+  this->Trelative = Eigen::Matrix<double, 6, 1>::Zero();
+  this->MotionParametersEgoMotion = Eigen::VectorXd::Zero(12, 1);
+  this->MotionParametersMapping = Eigen::VectorXd::Zero(12, 1);
 }
 
 //-----------------------------------------------------------------------------
@@ -501,7 +505,6 @@ void Slam::AddFrame(pcl::PointCloud<Slam::Point>::Ptr pc, std::vector<size_t> la
 {
   if (pc->size() == 0)
   {
-//    vtkGenericWarningMacro("Slam entry is a null pointer data");
     std::cout << "Slam entry is an empty pointcloud" << std::endl;
     return;
   }
@@ -582,12 +585,12 @@ void Slam::AddFrame(pcl::PointCloud<Slam::Point>::Ptr pc, std::vector<size_t> la
 //-----------------------------------------------------------------------------
 void Slam::TransformToWorld(Point& p)
 {
-//  if (this->Undistortion)
-//  {
-//    this->ExpressPointInOtherReferencial(p, this->MappingInterpolator);
-//  }
-//  else
-//  {
+  if (this->Undistortion)
+  {
+    this->ExpressPointInOtherReferencial(p);
+  }
+  else
+  {
     // Rotation and translation and points
     Eigen::Matrix3d Rw;
     Eigen::Vector3d Tw;
@@ -602,7 +605,7 @@ void Slam::TransformToWorld(Point& p)
     p.x = P(0);
     p.y = P(1);
     p.z = P(2);
-//  }
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -624,22 +627,18 @@ int Slam::ComputeLineDistanceParameters(KDTreePCLAdaptor& kdtreePreviousEdges, E
   Eigen::Vector3d P0(p.x, p.y, p.z);
   Eigen::Vector3d P, n;
   Eigen::Matrix3d A;
-//  if (this->Undistortion) // linear interpolated transform
-//  {
-//    if (matchingMode == MatchingMode::EgoMotion)
-//    {
-//      this->ExpressPointInOtherReferencial(p, this->EgoMotionInterpolator);
-//    }
-//    else if (matchingMode == MatchingMode::Mapping)
-//    {
-//      this->ExpressPointInOtherReferencial(p, this->MappingInterpolator);
-//    }
-//  }
-//  else // rigid transform
-//  {
+  // Time continious motion model to take
+  // into account the rolling shutter distortion
+  if (this->Undistortion)
+  {
+    this->ExpressPointInOtherReferencial(p);
+  }
+  // Rigid transform
+  else
+  {
     P = R * P0 + dT;
     p.x = P(0); p.y = P(1); p.z = P(2);
-//  }
+  }
 
   if (matchingMode == MatchingMode::EgoMotion)
   {
@@ -791,22 +790,18 @@ int Slam::ComputePlaneDistanceParameters(KDTreePCLAdaptor& kdtreePreviousPlanes,
   // Transform the point using the current pose estimation
   Eigen::Vector3d P0(p.x, p.y, p.z);
 
-//  if (this->Undistortion) // linear interpolated transform
-//  {
-//    if (matchingMode == MatchingMode::EgoMotion)
-//    {
-//      this->ExpressPointInOtherReferencial(p, this->EgoMotionInterpolator);
-//    }
-//    else if (matchingMode == MatchingMode::Mapping)
-//    {
-//      this->ExpressPointInOtherReferencial(p, this->MappingInterpolator);
-//    }
-//  }
-//  else // rigid transform
-//  {
+  // Time continious motion model to take
+  // into account the rolling shutter distortion
+  if (this->Undistortion)
+  {
+    this->ExpressPointInOtherReferencial(p);
+  }
+  // Rigid transform
+  else
+  {
     P = R * P0 + dT;
     p.x = P(0); p.y = P(1); p.z = P(2);
-//  }
+  }
 
   std::vector<int> nearestIndex(requiredNearest, -1);
   std::vector<double> nearestDist(requiredNearest, -1.0);
@@ -1154,13 +1149,13 @@ void Slam::ComputeEgoMotion()
   {
     this->EgoMotionEdgesPointsUsed = 0;
     this->EgoMotionPlanesPointsUsed = 0;
-//    vtkGenericWarningMacro("Not enought keypoints, EgoMotion skipped for this frame");
     std::cout << "Not enought keypoints, EgoMotion skipped for this frame" << std::endl;
     return;
   }
 
   // reset the relative transform
   this->Trelative = Eigen::Matrix<double, 6, 1>::Zero();
+  this->MotionParametersEgoMotion = Eigen::VectorXd::Zero(12, 1);
 
   // kd-tree to process fast nearest neighbor
   // among the keypoints of the previous pointcloud
@@ -1201,10 +1196,10 @@ void Slam::ComputeEgoMotion()
     this->ResetDistanceParameters();
 
     // Init the undistortion interpolator
-//    if (this->Undistortion)
-//    {
-//      this->EgoMotionInterpolator = this->InitUndistortionInterpolatorEgoMotion();
-//    }
+    if (this->Undistortion)
+    {
+      this->CreateWithinFrameTrajectory(this->WithinFrameTrajectory, WithinFrameTrajMode::EgoMotionTraj);
+    }
 
     // loop over edges if there is engought previous edge keypoints
     if (this->PreviousEdgesPoints->size() > this->EgoMotionLineDistanceNbrNeighbors)
@@ -1244,7 +1239,6 @@ void Slam::ComputeEgoMotion()
     // keypoints matched
     if ((usedPlanes + usedEdges) < 20)
     {
-//      vtkGenericWarningMacro("Too few geometric features, frame skipped");
       std::cout << "Too few geometric features, frame skipped" << std::endl;
       break;
     }
@@ -1258,23 +1252,22 @@ void Slam::ComputeEgoMotion()
     ceres::Problem problem;
     for (unsigned int k = 0; k < Xvalues.size(); ++k)
     {
-//      if (this->Undistortion)
-//      {
-//        ceres::CostFunction* cost_function = new ceres::AutoDiffCostFunction<CostFunctions::MahalanobisDistanceLinearDistortionResidual, 1, 6>(
-//                                              new CostFunctions::MahalanobisDistanceLinearDistortionResidual(
-//                                                this->Avalues[k], this->Pvalues[k], this->Xvalues[k],
-//                                                Eigen::Matrix<double, 3, 1>::Zero(),
-//                                                Eigen::Matrix<double, 3, 3>::Identity(),
-//                                                this->TimeValues[k], this->residualCoefficient[k]));
-//        problem.AddResidualBlock(cost_function, new ceres::ScaledLoss(new ceres::ArctanLoss(lossScale), this->residualCoefficient[k], ceres::TAKE_OWNERSHIP), this->Trelative.data());
-//      }
-//      else
-//      {
+      if (this->Undistortion)
+      {
+        ceres::CostFunction* cost_function = new ceres::AutoDiffCostFunction<CostFunctions::MahalanobisDistanceInterpolatedMotionResidual, 1, 12>(
+                                             new CostFunctions::MahalanobisDistanceInterpolatedMotionResidual(
+                                                this->Avalues[k], this->Pvalues[k], this->Xvalues[k],
+                                                this->TimeValues[k], this->residualCoefficient[k]));
+        problem.AddResidualBlock(cost_function, new ceres::ScaledLoss(new ceres::ArctanLoss(lossScale), this->residualCoefficient[k],
+                                                                      ceres::TAKE_OWNERSHIP), this->MotionParametersEgoMotion.data());
+      }
+      else
+      {
         ceres::CostFunction* cost_function = new ceres::AutoDiffCostFunction<CostFunctions::MahalanobisDistanceAffineIsometryResidual, 1, 6>(
                                              new CostFunctions::MahalanobisDistanceAffineIsometryResidual(this->Avalues[k], this->Pvalues[k],
                                                                                                           this->Xvalues[k], this->residualCoefficient[k]));
         problem.AddResidualBlock(cost_function, new ceres::ScaledLoss(new ceres::ArctanLoss(lossScale), this->residualCoefficient[k], ceres::TAKE_OWNERSHIP), this->Trelative.data());
-//      }
+      }
     }
 
     ceres::Solver::Options options;
@@ -1317,7 +1310,6 @@ void Slam::Mapping()
     this->MappingBlobsPointsUsed = 0;
     // update maps
     this->UpdateMapsUsingTworld();
-//    vtkGenericWarningMacro("Not enought keypoints, Mapping skipped for this frame");
     std::cout << "Not enought keypoints, Mapping skipped for this frame" << std::endl;
     return;
   }
@@ -1326,6 +1318,14 @@ void Slam::Mapping()
 
   // Set the FarestPoint to reduce the map to the minimum size
   this->SetLidarMaximunRange(this->KeyPointsExtractor->GetFarestKeypointDist());
+
+  // Update motion model parameters
+  if (this->Undistortion)
+  {
+    std::copy(this->MotionParametersMapping.data(),
+              this->MotionParametersMapping.data() + 5,
+              this->MotionParametersMapping.data() + 6);
+  }
 
   // get keypoints from the map
   pcl::PointCloud<Slam::Point>::Ptr subEdgesPointsLocalMap = this->EdgesPointsLocalMap->Get(this->Tworld);
@@ -1379,11 +1379,11 @@ void Slam::Mapping()
     // clear all keypoints matching data
     this->ResetDistanceParameters();
 
-//    // Init the undistortion interpolator
-//    if (this->Undistortion)
-//    {
-//      this->MappingInterpolator = this->InitUndistortionInterpolatorMapping();
-//    }
+    // Init the undistortion interpolator
+    if (this->Undistortion)
+    {
+      this->CreateWithinFrameTrajectory(this->WithinFrameTrajectory, WithinFrameTrajMode::MappingTraj);
+    }
 
     // Rotation and position at this step
     Eigen::Matrix3d R = GetRotationMatrix(this->Tworld);
@@ -1431,7 +1431,6 @@ void Slam::Mapping()
     // Skip this frame if there is too few geometric keypoints matched
     if ((usedPlanes + usedEdges + usedBlobs) < 20)
     {
-//      vtkGenericWarningMacro("Too few geometric features, loop breaked");
       std::cout << "Too few geometric features, loop breaked" << std::endl;
       std::cout << "planes: " << usedPlanes << " edges: " << usedEdges << " Blobs: " << usedBlobs << std::endl;
       break;
@@ -1447,21 +1446,22 @@ void Slam::Mapping()
     ceres::Problem problem;
     for (unsigned int k = 0; k < Xvalues.size(); ++k)
     {
-//      if (this->Undistortion)
-//      {
-//        ceres::CostFunction* cost_function = new ceres::AutoDiffCostFunction<CostFunctions::MahalanobisDistanceLinearDistortionResidual, 1, 6>(
-//                                              new CostFunctions::MahalanobisDistanceLinearDistortionResidual(
-//                                                this->Avalues[k], this->Pvalues[k], this->Xvalues[k], T0, R0,
-//                                                this->TimeValues[k], this->residualCoefficient[k]));
-//        problem.AddResidualBlock(cost_function, new ceres::ScaledLoss(new ceres::ArctanLoss(lossScale), this->residualCoefficient[k], ceres::TAKE_OWNERSHIP), this->Tworld.data());
-//      }
-//      else
-//      {
+      if (this->Undistortion)
+      {
+        ceres::CostFunction* cost_function = new ceres::AutoDiffCostFunction<CostFunctions::MahalanobisDistanceInterpolatedMotionResidual, 1, 12>(
+                                                     new CostFunctions::MahalanobisDistanceInterpolatedMotionResidual(
+                                                     this->Avalues[k], this->Pvalues[k], this->Xvalues[k],
+                                                     this->TimeValues[k], this->residualCoefficient[k]));
+        problem.AddResidualBlock(cost_function, new ceres::ScaledLoss(new ceres::ArctanLoss(lossScale), this->residualCoefficient[k],
+                                                                      ceres::TAKE_OWNERSHIP), this->MotionParametersMapping.data());
+      }
+      else
+      {
         ceres::CostFunction* cost_function = new ceres::AutoDiffCostFunction<CostFunctions::MahalanobisDistanceAffineIsometryResidual, 1, 6>(
                                              new CostFunctions::MahalanobisDistanceAffineIsometryResidual(this->Avalues[k], this->Pvalues[k],
                                                                                                           this->Xvalues[k], this->residualCoefficient[k]));
         problem.AddResidualBlock(cost_function, new ceres::ScaledLoss(new ceres::ArctanLoss(lossScale), this->residualCoefficient[k], ceres::TAKE_OWNERSHIP), this->Tworld.data());
-//      }
+      }
     }
 
     ceres::Solver::Options options;
@@ -1476,7 +1476,7 @@ void Slam::Mapping()
     // If no L-M iteration has been made since the
     // last ICP matching it means we reached a local
     // minimum for the ICP-LM algorithm
-    if (summary.num_successful_steps == 1)
+    if (summary.num_successful_steps == 1 && !this->Undistortion)
     {
       // Now evaluate the quality of the parameters
       // estimated using an approximate computation
@@ -1513,24 +1513,55 @@ void Slam::Mapping()
   std::cout << "Covariance Eigen values: " << D.transpose() << std::endl;
   std::cout << "Maximum variance: " << D(5) << std::endl;
 
+  if (this->Undistortion)
+  {
+    for (int i = 0; i < 6; ++i)
+    {
+      this->Tworld(i) = this->MotionParametersMapping(i + 6);
+    }
+  }
+
   // Add the current computed transform to the list
   this->TworldList.push_back(this->Tworld);
 
+  // Update maps
+  this->UpdateMapsUsingTworld();
+
+  // Transform the current keypoints
+  // in the sensor reference frame
+  // corresponding to the end of the
+  // frame
+  if (this->Undistortion)
+  {
+    this->UpdateCurrentKeypointsUsingTworld();
+  }
+  // Compute the undistortion interpolator before replacing previousTworld
+  // this interpolator will be used to output the mapped current frame
+  this->CreateWithinFrameTrajectory(this->WithinFrameTrajectory, WithinFrameTrajMode::MappingTraj);
+
   // Update the PreviousTworld data
   this->PreviousTworld = this->Tworld;
+}
 
-  // update maps
-  this->UpdateMapsUsingTworld();
+//-----------------------------------------------------------------------------
+void Slam::UpdateCurrentKeypointsUsingTworld()
+{
+  // Create the undistortion interpolator
+
+  // Now transform the keypoints
+  this->ExpressPointCloudInOtherReferencial(this->CurrentEdgesPoints);
+  this->ExpressPointCloudInOtherReferencial(this->CurrentPlanarsPoints);
+  this->ExpressPointCloudInOtherReferencial(this->CurrentBlobsPoints);
 }
 
 //-----------------------------------------------------------------------------
 void Slam::UpdateMapsUsingTworld()
 {
   // Init the mapping interpolator
-//  if (this->Undistortion)
-//  {
-//    this->MappingInterpolator = this->InitUndistortionInterpolatorMapping();
-//  }
+  if (this->Undistortion)
+  {
+    this->CreateWithinFrameTrajectory(this->WithinFrameTrajectory, WithinFrameTrajMode::MappingTraj);
+  }
 
   // it would nice to add the point frome the frame directly to the map
   auto updateMap = [this] (std::shared_ptr<RollingGrid> map, pcl::PointCloud<Slam::Point>::Ptr frame) {
@@ -1553,117 +1584,69 @@ void Slam::UpdateMapsUsingTworld()
 
 }
 
-////-----------------------------------------------------------------------------
-//vtkSmartPointer<vtkCustomTransformInterpolator> Slam::InitUndistortionInterpolatorEgoMotion()
-//{
-//  vtkSmartPointer<vtkCustomTransformInterpolator> resultInterp = vtkSmartPointer<vtkCustomTransformInterpolator>::New();
-//  resultInterp->SetInterpolationTypeToLinear();
+//-----------------------------------------------------------------------------
+void Slam::CreateWithinFrameTrajectory(SampledSensorPath& path, WithinFrameTrajMode mode)
+{
+  Eigen::VectorXd motionParameters;
+  if (mode == WithinFrameTrajMode::EgoMotionTraj)
+  {
+    motionParameters = this->MotionParametersEgoMotion;
+  }
+  else
+  {
+    motionParameters = this->MotionParametersMapping;
+  }
 
-//  // Transforms representing the passage from the
-//  // referential of the sensor at time t0 resp t1
-//  // to the referential of the sensor at the time 0
-//  vtkNew<vtkTransform> transform0, transform1;
+  // Position and orientation of the sensor at time t0
+  Eigen::Vector3d angles0(motionParameters(0), motionParameters(1), motionParameters(2));
+  Eigen::Matrix3d R0 = RollPitchYawToMatrix(angles0);
+  Eigen::Vector3d T0(motionParameters(3), motionParameters(4), motionParameters(5));
+  // Position and orientation of the sensor at time t1
+  Eigen::Vector3d angles1(motionParameters(6), motionParameters(7), motionParameters(8));
+  Eigen::Matrix3d R1 = RollPitchYawToMatrix(angles1);
+  Eigen::Vector3d T1(motionParameters(9), motionParameters(10), motionParameters(11));
 
-//  // transform 0 is identity
-//  transform0->Identity();
-//  transform0->Modified();
-//  transform0->Update();
+  if (mode == WithinFrameTrajMode::UndistortionTraj)
+  {
+    // Relative motion between t0 and t1
+    Eigen::Matrix3d dR = R1.transpose() * R0;
+    Eigen::Vector3d dT = R1.transpose() * (T0 - T1);
 
-//  // transform 1 is the delta transform
-//  // between T0 and T1 computed in the EgoMotion
-//  // i.e Trelative
-//  Eigen::Matrix3d R = GetRotationMatrix(this->Trelative);
-//  Eigen::Vector3d T(this->Trelative(3), this->Trelative(4), this->Trelative(5));
+    R0 = dR;
+    T0 = dT;
+    R1 = Eigen::Matrix3d::Identity();
+    T1 = Eigen::Vector3d::Zero();
+  }
 
-//  vtkNew<vtkMatrix4x4> M;
-//  for (unsigned int i = 0; i < 3; ++i)
-//  {
-//    for (unsigned int j = 0; j < 3; ++j)
-//    {
-//      M->Element[i][j] = R(i, j);
-//    }
-//    M->Element[i][3] = T(i);
-//    M->Element[3][i] = 0;
-//  }
-//  M->Element[3][3] = 1.0;
+  path.Samples.resize(2);
+  // Add orientation / position of the sensor at the beginning of the frame
+  this->WithinFrameTrajectory.Samples[0].R = R0;
+  this->WithinFrameTrajectory.Samples[0].T = T0;
+  this->WithinFrameTrajectory.Samples[0].time = 0.0;
+  // Add orientation / position of the sensor at the end of the frame
+  this->WithinFrameTrajectory.Samples[1].R = R1;
+  this->WithinFrameTrajectory.Samples[1].T = T1;
+  this->WithinFrameTrajectory.Samples[1].time = 1.0;
+}
 
-//  transform1->SetMatrix(M.Get());
-//  transform1->Modified();
-//  transform1->Update();
+//-----------------------------------------------------------------------------
+void Slam::ExpressPointInOtherReferencial(Point& p)
+{
+  // interpolate the transform
+  AffineIsometry iso = this->WithinFrameTrajectory(p.intensity);
+  Eigen::Vector3d X(p.x, p.y, p.z);
+  Eigen::Vector3d Y = iso.R * X + iso.T;
+  p.x = Y(0); p.y = Y(1); p.z = Y(2);
+}
 
-//  // Add the transforms and update
-//  resultInterp->AddTransform(0.0, transform0.GetPointer());
-//  resultInterp->AddTransform(1.0, transform1.GetPointer());
-//  resultInterp->Modified();
-
-//  return resultInterp;
-//}
-
-////-----------------------------------------------------------------------------
-//vtkSmartPointer<vtkCustomTransformInterpolator> Slam::InitUndistortionInterpolatorMapping()
-//{
-//  vtkSmartPointer<vtkCustomTransformInterpolator> resultInterp = vtkSmartPointer<vtkCustomTransformInterpolator>::New();
-//  resultInterp->SetInterpolationTypeToLinear();
-
-//  // Transforms representing the passage from the
-//  // referential of the sensor at time t0 resp t1
-//  // to the referential of the sensor at the time 0
-//  vtkNew<vtkTransform> transform0, transform1;
-
-//  // transform 1 is the delta transform
-//  // between T0 and T1
-//  Eigen::Matrix3d R0 = GetRotationMatrix(this->PreviousTworld);
-//  Eigen::Matrix3d R1 = GetRotationMatrix(this->Tworld);
-//  Eigen::Vector3d T0(this->PreviousTworld(3), this->PreviousTworld(4), this->PreviousTworld(5));
-//  Eigen::Vector3d T1(this->Tworld(3), this->Tworld(4), this->Tworld(5));
-
-//  vtkNew<vtkMatrix4x4> M0, M1;
-//  for (unsigned int i = 0; i < 3; ++i)
-//  {
-//    for (unsigned int j = 0; j < 3; ++j)
-//    {
-//      M0->Element[i][j] = R0(i, j);
-//      M1->Element[i][j] = R1(i, j);
-//    }
-//    M0->Element[i][3] = T0(i);
-//    M0->Element[3][i] = 0;
-//    M1->Element[i][3] = T1(i);
-//    M1->Element[3][i] = 0;
-//  }
-//  M0->Element[3][3] = 1.0;
-//  M1->Element[3][3] = 1.0;
-
-//  transform0->SetMatrix(M0.Get());
-//  transform0->Modified();
-//  transform0->Update();
-
-//  transform1->SetMatrix(M1.Get());
-//  transform1->Modified();
-//  transform1->Update();
-
-//  // Add the transforms and update
-//  resultInterp->AddTransform(0.0, transform0.GetPointer());
-//  resultInterp->AddTransform(1.0, transform1.GetPointer());
-//  resultInterp->Modified();
-
-//  return resultInterp;
-//}
-
-////-----------------------------------------------------------------------------
-//void Slam::ExpressPointInOtherReferencial(Point& p, vtkSmartPointer<vtkCustomTransformInterpolator> transform)
-//{
-//  // interpolate the transform
-//  vtkNew<vtkTransform> currTransform;
-//  transform->InterpolateTransform(p.intensity, currTransform.GetPointer());
-//  currTransform->Modified();
-//  currTransform->Update();
-
-//  double pos[3] = {p.x, p.y, p.z};
-//  currTransform->InternalTransformPoint(pos, pos);
-//  p.x = pos[0];
-//  p.y = pos[1];
-//  p.z = pos[2];
-//}
+//-----------------------------------------------------------------------------
+void Slam::ExpressPointCloudInOtherReferencial(pcl::PointCloud<Point>::Ptr pointcloud)
+{
+  for (unsigned int k = 0; k < pointcloud->size(); ++k)
+  {
+    ExpressPointInOtherReferencial(pointcloud->points[k]);
+  }
+}
 
 //-----------------------------------------------------------------------------
 void Slam::ResetDistanceParameters()
@@ -1684,40 +1667,82 @@ void Slam::ResetDistanceParameters()
 //-----------------------------------------------------------------------------
 void Slam::UpdateTworldUsingTrelative()
 {
-  // Rotation and translation relative
-  Eigen::Matrix3d Rr, Rw;
-  Eigen::Vector3d Tr, Tw;
-  Rr = GetRotationMatrix(this->Trelative);
-  Tr << this->Trelative(3), this->Trelative(4), this->Trelative(5);
+  if (this->Undistortion)
+  {
+    // Position and orientation of the sensor at time t0
+    // according to the reference frame attached to the
+    // sensor during the previous frame
+    Eigen::Vector3d angles0(this->MotionParametersEgoMotion(0), this->MotionParametersEgoMotion(1), this->MotionParametersEgoMotion(2));
+    Eigen::Matrix3d dR0 = RollPitchYawToMatrix(angles0);
+    Eigen::Vector3d dT0(this->MotionParametersEgoMotion(3), this->MotionParametersEgoMotion(4), this->MotionParametersEgoMotion(5));
+    // Position and orientation of the sensor at time t1
+    // according to the reference frame attached to the
+    // sensor during the previous frame
+    Eigen::Vector3d angles1(this->MotionParametersEgoMotion(6), this->MotionParametersEgoMotion(7), this->MotionParametersEgoMotion(8));
+    Eigen::Matrix3d dR1 = RollPitchYawToMatrix(angles1);
+    Eigen::Vector3d dT1(this->MotionParametersEgoMotion(9), this->MotionParametersEgoMotion(10), this->MotionParametersEgoMotion(11));
+    // Position and orientation of the sensor during previous
+    // frame according to the world reference frame
+    Eigen::Vector3d angles2(this->MotionParametersMapping(6), this->MotionParametersMapping(7), this->MotionParametersMapping(8));
+    Eigen::Matrix3d Rw = RollPitchYawToMatrix(angles2);
+    Eigen::Vector3d Tw(this->MotionParametersMapping(9), this->MotionParametersMapping(10), this->MotionParametersMapping(11));
 
-  // full rotation
-  Rw = GetRotationMatrix(this->Tworld);
-  Tw << this->Tworld(3), this->Tworld(4), this->Tworld(5);
+    // estimation of the sensor position and orientation
+    // at the time t0 according to the world rederence frame
+    Eigen::Matrix3d R0 = Rw * dR0;
+    Eigen::Vector3d T0 = Rw * dT0 + Tw;
+    // estimation of the sensor position and orientation
+    // at the time t1 according to the world rederence frame
+    Eigen::Matrix3d R1 = Rw * dR1;
+    Eigen::Vector3d T1 = Rw * dT1 + Tw;
 
-  Eigen::Vector3d newTw;
-  Eigen::Matrix3d newRw;
+    // Next estimation of Tworld using
+    // the odometry result. This estimation
+    // will be used to undistorded the frame
+    // if required and to initialize the
+    this->MotionParametersMapping(0) = std::atan2(R0(2, 1), R0(2, 2));
+    this->MotionParametersMapping(1) = -std::asin(R0(2, 0));
+    this->MotionParametersMapping(2) = std::atan2(R0(1, 0), R0(0, 0));
+    this->MotionParametersMapping(3) = T0(0);
+    this->MotionParametersMapping(4) = T0(1);
+    this->MotionParametersMapping(5) = T0(2);
 
-  // The new pos of the sensor in the world
-  // referential is the previous one composed
-  // with the relative motion estimated at the
-  // odometry step
-  newRw = Rw * Rr;
-  newTw = Rw * Tr + Tw;
+    this->MotionParametersMapping(6) = std::atan2(R1(2, 1), R1(2, 2));
+    this->MotionParametersMapping(7) = -std::asin(R1(2, 0));
+    this->MotionParametersMapping(8) = std::atan2(R1(1, 0), R1(0, 0));
+    this->MotionParametersMapping(9) = T1(0);
+    this->MotionParametersMapping(10) = T1(1);
+    this->MotionParametersMapping(11) = T1(2);
+  }
+  else
+  {
+    // Relative orientation and position estimated
+    // according to the last sensor pose reference frame
+    Eigen::Matrix3d Rr, Rw;
+    Rr = GetRotationMatrix(this->Trelative);
+    Eigen::Vector3d Tr(this->Trelative(3), this->Trelative(4), this->Trelative(5));
+    // Orientation and position of the sensor at its last pose
+    Rw = GetRotationMatrix(this->Tworld);
+    Eigen::Vector3d Tw(this->Tworld(3), this->Tworld(4), this->Tworld(5));
 
-  double rx = std::atan2(newRw(2, 1), newRw(2, 2));
-  double ry = -std::asin(newRw(2, 0));
-  double rz = std::atan2(newRw(1, 0), newRw(0, 0));
+    // The new pos of the sensor in the world
+    // referential is the previous one composed
+    // with the relative motion estimated at the
+    // odometry step
+    Eigen::Matrix3d newRw = Rw * Rr;
+    Eigen::Vector3d newTw = Rw * Tr + Tw;
 
-  // Next estimation of Tworld using
-  // the odometry result. This estimation
-  // will be used to undistorded the frame
-  // if required and to initialize the
-  this->Tworld(0) = rx;
-  this->Tworld(1) = ry;
-  this->Tworld(2) = rz;
-  this->Tworld(3) = newTw(0);
-  this->Tworld(4) = newTw(1);
-  this->Tworld(5) = newTw(2);
+    // Next estimation of Tworld using
+    // the odometry result. This estimation
+    // will be used to undistorded the frame
+    // if required and to initialize the
+    this->Tworld(0) = std::atan2(newRw(2, 1), newRw(2, 2));;
+    this->Tworld(1) = -std::asin(newRw(2, 0));
+    this->Tworld(2) = std::atan2(newRw(1, 0), newRw(0, 0));
+    this->Tworld(3) = newTw(0);
+    this->Tworld(4) = newTw(1);
+    this->Tworld(5) = newTw(2);
+  }
 }
 
 //-----------------------------------------------------------------------------

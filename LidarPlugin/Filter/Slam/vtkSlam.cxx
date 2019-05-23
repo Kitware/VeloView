@@ -74,9 +74,11 @@
 #include "vtkTemporalTransforms.h"
 #include "vtkSpinningSensorKeypointExtractor.h"
 #include "vtkEigenTools.h"
+
 // STD
 #include <algorithm>
 #include <numeric>
+
 // VTK
 #include <vtkCellArray.h>
 #include <vtkCellData.h>
@@ -104,7 +106,6 @@
 
 //-----------------------------------------------------------------------------
 vtkStandardNewMacro(vtkSlam)
-
 
 namespace {
 

@@ -325,6 +325,7 @@ if (ENABLE_Ceres)
   list(APPEND sources_which_do_not_inherit_from_vtkObject
       ${CMAKE_CURRENT_SOURCE_DIR}/Common/Calib/Geometric/vtkGeometricCalibration.cxx
       ${CMAKE_CURRENT_SOURCE_DIR}/Common/Calib/Camera/CameraCalibration.cxx
+      ${CMAKE_CURRENT_SOURCE_DIR}/Filter/Slam/MotionModel/MotionModel.cxx
       )
 endif (ENABLE_Ceres)
 
@@ -372,6 +373,7 @@ set(plugin_include_dirs
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/ProcessingSample
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/PCLRansacModel
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/Slam
+  ${CMAKE_CURRENT_SOURCE_DIR}/Filter/Slam/MotionModel
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/TemporalTransformsRemapper
   ${CMAKE_CURRENT_SOURCE_DIR}/Source/Grid
   )
