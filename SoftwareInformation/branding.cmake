@@ -1,5 +1,5 @@
 set(SOFTWARE_NAME "LidarView")
-set(VENDOR "Velodyne Lidar")
+set(VENDOR "Kitware, Inc.")
 set(PROJECT_NAME "${SOFTWARE_NAME}")
 
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "${SOFTWARE_NAME}")
