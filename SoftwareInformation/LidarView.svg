@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="51.424442cm"
+   height="10.308853cm"
+   viewBox="0 0 514.24441 103.08853"
+   version="1.1"
+   id="svg7638"
+   inkscape:version="0.92.2 (5c3e80d, 2017-08-06)"
+   sodipodi:docname="LidarView.svg"
+   inkscape:export-filename="/home/bjacquet/Dev/VeloView/VeloView-New/SoftwareInformation/LidarView.png"
+   inkscape:export-xdpi="45"
+   inkscape:export-ydpi="45">
+  <defs
+     id="defs7632" />
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="0.175"
+     inkscape:cx="927.39378"
+     inkscape:cy="19.106615"
+     inkscape:document-units="mm"
+     inkscape:current-layer="layer1"
+     showgrid="false"
+     fit-margin-top="0.75"
+     fit-margin-left="0.75"
+     fit-margin-right="0.75"
+     fit-margin-bottom="0.75"
+     inkscape:window-width="897"
+     inkscape:window-height="903"
+     inkscape:window-x="2472"
+     inkscape:window-y="108"
+     inkscape:window-maximized="0"
+     units="cm" />
+  <metadata
+     id="metadata7635">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(-25.603976,41.806171)">
+    <path
+       style="fill:#0038a5;fill-opacity:1;stroke-width:0.28222224"
+       d="m 291.64506,-34.306171 29.92397,87.739421 h 13.01062 c 10.32161,-29.086868 21.2589,-58.4370503 30.74839,-87.739421 h -14.38082 l -22.6437,65.199966 -23.48005,-65.199966 z m 123.73829,21.934114 c -17.81294,-0.123387 -34.67579,15.0012697 -33.32001,34.326746 2.32312,33.113898 47.15401,45.14653 63.00999,11.141993 0,0 -9.80115,-3.578381 -11.63048,-4.260821 -5.8742,11.533209 -20.74262,16.211973 -31.14357,7.391088 L 446.26117,9.8562747 C 438.61083,-6.1691523 426.80189,-12.293063 415.38335,-12.372057 Z m -51.35203,0.352411 0.0976,13.6861137 h 12.66838 l -0.004,-13.6847587 h -12.76173 z m 83.58979,0 22.3925,65.466469 h 12.82989 l 6.65739,-19.217923 6.7782,19.217923 h 12.7091 l 23.36022,-65.466469 H 518.06592 L 502.57305,31.384582 496.3999,14.317954 505.11488,-9.8898563 H 490.5901 l -1.45262,3.44966 -0.84727,-3.44966 h -13.43522 l 7.86773,24.2078103 -6.41515,17.066628 -15.13009,-43.404228 z M 414.62545,0.43563874 c 4.35607,0.03485 8.96847,1.55267296 13.33825,4.99490996 L 394.92799,24.836433 C 392.4994,11.580964 402.58217,0.33971174 414.62545,0.43563874 Z m -37.83341,9.39808496 -12.42745,0.05859 -0.0692,43.5545103 H 376.8314 L 376.792,9.8337247 Z"
+       id="path4147"
+       inkscape:connector-curvature="0"
+       sodipodi:nodetypes="ccccccccssccccsccccccccccccccccccccccccccccccccccc" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:111.09945679px;line-height:125%;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#00a94f;fill-opacity:1;stroke:none;stroke-width:0.41662294px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       x="25.095747"
+       y="50.444645"
+       id="text6029"
+       transform="scale(0.93794034,1.0661659)"><tspan
+         sodipodi:role="line"
+         id="tspan6027"
+         x="25.095747"
+         y="50.444645"
+         style="font-weight:bold;font-size:111.09945679px;fill:#00a94f;fill-opacity:1;stroke-width:0.41662294px">L<tspan
+   style="font-weight:bold;font-size:82.97427368px;line-height:96.3999927%;fill:#00a94f;fill-opacity:1;stroke-width:0.41662294px"
+   id="tspan6732">iDAR</tspan></tspan></text>
+  </g>
+</svg>
