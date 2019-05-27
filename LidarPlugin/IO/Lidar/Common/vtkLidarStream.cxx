@@ -77,17 +77,17 @@ void vtkLidarStream::SetForwardedIpAddress(const std::string &ipAddress)
 //-----------------------------------------------------------------------------
 int vtkLidarStream::GetLidarPort()
 {
-  return this->Network->LIDARPort;
+  return this->Network->LidarPort;
 }
 
 //-----------------------------------------------------------------------------
 void vtkLidarStream::SetLidarPort(int value)
 {
-  if (this->Network->LIDARPort != value)
+  if (this->Network->LidarPort != value)
   {
-    bool wasRunning = this->Network && this->Network->Thread->joinable() && this->Network->LIDARPortReceiver;
+    bool wasRunning = this->Network && this->Network->Thread->joinable() && this->Network->LidarPortReceiver;
     this->Stop();
-    this->Network->LIDARPort = value;
+    this->Network->LidarPort = value;
     if (wasRunning)
     {
       this->Start();
@@ -108,15 +108,15 @@ void vtkLidarStream::SetGPSPort(int value)
 }
 
 //-----------------------------------------------------------------------------
-int vtkLidarStream::GetForwardedLIDARPort()
+int vtkLidarStream::GetForwardedLidarPort()
 {
-  return this->Network->ForwardedLIDARPort;
+  return this->Network->ForwardedLidarPort;
 }
 
 //-----------------------------------------------------------------------------
-void vtkLidarStream::SetForwardedLIDARPort(int value)
+void vtkLidarStream::SetForwardedLidarPort(int value)
 {
-  this->Network->ForwardedLIDARPort = value;
+  this->Network->ForwardedLidarPort = value;
 }
 
 //-----------------------------------------------------------------------------
