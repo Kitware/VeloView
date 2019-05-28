@@ -445,7 +445,6 @@ vtkVelodynePacketInterpreter::vtkVelodynePacketInterpreter()
 {
   this->RpmCalculator_ = new RPMCalculator();
   this->UseIntraFiringAdjustment = true;
-  this->ShouldAddDualReturnArray = false;
   this->alreadyWarnedForIgnoredHDL64FiringPacket = false;
   this->OutputPacketProcessingDebugInfo = false;
   this->SensorPowerMode = 0;
@@ -1364,10 +1363,6 @@ bool vtkVelodynePacketInterpreter::SplitFrame(bool force)
 
     return true;
   }
-  if (this->ShouldAddDualReturnArray)
-  {
-    this->Frames.back()->GetPointData()->AddArray(this->SelectedDualReturn);
-  }
 
   return false;
 }
@@ -1564,19 +1559,6 @@ std::string vtkVelodynePacketInterpreter::GetSensorInformation()
                   static_cast<SensorType>(this->ReportedFactoryField2));
 
   return std::string(streamInfo.str());
-}
-
-//-----------------------------------------------------------------------------
-void vtkVelodynePacketInterpreter::SetSelectedPointsWithDualReturn(double* data, int Npoints)
-{
-  this->SelectedDualReturn = vtkSmartPointer<vtkDoubleArray>::New();
-  this->SelectedDualReturn->Allocate(60000);
-  this->SelectedDualReturn->SetName("dualReturn_of_selectedPoints");
-
-  for (int k = 0; k < Npoints; ++k)
-  {
-    this->SelectedDualReturn->InsertNextValue(data[k]);
-  }
 }
 
 //-----------------------------------------------------------------------------

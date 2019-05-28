@@ -55,8 +55,6 @@ public:
   void ResetParserMetaData() override;
   void SetParserMetaData(const FrameInformation& metaData) override;
 
-  void SetSelectedPointsWithDualReturn(double* data, int Npoints);
-
   void GetXMLColorTable(double XMLColorTable[]);
 
   void GetLaserCorrections(double verticalCorrection[HDL_MAX_NUM_LASERS],
@@ -66,8 +64,6 @@ public:
     double horizontalOffsetCorrection[HDL_MAX_NUM_LASERS], double focalDistance[HDL_MAX_NUM_LASERS],
     double focalSlope[HDL_MAX_NUM_LASERS], double minIntensity[HDL_MAX_NUM_LASERS],
     double maxIntensity[HDL_MAX_NUM_LASERS]);
-
-  vtkSetMacro(ShouldAddDualReturnArray, bool)
 
   vtkGetMacro(HasDualReturn, bool)
 
@@ -130,9 +126,6 @@ protected:
   vtkSmartPointer<vtkIntArray> DistanceFlag;
   vtkSmartPointer<vtkUnsignedIntArray> Flags;
   vtkSmartPointer<vtkIdTypeArray> DualReturnMatching;
-  vtkSmartPointer<vtkDoubleArray> SelectedDualReturn;
-
-  bool ShouldAddDualReturnArray;
 
   // sensor information
   bool HasDualReturn;
