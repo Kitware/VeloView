@@ -304,6 +304,9 @@ private:
     /// configuration pass in a non-null main window.
     pqParaViewMenuBuilders::buildFiltersMenu(*this->Ui.menuFilters, nullptr);
 
+    // setup the context menu for the pipeline browser.
+    pqParaViewMenuBuilders::buildPipelineBrowserContextMenu(*this->Ui.pipelineBrowser);
+
     // build Paraview file menu
     QMenu *paraviewFileMenu = this->Ui.menuAdvance->addMenu("File (Paraview)");
     pqParaViewMenuBuilders::buildFileMenu(*paraviewFileMenu);
