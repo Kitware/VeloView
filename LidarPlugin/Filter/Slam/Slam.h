@@ -110,20 +110,20 @@ struct Transform
   double time = 0;
   union
   {
-    double position[3];
+    double position[3] = { 0.0, 0.0, 0.0 };
     struct {
-      double x = 0;
-      double y = 0;
-      double z = 0;
+      double x;
+      double y;
+      double z;
     };
   };
   union
   {
-    double orientation[3];
+    double orientation[3] = { 0.0, 0.0, 0.0 };
     struct {
-      double rx = 0;
-      double ry = 0;
-      double rz = 0;
+      double rx;
+      double ry;
+      double rz;
     };
   };
 
