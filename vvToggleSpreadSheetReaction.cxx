@@ -25,27 +25,22 @@ vvToggleSpreadSheetReaction::vvToggleSpreadSheetReaction(QAction* action, pqView
   , Action(action)
   , View(view)
 {
-  // Hidding the XYZ grouped coordinates column by default
-  if (this->View->inherits("pqSpreadSheetView"))
-  {
-    pqSpreadSheetView* ssview = qobject_cast<pqSpreadSheetView*>(this->View);
-
-    // XYZ column
-    ssview->getViewModel()->setVisible(1, false);
-  }
-
   QObject::connect(this->Action, SIGNAL(triggered()), this, SLOT(onToggleSpreadsheet()));
-
   this->onToggleSpreadsheet();
-}
-
-//-----------------------------------------------------------------------------
-vvToggleSpreadSheetReaction::~vvToggleSpreadSheetReaction()
-{
 }
 
 //-----------------------------------------------------------------------------
 void vvToggleSpreadSheetReaction::onToggleSpreadsheet()
 {
-  this->View->widget()->setVisible(this->Action->isChecked());
+  // Hide / Show Dock
+  this->View->widget()->parentWidget()->parentWidget()->parentWidget()->parentWidget()->setVisible(this->Action->isChecked());
+
+  pqSpreadSheetView* ssview = qobject_cast<pqSpreadSheetView*>(this->View);
+
+  // Hide Block ID and XYZ column
+  ssview->getViewModel()->setVisible(0, false);
+  ssview->getViewModel()->setVisible(2, false);
+  // Display parameters
+  ssview->getViewModel()->setDecimalPrecision(3);
+  ssview->getViewModel()->setFixedRepresentation(true);
 }

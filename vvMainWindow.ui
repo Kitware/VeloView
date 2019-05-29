@@ -10,6 +10,9 @@
     <height>645</height>
    </rect>
   </property>
+  <property name="acceptDrops">
+   <bool>true</bool>
+  </property>
   <property name="windowTitle">
    <string>MainWindow</string>
   </property>
@@ -17,14 +20,18 @@
    <iconset resource="vvResources.qrc">
     <normaloff>:/vvResources/Icons/logo.png</normaloff>:/vvResources/Icons/logo.png</iconset>
   </property>
-  <widget class="QWidget" name="centralwidget"/>
+  <widget class="QWidget" name="centralwidget">
+   <property name="acceptDrops">
+    <bool>true</bool>
+   </property>
+  </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
     <rect>
      <x>0</x>
      <y>0</y>
      <width>1070</width>
-     <height>21</height>
+     <height>25</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -91,6 +98,7 @@
       <string>Processing Options</string>
      </property>
      <addaction name="actionCorrectIntensityValues"/>
+     <addaction name="actionFastRenderer"/>
      <addaction name="actionIgnoreZeroDistances"/>
      <addaction name="actionIntraFiringAdjust"/>
      <addaction name="actionIgnoreEmptyFrames"/>
@@ -108,57 +116,61 @@
     <addaction name="separator"/>
     <addaction name="menuProcessing_Options"/>
     <addaction name="separator"/>
-    <addaction name="actionPlay"/>
-    <addaction name="actionRecord"/>
     <addaction name="separator"/>
     <addaction name="actionPython_Console"/>
     <addaction name="actionShowErrorDialog"/>
     <addaction name="separator"/>
     <addaction name="menuDebugging"/>
-    <addaction name="actionEnableCrashAnalysis"/>
+    <addaction name="separator"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
      <string>Help</string>
     </property>
-    <action name="actionResetConfigurationFile">
+    <action name="actionResetDefaultSettings">
      <property name="text">
-      <string>Reset Veloview settings</string>
+      <string>Reset LidarView settings</string>
      </property>
      <property name="iconText">
-      <string>This will reset all veloview settings by default</string>
+      <string>This will reset all LidarView settings by default</string>
      </property>
     </action>
-    <addaction name="actionAbout_VeloView"/>
+    <addaction name="actionAbout_LidarView"/>
     <addaction name="separator"/>
-    <addaction name="actionVeloViewUserGuide"/>
-    <addaction name="actionVeloViewDeveloperGuide"/>
-    <addaction name="actionResetConfigurationFile"/>
+    <addaction name="actionLidarViewUserGuide"/>
+    <addaction name="actionLidarViewDeveloperGuide"/>
+    <addaction name="actionResetDefaultSettings"/>
+    <addaction name="actionAdvanceFeature"/>
    </widget>
-   <widget class="QMenu" name="menuToolbar">
+   <widget class="QMenu" name="menuViews">
     <property name="title">
-     <string>Toolbars</string>
+     <string>Views</string>
     </property>
-    <addaction name="actionBasic_Controls"/>
-    <addaction name="actionColor_Controls"/>
-    <addaction name="actionView_Controls"/>
-    <addaction name="actionPlayback_Controls"/>
-    <addaction name="actionGeolocation_Controls"/>
    </widget>
-   <widget class="QMenu" name="menuView">
+   <widget class="QMenu" name="menuFilters">
     <property name="title">
-     <string>View</string>
+     <string>Filters</string>
     </property>
-    <addaction name="actionShowPipelineBrowser"/>
-    <addaction name="actionShowPropertiesPanel"/>
+   </widget>
+   <widget class="QMenu" name="menuSources">
+    <property name="title">
+     <string>Sources</string>
+    </property>
+   </widget>
+   <widget class="QMenu" name="menuAdvance">
+    <property name="title">
+     <string>Advance</string>
+    </property>
    </widget>
    <addaction name="menu_File"/>
    <addaction name="menuTools"/>
-   <addaction name="menuToolbar"/>
-   <addaction name="menuView"/>
+   <addaction name="menuSources"/>
+   <addaction name="menuFilters"/>
+   <addaction name="menuViews"/>
    <addaction name="menuHelp"/>
+   <addaction name="menuAdvance"/>
   </widget>
-  <widget class="QStatusBar" name="statusbar"/>
+  <widget class="pqStatusBar" name="statusbar"/>
   <widget class="QToolBar" name="toolBar">
    <property name="windowTitle">
     <string>Basic Controls</string>
@@ -191,24 +203,6 @@
     <bool>false</bool>
    </attribute>
   </widget>
-  <widget class="QToolBar" name="playbackToolbar">
-   <property name="windowTitle">
-    <string>Playback Controls</string>
-   </property>
-   <attribute name="toolBarArea">
-    <enum>TopToolBarArea</enum>
-   </attribute>
-   <attribute name="toolBarBreak">
-    <bool>false</bool>
-   </attribute>
-   <addaction name="actionGo_To_Start"/>
-   <addaction name="actionSeek_Backward"/>
-   <addaction name="actionPlay"/>
-   <addaction name="actionSeek_Forward"/>
-   <addaction name="actionGo_To_End"/>
-   <addaction name="actionLoop"/>
-   <addaction name="actionRecord"/>
-  </widget>
   <widget class="QToolBar" name="viewSettings">
    <property name="windowTitle">
     <string>View Controls</string>
@@ -219,17 +213,10 @@
    <attribute name="toolBarBreak">
     <bool>true</bool>
    </attribute>
-   <addaction name="actionReset_Camera"/>
    <addaction name="actionToggleProjection"/>
    <addaction name="actionMeasure"/>
    <addaction name="actionPlaneFit"/>
    <addaction name="separator"/>
-   <addaction name="actionSetViewXPlus"/>
-   <addaction name="actionSetViewXMinus"/>
-   <addaction name="actionSetViewYPlus"/>
-   <addaction name="actionSetViewYMinus"/>
-   <addaction name="actionSetViewZPlus"/>
-   <addaction name="actionSetViewZMinus"/>
   </widget>
   <widget class="QToolBar" name="geolocationToolbar">
    <property name="windowTitle">
@@ -241,7 +228,7 @@
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
-   <addaction name="actionOverheadView"/>
+   <addaction name="actionShowPosition"/>
   </widget>
   <widget class="QDockWidget" name="colorMapEditorDock">
    <property name="windowTitle">
@@ -262,9 +249,9 @@
    <attribute name="dockWidgetArea">
     <number>2</number>
    </attribute>
-   <widget class="pqPipelineBrowserWidget" name="dockWidgetContents"/>
+   <widget class="pqPipelineBrowserWidget" name="pipelineBrowser"/>
   </widget>
-  <widget class="QDockWidget" name="propertiesPanelDock">
+  <widget class="QDockWidget" name="propertiesDock">
    <property name="features">
     <set>QDockWidget::AllDockWidgetFeatures</set>
    </property>
@@ -274,7 +261,61 @@
    <attribute name="dockWidgetArea">
     <number>2</number>
    </attribute>
-   <widget class="pqPropertiesPanel" name="dockWidgetContents_2"/>
+   <widget class="pqPropertiesPanel" name="propertiesPanel"/>
+  </widget>
+  <widget class="QDockWidget" name="spreadSheetDock">
+   <property name="windowTitle">
+    <string>SpreadSheet</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>2</number>
+   </attribute>
+   <widget class="QWidget" name="spreadSheet"/>
+  </widget>
+  <widget class="QDockWidget" name="memoryInspectorDock">
+   <property name="windowTitle">
+    <string>Memory Inspector</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>2</number>
+   </attribute>
+   <widget class="pqMemoryInspectorPanel" name="memoryInspectorPanel"/>
+  </widget>
+  <widget class="QDockWidget" name="informationDock">
+   <property name="windowTitle">
+    <string>Information</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>1</number>
+   </attribute>
+   <widget class="pqProxyInformationWidget" name="proxyInformationWidget"/>
+  </widget>
+  <widget class="QDockWidget" name="displayPropertiesDock">
+   <property name="windowTitle">
+    <string>Display</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>2</number>
+   </attribute>
+   <widget class="pqPropertiesPanel" name="displayPropertiesPanel"/>
+  </widget>
+  <widget class="QDockWidget" name="viewPropertiesDock">
+   <property name="windowTitle">
+    <string>View</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>2</number>
+   </attribute>
+   <widget class="pqPropertiesPanel" name="viewPropertiesPanel"/>
+  </widget>
+  <widget class="QDockWidget" name="viewAnimationDock">
+   <property name="windowTitle">
+    <string>Animation</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>2</number>
+   </attribute>
+   <widget class="pqPVAnimationWidget" name="animationPanel"/>
   </widget>
   <action name="actionE_xit">
    <property name="text">
@@ -289,14 +330,14 @@
   </action>
   <action name="actionOpenPcap">
    <property name="icon">
-    <iconset resource="VelodyneHDL/images/resources.qrc">
-     <normaloff>:/VelodyneHDLPlugin/WiresharkDoc-128.png</normaloff>:/VelodyneHDLPlugin/WiresharkDoc-128.png</iconset>
+    <iconset resource="LidarPlugin/Ui/images/resources.qrc">
+     <normaloff>:/LidarViewPlugin/WiresharkDoc-128.png</normaloff>:/LidarViewPlugin/WiresharkDoc-128.png</iconset>
    </property>
    <property name="text">
     <string>&amp;Capture File...</string>
    </property>
    <property name="toolTip">
-    <string>Open a Wireshark-format capture file with data collected from a Velodyne sensor</string>
+    <string>Open a Wireshark-format capture file with data collected from a lidar sensor</string>
    </property>
    <property name="statusTip">
     <string>Open Data File</string>
@@ -352,89 +393,35 @@
   </action>
   <action name="actionOpen_Sensor_Stream">
    <property name="icon">
-    <iconset resource="VelodyneHDL/images/resources.qrc">
-     <normaloff>:/VelodyneHDLPlugin/velodyne_hdl.png</normaloff>:/VelodyneHDLPlugin/velodyne_hdl.png</iconset>
+    <iconset resource="LidarPlugin/Ui/images/resources.qrc">
+     <normaloff>:/LidarViewPlugin/lidar.png</normaloff>:/LidarViewPlugin/lidar.png</iconset>
    </property>
    <property name="text">
     <string>Sensor &amp;Stream...</string>
    </property>
+   <property name="shortcut">
+    <string>Ctrl+K</string>
+   </property>
   </action>
   <action name="actionChoose_Calibration_File">
    <property name="icon">
-    <iconset resource="VelodyneHDL/images/resources.qrc">
-     <normaloff>:/VelodyneHDLPlugin/calibrate.png</normaloff>:/VelodyneHDLPlugin/calibrate.png</iconset>
+    <iconset resource="LidarPlugin/Ui/images/resources.qrc">
+     <normaloff>:/LidarViewPlugin/calibrate.png</normaloff>:/LidarViewPlugin/calibrate.png</iconset>
    </property>
    <property name="text">
     <string>Choose &amp;Calibration File...</string>
    </property>
   </action>
-  <action name="actionSeek_Backward">
-   <property name="icon">
-    <iconset resource="VelodyneHDL/images/resources.qrc">
-     <normaloff>:/VelodyneHDLPlugin/media-seek-backward.png</normaloff>:/VelodyneHDLPlugin/media-seek-backward.png</iconset>
-   </property>
-   <property name="text">
-    <string>Seek Backward</string>
-   </property>
-   <property name="toolTip">
-    <string>Seek Backward</string>
-   </property>
-   <property name="shortcut">
-    <string>Left</string>
-   </property>
-  </action>
-  <action name="actionPlay">
-   <property name="icon">
-    <iconset resource="VelodyneHDL/images/resources.qrc">
-     <normaloff>:/VelodyneHDLPlugin/media-playback-start.png</normaloff>:/VelodyneHDLPlugin/media-playback-start.png</iconset>
-   </property>
-   <property name="text">
-    <string>Play</string>
-   </property>
-   <property name="toolTip">
-    <string>Play</string>
-   </property>
-   <property name="shortcut">
-    <string>Space</string>
-   </property>
-  </action>
-  <action name="actionSeek_Forward">
-   <property name="icon">
-    <iconset resource="VelodyneHDL/images/resources.qrc">
-     <normaloff>:/VelodyneHDLPlugin/media-seek-forward.png</normaloff>:/VelodyneHDLPlugin/media-seek-forward.png</iconset>
-   </property>
-   <property name="text">
-    <string>Seek Forward</string>
-   </property>
-   <property name="toolTip">
-    <string>Seek Forward</string>
-   </property>
-   <property name="shortcut">
-    <string>Right</string>
-   </property>
-  </action>
   <action name="actionPause">
    <property name="icon">
-    <iconset resource="VelodyneHDL/images/resources.qrc">
-     <normaloff>:/VelodyneHDLPlugin/media-playback-pause.png</normaloff>:/VelodyneHDLPlugin/media-playback-pause.png</iconset>
+    <iconset>
+     <normaloff>:/LidarViewPlugin/media-playback-pause.png</normaloff>:/LidarViewPlugin/media-playback-pause.png</iconset>
    </property>
    <property name="text">
     <string>Pause</string>
    </property>
    <property name="shortcut">
     <string>Space</string>
-   </property>
-  </action>
-  <action name="actionRecord">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="icon">
-    <iconset resource="VelodyneHDL/images/resources.qrc">
-     <normaloff>:/VelodyneHDLPlugin/media-record.png</normaloff>:/VelodyneHDLPlugin/media-record.png</iconset>
-   </property>
-   <property name="text">
-    <string>Record</string>
    </property>
   </action>
   <action name="actionPython_Console">
@@ -447,18 +434,6 @@
    </property>
    <property name="shortcut">
     <string>F8</string>
-   </property>
-  </action>
-  <action name="actionReset_Camera">
-   <property name="icon">
-    <iconset resource="vvResources.qrc">
-     <normaloff>:/vvResources/Icons/pqResetCamera32.png</normaloff>:/vvResources/Icons/pqResetCamera32.png</iconset>
-   </property>
-   <property name="text">
-    <string>Reset Camera</string>
-   </property>
-   <property name="shortcut">
-    <string>R</string>
    </property>
   </action>
   <action name="actionClose">
@@ -486,24 +461,6 @@
     <string>Ctrl+G</string>
    </property>
   </action>
-  <action name="actionGo_To_Start">
-   <property name="icon">
-    <iconset resource="VelodyneHDL/images/resources.qrc">
-     <normaloff>:/VelodyneHDLPlugin/media-skip-backward.png</normaloff>:/VelodyneHDLPlugin/media-skip-backward.png</iconset>
-   </property>
-   <property name="text">
-    <string>Go To Start</string>
-   </property>
-  </action>
-  <action name="actionGo_To_End">
-   <property name="icon">
-    <iconset resource="VelodyneHDL/images/resources.qrc">
-     <normaloff>:/VelodyneHDLPlugin/media-skip-forward.png</normaloff>:/VelodyneHDLPlugin/media-skip-forward.png</iconset>
-   </property>
-   <property name="text">
-    <string>Go To End</string>
-   </property>
-  </action>
   <action name="actionSaveScreenshot">
    <property name="text">
     <string>Save &amp;Screenshot...</string>
@@ -511,29 +468,17 @@
   </action>
   <action name="actionSaveCSV">
    <property name="icon">
-    <iconset resource="VelodyneHDL/images/resources.qrc">
-     <normaloff>:/VelodyneHDLPlugin/csv.png</normaloff>:/VelodyneHDLPlugin/csv.png</iconset>
+    <iconset resource="LidarPlugin/Ui/images/resources.qrc">
+     <normaloff>:/LidarViewPlugin/csv.png</normaloff>:/LidarViewPlugin/csv.png</iconset>
    </property>
    <property name="text">
     <string>Save &amp;CSV...</string>
    </property>
   </action>
-  <action name="actionLoop">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="icon">
-    <iconset resource="VelodyneHDL/images/resources.qrc">
-     <normaloff>:/VelodyneHDLPlugin/media-loop.png</normaloff>:/VelodyneHDLPlugin/media-loop.png</iconset>
-   </property>
-   <property name="text">
-    <string>Loop</string>
-   </property>
-  </action>
   <action name="actionExport_To_KiwiViewer">
    <property name="icon">
-    <iconset resource="VelodyneHDL/images/resources.qrc">
-     <normaloff>:/VelodyneHDLPlugin/kiwi_200.png</normaloff>:/VelodyneHDLPlugin/kiwi_200.png</iconset>
+    <iconset resource="LidarPlugin/Ui/images/resources.qrc">
+     <normaloff>:/LidarViewPlugin/kiwi_200.png</normaloff>:/LidarViewPlugin/kiwi_200.png</iconset>
    </property>
    <property name="text">
     <string>Export To &amp;KiwiViewer...</string>
@@ -549,8 +494,8 @@
   </action>
   <action name="actionSavePCAP">
    <property name="icon">
-    <iconset resource="VelodyneHDL/images/resources.qrc">
-     <normaloff>:/VelodyneHDLPlugin/WiresharkDoc-128.png</normaloff>:/VelodyneHDLPlugin/WiresharkDoc-128.png</iconset>
+    <iconset resource="LidarPlugin/Ui/images/resources.qrc">
+     <normaloff>:/LidarViewPlugin/WiresharkDoc-128.png</normaloff>:/LidarViewPlugin/WiresharkDoc-128.png</iconset>
    </property>
    <property name="text">
     <string>Save PCAP...</string>
@@ -562,12 +507,12 @@
     <string>Save PCAP</string>
    </property>
   </action>
-  <action name="actionAbout_VeloView">
+  <action name="actionAbout_LidarView">
    <property name="text">
     <string>About ...</string>
    </property>
   </action>
-  <action name="actionVeloViewDeveloperGuide">
+  <action name="actionLidarViewDeveloperGuide">
    <property name="text">
     <string>Developer's Guide</string>
    </property>
@@ -629,79 +574,7 @@
     <string>Toggle between projective and orthogonal view</string>
    </property>
   </action>
-  <action name="actionSetViewXPlus">
-   <property name="icon">
-    <iconset resource="vvResources.qrc">
-     <normaloff>:/vvResources/Icons/pqXPlus32.png</normaloff>:/vvResources/Icons/pqXPlus32.png</iconset>
-   </property>
-   <property name="text">
-    <string>setViewXPlus</string>
-   </property>
-   <property name="toolTip">
-    <string>Set view direction to +X</string>
-   </property>
-  </action>
-  <action name="actionSetViewXMinus">
-   <property name="icon">
-    <iconset resource="vvResources.qrc">
-     <normaloff>:/vvResources/Icons/pqXMinus32.png</normaloff>:/vvResources/Icons/pqXMinus32.png</iconset>
-   </property>
-   <property name="text">
-    <string>setViewXMinus</string>
-   </property>
-   <property name="toolTip">
-    <string>Set view direction to -X</string>
-   </property>
-  </action>
-  <action name="actionSetViewYPlus">
-   <property name="icon">
-    <iconset resource="vvResources.qrc">
-     <normaloff>:/vvResources/Icons/pqYPlus32.png</normaloff>:/vvResources/Icons/pqYPlus32.png</iconset>
-   </property>
-   <property name="text">
-    <string>setViewYPlus</string>
-   </property>
-   <property name="toolTip">
-    <string>Set view direction to +Y</string>
-   </property>
-  </action>
-  <action name="actionSetViewYMinus">
-   <property name="icon">
-    <iconset resource="vvResources.qrc">
-     <normaloff>:/vvResources/Icons/pqYMinus32.png</normaloff>:/vvResources/Icons/pqYMinus32.png</iconset>
-   </property>
-   <property name="text">
-    <string>setViewYMinus</string>
-   </property>
-   <property name="toolTip">
-    <string>Set view direction to -Y</string>
-   </property>
-  </action>
-  <action name="actionSetViewZPlus">
-   <property name="icon">
-    <iconset resource="vvResources.qrc">
-     <normaloff>:/vvResources/Icons/pqZPlus32.png</normaloff>:/vvResources/Icons/pqZPlus32.png</iconset>
-   </property>
-   <property name="text">
-    <string>setViewZPlus</string>
-   </property>
-   <property name="toolTip">
-    <string>Set view direction to +Z</string>
-   </property>
-  </action>
-  <action name="actionSetViewZMinus">
-   <property name="icon">
-    <iconset resource="vvResources.qrc">
-     <normaloff>:/vvResources/Icons/pqZMinus32.png</normaloff>:/vvResources/Icons/pqZMinus32.png</iconset>
-   </property>
-   <property name="text">
-    <string>setViewZMinus</string>
-   </property>
-   <property name="toolTip">
-    <string>Set view direction to -Z</string>
-   </property>
-  </action>
-  <action name="actionVeloViewUserGuide">
+  <action name="actionLidarViewUserGuide">
    <property name="text">
     <string>User's Guide</string>
    </property>
@@ -722,21 +595,6 @@
    </property>
    <property name="toolTip">
     <string>Measure the distance (in meters) between two screen points.&lt;br/&gt;To draw a ruler line, click this button, then hold down the &lt;b&gt;Ctrl key&lt;/b&gt; and the &lt;b&gt;left button&lt;/b&gt; of your mouse. &lt;br/&gt;&lt;u&gt;This feature is only available in orthogonal projection.&lt;/u&gt;</string>
-   </property>
-  </action>
-  <action name="actionOverheadView">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="icon">
-    <iconset resource="vvResources.qrc">
-     <normaloff>:/vvResources/Icons/map.png</normaloff>:/vvResources/Icons/map.png</iconset>
-   </property>
-   <property name="text">
-    <string>OverheadView</string>
-   </property>
-   <property name="toolTip">
-    <string>Show overhead view of GPS position</string>
    </property>
   </action>
   <action name="actionPlaneFit">
@@ -797,8 +655,8 @@
   </action>
   <action name="actionSaveLAS">
    <property name="icon">
-    <iconset resource="VelodyneHDL/images/resources.qrc">
-     <normaloff>:/VelodyneHDLPlugin/las.png</normaloff>:/VelodyneHDLPlugin/las.png</iconset>
+    <iconset resource="LidarPlugin/Ui/images/resources.qrc">
+     <normaloff>:/LidarViewPlugin/las.png</normaloff>:/LidarViewPlugin/las.png</iconset>
    </property>
    <property name="text">
     <string>Save &amp;LAS</string>
@@ -807,22 +665,10 @@
     <string>Save to ASPRS LAS format</string>
    </property>
   </action>
-  <action name="actionOpenApplanix">
-   <property name="icon">
-    <iconset resource="VelodyneHDL/images/resources.qrc">
-     <normaloff>:/VelodyneHDLPlugin/gps.png</normaloff>:/VelodyneHDLPlugin/gps.png</iconset>
-   </property>
-   <property name="text">
-    <string>Capture File with External &amp;Geoposition</string>
-   </property>
-   <property name="toolTip">
-    <string>Open a text file with POSPAC text-format position data collected from an Applanix sensor, and Wireshark-format capture file with data collected from a Velodyne sensor</string>
-   </property>
-  </action>
   <action name="actionCropReturns">
    <property name="icon">
-    <iconset resource="VelodyneHDL/images/resources.qrc">
-     <normaloff>:/VelodyneHDLPlugin/crop.png</normaloff>:/VelodyneHDLPlugin/crop.png</iconset>
+    <iconset resource="LidarPlugin/Ui/images/resources.qrc">
+     <normaloff>:/LidarViewPlugin/crop.png</normaloff>:/LidarViewPlugin/crop.png</iconset>
    </property>
    <property name="text">
     <string>Crop Returns...</string>
@@ -913,17 +759,6 @@
    </property>
    <property name="toolTip">
     <string>Display the rotations per minute</string>
-   </property>
-  </action>
-  <action name="actionEnableCrashAnalysis">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Crash Analysis</string>
-   </property>
-   <property name="toolTip">
-    <string>Enable the crash analysis</string>
    </property>
   </action>
   <action name="actionCorrectIntensityValues">
@@ -1025,7 +860,18 @@
     <string>Ignore empty frames</string>
    </property>
   </action>
-  <action name="actionBasic_Controls">
+  <action name="actionFastRenderer">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Apply VLS-128 Fast Renderering</string>
+   </property>
+  </action>
+  <action name="actionAdvanceFeature">
    <property name="checkable">
     <bool>true</bool>
    </property>
@@ -1033,73 +879,22 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Basic Controls</string>
+    <string>Advanced Feature</string>
    </property>
   </action>
-  <action name="actionColor_Controls">
+  <action name="actionShowPosition">
    <property name="checkable">
     <bool>true</bool>
    </property>
-   <property name="checked">
-    <bool>true</bool>
+   <property name="icon">
+    <iconset resource="vvResources.qrc">
+     <normaloff>:/vvResources/Icons/map.png</normaloff>:/vvResources/Icons/map.png</iconset>
    </property>
    <property name="text">
-    <string>Color Controls</string>
+    <string>actionShowPosition</string>
    </property>
-  </action>
-  <action name="actionView_Controls">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="checked">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Camera Controls</string>
-   </property>
-  </action>
-  <action name="actionPlayback_Controls">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="checked">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Playback Controls</string>
-   </property>
-  </action>
-  <action name="actionGeolocation_Controls">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="checked">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Geolocation Controls</string>
-   </property>
-  </action>
-  <action name="actionShowPipelineBrowser">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Pipeline Browser</string>
-   </property>
-   <property name="shortcut">
-    <string>Ctrl+P</string>
-   </property>
-  </action>
-  <action name="actionShowPropertiesPanel">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Properties Panel</string>
-   </property>
-   <property name="shortcut">
-    <string>Ctrl+Shift+P</string>
+   <property name="toolTip">
+    <string>Show the GPS Track</string>
    </property>
   </action>
  </widget>
@@ -1127,10 +922,33 @@
    <header>pqPropertiesPanel.h</header>
    <container>1</container>
   </customwidget>
+  <customwidget>
+   <class>pqProxyInformationWidget</class>
+   <extends>QWidget</extends>
+   <header>pqProxyInformationWidget.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>pqMemoryInspectorPanel</class>
+   <extends>QWidget</extends>
+   <header>pqMemoryInspectorPanel.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>pqStatusBar</class>
+   <extends>QStatusBar</extends>
+   <header>pqStatusBar.h</header>
+  </customwidget>
+  <customwidget>
+   <class>pqPVAnimationWidget</class>
+   <extends>QWidget</extends>
+   <header>pqPVAnimationWidget.h</header>
+   <container>1</container>
+  </customwidget>
  </customwidgets>
  <resources>
+  <include location="LidarPlugin/Ui/images/resources.qrc"/>
   <include location="vvResources.qrc"/>
-  <include location="VelodyneHDL/images/resources.qrc"/>
  </resources>
  <connections>
   <connection>

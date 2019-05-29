@@ -1,0 +1,37 @@
+<ServerManagerConfiguration>
+  <ProxyGroup name="writers">
+    <WriterProxy name="TemporalTransformsWriter" class="vtkTemporalTransformsWriter">
+      <Documentation
+        short_help="Write in a CSV the list of time indexed transforms"
+        long_help="Write in a CSV the list of time indexed transforms">
+	Write in a CSV the list of time indexed transforms.
+	Usually these transforms represent the pose trajectory of a solid
+	over time.
+	The CSV has the following columns:
+	time(s),roll(d),pitch(d),yaw(d),X(m),Y(m),Z(m)
+      </Documentation>
+
+      <InputProperty name="Input" command="SetInputConnection">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources"/>
+          <Group name="filters"/>
+        </ProxyGroupDomain>
+        <DataTypeDomain name="input_type" composite_data_supported="0">
+          <DataType value="vtkPolyData"/>
+        </DataTypeDomain>
+      </InputProperty>
+
+      <StringVectorProperty command="SetFileName"
+        name="FileName"
+        number_of_elements="1">
+        <Documentation>The path to the CSV formated file to write.</Documentation>
+      </StringVectorProperty>
+
+      <Hints>
+        <Property name="Input" show="0"/>
+        <Property name="FileName" show="0"/>
+        <WriterFactory extensions="poses" file_description="0 - Pose trajectory in CSV format: time(s),roll(deg),pitch(deg),yaw(deg),x(m),y(m),z(m)"/>
+      </Hints>
+    </WriterProxy>
+  </ProxyGroup>
+</ServerManagerConfiguration>

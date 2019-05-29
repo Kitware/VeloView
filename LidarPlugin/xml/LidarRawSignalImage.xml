@@ -1,0 +1,91 @@
+<ServerManagerConfiguration>
+  <!-- Begin vtkLidarRawSignalImage -->
+  <ProxyGroup name="filters">
+    <SourceProxy name="LidarRawSignalImage" class="vtkLidarRawSignalImage" label="LidarRawSignalImage">
+
+    <InputProperty
+      name="PointCloud"
+      port_index="0"
+      command="SetInputConnection">
+      <DataTypeDomain name="input_type">
+        <DataType value="vtkPolyData"/>
+      </DataTypeDomain>
+      <Documentation>
+        Set the input pointcloud
+      </Documentation>
+    </InputProperty>
+
+    <InputProperty
+      name="Calibration"
+      port_index="1"
+      command="SetInputConnection">
+      <DataTypeDomain name="input_type">
+        <DataType value="vtkTable"/>
+      </DataTypeDomain>
+      <Documentation>
+        Set the calibration table
+      </Documentation>
+    </InputProperty>
+
+
+    <StringVectorProperty name="SelectArrayToUse"
+                          label="Take values from"
+                          command="SetInputArrayToProcess"
+                          number_of_elements="5"
+                          element_types="0 0 0 0 2"
+                          default_values_delimiter=";"
+                          default_values="0;0;0;0;intensity"
+                          animateable="0">
+      <ArrayListDomain name="array_list"
+                       attribute_type="Scalars">
+        <RequiredProperties>
+          <Property name="PointCloud"
+                    function="Input" />
+        </RequiredProperties>
+      </ArrayListDomain>
+     <!-- In versions of ParaView greater than 5.6, the FieldDataDomain element is not needed. -->
+      <FieldDataDomain name="field_list">
+        <RequiredProperties>
+          <Property name="PointCloud"
+                    function="Input" />
+        </RequiredProperties>
+      </FieldDataDomain>
+    </StringVectorProperty>
+
+    <IntVectorProperty
+        name="Width Resolution"
+        animateable="0"
+        default_values="1080"
+        command="SetWidth"
+        number_of_elements="1">
+        <Documentation>
+          The width resolution
+        </Documentation>
+    </IntVectorProperty>
+
+    <DoubleVectorProperty
+        name="Origin"
+        animateable="0"
+        default_values="0 0 0"
+        command="SetOrigin"
+        number_of_elements="3">
+        <Documentation>
+          The origin of the generated image
+        </Documentation>
+    </DoubleVectorProperty>
+
+    <DoubleVectorProperty
+        name="Scale"
+        animateable="0"
+        default_values="1.0"
+        command="SetScale"
+        number_of_elements="1">
+        <Documentation>
+          The scale of the image
+        </Documentation>
+    </DoubleVectorProperty>
+
+    </SourceProxy>
+  </ProxyGroup>
+  <!-- End vtkLidarRawSignalImage -->
+</ServerManagerConfiguration>

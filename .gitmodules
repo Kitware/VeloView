@@ -1,3 +1,6 @@
-[submodule "Testing"]
-	path = Testing
-	url = git@gitlab.kitware.com:bjacquet/VeloView-TestData.git
+[submodule "TestData"]
+	path = TestData
+	url = ../VeloView-TestData.git
+[submodule "Superbuild/common-superbuild"]
+	path = Superbuild/common-superbuild
+	url = https://gitlab.kitware.com/paraview/common-superbuild

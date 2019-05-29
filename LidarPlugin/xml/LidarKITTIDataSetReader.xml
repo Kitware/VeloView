@@ -1,0 +1,34 @@
+<ServerManagerConfiguration>
+  <ProxyGroup name="sources">
+    <SourceProxy name="LidarKITTIDataSetReader" class="vtkLidarKITTIDataSetReader" label="Lidar KITTI DataSet Reader">
+      <Documentation
+        short_help="Read Velodyne HDL data files."
+        long_help="Read Velodyne HDL data files.">
+        Read Velodyne HDL data files.
+      </Documentation>
+
+    <StringVectorProperty
+      name="FileName"
+      animateable="0"
+      command="SetFileName"
+      number_of_elements="1">
+      <FileListDomain name="files"/>
+      <Documentation>
+        This property specifies the file name for the reader.
+      </Documentation>
+    </StringVectorProperty>
+
+    <DoubleVectorProperty
+              name="TimestepValues"
+              information_only="1" >
+              <TimeStepsInformationHelper/>
+    </DoubleVectorProperty>
+
+    <Hints>
+      <ReaderFactory extensions=".bin"
+         file_description="Velodyne HDL Data File"/>
+    </Hints>
+
+    </SourceProxy>
+  </ProxyGroup>
+</ServerManagerConfiguration>

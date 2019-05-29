@@ -1,0 +1,45 @@
+<ServerManagerConfiguration>
+  <ProxyGroup name="sources">
+    <SourceProxy
+      name="TemporalTransformsReader"
+      class="vtkTemporalTransformsReader"
+      label="Temporal Transforms Reader">
+      <Documentation
+        short_help="Read from a CSV a list of time indexed transforms (vtkTemporalTransforms)"
+        long_help="Read from a CSV a list of time indexed transforms (vtkTemporalTransforms)">
+	Read from a CSV a list of time indexed transforms.
+	Usually these transforms represent the pose trajectory of a solid
+	over time.
+	The CSV must have the following columns:
+	time(s),roll(d),pitch(d),yaw(d),x(m),y(m),z(m)
+      </Documentation>
+
+      <StringVectorProperty
+        name="FileName"
+        label="FileName"
+        animateable="0"
+        command="SetFileName"
+        number_of_elements="1">
+        <FileListDomain name="files"/>
+        <Documentation>
+          The path to the CSV formated file to read.
+        </Documentation>
+      </StringVectorProperty>
+
+      <DoubleVectorProperty
+        name="Time Offset"
+        command="SetTimeOffset"
+        default_values="0"
+        number_of_elements="1">
+        <Documentation>
+          TimeOffset (in seconds) relative to the system clock.
+        </Documentation>
+      </DoubleVectorProperty>
+
+      <Hints>
+        <ReaderFactory extensions="csv txt poses"
+          file_description="CSV formated file containing a pose trajectory"/>
+      </Hints>
+    </SourceProxy>
+  </ProxyGroup>
+</ServerManagerConfiguration>

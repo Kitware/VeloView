@@ -1,7 +1,16 @@
-add_external_project(paraview
-  DEPENDS qt python pythonqt
-
+set(pv_cmake_options "")
+find_package(Protobuf)
+if (Protobuf_FOUND)
+  list(APPEND pv_cmake_options "-DVTK_USE_SYSTEM_PROTOBUF:BOOL=TRUE" )
+  message(MESSAGE "Found a system-wide Protobuf library, tell VTK to use it to avoid runtime version mismatch")
+endif()
+superbuild_add_project(paraview
+  DEPENDS qt5 python pythonqt
+  DEFAULT_ON
+  DEBUGGABLE
   CMAKE_ARGS
+    -DCMAKE_CXX_STANDARD=11
+    -DPARAVIEW_ENABLE_EMBEDDED_DOCUMENTATION=ON
     -DBUILD_SHARED_LIBS:BOOL=ON
     -DBUILD_TESTING:BOOL=OFF
     -DPARAVIEW_BUILD_QT_GUI:BOOL=ON
@@ -23,6 +32,7 @@ add_external_project(paraview
     -DPARAVIEW_BUILD_PLUGIN_GeodesicMeasurement:BOOL=FALSE
     -DPARAVIEW_BUILD_PLUGIN_GMVReader:BOOL=FALSE
     -DPARAVIEW_BUILD_PLUGIN_H5PartReader:BOOL=FALSE
+    -DPARAVIEW_BUILD_PLUGIN_LagrangianParticleTracker:BOOL=FALSE
     -DPARAVIEW_BUILD_PLUGIN_MantaView:BOOL=FALSE
     -DPARAVIEW_BUILD_PLUGIN_MobileRemoteControl:BOOL=FALSE
     -DPARAVIEW_BUILD_PLUGIN_Moments:BOOL=FALSE
@@ -31,12 +41,15 @@ add_external_project(paraview
     -DPARAVIEW_BUILD_PLUGIN_PointSprite:BOOL=FALSE
     -DPARAVIEW_BUILD_PLUGIN_PointCloudRepresentation:BOOL=TRUE
     -DPARAVIEW_AUTOLOAD_PLUGIN_PointCloudRepresentation:BOOL=TRUE
+    -DPARAVIEW_BUILD_PLUGIN_EyeDomeLighting:BOOL=TRUE
+    -DPARAVIEW_AUTOLOAD_PLUGIN_EyeDomeLighting:BOOL=TRUE
     -DPARAVIEW_BUILD_PLUGIN_PrismPlugin:BOOL=FALSE
     -DPARAVIEW_BUILD_PLUGIN_pvblot:BOOL=FALSE
     -DPARAVIEW_BUILD_PLUGIN_QuadView:BOOL=FALSE
     -DPARAVIEW_BUILD_PLUGIN_RGBZView:BOOL=FALSE
     -DPARAVIEW_BUILD_PLUGIN_SLACTools:BOOL=FALSE
     -DPARAVIEW_BUILD_PLUGIN_SciberQuestToolKit:BOOL=FALSE
+    -DPARAVIEW_BUILD_PLUGIN_StreamLinesRepresentation:BOOL=FALSE
     -DPARAVIEW_BUILD_PLUGIN_StreamingParticles:BOOL=FALSE
     -DPARAVIEW_BUILD_PLUGIN_SierraPlotTools:BOOL=FALSE
     -DPARAVIEW_BUILD_PLUGIN_SurfaceLIC:BOOL=FALSE
@@ -50,7 +63,11 @@ add_external_project(paraview
     -DPARAVIEW_CLIENT_RENDER_SERVER_TESTS:BOOL=FALSE
     -DPARAVIEW_COLLABORATION_TESTING:BOOL=FALSE
     -DVTK_BUILD_QT_DESIGNER_PLUGIN:BOOL=FALSE
+    -DVTK_QT_VERSION:STRING=${qt_version}
+    -DPARAVIEW_QT_VERSION:STRING=${qt_version}
     -DVTK_RENDERING_BACKEND:STRING=OpenGL2
+    -DVTK_LEGACY_SILENT:BOOL=TRUE
+    ${pv_cmake_options}
 
     -DPARAVIEW_BUILD_PLUGIN_PythonQtPlugin:BOOL=TRUE
     -DPYTHONQT_DIR:PATH=<INSTALL_DIR>

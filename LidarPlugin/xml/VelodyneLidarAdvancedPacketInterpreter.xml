@@ -1,0 +1,12 @@
+<ServerManagerConfiguration>
+  <ProxyGroup name="LidarPacketInterpreter">
+
+    <SourceProxy name="VelodyneAdvancePacketInterpreter"
+               class="vtkVelodyneAdvancedPacketInterpreter"
+               label="Velodyne Advanced Interpreter"
+               base_proxygroup="base_LidarPacketInterpreter_g"
+               base_proxyname="base_LidarPacketInterpreter">
+
+    </SourceProxy>
+  </ProxyGroup>
+</ServerManagerConfiguration>

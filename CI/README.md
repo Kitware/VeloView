@@ -1,8 +1,34 @@
 # Continuous Integration
 
-[![pipeline status](https://gitlab.kitware.com/bjacquet/VeloView-kwinternal/badges/master/pipeline.svg)](https://gitlab.kitware.com/bjacquet/VeloView-kwinternal/commits/master)
+[![pipeline status](https://gitlab.kitware.com/bjacquet/LidarView-kwinternal/badges/master/pipeline.svg)](https://gitlab.kitware.com/bjacquet/LidarView-kwinternal/commits/master)
 
-## Overview
+## Important note
+
+Each time a commit is pushed to gitlab, the following steps happen:
+- gitlab checks using the `.gitlab-ci` file which [Jobs] should be run and distributes then to differents [Runners]
+- once a [Runners] receives a job to excecute, it will create a clone of a predefined Virtual Machine, and start it.
+- because we don't want the superbuild to be rebuild for each job a cache mecanism is used:
+    - the superbuild caches are stored on a minio server
+    - the runner will try to find the best superbuild for the committed branch
+    - **The best superbuild is found given the folowing criteria:**
+        - fisrt: the branch specific superbuild
+        - then: a parent/master branch specific superbuild
+        - finally: the kitware-master branch superbuild
+
+#### example of how the best superbuild is found:
+
+Suppose a commit is pushed on the branch named feature/Slam/.../test/Nick
+- first:
+  - ---> feature/Slam/LoopClosure/test/Nick
+- then:
+  - ---> feature/Slam/LoopClosure/test/master
+  - ---> feature/Slam/LoopClosure/master
+  - ---> feature/Slam/master
+  - ---> feature/master
+- finally:
+  - ---> kitware-master
+
+## Overview of the different tools that are used
 
 ### [GitLab CI/CD] to manage all compilation jobs and pipelines
 
@@ -11,7 +37,7 @@ GitLab CI/CD is the fully integrated continuous integration service offered by G
 
 A `.gitlab-ci.yml` file describe an [Integration Pipeline] which describe different [Jobs], in our case:
 - a **superbuild** job per OS
-- a (veloview) **build** job per OS
+- a (lidarview) **build** job per OS
 - a **test** job per OS
 - a (superbuild) **package** job per OS
 - ...
@@ -31,7 +57,7 @@ Vagrant is a tool to automatically create virtual machines from scratch and conf
 
 A Minio server is used to cache, for each branch, the Superbuild build folder for each VMs/OS. This avoid to rebuild the Superbuild for each commit. New Superbuild "flavours" can be cached manually if needed.
 
-## Example how to configure VeloView Runners from scratch
+## Example how to set up everything from scratch
 
 ### Manually create a new VM for a new Runner
 
@@ -64,7 +90,7 @@ sudo apt-get install gitlab-runner
 > It's very important to set **builds_dir** and **cache_dir**, otherwise you would have a weird error like ***Skipping cache extraction due to empty cache key***
 
 The [Runners] are describe in the `.gitlab-runner/config.toml` file
-KEU one can be found on Wheezy/Project/VeloView/Internal/CI/.gitlab-runner/config.toml
+KEU one can be found on Wheezy/Project/LidarView/Internal/CI/.gitlab-runner/config.toml
 
 ```bash
 concurrent = 1
@@ -93,7 +119,7 @@ check_interval = 0
     Path = "minio"
     Shared = true
 ```
-Then you need to add the machine [tags](https://docs.gitlab.com/ee/ci/yaml/#tags) via  [Runners settings](https://gitlab.kitware.com/bjacquet/VeloView-kwinternal/settings/ci_cd) in section 
+Then you need to add the machine [tags](https://docs.gitlab.com/ee/ci/yaml/#tags) via  [Runners settings](https://gitlab.kitware.com/bjacquet/LidarView-kwinternal/settings/ci_cd) in section 
 
 ### Create a new Minio server
 

@@ -1,8 +1,8 @@
-add_external_project(pythonqt
-  DEPENDS qt python
-
+superbuild_add_project(pythonqt
+  DEPENDS qt5 python
   CMAKE_ARGS
     -DBUILD_SHARED_LIBS:BOOL=ON
+    -DPythonQt_QT_VERSION:STRING=${qt_version}
 
     -DPythonQt_Wrap_Qtcore:BOOL=ON
     -DPythonQt_Wrap_Qtgui:BOOL=ON

@@ -51,7 +51,7 @@
       <string notr="true"/>
      </property>
      <property name="pixmap">
-      <pixmap resource="vvResources.qrc">:/vvResources/About.png</pixmap>
+      <pixmap resource="vvResources.qrc">:/vvResources/SoftwareInformation/About.png</pixmap>
      </property>
      <property name="scaledContents">
       <bool>true</bool>
@@ -62,6 +62,9 @@
     <widget class="QLabel" name="copyrightLabel">
      <property name="text">
       <string>TextLabel</string>
+     </property>
+     <property name="openExternalLinks">
+      <bool>true</bool>
      </property>
     </widget>
    </item>

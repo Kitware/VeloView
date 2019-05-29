@@ -1,11 +1,33 @@
 cmake_minimum_required(VERSION 2.8.8)
 
-project(VeloViewSuperBuild)
+project(LidarViewSuperBuild)
 set (SuperBuild_CMAKE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/CMake")
 set (SuperBuild_PROJECTS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/Projects")
-set (SuperBuild_BINARY_DIR ${VeloViewSuperBuild_BINARY_DIR})
+set (SuperBuild_BINARY_DIR ${LidarViewSuperBuild_BINARY_DIR}) # required to do FindPackage(ParaView) inside LidarView's CMakeLists
 
-include(CMakeDependentOption)
+set(qt_version 5)
+
+macro (superbuild_setup_variables)
+  include(SuperbuildVersionMacros)
+  # if (paraview_SOURCE_SELECTION STREQUAL "git")
+  #   # Assuming master; just use the latest version, but let the user set their
+  #   # own version in case it is actually a branch from some other version.
+  #   set(PARAVIEW_VERSION_DEFAULT "5.5.0"
+  #     CACHE STRING "The default version of ParaView to use if it cannot be detected")
+  #   mark_as_advanced(PARAVIEW_VERSION_DEFAULT)
+  #   set(paraview_default_version "${PARAVIEW_VERSION_DEFAULT}")
+  # elseif (paraview_SOURCE_SELECTION STREQUAL "source")
+  #   # If it is a git repo, we'll get it that way, otherwise we will look at the
+  #   # `version.txt` in the checkout.
+  #   set(paraview_default_version "")
+  # else ()
+  #   # The selection is the version number; use it.
+  #   set(paraview_default_version "${paraview_SOURCE_SELECTION}")
+  # endif()
+  # superbuild_set_version_variables(paraview "${paraview_default_version}" "paraview-version.cmake" "version.txt")
+  # set(paraview_version "${paraview_version_major}.${paraview_version_minor}")
+  set(paraview_version "5.4")
+endmacro ()
 
 #------------------------------------------------------------------------------
 # Set a default build type if none was specified
@@ -27,23 +49,6 @@ else ()
   set(VV_BUILD_ARCHITECTURE "32")
 endif()
 
-set (platform)
-if (APPLE)
-  set (platform "apple")
-  option(APPLY_MOUNTAIN_LION_FIX "Apply Mountain Lion bundle fix" OFF)
-  mark_as_advanced(APPLY_MOUNTAIN_LION_FIX)
-  # Fix stdlic being wrongly used instead of libc++
-  #   (as it conflicts with boost which always uses libc++)
-  # REMOVED as this prevents qt to build its bootstrap target compatible with 10.4 
-  # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
-  # set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++")
-
-elseif (UNIX)
-  set (platform "unix")
-elseif (WIN32)
-  set (platform "win32")
-endif()
-
 # Set suffix to be used for generating archives. This ensures that the package
 # files have decent names that we can directly upload to the website.
 set (package_suffix "${CMAKE_SYSTEM_NAME}-${VV_BUILD_ARCHITECTURE}bit")
@@ -52,57 +57,58 @@ set (package_suffix "${CMAKE_SYSTEM_NAME}-${VV_BUILD_ARCHITECTURE}bit")
 # Setup CMAKE_MODULE_PATH so that platform specific configurations are processed
 # before the generic ones.
 set (CMAKE_MODULE_PATH
-  "${SuperBuild_PROJECTS_DIR}/${platform}"
-  "${SuperBuild_PROJECTS_DIR}/common"
   "${SuperBuild_PROJECTS_DIR}"
   "${SuperBuild_CMAKE_DIR}"
   "${CMAKE_CURRENT_SOURCE_DIR}"
   "${CMAKE_CURRENT_SOURCE_DIR}/../CMake"
   ${CMAKE_MODULE_PATH})
 
-#-----------------------------------------------------------------------------
-# Setup some standard variables that control various locations and flags.
-set (install_location "${CMAKE_CURRENT_BINARY_DIR}/install")
-set (download_location "${CMAKE_CURRENT_BINARY_DIR}/downloads"
-     CACHE PATH "Location where source tar-balls are (to be) downloaded.")
-mark_as_advanced(download_location)
+function (superbuild_find_projects var)
+  # Some of these allow using system libraries.
+  set(projects
+    boost
+    bzip2
+    cxx11
+    eigen
+    liblas
+    freetype
+    opencv
+    paraview
+    pcap
+    png
+    python
+    pythonqt
+    qt5
+    lidarview
+    zlib
+    ceres
+    glog
+    pcl
+    qhull
+    flann
+    nanoflann
+    )
+
+  if (UNIX)
+    list(APPEND projects
+      libxml2
+    )
+
+    if (NOT APPLE)
+      list(APPEND projects
+        fontconfig
+        gperf
+      )
+    endif()
+  endif()
+
+  set("${var}"
+    ${projects}
+    PARENT_SCOPE)
+endfunction ()
+
 
 if (WIN32)
-  set (ldflags)
-  set (cppflags)
-  set (cxxflags)
-  set (ld_library_path)
-else ()
-  # FIXME: currently, if any of these are empty, we have build issues on Unix.
-  set (ldflags "$ENV{LDFLAGS} -L${install_location}/lib")
-  set (cppflags "$ENV{CPPFLAGS} -fPIC")
-  set (cxxflags "$ENV{CXXFLAGS} -fPIC")
-  set (cflags "$ENV{CFLAGS} -fPIC")
-  set (ld_library_path "${install_location}/lib:$ENV{LD_LIBRARY_PATH}")
-endif()
-
-set (prefix_path "${install_location}")
-
-# merge in default/user-specified CMake flags.
-set (ldflags "${CMAKE_SHARED_LINKER_FLAGS} ${ldflags}")
-set (cppflags "${CMAKE_CXX_FLAGS} ${cppflags}")
-set (cxxflags "${CMAKE_CXX_FLAGS} ${cxxflags}")
-set (cflags "${CMAKE_C_FLAGS} ${cflags}")
-
-string (STRIP "${ldflags}" ldflags)
-string (STRIP "${cppflags}" cppflags)
-string (STRIP "${cxxflags}" cxxflags)
-string (STRIP "${cflags}"  cflags)
-#-----------------------------------------------------------------------------
-## Top-level options. These must be limited to a commonly used subset with
-## default values being used for building the binaries.
-#option(PV_COMMAND_LINE_TOOLS_ONLY
-#  "Turn this ON to build command lines tools alone." OFF)
-
-if (WIN32)
-  # Since we only support superbuild compilation with ninja, let's provide it
-  file(COPY ${SuperBuild_PROJECTS_DIR}/win32/ninja.exe
-       DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
   if ( (NOT "${CMAKE_GENERATOR}" MATCHES "^NMake.*$") OR
        (NOT "${CMAKE_GENERATOR}" MATCHES "^Visual Studio.*$"))
     # not use VS environment. We need to be pointed to nmake and devenv paths
@@ -113,27 +119,88 @@ if (WIN32)
   endif()
 endif()
 
-#-----------------------------------------------------------------------------
-include (ParaViewModules)
-include (versions)
-
-#-----------------------------------------------------------------------------
-set (CM_PROJECTS_ALL)
-
-# Include all optional projects. These are the ones user can pick and choose.
-# Some of these allow using system libraries too.
-include(qt)
-include(python)
-include(pythonqt)
-include(paraview)
-include(pcap)
-include(boost)
-include(eigen)
-include(liblas)
-include(veloview)
-
-process_dependencies()
-
-if (veloview_ENABLED)
-  include(veloview.bundle OPTIONAL)
+if(UNIX AND NOT DEFINED USE_SYSTEM_python)
+   # it is still possible to pass -DUSE_SYSTEM_python=False to cmake
+   message(STATUS "Defaulting USE_SYSTEM_python to True (was undefined and we are on UNIX)")
+   set(USE_SYSTEM_python True CACHE BOOL INTERNAL)
 endif()
+
+function (superbuild_add_packaging)
+  if (WIN32)
+    set(generators
+      ZIP
+      NSIS)
+  elseif (APPLE)
+    set(generators
+      DragNDrop)
+  else ()
+    set(generators
+      TGZ
+      TXZ)
+  endif ()
+  list(GET generators 0 default_generator)
+
+  if (USE_SYSTEM_qt5)
+    list(APPEND superbuild_export_variables
+      Qt5_DIR)
+  endif ()
+
+  # pass some variables that are required for packaging step:
+  list(APPEND superbuild_export_variables
+    PARAVIEW_VERSION
+    package_suffix
+    )
+
+  set(default_package lidarview)
+  foreach (generator IN LISTS generators)
+      superbuild_add_extra_package_test(lidarview "${generator}"
+      LABELS  "LidarView" # does not have to be ${SOFTWARE_NAME} I think
+      TIMEOUT 6400)
+  endforeach ()
+
+  if (default_package)
+    superbuild_enable_install_target("${default_package}/${default_generator}")
+  endif ()
+endfunction ()
+
+function (superbuild_add_tests)
+  # TODO: add existing tests
+  # add_subdirectory("${CMAKE_SOURCE_DIR}/tests" "${CMAKE_BINARY_DIR}/tests")
+endfunction ()
+
+# skiped module as defined in paraview superbuild.
+# One difference: pythonQt needs Multimedia so we don't skip it.
+set(qt5_skip_modules
+  qtspeech
+  qtconnectivity
+  qtgamepad
+  qtlocation
+  qtsensors
+  qtserialport
+  qtwayland
+  qtwebchannel
+  qtwebengine
+  qtwebsockets)
+list(APPEND qt5_process_environment
+  BUILD_IN_SOURCE 1)
+
+set(boost_libraries
+  chrono
+  date_time
+  filesystem
+  iostreams
+  program_options
+  system
+  regex
+  thread)
+set(boost_extra_options
+  "-sNO_BZIP2=1")
+
+list(APPEND superbuild_version_files
+  "${CMAKE_CURRENT_LIST_DIR}/versions.cmake")
+list(APPEND superbuild_project_roots
+  "${SuperBuild_PROJECTS_DIR}")
+
+set(_superbuild_default_cxx11 ON)
+
+add_subdirectory(common-superbuild)
