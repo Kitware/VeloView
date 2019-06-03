@@ -269,9 +269,11 @@ def setDefaultLookupTables(sourceProxy):
 
 def colorByIntensity(sourceProxy):
     arrayName = "intensity"
-    if hasattr(sourceProxy.Interpreter, 'UseIntraFiringAdjustment'):
+    try:
+        _ = sourceProxy.Interpreter.UseIntraFiringAdjustment
         arrayName =  "intensity"
-    else: #hasArrayName(sourceProxy, 'Intensity'):
+    #hasArrayName(sourceProxy, 'Intensity'):
+    except AttributeError:
         arrayName = "Intensity"
 
     setDefaultLookupTables(sourceProxy)
