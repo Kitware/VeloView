@@ -50,11 +50,6 @@ public:
 
   std::string GetSensorInformation() override;
 
-  FrameInformation GetParserMetaData() override;
-
-  void ResetParserMetaData() override;
-  void SetParserMetaData(const FrameInformation& metaData) override;
-
   void GetXMLColorTable(double XMLColorTable[]);
 
   void GetLaserCorrections(double verticalCorrection[HDL_MAX_NUM_LASERS],
@@ -208,19 +203,8 @@ struct VelodyneSpecificFrameInformation : public SpecificFrameInformation
   //! timestamp NbrOfRollingTime * MaxTimeBeforeRolling
   int NbrOfRollingTime = 0;
 
-  //! Deep copy the specific frame information
-  std::shared_ptr<SpecificFrameInformation> CopyTo()
-  {
-    std::shared_ptr<SpecificFrameInformation> copiedInfo = std::make_shared<VelodyneSpecificFrameInformation>();
-
-    VelodyneSpecificFrameInformation* copiedPtr =
-        reinterpret_cast<VelodyneSpecificFrameInformation*>(copiedInfo.get());
-    VelodyneSpecificFrameInformation* toCopyPtr =
-        reinterpret_cast<VelodyneSpecificFrameInformation*>(this);
-    copiedPtr->FiringToSkip = toCopyPtr->FiringToSkip;
-    copiedPtr->NbrOfRollingTime = toCopyPtr->NbrOfRollingTime;
-    return copiedInfo;
-  }
+  void reset() { *this = VelodyneSpecificFrameInformation(); }
+  std::unique_ptr<SpecificFrameInformation> clone() { return std::make_unique<VelodyneSpecificFrameInformation>(*this); }
 };
 
 #endif // VELODYNEPACKETINTERPRETOR_H

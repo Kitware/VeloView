@@ -154,8 +154,8 @@ vtkSmartPointer<vtkPolyData> vtkLidarReader::GetFrame(int frameNumber)
   double timeSinceStart;
 
   // Update the interpreter meta data according to the requested frame
-  FrameInformation currInfo = this->FrameCatalog[frameNumber];
-  this->Interpreter->SetParserMetaData(currInfo.CopyTo());
+  FrameInformation currInfo= this->FrameCatalog[frameNumber];
+  this->Interpreter->SetParserMetaData(this->FrameCatalog[frameNumber]);
   this->Reader->SetFilePosition(&currInfo.FilePosition);
 
   while (this->Reader->NextPacket(data, dataLength, timeSinceStart))

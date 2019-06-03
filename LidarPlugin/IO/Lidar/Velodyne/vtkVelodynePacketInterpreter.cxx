@@ -1477,11 +1477,6 @@ bool vtkVelodynePacketInterpreter::PreProcessPacket(unsigned char const * data, 
         }
         isNewFrame = true;
 
-        // Create a copy of the current meta data state
-        // at a different memory location than the one
-        // added to the catalog
-        this->ParserMetaData.SpecificInformation = this->ParserMetaData.SpecificInformation->CopyTo();
-
         frameNumber++;
         PacketProcessingDebugMacro(
           << "\n\nEnd of frame #" << frameNumber
@@ -1598,25 +1593,4 @@ void vtkVelodynePacketInterpreter::GetLaserCorrections(double verticalCorrection
     minIntensity[i] = this->laser_corrections_[i].minIntensity;
     maxIntensity[i] = this->laser_corrections_[i].maxIntensity;
   }
-}
-
-//-----------------------------------------------------------------------------
-void vtkVelodynePacketInterpreter::ResetParserMetaData()
-{
-  FrameInformation newFrameInfo;
-  newFrameInfo.SpecificInformation = std::make_shared<VelodyneSpecificFrameInformation>();
-  this->ParserMetaData = newFrameInfo;
-}
-
-//-----------------------------------------------------------------------------
-void vtkVelodynePacketInterpreter::SetParserMetaData(const FrameInformation& metaData)
-{
-  this->ParserMetaData = metaData.CopyTo();
-}
-
-//-----------------------------------------------------------------------------
-FrameInformation vtkVelodynePacketInterpreter::GetParserMetaData()
-{
-  FrameInformation frameInfo = this->ParserMetaData.CopyTo();
-  return frameInfo;
 }
