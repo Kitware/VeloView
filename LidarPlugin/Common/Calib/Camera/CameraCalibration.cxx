@@ -220,7 +220,8 @@ double NonLinearPinholeCalibration(const std::vector<Eigen::Vector3d>& X, const 
 }
 
 //----------------------------------------------------------------------------
-double NonLinearFisheyeCalibration(const std::vector<Eigen::Vector3d>& X, const std::vector<Eigen::Vector2d>& x, Eigen::Matrix<double, 15, 1>& W)
+double NonLinearFisheyeCalibration(const std::vector<Eigen::Vector3d>& X, const std::vector<Eigen::Vector2d>& x,
+                                   Eigen::Matrix<double, 15, 1>& W, unsigned int it)
 {
   // We want to estimate our 15-DOF parameters using a non
   // linear least square minimization. The non linear part
@@ -237,7 +238,7 @@ double NonLinearFisheyeCalibration(const std::vector<Eigen::Vector3d>& X, const 
   }
 
   ceres::Solver::Options options;
-  options.max_num_iterations = 1000;
+  options.max_num_iterations = it;
   options.linear_solver_type = ceres::DENSE_QR;
   options.minimizer_progress_to_stdout = false;
 
@@ -248,6 +249,42 @@ double NonLinearFisheyeCalibration(const std::vector<Eigen::Vector3d>& X, const 
   for (int k = 0; k < X.size(); ++k)
   {
     meanErr += ((x[k] - FisheyeProjection(W, X[k])).transpose() * (x[k] - FisheyeProjection(W, X[k])))(0);
+  }
+  return std::sqrt(meanErr / (1.0 * X.size()));
+}
+
+//----------------------------------------------------------------------------
+double BrownConradyPinholeCalibration(const std::vector<Eigen::Vector3d>& X, const std::vector<Eigen::Vector2d>& x,
+                                      Eigen::Matrix<double, 17, 1>& W, unsigned int it)
+{
+  // We want to estimate our 17-DOF parameters using a non
+  // linear least square minimization. The non linear part
+  // comes from the Euler Angle parametrization of the rotation
+  // endomorphism of SO(3), the homographie rescaling and
+  // the lens distortions
+  // To minimize it, we use CERES to perform
+  // the Levenberg-Marquardt algorithm.
+  ceres::Problem problem;
+  for (unsigned int k = 0; k < X.size(); ++k)
+  {
+    ceres::CostFunction* cost_function = new ceres::AutoDiffCostFunction<CostFunctions::BrownConradyAlgebraicDistance, 1, 17>(
+                                         new CostFunctions::BrownConradyAlgebraicDistance(X[k], x[k]));
+    problem.AddResidualBlock(cost_function, nullptr, W.data());
+  }
+
+  ceres::Solver::Options options;
+  options.max_num_iterations = it;
+  options.linear_solver_type = ceres::DENSE_QR;
+  options.minimizer_progress_to_stdout = false;
+
+  ceres::Solver::Summary summary;
+  ceres::Solve(options, &problem, &summary);
+  std::cout << summary.BriefReport() << std::endl;
+
+  double meanErr = 0;
+  for (int k = 0; k < X.size(); ++k)
+  {
+    meanErr += ((x[k] - BrownConradyPinholeProjection(W, X[k])).transpose() * (x[k] - BrownConradyPinholeProjection(W, X[k])))(0);
   }
   return std::sqrt(meanErr / (1.0 * X.size()));
 }

@@ -26,6 +26,10 @@
       </DataTypeDomain>
     </InputProperty>
 
+    <OutputPort name="Image With Projection" index="0" id="port0" />
+    <OutputPort name="Colored Frame" index="1" id="port1" />
+
+
     </SourceProxy>
   </ProxyGroup>
   <!-- End FishEyeProjector -->

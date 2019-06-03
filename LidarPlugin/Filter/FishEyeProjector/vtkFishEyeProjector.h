@@ -35,8 +35,9 @@ public:
 protected:
   vtkFishEyeProjector();
 
-  int FillInputPortInformation(int port, vtkInformation *info);
-  int RequestData(vtkInformation *, vtkInformationVector **, vtkInformationVector *);
+  int FillInputPortInformation(int port, vtkInformation *info) override;
+  int FillOutputPortInformation(int port, vtkInformation *info) override;
+  int RequestData(vtkInformation *, vtkInformationVector **, vtkInformationVector *) override;
 
 private:
   vtkFishEyeProjector(const vtkFishEyeProjector&) = delete;
