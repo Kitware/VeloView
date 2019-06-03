@@ -322,6 +322,13 @@ void vtkLidarReader::SaveFrame(int startFrame, int endFrame, const std::string &
 }
 
 //-----------------------------------------------------------------------------
+void vtkLidarReader::SetInterpreter(vtkLidarPacketInterpreter *interp)
+{
+  this->FrameCatalog.clear();
+  vtkLidarProvider::SetInterpreter(interp);
+}
+
+//-----------------------------------------------------------------------------
 int vtkLidarReader::RequestData(vtkInformation *vtkNotUsed(request),
                                 vtkInformationVector **vtkNotUsed(inputVector),
                                 vtkInformationVector *outputVector)

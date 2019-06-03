@@ -92,6 +92,8 @@ public:
    */
   virtual void SaveFrame(int startFrame, int endFrame, const std::string& filename);
 
+  void SetInterpreter(vtkLidarPacketInterpreter *) override;
+
   vtkGetMacro(ShowFirstAndLastFrame, bool)
   vtkSetMacro(ShowFirstAndLastFrame, bool)
 
