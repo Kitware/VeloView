@@ -139,17 +139,20 @@ void PacketReceiver::SocketCallback(
     return;
   }
 
-
   unsigned short ourPort = static_cast<unsigned short>(this->Port);
   // endpoint::port() is in host byte order
   unsigned short sourcePort = this->SenderEndpoint.port();
-  // warning: we make the assumption that network is ipv4
   // sourceIP has network endianess (so big endian).
-  // this line is ugly but it is required (the array types are differents)
-  unsigned char sourceIP[4] = { this->SenderEndpoint.address().to_v4().to_bytes()[0],
-                                this->SenderEndpoint.address().to_v4().to_bytes()[1],
-                                this->SenderEndpoint.address().to_v4().to_bytes()[2],
-                                this->SenderEndpoint.address().to_v4().to_bytes()[3]};
+  unsigned char sourceIP[4] = {192, 168, 0, 200};
+  if (this->SenderEndpoint.address().is_v4())
+  {
+    for (int i = 0; i < 4; i++)
+    {
+      // the array types are differents and to_bytes() handles endianess
+      sourceIP[i] = this->SenderEndpoint.address().to_v4().to_bytes()[i];
+    }
+  }
+  // TODO: IPV6 is recorded as fake ipv4 packet -> create BuildEthernetIP6UDP
   NetworkPacket* packet = NetworkPacket::BuildEthernetIP4UDP(this->RXBuffer,
                                                        numberOfBytes,
                                                        sourceIP,
