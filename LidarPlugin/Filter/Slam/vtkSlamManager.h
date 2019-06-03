@@ -46,14 +46,14 @@ public:
   vtkTypeMacro(vtkSlamManager, vtkSlam)
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //! @{ @copydoc StartFrame
-  vtkGetMacro(StartFrame, int)
-  vtkCustomSetMacro(StartFrame, int)
+  //! @{ @copydoc FirstFrame
+  vtkGetMacro(FirstFrame, int)
+  vtkCustomSetMacro(FirstFrame, int)
   //! @}
 
-  //! @{ @copydoc EndFrame
-  vtkGetMacro(EndFrame, int)
-  vtkCustomSetMacro(EndFrame, int)
+  //! @{ @copydoc LastFrame
+  vtkGetMacro(LastFrame, int)
+  vtkCustomSetMacro(LastFrame, int)
   //! @}
 
   //! @{ @copydoc StepSize
@@ -75,17 +75,17 @@ protected:
                   vtkInformationVector** inputVector,
                   vtkInformationVector* outputVector) override;
 
-  //! Overwrite StartFrame and EndFrame to process all the frame
+  //! Overwrite FirstFrame and LastFrame to process all the frame
   bool AllFrame = true;
 
   //! First frame to be process
-  int StartFrame = 0;
+  int FirstFrame = 0;
 
   //! No frame after this frame will be processed. In case StepSize is not 1 it corresponds to
   //! the last frame processed
-  int EndFrame = 0;
+  int LastFrame = 0;
 
-  //! Process one frame every step size (ex: every frame, every 2 frame, 3 frame, ...)
+  //! Process one frame every StepSize frames (ex: every frame, every 2 frame, 3 frame, ...)
   int StepSize = 1;
 
 private:

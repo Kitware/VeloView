@@ -504,8 +504,8 @@
       </IntVectorProperty>
 
       <IntVectorProperty
-          name="Start Frame"
-          command="SetStartFrame"
+          name="First Frame"
+          command="SetFirstFrame"
           default_values="0"
           number_of_elements="1">
           <Hints>
@@ -519,8 +519,8 @@
       </IntVectorProperty>
 
       <IntVectorProperty
-          name="End Frame"
-          command="SetEndFrame"
+          name="Last Frame"
+          command="SetLastFrame"
           default_values="0"
           number_of_elements="1">
           <Hints>
@@ -534,13 +534,13 @@
       </IntVectorProperty>
 
       <IntVectorProperty
-          name="Step Size"
+          name="StepSize"
           command="SetStepSize"
           default_values="1"
           number_of_elements="1"
           panel_visibility="advanced">
         <Documentation>
-          Set the first frame to process
+          Process one frame every StepSize frames (exemple: every (1) frames, every 2 frames, every 3 frames, and so on). A StepSize of 1 (the default value) means that all frames between the first and the last (included) will be used. This property can be useful to trade robustness (StepSize equal to 1) and accuracy for speed (StepSize bigger than 1).
         </Documentation>
       </IntVectorProperty>
 
