@@ -95,6 +95,9 @@ public:
   vtkGetMacro(ShowFirstAndLastFrame, bool)
   vtkSetMacro(ShowFirstAndLastFrame, bool)
 
+  int GetLidarPort() override { return this->LidarPort; }
+  void SetLidarPort(int _arg) override;
+
 protected:
   vtkLidarReader() = default;
   ~vtkLidarReader() = default;
@@ -119,6 +122,10 @@ protected:
 
   //! libpcap wrapped reader which enable to get the raw pcap packet from the pcap file
   vtkPacketFileReader* Reader = nullptr;
+
+  //! Filter the packet to only read the packet received on a specify port
+  //! To read all packet use -1
+  int LidarPort = -1;
 
 private:
   /**

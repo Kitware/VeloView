@@ -31,6 +31,17 @@
       </Documentation>
     </IntVectorProperty>
 
+    <IntVectorProperty
+        name="LidarPort"
+        animateable="0"
+        command="SetLidarPort"
+        default_values="2368"
+        number_of_elements="1">
+      <Documentation>
+        Specify port on which to listen for Lidar packets
+      </Documentation>
+    </IntVectorProperty>
+
   </SourceProxy>
 </ProxyGroup>
 <!-- End LidarProvider -->
@@ -72,6 +83,17 @@
         The sensor calibration file.
       </Documentation>
     </StringVectorProperty>
+
+    <IntVectorProperty
+        name="LidarPort"
+        command="SetLidarPort"
+        override = "1"
+        default_values="-1"
+        number_of_elements="1">
+      <Documentation>
+        Specify which packets are read. To read all packets set the value to -1
+      </Documentation>
+    </IntVectorProperty>
 
     <IntVectorProperty
         name="ShowFirstAndLastFrame"

@@ -58,6 +58,12 @@ public:
   vtkGetObjectMacro(Interpreter, vtkLidarPacketInterpreter)
   virtual void SetInterpreter(vtkLidarPacketInterpreter *);
 
+  /**
+   * @brief The port the Lidar is listening to
+   */
+  virtual int GetLidarPort() = 0;
+  virtual void SetLidarPort(int _arg) = 0;
+
   vtkGetMacro(DetectFrameDropping, bool)
   vtkSetMacro(DetectFrameDropping, bool)
 

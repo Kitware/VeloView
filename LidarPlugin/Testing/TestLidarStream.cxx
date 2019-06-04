@@ -66,7 +66,7 @@ int main(int argc, char* argv[])
   auto interp = vtkSmartPointer<vtkVelodynePacketInterpreter>::New();
   HDLsource->SetInterpreter(interp);
   HDLsource->SetCalibrationFileName(correctionFileName);
-  HDLsource->SetLIDARPort(dataPort);
+  HDLsource->SetLidarPort(dataPort);
   HDLsource->SetIsForwarding(false);
   HDLsource->SetIsCrashAnalysing(true);
   HDLsource->Start();

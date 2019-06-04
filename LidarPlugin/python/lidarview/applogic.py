@@ -382,7 +382,7 @@ def openSensor():
 
     calibrationFile = calibration.calibrationFile
     sensorTransform = calibration.sensorTransform
-    LIDARPort = calibration.lidarPort
+    LidarPort = calibration.lidarPort
     GPSPort = calibration.gpsPort
     LIDARForwardingPort = calibration.lidarForwardingPort
     GPSForwardingPort = calibration.gpsForwardingPort
@@ -393,11 +393,11 @@ def openSensor():
     app.grid = createGrid()
 
     sensor = smp.LidarStream(guiName='Data', CalibrationFile=calibrationFile)
-    sensor.GetClientSideObject().SetLIDARPort(LIDARPort)
+    sensor.LidarPort = LidarPort
     sensor.GetClientSideObject().EnableGPSListening(True)
     sensor.GetClientSideObject().SetGPSPort(GPSPort)
     sensor.GetClientSideObject().SetForwardedGPSPort(GPSForwardingPort)
-    sensor.GetClientSideObject().SetForwardedLIDARPort(LIDARForwardingPort)
+    sensor.GetClientSideObject().SetForwardedLidarPort(LIDARForwardingPort)
     sensor.GetClientSideObject().SetIsForwarding(isForwarding)
     sensor.GetClientSideObject().SetIsCrashAnalysing(calibration.isCrashAnalysing)
     sensor.GetClientSideObject().SetForwardedIpAddress(ipAddressForwarding)
@@ -416,7 +416,7 @@ def openSensor():
     app.sensor = sensor
     app.trailingFramesSpinBox.enabled = False
     app.colorByInitialized = False
-    app.filenameLabel.setText('Live sensor stream (Port:'+str(LIDARPort)+')' )
+    app.filenameLabel.setText('Live sensor stream (Port:'+str(LidarPort)+')' )
     app.positionPacketInfoLabel.setText('')
     enableSaveActions()
 

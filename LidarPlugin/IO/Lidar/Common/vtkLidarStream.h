@@ -41,10 +41,10 @@ public:
   void SetOutputFile(const std::string& filename);
 
   /**
-   * @copydoc NetworkSource::LIDARPort
+   * @copydoc NetworkSource::LidarPort
    */
-  int GetLIDARPort();
-  void SetLIDARPort(int);
+  void SetLidarPort(int) override;
+  int GetLidarPort() override;
 
   /**
    * @copydoc NetworkSource::GPSPort
@@ -59,13 +59,13 @@ public:
   void SetForwardedIpAddress(const std::string& ipAddress);
 
   /**
-   * @copydoc NetworkSource::ForwardedLIDARPort
+   * @copydoc NetworkSource::ForwardedLidarPort
    */
-  int GetForwardedLIDARPort();
-  void SetForwardedLIDARPort(int);
+  int GetForwardedLidarPort();
+  void SetForwardedLidarPort(int);
 
   /**
-   * @copydoc NetworkSource::ForwardedLIDARPort
+   * @copydoc NetworkSource::ForwardedLidarPort
    */
   int GetForwardedGPSPort();
   void SetForwardedGPSPort(int);
