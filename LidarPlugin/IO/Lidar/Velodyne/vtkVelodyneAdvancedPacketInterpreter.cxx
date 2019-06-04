@@ -1031,8 +1031,6 @@ public:
     PayloadHeader const * const payloadHeader,
     FiringGroupHeader const * const firingGroupHeader)
   {
-    ModelIdentificationCode mic = payloadHeader->GetMic();
-
     // Get and update all member values here to avoid doing so in various blocks
     // below just before returning.
 
@@ -1060,7 +1058,8 @@ public:
 
 
     // VelArray
-    if (mic == ModelIdentificationCode::MIC_VELARRAY)
+    ModelIdentificationCode mic = payloadHeader->GetMic();
+    if (mic == ModelIdentificationCode::MIC_VELARRAY || firingGroupHeader->GetVdfl() != 0)
     {
       return this->HasLastVertDir ? (vertDir != lastVertDir) : false;
     }
