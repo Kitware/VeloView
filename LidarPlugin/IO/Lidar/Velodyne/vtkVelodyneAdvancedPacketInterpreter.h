@@ -124,6 +124,7 @@ private:
   template <typename TAzm, typename TDist>
   void ComputeCorrectedValues(
     TAzm const azimuth,
+    double const verticalAngleInDegrees,
     size_t const correctionIndex,
     double pos[3],
     TDist & distance
@@ -142,7 +143,7 @@ public:
   bool UseIntraFiringAdjustment;
   unsigned int DualReturnFilter ;
   int FiringsSkip;
-  bool IsCorrectionFromLiveStream ;
+  bool IsCorrectionFromLiveStream;
   bool IsHDL64Data ;
   bool HasDualReturn ;
   bool ShouldAddDualReturnArray;
