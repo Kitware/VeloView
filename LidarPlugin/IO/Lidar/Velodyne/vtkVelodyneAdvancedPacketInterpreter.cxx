@@ -992,15 +992,12 @@ public:
 class FrameTracker
 {
 private:
-  bool HasLastHorDir;
+  bool HasLastState;
   HorizontalDirection LastHorDir;
-
-  bool HasLastVertDir;
   VerticalDirection LastVertDir;
-
   int LastSlope;
-
-  uint16_t LastAzimuth;
+  decltype(std::declval<FiringGroupHeader>().GetAzm()) LastAzimuth;
+  decltype(std::declval<FiringGroupHeader>().GetVdfl()) LastVertDeflection;
 
 public:
   FrameTracker()
@@ -1012,8 +1009,7 @@ public:
   void
   Reset()
   {
-    this->HasLastHorDir  = false;
-    this->HasLastVertDir = false;
+    this->HasLastState = false;
     this->LastSlope      = 0;
     this->LastAzimuth    = static_cast<decltype(this->LastAzimuth)>(-1);
   }
@@ -1034,8 +1030,11 @@ public:
     // Get and update all member values here to avoid doing so in various blocks
     // below just before returning.
 
-    uint16_t azimuth     = firingGroupHeader->GetAzm(),
-             lastAzimuth = this->LastAzimuth;
+    decltype(this->LastAzimuth) azimuth     = firingGroupHeader->GetAzm(),
+                                lastAzimuth = this->LastAzimuth;
+
+    decltype(this->LastVertDeflection) vertDeflection = firingGroupHeader->GetVdfl(),
+                                       lastVertDeflection = this->LastVertDeflection;
     // Follow the logic of the legacy interpreter.
     int slope = static_cast<int>(azimuth) - static_cast<int>(lastAzimuth),
         lastSlope = this->LastSlope;
@@ -1046,22 +1045,32 @@ public:
     VerticalDirection vertDir = firingGroupHeader->GetVdir(),
                       lastVertDir = this->LastVertDir;
 
-    bool hasLastHorDir = this->HasLastHorDir,
-         hasLastVertDir = this->HasLastVertDir;
+    bool hasLastState = this->HasLastState;
 
     this->LastAzimuth = azimuth; // static_cast<decltype(this->LastAzimuth)>(-1);
+    this->LastVertDeflection = vertDeflection;
     // this->LastSlope   = slope;
     this->LastHorDir = horDir;
     this->LastVertDir = vertDir;
-    this->HasLastHorDir = true;
-    this->HasLastVertDir = true;
+    this->HasLastState = true;
+
+    if (! hasLastState)
+    {
+      return false;
+    }
 
 
     // VelArray
     ModelIdentificationCode mic = payloadHeader->GetMic();
     if (mic == ModelIdentificationCode::MIC_VELARRAY || firingGroupHeader->GetVdfl() != 0)
     {
-      return this->HasLastVertDir ? (vertDir != lastVertDir) : false;
+      // The frame split if either the vertical direction changes (vertical
+      // scanning) OR the horizontal direction changes without a change in the
+      // vertical deflection (pure horizontal scanning).
+      return (
+          (vertDir != lastVertDir) ||
+          (horDir != lastHorDir && vertDeflection == lastVertDeflection)
+        );
     }
 
     // Not VelArray
@@ -1079,7 +1088,7 @@ public:
 
       // Old logic from VelArray FramingState. This doesn't seem to work for
       // other sensors.
-      if (! hasLastHorDir || slope == 0)
+      if (slope == 0)
       {
         return false;
       }
@@ -1974,15 +1983,6 @@ vtkVelodyneAdvancedPacketInterpreter::SetNumberOfItems(size_t numberOfItems)
 #define VAPI_SET_NUMBER_OF_VALUES(index, data, array)                          \
   array->SetNumberOfValues(numberOfItems);
 
-  // "data" is an unused placeholder
-      // if (azimuth == 0 and lastAzimuth != 0)
-      // {
-      //   return true;
-      // }
-      // else
-      // {
-      //   return this->HasLastHorDir ? (horDir != lastHorDir) : false;
-      // }
   VAPI_FOREACH_INFO_ARRAY(VAPI_SET_NUMBER_OF_VALUES, data)
 }
 
