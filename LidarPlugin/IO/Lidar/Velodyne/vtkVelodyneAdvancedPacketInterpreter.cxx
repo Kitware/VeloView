@@ -1455,21 +1455,21 @@ vtkVelodyneAdvancedPacketInterpreter::CreateNewEmptyFrame(
   VAPI_INIT_INFO_ARR(Xs, "X")
   VAPI_INIT_INFO_ARR(Ys, "Y")
   VAPI_INIT_INFO_ARR(Zs, "Z")
-  VAPI_INIT_INFO_ARR(Distances, "Raw Distance")
-  VAPI_INIT_INFO_ARR(DistanceTypes, "Distance Type")
-  VAPI_INIT_INFO_ARR(Azimuths, "Azimuth")
-  VAPI_INIT_INFO_ARR(VerticalAngles, "Vertical Angle") /*
+  VAPI_INIT_INFO_ARR(Distances, "raw_distance")
+  VAPI_INIT_INFO_ARR(DistanceTypes, "distance_type")
+  VAPI_INIT_INFO_ARR(Azimuths, "azimuth")
+  VAPI_INIT_INFO_ARR(VerticalAngles, "vertical_angle") /*
 VAPI_INIT_INFO_ARR(DistanceTypeStrings  , "Distance Type")
 VAPI_INIT_INFO_ARR(FiringModeStrings    , "FiringMode")
 VAPI_INIT_INFO_ARR(StatusStrings        , "Status")*/
-  VAPI_INIT_INFO_ARR(Intensities, "Intensity")
-  VAPI_INIT_INFO_ARR(Confidences, "Confidence")
-  VAPI_INIT_INFO_ARR(Reflectivities, "Reflectivity")
-  VAPI_INIT_INFO_ARR(ChannelNumbers, "Logical Channel Number")
-  VAPI_INIT_INFO_ARR(TimeFractionOffsets, "Time Fraction Offset")
-  VAPI_INIT_INFO_ARR(Powers, "Power")
-  VAPI_INIT_INFO_ARR(Noises, "Noise")
-  VAPI_INIT_INFO_ARR(Pseqs, "Packet Sequence Number")
+  VAPI_INIT_INFO_ARR(Intensities, "intensity")
+  VAPI_INIT_INFO_ARR(Confidences, "confidence")
+  VAPI_INIT_INFO_ARR(Reflectivities, "reflectivity")
+  VAPI_INIT_INFO_ARR(ChannelNumbers, "logical_channel_number")
+  VAPI_INIT_INFO_ARR(TimeFractionOffsets, "time_fraction_offset")
+  VAPI_INIT_INFO_ARR(Powers, "power")
+  VAPI_INIT_INFO_ARR(Noises, "noise")
+  VAPI_INIT_INFO_ARR(Pseqs, "packet_sequence_number")
 
   this->NumberOfPointsInCurrentFrame = 0;
   this->CurrentArraySize             = numberOfPoints;

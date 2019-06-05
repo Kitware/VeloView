@@ -269,12 +269,12 @@ def setDefaultLookupTables(sourceProxy):
 
 def colorByIntensity(sourceProxy):
     arrayName = "intensity"
-    try:
-        _ = sourceProxy.Interpreter.UseIntraFiringAdjustment
-        arrayName =  "intensity"
-    #hasArrayName(sourceProxy, 'Intensity'):
-    except AttributeError:
-        arrayName = "Intensity"
+    #  try:
+    #      _ = sourceProxy.Interpreter.UseIntraFiringAdjustment
+    #      arrayName =  "intensity"
+    #  #hasArrayName(sourceProxy, 'Intensity'):
+    #  except AttributeError:
+    #      arrayName = "Intensity"
 
     setDefaultLookupTables(sourceProxy)
     rep = smp.GetDisplayProperties(sourceProxy)
