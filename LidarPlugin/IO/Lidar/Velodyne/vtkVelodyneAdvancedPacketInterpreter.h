@@ -19,7 +19,7 @@ using namespace DataPacketFixedLength;
 class FrameTracker;
 
 //------------------------------------------------------------------------------
-class vtkVelodyneAdvancedPacketInterpreter : public vtkLidarPacketInterpreter
+class VTK_EXPORT vtkVelodyneAdvancedPacketInterpreter : public vtkLidarPacketInterpreter
 {
 //------------------------------------------------------------------------------
 private:
