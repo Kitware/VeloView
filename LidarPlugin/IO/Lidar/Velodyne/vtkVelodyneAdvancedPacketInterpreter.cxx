@@ -1397,10 +1397,51 @@ vtkVelodyneAdvancedPacketInterpreter::IsLidarPacket(
   unsigned char const * data,
   unsigned int dataLength)
 {
+  decltype(dataLength) index = 0;
+
+  // This checks that PayloadHeader's IsValid function, which in turn checks
+  // that the version is 1 and that expected lengths are consistent.
   PayloadHeader const * payloadHeader =
-    reinterpretCastWithChecks<PayloadHeader>(data, dataLength, 0);
-  return (
-    (payloadHeader != nullptr) && (payloadHeader->GetHlen() <= dataLength));
+    reinterpretCastWithChecks<PayloadHeader>(data, dataLength, index);
+  if ((payloadHeader == nullptr) || (payloadHeader->GetHlen() > dataLength))
+  {
+    return false;
+  }
+  ADVANCE_INDEX_BY_HLEN_OR_RETURN(dataLength, index, payloadHeader, false);
+
+  auto nxhdr = payloadHeader->GetNxhdr();
+  while (nxhdr != 0)
+  {
+    ExtensionHeader const * extensionHeader =
+      reinterpretCastWithChecks<ExtensionHeader>(data, dataLength, index);
+    if (extensionHeader == nullptr)
+    {
+      return false;
+    }
+    ADVANCE_INDEX_BY_HLEN_OR_RETURN(dataLength, index, extensionHeader, false);
+    nxhdr = extensionHeader->GetNxhdr();
+  }
+
+  size_t numberOfBytesPerFiring = payloadHeader->GetNumberOfBytesPerFiring();
+  size_t numberOfBytesPerFiringGroupHeader = payloadHeader->GetGlen();
+
+  while (index < dataLength)
+  {
+    FiringGroupHeader const * firingGroupHeader =
+      reinterpretCastWithChecks<FiringGroupHeader>(data, dataLength, index);
+    if (firingGroupHeader == nullptr)
+    {
+      return false;
+    }
+    // TODO
+    // Add firing header checks if necessary here. See ProcessPacket for an
+    // example of how to loop over each firing and advance the index.
+    index += (numberOfBytesPerFiring * firingGroupHeader->GetFcnt()) +
+             numberOfBytesPerFiringGroupHeader;
+  }
+
+  // return true;
+  return index == dataLength;
 }
 
 //------------------------------------------------------------------------------
