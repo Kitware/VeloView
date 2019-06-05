@@ -514,6 +514,7 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
     else: # Advanced
       reader.Interpreter = 'Velodyne Advanced Interpreter'
 
+    reader.UpdatePipelineInformation()
     app.reader = reader
     app.trailingFramesSpinBox.enabled = True
     app.trailingFrame = smp.TrailingFrame(guiName="TrailingFrame", Input=getLidar(), NumberOfTrailingFrames=app.trailingFramesSpinBox.value)
