@@ -33,6 +33,20 @@
         </Documentation>
       </IntVectorProperty>
 
+      <IntVectorProperty
+          name="UseCache"
+          animateable="0"
+          command="SetUseCache"
+          default_values="1"
+          number_of_elements="1"
+          panel_visibility="advanced">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          Use an internal cache for speed up. If a cache is used, some artefact may appear if
+          the input for previous timestep change
+        </Documentation>
+      </IntVectorProperty>
+
    </SourceProxy>
   </ProxyGroup>
 </ServerManagerConfiguration>

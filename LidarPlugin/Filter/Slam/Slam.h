@@ -85,6 +85,7 @@
 #include "SpinningSensorKeypointExtractor.h"
 #include "KalmanFilter.h"
 #include "KDTreePCLAdaptor.h"
+#include "MotionModel.h"
 
 #define SetMacro(name,type) void Set##name (type _arg) { name = _arg; }
 #define GetMacro(name,type) type Get##name () const { return name; }
@@ -95,6 +96,13 @@ enum MatchingMode
 {
   EgoMotion = 0,
   Mapping = 1
+};
+
+enum WithinFrameTrajMode
+{
+  EgoMotionTraj = 0,
+  MappingTraj = 1,
+  UndistortionTraj = 2
 };
 
 struct Transform
@@ -263,6 +271,12 @@ private:
   // the computation speed will decrease
   bool Undistortion = false;
 
+  // Represents estimated samples of the trajectory
+  // of the sensor within a lidar frame. The orientation
+  // and position of the sensor at a random time t can then
+  // be obtained using an interpolation
+  SampledSensorPath WithinFrameTrajectory;
+
   // keypoints extracted
   pcl::PointCloud<Point>::Ptr CurrentEdgesPoints;
   pcl::PointCloud<Point>::Ptr CurrentPlanarsPoints;
@@ -351,11 +365,13 @@ private:
   // Transformation to map the current pointcloud
   // in the referential of the previous one
   Eigen::Matrix<double, 6, 1> Trelative;
+  Eigen::VectorXd MotionParametersEgoMotion;
 
   // Transformation to map the current pointcloud
   // in the world (i.e first frame) one
   Eigen::Matrix<double, 6, 1> Tworld = Eigen::Matrix<double, 6, 1>::Zero();
   Eigen::Matrix<double, 6, 1> PreviousTworld = Eigen::Matrix<double, 6, 1>::Zero();
+  Eigen::VectorXd MotionParametersMapping;
 
   // Computed trajectory of the sensor
   // i.e the list of transforms computed
@@ -436,20 +452,22 @@ private:
   // is to express them in a same referential
   // This can be done using estimated egomotion and assuming
   // a constant angular velocity and velocity during a sweep
+  // or any other motion model
 
   // Express the provided point into the referential of the sensor
-  // at time t0. The referential at time of acquisition t is estimated
+  // at time tf. The referential at time of acquisition t is estimated
   // using the constant velocity hypothesis and the provided sensor
   // position estimation
-//  void ExpressPointInOtherReferencial(Point& p, vtkSmartPointer<vtkCustomTransformInterpolator> transform);
+  void ExpressPointInOtherReferencial(Point& p);
+  void ExpressPointCloudInOtherReferencial(pcl::PointCloud<Point>::Ptr pointcloud);
 
-  // Initialize the undistortion interpolator
+  // Compute the trajectory of the sensor within a frame
+  // according to the sensor motion model.
   // for the EgoMotion part it is just an interpolation
   // between Id and Trelative
   // for the mapping part it is an interpolation between indentity
   // and the incremental transform between TworldPrevious and Tworld
-//  vtkSmartPointer<vtkCustomTransformInterpolator> InitUndistortionInterpolatorEgoMotion();
-//  vtkSmartPointer<vtkCustomTransformInterpolator> InitUndistortionInterpolatorMapping();
+  void CreateWithinFrameTrajectory(SampledSensorPath& path, WithinFrameTrajMode mode);
 
   // Update the world transformation by integrating
   // the relative motion recover and the previous
@@ -460,6 +478,12 @@ private:
   // using the current keypoints expressed in the
   // world reference frame coordinate system
   void UpdateMapsUsingTworld();
+
+  // Update the current keypoints by expressing
+  // them in the reference coordinate system that
+  // correspond to the one attached to the sensor
+  // at the time of the end of the frame
+  void UpdateCurrentKeypointsUsingTworld();
 
   // Set the lidar maximun range
   void SetLidarMaximunRange(const double maxRange);

@@ -24,6 +24,12 @@ public:
   void SetNumberOfTrailingFrames(const unsigned int value);
   //! @}
 
+  //! @{
+  //! @copydoc UseCache
+  vtkGetMacro(UseCache, bool)
+  vtkSetMacro(UseCache, bool)
+  //! @}
+
 protected:
   vtkTrailingFrame() = default;
 
@@ -38,6 +44,8 @@ protected:
 private:
   //! Number of previous timestep to display
   unsigned int NumberOfTrailingFrames = 0;
+  //! Should the internal cache be used for speed
+  bool UseCache = true;
 
   //! Original pipeline time which must be restored after modifying the input filter time
   double PipelineTime = 0;

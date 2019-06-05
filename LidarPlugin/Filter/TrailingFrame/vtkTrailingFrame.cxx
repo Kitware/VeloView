@@ -70,6 +70,13 @@ int vtkTrailingFrame::RequestUpdateExtent(vtkInformation* vtkNotUsed(request),
   // first loop
   if (this->FirstFilterIteration)
   {
+    // Delete the cache so it cannot be used
+    if (!this->UseCache)
+    {
+      this->CacheTimeRange[0] = -1;
+      this->CacheTimeRange[1] = -1;
+      this->Cache->Initialize();
+    }
     // Save current pipeline time step
     this->PipelineTime = inInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP());
 

@@ -69,8 +69,8 @@ void NetworkSource::Start()
   }
 
   // Create work
-  this->LIDARPortReceiver = boost::shared_ptr<PacketReceiver>(new PacketReceiver(
-    this->IOService, LIDARPort, ForwardedLIDARPort, ForwardedIpAddress, IsForwarding, this));
+  this->LidarPortReceiver = boost::shared_ptr<PacketReceiver>(new PacketReceiver(
+    this->IOService, LidarPort, ForwardedLidarPort, ForwardedIpAddress, IsForwarding, this));
 
   if (this->ListenGPS)
   {
@@ -108,7 +108,7 @@ void NetworkSource::Start()
       boost::filesystem::create_directory(appDirPath);
     }
 
-    this->LIDARPortReceiver->EnableCrashAnalysing(
+    this->LidarPortReceiver->EnableCrashAnalysing(
       appDir + "LidarLastData", LIDAR_PACKET_TO_STORE_CRASH_ANALYSIS, this->IsCrashAnalysing);
     if (this->ListenGPS)
     {
@@ -117,7 +117,7 @@ void NetworkSource::Start()
     }
   }
 
-  this->LIDARPortReceiver->StartReceive();
+  this->LidarPortReceiver->StartReceive();
   if (this->ListenGPS)
   {
       this->PositionPortReceiver->StartReceive();
@@ -128,7 +128,7 @@ void NetworkSource::Start()
 void NetworkSource::Stop()
 {
   // Kill the receivers
-  this->LIDARPortReceiver.reset();
+  this->LidarPortReceiver.reset();
   if (this->ListenGPS)
   {
     this->PositionPortReceiver.reset();

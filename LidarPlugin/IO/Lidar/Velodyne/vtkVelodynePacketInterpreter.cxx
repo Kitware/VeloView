@@ -498,7 +498,6 @@ vtkVelodynePacketInterpreter::vtkVelodynePacketInterpreter()
 {
   this->RpmCalculator_ = new RPMCalculator();
   this->UseIntraFiringAdjustment = true;
-  this->ShouldAddDualReturnArray = false;
   this->alreadyWarnedForIgnoredHDL64FiringPacket = false;
   this->OutputPacketProcessingDebugInfo = false;
   this->SensorPowerMode = 0;
@@ -1462,10 +1461,6 @@ bool vtkVelodynePacketInterpreter::SplitFrame(bool force)
 
     return true;
   }
-  if (this->ShouldAddDualReturnArray)
-  {
-    this->Frames.back()->GetPointData()->AddArray(this->SelectedDualReturn);
-  }
 
   return false;
 }
@@ -1580,11 +1575,6 @@ bool vtkVelodynePacketInterpreter::PreProcessPacket(unsigned char const * data, 
         }
         isNewFrame = true;
 
-        // Create a copy of the current meta data state
-        // at a different memory location than the one
-        // added to the catalog
-        this->ParserMetaData.SpecificInformation = this->ParserMetaData.SpecificInformation->CopyTo();
-
         frameNumber++;
         PacketProcessingDebugMacro(
           << "\n\nEnd of frame #" << frameNumber
@@ -1665,19 +1655,6 @@ std::string vtkVelodynePacketInterpreter::GetSensorInformation()
 }
 
 //-----------------------------------------------------------------------------
-void vtkVelodynePacketInterpreter::SetSelectedPointsWithDualReturn(double* data, int Npoints)
-{
-  this->SelectedDualReturn = vtkSmartPointer<vtkDoubleArray>::New();
-  this->SelectedDualReturn->Allocate(60000);
-  this->SelectedDualReturn->SetName("dualReturn_of_selectedPoints");
-
-  for (int k = 0; k < Npoints; ++k)
-  {
-    this->SelectedDualReturn->InsertNextValue(data[k]);
-  }
-}
-
-//-----------------------------------------------------------------------------
 void vtkVelodynePacketInterpreter::GetXMLColorTable(double XMLColorTable[4 * HDL_MAX_NUM_LASERS])
 {
   for (int i = 0; i < HDL_MAX_NUM_LASERS; ++i)
@@ -1714,25 +1691,4 @@ void vtkVelodynePacketInterpreter::GetLaserCorrections(double verticalCorrection
     minIntensity[i] = this->laser_corrections_[i].minIntensity;
     maxIntensity[i] = this->laser_corrections_[i].maxIntensity;
   }
-}
-
-//-----------------------------------------------------------------------------
-void vtkVelodynePacketInterpreter::ResetParserMetaData()
-{
-  FrameInformation newFrameInfo;
-  newFrameInfo.SpecificInformation = std::make_shared<VelodyneSpecificFrameInformation>();
-  this->ParserMetaData = newFrameInfo;
-}
-
-//-----------------------------------------------------------------------------
-void vtkVelodynePacketInterpreter::SetParserMetaData(const FrameInformation& metaData)
-{
-  this->ParserMetaData = metaData.CopyTo();
-}
-
-//-----------------------------------------------------------------------------
-FrameInformation vtkVelodynePacketInterpreter::GetParserMetaData()
-{
-  FrameInformation frameInfo = this->ParserMetaData.CopyTo();
-  return frameInfo;
 }

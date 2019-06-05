@@ -300,6 +300,7 @@ private:
     this->Ui.spreadSheetDock->hide();
     this->Ui.informationDock->hide();
     this->Ui.memoryInspectorDock->hide();
+    this->Ui.viewAnimationDock->hide();
 
     // Setup the View menu. This must be setup after all toolbars and dockwidgets
     // have been created.
@@ -312,6 +313,9 @@ private:
     /// If you want to automatically add a menu for filters as requested in the
     /// configuration pass in a non-null main window.
     pqParaViewMenuBuilders::buildFiltersMenu(*this->Ui.menuFilters, nullptr);
+
+    // setup the context menu for the pipeline browser.
+    pqParaViewMenuBuilders::buildPipelineBrowserContextMenu(*this->Ui.pipelineBrowser);
 
     // build Paraview file menu
     QMenu *paraviewFileMenu = this->Ui.menuAdvance->addMenu("File (Paraview)");

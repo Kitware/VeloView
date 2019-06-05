@@ -33,7 +33,6 @@ import planefit
 import bisect
 
 from PythonQt.paraview import vvCalibrationDialog, vvCropReturnsDialog, vvSelectFramesDialog
-from LidarPluginPython import vtkVelodynePacketInterpreter
 
 _repCache = {}
 
@@ -386,7 +385,7 @@ def openSensor():
 
     calibrationFile = calibration.calibrationFile
     sensorTransform = calibration.sensorTransform
-    LIDARPort = calibration.lidarPort
+    LidarPort = calibration.lidarPort
     GPSPort = calibration.gpsPort
     LIDARForwardingPort = calibration.lidarForwardingPort
     GPSForwardingPort = calibration.gpsForwardingPort
@@ -407,11 +406,12 @@ def openSensor():
         sensor.Interpreter.UseIntraFiringAdjustment = app.actions['actionIntraFiringAdjust'].isChecked()
     else: # Advanced
         sensor.Interpreter = 'Velodyne Advanced Interpreter'
-    sensor.GetClientSideObject().SetLIDARPort(LIDARPort)
+
+    sensor.LidarPort = LidarPort
     sensor.GetClientSideObject().EnableGPSListening(True)
     sensor.GetClientSideObject().SetGPSPort(GPSPort)
     sensor.GetClientSideObject().SetForwardedGPSPort(GPSForwardingPort)
-    sensor.GetClientSideObject().SetForwardedLIDARPort(LIDARForwardingPort)
+    sensor.GetClientSideObject().SetForwardedLidarPort(LIDARForwardingPort)
     sensor.GetClientSideObject().SetIsForwarding(isForwarding)
     sensor.GetClientSideObject().SetIsCrashAnalysing(calibration.isCrashAnalysing)
     sensor.GetClientSideObject().SetForwardedIpAddress(ipAddressForwarding)
@@ -427,7 +427,7 @@ def openSensor():
     app.sensor = sensor
     app.trailingFramesSpinBox.enabled = False
     app.colorByInitialized = False
-    app.filenameLabel.setText('Live sensor stream (Port:'+str(LIDARPort)+')' )
+    app.filenameLabel.setText('Live sensor stream (Port:'+str(LidarPort)+')' )
     app.positionPacketInfoLabel.setText('')
     enableSaveActions()
 
@@ -1787,19 +1787,19 @@ def toggleCrashAnalysis():
     app.EnableCrashAnalysis = app.actions['actionEnableCrashAnalysis'].isChecked()
 
 def setFilterToDual():
-    setFilterTo(0)
+    setFilterTo("Dual")
 
 def setFilterToDistanceNear():
-    setFilterTo(vtkVelodynePacketInterpreter.DUAL_DISTANCE_NEAR)
+    setFilterTo("Near Distance")
 
 def setFilterToDistanceFar():
-    setFilterTo(vtkVelodynePacketInterpreter.DUAL_DISTANCE_FAR)
+    setFilterTo("Far Distance")
 
 def setFilterToIntensityHigh():
-    setFilterTo(vtkVelodynePacketInterpreter.DUAL_INTENSITY_HIGH)
+    setFilterTo("High Intensity")
 
 def setFilterToIntensityLow():
-    setFilterTo(vtkVelodynePacketInterpreter.DUAL_INTENSITY_LOW)
+    setFilterTo("Low Intensity")
 
 def setFilterTo(mask):
 

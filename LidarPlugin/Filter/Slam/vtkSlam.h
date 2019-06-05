@@ -71,19 +71,18 @@
 #ifndef VTK_SLAM_H
 #define VTK_SLAM_H
 
-#include "vtkPCLConversions.h"
-
-
+// VTK
 #include <vtkPolyDataAlgorithm.h>
 #include <vtkSmartPointer.h>
 
+// EIGEN
 #include <Eigen/Dense>
 
+// LOCAL
+#include "vtkPCLConversions.h"
 #include "Slam.h"
 #include "KalmanFilter.h"
 #include "vtkTemporalTransforms.h"
-
-
 
 // This custom macro is needed to make the SlamManager time agnostic
 // The SlamManager need to know when RequestData is call, if it's due
@@ -132,8 +131,8 @@ public:
   vtkCustomGetMacro(FastSlam, bool)
   vtkCustomSetMacro(FastSlam, bool)
 
-//  vtkGetMacro(Undistortion, bool)
-//  vtkCustomSetMacro(Undistortion, bool)
+  vtkCustomGetMacro(Undistortion, bool)
+  vtkCustomSetMacro(Undistortion, bool)
 
   vtkGetObjectMacro(KeyPointsExtractor, vtkSpinningSensorKeypointExtractor)
   virtual void SetKeyPointsExtractor(vtkSpinningSensorKeypointExtractor *);

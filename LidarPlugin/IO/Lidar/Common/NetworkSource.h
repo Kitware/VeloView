@@ -31,25 +31,25 @@ class PacketFileWriter;
 * \class PacketReceiver
 * \brief This class is responsible for the IOService and  two PacketReceiver classes
 * @param _consumer boost::shared_ptr<PacketConsumer>
-* @param argLIDARPort The used port to receive the LIDAR information
-* @param ForwardedLIDARPort_ The port which will receive the lidar forwarded packets
+* @param argLidarPort The used port to receive the LIDAR information
+* @param ForwardedLidarPort_ The port which will receive the lidar forwarded packets
 * @param ForwardedIpAddress_ The ip which will receive the forwarded packets
 * @param isForwarding_ Allow the forwarding
 */
 class NetworkSource
 {
 public:
-  NetworkSource(std::shared_ptr<PacketConsumer> _consumer, int argLIDARPort,
-    int ForwardedLIDARPort_, std::string ForwardedIpAddress_,
+  NetworkSource(std::shared_ptr<PacketConsumer> _consumer, int argLidarPort,
+    int ForwardedLidarPort_, std::string ForwardedIpAddress_,
     bool isForwarding_, bool isCrashAnalysing_)
-    : LIDARPort(argLIDARPort)
-    , ForwardedLIDARPort(ForwardedLIDARPort_)
+    : LidarPort(argLidarPort)
+    , ForwardedLidarPort(ForwardedLidarPort_)
     , ForwardedIpAddress(ForwardedIpAddress_)
     , IsForwarding(isForwarding_)
     , IsCrashAnalysing(isCrashAnalysing_)
     , IOService()
     , Thread()
-    , LIDARPortReceiver()
+    , LidarPortReceiver()
     , Consumer(_consumer)
     , Writer()
     , DummyWork(new boost::asio::io_service::work(this->IOService))
@@ -66,10 +66,10 @@ public:
   void Stop();
 
   //! @todo currently evrything is public, but it should be private
-  int LIDARPort;                  /*!< The port to receive LIDAR information. Default is 2368 */
+  int LidarPort;                  /*!< The port to receive LIDAR information. Default is 2368 */
   bool ListenGPS;
   int GPSPort;                    /*!< The port to receive GPS information. Default is 8308 */
-  int ForwardedLIDARPort;         /*!< The port to send LIDAR forwarded packets*/
+  int ForwardedLidarPort;         /*!< The port to send LIDAR forwarded packets*/
   int ForwardedGPSPort;           /*!< The port to send GPS forwarded packets*/
   std::string ForwardedIpAddress; /*!< The ip to send forwarded packets*/
   bool IsForwarding;              /*!< Allowing the forwarding of the packets*/
@@ -79,7 +79,7 @@ public:
   boost::shared_ptr<boost::thread> Thread;
 
   boost::shared_ptr<PacketReceiver>
-    LIDARPortReceiver; /*!< The PacketReceiver configured to receive LIDAR information */
+    LidarPortReceiver; /*!< The PacketReceiver configured to receive LIDAR information */
 
   boost::shared_ptr<PacketReceiver>
     PositionPortReceiver; /*!< The PacketReceiver configured to receive GPS information */
