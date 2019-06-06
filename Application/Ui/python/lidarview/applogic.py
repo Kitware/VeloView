@@ -404,11 +404,8 @@ def openSensor():
     app.grid = createGrid()
 
     sensor = smp.LidarStream(guiName='Data', CalibrationFile=calibrationFile)
-    if (interpreterType == 0): # Legacy
-        sensor.Interpreter = 'Velodyne Interpreter'
-        sensor.Interpreter.UseIntraFiringAdjustment = app.actions['actionIntraFiringAdjust'].isChecked()
-    else: # Advanced
-        sensor.Interpreter = 'Velodyne Advanced Interpreter'
+    sensor.Interpreter = 'Velodyne Meta Interpreter'
+    sensor.Interpreter.UseIntraFiringAdjustment = app.actions['actionIntraFiringAdjust'].isChecked()
 
     sensor.LidarPort = LidarPort
     sensor.GetClientSideObject().EnableGPSListening(True)
@@ -513,11 +510,8 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
     reader = smp.LidarReader(guiName='Data',
                              FileName = filename,
                              CalibrationFile = calibrationFile)
-    if (interpreterType == 0): # Legacy
-        reader.Interpreter = 'Velodyne Interpreter'
-        reader.Interpreter.UseIntraFiringAdjustment = app.actions['actionIntraFiringAdjust'].isChecked()
-    else: # Advanced
-      reader.Interpreter = 'Velodyne Advanced Interpreter'
+    reader.Interpreter = 'Velodyne Meta Interpreter'
+    reader.Interpreter.UseIntraFiringAdjustment = app.actions['actionIntraFiringAdjust'].isChecked()
 
     reader.UpdatePipelineInformation()
     app.reader = reader
