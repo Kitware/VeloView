@@ -136,13 +136,22 @@ public:
   uint8_t ReportedFactoryField1 ;
   uint8_t ReportedFactoryField2 ;
   bool OutputPacketProcessingDebugInfo ;
+  vtkSetMacro(UseIntraFiringAdjustment, bool)
+  vtkGetMacro(UseIntraFiringAdjustment, bool)
   bool UseIntraFiringAdjustment;
+  vtkSetMacro(DualReturnFilter, bool)
+  vtkGetMacro(DualReturnFilter, bool)
   unsigned int DualReturnFilter ;
+  vtkSetMacro(FiringsSkip, int)
+  vtkGetMacro(FiringsSkip, int)
   int FiringsSkip;
   bool IsCorrectionFromLiveStream;
   bool IsHDL64Data ;
+  vtkGetMacro(HasDualReturn, bool)
   bool HasDualReturn ;
   bool ShouldAddDualReturnArray;
+  vtkSetMacro(WantIntensityCorrection, bool)
+  vtkGetMacro(WantIntensityCorrection, bool)
   bool WantIntensityCorrection;
 };
 

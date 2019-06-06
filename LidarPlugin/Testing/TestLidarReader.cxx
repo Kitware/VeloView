@@ -14,7 +14,7 @@
 
 #include "TestHelpers.h"
 #include "vtkLidarReader.h"
-#include "vtkVelodynePacketInterpreter.h"
+#include "vtkVelodyneMetaPacketInterpreter.h"
 
 #include <vtkNew.h>
 #include <vtkTimerLog.h>
@@ -55,7 +55,7 @@ int main(int argc, char* argv[])
 
   // Generate a Velodyne HDL reader
   vtkNew<vtkLidarReader> HDLReader;
-  auto interp = vtkSmartPointer<vtkVelodynePacketInterpreter>::New();
+  auto interp = vtkSmartPointer<vtkVelodyneMetaPacketInterpreter>::New();
   HDLReader->SetInterpreter(interp);
   HDLReader->SetFileName(pcapFileName);
   HDLReader->SetCalibrationFileName(correctionFileName);

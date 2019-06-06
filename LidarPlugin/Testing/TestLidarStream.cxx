@@ -16,7 +16,7 @@
 #include "TestHelpers.h"
 #include "vtkLidarStream.h"
 #include "vvPacketSender.h"
-#include <vtkVelodynePacketInterpreter.h>
+#include <vtkVelodyneMetaPacketInterpreter.h>
 
 #include <vtkNew.h>
 #include <vtkTimerLog.h>
@@ -63,7 +63,7 @@ int main(int argc, char* argv[])
 
   // Generate a Velodyne HDL source
   vtkNew<vtkLidarStream> HDLsource;
-  auto interp = vtkSmartPointer<vtkVelodynePacketInterpreter>::New();
+  auto interp = vtkSmartPointer<vtkVelodyneMetaPacketInterpreter>::New();
   HDLsource->SetInterpreter(interp);
   HDLsource->SetCalibrationFileName(correctionFileName);
   HDLsource->SetLidarPort(dataPort);

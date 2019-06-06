@@ -11,6 +11,8 @@ PacketConsumer::PacketConsumer()
 //----------------------------------------------------------------------------
 void PacketConsumer::HandleSensorData(const unsigned char *data, unsigned int length)
 {
+  if (!this->Interpreter->IsLidarPacket(data, length))
+    return;
   this->Interpreter->ProcessPacket(data, length);
   if (this->Interpreter->IsNewFrameReady())
   {

@@ -16,7 +16,7 @@
 
 #include "vtkLidarReader.h"
 #include "vtkLidarStream.h"
-#include "vtkVelodynePacketInterpreter.h"
+#include "vtkVelodyneMetaPacketInterpreter.h"
 
 #include <vtkCommand.h>
 #include <vtkExecutive.h>
@@ -111,8 +111,8 @@ void SetProcessingOptions(
 
   std::vector<int> parsedOptions = parseOptions(currentOptions, numProcessingOptions);
 
-  vtkVelodynePacketInterpreter* pk =
-      dynamic_cast<vtkVelodynePacketInterpreter*>(HDLReader->GetInterpreter());
+  vtkVelodyneMetaPacketInterpreter* pk =
+      dynamic_cast<vtkVelodyneMetaPacketInterpreter*>(HDLReader->GetInterpreter());
   if (!pk)
   {
     return;

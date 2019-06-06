@@ -22,7 +22,7 @@ using namespace DataPacketFixedLength;
 #include <iostream>
 
 // include only to go the structure VelodyneSpecificFrameInformation before merging code
-#include <vtkVelodynePacketInterpreter.h>
+#include <vtkVelodyneLegacyPacketInterpreter.h>
 
 #define DEBUGMSG(msg) std::cout << msg << " [" << __LINE__ << "]\n";
 

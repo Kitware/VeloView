@@ -1,5 +1,5 @@
-#ifndef VELODYNEPACKETINTERPRETOR_H
-#define VELODYNEPACKETINTERPRETOR_H
+#ifndef VTKVELODYNELEGACYPACKETINTERPRETER_H
+#define VTKVELODYNELEGACYPACKETINTERPRETER_H
 
 #include "vtkLidarPacketInterpreter.h"
 #include "vtkDataPacket.h"
@@ -15,11 +15,11 @@ class FramingState;
 class vtkRollingDataAccumulator;
 
 
-class VTK_EXPORT vtkVelodynePacketInterpreter : public vtkLidarPacketInterpreter
+class VTK_EXPORT vtkVelodyneLegacyPacketInterpreter : public vtkLidarPacketInterpreter
 {
 public:
-  static vtkVelodynePacketInterpreter* New();
-  vtkTypeMacro(vtkVelodynePacketInterpreter, vtkLidarPacketInterpreter);
+  static vtkVelodyneLegacyPacketInterpreter* New();
+  vtkTypeMacro(vtkVelodyneLegacyPacketInterpreter, vtkLidarPacketInterpreter);
   void PrintSelf(ostream& os, vtkIndent indent){};
   enum DualFlag
   {
@@ -40,7 +40,6 @@ public:
 
   bool IsLidarPacket(unsigned char const * data, unsigned int dataLength) override;
 
-  vtkSmartPointer<vtkPolyData> CreateNewEmptyFrame(vtkIdType numberOfPoints, vtkIdType prereservedNumberOfPoints = 60000) override;
 
   void ResetCurrentFrame() override;
 
@@ -62,6 +61,7 @@ public:
 
   vtkGetMacro(HasDualReturn, bool)
 
+  vtkGetMacro(WantIntensityCorrection, bool)
   vtkSetMacro(WantIntensityCorrection, bool)
 
   vtkGetMacro(FiringsSkip, int)
@@ -70,9 +70,12 @@ public:
   vtkGetMacro(UseIntraFiringAdjustment, bool)
   vtkSetMacro(UseIntraFiringAdjustment, bool)
 
+  vtkGetMacro(DualReturnFilter, unsigned int)
   vtkSetMacro(DualReturnFilter, unsigned int)
 
 protected:
+  vtkSmartPointer<vtkPolyData> CreateNewEmptyFrame(vtkIdType numberOfPoints, vtkIdType prereservedNumberOfPoints = 60000) override;
+
   // Process the laser return from the firing data
   // firingData - one of HDL_FIRING_PER_PKT from the packet
   // hdl64offset - either 0 or 32 to support 64-laser systems
@@ -182,12 +185,12 @@ protected:
 
   unsigned int DualReturnFilter;
 
-  vtkVelodynePacketInterpreter();
-  ~vtkVelodynePacketInterpreter();
+  vtkVelodyneLegacyPacketInterpreter();
+  ~vtkVelodyneLegacyPacketInterpreter();
 
 private:
-  vtkVelodynePacketInterpreter(const vtkVelodynePacketInterpreter&) = delete;
-  void operator=(const vtkVelodynePacketInterpreter&) = delete;
+  vtkVelodyneLegacyPacketInterpreter(const vtkVelodyneLegacyPacketInterpreter&) = delete;
+  void operator=(const vtkVelodyneLegacyPacketInterpreter&) = delete;
 };
 
 /**
@@ -210,4 +213,4 @@ struct VelodyneSpecificFrameInformation : public SpecificFrameInformation
   std::unique_ptr<SpecificFrameInformation> clone() { return std::make_unique<VelodyneSpecificFrameInformation>(*this); }
 };
 
-#endif // VELODYNEPACKETINTERPRETOR_H
+#endif // VTKVELODYNELEGACYPACKETINTERPRETER_H
