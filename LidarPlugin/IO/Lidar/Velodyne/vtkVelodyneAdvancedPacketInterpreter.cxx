@@ -862,6 +862,7 @@ public:
 class FrameTracker
 {
 private:
+  FramingLogic FrameLogic { FramingLogic::FL_DEFAULT };
   bool HasLastState;
   HorizontalDirection LastHorDir;
   VerticalDirection LastVertDir;
@@ -873,6 +874,11 @@ public:
   FrameTracker()
   {
     this->Reset();
+  }
+
+  void SetFramingLogic(FramingLogic fl)
+  {
+    this->FrameLogic = fl;
   }
 
   //! @brief Reset frame detection.
@@ -929,19 +935,23 @@ public:
       return false;
     }
 
-
-    // VelArray
-    ModelIdentificationCode mic = payloadHeader->GetMic();
-    if (mic == ModelIdentificationCode::MIC_VELARRAY || firingGroupHeader->GetVdfl() != 0)
+    if (this->FrameLogic != FramingLogic::FL_AZIMUTH_CROSSING)
     {
-      // The frame split if either the vertical direction changes (vertical
-      // scanning) OR the horizontal direction changes without a change in the
-      // vertical deflection (pure horizontal scanning).
-      return (
-          (vertDir != lastVertDir) ||
-          (horDir != lastHorDir && vertDeflection == lastVertDeflection)
-        );
+      return (vertDir != lastVertDir);
     }
+
+    // // VelArray
+    // ModelIdentificationCode mic = payloadHeader->GetMic();
+    // if (mic == ModelIdentificationCode::MIC_VELARRAY || firingGroupHeader->GetVdfl() != 0)
+    // {
+    //   // The frame split if either the vertical direction changes (vertical
+    //   // scanning) OR the horizontal direction changes without a change in the
+    //   // vertical deflection (pure horizontal scanning).
+    //   return (
+    //       (vertDir != lastVertDir) ||
+    //       (horDir != lastHorDir && vertDeflection == lastVertDeflection)
+    //     );
+    // }
 
     // Not VelArray
     else
@@ -1577,5 +1587,6 @@ void vtkVelodyneAdvancedPacketInterpreter::LoadCalibration(const std::string& fi
   this->IsCorrectionFromLiveStream = this->VDCalibrationData.GetIsCorrectionFromLiveStream();
   this->CalibrationReportedNumLasers = this->VDCalibrationData.GetCalibrationReportedNumLasers();
   this->DistanceResolutionM = this->VDCalibrationData.GetDistanceResolutionM();
+  this->CurrentFrameTracker->SetFramingLogic(this->VDCalibrationData.GetFramingLogic());
 }
 

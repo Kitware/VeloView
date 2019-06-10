@@ -109,6 +109,7 @@ using namespace DataPacketFixedLength;
 //------------------------------------------------------------------------------
 // Collect common enums here.
 //------------------------------------------------------------------------------
+// Use these when unifying the frame logic.
 
 //------------------------------------------------------------------------------
 //! @brief Horizontal direction of Lidar.
@@ -128,6 +129,30 @@ DEFINE_ENUM(
   ((UP   , 0))
   ((DOWN , 1)),
   UP
+)
+
+
+//------------------------------------------------------------------------------
+/*!
+ * @brief The framing logic.
+ *
+ * The legacy and advanced packet formats (lfp and afp, resp.) use the same
+ * calibration files but afp introduced the notion of using vdir changes to
+ * delineate frames even in lidars that do not support vertical scanning. The
+ * default behavior should be that afp packets are split into frames when the
+ * vdir changes but the lfp are split using the legacy logic. The configuration
+ * files should have an option to toggle this behavior. An enum is used here
+ * both to allow for other framing logic in the future and to provide a default
+ * value so that each interpreter may correctly fall back to the expected
+ * behavior when the configuration file does not specify the logic.
+ */
+DEFINE_ENUM(
+  FramingLogic,
+  FL_,
+  ((DEFAULT          , 0))
+  ((AZIMUTH_CROSSING , 1))
+  ((VDIR_CHANGE      , 2)),
+  DEFAULT
 )
 
 
@@ -181,6 +206,7 @@ private:
 
   bool IsCalibrated { false };
   bool IsCorrectionFromLiveStream { false };
+  FramingLogic FrameLogic  { FramingLogic::FL_DEFAULT };
   int CalibrationReportedNumLasers { -1 };
   double DistanceResolutionM;
 
@@ -213,6 +239,8 @@ public:
   );
 
   void GetXMLColorTable(double XMLColorTable[4 * HDL_MAX_NUM_LASERS]);
+
+  FramingLogic GetFramingLogic() { return this->FrameLogic; }
   bool GetIsCalibrated() { return this->IsCalibrated; }
   bool GetIsCorrectionFromLiveStream() { return this->IsCorrectionFromLiveStream; }
   int GetCalibrationReportedNumLasers() { return this->CalibrationReportedNumLasers; }

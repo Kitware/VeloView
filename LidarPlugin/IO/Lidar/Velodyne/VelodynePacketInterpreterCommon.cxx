@@ -84,6 +84,30 @@ void VelodyneCalibrationData::LoadCalibration(const std::string& filename)
       "LoadCalibration: error reading calibration file: " << filename);
     return;
   }
+  // Read framing logic mode if available.
+  BOOST_FOREACH (boost::property_tree::ptree::value_type& v, pt.get_child("boost_serialization.DB"))
+  {
+    if (v.first == "framingLogic")
+    {
+      // TODO
+      // Do this automatically with boost macros.
+      auto framingLogic = v.second.data();
+      std::transform(framingLogic.begin(), framingLogic.end(), framingLogic.begin(), ::toupper);
+
+      if (framingLogic == toString(FramingLogic::FL_DEFAULT))
+      {
+        this->FrameLogic = FramingLogic::FL_DEFAULT;
+      }
+      else if (framingLogic == toString(FramingLogic::FL_AZIMUTH_CROSSING))
+      {
+        this->FrameLogic = FramingLogic::FL_AZIMUTH_CROSSING;
+      }
+      else if (framingLogic == toString(FramingLogic::FL_VDIR_CHANGE))
+      {
+        this->FrameLogic = FramingLogic::FL_VDIR_CHANGE;
+      }
+    }
+  }
   // Read distLSB if provided
   BOOST_FOREACH (boost::property_tree::ptree::value_type& v, pt.get_child("boost_serialization.DB"))
   {
