@@ -138,7 +138,11 @@ public:
   GenericGetMacro(TimeOffset, double)
   GenericSetMacro(TimeOffset, double)
 
-  // Laser selection
+  void SetLaserSelection(const bool* v);
+  void GetLaserSelection(bool* v) override;
+  GenericGetMacro(LaserSelection, std::vector<bool>)
+  void SetLaserSelection(const std::vector<bool>& v);
+
 
   GenericGetMacro(DistanceResolutionM, double)
 
@@ -165,19 +169,15 @@ public:
   void SetCropRegion(double _arg[6]) override { this->SetCropRegion(_arg[0], _arg[1], _arg[2], _arg[3], _arg[4], _arg[5]); }
   void SetCropRegion(double _arg1, double _arg2, double _arg3, double _arg4, double _arg5, double _arg6) override;
 
+  void GetXMLColorTable(double XMLColorTable[]);
 
-  //! @todo
-  void GetXMLColorTable(double XMLColorTable[]) {}
-
-  //! @todo
-//  void GetLaserCorrections(double verticalCorrection[HDL_MAX_NUM_LASERS],
-//    double rotationalCorrection[HDL_MAX_NUM_LASERS], double distanceCorrection[HDL_MAX_NUM_LASERS],
-//    double distanceCorrectionX[HDL_MAX_NUM_LASERS], double distanceCorrectionY[HDL_MAX_NUM_LASERS],
-//    double verticalOffsetCorrection[HDL_MAX_NUM_LASERS],
-//    double horizontalOffsetCorrection[HDL_MAX_NUM_LASERS], double focalDistance[HDL_MAX_NUM_LASERS],
-//    double focalSlope[HDL_MAX_NUM_LASERS], double minIntensity[HDL_MAX_NUM_LASERS],
-//                           double maxIntensity[HDL_MAX_NUM_LASERS]) {}
-
+  void GetLaserCorrections(double verticalCorrection[HDL_MAX_NUM_LASERS],
+    double rotationalCorrection[HDL_MAX_NUM_LASERS], double distanceCorrection[HDL_MAX_NUM_LASERS],
+    double distanceCorrectionX[HDL_MAX_NUM_LASERS], double distanceCorrectionY[HDL_MAX_NUM_LASERS],
+    double verticalOffsetCorrection[HDL_MAX_NUM_LASERS],
+    double horizontalOffsetCorrection[HDL_MAX_NUM_LASERS], double focalDistance[HDL_MAX_NUM_LASERS],
+    double focalSlope[HDL_MAX_NUM_LASERS], double minIntensity[HDL_MAX_NUM_LASERS],
+                           double maxIntensity[HDL_MAX_NUM_LASERS]);
 
   SpecificGetMacro(HasDualReturn, bool)
 

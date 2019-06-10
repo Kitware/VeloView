@@ -108,6 +108,17 @@ public:
   vtkSmartPointer<vtkUnsignedIntArray>    INFO_Pseqs;
   vtkSmartPointer<vtkUnsignedIntArray>    INFO_TimeFractionOffsets;
 
+  void GetXMLColorTable(double XMLColorTable[]) { cout << "Not implemented yet" << endl;}
+
+  void GetLaserCorrections(double verticalCorrection[HDL_MAX_NUM_LASERS],
+    double rotationalCorrection[HDL_MAX_NUM_LASERS], double distanceCorrection[HDL_MAX_NUM_LASERS],
+    double distanceCorrectionX[HDL_MAX_NUM_LASERS], double distanceCorrectionY[HDL_MAX_NUM_LASERS],
+    double verticalOffsetCorrection[HDL_MAX_NUM_LASERS],
+    double horizontalOffsetCorrection[HDL_MAX_NUM_LASERS], double focalDistance[HDL_MAX_NUM_LASERS],
+    double focalSlope[HDL_MAX_NUM_LASERS], double minIntensity[HDL_MAX_NUM_LASERS],
+                           double maxIntensity[HDL_MAX_NUM_LASERS]) { cout << "Not implemented yet" << endl;}
+
+
 protected:
   vtkVelodyneAdvancedPacketInterpreter();
   ~vtkVelodyneAdvancedPacketInterpreter();
