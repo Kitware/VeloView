@@ -77,10 +77,6 @@ public:
   bool PreProcessPacket(const unsigned char *data, unsigned int dataLength, fpos_t filePosition, double packetNetworkTime, std::vector<FrameInformation> *frameCatalog) override;
 //  void PreProcessPacket(unsigned char const * data, unsigned int dataLength, bool &isNewFrame, int &framePositionInPacket) override;
 
-  void ResetParserMetaData() override;
-  void SetParserMetaData(const FrameInformation& metaData) override;
-  FrameInformation GetParserMetaData() override;
-
   vtkSmartPointer<vtkPoints> Points;
 
   // Update VAPI_FIELD_ARRAYS and CreateNewEmptyFrame whenever an array is
@@ -148,35 +144,6 @@ public:
   bool HasDualReturn ;
   bool ShouldAddDualReturnArray;
   bool WantIntensityCorrection;
-};
-
-
-/**
- * @brief VelodyneAdvancedSpecificFrameInformation frame information
- *        that are specific to velodyne's sensor
- */
-struct VelodyneAdvancedSpecificFrameInformation : public SpecificFrameInformation
-{
-  //! Offset specific to the lidar data format
-  //! Used because some frames start at the middle of a packet
-  int FiringToSkip = 0;
-
-  //! Indicates the number of time rolled that has occured
-  //! since the beginning of the .pcap file. hence, to have
-  //! a non rolling timestamp one should add to the rolling
-  //! timestamp NbrOfRollingTime * MaxTimeBeforeRolling
-  int NbrOfRollingTime = 0;
-
-  //! Deep copy the specific frame information
-  std::shared_ptr<SpecificFrameInformation> CopyTo()
-  {
-    auto copiedInfo = std::make_shared<VelodyneAdvancedSpecificFrameInformation>();
-    auto* copiedPtr = reinterpret_cast<VelodyneAdvancedSpecificFrameInformation*>(copiedInfo.get());
-    auto* toCopyPtr = reinterpret_cast<VelodyneAdvancedSpecificFrameInformation*>(this);
-    copiedPtr->FiringToSkip = toCopyPtr->FiringToSkip;
-    copiedPtr->NbrOfRollingTime = toCopyPtr->NbrOfRollingTime;
-    return copiedInfo;
-  }
 };
 
 #endif // VTK_VELODYNE_ADVANCED_PACKET_INTERPRETOR_H

@@ -21,6 +21,9 @@ using namespace DataPacketFixedLength;
 
 #include <iostream>
 
+// include only to go the structure VelodyneSpecificFrameInformation before merging code
+#include <vtkVelodynePacketInterpreter.h>
+
 #define DEBUGMSG(msg) std::cout << msg << " [" << __LINE__ << "]\n";
 
 // clang-format off
@@ -1148,7 +1151,7 @@ vtkStandardNewMacro(vtkVelodyneAdvancedPacketInterpreter)
   this->WantIntensityCorrection         = false;
   this->LaserSelection.resize(HDL_MAX_NUM_LASERS, true);
   this->ParserMetaData.SpecificInformation =
-    std::make_shared<VelodyneAdvancedSpecificFrameInformation>();
+    std::make_shared<VelodyneSpecificFrameInformation>();
 }
 
 //------------------------------------------------------------------------------
@@ -1273,7 +1276,7 @@ vtkVelodyneAdvancedPacketInterpreter::ProcessPacket(
     // Skip the firings and jump to the next firing group header.
     if (
       (loopCount++) <
-      reinterpret_cast<VelodyneAdvancedSpecificFrameInformation *>(
+      reinterpret_cast<VelodyneSpecificFrameInformation *>(
         this->ParserMetaData.SpecificInformation.get())
         ->FiringToSkip)
     {
@@ -1586,7 +1589,7 @@ vtkVelodyneAdvancedPacketInterpreter::PreProcessPacket(
   //! @todo
   //  this->ParserMetaData.FirstPacketDataTime = packetNetworkTime;
   auto * velFrameInfo =
-    reinterpret_cast<VelodyneAdvancedSpecificFrameInformation *>(
+    reinterpret_cast<VelodyneSpecificFrameInformation *>(
       this->ParserMetaData.SpecificInformation.get());
   //  if (dataPacket->gpsTimestamp < this->lastGpsTimestamp)
   //  {
@@ -1635,13 +1638,11 @@ vtkVelodyneAdvancedPacketInterpreter::PreProcessPacket(
       this->CurrentFrameTracker->Update(payloadHeader, firingGroupHeader);
     if (isNewFrame)
     {
-      frameCatalog->push_back(this->ParserMetaData);
       velFrameInfo->FiringToSkip = firingCount;
+      frameCatalog->push_back(this->ParserMetaData);
       // Create a copy of the current meta data state
       // at a different memory location than the one
       // added to the catalog
-      this->ParserMetaData.SpecificInformation =
-        this->ParserMetaData.SpecificInformation->CopyTo();
       return isNewFrame;
     }
     firingCount++;
@@ -2025,30 +2026,4 @@ vtkVelodyneAdvancedPacketInterpreter::SetNumberOfItems(size_t numberOfItems)
   array->SetNumberOfValues(numberOfItems);
 
   VAPI_FOREACH_INFO_ARRAY(VAPI_SET_NUMBER_OF_VALUES, data)
-}
-
-//------------------------------------------------------------------------------
-void
-vtkVelodyneAdvancedPacketInterpreter::ResetParserMetaData()
-{
-  FrameInformation newFrameInfo;
-  newFrameInfo.SpecificInformation =
-    std::make_shared<VelodyneAdvancedSpecificFrameInformation>();
-  this->ParserMetaData = newFrameInfo;
-}
-
-//------------------------------------------------------------------------------
-void
-vtkVelodyneAdvancedPacketInterpreter::SetParserMetaData(
-  const FrameInformation & metaData)
-{
-  this->ParserMetaData = metaData.CopyTo();
-}
-
-//------------------------------------------------------------------------------
-FrameInformation
-vtkVelodyneAdvancedPacketInterpreter::GetParserMetaData()
-{
-  FrameInformation frameInfo = this->ParserMetaData.CopyTo();
-  return frameInfo;
 }
