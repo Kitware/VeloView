@@ -265,9 +265,8 @@ protected:
    * if this->CropOutside == true the cropping volume is the 3D volume
    * outside the two boundaries (i.e. complement set of the previous case)
    * @param pos cartesian coordinates of the point to be check
-   * @param theta azimuth of the point to be check. Avoid to recompute this information using an atan2 function
    */
-  bool shouldBeCroppedOut(double pos[3], double theta);
+  bool shouldBeCroppedOut(double pos[3]);
 
   //! Buffer to store the frame once they are ready
   std::vector<vtkSmartPointer<vtkPolyData> > Frames;
@@ -326,12 +325,16 @@ protected:
   //! data contained within the udp packets
   FrameInformation ParserMetaData;
 
-  //! Depending on the :CropingMode select this can have different meaning:
-  //! - vtkLidarProvider::CropModeEnum::Cartesian it correspond to [X_min, X_max, Y_min, Y_max, Z_min, Z_max]
-  //! - vtkLidarProvider::CropModeEnum::Spherical it correspond to [R_min, R_max, THETA_min, THETA_max, PHI_min, PHI_max]
-  //! - vtkLidarProvider::CropModeEnum::Spherical -> Note implemented yet
-  //! all distance are in cm and all angle are in degree
-  double CropRegion[6] = {0,0,0,0,0,0};
+  //! Depending on the CroppingMode selected this can have different meaning:
+  //! - Cartesian -> [x_min, x_max, y_min, y_max, z_min, z_max]
+  //! - Spherical -> [azimuth_min, azimuth_max, vertAngle_min, vertAngle_max, r_min, r_max]
+  //! (0° <= azimuth <= 360° (mod 360°), -90° <= vertAngle <= 90°, r >= 0.0,
+  //! vertAngle increasing with z and vertAngle = 0 in plane z = 0)
+  //! any interval is valid for the azimuthal but [ a, b ] is different from
+  //! [ b, a ]
+  //! - Cylindric -> Not implemented yet
+  //! all distances are in meters and all angles are in degrees
+  double CropRegion[6] = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
 
   vtkLidarPacketInterpreter() = default;
   virtual ~vtkLidarPacketInterpreter() = default;
