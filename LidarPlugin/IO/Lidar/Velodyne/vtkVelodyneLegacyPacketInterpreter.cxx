@@ -703,7 +703,7 @@ void vtkVelodyneLegacyPacketInterpreter::PushFiringData(unsigned char laserId,
 // << " " << this->SensorTransform->GetPosition()[0] << " " << this->SensorTransform->GetPosition()[0] << endl;
   if (SensorTransform) this->SensorTransform->InternalTransformPoint(pos, pos);
 
-  if (this->shouldBeCroppedOut(pos, static_cast<double>(azimuth) / 100.0))
+  if (this->shouldBeCroppedOut(pos))
     return;
 
   // Do not add any data before here as this might short-circuit

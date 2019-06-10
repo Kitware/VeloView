@@ -412,7 +412,7 @@ vtkVelodyneAdvancedPacketInterpreter::ProcessPacket(
           false);
 
         // Check if the point should be cropped out.
-        if (this->shouldBeCroppedOut(position, azimuthInDegrees))
+        if (this->shouldBeCroppedOut(position))
         {
           continue;
         }
