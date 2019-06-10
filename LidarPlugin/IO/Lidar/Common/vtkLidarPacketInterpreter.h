@@ -254,8 +254,16 @@ public:
 
 protected:
   /**
-   * @brief shouldBeCroppedOut Check if a point is inside a region of interest determined
-   * either by its cartesian coordinates system or spherical coordinates system.
+   * @brief shouldBeCroppedOut Returns true if a point should be removed,
+   * i.e. if it lays *outside* the cropping volume.
+   *
+   * This cropping as the same definition as in Gimp: when cropping an image
+   * by drawing a selection, only the selection is kept.
+   * If this->CropOutside == false (the default), the cropping volume is
+   * the 3D volume inside the two boundaries defined using either cartesian
+   * coordinates or spherical coordinates.
+   * if this->CropOutside == true the cropping volume is the 3D volume
+   * outside the two boundaries (i.e. complement set of the previous case)
    * @param pos cartesian coordinates of the point to be check
    * @param theta azimuth of the point to be check. Avoid to recompute this information using an atan2 function
    */
