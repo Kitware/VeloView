@@ -1033,6 +1033,7 @@ bool vtkVelodyneLegacyPacketInterpreter::HDL64LoadCorrectionsFromStreamData()
 
   this->CalibrationReportedNumLasers = HDL64_RollingData_NumLaser;
   this->VDCalibrationData.PrecomputeCorrectionCosSin();
+  this->VDCalibrationData.SetIsCalibrated(true);
   this->IsCalibrated = true;
   return true;
 }

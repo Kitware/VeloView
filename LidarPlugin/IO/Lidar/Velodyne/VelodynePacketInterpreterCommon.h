@@ -242,6 +242,7 @@ public:
 
   FramingLogic GetFramingLogic() { return this->FrameLogic; }
   bool GetIsCalibrated() { return this->IsCalibrated; }
+  void SetIsCalibrated(bool isCal) { this->IsCalibrated = isCal; }
   bool GetIsCorrectionFromLiveStream() { return this->IsCorrectionFromLiveStream; }
   int GetCalibrationReportedNumLasers() { return this->CalibrationReportedNumLasers; }
   double GetDistanceResolutionM() { return this->DistanceResolutionM; }
