@@ -26,6 +26,7 @@ variables:
 
 # this are the 4 stage of the continuous integration, the stage are executed one after another
 stages:
+  - manual
   - superbuild
   - build
   - test
@@ -131,15 +132,16 @@ stages:
     - ctest -E "$test_blacklist"
 
 .linux_package: &linux_package
-  stage: package
   before_script: *unix_get_superbuild # you cannot put linux_build here
   script:
     - git submodule update --init Superbuild/common-superbuild
     - cd ../Superbuild-build/ # created by extracting cache in "unix_get_superbuild"
+    - cmake .
     - make lidarview -j8
     - ctest -R cpack-lidarview-TGZ -V
 
 .linux_package_manual: &linux_package_manual
+  stage: manual
   when: manual
   <<: *linux_package
   artifacts:
@@ -149,6 +151,7 @@ stages:
     expire_in: 1 hr
 
 .linux_package_schedule: &linux_package_schedule
+  stage: package
   <<: *linux_package
   artifacts:
     name: ${CI_JOB_NAME}
@@ -395,13 +398,11 @@ windows_test:
     - ./test.bat
 
 .windows_package: &windows_package
-  stage: package
   before_script: *windows_get_superbuild
   tags:
     - windows_10
   variables:
     OS: windows_10
-  stage: package
   script:
     - git submodule update --init Superbuild/common-superbuild
     - cd /cygdrive/c/Superbuild-build # provided by windows_get_superbuild
@@ -412,6 +413,7 @@ windows_test:
     - ./package.bat
 
 windows_package_manual: &windows_package_manual
+  stage: manual
   when: manual
   <<: *windows_package
   artifacts:
@@ -422,6 +424,7 @@ windows_package_manual: &windows_package_manual
     expire_in: 1 hr
 
 windows_package_schedule: &windows_package_schedule
+  stage: package
   <<: *windows_package
   artifacts:
     name: ${CI_JOB_NAME}
