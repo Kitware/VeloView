@@ -5,6 +5,7 @@
 #include <vtkUnsignedCharArray.h>
 #include <vtkUnsignedIntArray.h>
 #include <vtkDoubleArray.h>
+#include "VelodynePacketInterpreterCommon.h"
 
 #include <memory>
 #include <limits>
@@ -112,27 +113,15 @@ protected:
   ~vtkVelodyneAdvancedPacketInterpreter();
 
 //------------------------------------------------------------------------------
+private:
+  VelodyneCalibrationData VDCalibrationData;
+
+//------------------------------------------------------------------------------
 // Code from legacy packet format interpreter.
 private:
 	void Init();
-	void InitTrigonometricTables();
-  void PrecomputeCorrectionCosSin();
-  template <typename TAzm, typename TDist>
-  void ComputeCorrectedValues(
-    TAzm const azimuth,
-    double const verticalAngleInDegrees,
-    size_t const correctionIndex,
-    double pos[3],
-    TDist & distance
-  );
 
 public:
-  std::vector<double> cos_lookup_table_;
-  std::vector<double> sin_lookup_table_;
-  HDLLaserCorrection laser_corrections_[HDL_MAX_NUM_LASERS];
-  double XMLColorTable[HDL_MAX_NUM_LASERS][3];
-  // bool IsCorrectionFromLiveStream;
-
   uint8_t ReportedFactoryField1 ;
   uint8_t ReportedFactoryField2 ;
   bool OutputPacketProcessingDebugInfo ;

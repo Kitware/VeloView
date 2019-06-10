@@ -6,6 +6,8 @@
 #include <vtkUnsignedCharArray.h>
 #include <vtkUnsignedIntArray.h>
 #include <vtkUnsignedShortArray.h>
+#include "VelodynePacketInterpreterCommon.h"
+
 #include <memory>
 
 using namespace DataPacketFixedLength;
@@ -20,7 +22,7 @@ class VTK_EXPORT vtkVelodyneLegacyPacketInterpreter : public vtkLidarPacketInter
 public:
   static vtkVelodyneLegacyPacketInterpreter* New();
   vtkTypeMacro(vtkVelodyneLegacyPacketInterpreter, vtkLidarPacketInterpreter);
-  void PrintSelf(ostream& os, vtkIndent indent){};
+  void PrintSelf(ostream& vtkNotUsed(os), vtkIndent vtkNotUsed(indent)){};
   enum DualFlag
   {
     DUAL_DISTANCE_NEAR = 0x1,  // point with lesser distance
@@ -49,7 +51,7 @@ public:
 
   std::string GetSensorInformation() override;
 
-  void GetXMLColorTable(double XMLColorTable[]);
+  void GetXMLColorTable(double XMLColorTable[]) { this->VDCalibrationData.GetXMLColorTable(XMLColorTable); }
 
   void GetLaserCorrections(double verticalCorrection[HDL_MAX_NUM_LASERS],
     double rotationalCorrection[HDL_MAX_NUM_LASERS], double distanceCorrection[HDL_MAX_NUM_LASERS],
@@ -90,22 +92,14 @@ protected:
   void PushFiringData(unsigned char laserId, unsigned char rawLaserId,
                       unsigned short azimuth, const unsigned short elevation, const double timestamp,
                       const unsigned int rawtime, const HDLLaserReturn* laserReturn,
-                      const HDLLaserCorrection* correction, const bool isFiringDualReturnData);
+                      const unsigned int channelNumber, const bool isFiringDualReturnData);
 
-
-  void InitTrigonometricTables();
-
-  void PrecomputeCorrectionCosSin();
 
   void Init();
 
   double ComputeTimestamp(unsigned int tohTime, const FrameInformation& frameInfo);
 
 
-
-  void ComputeCorrectedValues(const unsigned short azimuth, const unsigned short elevation,
-                              const HDLLaserReturn* laserReturn, const HDLLaserCorrection* correction, double pos[3],
-                              double& distanceM, short& intensity, bool correctIntensity);
 
   bool HDL64LoadCorrectionsFromStreamData();
 
@@ -165,11 +159,6 @@ protected:
 
   unsigned char SensorPowerMode;
 
-  // Parameters ready by calibration
-  std::vector<double> cos_lookup_table_;
-  std::vector<double> sin_lookup_table_;
-  HDLLaserCorrection laser_corrections_[HDL_MAX_NUM_LASERS];
-  double XMLColorTable[HDL_MAX_NUM_LASERS][3];
   bool IsCorrectionFromLiveStream = true;
 
   // Sensor parameters presented as rolling data, extracted from enough packets
@@ -191,6 +180,10 @@ protected:
 private:
   vtkVelodyneLegacyPacketInterpreter(const vtkVelodyneLegacyPacketInterpreter&) = delete;
   void operator=(const vtkVelodyneLegacyPacketInterpreter&) = delete;
+
+//------------------------------------------------------------------------------
+  VelodyneCalibrationData VDCalibrationData;
+
 };
 
 /**

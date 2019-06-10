@@ -5,16 +5,8 @@
 #include <vtkPointData.h>
 #include <vtkPoints.h>
 
-#include <boost/foreach.hpp>
-#include <boost/property_tree/ptree.hpp>
-#include <boost/property_tree/xml_parser.hpp>
-
-#include "vtkDataPacket.h"
-using namespace DataPacketFixedLength;
-
 #include <boost/endian/arithmetic.hpp>
 #include <boost/predef/detail/endian_compat.h>
-#include <boost/preprocessor.hpp>
 #include <type_traits>
 
 #include <cstring>
@@ -93,100 +85,9 @@ VAPI_DECLARE_BIG_TO_NATIVE(uint64_t)
 
 
 //------------------------------------------------------------------------------
-// Enum macros.
-//------------------------------------------------------------------------------
-/*
- * Define some macros to facilitate maintenance of different enum types. These
- * allow a single macro to define an enum type with values, an overloaded
- * ToString function to convert macro values to strings, and a templated
- * To<enum> function to convert integral values to enums.
- *
- * For details of the Boost preprocessing macros, see
- * https://www.boost.org/doc/libs/1_67_0/libs/preprocessor/doc/AppendixA-AnIntroductiontoPreprocessorMetaprogramming.html
- */
-
-//! @brief Internal macro for defining enum values.
-#define DEFINE_ENUM_VALUES_INTERNAL(r, prefix, pair) \
-  BOOST_PP_CAT(prefix, BOOST_PP_TUPLE_ELEM(0, pair)) = BOOST_PP_TUPLE_ELEM(1, pair)
-
-//! @brief Macro for defining enum values.
-#define DEFINE_ENUM_VALUES(name, prefix, enumerators) \
-  enum name {                                         \
-    BOOST_PP_SEQ_ENUM(                                \
-      BOOST_PP_SEQ_TRANSFORM(                         \
-        DEFINE_ENUM_VALUES_INTERNAL,                  \
-        prefix,                                       \
-        enumerators                                   \
-      )                                               \
-    )                                                 \
-  };
-
-
-//! @brief Internal macro for defining enum string conversions.
-#define DEFINE_ENUM_STRING_CASES_INTERNAL(r, prefix, pair) \
-  case BOOST_PP_CAT(prefix, BOOST_PP_TUPLE_ELEM(0, pair)): return BOOST_PP_STRINGIZE(BOOST_PP_TUPLE_ELEM(0, pair));
-
-
-//! @brief Macro for defining enum string conversions.
-#define DEFINE_ENUM_TO_STRING(name, prefix, enumerators)                                \
-  inline                                                                                \
-  char const * toString(name const x)                                                   \
-  {                                                                                     \
-    switch(x)                                                                           \
-    {                                                                                   \
-      BOOST_PP_SEQ_FOR_EACH(                                                            \
-        DEFINE_ENUM_STRING_CASES_INTERNAL,                                              \
-        prefix,                                                                         \
-        enumerators                                                                     \
-      )                                                                                 \
-      default: return "<unrecognized enum value of type " BOOST_PP_STRINGIZE(name) ">"; \
-    }                                                                                   \
-  }
-
-
-//! @brief Internal macro for converting integral values to enums.
-#define DEFINE_VALUE_TO_ENUM_CASES_INTERNAL(r, prefix, pair) \
-  case static_cast<T>(BOOST_PP_CAT(prefix, BOOST_PP_TUPLE_ELEM(0, pair))): return BOOST_PP_CAT(prefix, BOOST_PP_TUPLE_ELEM(0, pair));
-
-
-//! @brief Macro for converting integral values to enums.
-#define DEFINE_VALUE_TO_ENUM(name, prefix, enumerators, default_value) \
-  template <typename T>                                                \
-  inline                                                               \
-  name to ## name(T const x)                                           \
-  {                                                                    \
-    switch(x)                                                          \
-    {                                                                  \
-      BOOST_PP_SEQ_FOR_EACH(                                           \
-        DEFINE_VALUE_TO_ENUM_CASES_INTERNAL,                           \
-        prefix,                                                        \
-        enumerators                                                    \
-      )                                                                \
-      default: return BOOST_PP_CAT(prefix, default_value);             \
-    }                                                                  \
-  }
-
-/*!
- * @brief Define enum type with string and value conversion functions.
- * @param name        The typename of the enum. This will also be concatenated
- *                    with "To" to define a function that converts integral
- *                    values to this enum type. For example. the name "Foo" will
- *                    define "Foo toFoo(T x)".
- * @param prefix      The prefix to attach to all values of the enum. This may
- *                    be an empty string.
- * @param enumerators A sequence of name-value pairs in double-parentheses, e.g.
- *                    ((a, 1))((b, 2))((c , 4)). All valid enum values may be
- *                    used, e.g. ((a, (1<<0)))((b, (1<<1))), etc.
- */
-#define DEFINE_ENUM(name, prefix, enumerators, default_value)    \
-  DEFINE_ENUM_VALUES(name, prefix, enumerators)                  \
-  DEFINE_ENUM_TO_STRING(name, prefix, enumerators)               \
-  DEFINE_VALUE_TO_ENUM(name, prefix, enumerators, default_value)
-
-//------------------------------------------------------------------------------
 // Info array macros.
 //------------------------------------------------------------------------------
-//! @ brief List of field macros for using in other macros.
+//! @ brief List of field macros for use in other macros.
 #define VAPI_INFO_ARRAYS \
 	(Xs)                    \
 	(Ys)                    \
@@ -268,26 +169,6 @@ DEFINE_ENUM(
 )
 
 //------------------------------------------------------------------------------
-//! @brief Horizontal direction of Lidar.
-DEFINE_ENUM(
-  HorizontalDirection,
-  HDIR_,
-  ((CLOCKWISE         , 0))
-  ((COUNTER_CLOCKWISE , 1)),
-  CLOCKWISE
-)
-
-//------------------------------------------------------------------------------
-//! @brief Vertical direction of Lidar.
-DEFINE_ENUM(
-  VerticalDirection,
-  VDIR_,
-  ((UP   , 0))
-  ((DOWN , 1)),
-  UP
-)
-
-//------------------------------------------------------------------------------
 //! @brief Firing mode.
 DEFINE_ENUM(
   FiringMode,
@@ -339,20 +220,6 @@ DEFINE_ENUM(
 )
 
 // clang-format on
-
-//------------------------------------------------------------------------------
-// Convenience functions.
-//------------------------------------------------------------------------------
-/*!
- * @brief     Convert degrees to radians.
- * @param[in] degrees The input value in degrees.
- * @return    The input value converted to radians.
- */
-inline double
-degreesToRadians(double degrees)
-{
-  return (degrees * vtkMath::Pi()) / 180.0;
-}
 
 //------------------------------------------------------------------------------
 /*!
@@ -1128,8 +995,9 @@ public:
 //------------------------------------------------------------------------------
 vtkStandardNewMacro(vtkVelodyneAdvancedPacketInterpreter)
 
-  //----------------------------------------------------------------------------
-  vtkVelodyneAdvancedPacketInterpreter::vtkVelodyneAdvancedPacketInterpreter()
+//----------------------------------------------------------------------------
+vtkVelodyneAdvancedPacketInterpreter::vtkVelodyneAdvancedPacketInterpreter()
+  : VDCalibrationData { CalibrationData }
 {
   this->CurrentFrameTracker          = new FrameTracker();
   this->MaxFrameSize                 = MEM_STEP_SIZE;
@@ -1276,9 +1144,9 @@ vtkVelodyneAdvancedPacketInterpreter::ProcessPacket(
     // Skip the firings and jump to the next firing group header.
     if (
       (loopCount++) <
-      reinterpret_cast<VelodyneSpecificFrameInformation *>(
+      static_cast<size_t>(reinterpret_cast<VelodyneSpecificFrameInformation *>(
         this->ParserMetaData.SpecificInformation.get())
-        ->FiringToSkip)
+        ->FiringToSkip))
     {
       index += numberOfBytesPerFiring * firingGroupHeader->GetFcnt();
       continue;
@@ -1294,10 +1162,11 @@ vtkVelodyneAdvancedPacketInterpreter::ProcessPacket(
     auto timeFractionOffset         = firingGroupHeader->GetToffs();
     auto coChannelSpan              = firingGroupHeader->GetFspn();
     auto coChannelTimeFractionDelay = firingGroupHeader->GetFdly();
-    double verticalAngleInDegrees = firingGroupHeader->GetVerticalDeflection();
-    auto azimuth                  = firingGroupHeader->GetAzm();
-    double azimuthInDegrees       = firingGroupHeader->GetAzimuth();
-    auto numberOfFirings          = firingGroupHeader->GetFcnt();
+    auto vdfl                       = firingGroupHeader->GetVdfl();
+    double verticalAngleInDegrees   = firingGroupHeader->GetVerticalDeflection();
+    auto azimuth                    = firingGroupHeader->GetAzm();
+    double azimuthInDegrees         = firingGroupHeader->GetAzimuth();
+    auto numberOfFirings            = firingGroupHeader->GetFcnt();
 
     for (size_t i = 0; i < numberOfFirings; ++i)
     {
@@ -1331,10 +1200,6 @@ vtkVelodyneAdvancedPacketInterpreter::ProcessPacket(
       // auto status = firingHeader->GetStat();
       // auto statusString = toString(status);
 
-      double correctedVerticalAngle =
-        verticalAngleInDegrees +
-        this->laser_corrections_[channelNumber].verticalCorrection;
-
       for (distanceIndex = 0; distanceIndex < distanceCount; ++distanceIndex)
       {
         FiringReturn firingReturn(data + index);
@@ -1346,9 +1211,15 @@ vtkVelodyneAdvancedPacketInterpreter::ProcessPacket(
           continue;
         }
 
-        double position[3];
-        this->ComputeCorrectedValues(
-          azimuth, verticalAngleInDegrees, channelNumber, position, distance);
+        RawValues rawValues(azimuth, vdfl, distance);
+        CorrectedValues correctedValues;
+        double (& position)[3] = correctedValues.position;
+        
+        this->VDCalibrationData.ComputeCorrectedValues(
+          rawValues,
+          channelNumber, 
+          correctedValues,
+          false);
 
         // Check if the point should be cropped out.
         if (this->shouldBeCroppedOut(position, azimuthInDegrees))
@@ -1367,14 +1238,14 @@ vtkVelodyneAdvancedPacketInterpreter::ProcessPacket(
         VAPI_SET_VALUE(Ys, position[1])
         VAPI_SET_VALUE(Zs, position[2])
         VAPI_SET_VALUE(Azimuths, azimuthInDegrees)
-        VAPI_SET_VALUE(Distances, distance)
+        VAPI_SET_VALUE(Distances, correctedValues.distance)
         VAPI_SET_VALUE(DistanceTypes, distanceTypes[distanceIndex])
         VAPI_SET_VALUE(Pseqs, pseq)
         VAPI_SET_VALUE(ChannelNumbers, channelNumber)
         VAPI_SET_VALUE(TimeFractionOffsets, channelTimeFractionOffset)
         VAPI_SET_VALUE(Powers, power)
         VAPI_SET_VALUE(Noises, noise)
-        VAPI_SET_VALUE(VerticalAngles, correctedVerticalAngle)
+        VAPI_SET_VALUE(VerticalAngles, correctedValues.elevation)
 
         //! @brief Convenience macro for setting intensity values
 #define VAPI_INSERT_INTENSITY(my_array, iset_flag)                             \
@@ -1529,22 +1400,6 @@ VAPI_INIT_INFO_ARR(StatusStrings        , "Status")*/
   return polyData;
 }
 
-//------------------------------------------------------------------------------
-// vtkSmartPointer<vtkPolyData>
-// vtkVelodyneAdvancedPacketInterpreter::PreparePolyData()
-// {
-//   vtkSmartPointer<vtkPolyData> polyData =
-//   vtkSmartPointer<vtkPolyData>::New(); polyData->SetPoints(this->Points);
-//   auto pointData = polyData->GetPointData();
-//
-// #define VAPI_ADD_ARRAY(index, data, array) \
-//   pointData->AddArray(array);
-//
-//   // "data" is an unused placeholder
-//   VAPI_FOREACH_INFO_ARRAY(VAPI_ADD_ARRAY, data)
-//
-//   return polyData;
-// }
 
 //------------------------------------------------------------------------------
 // TODO: Revisit this if the frequency still needs to be calculated here.
@@ -1652,328 +1507,14 @@ vtkVelodyneAdvancedPacketInterpreter::PreProcessPacket(
   return isNewFrame;
 }
 
-//------------------------------------------------------------------------------
-// Code from the legacy packet format interpreter.
-//------------------------------------------------------------------------------
-void
-vtkVelodyneAdvancedPacketInterpreter::InitTrigonometricTables()
-{
-  if (cos_lookup_table_.size() == 0 || sin_lookup_table_.size() == 0)
-  {
-    cos_lookup_table_.resize(HDL_NUM_ROT_ANGLES);
-    sin_lookup_table_.resize(HDL_NUM_ROT_ANGLES);
-    for (unsigned int i = 0; i < HDL_NUM_ROT_ANGLES; i++)
-    {
-      double rad           = degreesToRadians(i / 100.0);
-      cos_lookup_table_[i] = std::cos(rad);
-      sin_lookup_table_[i] = std::sin(rad);
-    }
-  }
-}
-
-//------------------------------------------------------------------------------
-void
-vtkVelodyneAdvancedPacketInterpreter::PrecomputeCorrectionCosSin()
-{
-  for (int i = 0; i < HDL_MAX_NUM_LASERS; i++)
-  {
-    HDLLaserCorrection & correction = laser_corrections_[i];
-    correction.cosVertCorrection =
-      std::cos(degreesToRadians(correction.verticalCorrection));
-    correction.sinVertCorrection =
-      std::sin(degreesToRadians(correction.verticalCorrection));
-    correction.cosRotationalCorrection =
-      std::cos(degreesToRadians(correction.rotationalCorrection));
-    correction.sinRotationalCorrection =
-      std::sin(degreesToRadians(correction.rotationalCorrection));
-    correction.sinVertOffsetCorrection =
-      correction.verticalOffsetCorrection * correction.sinVertCorrection;
-    correction.cosVertOffsetCorrection =
-      correction.verticalOffsetCorrection * correction.cosVertCorrection;
-  }
-}
 
 //------------------------------------------------------------------------------
 void
 vtkVelodyneAdvancedPacketInterpreter::Init()
 {
-  this->InitTrigonometricTables();
+  this->VDCalibrationData.InitTrigonometricTables();
   // this->SensorTransform->Identity()
   this->ResetCurrentFrame();
-}
-
-//------------------------------------------------------------------------------
-void
-vtkVelodyneAdvancedPacketInterpreter::LoadCalibration(
-  const std::string & filename)
-{
-  boost::property_tree::ptree pt;
-  try
-  {
-    read_xml(filename, pt, boost::property_tree::xml_parser::trim_whitespace);
-  }
-  catch (boost::exception const &)
-  {
-    vtkGenericWarningMacro(
-      "LoadCalibration: error reading calibration file: " << filename);
-    return;
-  }
-  // Read distLSB if provided
-  BOOST_FOREACH (
-    boost::property_tree::ptree::value_type & v,
-    pt.get_child("boost_serialization.DB"))
-  {
-    if (v.first == "distLSB_")
-    { // Stored in cm in xml
-      DistanceResolutionM = atof(v.second.data().c_str()) / 100.0;
-    }
-  }
-
-  int i, j;
-  i = 0;
-  BOOST_FOREACH (
-    boost::property_tree::ptree::value_type & p,
-    pt.get_child("boost_serialization.DB.colors_"))
-  {
-    if (p.first == "item")
-    {
-      j = 0;
-      BOOST_FOREACH (
-        boost::property_tree::ptree::value_type & v, p.second.get_child("rgb"))
-        if (v.first == "item")
-        {
-          std::stringstream ss;
-          double val;
-          ss << v.second.data();
-          ss >> val;
-
-          XMLColorTable[i][j] = val;
-          j++;
-        }
-      i++;
-    }
-  }
-
-  int enabledCount = 0;
-  BOOST_FOREACH (
-    boost::property_tree::ptree::value_type & v,
-    pt.get_child("boost_serialization.DB.enabled_"))
-  {
-    std::stringstream ss;
-    if (v.first == "item")
-    {
-      ss << v.second.data();
-      int test = 0;
-      ss >> test;
-      if (!ss.fail() && test == 1)
-      {
-        enabledCount++;
-      }
-    }
-  }
-  this->CalibrationReportedNumLasers = enabledCount;
-
-  // Getting min & max intensities from XML
-  int laserId = 0;
-  int minIntensity[HDL_MAX_NUM_LASERS], maxIntensity[HDL_MAX_NUM_LASERS];
-  BOOST_FOREACH (
-    boost::property_tree::ptree::value_type & v,
-    pt.get_child("boost_serialization.DB.minIntensity_"))
-  {
-    std::stringstream ss;
-    if (v.first == "item")
-    {
-      ss << v.second.data();
-      ss >> minIntensity[laserId];
-      laserId++;
-    }
-  }
-
-  laserId = 0;
-  BOOST_FOREACH (
-    boost::property_tree::ptree::value_type & v,
-    pt.get_child("boost_serialization.DB.maxIntensity_"))
-  {
-    std::stringstream ss;
-    if (v.first == "item")
-    {
-      ss << v.second.data();
-      ss >> maxIntensity[laserId];
-      laserId++;
-    }
-  }
-
-  BOOST_FOREACH (
-    boost::property_tree::ptree::value_type & v,
-    pt.get_child("boost_serialization.DB.points_"))
-  {
-    if (v.first == "item")
-    {
-      boost::property_tree::ptree points = v.second;
-      BOOST_FOREACH (boost::property_tree::ptree::value_type & px, points)
-      {
-        if (px.first == "px")
-        {
-          boost::property_tree::ptree calibrationData = px.second;
-          int index                                   = -1;
-          HDLLaserCorrection xmlData;
-
-          BOOST_FOREACH (
-            boost::property_tree::ptree::value_type & item, calibrationData)
-          {
-            if (item.first == "id_")
-              index = atoi(item.second.data().c_str());
-            if (item.first == "rotCorrection_")
-              xmlData.rotationalCorrection = atof(item.second.data().c_str());
-            if (item.first == "vertCorrection_")
-              xmlData.verticalCorrection = atof(item.second.data().c_str());
-            if (item.first == "distCorrection_")
-              xmlData.distanceCorrection = atof(item.second.data().c_str());
-            if (item.first == "distCorrectionX_")
-              xmlData.distanceCorrectionX = atof(item.second.data().c_str());
-            if (item.first == "distCorrectionY_")
-              xmlData.distanceCorrectionY = atof(item.second.data().c_str());
-            if (item.first == "vertOffsetCorrection_")
-              xmlData.verticalOffsetCorrection =
-                atof(item.second.data().c_str());
-            if (item.first == "horizOffsetCorrection_")
-              xmlData.horizontalOffsetCorrection =
-                atof(item.second.data().c_str());
-            if (item.first == "focalDistance_")
-              xmlData.focalDistance = atof(item.second.data().c_str());
-            if (item.first == "focalSlope_")
-              xmlData.focalSlope = atof(item.second.data().c_str());
-            if (item.first == "closeSlope_")
-              xmlData.closeSlope = atof(item.second.data().c_str());
-          }
-          if (index != -1 && index < HDL_MAX_NUM_LASERS)
-          {
-            laser_corrections_[index] = xmlData;
-            // Angles are already stored in degrees in xml
-            // Distances are stored in centimeters in xml, and we store meters.
-            laser_corrections_[index].distanceCorrection /= 100.0;
-            laser_corrections_[index].distanceCorrectionX /= 100.0;
-            laser_corrections_[index].distanceCorrectionY /= 100.0;
-            laser_corrections_[index].verticalOffsetCorrection /= 100.0;
-            laser_corrections_[index].horizontalOffsetCorrection /= 100.0;
-            laser_corrections_[index].focalDistance /= 100.0;
-            laser_corrections_[index].focalSlope /= 100.0;
-            laser_corrections_[index].closeSlope /= 100.0;
-            if (laser_corrections_[index].closeSlope == 0.0)
-              laser_corrections_[index].closeSlope =
-                laser_corrections_[index].focalSlope;
-            laser_corrections_[index].minIntensity = minIntensity[index];
-            laser_corrections_[index].maxIntensity = maxIntensity[index];
-          }
-        }
-      }
-    }
-  }
-
-  int idx = 0;
-  BOOST_FOREACH (
-    boost::property_tree::ptree::value_type & v,
-    pt.get_child("boost_serialization.DB.minIntensity_"))
-  {
-    std::stringstream ss;
-    if (v.first == "item")
-    {
-      ss << v.second.data();
-      int intensity = 0;
-      ss >> intensity;
-      if (!ss.fail() && idx < HDL_MAX_NUM_LASERS)
-      {
-        laser_corrections_[idx].minIntensity = intensity;
-      }
-      idx++;
-    }
-  }
-
-  idx = 0;
-  BOOST_FOREACH (
-    boost::property_tree::ptree::value_type & v,
-    pt.get_child("boost_serialization.DB.maxIntensity_"))
-  {
-    std::stringstream ss;
-    if (v.first == "item")
-    {
-      ss << v.second.data();
-      int intensity = 0;
-      ss >> intensity;
-      if (!ss.fail() && idx < HDL_MAX_NUM_LASERS)
-      {
-        laser_corrections_[idx].maxIntensity = intensity;
-      }
-      idx++;
-    }
-  }
-
-  PrecomputeCorrectionCosSin();
-  this->IsCalibrated = true;
-}
-
-//------------------------------------------------------------------------------
-template <typename TAzm, typename TDist>
-void
-vtkVelodyneAdvancedPacketInterpreter::ComputeCorrectedValues(
-  TAzm const azimuth,
-  double const verticalAngleInDegrees,
-  size_t const correctionIndex,
-  double pos[3],
-  TDist & distance)
-{
-  double cosAzimuth, sinAzimuth, cosVertCorrection, sinVertCorrection;
-  HDLLaserCorrection * correction =
-    &(this->laser_corrections_[correctionIndex]);
-
-  if (correction->rotationalCorrection == 0)
-  {
-    cosAzimuth = this->cos_lookup_table_[azimuth];
-    sinAzimuth = this->sin_lookup_table_[azimuth];
-  }
-  else
-  {
-    // realAzimuth = azimuth/100 - rotationalCorrection
-    // cos(a-b) = cos(a)*cos(b) + sin(a)*sin(b)
-    // sin(a-b) = sin(a)*cos(b) - cos(a)*sin(b)
-    cosAzimuth =
-      this->cos_lookup_table_[azimuth] * correction->cosRotationalCorrection +
-      this->sin_lookup_table_[azimuth] * correction->sinRotationalCorrection;
-    sinAzimuth =
-      this->sin_lookup_table_[azimuth] * correction->cosRotationalCorrection -
-      this->cos_lookup_table_[azimuth] * correction->sinRotationalCorrection;
-  }
-
-  if (verticalAngleInDegrees == 0)
-  {
-    cosVertCorrection = correction->cosVertCorrection;
-    sinVertCorrection = correction->sinVertCorrection;
-  }
-  else
-  {
-    double VerticalAngleInRadians = degreesToRadians(verticalAngleInDegrees + correction->verticalCorrection);
-    cosVertCorrection = std::cos(VerticalAngleInRadians);
-    sinVertCorrection = std::sin(VerticalAngleInRadians);
-  }
-
-  // double cosVertOffsetCorrection = correction->verticalOffsetCorrection * cosVertCorrection;
-  double sinVertOffsetCorrection = correction->verticalOffsetCorrection * sinVertCorrection;
-
-  // Compute the distance in the xy plane (w/o accounting for rotation)
-  /**the new term of 'vert_offset * sin_vert_angle'
-   * was added to the expression due to the mathemathical
-   * model we used.
-   */
-  double distanceMRaw = distance * this->DistanceResolutionM;
-  double distanceM    = distanceMRaw + correction->distanceCorrection;
-  double xyDistance   = distanceM * cosVertCorrection - sinVertOffsetCorrection;
-
-  pos[0] = xyDistance * sinAzimuth -
-           correction->horizontalOffsetCorrection * cosAzimuth;
-  pos[1] = xyDistance * cosAzimuth +
-           correction->horizontalOffsetCorrection * sinAzimuth;
-  pos[2] = distanceM * sinVertCorrection +
-           correction->verticalOffsetCorrection;
 }
 
 //------------------------------------------------------------------------------
@@ -2027,3 +1568,14 @@ vtkVelodyneAdvancedPacketInterpreter::SetNumberOfItems(size_t numberOfItems)
 
   VAPI_FOREACH_INFO_ARRAY(VAPI_SET_NUMBER_OF_VALUES, data)
 }
+
+//------------------------------------------------------------------------------
+void vtkVelodyneAdvancedPacketInterpreter::LoadCalibration(const std::string& filename)
+{
+  this->VDCalibrationData.LoadCalibration(filename);
+  this->IsCalibrated = this->VDCalibrationData.GetIsCalibrated();
+  this->IsCorrectionFromLiveStream = this->VDCalibrationData.GetIsCorrectionFromLiveStream();
+  this->CalibrationReportedNumLasers = this->VDCalibrationData.GetCalibrationReportedNumLasers();
+  this->DistanceResolutionM = this->VDCalibrationData.GetDistanceResolutionM();
+}
+
