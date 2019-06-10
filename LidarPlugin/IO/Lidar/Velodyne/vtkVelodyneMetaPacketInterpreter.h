@@ -198,6 +198,9 @@ public:
 protected:
     vtkVelodyneMetaPacketInterpreter();
 
+    //! this function should never be called
+    vtkSmartPointer<vtkPolyData> CreateNewEmptyFrame(vtkIdType numberOfPoints, vtkIdType prereservedNumberOfPoints = 0) override;
+
 private:
   vtkVelodyneMetaPacketInterpreter(const vtkVelodyneMetaPacketInterpreter&) = delete;
   void operator=(const vtkVelodyneMetaPacketInterpreter&) = delete;

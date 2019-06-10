@@ -12,6 +12,13 @@ vtkVelodyneMetaPacketInterpreter::vtkVelodyneMetaPacketInterpreter()
 }
 
 //-----------------------------------------------------------------------------
+vtkSmartPointer<vtkPolyData> vtkVelodyneMetaPacketInterpreter::CreateNewEmptyFrame(vtkIdType numberOfPoints, vtkIdType prereservedNumberOfPoints)
+{
+  assert(false && "this function should never be called");
+  return vtkSmartPointer<vtkPolyData>::New();
+}
+
+//-----------------------------------------------------------------------------
 void vtkVelodyneMetaPacketInterpreter::LoadCalibration(const std::string &filename)
 {
   if (this->SelectedInterp)

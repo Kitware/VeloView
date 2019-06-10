@@ -245,7 +245,7 @@ protected:
    * space. No CellArray should be created as it can be create once the frame is ready.
    * @param numberOfPoints indicate the space to allocate @todo change the meaning
    */
-  virtual vtkSmartPointer<vtkPolyData> CreateNewEmptyFrame(vtkIdType numberOfPoints, vtkIdType prereservedNumberOfPoints = 0) {}
+  virtual vtkSmartPointer<vtkPolyData> CreateNewEmptyFrame(vtkIdType numberOfPoints, vtkIdType prereservedNumberOfPoints = 0) = 0;
 
   /**
    * @brief shouldBeCroppedOut Check if a point is inside a region of interest determined
