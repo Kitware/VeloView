@@ -199,7 +199,7 @@ struct CorrectedValues
 //------------------------------------------------------------------------------
 //VelodyneCalibrationData
 //------------------------------------------------------------------------------
-class VelodyneCalibrationData
+class VTK_EXPORT VelodyneCalibrationData
 {
 private:
   vtkTable * CalibrationData { nullptr };
