@@ -1,12 +1,10 @@
 #ifndef VTKVELODYNELEGACYPACKETINTERPRETER_H
 #define VTKVELODYNELEGACYPACKETINTERPRETER_H
 
-#include "vtkLidarPacketInterpreter.h"
-#include "vtkDataPacket.h"
 #include <vtkUnsignedCharArray.h>
 #include <vtkUnsignedIntArray.h>
 #include <vtkUnsignedShortArray.h>
-#include "VelodynePacketInterpreterCommon.h"
+#include "vtkVelodyneBasePacketInterpreter.h"
 
 #include <memory>
 
@@ -17,11 +15,11 @@ class FramingState;
 class vtkRollingDataAccumulator;
 
 
-class VTK_EXPORT vtkVelodyneLegacyPacketInterpreter : public vtkLidarPacketInterpreter
+class VTK_EXPORT vtkVelodyneLegacyPacketInterpreter : public vtkVelodyneBasePacketInterpreter
 {
 public:
   static vtkVelodyneLegacyPacketInterpreter* New();
-  vtkTypeMacro(vtkVelodyneLegacyPacketInterpreter, vtkLidarPacketInterpreter);
+  vtkTypeMacro(vtkVelodyneLegacyPacketInterpreter, vtkVelodyneBasePacketInterpreter);
   void PrintSelf(ostream& vtkNotUsed(os), vtkIndent vtkNotUsed(indent)){};
   enum DualFlag
   {
@@ -33,8 +31,6 @@ public:
     DUAL_DISTANCE_MASK = 0x3,
     DUAL_INTENSITY_MASK = 0xc,
   };
-
-  void LoadCalibration(const std::string& filename) override;
 
   void ProcessPacket(unsigned char const * data, unsigned int dataLength) override;
 
@@ -51,29 +47,6 @@ public:
 
   std::string GetSensorInformation() override;
 
-  void GetXMLColorTable(double XMLColorTable[]) { this->VDCalibrationData.GetXMLColorTable(XMLColorTable); }
-
-  void GetLaserCorrections(double verticalCorrection[HDL_MAX_NUM_LASERS],
-    double rotationalCorrection[HDL_MAX_NUM_LASERS], double distanceCorrection[HDL_MAX_NUM_LASERS],
-    double distanceCorrectionX[HDL_MAX_NUM_LASERS], double distanceCorrectionY[HDL_MAX_NUM_LASERS],
-    double verticalOffsetCorrection[HDL_MAX_NUM_LASERS],
-    double horizontalOffsetCorrection[HDL_MAX_NUM_LASERS], double focalDistance[HDL_MAX_NUM_LASERS],
-    double focalSlope[HDL_MAX_NUM_LASERS], double minIntensity[HDL_MAX_NUM_LASERS],
-    double maxIntensity[HDL_MAX_NUM_LASERS]);
-
-  vtkGetMacro(HasDualReturn, bool)
-
-  vtkGetMacro(WantIntensityCorrection, bool)
-  vtkSetMacro(WantIntensityCorrection, bool)
-
-  vtkGetMacro(FiringsSkip, int)
-  vtkSetMacro(FiringsSkip, int)
-
-  vtkGetMacro(UseIntraFiringAdjustment, bool)
-  vtkSetMacro(UseIntraFiringAdjustment, bool)
-
-  vtkGetMacro(DualReturnFilter, unsigned int)
-  vtkSetMacro(DualReturnFilter, unsigned int)
 
 protected:
   vtkSmartPointer<vtkPolyData> CreateNewEmptyFrame(vtkIdType numberOfPoints, vtkIdType prereservedNumberOfPoints = 60000) override;
@@ -100,9 +73,6 @@ protected:
   double ComputeTimestamp(unsigned int tohTime, const FrameInformation& frameInfo);
 
 
-
-  bool HDL64LoadCorrectionsFromStreamData();
-
   bool CheckReportedSensorAndCalibrationFileConsistent(const HDLDataPacket* dataPacket);
 
   vtkSmartPointer<vtkPoints> Points;
@@ -124,7 +94,6 @@ protected:
 
   // sensor information
   unsigned char SensorPowerMode;
-  bool HasDualReturn;
   SensorType ReportedSensor;
   DualReturnSensorMode ReportedSensorReturnMode;
   bool IsHDL64Data;
@@ -165,15 +134,8 @@ protected:
   // Sensor parameters presented as rolling data, extracted from enough packets
   vtkRollingDataAccumulator* rollingCalibrationData;
 
-  // User configurable parameters
-  int FiringsSkip;
-
-  bool UseIntraFiringAdjustment;
-
   bool ShouldCheckSensor;
   uint32_t lastGpsTimestamp = 0;
-
-  unsigned int DualReturnFilter;
 
   vtkVelodyneLegacyPacketInterpreter();
   ~vtkVelodyneLegacyPacketInterpreter();
@@ -181,9 +143,6 @@ protected:
 private:
   vtkVelodyneLegacyPacketInterpreter(const vtkVelodyneLegacyPacketInterpreter&) = delete;
   void operator=(const vtkVelodyneLegacyPacketInterpreter&) = delete;
-
-//------------------------------------------------------------------------------
-  VelodyneCalibrationData VDCalibrationData;
 
 };
 

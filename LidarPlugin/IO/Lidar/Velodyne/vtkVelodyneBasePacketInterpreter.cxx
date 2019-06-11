@@ -1,4 +1,4 @@
-#include "VelodynePacketInterpreterCommon.h"
+#include "vtkVelodyneBasePacketInterpreter.h"
 
 #include "vtkRollingDataAccumulator.h"
 
@@ -182,12 +182,36 @@ struct last4cyclesByte
 
 
 
+//------------------------------------------------------------------------------
+vtkVelodyneBasePacketInterpreter::vtkVelodyneBasePacketInterpreter()
+{
+  this->SensorPowerMode = 0;
+  this->DistanceResolutionM = 0.002;
+  this->HasDualReturn = false;
+
+  // Legacy code.
+  this->ReportedFactoryField1           = 0;
+  this->ReportedFactoryField2           = 0;
+  this->OutputPacketProcessingDebugInfo = false;
+  this->UseIntraFiringAdjustment        = false;
+  this->DualReturnFilter                = 0;
+  this->FiringsSkip                     = 0;
+  this->IsHDL64Data                     = false;
+  this->HasDualReturn                   = false;
+  this->ShouldAddDualReturnArray        = false;
+  this->WantIntensityCorrection         = false;
+
+  this->LaserSelection.resize(HDL_MAX_NUM_LASERS, true);
+
+  this->InitTrigonometricTables();
+}
+
 
 //------------------------------------------------------------------------------
 // Code from the legacy packet format interpreter.
 //------------------------------------------------------------------------------
 void
-VelodyneCalibrationData::InitTrigonometricTables()
+vtkVelodyneBasePacketInterpreter::InitTrigonometricTables()
 {
   if (cos_lookup_table_.size() == 0 || sin_lookup_table_.size() == 0)
   {
@@ -204,7 +228,7 @@ VelodyneCalibrationData::InitTrigonometricTables()
 
 //------------------------------------------------------------------------------
 void
-VelodyneCalibrationData::PrecomputeCorrectionCosSin()
+vtkVelodyneBasePacketInterpreter::PrecomputeCorrectionCosSin()
 {
   for (int i = 0; i < HDL_MAX_NUM_LASERS; i++)
   {
@@ -225,7 +249,7 @@ VelodyneCalibrationData::PrecomputeCorrectionCosSin()
 }
 
 //-----------------------------------------------------------------------------
-void VelodyneCalibrationData::LoadCalibration(const std::string& filename)
+void vtkVelodyneBasePacketInterpreter::LoadCalibration(const std::string& filename)
 {
   // the HDL64 allow autocalibration, so no calibration can be provided
   if (filename.empty())
@@ -484,7 +508,7 @@ void VelodyneCalibrationData::LoadCalibration(const std::string& filename)
 }
 
 //-----------------------------------------------------------------------------
-void VelodyneCalibrationData::ComputeCorrectedValues(
+void vtkVelodyneBasePacketInterpreter::ComputeCorrectedValues(
     const RawValues & rawValues,
     const unsigned int correctionIndex,
     CorrectedValues & correctedValues,
@@ -593,7 +617,7 @@ void VelodyneCalibrationData::ComputeCorrectedValues(
 }
 
 //-----------------------------------------------------------------------------
-void VelodyneCalibrationData::GetXMLColorTable(double XMLColorTable[4 * HDL_MAX_NUM_LASERS])
+void vtkVelodyneBasePacketInterpreter::GetXMLColorTable(double XMLColorTable[4 * HDL_MAX_NUM_LASERS])
 {
   for (int i = 0; i < HDL_MAX_NUM_LASERS; ++i)
   {
@@ -606,7 +630,7 @@ void VelodyneCalibrationData::GetXMLColorTable(double XMLColorTable[4 * HDL_MAX_
 }
 
 //-----------------------------------------------------------------------------
-bool VelodyneCalibrationData::HDL64LoadCorrectionsFromStreamData(vtkRollingDataAccumulator * rollingCalibrationData)
+bool vtkVelodyneBasePacketInterpreter::HDL64LoadCorrectionsFromStreamData(vtkRollingDataAccumulator * rollingCalibrationData)
 {
   std::vector<unsigned char> data;
   if (!rollingCalibrationData->getAlignedRollingData(data))
@@ -662,3 +686,28 @@ bool VelodyneCalibrationData::HDL64LoadCorrectionsFromStreamData(vtkRollingDataA
   return true;
 }
 
+//-----------------------------------------------------------------------------
+void vtkVelodyneBasePacketInterpreter::GetLaserCorrections(double verticalCorrection[HDL_MAX_NUM_LASERS],
+  double rotationalCorrection[HDL_MAX_NUM_LASERS], double distanceCorrection[HDL_MAX_NUM_LASERS],
+  double distanceCorrectionX[HDL_MAX_NUM_LASERS], double distanceCorrectionY[HDL_MAX_NUM_LASERS],
+  double verticalOffsetCorrection[HDL_MAX_NUM_LASERS],
+  double horizontalOffsetCorrection[HDL_MAX_NUM_LASERS], double focalDistance[HDL_MAX_NUM_LASERS],
+  double focalSlope[HDL_MAX_NUM_LASERS], double minIntensity[HDL_MAX_NUM_LASERS],
+  double maxIntensity[HDL_MAX_NUM_LASERS])
+{
+  for (int i = 0; i < HDL_MAX_NUM_LASERS; ++i)
+  {
+    verticalCorrection[i] = laser_corrections_[i].verticalCorrection;
+    rotationalCorrection[i] = laser_corrections_[i].rotationalCorrection;
+    distanceCorrection[i] = laser_corrections_[i].distanceCorrection;
+    distanceCorrectionX[i] = laser_corrections_[i].distanceCorrectionX;
+    distanceCorrectionY[i] = laser_corrections_[i].distanceCorrectionY;
+    verticalOffsetCorrection[i] = laser_corrections_[i].verticalOffsetCorrection;
+    horizontalOffsetCorrection[i] =
+      laser_corrections_[i].horizontalOffsetCorrection;
+    focalDistance[i] = laser_corrections_[i].focalDistance;
+    focalSlope[i] = laser_corrections_[i].focalSlope;
+    minIntensity[i] = laser_corrections_[i].minIntensity;
+    maxIntensity[i] = laser_corrections_[i].maxIntensity;
+  }
+}

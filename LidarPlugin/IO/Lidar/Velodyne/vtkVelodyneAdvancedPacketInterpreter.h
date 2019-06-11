@@ -5,7 +5,7 @@
 #include <vtkUnsignedCharArray.h>
 #include <vtkUnsignedIntArray.h>
 #include <vtkDoubleArray.h>
-#include "VelodynePacketInterpreterCommon.h"
+#include "vtkVelodyneBasePacketInterpreter.h"
 
 #include <memory>
 #include <limits>
@@ -20,7 +20,7 @@ using namespace DataPacketFixedLength;
 class FrameTracker;
 
 //------------------------------------------------------------------------------
-class VTK_EXPORT vtkVelodyneAdvancedPacketInterpreter : public vtkLidarPacketInterpreter
+class VTK_EXPORT vtkVelodyneAdvancedPacketInterpreter : public vtkVelodyneBasePacketInterpreter
 {
 //------------------------------------------------------------------------------
 private:
@@ -59,11 +59,12 @@ private:
 //------------------------------------------------------------------------------
 public:
   static vtkVelodyneAdvancedPacketInterpreter* New();
-  vtkTypeMacro(vtkVelodyneAdvancedPacketInterpreter, vtkLidarPacketInterpreter)
-
-  std::string GetSensorInformation() override { return "advanced data format"; }
+  vtkTypeMacro(vtkVelodyneAdvancedPacketInterpreter, vtkVelodyneBasePacketInterpreter)
+  void PrintSelf(ostream& vtkNotUsed(os), vtkIndent vtkNotUsed(indent)){};
 
   void LoadCalibration(const std::string& filename) override;
+
+  std::string GetSensorInformation() override { return "advanced data format"; }
 
   void ProcessPacket(unsigned char const * data, unsigned int dataLength) override;
 
@@ -108,53 +109,12 @@ public:
   vtkSmartPointer<vtkUnsignedIntArray>    INFO_Pseqs;
   vtkSmartPointer<vtkUnsignedIntArray>    INFO_TimeFractionOffsets;
 
-  void GetXMLColorTable(double XMLColorTable[]) { cout << "Not implemented yet" << endl;}
-
-  void GetLaserCorrections(double verticalCorrection[HDL_MAX_NUM_LASERS],
-    double rotationalCorrection[HDL_MAX_NUM_LASERS], double distanceCorrection[HDL_MAX_NUM_LASERS],
-    double distanceCorrectionX[HDL_MAX_NUM_LASERS], double distanceCorrectionY[HDL_MAX_NUM_LASERS],
-    double verticalOffsetCorrection[HDL_MAX_NUM_LASERS],
-    double horizontalOffsetCorrection[HDL_MAX_NUM_LASERS], double focalDistance[HDL_MAX_NUM_LASERS],
-    double focalSlope[HDL_MAX_NUM_LASERS], double minIntensity[HDL_MAX_NUM_LASERS],
-    double maxIntensity[HDL_MAX_NUM_LASERS]);
-
 
 protected:
   vtkVelodyneAdvancedPacketInterpreter();
   ~vtkVelodyneAdvancedPacketInterpreter();
 
-//------------------------------------------------------------------------------
-private:
-  VelodyneCalibrationData VDCalibrationData;
 
-//------------------------------------------------------------------------------
-// Code from legacy packet format interpreter.
-private:
-	void Init();
-
-public:
-  uint8_t ReportedFactoryField1 ;
-  uint8_t ReportedFactoryField2 ;
-  bool OutputPacketProcessingDebugInfo ;
-  vtkSetMacro(UseIntraFiringAdjustment, bool)
-  vtkGetMacro(UseIntraFiringAdjustment, bool)
-  bool UseIntraFiringAdjustment;
-  vtkSetMacro(DualReturnFilter, bool)
-  vtkGetMacro(DualReturnFilter, bool)
-  unsigned int DualReturnFilter ;
-  vtkSetMacro(FiringsSkip, int)
-  vtkGetMacro(FiringsSkip, int)
-  int FiringsSkip;
-  bool IsCorrectionFromLiveStream;
-  bool IsHDL64Data ;
-  vtkGetMacro(HasDualReturn, bool)
-  bool HasDualReturn ;
-  bool ShouldAddDualReturnArray;
-  vtkSetMacro(WantIntensityCorrection, bool)
-  vtkGetMacro(WantIntensityCorrection, bool)
-  bool WantIntensityCorrection;
-  unsigned char SensorPowerMode;
-  DualReturnSensorMode ReportedSensorReturnMode;
 };
 
 #endif // VTK_VELODYNE_ADVANCED_PACKET_INTERPRETOR_H

@@ -900,7 +900,7 @@ public:
    */
   bool
   Update(
-    PayloadHeader const * const payloadHeader,
+    PayloadHeader const * const vtkNotUsed(payloadHeader),
     FiringGroupHeader const * const firingGroupHeader)
   {
     // Get and update all member values here to avoid doing so in various blocks
@@ -1007,36 +1007,13 @@ vtkStandardNewMacro(vtkVelodyneAdvancedPacketInterpreter)
 
 //----------------------------------------------------------------------------
 vtkVelodyneAdvancedPacketInterpreter::vtkVelodyneAdvancedPacketInterpreter()
-  : VDCalibrationData 
-    { 
-      CalibrationData, 
-      IsCalibrated,
-      IsCorrectionFromLiveStream,
-      CalibrationReportedNumLasers,
-      DistanceResolutionM,
-      SensorPowerMode,
-      ReportedSensorReturnMode
-    }
 {
   this->CurrentFrameTracker          = new FrameTracker();
   this->MaxFrameSize                 = MEM_STEP_SIZE;
   this->CurrentArraySize             = 0;
   this->NumberOfPointsInCurrentFrame = 0;
-  this->Init();
-  this->DistanceResolutionM = 0.002;
+  this->ResetCurrentFrame();
 
-  this->ReportedFactoryField1           = 0;
-  this->ReportedFactoryField2           = 0;
-  this->OutputPacketProcessingDebugInfo = false;
-  this->UseIntraFiringAdjustment        = false;
-  this->DualReturnFilter                = 0;
-  this->FiringsSkip                     = 0;
-  this->IsCorrectionFromLiveStream      = false;
-  this->IsHDL64Data                     = false;
-  this->HasDualReturn                   = false;
-  this->ShouldAddDualReturnArray        = false;
-  this->WantIntensityCorrection         = false;
-  this->LaserSelection.resize(HDL_MAX_NUM_LASERS, true);
   this->ParserMetaData.SpecificInformation =
     std::make_shared<VelodyneSpecificFrameInformation>();
 }
@@ -1234,7 +1211,7 @@ vtkVelodyneAdvancedPacketInterpreter::ProcessPacket(
         CorrectedValues correctedValues;
         double (& position)[3] = correctedValues.position;
         
-        this->VDCalibrationData.ComputeCorrectedValues(
+        this->ComputeCorrectedValues(
           rawValues,
           channelNumber, 
           correctedValues,
@@ -1369,7 +1346,7 @@ InitializeDataArrayForPolyData(
 vtkSmartPointer<vtkPolyData>
 vtkVelodyneAdvancedPacketInterpreter::CreateNewEmptyFrame(
   vtkIdType numberOfPoints,
-  vtkIdType prereservedNumberOfPoints)
+  vtkIdType vtkNotUsed(prereservedNumberOfPoints))
 {
   vtkSmartPointer<vtkPolyData> polyData = vtkSmartPointer<vtkPolyData>::New();
 
@@ -1529,15 +1506,6 @@ vtkVelodyneAdvancedPacketInterpreter::PreProcessPacket(
 
 //------------------------------------------------------------------------------
 void
-vtkVelodyneAdvancedPacketInterpreter::Init()
-{
-  this->VDCalibrationData.InitTrigonometricTables();
-  // this->SensorTransform->Identity()
-  this->ResetCurrentFrame();
-}
-
-//------------------------------------------------------------------------------
-void
 vtkVelodyneAdvancedPacketInterpreter::UpdateMaxFrameSize(size_t frameSize)
 {
   if (frameSize > this->MaxFrameSize)
@@ -1591,33 +1559,7 @@ vtkVelodyneAdvancedPacketInterpreter::SetNumberOfItems(size_t numberOfItems)
 //------------------------------------------------------------------------------
 void vtkVelodyneAdvancedPacketInterpreter::LoadCalibration(const std::string& filename)
 {
-  this->VDCalibrationData.LoadCalibration(filename);
-  this->CurrentFrameTracker->SetFramingLogic(this->VDCalibrationData.GetFramingLogic());
+  this->vtkVelodyneBasePacketInterpreter::LoadCalibration(filename);
+  this->CurrentFrameTracker->SetFramingLogic(this->GetFramingLogic());
 }
 
-//-----------------------------------------------------------------------------
-void vtkVelodyneAdvancedPacketInterpreter::GetLaserCorrections(double verticalCorrection[HDL_MAX_NUM_LASERS],
-  double rotationalCorrection[HDL_MAX_NUM_LASERS], double distanceCorrection[HDL_MAX_NUM_LASERS],
-  double distanceCorrectionX[HDL_MAX_NUM_LASERS], double distanceCorrectionY[HDL_MAX_NUM_LASERS],
-  double verticalOffsetCorrection[HDL_MAX_NUM_LASERS],
-  double horizontalOffsetCorrection[HDL_MAX_NUM_LASERS], double focalDistance[HDL_MAX_NUM_LASERS],
-  double focalSlope[HDL_MAX_NUM_LASERS], double minIntensity[HDL_MAX_NUM_LASERS],
-  double maxIntensity[HDL_MAX_NUM_LASERS])
-{
-  auto laser_corrections_ = this->VDCalibrationData.GetLaserCorrections();
-  for (int i = 0; i < HDL_MAX_NUM_LASERS; ++i)
-  {
-    verticalCorrection[i] = laser_corrections_[i].verticalCorrection;
-    rotationalCorrection[i] = laser_corrections_[i].rotationalCorrection;
-    distanceCorrection[i] = laser_corrections_[i].distanceCorrection;
-    distanceCorrectionX[i] = laser_corrections_[i].distanceCorrectionX;
-    distanceCorrectionY[i] = laser_corrections_[i].distanceCorrectionY;
-    verticalOffsetCorrection[i] = laser_corrections_[i].verticalOffsetCorrection;
-    horizontalOffsetCorrection[i] =
-      laser_corrections_[i].horizontalOffsetCorrection;
-    focalDistance[i] = laser_corrections_[i].focalDistance;
-    focalSlope[i] = laser_corrections_[i].focalSlope;
-    minIntensity[i] = laser_corrections_[i].minIntensity;
-    maxIntensity[i] = laser_corrections_[i].maxIntensity;
-  }
-}

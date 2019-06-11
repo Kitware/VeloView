@@ -342,16 +342,6 @@ vtkStandardNewMacro(vtkVelodyneLegacyPacketInterpreter)
 
 //-----------------------------------------------------------------------------
 vtkVelodyneLegacyPacketInterpreter::vtkVelodyneLegacyPacketInterpreter()
-  : VDCalibrationData 
-    { 
-      CalibrationData, 
-      IsCalibrated,
-      IsCorrectionFromLiveStream,
-      CalibrationReportedNumLasers,
-      DistanceResolutionM,
-      SensorPowerMode,
-      ReportedSensorReturnMode
-    }
 {
   this->RpmCalculator_ = new RPMCalculator();
   this->UseIntraFiringAdjustment = true;
@@ -406,7 +396,7 @@ void vtkVelodyneLegacyPacketInterpreter::ProcessPacket(unsigned char const * dat
     !this->IsCalibrated)
   {
     this->rollingCalibrationData->appendData(dataPacket->gpsTimestamp, dataPacket->factoryField1, dataPacket->factoryField2);
-    this->HDL64LoadCorrectionsFromStreamData();
+    this->HDL64LoadCorrectionsFromStreamData(this->rollingCalibrationData);
     return;
   }
 
@@ -528,7 +518,7 @@ void vtkVelodyneLegacyPacketInterpreter::ProcessPacket(unsigned char const * dat
 }
 
 //-----------------------------------------------------------------------------
-bool vtkVelodyneLegacyPacketInterpreter::IsLidarPacket(unsigned char const * data, unsigned int dataLength)
+bool vtkVelodyneLegacyPacketInterpreter::IsLidarPacket(unsigned char const * vtkNotUsed(data), unsigned int dataLength)
 {
   if (dataLength == HDLDataPacket::getDataByteLength())
   {
@@ -680,7 +670,7 @@ void vtkVelodyneLegacyPacketInterpreter::PushFiringData(unsigned char laserId,
   RawValues rawValues(azimuth, firingElevation100th, laserReturn->distance, laserReturn->intensity);
   CorrectedValues correctedValues;
 
-  this->VDCalibrationData.ComputeCorrectedValues(
+  this->ComputeCorrectedValues(
       rawValues,
       channelNumber,
       correctedValues,
@@ -811,7 +801,7 @@ void vtkVelodyneLegacyPacketInterpreter::PushFiringData(unsigned char laserId,
 //-----------------------------------------------------------------------------
 void vtkVelodyneLegacyPacketInterpreter::Init()
 {
-  this->VDCalibrationData.InitTrigonometricTables();
+  this->InitTrigonometricTables();
   this->ResetCurrentFrame();
 }
 
@@ -823,28 +813,7 @@ double vtkVelodyneLegacyPacketInterpreter::ComputeTimestamp(unsigned int tohTime
   return tohTime + velInfo->NbrOfRollingTime * hourInMilliseconds;
 }
 
-//------------------------------------------------------------------------------
-void vtkVelodyneLegacyPacketInterpreter::LoadCalibration(const std::string& filename)
-{
-  this->VDCalibrationData.LoadCalibration(filename);
-}
 
-
-//-----------------------------------------------------------------------------
-bool vtkVelodyneLegacyPacketInterpreter::HDL64LoadCorrectionsFromStreamData()
-{
-  bool succeeded = this->VDCalibrationData.HDL64LoadCorrectionsFromStreamData(this->rollingCalibrationData);
-
-
-  // The original logic returns false early if certain conditions are not met
-  // without updating IsCalibrated. The logic is preserved here as well instead
-  // of setting IsCalibrated = succeeded.
-  if (succeeded)
-  {
-    this->IsCalibrated = true;
-  }
-  return succeeded;
-}
 
 //-----------------------------------------------------------------------------
 vtkSmartPointer<vtkPolyData> vtkVelodyneLegacyPacketInterpreter::CreateNewEmptyFrame(vtkIdType numberOfPoints, vtkIdType prereservedNumberOfPoints)
@@ -946,9 +915,9 @@ void vtkVelodyneLegacyPacketInterpreter::ResetCurrentFrame()
 }
 
 //-----------------------------------------------------------------------------
-bool vtkVelodyneLegacyPacketInterpreter::PreProcessPacket(unsigned char const * data, unsigned int dataLength,
-                                                    fpos_t filePosition, double packetNetworkTime,
-                                                    std::vector<FrameInformation>* frameCatalog)
+bool vtkVelodyneLegacyPacketInterpreter::PreProcessPacket(unsigned char const* data,
+  unsigned int vtkNotUsed(dataLength), fpos_t filePosition, double packetNetworkTime,
+  std::vector<FrameInformation>* frameCatalog)
 {
   const HDLDataPacket* dataPacket = reinterpret_cast<const HDLDataPacket*>(data);
   //! @todo don't use static value here this is ugly...
@@ -1055,7 +1024,7 @@ bool vtkVelodyneLegacyPacketInterpreter::PreProcessPacket(unsigned char const * 
     !this->IsCalibrated)
   {
     this->rollingCalibrationData->appendData(dataPacket->gpsTimestamp, dataPacket->factoryField1, dataPacket->factoryField2);
-    this->HDL64LoadCorrectionsFromStreamData();
+    this->HDL64LoadCorrectionsFromStreamData(this->rollingCalibrationData);
   }
   return isNewFrame;
 }
@@ -1116,29 +1085,3 @@ std::string vtkVelodyneLegacyPacketInterpreter::GetSensorInformation()
   return std::string(streamInfo.str());
 }
 
-//-----------------------------------------------------------------------------
-void vtkVelodyneLegacyPacketInterpreter::GetLaserCorrections(double verticalCorrection[HDL_MAX_NUM_LASERS],
-  double rotationalCorrection[HDL_MAX_NUM_LASERS], double distanceCorrection[HDL_MAX_NUM_LASERS],
-  double distanceCorrectionX[HDL_MAX_NUM_LASERS], double distanceCorrectionY[HDL_MAX_NUM_LASERS],
-  double verticalOffsetCorrection[HDL_MAX_NUM_LASERS],
-  double horizontalOffsetCorrection[HDL_MAX_NUM_LASERS], double focalDistance[HDL_MAX_NUM_LASERS],
-  double focalSlope[HDL_MAX_NUM_LASERS], double minIntensity[HDL_MAX_NUM_LASERS],
-  double maxIntensity[HDL_MAX_NUM_LASERS])
-{
-  auto laser_corrections_ = this->VDCalibrationData.GetLaserCorrections();
-  for (int i = 0; i < HDL_MAX_NUM_LASERS; ++i)
-  {
-    verticalCorrection[i] = laser_corrections_[i].verticalCorrection;
-    rotationalCorrection[i] = laser_corrections_[i].rotationalCorrection;
-    distanceCorrection[i] = laser_corrections_[i].distanceCorrection;
-    distanceCorrectionX[i] = laser_corrections_[i].distanceCorrectionX;
-    distanceCorrectionY[i] = laser_corrections_[i].distanceCorrectionY;
-    verticalOffsetCorrection[i] = laser_corrections_[i].verticalOffsetCorrection;
-    horizontalOffsetCorrection[i] =
-      laser_corrections_[i].horizontalOffsetCorrection;
-    focalDistance[i] = laser_corrections_[i].focalDistance;
-    focalSlope[i] = laser_corrections_[i].focalSlope;
-    minIntensity[i] = laser_corrections_[i].minIntensity;
-    maxIntensity[i] = laser_corrections_[i].maxIntensity;
-  }
-}
