@@ -450,7 +450,7 @@ void vvMainWindow::dropEvent(QDropEvent* evt)
 
   if (files[0].endsWith(".pcap"))
   {
-    pqLidarViewManager::instance()->runPython(QString("vv.openPCAP('" + files[0] + "')"));
+    pqLidarViewManager::instance()->runPython(QString("lv.openPCAP('" + files[0] + "')"));
   }
   else {
     pqLoadDataReaction::loadData(files);

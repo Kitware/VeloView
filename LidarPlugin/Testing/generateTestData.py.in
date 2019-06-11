@@ -32,13 +32,13 @@ for pcap, conf in tests.iteritems():
 
   calibPath = (calibFolder + "/" + conf['xml'] + ".xml" if conf['xml'] else "")
 
-  reader = vv.smp.VelodyneHDLReader(guiName = 'Data',
+  reader = lv.smp.VelodyneHDLReader(guiName = 'Data',
                                  FileName = pcapFolder + "/" + pcap,
                                  CalibrationFile = calibPath,
                                  ApplyTransform = False,
                                  NumberOfTrailingFrames = 0)
   reader.GetClientSideObject().ReadFrameInformation()
-  w = vv.smp.XMLPPolyDataWriter(FileName = baselineFolder + "/" + pcap[:-5] + ".vtp",
+  w = lv.smp.XMLPPolyDataWriter(FileName = baselineFolder + "/" + pcap[:-5] + ".vtp",
                              Input = reader,
                              Writealltimestepsasfileseries = 1)
   w.UpdatePipeline()
@@ -77,4 +77,4 @@ for pcap, conf in tests.iteritems():
   vtpList.close()
 
 print "Everything was generated successfully, LidarView will close now."
-vv.quit()
+lv.quit()
