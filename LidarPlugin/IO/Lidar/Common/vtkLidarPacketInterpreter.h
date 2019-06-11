@@ -80,7 +80,7 @@ class VTK_EXPORT  vtkLidarPacketInterpreter : public vtkAlgorithm
 {
 public:
   vtkTypeMacro(vtkLidarPacketInterpreter, vtkAlgorithm)
-  void PrintSelf(ostream& os, vtkIndent indent) {}
+  void PrintSelf(ostream& vtkNotUsed(os), vtkIndent vtkNotUsed(indent)) {}
 
   /**
    * @brief The CropModeEnum enum to select the cropping mode

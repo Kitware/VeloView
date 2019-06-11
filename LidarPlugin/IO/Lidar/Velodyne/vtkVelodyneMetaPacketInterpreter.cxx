@@ -12,7 +12,8 @@ vtkVelodyneMetaPacketInterpreter::vtkVelodyneMetaPacketInterpreter()
 }
 
 //-----------------------------------------------------------------------------
-vtkSmartPointer<vtkPolyData> vtkVelodyneMetaPacketInterpreter::CreateNewEmptyFrame(vtkIdType numberOfPoints, vtkIdType prereservedNumberOfPoints)
+vtkSmartPointer<vtkPolyData> vtkVelodyneMetaPacketInterpreter::CreateNewEmptyFrame(
+  vtkIdType vtkNotUsed(numberOfPoints), vtkIdType vtkNotUsed(prereservedNumberOfPoints))
 {
   assert(false && "this function should never be called");
   return vtkSmartPointer<vtkPolyData>::New();
