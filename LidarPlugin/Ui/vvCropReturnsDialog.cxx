@@ -324,7 +324,7 @@ void vvCropReturnsDialog::pqInternal::SetSphericalSettings()
   // Here we take the spherical coordinates used in mathematics (and not physic)
   // (r,theta,phi)
   double minR = 0, maxR = 240;
-  double minTheta = 0, maxTheta = 360; // Rotational Angle
+  double minTheta = -360, maxTheta = 360; // Rotational Angle
   double minPhi = -90, maxPhi = 90;    // Vertical Angle
   // theta is between [minTheta,maxTheta] - Rotational Angle
   this->X1SpinBox->setMinimum(minTheta);

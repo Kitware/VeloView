@@ -274,7 +274,7 @@
 
       If CropMode == Cartesian, the format is: Xmin, Xmax, Ymin, Ymax, Zmin, Zmax (all in meters)
 
-      If CropMode == Spherical, the format is: AzimuthAngleMin, AzimuthAngleMax, VerticalAngleMin, VerticalAngleMax, DistanceMin, DistanceMax (angles in degrees, distances in meters)
+      If CropMode == Spherical, the format is: AzimuthMin, AzimuthMax, VerticalAngleMin, VerticalAngleMax, DistanceMin, DistanceMax (Azimuth in [0;360] mod 360, VerticalAngle in [-90, 90] increasing with z, with 0 in plane z = 0, distance >= 0 in meters)
     </Documentation>
   </DoubleVectorProperty>
 
