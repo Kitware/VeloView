@@ -37,6 +37,7 @@
 .linux_superbuild_manual: &linux_superbuild_manual
   when: manual
   <<: *linux_superbuild
+  stage: manual
 
 .linux_superbuild_schedule: &linux_superbuild_schedule
   <<: *linux_superbuild
@@ -82,6 +83,7 @@
 .linux_package_manual: &linux_package_manual
   when: manual
   <<: *linux_package
+  stage: manual
   artifacts:
     name: ${CI_JOB_NAME}
     paths:

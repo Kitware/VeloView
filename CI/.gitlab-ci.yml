@@ -20,6 +20,7 @@ variables:
 
 # this are the 4 stage of the continuous integration, the stage are executed one after another
 stages:
+  - manual
   - superbuild
   - build
   - test

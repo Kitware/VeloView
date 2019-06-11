@@ -50,6 +50,7 @@
 windows_superbuild_manual: &windows_superbuild_manual
   when: manual
   <<: *windows_superbuild
+  stage: manual
 
 windows_superbuild_schedule: &windows_superbuild_schedule
   <<: *windows_superbuild
@@ -118,6 +119,7 @@ windows_test:
 windows_package_manual: &windows_package_manual
   when: manual
   <<: *windows_package
+  stage: manual
   artifacts:
     name: ${CI_JOB_NAME}
     paths:
