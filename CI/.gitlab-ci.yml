@@ -25,6 +25,20 @@ stages:
   - test
   - package
 
+# run the job only it modify the source code and if, it's:
+#  - a merge request which is not a WIP
+#  - a branch ending with "-master"
+.only-important:
+  only:
+    - /[[:alpha:]]*-?master/
+    - merge_requests
+  except:
+    changes:
+      - "*.md"
+      - "/Documentation/*"
+    variables:
+      - $CI_MERGE_REQUEST_TITLE =~ /^WIP:/
+
 
 # The job are define per OS in a specific file
 include:

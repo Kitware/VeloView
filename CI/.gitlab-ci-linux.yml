@@ -45,6 +45,7 @@
 
 .linux_build: &linux_build
   stage: build
+  extends: .only-important
   before_script: *unix_get_superbuild
   script:
     - git submodule update --init Superbuild/common-superbuild
@@ -53,6 +54,7 @@
 
 .linux_test: &linux_test
   stage: test
+  extends: .only-important
   before_script: *unix_get_superbuild # you cannot put linux_build here
   script:
     # get test data and baseline

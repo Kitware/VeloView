@@ -58,6 +58,7 @@ windows_superbuild_schedule: &windows_superbuild_schedule
 
 windows_build:
   stage: build
+  extends: .only-important
   before_script: *windows_get_superbuild
   tags:
     - windows_10
@@ -74,6 +75,7 @@ windows_build:
 
 windows_test:
   stage: test
+  extends: .only-important
   before_script: *windows_get_superbuild
   tags:
     - windows_10
