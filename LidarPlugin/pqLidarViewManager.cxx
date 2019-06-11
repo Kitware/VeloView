@@ -119,8 +119,8 @@ void pqLidarViewManager::pythonStartup()
       "import PythonQt\n"
       "QtGui = PythonQt.QtGui\n"
       "QtCore = PythonQt.QtCore\n"
-      "import lidarview.applogic as vv\n"
-      "vv.start()\n"));
+      "import lidarview.applogic as lv\n"
+      "lv.start()\n"));
 
   pqSettings* const settings = pqApplicationCore::instance()->settings();
   const QVariant& gridVisible =
@@ -366,15 +366,15 @@ void pqLidarViewManager::openData(const QString& filename, const QString& positi
 {
   if (!positionFilename.isEmpty())
   {
-    this->runPython(QString("vv.openPCAP('%1', '%2')\n").arg(filename, positionFilename));
+    this->runPython(QString("lv.openPCAP('%1', '%2')\n").arg(filename, positionFilename));
   }
   else if (QFileInfo(filename).suffix() == "pcap")
   {
-    this->runPython(QString("vv.openPCAP('%1')\n").arg(filename));
+    this->runPython(QString("lv.openPCAP('%1')\n").arg(filename));
   }
   else
   {
-    this->runPython(QString("vv.openData('%1')\n").arg(filename));
+    this->runPython(QString("lv.openData('%1')\n").arg(filename));
   }
 }
 
@@ -386,18 +386,18 @@ void pqLidarViewManager::onMeasurementGrid(bool gridVisible)
 
   if (gridVisible)
   {
-    this->runPython("vv.showMeasurementGrid()\n");
+    this->runPython("lv.showMeasurementGrid()\n");
   }
   else
   {
-    this->runPython("vv.hideMeasurementGrid()\n");
+    this->runPython("lv.hideMeasurementGrid()\n");
   }
 }
 
 //-----------------------------------------------------------------------------
 void pqLidarViewManager::onOpenSensor()
 {
-  this->runPython("vv.openSensor()\n");
+  this->runPython("lv.openSensor()\n");
 }
 
 //-----------------------------------------------------------------------------

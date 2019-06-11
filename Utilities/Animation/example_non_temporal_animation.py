@@ -8,7 +8,7 @@ output_directory = "/mnt/ramdisk"
 
 
 # example of ruler
-r1 = vv.createRuler()
+r1 = lv.createRuler()
 r1.Point1WorldPosition = [-1.0, 0.0, 0.0]
 r1.Point2WorldPosition = [1.0, 0.0, 0.0]
 r1.Visibility = True
