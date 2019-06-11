@@ -1,5 +1,7 @@
 #include "VelodynePacketInterpreterCommon.h"
 
+#include "vtkRollingDataAccumulator.h"
+
 #include <vtkMath.h>
 #include <vtkDoubleArray.h>
 
@@ -16,6 +18,170 @@ degreesToRadians(double degrees)
 {
   return (degrees * vtkMath::Pi()) / 180.0;
 }
+
+
+
+
+
+
+#pragma pack(push, 1)
+// Following struct are direct mapping from the manual
+//      "Velodyne, Inc. ©2013  63‐HDL64ES3 REV G" Appendix E. Pages 31-42
+struct HDLLaserCorrectionByte
+{
+  // This is the per laser 64-byte struct in the rolling data
+  // It corresponds to 4 cycles of (9 HW status bytes + 7 calibration bytes)
+  // WARNING data in packets are little-endian, which enables direct casting
+  //  in short ONLY on little-endian machines (Intel & Co are fine)
+
+  // Cycle n+0
+  unsigned char hour_cycle0;
+  unsigned char minutes_cycle0;
+  unsigned char seconds_cycle0;
+  unsigned char day_cycle0;
+  unsigned char month_cycle0;
+  unsigned char year_cycle0;
+  unsigned char gpsSignalStatus_cycle0;
+  unsigned char temperature_cycle0;
+  unsigned char firmwareVersion_cycle0;
+  unsigned char warningBit;          // 'U' in very first cycle (laser #0)
+  unsigned char reserved1;           // 'N' in very first cycle (laser #0)
+  unsigned char reserved2;           // 'I' in very first cycle (laser #0)
+  unsigned char reserved3;           // 'T' in very first cycle (laser #0)
+  unsigned char reserved4;           // '#' in very first cycle (laser #0)
+  unsigned char upperBlockThreshold; // only in very first cycle (laser #0)
+  unsigned char lowerBlockThreshold; // only in very first cycle (laser #0)
+
+  // Cycle n+1
+  unsigned char hour_cycle1;
+  unsigned char minutes_cycle1;
+  unsigned char seconds_cycle1;
+  unsigned char day_cycle1;
+  unsigned char month_cycle1;
+  unsigned char year_cycle1;
+  unsigned char gpsSignalStatus_cycle1;
+  unsigned char temperature_cycle1;
+  unsigned char firmwareVersion_cycle1;
+
+  unsigned char channel;
+  signed short verticalCorrection;    // This is in 100th of degree
+  signed short rotationalCorrection;  // This is in 100th of degree
+  signed short farDistanceCorrection; // This is in millimeter
+  // Cycle n+2
+  unsigned char hour_cycle2;
+  unsigned char minutes_cycle2;
+  unsigned char seconds_cycle2;
+  unsigned char day_cycle2;
+  unsigned char month_cycle2;
+  unsigned char year_cycle2;
+  unsigned char gpsSignalStatus_cycle2;
+  unsigned char temperature_cycle2;
+  unsigned char firmwareVersion_cycle2;
+
+  signed short distanceCorrectionX;
+  signed short distanceCorrectionV;
+  signed short verticalOffset;
+
+  unsigned char horizontalOffsetByte1;
+  // Cycle n+3
+  unsigned char hour_cycle3;
+  unsigned char minutes_cycle3;
+  unsigned char seconds_cycle3;
+  unsigned char day_cycle3;
+  unsigned char month_cycle3;
+  unsigned char year_cycle3;
+  unsigned char gpsSignalStatus_cycle3;
+  unsigned char temperature_cycle3;
+  unsigned char firmwareVersion_cycle3;
+
+  unsigned char horizontalOffsetByte2;
+
+  signed short focalDistance;
+  signed short focalSlope;
+
+  unsigned char minIntensity;
+  unsigned char maxIntensity;
+};
+
+struct last4cyclesByte
+{
+  // Cycle n+0
+  unsigned char hour_cycle0;
+  unsigned char minutes_cycle0;
+  unsigned char seconds_cycle0;
+  unsigned char day_cycle0;
+  unsigned char month_cycle0;
+  unsigned char year_cycle0;
+  unsigned char gpsSignalStatus_cycle0;
+  unsigned char temperature_cycle0;
+  unsigned char firmwareVersion_cycle0;
+
+  unsigned char calibration_year;
+  unsigned char calibration_month;
+  unsigned char calibration_day;
+  unsigned char calibration_hour;
+  unsigned char calibration_minutes;
+  unsigned char calibration_seconds;
+  unsigned char humidity;
+  // Cycle n+1
+  unsigned char hour_cycle1;
+  unsigned char minutes_cycle1;
+  unsigned char seconds_cycle1;
+  unsigned char day_cycle1;
+  unsigned char month_cycle1;
+  unsigned char year_cycle1;
+  unsigned char gpsSignalStatus_cycle1;
+  unsigned char temperature_cycle1;
+  unsigned char firmwareVersion_cycle1;
+
+  signed short motorRPM;
+  unsigned short fovStartAngle; // in 100th of degree
+  unsigned short fovEndAngle;   // in 100th of degree
+  unsigned char realLifeTimeByte1;
+  // Cycle n+2
+  unsigned char hour_cycle2;
+  unsigned char minutes_cycle2;
+  unsigned char seconds_cycle2;
+  unsigned char day_cycle2;
+  unsigned char month_cycle2;
+  unsigned char year_cycle2;
+  unsigned char gpsSignalStatus_cycle2;
+  unsigned char temperature_cycle2;
+  unsigned char firmwareVersion_cycle2;
+
+  unsigned char realLifeTimeByte2;
+
+  unsigned char sourceIPByte1;
+  unsigned char sourceIPByte2;
+  unsigned char sourceIPByte3;
+  unsigned char sourceIPByte4;
+
+  unsigned char destinationIPByte1;
+  unsigned char destinationIPByte2;
+  // Cycle n+3
+  unsigned char hour_cycle3;
+  unsigned char minutes_cycle3;
+  unsigned char seconds_cycle3;
+  unsigned char day_cycle3;
+  unsigned char month_cycle3;
+  unsigned char year_cycle3;
+  unsigned char gpsSignalStatus_cycle3;
+  unsigned char temperature_cycle3;
+  unsigned char firmwareVersion_cycle3;
+
+  unsigned char destinationIPByte3;
+  unsigned char destinationIPByte4;
+  unsigned char multipleReturnStatus; // 0= Strongest, 1= Last, 2= Both
+  unsigned char reserved3;
+  unsigned char powerLevelStatus;
+  unsigned short calibrationDataCRC;
+};
+
+#pragma pack(pop)
+
+
+
+
 
 //------------------------------------------------------------------------------
 // Code from the legacy packet format interpreter.
@@ -437,5 +603,62 @@ void VelodyneCalibrationData::GetXMLColorTable(double XMLColorTable[4 * HDL_MAX_
       XMLColorTable[i * 4 + j + 1] = this->XMLColorTable[i][j];
     }
   }
+}
+
+//-----------------------------------------------------------------------------
+bool VelodyneCalibrationData::HDL64LoadCorrectionsFromStreamData(vtkRollingDataAccumulator * rollingCalibrationData)
+{
+  std::vector<unsigned char> data;
+  if (!rollingCalibrationData->getAlignedRollingData(data))
+  {
+    return false;
+  }
+  // the rollingCalibrationData considers the marker to be "#" in reserved4
+  const int idxDSRDataFromMarker =
+    static_cast<int>(-reinterpret_cast<unsigned long>(&((HDLLaserCorrectionByte*)0)->reserved4));
+  const int HDL64_RollingData_NumLaser = 64;
+  for (int dsr = 0; dsr < HDL64_RollingData_NumLaser; ++dsr)
+  {
+    const HDLLaserCorrectionByte* correctionStream = reinterpret_cast<const HDLLaserCorrectionByte*>
+      // The 64 here is the length of the 4 16-byte cycle
+      //    containing one dsr information
+      (&data[idxDSRDataFromMarker + 64 * dsr]);
+    if (correctionStream->channel != dsr)
+    {
+      return false;
+    }
+    HDLLaserCorrection& vvCorrection = laser_corrections_[correctionStream->channel];
+    vvCorrection.verticalCorrection = correctionStream->verticalCorrection / 100.0;
+    vvCorrection.rotationalCorrection = correctionStream->rotationalCorrection / 100.0;
+    vvCorrection.distanceCorrection = correctionStream->farDistanceCorrection / 1000.0;
+
+    vvCorrection.distanceCorrectionX = correctionStream->distanceCorrectionX / 1000.0;
+    vvCorrection.distanceCorrectionY = correctionStream->distanceCorrectionV / 1000.0;
+    vvCorrection.verticalOffsetCorrection = correctionStream->verticalOffset / 1000.0;
+    // The following manipulation is needed because of the two byte for this
+    //  parameter are not side-by-side
+    vvCorrection.horizontalOffsetCorrection =
+      rollingCalibrationData->fromTwoLittleEndianBytes<signed short>(
+        correctionStream->horizontalOffsetByte1, correctionStream->horizontalOffsetByte2) /
+      1000.0;
+    vvCorrection.focalDistance = correctionStream->focalDistance / 1000.0;
+    vvCorrection.focalSlope = correctionStream->focalSlope / 1000.0;
+    vvCorrection.closeSlope = correctionStream->focalSlope / 1000.0;
+    vvCorrection.minIntensity = correctionStream->minIntensity;
+    vvCorrection.maxIntensity = correctionStream->maxIntensity;
+  }
+
+  // Get the last cycle of live correction file
+  const last4cyclesByte* lastCycle = reinterpret_cast<const last4cyclesByte*>(
+    &data[idxDSRDataFromMarker + 64 * HDL64_RollingData_NumLaser]);
+  this->SensorPowerMode = lastCycle->powerLevelStatus;
+  this->ReportedSensorReturnMode = ((lastCycle->multipleReturnStatus == 0)
+      ? STRONGEST_RETURN
+      : ((lastCycle->multipleReturnStatus == 1) ? LAST_RETURN : DUAL_RETURN));
+
+  this->CalibrationReportedNumLasers = HDL64_RollingData_NumLaser;
+  this->PrecomputeCorrectionCosSin();
+  this->IsCalibrated = true;
+  return true;
 }
 

@@ -123,6 +123,7 @@ protected:
   vtkSmartPointer<vtkIdTypeArray> DualReturnMatching;
 
   // sensor information
+  unsigned char SensorPowerMode;
   bool HasDualReturn;
   SensorType ReportedSensor;
   DualReturnSensorMode ReportedSensorReturnMode;
@@ -157,7 +158,7 @@ protected:
   vtkIdType LastPointId[HDL_MAX_NUM_LASERS];
   vtkIdType FirstPointIdOfDualReturnPair;
 
-  unsigned char SensorPowerMode;
+  unsigned char epororPowerMode;
 
   bool IsCorrectionFromLiveStream = true;
 

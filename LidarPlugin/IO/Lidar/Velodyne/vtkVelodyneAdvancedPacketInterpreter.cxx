@@ -909,14 +909,14 @@ public:
     decltype(this->LastAzimuth) azimuth     = firingGroupHeader->GetAzm(),
                                 lastAzimuth = this->LastAzimuth;
 
-    decltype(this->LastVertDeflection) vertDeflection = firingGroupHeader->GetVdfl(),
-                                       lastVertDeflection = this->LastVertDeflection;
+    decltype(this->LastVertDeflection) vertDeflection = firingGroupHeader->GetVdfl(); //,
+                                       // lastVertDeflection = this->LastVertDeflection;
     // Follow the logic of the legacy interpreter.
     int slope = static_cast<int>(azimuth) - static_cast<int>(lastAzimuth),
         lastSlope = this->LastSlope;
 
-    HorizontalDirection horDir = firingGroupHeader->GetHdir(),
-                        lastHorDir = this->LastHorDir;
+    HorizontalDirection horDir = firingGroupHeader->GetHdir(); //,
+                        // lastHorDir = this->LastHorDir;
 
     VerticalDirection vertDir = firingGroupHeader->GetVdir(),
                       lastVertDir = this->LastVertDir;
@@ -1007,7 +1007,16 @@ vtkStandardNewMacro(vtkVelodyneAdvancedPacketInterpreter)
 
 //----------------------------------------------------------------------------
 vtkVelodyneAdvancedPacketInterpreter::vtkVelodyneAdvancedPacketInterpreter()
-  : VDCalibrationData { CalibrationData }
+  : VDCalibrationData 
+    { 
+      CalibrationData, 
+      IsCalibrated,
+      IsCorrectionFromLiveStream,
+      CalibrationReportedNumLasers,
+      DistanceResolutionM,
+      SensorPowerMode,
+      ReportedSensorReturnMode
+    }
 {
   this->CurrentFrameTracker          = new FrameTracker();
   this->MaxFrameSize                 = MEM_STEP_SIZE;
@@ -1173,7 +1182,7 @@ vtkVelodyneAdvancedPacketInterpreter::ProcessPacket(
     auto coChannelSpan              = firingGroupHeader->GetFspn();
     auto coChannelTimeFractionDelay = firingGroupHeader->GetFdly();
     auto vdfl                       = firingGroupHeader->GetVdfl();
-    double verticalAngleInDegrees   = firingGroupHeader->GetVerticalDeflection();
+    // double verticalAngleInDegrees   = firingGroupHeader->GetVerticalDeflection();
     auto azimuth                    = firingGroupHeader->GetAzm();
     double azimuthInDegrees         = firingGroupHeader->GetAzimuth();
     auto numberOfFirings            = firingGroupHeader->GetFcnt();
@@ -1583,10 +1592,32 @@ vtkVelodyneAdvancedPacketInterpreter::SetNumberOfItems(size_t numberOfItems)
 void vtkVelodyneAdvancedPacketInterpreter::LoadCalibration(const std::string& filename)
 {
   this->VDCalibrationData.LoadCalibration(filename);
-  this->IsCalibrated = this->VDCalibrationData.GetIsCalibrated();
-  this->IsCorrectionFromLiveStream = this->VDCalibrationData.GetIsCorrectionFromLiveStream();
-  this->CalibrationReportedNumLasers = this->VDCalibrationData.GetCalibrationReportedNumLasers();
-  this->DistanceResolutionM = this->VDCalibrationData.GetDistanceResolutionM();
   this->CurrentFrameTracker->SetFramingLogic(this->VDCalibrationData.GetFramingLogic());
 }
 
+//-----------------------------------------------------------------------------
+void vtkVelodyneAdvancedPacketInterpreter::GetLaserCorrections(double verticalCorrection[HDL_MAX_NUM_LASERS],
+  double rotationalCorrection[HDL_MAX_NUM_LASERS], double distanceCorrection[HDL_MAX_NUM_LASERS],
+  double distanceCorrectionX[HDL_MAX_NUM_LASERS], double distanceCorrectionY[HDL_MAX_NUM_LASERS],
+  double verticalOffsetCorrection[HDL_MAX_NUM_LASERS],
+  double horizontalOffsetCorrection[HDL_MAX_NUM_LASERS], double focalDistance[HDL_MAX_NUM_LASERS],
+  double focalSlope[HDL_MAX_NUM_LASERS], double minIntensity[HDL_MAX_NUM_LASERS],
+  double maxIntensity[HDL_MAX_NUM_LASERS])
+{
+  auto laser_corrections_ = this->VDCalibrationData.GetLaserCorrections();
+  for (int i = 0; i < HDL_MAX_NUM_LASERS; ++i)
+  {
+    verticalCorrection[i] = laser_corrections_[i].verticalCorrection;
+    rotationalCorrection[i] = laser_corrections_[i].rotationalCorrection;
+    distanceCorrection[i] = laser_corrections_[i].distanceCorrection;
+    distanceCorrectionX[i] = laser_corrections_[i].distanceCorrectionX;
+    distanceCorrectionY[i] = laser_corrections_[i].distanceCorrectionY;
+    verticalOffsetCorrection[i] = laser_corrections_[i].verticalOffsetCorrection;
+    horizontalOffsetCorrection[i] =
+      laser_corrections_[i].horizontalOffsetCorrection;
+    focalDistance[i] = laser_corrections_[i].focalDistance;
+    focalSlope[i] = laser_corrections_[i].focalSlope;
+    minIntensity[i] = laser_corrections_[i].minIntensity;
+    maxIntensity[i] = laser_corrections_[i].maxIntensity;
+  }
+}

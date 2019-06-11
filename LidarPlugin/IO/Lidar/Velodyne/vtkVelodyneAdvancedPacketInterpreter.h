@@ -116,7 +116,7 @@ public:
     double verticalOffsetCorrection[HDL_MAX_NUM_LASERS],
     double horizontalOffsetCorrection[HDL_MAX_NUM_LASERS], double focalDistance[HDL_MAX_NUM_LASERS],
     double focalSlope[HDL_MAX_NUM_LASERS], double minIntensity[HDL_MAX_NUM_LASERS],
-                           double maxIntensity[HDL_MAX_NUM_LASERS]) { cout << "Not implemented yet" << endl;}
+    double maxIntensity[HDL_MAX_NUM_LASERS]);
 
 
 protected:
@@ -153,6 +153,8 @@ public:
   vtkSetMacro(WantIntensityCorrection, bool)
   vtkGetMacro(WantIntensityCorrection, bool)
   bool WantIntensityCorrection;
+  unsigned char SensorPowerMode;
+  DualReturnSensorMode ReportedSensorReturnMode;
 };
 
 #endif // VTK_VELODYNE_ADVANCED_PACKET_INTERPRETOR_H

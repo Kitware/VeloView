@@ -199,16 +199,20 @@ struct CorrectedValues
 //------------------------------------------------------------------------------
 //VelodyneCalibrationData
 //------------------------------------------------------------------------------
+class vtkRollingDataAccumulator;
+
 class VTK_EXPORT VelodyneCalibrationData
 {
 private:
   vtkTable * CalibrationData { nullptr };
 
-  bool IsCalibrated { false };
-  bool IsCorrectionFromLiveStream { false };
+  bool & IsCalibrated;
+  bool & IsCorrectionFromLiveStream;
   FramingLogic FrameLogic  { FramingLogic::FL_DEFAULT };
-  int CalibrationReportedNumLasers { -1 };
-  double DistanceResolutionM;
+  int & CalibrationReportedNumLasers;
+  double & DistanceResolutionM;
+  unsigned char & SensorPowerMode;
+  DualReturnSensorMode & ReportedSensorReturnMode;
 
   std::vector<double> cos_lookup_table_;
   std::vector<double> sin_lookup_table_;
@@ -220,7 +224,23 @@ public:
 	void InitTrigonometricTables();
   void PrecomputeCorrectionCosSin();
   void LoadCalibration(std::string const & filename);
-  VelodyneCalibrationData(vtkTable * calibDat) : CalibrationData { calibDat } {};
+  VelodyneCalibrationData(
+      vtkTable * calibDat,
+      bool & isCalib,
+      bool & isCorrFromLive,
+      int & calRepNumLas,
+      double & distResM,
+      unsigned char & sensPowMod,
+      DualReturnSensorMode & repSensRetMode
+      ) 
+    : CalibrationData { calibDat } 
+    , IsCalibrated { isCalib }
+    , IsCorrectionFromLiveStream { isCorrFromLive }
+    , CalibrationReportedNumLasers { calRepNumLas }
+    , DistanceResolutionM { distResM }
+    , SensorPowerMode { sensPowMod }
+    , ReportedSensorReturnMode { repSensRetMode }
+  {};
 
   /*!
    * @brief      Compute corrected position and other values using the Velodyne
@@ -238,14 +258,12 @@ public:
     bool correctIntensity = false
   );
 
+  bool HDL64LoadCorrectionsFromStreamData(vtkRollingDataAccumulator * rollingCalibrationData);
+
   void GetXMLColorTable(double XMLColorTable[4 * HDL_MAX_NUM_LASERS]);
 
   FramingLogic GetFramingLogic() { return this->FrameLogic; }
-  bool GetIsCalibrated() { return this->IsCalibrated; }
-  void SetIsCalibrated(bool isCal) { this->IsCalibrated = isCal; }
-  bool GetIsCorrectionFromLiveStream() { return this->IsCorrectionFromLiveStream; }
-  int GetCalibrationReportedNumLasers() { return this->CalibrationReportedNumLasers; }
-  double GetDistanceResolutionM() { return this->DistanceResolutionM; }
+
   // TODO
   // This is a temporary workaround to avoid breaking code in the legacy
   // interpreter that updates the corrections. All of those updates should be
