@@ -1,0 +1,123 @@
+variable:
+  # options specific to macOS builds
+  cmake_option_CMAKE_OSX_ARCHITECTURES: "x86_64"
+  cmake_option_CMAKE_OSX_DEPLOYMENT_TARGET: "10.12"
+  cmake_option_CMAKE_OSX_SYSROOT: "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.12.sdk"
+
+################################################################################
+### anchor jobs for OSX, they will be used accros multiple other jobs
+################################################################################
+# Currently the OSX job are executed in a sheel runner, every folder that is create remain
+.OSX_superbuild: &OSX_superbuild
+  stage: superbuild
+  script:
+    - git submodule update --init Superbuild/common-superbuild
+    - cd ..
+    # prepare directory, on OSX as we use the shell executor we need to remove
+    # the old directory
+    - rm -rf Superbuild-build/
+    - mkdir Superbuild-build/
+    - cd Superbuild-build/
+    # configure & generate
+    - cmake -DCMAKE_BUILD_TYPE:STRING=${cmake_option_CMAKE_BUILD_TYPE}
+      -DCMAKE_OSX_ARCHITECTURES:STRING=${cmake_option_CMAKE_OSX_ARCHITECTURES}
+      -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING=${cmake_option_CMAKE_OSX_DEPLOYMENT_TARGET}
+      -DCMAKE_OSX_SYSROOT:STRING=${cmake_option_CMAKE_OSX_SYSROOT}
+      ${CI_PROJECT_DIR}/Superbuild
+    # compile
+    - make -j8
+    # remove lidarview
+    - rm -rf common-superbuild/lidarview
+    # upload superbuild, Apple's Zip Utility, which I guess is use by gilab-ci
+    # produce corrupted file for large file, so we need to upload the cache manually
+    - cd ..
+    - echo "compressing and uploading Superbuild. This take some time..."
+    - tar jcf archive Superbuild-build/
+    - ~/mc config host add superbuild ${MINIO_CACHE_SERVER_ADDRESS} ${MINIO_CACHE_SERVER_ACCESS_KEY} ${MINIO_CACHE_SERVER_SECRET_KEY}
+    - ~/mc cp archive superbuild/runner/minio/project/808/${cache_patch}/${OS}/${CI_COMMIT_REF_NAME}-1
+
+.OSX_superbuild_manual: &OSX_superbuild_manual
+  # when: manual
+  <<: *OSX_superbuild
+
+.OSX_superbuild_schedule: &OSX_superbuild_schedule
+  <<: *OSX_superbuild
+  only:
+    - schedules
+
+.OSX_build: &OSX_build
+  stage: build
+  before_script: *unix_get_superbuild
+  script:
+    - cd Superbuild-build/
+    - make lidarview -j8
+  artifacts:
+    paths:
+     - Superbuild-build/lidarview
+    expire_in: 1 hr
+
+.OSX_test: &OSX_test
+  stage: test
+  before_script: *unix_get_superbuild
+  script:
+    - echo "test "
+
+.OSX_package: &OSX_package
+  stage: package
+  before_script: *unix_get_superbuild
+  dependencies: []
+  script:
+    - cd Superbuild-build
+    - make package -j8
+
+.OSX_package_manual: &OSX_package_manual
+  # when: manual
+  <<: *OSX_package
+  artifacts:
+    name: ${CI_JOB_NAME}
+    paths:
+     - Superbuild-build/*.dmg
+    expire_in: 1 hr
+
+.OSX_package_schedule: &OSX_package_schedule
+  <<: *OSX_package
+  artifacts:
+    name: ${CI_JOB_NAME}-nightly
+    paths:
+     - Superbuild-build/*.dmg
+    expire_in: 1 day
+  only:
+    - schedules
+
+#-------------------------------------------------------------------------------
+# jobs for OSX ElCapitan
+#-------------------------------------------------------------------------------
+.OSX_ElCapitan: &OSX_ElCapitan
+  tags:
+    - OSX_ElCapitan
+  variables:
+    OS: OSX_ElCapitan
+
+.OSX_ElCapitan_superbuild_manual:
+  <<: *OSX_ElCapitan
+  <<: *OSX_superbuild_manual
+
+.OSX_ElCapitan_superbuild_schedule:
+  <<: *OSX_ElCapitan
+  <<: *OSX_superbuild_schedule
+
+.OSX_ElCapitan_build:
+  <<: *OSX_ElCapitan
+  <<: *OSX_build
+
+.OSX_ElCapitan_test:
+  <<: *OSX_ElCapitan
+  <<: *OSX_test
+
+.OSX_ElCapitan_package_manual:
+  <<: *OSX_ElCapitan
+  <<: *OSX_package_manual
+
+.OSX_ElCapitan_package_schedule:
+  <<: *OSX_ElCapitan
+  <<: *OSX_package_schedule
