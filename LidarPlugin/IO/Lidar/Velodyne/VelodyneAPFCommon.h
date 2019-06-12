@@ -312,7 +312,7 @@ reinterpretCastWithChecks(uint8_t const * data, size_t dataLength, size_t index)
     return nullptr;
   }
   T const * objectPtr = reinterpret_cast<T const *>(data);
-  if (!objectPtr->IsValid())
+  if (!objectPtr->IsValid(dataLength))
   {
     return nullptr;
   }
@@ -327,7 +327,7 @@ reinterpretCastWithChecks(uint8_t const * data, size_t dataLength, size_t index)
 #define ADVANCE_INDEX_BY_HLEN_OR_RETURN(                                       \
   dataLength, index, objectPtr, returnValue)                                   \
   auto hlen = objectPtr->GetHlen();                                            \
-  if (hlen > (dataLength - index))                                             \
+  if ((dataLength < index) || (hlen > (dataLength - index)))                   \
   {                                                                            \
     return returnValue;                                                        \
   }                                                                            \
@@ -473,14 +473,19 @@ public:
   }
 
   /*!
-   * @brief Returns true if the packet header appears to be a valid version 1
-   *        header.
+   * @brief     Returns true if the packet header appears to be a valid version
+   *            1 header.
+   * @param[in] length The number of bytes available for casting.
    */
   inline bool
-  IsValid() const
+  IsValid(size_t length) const
   {
-    return (this->GetVer() == 1) && (this->GetHlen() >= 5) &&
-           (this->GetGlen() >= 2);
+    return (
+        (this->GetVer() == 1) &&
+        (this->GetHlen() >= 5) &&
+        (this->GetHlen() <= length) &&
+        (this->GetGlen() >= 2)
+      );
   }
 
   //! @brief Get the minimum required length of this header, in bytes.
@@ -550,12 +555,17 @@ public:
     return 2;
   }
 
-  //! @brief Check if this extension header appears to be valid.
+  /*!
+   * @brief     Check if this extension header appears to be valid.
+   * @param[in] length The number of bytes available for casting.
+   */
   inline bool
-  IsValid() const
+  IsValid(size_t length) const
   {
-    // Empty extension headers make no sense so consider them invalid.
-    return (this->GetHlen() > 2);
+    return (
+        (this->GetHlen() > 0) &&
+        (this->GetHlen() <= length)
+      );
   }
 };
 #pragma pack(pop)
@@ -675,9 +685,12 @@ public:
     return 8;
   }
 
-  //! @brief True if the firing group appears to be valid.
+  /*!
+   * @brief     Check if this extension header appears to be valid.
+   * @param[in] length The number of bytes available for casting.
+   */
   inline bool
-  IsValid() const
+  IsValid(size_t length) const
   {
     return (this->GetFcnt() > 0);
   }
@@ -737,9 +750,12 @@ public:
     return 4;
   }
 
-  //! @brief True if the firing head appears to be valid.
+  /*!
+   * @brief     Check if this extension header appears to be valid.
+   * @param[in] length The number of bytes available for casting.
+   */
   inline bool
-  IsValid() const
+  IsValid(size_t length) const
   {
     return true;
   }

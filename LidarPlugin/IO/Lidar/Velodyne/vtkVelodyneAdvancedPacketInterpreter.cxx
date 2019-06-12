@@ -371,12 +371,12 @@ vtkVelodyneAdvancedPacketInterpreter::ProcessPacket(
         // values are provided. The test data was not provided so the cause
         // could not be determined with certainty. This check was added as a
         // precaution but it may be unnecessary and unrelated.
-        auto remainingBytes = dataLength - index;
-        if (remainingBytes > numberOfBytesPerFiringReturn)
+        decltype(dataLength) availableBytes = ((dataLength > index) ? dataLength - index : 0);
+        if (availableBytes > numberOfBytesPerFiringReturn)
         {
-          remainingBytes = numberOfBytesPerFiringReturn;
+          availableBytes = numberOfBytesPerFiringReturn;
         }
-        FiringReturn firingReturn(data + index, remainingBytes);
+        FiringReturn firingReturn(data + index, availableBytes);
         index += numberOfBytesPerFiringReturn;
 
         uint32_t distance = firingReturn.GetDistance<uint32_t>(distanceSize);
