@@ -31,8 +31,8 @@ void vtkSlamManager::PrintSelf(std::ostream &os, vtkIndent indent)
   os << indent << "Slam Manager: " << std::endl;
   #define PrintParameter(param) os << indent << #param << " " << this->param << std::endl;
   PrintParameter(AllFrame)
-  PrintParameter(StartFrame)
-  PrintParameter(EndFrame)
+  PrintParameter(FirstFrame)
+  PrintParameter(LastFrame)
   PrintParameter(StepSize)
   vtkIndent paramIndent = indent.GetNextIndent();
   this->Superclass::PrintSelf(os, paramIndent);
@@ -67,19 +67,19 @@ int vtkSlamManager::RequestData(vtkInformation *request, vtkInformationVector **
     vtkErrorMacro("StepSize must be greater than zero!")
     return 0;
   }
-  if (this->EndFrame < 0 || this->StartFrame < 0)
+  if (this->LastFrame < 0 || this->FirstFrame < 0)
   {
-    vtkErrorMacro("StartFrame and EndFrame must be positive integers!")
+    vtkErrorMacro("FirstFrame and LastFrame must be positive integers!")
     return 0;
   }
-  if (this->StartFrame > nb_time_steps - 1 || this->EndFrame > nb_time_steps -1)
+  if (this->FirstFrame > nb_time_steps - 1 || this->LastFrame > nb_time_steps -1)
   {
-    vtkErrorMacro("The dataset only has" << nb_time_steps << " frames!")
+    vtkErrorMacro("The dataset only has " << nb_time_steps << " frames!")
     return 0;
   }
-  if (this->EndFrame < this->StartFrame )
+  if (this->LastFrame < this->FirstFrame )
   {
-    vtkErrorMacro(<< "The end frame must come after the start frame!")
+    vtkErrorMacro(<< "The last frame must come after the first frame!")
     return 0;
   }
 
@@ -99,17 +99,18 @@ int vtkSlamManager::RequestData(vtkInformation *request, vtkInformationVector **
     }
     this->FirstIteration = false;
     this->Reset();
-    this->CurrentFrame = this->AllFrame ? 0 : this->StartFrame;
+    this->CurrentFrame = this->AllFrame ? 0 : this->FirstFrame;
   }
 
-  // relaunch the pipeline if needed
-  int stop = this->AllFrame ? nb_time_steps : this->EndFrame;
-  int start = this->AllFrame ? nb_time_steps : this->StartFrame;
-  bool LastIteration = !(this->CurrentFrame <= stop - this->StepSize);
-  if (!LastIteration)
+  // relaunch the pipeline if necessary
+  int firstFrame = this->AllFrame ? 0 : this->FirstFrame;
+  int lastFrame = this->AllFrame ? nb_time_steps - 1 : this->LastFrame;
+  int candidateNextFrame = this->CurrentFrame + this->StepSize;
+  bool lastIteration = candidateNextFrame > lastFrame;
+  if (!lastIteration)
   {
     request->Set(vtkStreamingDemandDrivenPipeline::CONTINUE_EXECUTING(), 1);
-    this->CurrentFrame += this->StepSize;
+    this->CurrentFrame = candidateNextFrame;
   }
   // stop the pipeline
   else
@@ -118,14 +119,15 @@ int vtkSlamManager::RequestData(vtkInformation *request, vtkInformationVector **
     this->FirstIteration = true;
     this->LastModifyTime = this->ParametersModificationTime.GetMTime();
   }
-  double progress = double(this->CurrentFrame-start)/double(stop-start);
+  double progress = static_cast<double>(this->CurrentFrame - firstFrame)
+      / static_cast<double>(lastFrame - firstFrame);
   this->UpdateProgress(progress);
 
   // process the frame
   vtkSlam::RequestData(request, inputVector, outputVector);
 
   // save data to the cache at the end
-  if (LastIteration)
+  if (lastIteration)
   {
     this->Cache.clear();
     for (int i = 0; i < this->GetNumberOfOutputPorts(); ++i)
