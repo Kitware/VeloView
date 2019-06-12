@@ -1,3 +1,3 @@
 pv_plugin(LidarPlugin
-  DESCRIPTION "Plugin to read Veldyone HDL data files"
+  DESCRIPTION "Plugin to read Lidar data files"
 )

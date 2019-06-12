@@ -51,9 +51,9 @@ def showDialog(mainWindow):
     textBoxContent = '''<h4>Want more ? Ask Kitware !</h4>
                         Kitware Inc. is a leading provider of open-source software systems for technical and scientific computing.
                         We are the developers of LidarView, providing real-time interactive visualization of live captured 3D LiDAR
-                        data from Velodyne's sensors. We create customized solutions providing detection and tracking of people,
+                        data from Lidar sensors. We create customized solutions providing detection and tracking of people,
                         street signs, lane markings, vehicles, industrial machinery, and building facades from within LidarView or using
-                        combinations of point cloud and video data. We also provide Lidar-based SLAM algorithms for other Velodyne's integrators.
+                        combinations of point cloud and video data. We also provide Lidar-based SLAM algorithms for Lidar integrators.
                         We work with customers to create tailored solutions using proven open-source
                         technologies, avoiding vendor lock-in and leveraging our world-leading experience in visualization, computer vision, high-performance
                         computing, and test-driven high-quality software process.<br />
