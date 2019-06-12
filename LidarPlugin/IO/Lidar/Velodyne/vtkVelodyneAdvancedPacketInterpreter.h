@@ -5,6 +5,7 @@
 #include <vtkUnsignedCharArray.h>
 #include <vtkUnsignedIntArray.h>
 #include <vtkDoubleArray.h>
+// #include <vtkStringArray.h>
 #include "vtkVelodyneBasePacketInterpreter.h"
 
 #include <memory>
@@ -96,7 +97,7 @@ public:
   vtkSmartPointer<vtkUnsignedIntArray>    INFO_Confidences;
   vtkSmartPointer<vtkUnsignedIntArray>    INFO_Intensities;
   vtkSmartPointer<vtkUnsignedIntArray>    INFO_Reflectivities;
-  /*
+/*
   vtkSmartPointer<vtkStringArray>         INFO_DistanceTypeStrings;
   vtkSmartPointer<vtkStringArray>         INFO_FiringModeStrings;
   vtkSmartPointer<vtkStringArray>         INFO_StatusStrings;

@@ -104,6 +104,7 @@ VAPI_DECLARE_BIG_TO_NATIVE(uint64_t)
 	(Powers)                \
 	(Pseqs)                 \
 	(TimeFractionOffsets)
+	// (DistanceTypeStrings)   \
 
 //! @brief Wrapper around BOOST_PP_CAT for use with BOOST_PP_SEQ_TRANSFORM.
 #define VAPI_ADD_PREFIX(index, prefix, elem) BOOST_PP_CAT(prefix, elem)
@@ -198,12 +199,13 @@ DEFINE_ENUM(
 DEFINE_ENUM(
   IntensityType,
   ISET_,
-  ((REFLECTIVITY , (0u)))
-  ((INTENSITY    , (1u << 0)))
-  ((CONFIDENCE   , (1u << 1)))
-  ((RESERVED     , (1u << 2))),
+  ((REFLECTIVITY , (1u << 0)))
+  ((INTENSITY    , (1u << 1)))
+  ((CONFIDENCE   , (1u << 2)))
+  ((RESERVED     , (1u << 3))),
   RESERVED
   )
+
 
 //------------------------------------------------------------------------------
 //! @brief Mask format to specify values in returned distance set.
@@ -211,11 +213,12 @@ DEFINE_ENUM(
 DEFINE_ENUM(
   DistanceType,
   DSET_,
-  ((FIRST            , (0u)))
-  ((STRONGEST        , (1u << 0)))
-  ((SECOND_STRONGEST , (1u << 1)))
-  ((LAST             , (1u << 2)))
-  ((RESERVED         , (1u << 3))),
+  ((UNSPECIFIED      , (0)))
+  ((FIRST            , (1u << 0)))
+  ((STRONGEST        , (1u << 1)))
+  ((SECOND_STRONGEST , (1u << 2)))
+  ((LAST             , (1u << 3)))
+  ((RESERVED         , (1u << 4))),
   RESERVED
 )
 
@@ -428,7 +431,7 @@ public:
   uint8_t
   GetDistanceSizeInBytes() const
   {
-    return (bitRangeValue<uint8_t>(this->Dset, 9, 1) ? 3 : 2);
+    return (bitRangeValue<uint8_t>(this->Dset, 7, 1) ? 3 : 2);
   }
 
   //! @brief True if the distance set includes a mask, false if a count.
@@ -451,14 +454,7 @@ public:
   uint8_t
   GetIntensityCount() const
   {
-    if (this->GetDset() == 0)
-    {
-      return 0;
-    }
-    else
-    {
-      return SET_BITS_IN_BYTE[this->Iset];
-    }
+    return SET_BITS_IN_BYTE[this->Iset];
   }
 
   //! @brief The the number of bytes per firing return.
@@ -778,6 +774,7 @@ class FiringReturn
 private:
   //! @brief The packed data with the return values.
   uint8_t const * Data;
+  uint8_t const MaxLength;
 
 public:
   //@{
@@ -814,7 +811,8 @@ public:
   T
   GetIntensity(uint8_t bytesPerDistance, uint8_t i) const
   {
-    return this->Data[bytesPerDistance + i];
+    i += bytesPerDistance;
+    return ((i < this->MaxLength) ? this->Data[i] : 0);
   }
 
   //! @brief Get an intensity from this firing by type.
@@ -831,7 +829,7 @@ public:
       // throw std::out_of_range("requested intensity type is not in the
       // intensity set");
     }
-    uint8_t i = 0;
+    uint8_t i = bytesPerDistance;
 
     // Count the number of bits set before the requested one. `mask` constains a
     // single set bit. By decrementing the value, we obtain a mask over all
@@ -840,13 +838,13 @@ public:
     uint8_t mask = static_cast<uint8_t>(type);
     if (mask)
     {
-      mask--;
+      --mask;
       i += SET_BITS_IN_BYTE[iset & mask];
     }
-    return this->Data[bytesPerDistance + i];
+    return ((i < this->MaxLength) ? this->Data[i] : 0);
   }
 
-  FiringReturn(uint8_t const * data) : Data(data) {};
+  FiringReturn(uint8_t const * data, uint8_t const maxLen) : Data(data), MaxLength(maxLen) {};
 };
 #pragma pack(pop)
 
@@ -1061,8 +1059,7 @@ vtkVelodyneAdvancedPacketInterpreter::ProcessPacket(
 
   size_t numberOfBytesPerFiringGroupHeader = payloadHeader->GetGlen();
   size_t numberOfBytesPerFiringHeader      = payloadHeader->GetFlen();
-  size_t numberOfBytesPerFiringReturn =
-    payloadHeader->GetNumberOfBytesPerFiringReturn();
+  size_t numberOfBytesPerFiringReturn = payloadHeader->GetNumberOfBytesPerFiringReturn();
   size_t numberOfBytesPerFiring = payloadHeader->GetNumberOfBytesPerFiring();
 
   // Skip optional extension headers.
@@ -1079,13 +1076,13 @@ vtkVelodyneAdvancedPacketInterpreter::ProcessPacket(
     nxhdr = extensionHeader->GetNxhdr();
   }
 
-  // The included distance types are specified by a bit mask (if DSET included
-  // it), for example 0110 indicates the presence of distance type 0100 and
-  // 0010. To display this information, we need to retrieve the type below in
-  // the firing loop. To avoid redundant bit calculations to retrieve the nth
-  // bit from the mask, we can define a vector that we can easily index below
-  // instead. The order of the distance types is determined by their bit values
-  // in the mask per the standard so this is safe.
+  // The included distance types may be specified by a bit mask in DSET, for
+  // example 0110 indicates the presence of distance type 0100 and 0010. To
+  // display this information, we need to retrieve the type in the firing loop
+  // below. To avoid redundant bit calculations to retrieve the nth bit from the
+  // mask, we cache the results in a vector instead. The order of the distance
+  // types is determined by their bit values in the mask per the specification
+  // so this is safe.
 
   // To do this, we start with the DSET mask and determine the value of the
   // first set bit. This is the distance type of the first distance. We then
@@ -1139,17 +1136,18 @@ vtkVelodyneAdvancedPacketInterpreter::ProcessPacket(
 
     // Skip the firings and jump to the next firing group header.
     if (
-      (loopCount++) <
-      static_cast<size_t>(reinterpret_cast<VelodyneSpecificFrameInformation *>(
-        this->ParserMetaData.SpecificInformation.get())
-        ->FiringToSkip))
+      (loopCount++) < static_cast<size_t>(
+        reinterpret_cast<VelodyneSpecificFrameInformation *>(
+          this->ParserMetaData.SpecificInformation.get()
+        )->FiringToSkip
+      )
+    )
     {
       index += numberOfBytesPerFiring * firingGroupHeader->GetFcnt();
       continue;
     }
 
-    bool isNewFrame =
-      this->CurrentFrameTracker->Update(payloadHeader, firingGroupHeader);
+    bool isNewFrame = this->CurrentFrameTracker->Update(payloadHeader, firingGroupHeader);
     if (isNewFrame)
     {
       this->SplitFrame();
@@ -1169,12 +1167,10 @@ vtkVelodyneAdvancedPacketInterpreter::ProcessPacket(
       // TODO
       // This assumes that the spans are returned in order in the firing group.
       // Check that this is the case. If not, determine how to handle this (by
-      // using the channe number?).
-      uint32_t channelTimeFractionOffset =
-        timeFractionOffset + (coChannelTimeFractionDelay * (i / coChannelSpan));
+      // using the channel number?).
+      uint32_t channelTimeFractionOffset = timeFractionOffset + (coChannelTimeFractionDelay * (i / coChannelSpan));
 
-      FiringHeader const * firingHeader =
-        reinterpretCastWithChecks<FiringHeader>(data, dataLength, index);
+      FiringHeader const * firingHeader = reinterpretCastWithChecks<FiringHeader>(data, dataLength, index);
       if (firingHeader == nullptr)
       {
         return;
@@ -1198,7 +1194,20 @@ vtkVelodyneAdvancedPacketInterpreter::ProcessPacket(
 
       for (distanceIndex = 0; distanceIndex < distanceCount; ++distanceIndex)
       {
-        FiringReturn firingReturn(data + index);
+        // Given the checks in place in IsLidarPacket and above, this should not
+        // be necessary because this point of code should only be reached by
+        // well-formed packets of the expected length.
+        //
+        // This was added due to a bug reported about a crash when no intensity
+        // values are provided. The test data was not provided so the cause
+        // could not be determined with certainty. This check was added as a
+        // precaution but it may be unnecessary and unrelated.
+        auto remainingBytes = dataLength - index;
+        if (remainingBytes > numberOfBytesPerFiringReturn)
+        {
+          remainingBytes = numberOfBytesPerFiringReturn;
+        }
+        FiringReturn firingReturn(data + index, remainingBytes);
         index += numberOfBytesPerFiringReturn;
 
         uint32_t distance = firingReturn.GetDistance<uint32_t>(distanceSize);
@@ -1210,10 +1219,10 @@ vtkVelodyneAdvancedPacketInterpreter::ProcessPacket(
         RawValues rawValues(azimuth, vdfl, distance);
         CorrectedValues correctedValues;
         double (& position)[3] = correctedValues.position;
-        
+
         this->ComputeCorrectedValues(
           rawValues,
-          channelNumber, 
+          channelNumber,
           correctedValues,
           false);
 
@@ -1230,12 +1239,14 @@ vtkVelodyneAdvancedPacketInterpreter::ProcessPacket(
 #define VAPI_SET_VALUE(my_array, value)                                        \
   this->INFO_##my_array->SetValue(arrayIndex, value);
 
+        auto distType = distanceTypes[distanceIndex];
         VAPI_SET_VALUE(Xs, position[0])
         VAPI_SET_VALUE(Ys, position[1])
         VAPI_SET_VALUE(Zs, position[2])
         VAPI_SET_VALUE(Azimuths, azimuthInDegrees)
         VAPI_SET_VALUE(Distances, correctedValues.distance)
-        VAPI_SET_VALUE(DistanceTypes, distanceTypes[distanceIndex])
+        VAPI_SET_VALUE(DistanceTypes, distType)
+        // VAPI_SET_VALUE(DistanceTypeStrings, toString(toDistanceType(distType)))
         VAPI_SET_VALUE(Pseqs, pseq)
         VAPI_SET_VALUE(ChannelNumbers, channelNumber)
         VAPI_SET_VALUE(TimeFractionOffsets, channelTimeFractionOffset)
@@ -1292,22 +1303,26 @@ vtkVelodyneAdvancedPacketInterpreter::IsLidarPacket(
     nxhdr = extensionHeader->GetNxhdr();
   }
 
-  size_t numberOfBytesPerFiring = payloadHeader->GetNumberOfBytesPerFiring();
-  size_t numberOfBytesPerFiringGroupHeader = payloadHeader->GetGlen();
-
-  while (index < dataLength)
+  // Check for empty distance counts, which mean there are no firings.
+  if (payloadHeader->GetDistanceCount() != 0)
   {
-    FiringGroupHeader const * firingGroupHeader =
-      reinterpretCastWithChecks<FiringGroupHeader>(data, dataLength, index);
-    if (firingGroupHeader == nullptr)
+    size_t numberOfBytesPerFiring = payloadHeader->GetNumberOfBytesPerFiring();
+    size_t numberOfBytesPerFiringGroupHeader = payloadHeader->GetGlen();
+
+    while (index < dataLength)
     {
-      return false;
+      FiringGroupHeader const * firingGroupHeader =
+        reinterpretCastWithChecks<FiringGroupHeader>(data, dataLength, index);
+      if (firingGroupHeader == nullptr)
+      {
+        return false;
+      }
+      // TODO
+      // Add firing header checks if necessary here. See ProcessPacket for an
+      // example of how to loop over each firing and advance the index.
+      index += (numberOfBytesPerFiring * firingGroupHeader->GetFcnt()) +
+        numberOfBytesPerFiringGroupHeader;
     }
-    // TODO
-    // Add firing header checks if necessary here. See ProcessPacket for an
-    // example of how to loop over each firing and advance the index.
-    index += (numberOfBytesPerFiring * firingGroupHeader->GetFcnt()) +
-             numberOfBytesPerFiringGroupHeader;
   }
 
   // return true;
@@ -1378,10 +1393,12 @@ vtkVelodyneAdvancedPacketInterpreter::CreateNewEmptyFrame(
   VAPI_INIT_INFO_ARR(Distances, "raw_distance")
   VAPI_INIT_INFO_ARR(DistanceTypes, "distance_type")
   VAPI_INIT_INFO_ARR(Azimuths, "azimuth")
-  VAPI_INIT_INFO_ARR(VerticalAngles, "vertical_angle") /*
-VAPI_INIT_INFO_ARR(DistanceTypeStrings  , "Distance Type")
-VAPI_INIT_INFO_ARR(FiringModeStrings    , "FiringMode")
-VAPI_INIT_INFO_ARR(StatusStrings        , "Status")*/
+  VAPI_INIT_INFO_ARR(VerticalAngles, "vertical_angle")
+/*
+  VAPI_INIT_INFO_ARR(DistanceTypeStrings  , "distance_type_name")
+  VAPI_INIT_INFO_ARR(FiringModeStrings    , "firing_mode")
+  VAPI_INIT_INFO_ARR(StatusStrings        , "status")
+*/
   VAPI_INIT_INFO_ARR(Intensities, "intensity")
   VAPI_INIT_INFO_ARR(Confidences, "confidence")
   VAPI_INIT_INFO_ARR(Reflectivities, "reflectivity")
