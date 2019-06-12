@@ -14,6 +14,10 @@
 
 #include "vvPacketSender.h"
 
+#ifdef APF_PACKET_MANGLING
+#include "VelodyneAPFPacketMangling.h"
+#endif // APF_PACKET_MANGLING
+
 //-----------------------------------------------------------------------------
 vvPacketSender::vvPacketSender(
   std::string pcapfile, std::string destinationIp, int lidarPort, int positionPort)
@@ -80,6 +84,16 @@ double vvPacketSender::pumpPacket()
   }
   else // Lidar packet
   {
+#ifdef APF_PACKET_MANGLING
+    size_t strippedDataLength = 0;
+    unsigned char * mangledData = stripIntensities(data, dataLength, strippedDataLength);
+    if (mangledData != nullptr)
+    {
+      // free(data);
+      data = mangledData;
+      dataLength = strippedDataLength;
+    }
+#endif // APF_PACKET_MANGLING
     this->LIDARSocket->send_to(
       boost::asio::buffer(data, dataLength), this->LIDAREndpoint);
   }
