@@ -495,8 +495,9 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
     # reader which scans the pcap file and emits progress events
     reader = smp.LidarReader(guiName='Data',
                              FileName = filename,
-                             CalibrationFile = calibrationFile)
-    reader.Interpreter = 'Velodyne Meta Interpreter'
+                             CalibrationFile = calibrationFile,
+                             Interpreter = 'Velodyne Meta Interpreter',
+                             )
     reader.Interpreter.UseIntraFiringAdjustment = app.actions['actionIntraFiringAdjust'].isChecked()
 
     reader.UpdatePipelineInformation()

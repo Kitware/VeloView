@@ -69,12 +69,20 @@ int vtkLidarReader::ReadFrameInformation()
   {
     vtkErrorMacro("The calibration could not be determined from the pcap file!");
   }
+  if (this->FrameCatalog.size() == 1)
+  {
+    vtkGenericWarningMacro("The reader could not parse the pcap file")
+  }
   return this->GetNumberOfFrames();
 }
 
 //-----------------------------------------------------------------------------
 void vtkLidarReader::SetTimestepInformation(vtkInformation *info)
 {
+  if (this->FrameCatalog.size() == 1)
+  {
+    return;
+  }
   size_t numberOfTimesteps = this->FrameCatalog.size();
   std::vector<double> timesteps(numberOfTimesteps);
   double timeOffset = this->GetInterpreter()->GetTimeOffset();
@@ -82,7 +90,6 @@ void vtkLidarReader::SetTimestepInformation(vtkInformation *info)
   {
     timesteps[i] = this->FrameCatalog[i].FirstPacketNetworkTime + timeOffset;
   }
-
   if (this->FrameCatalog.size())
   {
     double* firstTimestepPointer = &timesteps.front();
@@ -360,6 +367,14 @@ int vtkLidarReader::RequestData(vtkInformation *vtkNotUsed(request),
     return 0;
   }
 
+  vtkTable *t = this->Interpreter->GetCalibrationTable();
+  calibration->ShallowCopy(t);
+
+  if (this->FrameCatalog.size())
+  {
+    return 1;
+  }
+
   double timestep = 0.0;
   if (info->Has(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP()))
   {
@@ -401,9 +416,6 @@ int vtkLidarReader::RequestData(vtkInformation *vtkNotUsed(request),
   output->ShallowCopy(this->GetFrame(frameRequested));
   this->Close();
 
-  vtkTable *t = this->Interpreter->GetCalibrationTable();
-  calibration->ShallowCopy(t);
-
   return 1;
 }
 
@@ -413,7 +425,7 @@ int vtkLidarReader::RequestInformation(vtkInformation* request,
                                        vtkInformationVector* outputVector)
 {
   this->Superclass::RequestInformation(request, inputVector, outputVector);
-  if (!this->FileName.empty() && this->FrameCatalog.empty())
+  if (this->Interpreter && !this->FileName.empty() && this->FrameCatalog.empty())
   {
     this->ReadFrameInformation();
   }
