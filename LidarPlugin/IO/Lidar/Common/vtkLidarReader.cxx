@@ -372,7 +372,7 @@ int vtkLidarReader::RequestData(vtkInformation *vtkNotUsed(request),
   vtkTable *t = this->Interpreter->GetCalibrationTable();
   calibration->ShallowCopy(t);
 
-  if (this->FrameCatalog.size())
+  if (this->FrameCatalog.size() <= 1)
   {
     return 1;
   }
