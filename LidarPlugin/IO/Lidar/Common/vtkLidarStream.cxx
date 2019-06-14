@@ -85,7 +85,9 @@ void vtkLidarStream::SetLidarPort(int value)
 {
   if (this->Network->LidarPort != value)
   {
-    bool wasRunning = this->Network && this->Network->Thread->joinable() && this->Network->LidarPortReceiver;
+    bool wasRunning = this->Network != nullptr
+        && this->Network->Thread != nullptr && this->Network->Thread->joinable()
+        && this->Network->LidarPortReceiver != nullptr;
     this->Stop();
     this->Network->LidarPort = value;
     if (wasRunning)
