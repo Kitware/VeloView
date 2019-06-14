@@ -65,13 +65,9 @@ int vtkLidarReader::ReadFrameInformation()
     this->Reader->GetFilePosition(&lastFilePosition);
   }
 
-  if (!this->Interpreter->GetIsCalibrated())
-  {
-    vtkErrorMacro("The calibration could not be determined from the pcap file!");
-  }
   if (this->FrameCatalog.size() == 1)
   {
-    vtkGenericWarningMacro("The reader could not parse the pcap file")
+    vtkErrorMacro("The reader could not parse the pcap file")
   }
   return this->GetNumberOfFrames();
 }
@@ -364,6 +360,12 @@ int vtkLidarReader::RequestData(vtkInformation *vtkNotUsed(request),
   if (!this->Interpreter->GetIsCalibrated())
   {
     vtkErrorMacro("Corrections have not been set");
+    return 0;
+  }
+
+  if (!this->Interpreter->GetIsCalibrated())
+  {
+    vtkErrorMacro("The calibration could not be determined from the pcap file!");
     return 0;
   }
 
