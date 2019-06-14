@@ -1,4 +1,4 @@
-set(SOFTWARE_NAME "LidarView")
+set(SOFTWARE_NAME "VeloView")
 set(VENDOR "Velodyne Lidar")
 set(PROJECT_NAME "${SOFTWARE_NAME}")
 
