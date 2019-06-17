@@ -253,6 +253,8 @@ void LASFileWriter::SetGeoConversionUTM(int inOutSignedUTMZone, bool useLatLonFo
     utmparamsOut << "+no_defs ";
     this->OutProj = pj_init_plus(utmparamsOut.str().c_str());
     std::cout << "init Out : " << utmparamsOut.str() << std::endl;
+    // 4326 is EPSG ID code for lat-long-alt coordinates
+    this->OutGcsEPSG = 4326;
   }
   else
   {
@@ -270,9 +272,8 @@ void LASFileWriter::SetGeoConversionUTM(int inOutSignedUTMZone, bool useLatLonFo
     utmparamsOut << "+datum=WGS84 ";
     utmparamsOut << "+no_defs ";
     this->OutProj = pj_init_plus(utmparamsOut.str().c_str());
+    this->OutGcsEPSG = SignedUTMToEPSG(inOutSignedUTMZone);
   }
-
-  this->OutGcsEPSG = SignedUTMToEPSG(inOutSignedUTMZone);
 
   std::cout << "InProj created : " << this->InProj << std::endl;
   std::cout << "OutProj created : " << this->OutProj << std::endl;

@@ -48,12 +48,16 @@ int vtkLASFileWriter::Write()
   }
 
   this->LASWriter.Open(this->FileName);
-  this->LASWriter.SetGeoConversionUTM(this->InOutSignedUTMZone, false);
+
+  bool useLatLonForOut = this->ExportType == EXPORT_LATLONG;
+  this->LASWriter.SetGeoConversionUTM(this->InOutSignedUTMZone, useLatLonForOut);
   // Mind the order for this the parameters for SetOrigin
   // This is a bit strange, but the exports seem to be correct.
   // Strange because if the input is ENU then this corresponds to switching to
   // a left handed referential (two axis are switched without flipping the
   // third).
+  // Mind that SetOrigin will use this->LASWriter->OutGcsEPSG to write the
+  // LAS header
   this->LASWriter.SetOrigin(Offset[1], Offset[0], Offset[2]);
   this->LASWriter.SetPrecision(1e-3, 1e-3);
 

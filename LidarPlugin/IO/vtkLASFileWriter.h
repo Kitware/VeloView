@@ -62,6 +62,9 @@ public:
   vtkSetMacro(FrameStride, int)
   vtkGetMacro(FrameStride, int)
 
+  vtkSetMacro(ExportType, int)
+  vtkGetMacro(ExportType, int)
+
   vtkSetMacro(InOutSignedUTMZone, int)
   vtkGetMacro(InOutSignedUTMZone, int)
 
@@ -80,6 +83,12 @@ public:
                   vtkInformationVector*) VTK_OVERRIDE; // from vtkAlgorithm
   // For debug purpose only:
   void Update() VTK_OVERRIDE; // from vtkAlgorithm
+
+  enum
+  {
+    EXPORT_UTM = 0,
+    EXPORT_LATLONG = 1,
+  };
 
 protected:
   vtkLASFileWriter();
@@ -105,6 +114,7 @@ private:
   int FrameStride = 1;
   int NumberOfFrames = 0;
   int CurrentFrame = 0;
+  int ExportType = EXPORT_UTM;
   int InOutSignedUTMZone = 0;
   bool SkipMetaDataPass = false;
   int CurrentPass = 0; // pass 0 is to compute the header, pass 1 is to write
