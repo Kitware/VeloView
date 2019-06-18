@@ -55,6 +55,7 @@ uint8_t * stripIntensities(uint8_t const * data, size_t dataLength, size_t & str
 
     while (index < dataLength)
     {
+      align_to_word_size(index);
       FiringGroupHeader const * firingGroupHeader = reinterpretCastWithChecks<FiringGroupHeader>(data, dataLength, index);
       if (firingGroupHeader == nullptr)
       {
@@ -67,6 +68,7 @@ uint8_t * stripIntensities(uint8_t const * data, size_t dataLength, size_t & str
         numberOfBytesPerFiringGroupHeader;
 
       requiredSize += numberOfBytesPerFiringGroupHeader + (numberOfBytesPerStrippedFiring * firingGroupHeader->GetFcnt());
+      align_to_word_size(requiredSize);
     }
   }
 
@@ -96,6 +98,7 @@ uint8_t * stripIntensities(uint8_t const * data, size_t dataLength, size_t & str
 
     while (index < dataLength)
     {
+      align_to_word_size(index);
       FiringGroupHeader const * firingGroupHeader = reinterpretCastWithChecks<FiringGroupHeader>(data, dataLength, index);
 
       // Copy the firing group header.

@@ -216,6 +216,24 @@ DEFINE_ENUM(
 
 //------------------------------------------------------------------------------
 /*!
+ * @brief         Align a value to the pre-defined header word size.
+ * @tparam        T   The type of the value to align.
+ * @param[in,out] The value to align.
+ */
+template <typename T>
+inline
+void align_to_word_size(T & x)
+{
+  // Check that VAPI_BYTES_PER_HEADER_WORD is a power of 2 at compile time.
+  static_assert(VAPI_BYTES_PER_HEADER_WORD && (VAPI_BYTES_PER_HEADER_WORD & (VAPI_BYTES_PER_HEADER_WORD - 1)) == 0);
+  // Use bitshifts instead of the modulus operator and branching.
+  T staggered = x & (VAPI_BYTES_PER_HEADER_WORD - 1);
+  // Adds 0 if staggered is already 0.
+  x += (VAPI_BYTES_PER_HEADER_WORD - staggered) & (VAPI_BYTES_PER_HEADER_WORD - 1);
+}
+
+//------------------------------------------------------------------------------
+/*!
  * @brief     Get the index of a bit in a bitmask.
  * @tparam    T    The input and return types.
  * @param[in] mask The mask of set bits.
@@ -690,7 +708,7 @@ public:
    * @param[in] length The number of bytes available for casting.
    */
   inline bool
-  IsValid(size_t length) const
+  IsValid(size_t vtkNotUsed(length)) const
   {
     return (this->GetFcnt() > 0);
   }

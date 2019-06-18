@@ -291,6 +291,7 @@ vtkVelodyneAdvancedPacketInterpreter::ProcessPacket(
   size_t loopCount = 0;
   while (index < dataLength)
   {
+    align_to_word_size(index);
     FiringGroupHeader const * firingGroupHeader =
       reinterpretCastWithChecks<FiringGroupHeader>(data, dataLength, index);
     if (firingGroupHeader == nullptr)
@@ -478,6 +479,7 @@ vtkVelodyneAdvancedPacketInterpreter::IsLidarPacket(
 
     while (index < dataLength)
     {
+      align_to_word_size(index);
       FiringGroupHeader const * firingGroupHeader =
         reinterpretCastWithChecks<FiringGroupHeader>(data, dataLength, index);
       if (firingGroupHeader == nullptr)
@@ -661,6 +663,7 @@ vtkVelodyneAdvancedPacketInterpreter::PreProcessPacket(
   bool isNewFrame               = false;
   while (index < dataLength)
   {
+    align_to_word_size(index);
     FiringGroupHeader const * firingGroupHeader =
       reinterpretCastWithChecks<FiringGroupHeader>(data, dataLength, index);
     if (firingGroupHeader == nullptr)
