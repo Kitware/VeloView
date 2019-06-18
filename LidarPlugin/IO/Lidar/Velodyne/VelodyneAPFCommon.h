@@ -773,7 +773,7 @@ public:
    * @param[in] length The number of bytes available for casting.
    */
   inline bool
-  IsValid(size_t length) const
+  IsValid(size_t vtkNotUsed(length)) const
   {
     return true;
   }

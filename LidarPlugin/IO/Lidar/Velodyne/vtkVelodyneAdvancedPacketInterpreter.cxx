@@ -204,7 +204,7 @@ vtkVelodyneAdvancedPacketInterpreter::ProcessPacket(
   }
   ADVANCE_INDEX_BY_HLEN_OR_RETURN(dataLength, index, payloadHeader, void())
 
-  uint8_t distanceCount = payloadHeader->GetDistanceCount();
+  uint8_t const distanceCount = payloadHeader->GetDistanceCount();
 
   // A valid distance count may be 0, in which case there are no returns
   // included in the firing and thus there is nothing to do.
@@ -213,21 +213,21 @@ vtkVelodyneAdvancedPacketInterpreter::ProcessPacket(
     return;
   }
 
-  uint8_t distanceSize = payloadHeader->GetDistanceSizeInBytes();
+  uint8_t const distanceSize = payloadHeader->GetDistanceSizeInBytes();
   uint8_t distanceIndex;
 
-  auto pseq       = payloadHeader->GetPseq();
-  auto iset       = payloadHeader->GetIset();
-  auto dsetMask   = payloadHeader->GetDsetMask();
-  auto isDsetMask = payloadHeader->IsDsetMask();
+  auto const pseq       = payloadHeader->GetPseq();
+  auto const iset       = payloadHeader->GetIset();
+  auto const dsetMask   = payloadHeader->GetDsetMask();
+  auto const isDsetMask = payloadHeader->IsDsetMask();
 
   // 64-bit PTP truncated format.
   // auto timeRef = payloadHeader->GetTref();
 
-  size_t numberOfBytesPerFiringGroupHeader = payloadHeader->GetGlen();
-  size_t numberOfBytesPerFiringHeader      = payloadHeader->GetFlen();
-  size_t numberOfBytesPerFiringReturn = payloadHeader->GetNumberOfBytesPerFiringReturn();
-  size_t numberOfBytesPerFiring = payloadHeader->GetNumberOfBytesPerFiring();
+  size_t const numberOfBytesPerFiringGroupHeader = payloadHeader->GetGlen();
+  size_t const numberOfBytesPerFiringHeader      = payloadHeader->GetFlen();
+  size_t const numberOfBytesPerFiringReturn = payloadHeader->GetNumberOfBytesPerFiringReturn();
+  size_t const numberOfBytesPerFiring = payloadHeader->GetNumberOfBytesPerFiring();
 
   // Skip optional extension headers.
   auto nxhdr = payloadHeader->GetNxhdr();
@@ -256,9 +256,9 @@ vtkVelodyneAdvancedPacketInterpreter::ProcessPacket(
   // remove that bit from the mask by subtraction and proceed to the next bit
   // and repeat. The values are stored successively so that they can be indexed
   // below.
-  decltype(dsetMask) dsetRemainingMask = dsetMask;
-  decltype(dsetMask) dsetBit;
-  std::vector<decltype(dsetMask)> distanceTypes;
+  std::remove_const<decltype(dsetMask)>::type dsetRemainingMask = dsetMask;
+  decltype(dsetRemainingMask) dsetBit;
+  std::vector<decltype(dsetRemainingMask)> distanceTypes;
   for (distanceIndex = 0; distanceIndex < distanceCount; ++distanceIndex)
   {
     if (isDsetMask)
@@ -321,14 +321,14 @@ vtkVelodyneAdvancedPacketInterpreter::ProcessPacket(
       this->SplitFrame();
     }
 
-    auto timeFractionOffset         = firingGroupHeader->GetToffs();
-    auto coChannelSpan              = firingGroupHeader->GetFspn();
-    auto coChannelTimeFractionDelay = firingGroupHeader->GetFdly();
-    auto vdfl                       = firingGroupHeader->GetVdfl();
-    // double verticalAngleInDegrees   = firingGroupHeader->GetVerticalDeflection();
-    auto azimuth                    = firingGroupHeader->GetAzm();
-    double azimuthInDegrees         = firingGroupHeader->GetAzimuth();
-    auto numberOfFirings            = firingGroupHeader->GetFcnt();
+    auto const timeFractionOffset         = firingGroupHeader->GetToffs();
+    auto const coChannelSpan              = firingGroupHeader->GetFspn();
+    auto const coChannelTimeFractionDelay = firingGroupHeader->GetFdly();
+    auto const vdfl                       = firingGroupHeader->GetVdfl();
+    // double const verticalAngleInDegrees   = firingGroupHeader->GetVerticalDeflection();
+    auto const azimuth                    = firingGroupHeader->GetAzm();
+    double const azimuthInDegrees         = firingGroupHeader->GetAzimuth();
+    auto const numberOfFirings            = firingGroupHeader->GetFcnt();
 
     for (size_t i = 0; i < numberOfFirings; ++i)
     {
@@ -336,7 +336,7 @@ vtkVelodyneAdvancedPacketInterpreter::ProcessPacket(
       // This assumes that the spans are returned in order in the firing group.
       // Check that this is the case. If not, determine how to handle this (by
       // using the channel number?).
-      uint32_t channelTimeFractionOffset = timeFractionOffset + (coChannelTimeFractionDelay * (i / coChannelSpan));
+      uint32_t const channelTimeFractionOffset = timeFractionOffset + (coChannelTimeFractionDelay * (i / coChannelSpan));
 
       FiringHeader const * firingHeader = reinterpretCastWithChecks<FiringHeader>(data, dataLength, index);
       if (firingHeader == nullptr)
@@ -345,20 +345,21 @@ vtkVelodyneAdvancedPacketInterpreter::ProcessPacket(
       }
       index += numberOfBytesPerFiringHeader;
 
-      auto channelNumber = firingHeader->GetLcn();
+      auto const channelNumber = firingHeader->GetLcn();
       // only process point when the laser is selected
       if (!this->LaserSelection[static_cast<int>(channelNumber)])
       {
+        index += numberOfBytesPerFiringReturn * distanceCount;
         continue;
       }
 
-      // auto firingMode = firingHeader->GetFm();
-      // auto firingModeString = toString(firingMode);
-      auto power = firingHeader->GetPwr();
-      auto noise = firingHeader->GetNf();
+      // auto const firingMode = firingHeader->GetFm();
+      // auto const firingModeString = toString(firingMode);
+      auto const power = firingHeader->GetPwr();
+      auto const noise = firingHeader->GetNf();
       // Status is also an enum and requires a string conversion.
-      // auto status = firingHeader->GetStat();
-      // auto statusString = toString(status);
+      // auto const status = firingHeader->GetStat();
+      // auto const statusString = toString(status);
 
       for (distanceIndex = 0; distanceIndex < distanceCount; ++distanceIndex)
       {
@@ -378,7 +379,7 @@ vtkVelodyneAdvancedPacketInterpreter::ProcessPacket(
         FiringReturn firingReturn(data + index, availableBytes);
         index += numberOfBytesPerFiringReturn;
 
-        uint32_t distance = firingReturn.GetDistance<uint32_t>(distanceSize);
+        uint32_t const distance = firingReturn.GetDistance<uint32_t>(distanceSize);
         if (this->IgnoreZeroDistances && distance == 0)
         {
           continue;
