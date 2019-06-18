@@ -15,8 +15,6 @@
 // include only to go the structure VelodyneSpecificFrameInformation before merging code
 #include <vtkVelodyneLegacyPacketInterpreter.h>
 
-#define DEBUGMSG(msg) std::cout << msg << " [" << __LINE__ << "]\n";
-
 //------------------------------------------------------------------------------
 // FrameTracker
 //------------------------------------------------------------------------------
