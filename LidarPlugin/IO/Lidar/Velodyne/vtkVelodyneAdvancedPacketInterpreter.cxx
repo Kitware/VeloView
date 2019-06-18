@@ -671,8 +671,8 @@ vtkVelodyneAdvancedPacketInterpreter::PreProcessPacket(
     }
     // The payload header checks above ensure that this value is non-zero and
     // that the loop will therefore eventually terminate.
-    isNewFrame =
-      this->CurrentFrameTracker->Update(payloadHeader, firingGroupHeader);
+    isNewFrame = this->CurrentFrameTracker->Update(payloadHeader, firingGroupHeader);
+
     if (isNewFrame)
     {
       velFrameInfo->FiringToSkip = firingCount;

@@ -284,11 +284,7 @@ void vtkVelodyneBasePacketInterpreter::LoadCalibration(const std::string& filena
       auto framingLogic = v.second.data();
       std::transform(framingLogic.begin(), framingLogic.end(), framingLogic.begin(), ::toupper);
 
-      if (framingLogic == toString(FramingLogic::FL_DEFAULT))
-      {
-        this->FrameLogic = FramingLogic::FL_DEFAULT;
-      }
-      else if (framingLogic == toString(FramingLogic::FL_AZIMUTH_CROSSING))
+      if (framingLogic == toString(FramingLogic::FL_AZIMUTH_CROSSING))
       {
         this->FrameLogic = FramingLogic::FL_AZIMUTH_CROSSING;
       }
@@ -296,6 +292,11 @@ void vtkVelodyneBasePacketInterpreter::LoadCalibration(const std::string& filena
       {
         this->FrameLogic = FramingLogic::FL_VDIR_CHANGE;
       }
+      else //if (framingLogic == toString(FramingLogic::FL_DEFAULT))
+      {
+        this->FrameLogic = FramingLogic::FL_DEFAULT;
+      }
+      break;
     }
   }
   // Read distLSB if provided
