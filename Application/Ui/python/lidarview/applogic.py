@@ -499,8 +499,8 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
     reader = smp.LidarReader(guiName='Data',
                              FileName = filename,
                              CalibrationFile = calibrationFile,
-                             Interpreter = 'Velodyne Meta Interpreter',
                              )
+    reader.Interpreter = 'Velodyne Meta Interpreter'
     reader.Interpreter.UseIntraFiringAdjustment = app.actions['actionIntraFiringAdjust'].isChecked()
 
     reader.UpdatePipelineInformation()
