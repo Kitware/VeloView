@@ -97,6 +97,28 @@ foreach(sensor ${sensors})
 
 endforeach(sensor)
 
+
+#-------------------------------------------------------------------------------
+set(apf_tests "VLS-128_APF" "VLS-128_APF-padding")
+foreach(apf_test ${apf_tests})
+    # LidarStream test
+    add_test(TestLidarStream_${apf_test}
+      ${INSTALL_LOCAL_DIR}/TestLidarStream
+      ${CMAKE_SOURCE_DIR}/TestData/${apf_test}.pcap
+      ${CMAKE_SOURCE_DIR}/TestData/${apf_test}/files.txt
+      ${CMAKE_SOURCE_DIR}/share/VLS-128.xml
+    )
+    # LidarReader test
+    add_test(TestLidarReader_${apf_test}
+      ${INSTALL_LOCAL_DIR}/TestLidarReader
+      ${CMAKE_SOURCE_DIR}/TestData/${apf_test}.pcap
+      ${CMAKE_SOURCE_DIR}/TestData/${apf_test}/files.txt
+      ${CMAKE_SOURCE_DIR}/share/VLS-128.xml
+    )
+endforeach(apf_test)
+
+
+
 # add special test for HDL-64 in autocalibration mode
 # LidarStream test
 add_test(TestLidarStream_HDL-64_Single-autocalib

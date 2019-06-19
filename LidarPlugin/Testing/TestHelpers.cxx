@@ -568,6 +568,14 @@ int TestPointPositions(vtkPolyData* currentFrame, vtkPolyData* currentReference)
 //-----------------------------------------------------------------------------
 int TestRPMValues(vtkPolyData* currentFrame, vtkPolyData* currentReference)
 {
+  auto currentFrameRPMArray = currentFrame->GetFieldData()->GetArray("RotationPerMinute");
+  auto currentReferenceRPMArray = currentReference->GetFieldData()->GetArray("RotationPerMinute");
+
+  if (currentFrameRPMArray == nullptr && currentReferenceRPMArray == nullptr)
+  {
+    return 0;
+  }
+
   std::cout << "RPM Value : \t";
   // Get the current frame RPM
   double currentFrameRPM =
