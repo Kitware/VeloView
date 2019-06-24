@@ -7,6 +7,7 @@
     <Proxy group="filters" name="Clip" icon=":/pqWidgets/Icons/pqClip24.png"/>
     <Proxy group="filters" name="Cut" icon=":/pqWidgets/Icons/pqSlice24.png"/>
     <Proxy group="filters" name="Threshold" icon=":/pqWidgets/Icons/pqThreshold24.png"/>
+    <Proxy group="filters" name="PassArrays" icon=":/pqWidgets/Icons/pqPassArrays24.png"/>
     <Proxy group="filters" name="ExtractGrid" icon=":/pqWidgets/Icons/pqExtractGrid24.png"/>
     <Proxy group="filters" name="Glyph" icon=":/pqWidgets/Icons/pqGlyph24.png"/>
     <Proxy group="filters" name="StreamTracer" icon=":/pqWidgets/Icons/pqStreamTracer24.png"/>
@@ -148,6 +149,7 @@
   <Proxy group="filters" name="TextureMapToPlane" />
   <Proxy group="filters" name="TextureMapToSphere" />
   <Proxy group="filters" name="Threshold" />
+  <Proxy group="filters" name="PassArrays" />
   <Proxy group="filters" name="TimeToTextConvertor" />
   <Proxy group="filters" name="TransformFilter" />
   <Proxy group="filters" name="TriangleFilter" />
