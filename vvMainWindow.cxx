@@ -33,18 +33,10 @@
 #include <vtkSMProxyManager.h>
 #include <vtkSMSessionProxyManager.h>
 
-#include "pqObjectPickingBehavior.h"
 #include <pqActiveObjects.h>
 #include <pqApplicationCore.h>
-#include <pqAutoLoadPluginXMLBehavior.h>
-#include <pqCommandLineOptionsBehavior.h>
-#include <pqCrashRecoveryBehavior.h>
-#include <pqDataTimeStepBehavior.h>
-#include <pqDefaultViewBehavior.h>
-#include <pqApplyBehavior.h>
 #include <pqInterfaceTracker.h>
 #include <pqObjectBuilder.h>
-#include <pqPersistentMainWindowStateBehavior.h>
 #include <pqPythonShellReaction.h>
 #include <pqQtMessageHandlerBehavior.h>
 #include <pqRenderView.h>
@@ -55,7 +47,6 @@
 #include <pqSettings.h>
 #include <pqSpreadSheetView.h>
 #include <pqSpreadSheetViewDecorator.h>
-#include <pqSpreadSheetVisibilityBehavior.h>
 #include <pqStandardPropertyWidgetInterface.h>
 #include <pqStandardViewFrameActionsImplementation.h>
 #include <pqLidarViewManager.h>
@@ -67,7 +58,7 @@
 #include <vtkSMPropertyHelper.h>
 #include "pqAxesToolbar.h"
 #include "pqCameraToolbar.h"
-#include <pqLiveSourceBehavior.h>
+#include <pqParaViewBehaviors.h>
 
 #include <QToolBar>
 #include <QShortcut>
@@ -147,17 +138,16 @@ private:
 
     // Define application behaviors.
     new pqQtMessageHandlerBehavior(window);
-    new pqDataTimeStepBehavior(window);
-    new pqSpreadSheetVisibilityBehavior(window);
-    new pqObjectPickingBehavior(window);
-    //    new pqDefaultViewBehavior(window);
-    new pqCrashRecoveryBehavior(window);
-    new pqAutoLoadPluginXMLBehavior(window);
-    new pqDataTimeStepBehavior(window);
-    new pqCommandLineOptionsBehavior(window);
-    new pqLiveSourceBehavior(window);
 
-    pqApplyBehavior* applyBehaviors = new pqApplyBehavior(window);
+    pqParaViewBehaviors::enableQuickLaunchShortcuts();
+    pqParaViewBehaviors::enableSpreadSheetVisibilityBehavior();
+    pqParaViewBehaviors::enableObjectPickingBehavior();
+    pqParaViewBehaviors::enableCrashRecoveryBehavior();
+    pqParaViewBehaviors::enableAutoLoadPluginXMLBehavior();
+    pqParaViewBehaviors::enableDataTimeStepBehavior();
+    pqParaViewBehaviors::enableCommandLineOptionsBehavior();
+    pqParaViewBehaviors::enableLiveSourceBehavior();
+    pqParaViewBehaviors::enableApplyBehavior();
 
     // Check if the settings are well formed i.e. if an OriginalMainWindow
     // state was previously saved. If not, we don't want to automatically
@@ -191,7 +181,7 @@ private:
 
     if (shouldClearSettings)
     {
-      new pqPersistentMainWindowStateBehavior(window);
+      pqParaViewBehaviors::enablePersistentMainWindowStateBehavior();
     }
     else
     {
@@ -253,8 +243,6 @@ private:
     this->Ui.viewPropertiesPanel->setPanelMode(pqPropertiesPanel::VIEW_PROPERTIES);
     this->Ui.displayPropertiesPanel->setPanelMode(pqPropertiesPanel::DISPLAY_PROPERTIES);
 
-    // connect apply button
-    applyBehaviors->registerPanel(this->Ui.propertiesPanel);
     // Enable help from the properties panel.
     QObject::connect(this->Ui.propertiesPanel,
       SIGNAL(helpRequested(const QString&, const QString&)),
@@ -328,9 +316,7 @@ private:
     QMenu *paraviewMacroMenu = this->Ui.menuAdvance->addMenu("Macro (Paraview)");
     pqParaViewMenuBuilders::buildMacrosMenu(*paraviewMacroMenu);
 
-    // add 'ctrl+space' shortcut for quickLaunch
-    QShortcut *ctrlSpace = new QShortcut(Qt::CTRL + Qt::Key_Space, window);
-    QObject::connect(ctrlSpace, SIGNAL(activated()), pqApplicationCore::instance(), SLOT(quickLaunch()));
+    new pqParaViewBehaviors(window, window);
 
     pqActiveObjects::instance().setActiveView(view);
   }
