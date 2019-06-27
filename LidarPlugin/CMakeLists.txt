@@ -241,6 +241,12 @@ if (ENABLE_PCL AND ENABLE_Ceres AND ENABLE_NANOFLANN)
     )
 endif(ENABLE_PCL AND ENABLE_Ceres AND ENABLE_NANOFLANN)
 
+if (ENABLE_OpenCV)
+  list(APPEND sources_which_do_not_inherit_from_vtkObject
+    ${CMAKE_CURRENT_SOURCE_DIR}/Common/vtkOpenCVConversions.cxx
+    )
+endif(ENABLE_OpenCV)
+
 # xml file that describe the proxy of the wrap sources in paraview
 list(APPEND servermanager_xml
   xml/Lidar.xml
@@ -339,6 +345,7 @@ list(APPEND deps
   ${vtklibproj4_LIBRARIES}
   ${PCL_LIBRARIES}
   ${CERES_LIBRARIES}
+  ${OpenCV_LIBRARIES}
   )
 
 # folder where to look for header file
@@ -353,6 +360,7 @@ set(plugin_include_dirs
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/Lidar/Common
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/Lidar/KITTIDataSet
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/Lidar/Velodyne
+  ${CMAKE_CURRENT_SOURCE_DIR}/IO/Camera
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/GPS-IMU/Applanix
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/GPS-IMU/ArduPilotDataFlashLogReader/
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/GPS-IMU/Velodyne
