@@ -85,10 +85,13 @@ public:
   // Update VAPI_FIELD_ARRAYS and CreateNewEmptyFrame whenever an array is
   // added or removed.
 
+  // When adding or removing arrays here, update the macro sequence in
+  // VelodyneAPFCommon.h!
   vtkSmartPointer<vtkDoubleArray>         INFO_Xs;
   vtkSmartPointer<vtkDoubleArray>         INFO_Ys;
   vtkSmartPointer<vtkDoubleArray>         INFO_Zs;
-  vtkSmartPointer<vtkUnsignedIntArray>    INFO_Distances;
+  vtkSmartPointer<vtkDoubleArray>         INFO_Distances;
+  vtkSmartPointer<vtkUnsignedIntArray>    INFO_RawDistances;
   vtkSmartPointer<vtkDoubleArray>         INFO_Azimuths;
   vtkSmartPointer<vtkDoubleArray>         INFO_VerticalAngles;
 

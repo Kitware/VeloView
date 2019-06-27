@@ -83,6 +83,7 @@ VAPI_DECLARE_BIG_TO_NATIVE(uint64_t)
 	(Ys)                    \
 	(Zs)                    \
 	(Distances)             \
+	(RawDistances)          \
 	(Azimuths)              \
 	(VerticalAngles)        \
 	(Confidences)           \
