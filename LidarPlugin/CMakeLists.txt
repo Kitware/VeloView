@@ -242,6 +242,12 @@ if (ENABLE_PCL AND ENABLE_Ceres AND ENABLE_NANOFLANN)
 endif(ENABLE_PCL AND ENABLE_Ceres AND ENABLE_NANOFLANN)
 
 if (ENABLE_OpenCV)
+  list(APPEND servermanager_sources
+    ${CMAKE_CURRENT_SOURCE_DIR}/IO/Camera/vtkPCAPImageReader.cxx
+    )
+  list(APPEND servermanager_xml
+    xml/PCAPImageReader.xml
+    )
   list(APPEND sources_which_do_not_inherit_from_vtkObject
     ${CMAKE_CURRENT_SOURCE_DIR}/Common/vtkOpenCVConversions.cxx
     )

@@ -1,0 +1,61 @@
+<ServerManagerConfiguration>
+
+<ProxyGroup name="sources">
+  <SourceProxy name="PCAPImageReader"
+               class="vtkPCAPImageReader"
+	       label="PCAP Image Reader">
+    <Documentation
+      short_help=""
+      long_help="">
+    </Documentation>
+
+    <OutputPort name="Current_Video_Frame" index="0" id="port0" />
+
+    <StringVectorProperty
+        name="FileName"
+        animateable="0"
+        command="SetFileName"
+        number_of_elements="1">
+        <FileListDomain name="files"/>
+        <Documentation>
+          This property specifies the file name for the reader.
+        </Documentation>
+    </StringVectorProperty>
+
+    <IntVectorProperty
+        name="NetworkPort"
+        command="SetNetworkPort"
+        override = "1"
+        default_values="-1"
+        number_of_elements="1">
+      <Documentation>
+        Specify which packets are read. To read all packets set the value to -1
+      </Documentation>
+    </IntVectorProperty>
+
+    <DoubleVectorProperty
+            name="TimestepValues"
+            repeatable="1"
+            information_only="1">
+          <TimeStepsInformationHelper/>
+    </DoubleVectorProperty>
+
+   <DoubleVectorProperty
+        name="Time Offset"
+        command="SetTimeOffset"
+        default_values="0"
+        number_of_elements="1">
+     <Documentation>
+         TimeOffset (in seconds) relative to the system clock.
+     </Documentation>
+   </DoubleVectorProperty>
+
+    <Hints>
+      <ReaderFactory extensions="pcap"
+         file_description="Lidar Data File"/>
+    </Hints>
+
+  </SourceProxy>
+</ProxyGroup>
+
+</ServerManagerConfiguration>
