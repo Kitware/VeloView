@@ -122,6 +122,9 @@ public:
   vtkGetMacro(DisplayMode, bool)
   vtkSetMacro(DisplayMode, bool)
 
+  vtkGetMacro(ShouldExportCovariance, bool)
+  vtkSetMacro(ShouldExportCovariance, bool)
+
   vtkCustomGetMacro(MaxDistBetweenTwoFrames, double)
   vtkCustomSetMacro(MaxDistBetweenTwoFrames, double)
 
@@ -230,7 +233,7 @@ private:
 
   // Polydata which represents the trajectory computed
   vtkSmartPointer<vtkTemporalTransforms> Trajectory;
-
+  std::vector<std::vector<double>> TrajectoryCovariance;
   std::vector<size_t> GetLaserIdMapping(vtkTable *calib);
 
   // Indicate if we are in display mode or not
@@ -238,6 +241,10 @@ private:
   // results of the slam algorithm such as
   // the keypoints extracted, curvature etc
   bool DisplayMode = false;
+
+  // Indicate if the variance-covariance matrix of a
+  // pose estimation should be export in the trajectory
+  bool ShouldExportCovariance = true;
 };
 
 #endif // VTK_SLAM_H

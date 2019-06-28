@@ -470,6 +470,14 @@ Transform Slam::GetWorldTransform()
 }
 
 //-----------------------------------------------------------------------------
+std::vector<double> Slam::GetTransformCovariance()
+{
+  std::vector<double> cov(36);
+  std::copy(this->TworldCovariance.data(), this->TworldCovariance.data() + 36, cov.data());
+  return cov;
+}
+
+//-----------------------------------------------------------------------------
 std::unordered_map<std::string, double> Slam::GetDebugInformation()
 {
   std::unordered_map<std::string, double> map;
@@ -1352,9 +1360,7 @@ void Slam::Mapping()
   unsigned int usedEdges = 0;
   unsigned int usedPlanes = 0;
   unsigned int usedBlobs = 0;
-  // Variance-Covariance matrix that estimates the
-  // estimation error about the 6-DoF parameters
-  Eigen::MatrixXd estimatorCovariance(6, 6);
+
   Point currentPoint;
 
   unsigned int toReserve =   this->CurrentEdgesPoints->size()
@@ -1476,7 +1482,9 @@ void Slam::Mapping()
     // If no L-M iteration has been made since the
     // last ICP matching it means we reached a local
     // minimum for the ICP-LM algorithm
-    if (summary.num_successful_steps == 1 && !this->Undistortion)
+    if (((summary.num_successful_steps == 1) ||
+        (icpCount == (this->MappingICPMaxIter - 1))) &&
+        !this->Undistortion)
     {
       // Now evaluate the quality of the parameters
       // estimated using an approximate computation
@@ -1495,12 +1503,12 @@ void Slam::Mapping()
       covariance.GetCovarianceBlock(this->Tworld.data(), this->Tworld.data(), covarianceMat);
       for (int i = 0; i < 6; ++i)
         for (int j = 0; j < 6; ++j)
-          estimatorCovariance(i, j) = covarianceMat[i + 6 * j];
+          this->TworldCovariance(i, j) = covarianceMat[i + 6 * j];
       break;
-      }
+    }
   }
 
-  Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eig(estimatorCovariance);
+  Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eig(this->TworldCovariance);
   Eigen::MatrixXd D = eig.eigenvalues();
 
   this->MappingVarianceError = D(5);
@@ -1510,7 +1518,9 @@ void Slam::Mapping()
 
   std::cout << "Matches used: Total: " << this->Xvalues.size()
             << " edges: " << usedEdges << " planes: " << usedPlanes << " blobs: " << usedBlobs << std::endl;
+
   std::cout << "Covariance Eigen values: " << D.transpose() << std::endl;
+  std::cout << "Maximum variance eigen vector: " << eig.eigenvectors().col(5).transpose() << std::endl;
   std::cout << "Maximum variance: " << D(5) << std::endl;
 
   if (this->Undistortion)
