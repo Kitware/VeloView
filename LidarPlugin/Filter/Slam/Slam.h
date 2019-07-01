@@ -148,6 +148,7 @@ public:
 
   // Get the computed world transform so far
   Transform GetWorldTransform();
+  std::vector<double> GetTransformCovariance();
 
   std::unordered_map<std::string, double> GetDebugInformation();
 
@@ -372,6 +373,10 @@ private:
   Eigen::Matrix<double, 6, 1> Tworld = Eigen::Matrix<double, 6, 1>::Zero();
   Eigen::Matrix<double, 6, 1> PreviousTworld = Eigen::Matrix<double, 6, 1>::Zero();
   Eigen::VectorXd MotionParametersMapping;
+
+  // Variance-Covariance matrix that estimates the
+  // estimation error about the 6-DoF parameters
+  Eigen::Matrix<double, 6, 6> TworldCovariance = Eigen::Matrix<double, 6, 6>::Identity();
 
   // Computed trajectory of the sensor
   // i.e the list of transforms computed

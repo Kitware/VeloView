@@ -277,6 +277,7 @@ vtkInformationVector **inputVector, vtkInformationVector *outputVector)
   // output 1 - Trajectory
   Eigen::AngleAxisd m(RollPitchYawToMatrix(Tworld.rx, Tworld.ry, Tworld.rz));
   this->Trajectory->PushBack(pc->points[0].time, m, Eigen::Vector3d(Tworld.position));
+  this->TrajectoryCovariance.push_back(this->SlamAlgo.GetTransformCovariance());
   auto *output1 = vtkPolyData::GetData(outputVector->GetInformationObject(1));
   output1->ShallowCopy(this->Trajectory);
 
@@ -290,6 +291,20 @@ vtkInformationVector **inputVector, vtkInformationVector *outputVector)
       auto array = this->Trajectory->GetPointData()->GetArray(it.first.c_str());
       array->InsertNextTuple1(it.second);
     }
+  }
+
+  // export the variance-covariance matrix if required
+  if (this->ShouldExportCovariance)
+  {
+    auto covArray = vtkSmartPointer<vtkDoubleArray>::New();
+    covArray->SetName("Variance Covariance Matrix");
+    covArray->SetNumberOfComponents(36);
+    covArray->SetNumberOfTuples(this->TrajectoryCovariance.size());
+    for (int i = 0; i < this->TrajectoryCovariance.size(); ++i)
+    {
+      covArray->SetTuple(i, this->TrajectoryCovariance[i].data());
+    }
+    output1->GetPointData()->AddArray(covArray);
   }
 
   // output 2 - Edges Points Map

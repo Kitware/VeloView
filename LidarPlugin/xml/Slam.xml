@@ -70,6 +70,18 @@
         </Documentation>
       </IntVectorProperty>
 
+        <IntVectorProperty
+          name="Export Covariance"
+          command="SetShouldExportCovariance"
+          default_values="1"
+          number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          Indicate if the variance-covariance matrix of a
+          pose estimation should be export in the trajectory
+        </Documentation>
+      </IntVectorProperty>
+
 <!--      <IntVectorProperty
           name="Undistortion Model"
           command="SetUndistortion"
