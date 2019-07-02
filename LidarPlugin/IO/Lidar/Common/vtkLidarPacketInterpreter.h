@@ -21,60 +21,10 @@
 #include <vtkTable.h>
 #include <vtkPolyData.h>
 #include <vtkAlgorithm.h>
-#include <memory>
+
+#include "FrameInformation.h"
 
 class vtkTransform;
-
-/**
- * @brief SpecificFrameInformation placeholder for
- *        specific sensor implementation
- */
-struct SpecificFrameInformation {
-  virtual void reset() = 0;
-  virtual std::unique_ptr<SpecificFrameInformation> clone() = 0;
-};
-
-/**
- * @brief FrameInformation contains information about a frame
- */
-struct FrameInformation
-{
-  //! position of the first packet of the given frame
-  fpos_t FilePosition;
-
-  //! To be agnostic to the underlying data, we rely on the first packet timestep to determine
-  //! the Time of frame. The packet timestep has no relation with the timesteps that are in the
-  //! payload of the packet. It's contained in the header, and indicate when a packet has been
-  //! received
-  double FirstPacketNetworkTime = 0;
-
-  //! timestamp of data contained in the first packet
-  double FirstPacketDataTime = 0;
-
-  //! Packet information that are specific to a sensor
-  std::shared_ptr<SpecificFrameInformation> SpecificInformation = nullptr;
-
-  void Reset() {
-    this->FirstPacketDataTime = 0;
-    this->FirstPacketNetworkTime = 0;
-    this->SpecificInformation->reset();
-  }
-
-  FrameInformation() = default;
-
-  FrameInformation(const FrameInformation& arg) { *this = arg; }
-
-  void operator=(const FrameInformation& arg) {
-    this->FilePosition = arg.FilePosition;
-    this->FirstPacketNetworkTime = arg.FirstPacketNetworkTime;
-    this->FirstPacketDataTime = arg.FirstPacketDataTime;
-    if(arg.SpecificInformation != nullptr)
-    {
-      this->SpecificInformation = arg.SpecificInformation->clone();
-    }
-  }
-
-};
 
 class VTK_EXPORT  vtkLidarPacketInterpreter : public vtkAlgorithm
 {
