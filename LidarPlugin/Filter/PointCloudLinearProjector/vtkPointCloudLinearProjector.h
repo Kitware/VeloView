@@ -43,6 +43,15 @@ public:
   vtkGetMacro(RankPercentil, double)
   vtkSetMacro(RankPercentil, double)
 
+  vtkGetMacro(ExportAsChar, bool)
+  vtkSetMacro(ExportAsChar, bool)
+
+  vtkGetMacro(ShouldMedianFilter, bool)
+  vtkSetMacro(ShouldMedianFilter, bool)
+
+  vtkGetMacro(MedianFilterWidth, int)
+  vtkSetMacro(MedianFilterWidth, int)
+
   // set the plane normal coordinates on which points are projected
   void SetPlaneNormal(double w0, double w1, double w2);
 
@@ -65,6 +74,13 @@ private:
 
   // percentil to extract when performing rank filter
   double RankPercentil = 0.5;
+
+  // Export as double or char
+  bool ExportAsChar = false;
+
+  // Run median filter or nit
+  bool ShouldMedianFilter = false;
+  int MedianFilterWidth = 3;
 
   // Information about the projector
   Eigen::Matrix3d DiagonalizedProjector = Eigen::Matrix3d::Identity();
