@@ -49,6 +49,41 @@
         </Documentation>
     </DoubleVectorProperty>
 
+    <IntVectorProperty
+      name="Export As Char"
+      animateable="0"
+      command="SetExportAsChar"
+      default_values="0"
+      number_of_elements="1">
+        <BooleanDomain name="SetExportAsCharBool" />
+            <Documentation>
+                Indicate if the result should be char
+            </Documentation>
+    </IntVectorProperty>
+
+    <IntVectorProperty
+      name="Should Apply Median Filter"
+      animateable="0"
+      command="SetShouldMedianFilter"
+      default_values="0"
+      number_of_elements="1">
+        <BooleanDomain name="SetShouldMedianFilterBool" />
+            <Documentation>
+                Indicate if the result should be post-processed with median filter
+            </Documentation>
+    </IntVectorProperty>
+
+    <IntVectorProperty
+        name="Median Filter Width"
+        animateable="0"
+        default_values="3"
+        command="SetMedianFilterWidth"
+        number_of_elements="1">
+        <Documentation>
+          Size of the neighborhood when performing median filter
+        </Documentation>
+    </IntVectorProperty>
+
     </SourceProxy>
   </ProxyGroup>
   <!-- End vtkPointCloudLinearProjector -->
