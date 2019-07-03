@@ -75,6 +75,8 @@ public:
   void SetMaxPt(double const* pt);
   void SetMinPt(double const* pt);
 
+  void SetWriteSRS(bool shouldWrite);
+
   // Sets the metadata into the LAS header
   void FlushMetaData();
 
@@ -109,6 +111,11 @@ private:
   projPJ OutProj; // used to project the points into coordinates used inside LAS
   int OutGcsEPSG; // used to tell in the LAS header which projection is used
   // Obviously, OutGcsEPSG should be coherent with OutProj
+
+  // Setting WriteSRS to false can be used to simulate the absence of GDAL
+  // library (in which case setting SRS fails), or to use the default
+  // interpretation of the software that will use the LAS file.
+  bool WriteSRS = true;
 };
 
 #endif

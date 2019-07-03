@@ -195,21 +195,28 @@ void LASFileWriter::SetOrigin(double easting, double northing, double height)
 
   // Update header
   this->header.SetOffset(origin[0], origin[1], origin[2]);
-  try
+  if (this->WriteSRS)
   {
-    liblas::SpatialReference srs;
-    std::ostringstream ss;
-    ss << "EPSG:" << this->OutGcsEPSG;
-    srs.SetFromUserInput(ss.str());
-    this->header.SetSRS(srs);
+    try
+    {
+      liblas::SpatialReference srs;
+      std::ostringstream ss;
+      ss << "EPSG:" << this->OutGcsEPSG;
+      srs.SetFromUserInput(ss.str());
+      this->header.SetSRS(srs);
+    }
+    catch (std::logic_error &e)
+    {
+      std::cerr << "failed to set SRS (logic_error): " << e.what() << std::endl;
+    }
+    catch (std::runtime_error &e)
+    {
+      std::cerr << "failed to set SRS (runtime_error): " << e.what() << std::endl;
+    }
   }
-  catch (std::logic_error &e)
+  else
   {
-    std::cerr << "failed to set SRS (logic_error): " << e.what() << std::endl;
-  }
-  catch (std::runtime_error &e)
-  {
-    std::cerr << "failed to set SRS (runtime_error): " << e.what() << std::endl;
+    std::cout << "As asked, not setting SRS in LAS Header." << std::endl;
   }
 }
 
@@ -408,4 +415,9 @@ void LASFileWriter::SetMinPt(double const* pt)
   this->MinPt[0] = pt[0];
   this->MinPt[1] = pt[1];
   this->MinPt[2] = pt[2];
+}
+
+void LASFileWriter::SetWriteSRS(bool shouldWrite)
+{
+  this->WriteSRS = shouldWrite;
 }

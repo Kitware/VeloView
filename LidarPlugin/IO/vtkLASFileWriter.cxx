@@ -48,8 +48,19 @@ int vtkLASFileWriter::Write()
   }
 
   this->LASWriter.Open(this->FileName);
+  this->LASWriter.SetWriteSRS(this->WriteSRS);
 
   bool useLatLonForOut = this->ExportType == EXPORT_LATLONG;
+#ifdef DEBUG_VTKLASFILEWRITER
+  if (useLatLonForOut)
+  {
+    std::cout << "useLatLonForOut: true" << std::endl;
+  }
+  else
+  {
+    std::cout << "useLatLonForOut: false" << std::endl;
+  }
+#endif
   this->LASWriter.SetGeoConversionUTM(this->InOutSignedUTMZone, useLatLonForOut);
   // Mind the order for this the parameters for SetOrigin
   // This is a bit strange, but the exports seem to be correct.

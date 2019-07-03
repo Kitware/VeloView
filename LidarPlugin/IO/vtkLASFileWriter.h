@@ -56,6 +56,9 @@ public:
   vtkSetMacro(FirstFrame, int)
   vtkGetMacro(FirstFrame, int)
 
+  vtkSetMacro(WriteSRS, bool)
+  vtkGetMacro(WriteSRS, bool)
+
   vtkSetMacro(LastFrame, int)
   vtkGetMacro(LastFrame, int)
 
@@ -109,6 +112,7 @@ private:
   void operator =(const vtkLASFileWriter&) = delete;
 
   char* FileName = nullptr;
+  bool WriteSRS = true;
   int FirstFrame = 0;
   int LastFrame = -1; // negative numbers can be used à la Python list indexes
   int FrameStride = 1;
