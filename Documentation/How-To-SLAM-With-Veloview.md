@@ -20,7 +20,7 @@ A quick summary to install Veloview on Windows 10 based on Veloview’s [Develop
    - Click 'Generate' to create relevant new files
    - Close cmake-gui, recompile Veloview again by typing `ninja install` in the same location.
 
-##Veloview with SLAM on Linux coming soon.
+## Veloview with SLAM on Linux coming soon.
 This has been tested with Ubuntu 16.04.
 
 1. Follow Veloview's [Developer Guide](https://github.com/Kitware/VeloView/blob/master/Documentation/VeloView_Developer_Guide.md#linux-dependencies) instructions to build Veloview in Linux, and stop at step #3. For Step #4, a different cmake command that enables pcl and ceres for SLAM features will need to be used.
