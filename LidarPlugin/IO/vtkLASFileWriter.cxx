@@ -52,15 +52,16 @@ int vtkLASFileWriter::Write()
 
   bool useLatLonForOut = this->ExportType == EXPORT_LATLONG;
 #ifdef DEBUG_VTKLASFILEWRITER
+  std::cout << "useLatLonForOut: " << useLatLonForOut << std::endl;
+#endif
   if (useLatLonForOut)
   {
-    std::cout << "useLatLonForOut: true" << std::endl;
+    this->LASWriter.SetPrecision(1e-8, 1e-3); // 1e-8 degrees give approx 1mm
   }
   else
   {
-    std::cout << "useLatLonForOut: false" << std::endl;
+    this->LASWriter.SetPrecision(1e-3, 1e-3);
   }
-#endif
   this->LASWriter.SetGeoConversionUTM(this->InOutSignedUTMZone, useLatLonForOut);
   // Mind the order for this the parameters for SetOrigin
   // This is a bit strange, but the exports seem to be correct.
@@ -70,7 +71,6 @@ int vtkLASFileWriter::Write()
   // Mind that SetOrigin will use this->LASWriter->OutGcsEPSG to write the
   // LAS header
   this->LASWriter.SetOrigin(Offset[1], Offset[0], Offset[2]);
-  this->LASWriter.SetPrecision(1e-3, 1e-3);
 
   // the call to Modified() does not seems required, but it is done in
   // vtkFileSeriesWriter
