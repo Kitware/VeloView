@@ -99,7 +99,9 @@ void WriteCameraParamsCSV(std::string filename, Eigen::VectorXd& W)
 }
 
 //----------------------------------------------------------------------------
-Eigen::Vector2d FisheyeProjection(const Eigen::Matrix<double, 15, 1>& W, const Eigen::Vector3d& X)
+Eigen::Vector2d FisheyeProjection(const Eigen::Matrix<double, 15, 1>& W,
+                                  const Eigen::Vector3d& X,
+                                  bool shouldClip)
 {
   // Get rotation matrix
   Eigen::Matrix3d R = RollPitchYawToMatrix(W(0), W(1), W(2));
@@ -107,6 +109,12 @@ Eigen::Vector2d FisheyeProjection(const Eigen::Matrix<double, 15, 1>& W, const E
 
   // Express the 3D point in the camera reference frame
   Eigen::Vector3d Xcam = R.transpose() * (X - T);
+
+  // check that the point is not behind the camera plane
+  if (shouldClip && (Xcam(2) < 0))
+  {
+    return Eigen::Vector2d(-1, -1);
+  }
 
   // Project the 3D point in the plan
   Eigen::Vector2d Xp1(Xcam(0) / Xcam(2), Xcam(1) / Xcam(2));
@@ -117,6 +125,56 @@ Eigen::Vector2d FisheyeProjection(const Eigen::Matrix<double, 15, 1>& W, const E
   double thetad = theta * (1 + W(11) * std::pow(theta, 2) + W(12) * std::pow(theta, 4) +
                            W(13) * std::pow(theta, 6) + W(14) * std::pow(theta, 8));
    Eigen::Vector2d Xp1d = (thetad / r) * Xp1;
+
+   // Create current intrinsic parameters
+   Eigen::Matrix3d K = Eigen::Matrix3d::Zero();
+   K(0, 0) = W(6);
+   K(1, 1) = W(7);
+   K(0, 2) = W(8);
+   K(1, 2) = W(9);
+   K(0, 1) = W(10);
+   K(2, 2) = 1;
+
+   // Express the point in the pixel coordinates
+   Eigen::Vector3d Xp1dh(Xp1d(0), Xp1d(1), 1);
+   Eigen::Vector3d Xpix = K * Xp1dh;
+   return Eigen::Vector2d(Xpix(0) / Xpix(2), Xpix(1) / Xpix(2));
+}
+
+//----------------------------------------------------------------------------
+Eigen::Vector2d BrownConradyPinholeProjection(const Eigen::Matrix<double, 17, 1>& W,
+                                              const Eigen::Vector3d& X,
+                                              bool shouldClip)
+{
+  // Get rotation matrix
+  Eigen::Matrix3d R = RollPitchYawToMatrix(W(0), W(1), W(2));
+  Eigen::Vector3d T(W(3), W(4), W(5));
+
+  // Express the 3D point in the camera reference frame
+  Eigen::Vector3d Xcam = R.transpose() * (X - T);
+
+  // check that the point is not behind the camera plane
+  if (shouldClip && (Xcam(2) < 0))
+  {
+    return Eigen::Vector2d(-1, -1);
+  }
+
+  // Project the 3D point in the plan
+  Eigen::Vector2d Xp1(Xcam(0) / Xcam(2), Xcam(1) / Xcam(2));
+
+  // Undistorded the projected image
+  double r = Xp1.norm();
+  double k1 = W(11); double k2 = W(12);
+  double p1 = W(13); double p2 = W(14);
+  double p3 = W(14); double p4 = W(15);
+
+  double xdist = Xp1(0) + Xp1(0) * (k1 * std::pow(r, 2) + k2 * std::pow(r, 4)) +
+                 (p1 * (std::pow(r, 2) + 2 * std::pow(Xp1(0), 2)) +
+                  2 * p2 * Xp1(0) * Xp1(1)) * (1 + p3 * std::pow(r, 2) + p4 * std::pow(r, 4));
+  double ydist = Xp1(1) + Xp1(1) * (k1 * std::pow(r, 2) + k2 * std::pow(r, 4)) +
+                 (2 * p1 * Xp1(0) * Xp1(1) + p2 * (std::pow(r, 2) + 2 * std::pow(Xp1(1), 2))) *
+                 (1 + p3 * std::pow(r, 2) + p4 * std::pow(r, 4));
+  Eigen::Vector2d Xp1d(xdist, ydist);
 
    // Create current intrinsic parameters
    Eigen::Matrix3d K = Eigen::Matrix3d::Zero();

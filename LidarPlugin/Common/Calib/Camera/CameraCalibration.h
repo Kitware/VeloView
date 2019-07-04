@@ -89,7 +89,26 @@ double NonLinearPinholeCalibration(const std::vector<Eigen::Vector3d>& X, const 
    * @param x 2D keypoints associated to the 3D keypoints
    * @param P W fisheye camera model parameters estimated
    */
-double NonLinearFisheyeCalibration(const std::vector<Eigen::Vector3d>& X, const std::vector<Eigen::Vector2d>& x, Eigen::Matrix<double, 15, 1>& W);
+double NonLinearFisheyeCalibration(const std::vector<Eigen::Vector3d>& X, const std::vector<Eigen::Vector2d>& x,
+                                   Eigen::Matrix<double, 15, 1>& W, unsigned int it = 1000);
+
+/**
+   * @brief BrownConradyPinholeCalibration Compute the pinhole camera model parameters
+   *        using the brown conrady distortion modelization.
+   *        To do that we will estimate the parameters by minimizing the reprojection
+   *        euclidean distance between the image keypoints and the reprojected 3D associated
+   *        keypoints. This leads to a non-linear least square cost function that is solved
+   *        using the iterative Levenberg-Marquardt Algorithm
+   *
+   *        Note that to converge, the method need to start with a first estimation that is not
+   *        too far from the solution. One can first use the linear method using LinearPinholeCalibration
+   *        to have a good estimation and then use the non linear method
+   * @param X 3D keypoints associated to the 2D keypoints
+   * @param x 2D keypoints associated to the 3D keypoints
+   * @param P W camera model parameters estimated
+   */
+double BrownConradyPinholeCalibration(const std::vector<Eigen::Vector3d>& X, const std::vector<Eigen::Vector2d>& x,
+                                      Eigen::Matrix<double, 17, 1>& W, unsigned int it = 1000);
 
 /**
    * @brief CalibrationMatrixDecomposition Decompose the pinhole camera model

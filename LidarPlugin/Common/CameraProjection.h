@@ -49,10 +49,24 @@ void WriteCameraParamsCSV(std::string filename, Eigen::VectorXd& W);
    *
    * @param W fisheye camera model parameters
    * @param X 3D point to project
-   * @param T position of the camera (extrinsic parameters)
-   * @param W pinhole model parameters
+   * @param shouldClip Clip points that are behind the camera plane
    */
-Eigen::Vector2d FisheyeProjection(const Eigen::Matrix<double, 15, 1>& W, const Eigen::Vector3d& X);
+Eigen::Vector2d FisheyeProjection(const Eigen::Matrix<double, 15, 1>& W,
+                                  const Eigen::Vector3d& X,
+                                  bool shouldClip = false);
+
+/**
+   * @brief BrownConradyPinholeProjection Project a 3D point using a pinhole
+   *        camera model with Brown-Conrady camera distortion model.
+   *        the projected 2D points will be expressed in pixel coordinates
+   *
+   * @param W pinhole Brown-Conrady camera model parameters
+   * @param X 3D point to project
+   * @param shouldClip Clip points that are behind the camera plane
+   */
+Eigen::Vector2d BrownConradyPinholeProjection(const Eigen::Matrix<double, 17, 1>& W,
+                                              const Eigen::Vector3d& X,
+                                              bool shouldClip = false);
 
 /**
    * @brief GetRGBColourFromReflectivity map the reflectivity signal
