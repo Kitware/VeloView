@@ -14,49 +14,45 @@ A quick summary to install Veloview on Windows 10 based on Veloview’s [Develop
 3. To start building, type `ninja` in the command line. When build is complete, the Veloview.exe application can be found in `<work-directory>\VeloView-build\install\bin`. 
 
 4. Enable pcl and ceres now that you have pcl and ceres files in build folder:
-   - Open a VS2015 cmd terminal and change directory to `${PATH_TO_BUILD}\common-superbuild\veloview\build`
+   - Open a VS2015 cmd terminal and **change directory** to `${PATH_TO_BUILD}\common-superbuild\veloview\build`
    - Open cmake-gui by typing `cmake-gui . `, including the fullstop ".".
    - Enable options ENABLE_pcl and ENABLE_ceres by clicking the tickboxes
    - Click 'Generate' to create relevant new files
    - Close cmake-gui, recompile Veloview again by typing `ninja install` in the same location.
 
-Veloview with SLAM on Linux coming soon.
+*Veloview with SLAM on Linux coming soon.*
 (I just need to sit down and organize all the info!)
-
-
-- - - - - - - - - - - - - - - - - - - 
 
 
 # Using SLAM in Veloview
 See [Veloview's SLAM Presentation](https://github.com/etanx/VeloView/blob/master/Documentation/slam_presentation.docx) for more info about Veloview's SLAM algorithm. Note: SLAM has been tested with .pcap files from the VLP-32c.
 
-Open Veloview. Make sure Advanced Features are enabled.
+1. Open Veloview. Make sure Advanced Features are enabled.
 
 ![exportformat](https://user-images.githubusercontent.com/22595013/60025272-9544fd80-9699-11e9-8901-e12dc0662b3d.png)
 
-Enable Pipeline Browser and Properties under ‘Views’ tab. 
+2. Enable Pipeline Browser and Properties under ‘Views’ tab. 
 
 ![exportformat](https://user-images.githubusercontent.com/22595013/60025310-a857cd80-9699-11e9-848e-f147fcee74f9.png)
 
-Open a .pcap file (or sensor stream) from the LIDAR folder on Desktop
+3. Open a previously recorded .pcap file.
 
-In Pipeline browser, select Calibration (the source), click on Filters tab and search for ‘SLAM’. 
+4. In Pipeline browser, select Calibration (the source), click on Filters tab and type ‘SLAM’ in search bar.
 
 ![exportformat](https://user-images.githubusercontent.com/22595013/56412530-d1687600-6284-11e9-9ec0-8731ff9f9ab6.png)
 
-Hit ‘Enter’ to select a SLAM filter: Pick *Slam (online)* to see it do a test live display (not as accurate since it skips some frames), or *SLAM (offline)* for a full process.
+5. Hit ‘Enter’ to select a SLAM filter: Pick *Slam (online)* to see it do a test live display (not as accurate since it skips some frames), or *SLAM (offline)* for a full process.
 
-A new input dialog will appear. 
-
+6. A new input dialog will appear. 
+   - Click the Point Cloud input port, select the ‘Frame’ green cube. 
+   - Click the Calibration input port, select the ‘Calibration’ entry. 
+   - Hit ‘Ok’ when done.
+ 
 ![exportformat](https://user-images.githubusercontent.com/22595013/56412718-64091500-6285-11e9-9de3-10b8f17e1434.png)
 
-Click the Point Cloud input port, select the ‘Frame’ green cube. 
-Click the Calibration input port, select the ‘Calibration’ entry. 
-Hit ‘Ok’ when done.
-
-Under properties, hit ‘Apply’ after you’re done searching and changing algorithm properties (default ones are good to start with).
-- If you chose online SLAM, a white frame will appear. Hit playback to play through the entire recording and watch it SLAM.
-- If you chose offline SLAM, nothing will happen after you hit ‘Apply’, but that’s okay, the computer is working hard to SLAM stuff.
+7. Under properties, hit ‘Apply’
+   - If you chose online SLAM, a white frame will appear. Hit playback to play through the entire recording and watch it SLAM.
+   - If you chose offline SLAM, nothing will happen after you hit ‘Apply’, but that’s okay, the computer is working hard to SLAM stuff.
 
 Once SLAM is complete, you can export the Trajectory as .poses to avoid running the SLAM again (selecting the Trajectory and ctrl + s). Then, to load the trajectory you can drag and drop the .poses file.
 
