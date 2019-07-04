@@ -29,17 +29,17 @@ See [Veloview's SLAM Presentation](https://github.com/etanx/VeloView/blob/master
 
 1. Open Veloview. Make sure Advanced Features are enabled.
 
-![exportformat](https://user-images.githubusercontent.com/22595013/60025272-9544fd80-9699-11e9-8901-e12dc0662b3d.png)
+    ![exportformat](https://user-images.githubusercontent.com/22595013/60025272-9544fd80-9699-11e9-8901-e12dc0662b3d.png)
 
 2. Enable Pipeline Browser and Properties under ‘Views’ tab. 
 
-![exportformat](https://user-images.githubusercontent.com/22595013/60025310-a857cd80-9699-11e9-848e-f147fcee74f9.png)
+    ![exportformat](https://user-images.githubusercontent.com/22595013/60025310-a857cd80-9699-11e9-848e-f147fcee74f9.png)
 
 3. Open a previously recorded .pcap file.
 
 4. In Pipeline browser, select Calibration (the source), click on Filters tab and type ‘SLAM’ in search bar.
 
-![exportformat](https://user-images.githubusercontent.com/22595013/56412530-d1687600-6284-11e9-9ec0-8731ff9f9ab6.png)
+    ![exportformat](https://user-images.githubusercontent.com/22595013/56412530-d1687600-6284-11e9-9ec0-8731ff9f9ab6.png)
 
 5. Hit ‘Enter’ to select a SLAM filter: Pick *Slam (online)* to see it do a test live display (not as accurate since it skips some frames), or *SLAM (offline)* for a full process.
 
@@ -48,7 +48,7 @@ See [Veloview's SLAM Presentation](https://github.com/etanx/VeloView/blob/master
    - Click the Calibration input port, select the ‘Calibration’ entry. 
    - Hit ‘Ok’ when done.
  
-![exportformat](https://user-images.githubusercontent.com/22595013/56412718-64091500-6285-11e9-9de3-10b8f17e1434.png)
+    ![exportformat](https://user-images.githubusercontent.com/22595013/56412718-64091500-6285-11e9-9de3-10b8f17e1434.png)
 
 7. Under properties, hit ‘Apply’
    - If you chose online SLAM, a white frame will appear. Hit playback to play through the entire recording and watch it SLAM.
