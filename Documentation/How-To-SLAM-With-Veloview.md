@@ -20,11 +20,33 @@ A quick summary to install Veloview on Windows 10 based on Veloview’s [Develop
    - Click 'Generate' to create relevant new files
    - Close cmake-gui, recompile Veloview again by typing `ninja install` in the same location.
 
-*Veloview with SLAM on Linux coming soon.*
-(I just need to sit down and organize all the info!)
+##Veloview with SLAM on Linux coming soon.
+This has been tested with Ubuntu 16.04.
+
+1. Follow Veloview's [Developer Guide](https://github.com/Kitware/VeloView/blob/master/Documentation/VeloView_Developer_Guide.md#linux-dependencies) instructions to build Veloview in Linux, and stop at step #3. For Step #4, a different cmake command that enables pcl and ceres for SLAM features will need to be used.
+
+2. Change work directory to the build directory
+   `cd <work-directory>/VeloView-build`
+
+3. Use this cmake command instead of the one in step #6 of the Devloper's Guide so that superbuild will download pcl and ceres sources will be downloaded and compiled:
+    ```
+    cmake <work-directory>/VeloView-source/Superbuild -DCMAKE_BUILD_TYPE=Release -DENABLE_pcl=True -DENABLE_ceres=True
+    ```
+    
+4. Start building with make. Replace <N> with number of cores to use!
+   `make -jN`
+
+5. Now you need to enable pcl and ceres from VeloView-build (in same directory):
+   - Navigate to veloview build folder `cd common-superbuild/veloview/build`
+   - Open Veloview cmake project `cmake-gui . ` including the "."
+   - Enable options ENABLE_pcl and ENABLE_ceres by clicking the tickboxes
+   - Configure and Generate files
+   - Close cmake-gui, recompile Veloview again by typing `make install` in the same location.
+
 
 
 # Using SLAM in Veloview
+
 See [Veloview's SLAM Presentation](https://github.com/etanx/VeloView/blob/master/Documentation/slam_presentation.docx) for more info about Veloview's SLAM algorithm. Note: SLAM has been tested with .pcap files from the VLP-32c.
 
 1. Open Veloview. Make sure Advanced Features are enabled.
@@ -63,7 +85,7 @@ To export all frames processed, you need to instanciate a "Transforms Applier" a
 - Instantiate a "Transform Applier" with point cloud <-> the output of the Extract Surface and trajectory <-> the one estimated by the SLAM.
 
 
-Save/Export the complete pointcloud for further processing.
+To save the complete pointcloud, export the Edge and Blob in SLAM (green cube), and the Temporal Transform Applier (with the green box) by using ctrl + “Edge Map,” “Blob Map,” and “TemporalTransformApplier1”.
 
 
 
