@@ -47,8 +47,9 @@ int vtkLASFileWriter::Write()
     return 0;
   }
 
-  this->LASWriter.Open(this->FileName);
   this->LASWriter.SetWriteSRS(this->WriteSRS);
+  this->LASWriter.SetWriteColor(this->WriteColor);
+  this->LASWriter.Open(this->FileName);
 
   bool useLatLonForOut = this->ExportType == EXPORT_LATLONG;
 #ifdef DEBUG_VTKLASFILEWRITER

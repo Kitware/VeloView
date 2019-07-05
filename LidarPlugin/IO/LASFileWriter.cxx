@@ -123,8 +123,14 @@ int LASFileWriter::Open(const char* filename)
   }
 
   this->header.SetSoftwareId(SOFTWARE_NAME);
-  // this->header.SetDataFormatId(liblas::ePointFormat1);
-  this->header.SetDataFormatId(liblas::ePointFormat3); // the first format with color and time
+  if (this->WriteColor)
+  {
+    this->header.SetDataFormatId(liblas::ePointFormat3); // the first format with color and time
+  }
+  else
+  {
+    this->header.SetDataFormatId(liblas::ePointFormat1);
+  }
   this->header.SetScale(1e-3, 1e-3, 1e-3);
 
   return 1;
@@ -342,7 +348,7 @@ void LASFileWriter::WriteFrame(vtkPolyData* data)
       p.SetReturnNumber(1);
       p.SetNumberOfReturns(1);
       p.SetUserData(static_cast<uint8_t>(laserIdData == nullptr ? 0.0 : laserIdData->GetComponent(n, 0)));
-      if (colorData != nullptr)
+      if (this->WriteColor && colorData != nullptr)
       {
         liblas::Color color = liblas::Color(
               static_cast<uint32_t>(colorData->GetComponent(n, 0)),
@@ -420,4 +426,9 @@ void LASFileWriter::SetMinPt(double const* pt)
 void LASFileWriter::SetWriteSRS(bool shouldWrite)
 {
   this->WriteSRS = shouldWrite;
+}
+
+void LASFileWriter::SetWriteColor(bool shouldWrite)
+{
+  this->WriteColor = shouldWrite;
 }

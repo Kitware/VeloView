@@ -59,6 +59,9 @@ public:
   vtkSetMacro(WriteSRS, bool)
   vtkGetMacro(WriteSRS, bool)
 
+  vtkSetMacro(WriteColor, bool)
+  vtkGetMacro(WriteColor, bool)
+
   vtkSetMacro(LastFrame, int)
   vtkGetMacro(LastFrame, int)
 
@@ -113,6 +116,7 @@ private:
 
   char* FileName = nullptr;
   bool WriteSRS = true;
+  bool WriteColor = false;
   int FirstFrame = 0;
   int LastFrame = -1; // negative numbers can be used à la Python list indexes
   int FrameStride = 1;

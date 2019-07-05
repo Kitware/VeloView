@@ -108,6 +108,17 @@
         </Documentation>
       </IntVectorProperty>
 
+      <IntVectorProperty
+          name="WriteColor"
+          command="SetWriteColor"
+          default_values="0"
+	  number_of_elements="1">
+        <BooleanDomain name="bool"/>
+        <Documentation>
+		Should the RGB color (if available) be written in the LAS file ? Resulting LAS will be bigger.
+        </Documentation>
+      </IntVectorProperty>
+
       <Hints>
         <Property name="Input"
                   show="0" />
