@@ -7,11 +7,8 @@
 #include "vtkPointData.h"
 
 #include <boost/algorithm/string.hpp>
-#include <cstdlib>
-#include <ctime>
 #include <iostream>
 #include <string>
-#include <chrono>
 #include <regex>
 #include <boost/program_options.hpp>
 namespace po = boost::program_options;
@@ -81,16 +78,16 @@ std::string bytes_to_human_readable(long bytes) {
 int main(int argc, char* argv[])
 {
   const std::string sep = ",";
-  bool pretty = false;
+  bool notPretty = false;
   bool showCSVHeader = false;
   bool showPCAPPath = false;
   po::options_description visible("Allowed options");
   visible.add_options()
       ("help", "produce help message")
-      ("pretty", po::bool_switch(&pretty), "Pretty-print columns")
-      ("showCSVHeader", po::bool_switch(&showCSVHeader), "Print CSV header line then exit")
-      ("pcapFile", po::value<std::string>()->default_value(""), "PCAP File")
+      ("pcapFile", po::value<std::string>()->default_value(""), "(mandatory) PCAP File")
       ("calibrationFile", po::value<std::string>()->default_value(""), "Calibration File")
+      ("notPretty", po::bool_switch(&notPretty)->default_value(false), "Do not pretty-print columns (useful to create CSVs)")
+      ("showCSVHeader", po::bool_switch(&showCSVHeader)->default_value(false), "Print CSV header line without printing results")
       ("showPCAPPath", po::bool_switch(&showPCAPPath), "First column is PCAP Path")
       ;
 
@@ -101,7 +98,7 @@ int main(int argc, char* argv[])
             options(cmdline_options).run(), vm);
   po::notify(vm);
 
-  if (vm.count("help") || argc < 2) {
+  if (vm.count("help") || argc < 2 || !(vm["pcapFile"].as<std::string>() != "" || showCSVHeader == true)) {
       cout << "Usage: " << argv[0] << " [options]" << std::endl;
       cout << visible << "\n"; // shows usage
       std::cout << "Tip: it can be interesting to use a calibration even if it"
@@ -118,20 +115,21 @@ int main(int argc, char* argv[])
     {
       std::cout << "file" << sep;
     }
-    // must be kept in sync with printing order the values below
+    // ! must be kept in sync with printing order the values below
     std::cout << "modelString" << sep;
     std::cout << "FF2" << sep;
-    std::cout << "dualReturnString," << sep;
+    std::cout << "dualReturnString" << sep;
     std::cout << "FF1" << sep;
     std::cout << "DualR" << sep;
     std::cout << "RPMs" << sep;
     std::cout << "PPSSynced" << sep;
     std::cout << "TSEstim" << sep;
-    std::cout << "Lat:" << sep;
-    std::cout << "Lon:" << sep;
-    std::cout << "Frames " << sep;
-    std::cout << "Size " << sep;
-    std::cout << "HRSize " << sep;
+    std::cout << "Lat" << sep;
+    std::cout << "Lon" << sep;
+    std::cout << "Frames" << sep;
+    std::cout << "Duration" << sep;
+    std::cout << "Size" << sep;
+    std::cout << "HRSize" << sep;
     std::cout << "Pts/frame";
     std::cout << std::endl;
     return 0;
@@ -185,6 +183,40 @@ int main(int argc, char* argv[])
 
   }
 
+  bool haveDuration = false;
+  double duration = 0.0;
+  if (frameCount > 0)
+  {
+    int i = 0;
+    vtkSmartPointer<vtkPolyData> firstFrame;
+    while (i < std::max(frameCount, 5)) // we try up to 5 frames to find a non-empty frame
+    {
+      reader->Open();
+      firstFrame = reader->GetFrame(i);
+      reader->Close();
+      if (firstFrame != nullptr && firstFrame->GetNumberOfPoints() > 0)
+      {
+        break;
+      }
+      i++;
+    }
+    reader->Open();
+    vtkSmartPointer<vtkPolyData> lastFrame = reader->GetFrame(frameCount - 1);
+    reader->Close();
+    if (firstFrame != nullptr && firstFrame->GetNumberOfPoints() > 0
+        && lastFrame != nullptr && lastFrame->GetNumberOfPoints() > 0
+        && firstFrame->GetPointData() != nullptr
+        && firstFrame->GetPointData()->GetArray("adjustedtime") != nullptr)
+    {
+      haveDuration = true;
+      double tStart = 1e-6 * firstFrame->GetPointData()->GetArray("adjustedtime")->GetTuple1(0);
+      size_t N = lastFrame->GetNumberOfPoints();
+      double tEnd = 1e-6 * lastFrame->GetPointData()->GetArray("adjustedtime")->GetTuple1(N - 1);
+      duration = tEnd - tStart;
+    }
+    reader->Close();
+  }
+
   std::string sensorInfo = reader->GetSensorInformation();
   static const std::regex parseSensorInfo = std::regex(".*:(.*)\\(.*\\)(.*)\\|.*:(.*)\\(.*\\)(.*)");
   std::smatch matches;
@@ -225,25 +257,26 @@ int main(int argc, char* argv[])
   // been read.
   if (showPCAPPath)
   {
-    std::cout << (pretty ? "Path:" : "") << "\"" << pcapPath << "\"" << sep;
+    std::cout << (!notPretty ? "Path:" : "") << "\"" << pcapPath << "\"" << sep;
   }
 
   const int latLongPrecision = 4; // 4 digits give 11m of precision
   // must be kept in sync with printing of CSV header line above
-  std::cout << (pretty ? "Model:" : "") << modelString << sep;
-  std::cout << (pretty ? "FF2:" : "") << int_to_hex(factoryField2) << sep;
-  std::cout << (pretty ? "Returns:" : "") << dualReturnString << sep;
-  std::cout << (pretty ? "FF1:" : "") << int_to_hex(factoryField1) << sep;
-  std::cout << (pretty ? "DualR:" : "") << (haveCalibration ? ((interp->GetHasDualReturn() ? "True" : "False")) : "?") << sep;
-  std::cout << (pretty ? "RPMs:" : "") << (haveCalibration ? to_string_with_precision(RPM, 1) : "?") << sep;
-  std::cout << (pretty ? "PPSSynced:" : "") << (isPPSSynced ? "True" : "False") << sep;
-  std::cout << (pretty ? "TSEstim:" : "") << (hasGPSTimeShiftEstimation ? "True" : "False") << sep;
-  std::cout << (pretty ? "Lat:" : "") << (haveLatLon ? to_string_with_precision(lat, latLongPrecision) : "None") << sep;
-  std::cout << (pretty ? "Lon:" : "") << (haveLatLon ? to_string_with_precision(lon, latLongPrecision) : "None") << sep;
-  std::cout << (pretty ? "Frames:" : "") << std::to_string(frameCount) << sep;
-  std::cout << (pretty ? "Size:" : "") << GetFileSize(pcapPath) << sep;
-  std::cout << (pretty ? "HRSize:" : "") << bytes_to_human_readable(GetFileSize(pcapPath)) << sep;
-  std::cout << (pretty ? "Pts/frame:" : "") << (haveCalibration ? to_string_with_precision(pointsPerFrame, 1) : "?");
+  std::cout << (!notPretty ? "Model:" : "") << modelString << sep;
+  std::cout << (!notPretty ? "FF2:" : "") << int_to_hex(factoryField2) << sep;
+  std::cout << (!notPretty ? "Returns:" : "") << dualReturnString << sep;
+  std::cout << (!notPretty ? "FF1:" : "") << int_to_hex(factoryField1) << sep;
+  std::cout << (!notPretty ? "DualR:" : "") << (haveCalibration ? ((interp->GetHasDualReturn() ? "True" : "False")) : "?") << sep;
+  std::cout << (!notPretty ? "RPMs:" : "") << (haveCalibration ? to_string_with_precision(RPM, 1) : "?") << sep;
+  std::cout << (!notPretty ? "PPSSynced:" : "") << (isPPSSynced ? "True" : "False") << sep;
+  std::cout << (!notPretty ? "TSEstim:" : "") << (hasGPSTimeShiftEstimation ? "True" : "False") << sep;
+  std::cout << (!notPretty ? "Lat:" : "") << (haveLatLon ? to_string_with_precision(lat, latLongPrecision) : "None") << sep;
+  std::cout << (!notPretty ? "Lon:" : "") << (haveLatLon ? to_string_with_precision(lon, latLongPrecision) : "None") << sep;
+  std::cout << (!notPretty ? "Frames:" : "") << std::to_string(frameCount) << sep;
+  std::cout << (!notPretty ? "Duration:" : "") << (haveDuration ? to_string_with_precision(duration, 1) : "?") << sep;
+  std::cout << (!notPretty ? "Size:" : "") << GetFileSize(pcapPath) << sep;
+  std::cout << (!notPretty ? "HRSize:" : "") << bytes_to_human_readable(GetFileSize(pcapPath)) << sep;
+  std::cout << (!notPretty ? "Pts/frame:" : "") << (haveCalibration ? to_string_with_precision(pointsPerFrame, 1) : "?");
   std::cout << std::endl;
   return 1;
 }
