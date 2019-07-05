@@ -43,7 +43,7 @@
         <BooleanDomain name="bool" />
         <Documentation>
           Use an internal cache for speed up. If a cache is used, some artefact may appear if
-          the input for previous timestep change
+          the input for previous timestep change. This option has no effect on live source.
         </Documentation>
       </IntVectorProperty>
 
