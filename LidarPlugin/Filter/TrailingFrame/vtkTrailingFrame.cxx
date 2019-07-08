@@ -45,9 +45,11 @@ int vtkTrailingFrame::RequestUpdateExtent(vtkInformation* vtkNotUsed(request),
     this->TimeSteps.assign(time_steps, time_steps + nb_time_steps);
   }
 
+  // If the TimeSteps size is still zero, it means
+  // that we are in the presence of a live source
   if (this->TimeSteps.size() == 0)
   {
-    vtkGenericWarningMacro("No timestep available");
+    this->LastTimeProcessedIndex = (LastTimeProcessedIndex+1) % (this->NumberOfTrailingFrames+1);
     return 1;
   }
 
@@ -136,38 +138,33 @@ int vtkTrailingFrame::RequestData(vtkInformation* request,
   vtkMultiBlockDataSet* output = vtkMultiBlockDataSet::GetData(outputVector);
 
   // If the TimeSteps size is still zero, it means
-  // that no time_steps has been filled by the reader /
-  // stream. Hence, either no lidar data was stored in the
-  // .pcap or received throught ethernet
-  if (this->TimeSteps.size() == 0)
+  // that we are in the presence of a live source
+  if (!this->TimeSteps.empty())
   {
-    // Stop the pipeline loop
-    request->Remove(vtkStreamingDemandDrivenPipeline::CONTINUE_EXECUTING());
-    return 1;
-  }
 
-  if ((this->LastTimeProcessedIndex == this->CacheTimeRange[0] && this->Direction == -1)
-      || (this->LastTimeProcessedIndex == this->CacheTimeRange[1]-1 && this->Direction == 1))
-  {
-    // Stop the pipeline loop
-    request->Remove(vtkStreamingDemandDrivenPipeline::CONTINUE_EXECUTING());
-
-    // reset block that should be empty
-    for (unsigned int i = this->PipelineIndex + 1; i < this->NumberOfTrailingFrames + 1; i++)
+    if ((this->LastTimeProcessedIndex == this->CacheTimeRange[0] && this->Direction == -1)
+        || (this->LastTimeProcessedIndex == this->CacheTimeRange[1]-1 && this->Direction == 1))
     {
-      int index = i % (this->NumberOfTrailingFrames + 1);
-      this->Cache->SetBlock(index, nullptr);
-    }
+      // Stop the pipeline loop
+      request->Remove(vtkStreamingDemandDrivenPipeline::CONTINUE_EXECUTING());
 
-    // reset some variable and pipeline time
-    this->FirstFilterIteration = true;
-    inInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP(),
-                this->PipelineTime);
-  }
-  else
-  {
-    // force the pipeline loop
-    request->Set(vtkStreamingDemandDrivenPipeline::CONTINUE_EXECUTING(), 1);
+      // reset block that should be empty
+      for (unsigned int i = this->PipelineIndex + 1; i < this->NumberOfTrailingFrames + 1; i++)
+      {
+        int index = i % (this->NumberOfTrailingFrames + 1);
+        this->Cache->SetBlock(index, nullptr);
+      }
+
+      // reset some variable and pipeline time
+      this->FirstFilterIteration = true;
+      inInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP(),
+                  this->PipelineTime);
+    }
+    else
+    {
+      // force the pipeline loop
+      request->Set(vtkStreamingDemandDrivenPipeline::CONTINUE_EXECUTING(), 1);
+    }
   }
 
   // copy the input in the multiblock
