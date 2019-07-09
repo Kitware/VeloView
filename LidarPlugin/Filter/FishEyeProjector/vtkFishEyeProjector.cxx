@@ -27,6 +27,7 @@
 #include <vtkIntArray.h>
 #include <vtkInformation.h>
 #include <vtkInformationVector.h>
+#include <vtkNew.h>
 #include <vtkPointData.h>
 #include <vtkPolyData.h>
 #include <vtkSmartPointer.h>
@@ -38,18 +39,18 @@ vtkStandardNewMacro(vtkFishEyeProjector)
 vtkFishEyeProjector::vtkFishEyeProjector()
 {
   this->SetNumberOfInputPorts(2);
-  this->SetNumberOfOutputPorts(2);
+  this->SetNumberOfOutputPorts(3);
 }
 
 //-----------------------------------------------------------------------------
 int vtkFishEyeProjector::FillInputPortInformation(int port, vtkInformation *info)
 {
-  if ( port == 0 )
+  if (port == 0)
   {
     info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkImageData" );
     return 1;
   }
-  if ( port == 1 )
+  if (port == 1)
   {
     info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkPolyData" );
     return 1;
@@ -60,12 +61,17 @@ int vtkFishEyeProjector::FillInputPortInformation(int port, vtkInformation *info
 //-----------------------------------------------------------------------------
 int vtkFishEyeProjector::FillOutputPortInformation(int port, vtkInformation *info)
 {
-  if ( port == 0 )
+  if (port == 0)
   {
     info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkImageData" );
     return 1;
   }
-  if ( port == 1 )
+  if (port == 1)
+  {
+    info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkPolyData" );
+    return 1;
+  }
+  if (port == 2)
   {
     info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkPolyData" );
     return 1;
@@ -84,7 +90,8 @@ int vtkFishEyeProjector::RequestData(vtkInformation *vtkNotUsed(request),
   // Get the output
   vtkImageData* outImg = vtkImageData::GetData(outputVector->GetInformationObject(0));
   vtkPolyData* outCloud = vtkPolyData::GetData(outputVector->GetInformationObject(1));
-  if (!outImg || !outCloud)
+  vtkPolyData* projectedCloud = vtkPolyData::GetData(outputVector->GetInformationObject(2));
+  if (!inImg || !pointcloud)
   {
     vtkGenericWarningMacro("Null pointer entry, can not launch the filter");
     return 1;
@@ -92,6 +99,12 @@ int vtkFishEyeProjector::RequestData(vtkInformation *vtkNotUsed(request),
 
   outImg->DeepCopy(inImg);
   outCloud->DeepCopy(pointcloud);
+  projectedCloud->DeepCopy(pointcloud);
+  projectedCloud->GetPoints()->Resize(0);
+  for (int i = 0; i < projectedCloud->GetPointData()->GetNumberOfArrays(); ++i)
+  {
+    projectedCloud->GetPointData()->GetArray(i)->Resize(0);
+  }
 
 
   vtkDataArray* intensity = outCloud->GetPointData()->GetArray("intensity");
@@ -124,6 +137,15 @@ int vtkFishEyeProjector::RequestData(vtkInformation *vtkNotUsed(request),
     vtkRaw = std::min(std::max(0, vtkRaw), inImg->GetDimensions()[1] - 1);
     vtkCol = std::min(std::max(0, vtkCol), inImg->GetDimensions()[0] - 1);
 
+    // register the point if it is valid
+    double pt[3] = {y(0), y(1), 0};
+    projectedCloud->GetPoints()->InsertNextPoint(pt);
+    for (int i = 0; i < projectedCloud->GetPointData()->GetNumberOfArrays(); ++i)
+    {
+      projectedCloud->GetPointData()->GetArray(i)->InsertNextTuple(
+            pointcloud->GetPointData()->GetArray(i)->GetTuple(pointIndex));
+    }
+
     // Get its color
     double intensityValue = intensity->GetTuple1(pointIndex);
     Eigen::Vector3d color = GetRGBColourFromReflectivity(intensityValue, 0, 255);
@@ -136,6 +158,18 @@ int vtkFishEyeProjector::RequestData(vtkInformation *vtkNotUsed(request),
     }
     rgbArray->SetTuple3(pointIndex, rgb[0], rgb[1], rgb[2]);
   }
+
+  vtkNew<vtkIdTypeArray> cells;
+  cells->SetNumberOfValues(projectedCloud->GetNumberOfPoints() * 2);
+  vtkIdType* ids = cells->GetPointer(0);
+  for (vtkIdType i = 0; i < projectedCloud->GetNumberOfPoints(); ++i)
+  {
+    ids[i * 2] = 1;
+    ids[i * 2 + 1] = i;
+  }
+  vtkSmartPointer<vtkCellArray> cellArray = vtkSmartPointer<vtkCellArray>::New();
+  cellArray->SetCells(projectedCloud->GetNumberOfPoints(), cells.GetPointer());
+  projectedCloud->SetVerts(cellArray);
 
   return 1;
 }
