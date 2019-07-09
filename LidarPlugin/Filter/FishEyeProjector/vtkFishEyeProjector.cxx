@@ -112,8 +112,8 @@ int vtkFishEyeProjector::RequestData(vtkInformation *vtkNotUsed(request),
 
     // y represents the pixel coordinates using opencv convention, we need to
     // go back to vtkImageData pixel convention
-    int vtkRaw = inImg->GetDimensions()[1] - 1 - y(0);
-    int vtkCol = y(1);
+    int vtkRaw = y(1);
+    int vtkCol = y(0);
 
     if ((vtkRaw < 0) || (vtkRaw >= inImg->GetDimensions()[1]) ||
         (vtkCol < 0) || (vtkCol >= inImg->GetDimensions()[0]))

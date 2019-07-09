@@ -166,7 +166,7 @@ Eigen::Vector2d BrownConradyPinholeProjection(const Eigen::Matrix<double, 17, 1>
   double r = Xp1.norm();
   double k1 = W(11); double k2 = W(12);
   double p1 = W(13); double p2 = W(14);
-  double p3 = W(14); double p4 = W(15);
+  double p3 = W(15); double p4 = W(16);
 
   double xdist = Xp1(0) + Xp1(0) * (k1 * std::pow(r, 2) + k2 * std::pow(r, 4)) +
                  (p1 * (std::pow(r, 2) + 2 * std::pow(Xp1(0), 2)) +
