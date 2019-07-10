@@ -84,11 +84,11 @@ To export all frames processed, you need to instanciate a "Transforms Applier" a
 - Click on apply. You should now see all the frames aggregated in a non-sense way (all points being displayed using their coordinates of the reference frame attached to the sensor at the time of acquisition).
 - Instantiate a "Transform Applier" with point cloud <-> the output of the Extract Surface and trajectory <-> the one estimated by the SLAM.
 
+![exportformat](https://user-images.githubusercontent.com/22595013/58315333-ab993880-7e11-11e9-9415-508953f65947.png)
 
 To save the complete pointcloud, export the Edge and Blob in SLAM (green cube), and the Temporal Transform Applier (with the green box) by using ctrl + “Edge Map,” “Blob Map,” and “TemporalTransformApplier1”.
 
+Note: The default SLAM parameters are a good compromise to make the SLAM working in outdoor urban area, indoor scene and poor geometric scene (forest recorded from UAV, glades, career, ...). However, the parameters can be adapted to the specific kind of environment you want to process to have an optimal result.
 
 
-Note: The default SLAM parameters are a good compromise to make the SLAM working in outdoor urban area, indoor scene and poor geometric scene (forest recorded from UAV, glades, career, ...).
-However, the parameters can be adapted to the specific kind of environment you want to process to have an optimal result.
 
