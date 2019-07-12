@@ -79,22 +79,23 @@ VAPI_DECLARE_BIG_TO_NATIVE(uint64_t)
 //------------------------------------------------------------------------------
 //! @ brief List of field macros for use in other macros.
 #define VAPI_INFO_ARRAYS \
-	(Xs)                    \
-	(Ys)                    \
-	(Zs)                    \
-	(Distances)             \
-	(RawDistances)          \
-	(Azimuths)              \
-	(VerticalAngles)        \
-	(Confidences)           \
-	(Intensities)           \
-	(Reflectivities)        \
-	(DistanceTypes)         \
-	(ChannelNumbers)        \
-	(Noises)                \
-	(Powers)                \
-	(Pseqs)                 \
-	(TimeFractionOffsets)
+	(Xs)                   \
+	(Ys)                   \
+	(Zs)                   \
+	(Distances)            \
+	(RawDistances)         \
+	(Azimuths)             \
+	(VerticalAngles)       \
+	(Confidences)          \
+	(Intensities)          \
+	(Reflectivities)       \
+	(DistanceTypes)        \
+	(ChannelNumbers)       \
+	(Noises)               \
+	(Powers)               \
+	(Pseqs)                \
+	(TimeFractionOffsets)  \
+	(Timestamps)
 	// (DistanceTypeStrings)
 
 //! @brief Wrapper around BOOST_PP_CAT for use with BOOST_PP_SEQ_TRANSFORM.
@@ -428,6 +429,16 @@ public:
   VAPI_GET_NATIVE_UINT(64, Tref)
   VAPI_GET_NATIVE_UINT(32, Pseq)
   //@}
+
+  //! @brief Get the number of nanoseconds represented by TREF.
+  uint64_t
+  GetTrefInNanoseconds() const
+  {
+    uint64_t ns = 0, tref = this->Tref;
+    ns += (tref >> 32) * 1000000000;
+    ns += (tref & 0xffffffff);
+    return ns;
+  }
 
   //! @brief Get the DSET mask (or the count if DSET is not a mask).
   uint8_t

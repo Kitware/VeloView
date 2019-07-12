@@ -222,7 +222,8 @@ vtkVelodyneAdvancedPacketInterpreter::ProcessPacket(
   auto const isDsetMask = payloadHeader->IsDsetMask();
 
   // 64-bit PTP truncated format.
-  // auto timeRef = payloadHeader->GetTref();
+  // auto const timeRef = payloadHeader->GetTref();
+  auto const packetTimeReferenceInNanoseconds = payloadHeader->GetTrefInNanoseconds();
 
   size_t const numberOfBytesPerFiringGroupHeader = payloadHeader->GetGlen();
   size_t const numberOfBytesPerFiringHeader      = payloadHeader->GetFlen();
@@ -321,22 +322,37 @@ vtkVelodyneAdvancedPacketInterpreter::ProcessPacket(
       this->SplitFrame();
     }
 
-    auto const timeFractionOffset         = firingGroupHeader->GetToffs();
-    auto const coChannelSpan              = firingGroupHeader->GetFspn();
-    auto const coChannelTimeFractionDelay = firingGroupHeader->GetFdly();
-    auto const vdfl                       = firingGroupHeader->GetVdfl();
-    // double const verticalAngleInDegrees   = firingGroupHeader->GetVerticalDeflection();
-    auto const azimuth                    = firingGroupHeader->GetAzm();
-    double const azimuthInDegrees         = firingGroupHeader->GetAzimuth();
-    auto const numberOfFirings            = firingGroupHeader->GetFcnt();
+    auto const timeFractionOffsetInNanoseconds         = firingGroupHeader->GetToffs();
+    auto const coChannelSpan                           = firingGroupHeader->GetFspn();
+    auto const coChannelTimeFractionDelayInNanoseconds = firingGroupHeader->GetFdly();
+    auto const vdfl                                    = firingGroupHeader->GetVdfl();
+    // double const verticalAngleInDegrees             = firingGroupHeader->GetVerticalDeflection();
+    auto const azimuth                                 = firingGroupHeader->GetAzm();
+    double const azimuthInDegrees                      = firingGroupHeader->GetAzimuth();
+    auto const numberOfFirings                         = firingGroupHeader->GetFcnt();
 
-    for (size_t i = 0; i < numberOfFirings; ++i)
+    for (
+      std::remove_const<decltype(numberOfFirings)>::type i = 0;
+      i < numberOfFirings;
+      ++i
+    )
     {
       // TODO
       // This assumes that the spans are returned in order in the firing group.
-      // Check that this is the case. If not, determine how to handle this (by
-      // using the channel number?).
-      uint32_t const channelTimeFractionOffset = timeFractionOffset + (coChannelTimeFractionDelay * (i / coChannelSpan));
+      // Check that this is the case. If not, determine how to handle this
+      // (e.g. by using the channel number?).
+
+      // Intentional truncating integer division. The span index counts the
+      // number of spans and should only increment after multiples of
+      // coChannelSpan.
+      // Also note that these operations are safe despite the mixed types due
+      // to the rules for implicit integer promotion.
+      decltype(timeFractionOffsetInNanoseconds) iSpan = i / coChannelSpan;
+      decltype(timeFractionOffsetInNanoseconds) channelTimeFractionOffsetInNanoseconds =
+        timeFractionOffsetInNanoseconds + (coChannelTimeFractionDelayInNanoseconds * iSpan);
+
+      decltype(packetTimeReferenceInNanoseconds) firingTimeInNanoseconds =
+        packetTimeReferenceInNanoseconds + channelTimeFractionOffsetInNanoseconds;
 
       FiringHeader const * firingHeader = reinterpretCastWithChecks<FiringHeader>(data, dataLength, index);
       if (firingHeader == nullptr)
@@ -419,7 +435,8 @@ vtkVelodyneAdvancedPacketInterpreter::ProcessPacket(
         // VAPI_SET_VALUE(DistanceTypeStrings, toString(toDistanceType(distType)))
         VAPI_SET_VALUE(Pseqs, pseq)
         VAPI_SET_VALUE(ChannelNumbers, channelNumber)
-        VAPI_SET_VALUE(TimeFractionOffsets, channelTimeFractionOffset)
+        VAPI_SET_VALUE(TimeFractionOffsets, channelTimeFractionOffsetInNanoseconds)
+        VAPI_SET_VALUE(Timestamps, firingTimeInNanoseconds)
         VAPI_SET_VALUE(Powers, power)
         VAPI_SET_VALUE(Noises, noise)
         VAPI_SET_VALUE(VerticalAngles, correctedValues.elevation)
@@ -576,6 +593,7 @@ vtkVelodyneAdvancedPacketInterpreter::CreateNewEmptyFrame(
   VAPI_INIT_INFO_ARR(Reflectivities, "reflectivity")
   VAPI_INIT_INFO_ARR(ChannelNumbers, "logical_channel_number")
   VAPI_INIT_INFO_ARR(TimeFractionOffsets, "time_fraction_offset")
+  VAPI_INIT_INFO_ARR(Timestamps, "timestamp")
   VAPI_INIT_INFO_ARR(Powers, "power")
   VAPI_INIT_INFO_ARR(Noises, "noise")
   VAPI_INIT_INFO_ARR(Pseqs, "packet_sequence_number")

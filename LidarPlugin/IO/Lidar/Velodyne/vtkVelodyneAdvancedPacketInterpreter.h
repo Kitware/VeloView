@@ -4,6 +4,8 @@
 #include "vtkLidarPacketInterpreter.h"
 #include <vtkUnsignedCharArray.h>
 #include <vtkUnsignedIntArray.h>
+#include <vtkUnsignedLongArray.h>
+#include <vtkUnsignedLongLongArray.h>
 #include <vtkDoubleArray.h>
 // #include <vtkStringArray.h>
 #include "vtkVelodyneBasePacketInterpreter.h"
@@ -51,7 +53,7 @@ private:
   /*!
    * @brief     Set the number of items in the arrays.
    * @param[in] newSize The number of items to set.
-   * 
+   *
    * If the number of points is greater than the current number of points,
    * ResizeArrays will be called first to ensure that points are preserved.
    */
@@ -111,7 +113,8 @@ public:
   vtkSmartPointer<vtkUnsignedCharArray>   INFO_Powers;
 
   vtkSmartPointer<vtkUnsignedIntArray>    INFO_Pseqs;
-  vtkSmartPointer<vtkUnsignedIntArray>    INFO_TimeFractionOffsets;
+  vtkSmartPointer<vtkUnsignedLongArray>   INFO_TimeFractionOffsets;
+  vtkSmartPointer<vtkUnsignedLongLongArray>  INFO_Timestamps;
 
 
 protected:
