@@ -79,7 +79,7 @@ include_directories(${SYSTEM_OPTION} ${EIGEN_INCLUDE_DIR})
 #--------------------------------------
 # PCL dependency
 #--------------------------------------
-option(ENABLE_pcl OFF "PCL will be required for filters using pcl (PCLRansacFilter, Slam, ...)")
+option(ENABLE_pcl "PCL will be required for filters using pcl (PCLRansacFilter, Slam, ...)" OFF)
 if (ENABLE_pcl)
   find_package(PCL REQUIRED)
   include_directories(${SYSTEM_OPTION} ${PCL_INCLUDE_DIRS})
@@ -102,7 +102,7 @@ list(APPEND ALL_BOOST_LIBRARIES ${Boost_LIBRARIES})
 #--------------------------------------
 # Ceres dependency
 #--------------------------------------
-option(ENABLE_ceres OFF "Ceres is required for filters using non-linear least square optimization (Slam, autocalibration, ...)")
+option(ENABLE_ceres "Ceres is required for filters using non-linear least square optimization (Slam, autocalibration, ...)" OFF)
 if (ENABLE_ceres)
   find_package(Ceres REQUIRED)
   include_directories(${SYSTEM_OPTION} ${CERES_INCLUDE_DIRS})
@@ -111,7 +111,7 @@ endif(ENABLE_ceres)
 #--------------------------------------
 # Opencv dependency
 #--------------------------------------
-option(ENABLE_opencv OFF "OpenCV is required for handling lidar-camera multisensor systems")
+option(ENABLE_opencv "OpenCV is required for handling lidar-camera multisensor systems" OFF)
 if (ENABLE_opencv)
   find_package(OpenCV REQUIRED)
   include_directories(${SYSTEM_OPTION} ${OpenCV_INCLUDE_DIRS})
@@ -120,7 +120,7 @@ endif(ENABLE_opencv)
 #--------------------------------------
 # nanoflann dependency
 #--------------------------------------
-option(ENABLE_nanoflann OFF "Nanoflann will be required for filters using some optimized kdtree (SLAM, DBSCAN, ...)")
+option(ENABLE_nanoflann "Nanoflann will be required for filters using some optimized kdtree (SLAM, DBSCAN, ...)" OFF)
   if (ENABLE_nanoflann)
   # because nanoflann use modern C++, no need to specify the include dir or anything else
   # you just need to link against the target nanoflann::nanoflann
