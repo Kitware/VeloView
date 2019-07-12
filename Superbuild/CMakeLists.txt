@@ -28,7 +28,6 @@ macro (superbuild_setup_variables)
   # set(paraview_version "${paraview_version_major}.${paraview_version_minor}")
   set(paraview_version "5.4")
 endmacro ()
-
 #------------------------------------------------------------------------------
 # Set a default build type if none was specified
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
@@ -202,5 +201,13 @@ list(APPEND superbuild_project_roots
   "${SuperBuild_PROJECTS_DIR}")
 
 set(_superbuild_default_cxx11 ON)
+
+option(ENABLE_all "Enable all optional dependancy like pcl, ceres, opencv, ..." ON)
+if (ENABLE_all)
+  set(ENABLE_opencv ON)
+  set(ENABLE_ceres ON)
+  set(ENABLE_pcl ON)
+  set(ENABLE_nanoflann ON)
+endif(ENABLE_all)
 
 add_subdirectory(common-superbuild)
