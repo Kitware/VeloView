@@ -227,7 +227,8 @@ inline
 void align_to_word_size(T & x)
 {
   // Check that VAPI_BYTES_PER_HEADER_WORD is a power of 2 at compile time.
-  static_assert(VAPI_BYTES_PER_HEADER_WORD && (VAPI_BYTES_PER_HEADER_WORD & (VAPI_BYTES_PER_HEADER_WORD - 1)) == 0);
+  constexpr bool isPowerOfTwo = VAPI_BYTES_PER_HEADER_WORD && (VAPI_BYTES_PER_HEADER_WORD & (VAPI_BYTES_PER_HEADER_WORD - 1)) == 0;
+  static_assert(isPowerOfTwo, "VAPI_BYTES_PER_HEADER_WORD is not a power of 2");
   // Use bitshifts instead of the modulus operator and branching.
   T staggered = x & (VAPI_BYTES_PER_HEADER_WORD - 1);
   // Adds 0 if staggered is already 0.
