@@ -45,7 +45,7 @@
     - cd ..
     - tar zcf archive Superbuild-build/
     - /cygdrive/c/mc.exe config host add superbuild ${MINIO_CACHE_SERVER_ADDRESS} ${MINIO_CACHE_SERVER_ACCESS_KEY} ${MINIO_CACHE_SERVER_SECRET_KEY}
-    - /cygdrive/c/mc.exe cp archive superbuild/runner/minio/project/808/${cache_patch}/${OS}/${CI_COMMIT_REF_NAME}-1
+    - /cygdrive/c/mc.exe cp archive superbuild/runner/minio/project/808/${cache_patch}/${OS}/${CI_COMMIT_REF_NAME}
 
 windows_superbuild_manual: &windows_superbuild_manual
   when: manual

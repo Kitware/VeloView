@@ -56,16 +56,16 @@ function cache_exist {
 }
 
 # find the most appropriate superbuild
-superbuild_cache="${prefix}/${path}-${FULL_VERSION}-1"
+superbuild_cache="${prefix}/${path}-${FULL_VERSION}"
 echo "looking for superbuild cache at: $superbuild_cache"
 while ! cache_exist "$superbuild_cache"; do
   echo "cache not found"
   path=$(dirname -- ${path})
   if [ "$path" != "." ]; then
-    superbuild_cache="${prefix}/${path}/master-${FULL_VERSION}-1"
+    superbuild_cache="${prefix}/${path}/master-${FULL_VERSION}"
     echo "looking for superbuild cache at: $superbuild_cache"
   else
-    superbuild_cache="${prefix}/${OS}/kitware-master-${FULL_VERSION}-1"
+    superbuild_cache="${prefix}/${OS}/kitware-master-${FULL_VERSION}"
     echo "top level reached, looking for superbuild cache at: ${superbuild_cache}"
     if ! cache_exist "$superbuild_cache"; then
       echo "!!!WARNING!!! Default superbuild : ${superbuild_cache} does not exists"
