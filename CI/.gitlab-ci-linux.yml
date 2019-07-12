@@ -5,7 +5,7 @@
   script: &unix_get_superbuild
     - cd ..
     - chmod +x ${CI_PROJECT_DIR}/CI/findRightSuperbuildCache.sh
-    - ${CI_PROJECT_DIR}/CI/findRightSuperbuildCache.sh ${OS} ${CI_COMMIT_REF_NAME} ${MINIO_CACHE_SERVER_ADDRESS} ${MINIO_CACHE_SERVER_ACCESS_KEY} ${MINIO_CACHE_SERVER_SECRET_KEY}
+    - ${CI_PROJECT_DIR}/CI/findRightSuperbuildCache.sh ${OS} ${CI_COMMIT_REF_NAME} ${MINIO_CACHE_SERVER_ADDRESS} ${MINIO_CACHE_SERVER_ACCESS_KEY} ${MINIO_CACHE_SERVER_SECRET_KEY} ${superbuild_with_all_dependacies}
     # create a symbolic link
     - cd ${CI_PROJECT_DIR}
     - ln -s ../Superbuild-build Superbuild-build
@@ -19,7 +19,9 @@
     - mkdir Superbuild-build/
     - cd Superbuild-build/
     # configure & generate
-    - cmake -DCMAKE_BUILD_TYPE:STRING=${cmake_option_CMAKE_BUILD_TYPE} -DBUILD_TESTING=True
+    - cmake -DCMAKE_BUILD_TYPE:STRING=${cmake_option_CMAKE_BUILD_TYPE}
+      -DBUILD_TESTING=True
+      -DENABLE_all=${superbuild_with_all_dependacies}
       ${CI_PROJECT_DIR}/Superbuild
     # compile
     - make -j8
@@ -32,7 +34,7 @@
     - cd ..
     - tar zcf archive Superbuild-build/
     - ~/mc config host add superbuild ${MINIO_CACHE_SERVER_ADDRESS} ${MINIO_CACHE_SERVER_ACCESS_KEY} ${MINIO_CACHE_SERVER_SECRET_KEY}
-    - ~/mc cp archive superbuild/runner/minio/project/808/${cache_patch}/${OS}/${CI_COMMIT_REF_NAME}-1
+    - ~/mc cp archive superbuild/runner/minio/project/808/${cache_patch}/${OS}/${CI_COMMIT_REF_NAME}-${superbuild_with_all_dependacies}-1
 
 .linux_superbuild_manual: &linux_superbuild_manual
   when: manual
