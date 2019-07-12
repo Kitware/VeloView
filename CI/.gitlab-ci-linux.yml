@@ -111,8 +111,16 @@
   variables:
     OS: ubuntu_16.04
 
-ubuntu16.04_superbuild_manual:
+ubuntu16.04_full_superbuild_manual:
   <<: *ubuntu_16_04
+  <<: *linux_superbuild_manual
+
+# duplicate manual job until gitlab 12.2 see https://gitlab.com/gitlab-org/gitlab-ce/issues/24935
+ubuntu16.04_light_superbuild_manual:
+  <<: *ubuntu_16_04
+  variables:
+    OS: ubuntu_16.04
+    superbuild_with_all_dependacies: "OFF"
   <<: *linux_superbuild_manual
 
 ubuntu16.04_superbuild_schedule:
@@ -127,7 +135,15 @@ ubuntu16.04_test:
   <<: *ubuntu_16_04
   <<: *linux_test
 
-ubuntu16.04_package_manual:
+# duplicate manual job until gitlab 12.2 see https://gitlab.com/gitlab-org/gitlab-ce/issues/24935
+ubuntu16.04_light_package_manual:
+  <<: *ubuntu_16_04
+  variables:
+    OS: ubuntu_16.04
+    superbuild_with_all_dependacies: "OFF"
+  <<: *linux_package_manual
+
+ubuntu16.04_full_package_manual:
   <<: *ubuntu_16_04
   <<: *linux_package_manual
 
