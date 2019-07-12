@@ -40,18 +40,18 @@ target_link_libraries(TestVelodynePPSIdentification LidarPlugin)
 custom_add_executable(TestVtkEigenTools TestVtkEigenTools.cxx TestHelpers.cxx)
 target_link_libraries(TestVtkEigenTools LidarPlugin)
 
-if (ENABLE_Ceres)
+if (ENABLE_ceres)
   add_executable(TestCameraCalibration TestCameraCalibration.cxx)
   target_link_libraries(TestCameraCalibration LidarPlugin)
-endif (ENABLE_Ceres)
+endif (ENABLE_ceres)
 
-if (ENABLE_PCL AND ENABLE_Ceres)
+if (ENABLE_pcl AND ENABLE_ceres)
   add_executable(TestGeometricCalibration-MM TestGeometricCalibration-MM.cxx)
   target_link_libraries(TestGeometricCalibration-MM LidarPlugin)
 
   add_executable(TestGeometricCalibration-LaDoua TestGeometricCalibration-LaDoua.cxx)
   target_link_libraries(TestGeometricCalibration-LaDoua LidarPlugin)
-endif(ENABLE_PCL AND ENABLE_Ceres)
+endif(ENABLE_pcl AND ENABLE_ceres)
 
 custom_add_executable(TestTemporalTransformsReaderWriter TestTemporalTransformsReaderWriter.cxx TestHelpers.cxx)
 target_link_libraries(TestTemporalTransformsReaderWriter LidarPlugin)
@@ -143,14 +143,14 @@ add_test(TestRansacPlaneModel
   ${INSTALL_LOCAL_DIR}/TestRansacPlaneModel
 )
 
-if (ENABLE_Ceres)
+if (ENABLE_ceres)
   add_test(TestCameraCalibration
     ${INSTALL_LOCAL_DIR}/TestCameraCalibration
     ${CMAKE_SOURCE_DIR}/TestData/Camera/MatchedPoints_3D_2D
   )
-endif (ENABLE_Ceres)
+endif (ENABLE_ceres)
 
-if (ENABLE_PCL AND ENABLE_Ceres)
+if (ENABLE_pcl AND ENABLE_ceres)
   add_test(TestGeometricCalibration-MM
     ${INSTALL_LOCAL_DIR}/TestGeometricCalibration-MM
     ${CMAKE_SOURCE_DIR}/TestData/trajectories
@@ -160,7 +160,7 @@ if (ENABLE_PCL AND ENABLE_Ceres)
     ${INSTALL_LOCAL_DIR}/TestGeometricCalibration-LaDoua
     ${CMAKE_SOURCE_DIR}/TestData/trajectories/la_doua_dataset
   )
-endif(ENABLE_PCL AND ENABLE_Ceres)
+endif(ENABLE_pcl AND ENABLE_ceres)
 
 add_test(TestVelodynePPSIdentification
   ${INSTALL_LOCAL_DIR}/TestVelodynePPSIdentification

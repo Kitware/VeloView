@@ -79,12 +79,12 @@ include_directories(${SYSTEM_OPTION} ${EIGEN_INCLUDE_DIR})
 #--------------------------------------
 # PCL dependency
 #--------------------------------------
-option(ENABLE_PCL OFF "PCL will be required for filters using pcl (PCLRansacFilter, Slam, ...)")
-if (ENABLE_PCL)
+option(ENABLE_pcl OFF "PCL will be required for filters using pcl (PCLRansacFilter, Slam, ...)")
+if (ENABLE_pcl)
   find_package(PCL REQUIRED)
   include_directories(${SYSTEM_OPTION} ${PCL_INCLUDE_DIRS})
   add_definitions(${PCL_DEFINITIONS})
-endif(ENABLE_PCL)
+endif(ENABLE_pcl)
 
 #--------------------------------------
 # Boost dependency
@@ -102,31 +102,31 @@ list(APPEND ALL_BOOST_LIBRARIES ${Boost_LIBRARIES})
 #--------------------------------------
 # Ceres dependency
 #--------------------------------------
-option(ENABLE_Ceres OFF "Ceres is required for filters using non-linear least square optimization (Slam, autocalibration, ...)")
-if (ENABLE_Ceres)
+option(ENABLE_ceres OFF "Ceres is required for filters using non-linear least square optimization (Slam, autocalibration, ...)")
+if (ENABLE_ceres)
   find_package(Ceres REQUIRED)
   include_directories(${SYSTEM_OPTION} ${CERES_INCLUDE_DIRS})
-endif(ENABLE_Ceres)
+endif(ENABLE_ceres)
 
 #--------------------------------------
 # Opencv dependency
 #--------------------------------------
-option(ENABLE_OpenCV OFF "OpenCV is required for handling lidar-camera multisensor systems")
-if (ENABLE_OpenCV)
+option(ENABLE_opencv OFF "OpenCV is required for handling lidar-camera multisensor systems")
+if (ENABLE_opencv)
   find_package(OpenCV REQUIRED)
   include_directories(${SYSTEM_OPTION} ${OpenCV_INCLUDE_DIRS})
-endif(ENABLE_OpenCV)
+endif(ENABLE_opencv)
 
 #--------------------------------------
 # nanoflann dependency
 #--------------------------------------
-option(ENABLE_NANOFLANN OFF "Nanoflann will be required for filters using some optimized kdtree (SLAM, DBSCAN, ...)")
-  if (ENABLE_NANOFLANN)
+option(ENABLE_nanoflann OFF "Nanoflann will be required for filters using some optimized kdtree (SLAM, DBSCAN, ...)")
+  if (ENABLE_nanoflann)
   # because nanoflann use modern C++, no need to specify the include dir or anything else
   # you just need to link against the target nanoflann::nanoflann
   find_package(nanoflann REQUIRED)
   list(APPEND deps nanoflann::nanoflann)
-endif(ENABLE_NANOFLANN)
+endif(ENABLE_nanoflann)
 
 #-----------------------------------------------------------------------------
 # Build Paraview Plugin
@@ -216,20 +216,20 @@ list(APPEND servermanager_sources
   ${CMAKE_CURRENT_SOURCE_DIR}/Source/Grid/vtkGridSource.cxx
   )
 
-if (ENABLE_Ceres)
+if (ENABLE_ceres)
   list(APPEND servermanager_sources
     ${CMAKE_CURRENT_SOURCE_DIR}/Filter/CalibrationFromPoses/vtkCalibrationFromPoses.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/Filter/TemporalTransformsRemapper/vtkTemporalTransformsRemapper.cxx
     )
-endif(ENABLE_Ceres)
+endif(ENABLE_ceres)
 
-if (ENABLE_PCL)
+if (ENABLE_pcl)
   list(APPEND servermanager_sources
     ${CMAKE_CURRENT_SOURCE_DIR}/Filter/PCLRansacModel/vtkPCLRansacModel.cxx
     )
 
-endif(ENABLE_PCL)
-if (ENABLE_PCL AND ENABLE_Ceres AND ENABLE_NANOFLANN)
+endif(ENABLE_pcl)
+if (ENABLE_pcl AND ENABLE_ceres AND ENABLE_nanoflann)
   list(APPEND servermanager_sources
     ${CMAKE_CURRENT_SOURCE_DIR}/Filter/Slam/vtkSlam.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/Filter/Slam/vtkSpinningSensorKeypointExtractor.cxx
@@ -239,9 +239,9 @@ if (ENABLE_PCL AND ENABLE_Ceres AND ENABLE_NANOFLANN)
     ${CMAKE_CURRENT_SOURCE_DIR}/Filter/Slam/Slam.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/Filter/Slam/SpinningSensorKeypointExtractor.cxx
     )
-endif(ENABLE_PCL AND ENABLE_Ceres AND ENABLE_NANOFLANN)
+endif(ENABLE_pcl AND ENABLE_ceres AND ENABLE_nanoflann)
 
-if (ENABLE_OpenCV)
+if (ENABLE_opencv)
   list(APPEND servermanager_sources
     ${CMAKE_CURRENT_SOURCE_DIR}/IO/Camera/vtkPCAPImageReader.cxx
     )
@@ -251,7 +251,7 @@ if (ENABLE_OpenCV)
   list(APPEND sources_which_do_not_inherit_from_vtkObject
     ${CMAKE_CURRENT_SOURCE_DIR}/Common/vtkOpenCVConversions.cxx
     )
-endif(ENABLE_OpenCV)
+endif(ENABLE_opencv)
 
 # xml file that describe the proxy of the wrap sources in paraview
 list(APPEND servermanager_xml
@@ -279,23 +279,23 @@ list(APPEND servermanager_xml
   xml/LASFileWriter.xml
   )
 
-if (ENABLE_PCL)
+if (ENABLE_pcl)
   list(APPEND servermanager_xml
     xml/PCLRansacModel.xml
     )
-endif(ENABLE_PCL)
+endif(ENABLE_pcl)
 
-if (ENABLE_Ceres)
+if (ENABLE_ceres)
   list(APPEND servermanager_xml
     xml/CalibrationFromPoses.xml
     )
-endif(ENABLE_Ceres)
+endif(ENABLE_ceres)
 
-if (ENABLE_PCL AND ENABLE_Ceres AND ENABLE_NANOFLANN)
+if (ENABLE_pcl AND ENABLE_ceres AND ENABLE_nanoflann)
   list(APPEND servermanager_xml
     xml/Slam.xml
     )
-endif(ENABLE_PCL AND ENABLE_Ceres AND ENABLE_NANOFLANN)
+endif(ENABLE_pcl AND ENABLE_ceres AND ENABLE_nanoflann)
 
 # other source code than won't be wrap by paraview but are needed to create the plugin
 # We make the distinction on that inherit from vtkObject as this one will be also wrap
@@ -328,18 +328,18 @@ list(APPEND sources_which_do_not_inherit_from_vtkObject
   ${CMAKE_CURRENT_SOURCE_DIR}/Common/Calib/Temporal/vtkTimeCalibration.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/Common/Calib/Geometric/vtkCarGeometricCalibration.cxx
   )
-if (ENABLE_PCL)
+if (ENABLE_pcl)
   list(APPEND sources_which_do_not_inherit_from_vtkObject
     ${CMAKE_CURRENT_SOURCE_DIR}/Common/vtkPCLConversions.cxx
     )
-endif(ENABLE_PCL)
-if (ENABLE_Ceres)
+endif(ENABLE_pcl)
+if (ENABLE_ceres)
   list(APPEND sources_which_do_not_inherit_from_vtkObject
       ${CMAKE_CURRENT_SOURCE_DIR}/Common/Calib/Geometric/vtkGeometricCalibration.cxx
       ${CMAKE_CURRENT_SOURCE_DIR}/Common/Calib/Camera/CameraCalibration.cxx
       ${CMAKE_CURRENT_SOURCE_DIR}/Filter/Slam/MotionModel/MotionModel.cxx
       )
-endif (ENABLE_Ceres)
+endif (ENABLE_ceres)
 
 
 # plugin dependencies
