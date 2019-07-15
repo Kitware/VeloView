@@ -26,7 +26,7 @@ CI_COMMIT_REF=$2
 MINIO_CACHE_SERVER_ADDRESS=$3
 MINIO_CACHE_SERVER_ACCESS_KEY=$4
 MINIO_CACHE_SERVER_SECRET_KEY=$5
-FULL_VERSION=$6
+MODE=$6
 
 echo "inside findRightSuperbuildCache, OS is: $OS"
 if [ $OS == "windows_10" ]; then
@@ -56,16 +56,16 @@ function cache_exist {
 }
 
 # find the most appropriate superbuild
-superbuild_cache="${prefix}/${path}-${FULL_VERSION}"
+superbuild_cache="${prefix}/${path}-${MODE}"
 echo "looking for superbuild cache at: $superbuild_cache"
 while ! cache_exist "$superbuild_cache"; do
   echo "cache not found"
   path=$(dirname -- ${path})
   if [ "$path" != "." ]; then
-    superbuild_cache="${prefix}/${path}/master-${FULL_VERSION}"
+    superbuild_cache="${prefix}/${path}/master-${MODE}"
     echo "looking for superbuild cache at: $superbuild_cache"
   else
-    superbuild_cache="${prefix}/${OS}/kitware-master-${FULL_VERSION}"
+    superbuild_cache="${prefix}/${OS}/kitware-master-${MODE}"
     echo "top level reached, looking for superbuild cache at: ${superbuild_cache}"
     if ! cache_exist "$superbuild_cache"; then
       echo "!!!WARNING!!! Default superbuild : ${superbuild_cache} does not exists"
