@@ -23,6 +23,13 @@
       -DBUILD_TESTING=True
       -DENABLE_all=${superbuild_with_all_dependacies}
       ${CI_PROJECT_DIR}/Superbuild
+    # force pcl to build only with 3 thread because we don't have enough RAM
+    - >
+      if superbuild_with_all_dependacies==ON; then
+        cmake -DSUPERBUILD_PROJECT_PARALLELISM=3 .
+        make pcl -j8
+        cmake -DSUPERBUILD_PROJECT_PARALLELISM=$(nproc) .
+      fi
     # compile
     - make -j8
     # remove lidarview
