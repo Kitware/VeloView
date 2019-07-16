@@ -202,7 +202,7 @@ list(APPEND superbuild_project_roots
 
 set(_superbuild_default_cxx11 ON)
 
-option(ENABLE_all "Enable all optional dependancy like pcl, ceres, opencv, ..." ON)
+option(ENABLE_all "Enable all optional dependancy like pcl, ceres, opencv, ..." OFF)
 if (ENABLE_all)
   set(ENABLE_opencv ON)
   set(ENABLE_ceres ON)
