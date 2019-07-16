@@ -104,7 +104,7 @@
 	  number_of_elements="1">
         <BooleanDomain name="bool"/>
         <Documentation>
-		Should the SRS be written in the LAS file ? If you do not know, leave to true.
+		Should the SRS (Spatial Reference System) information be written in the LAS file ? If you do not know, leave to true.
         </Documentation>
       </IntVectorProperty>
 
