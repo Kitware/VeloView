@@ -5,7 +5,7 @@
   script: &unix_get_superbuild
     - cd ..
     - chmod +x ${CI_PROJECT_DIR}/CI/findRightSuperbuildCache.sh
-    - ${CI_PROJECT_DIR}/CI/findRightSuperbuildCache.sh ${OS} ${CI_COMMIT_REF_NAME} ${MINIO_CACHE_SERVER_ADDRESS} ${MINIO_CACHE_SERVER_ACCESS_KEY} ${MINIO_CACHE_SERVER_SECRET_KEY}
+    - ${CI_PROJECT_DIR}/CI/findRightSuperbuildCache.sh ${OS} ${CI_COMMIT_REF_NAME} ${MINIO_CACHE_SERVER_ADDRESS} ${MINIO_CACHE_SERVER_ACCESS_KEY} ${MINIO_CACHE_SERVER_SECRET_KEY} ${mode}
     # create a symbolic link
     - cd ${CI_PROJECT_DIR}
     - ln -s ../Superbuild-build Superbuild-build
@@ -19,8 +19,23 @@
     - mkdir Superbuild-build/
     - cd Superbuild-build/
     # configure & generate
-    - cmake -DCMAKE_BUILD_TYPE:STRING=${cmake_option_CMAKE_BUILD_TYPE} -DBUILD_TESTING=True
+    - >
+      if mode="full"; then
+        optional_dependancies="ON"
+      else
+        optional_dependancies="OFF"
+      fi
+    - cmake -DCMAKE_BUILD_TYPE:STRING=${cmake_option_CMAKE_BUILD_TYPE}
+      -DBUILD_TESTING=True
+      -DENABLE_all=${optional_dependancies}
       ${CI_PROJECT_DIR}/Superbuild
+    # force pcl to build only with 3 thread because we don't have enough RAM
+    - >
+      if mode="full"; then
+        cmake -DSUPERBUILD_PROJECT_PARALLELISM=3 .
+        make pcl -j8
+        cmake -DSUPERBUILD_PROJECT_PARALLELISM=$(nproc) .
+      fi
     # compile
     - make -j8
     # remove lidarview
@@ -32,7 +47,7 @@
     - cd ..
     - tar zcf archive Superbuild-build/
     - ~/mc config host add superbuild ${MINIO_CACHE_SERVER_ADDRESS} ${MINIO_CACHE_SERVER_ACCESS_KEY} ${MINIO_CACHE_SERVER_SECRET_KEY}
-    - ~/mc cp archive superbuild/runner/minio/project/808/${cache_patch}/${OS}/${CI_COMMIT_REF_NAME}-1
+    - ~/mc cp archive superbuild/runner/minio/project/808/${cache_patch}/${OS}/${CI_COMMIT_REF_NAME}-${mode}
 
 .linux_superbuild_manual: &linux_superbuild_manual
   when: manual
@@ -109,8 +124,16 @@
   variables:
     OS: ubuntu_16.04
 
-ubuntu16.04_superbuild_manual:
+ubuntu16.04_full_superbuild_manual:
   <<: *ubuntu_16_04
+  <<: *linux_superbuild_manual
+
+# duplicate manual job until gitlab 12.2 see https://gitlab.com/gitlab-org/gitlab-ce/issues/24935
+ubuntu16.04_light_superbuild_manual:
+  <<: *ubuntu_16_04
+  variables:
+    OS: ubuntu_16.04
+    mode: "light"
   <<: *linux_superbuild_manual
 
 ubuntu16.04_superbuild_schedule:
@@ -125,7 +148,15 @@ ubuntu16.04_test:
   <<: *ubuntu_16_04
   <<: *linux_test
 
-ubuntu16.04_package_manual:
+# duplicate manual job until gitlab 12.2 see https://gitlab.com/gitlab-org/gitlab-ce/issues/24935
+ubuntu16.04_light_package_manual:
+  <<: *ubuntu_16_04
+  variables:
+    OS: ubuntu_16.04
+    mode: "light"
+  <<: *linux_package_manual
+
+ubuntu16.04_full_package_manual:
   <<: *ubuntu_16_04
   <<: *linux_package_manual
 

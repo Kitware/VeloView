@@ -1,3 +1,10 @@
+.windows_10: &windows_10
+  tags:
+    - windows_10
+  variables:
+    OS: windows_10
+    mode: "light"
+
 .window_get_superbuild:
   script: &windows_get_superbuild
     - ABSOLUTE_CI_PROJECT_DIR=$(pwd) # else not absolute on windows + cygwin
@@ -5,7 +12,7 @@
     - echo "CI_PROJECT_DIR is ${CI_PROJECT_DIR}"
     - cd /cygdrive/c # findRightSuperbuildCache.sh will restore "Superbuild-build" here
     - chmod +x ${ABSOLUTE_CI_PROJECT_DIR}/CI/findRightSuperbuildCache.sh
-    - ${ABSOLUTE_CI_PROJECT_DIR}/CI/findRightSuperbuildCache.sh ${OS} ${CI_COMMIT_REF_NAME} ${MINIO_CACHE_SERVER_ADDRESS} ${MINIO_CACHE_SERVER_ACCESS_KEY} ${MINIO_CACHE_SERVER_SECRET_KEY}
+    - ${ABSOLUTE_CI_PROJECT_DIR}/CI/findRightSuperbuildCache.sh ${OS} ${CI_COMMIT_REF_NAME} ${MINIO_CACHE_SERVER_ADDRESS} ${MINIO_CACHE_SERVER_ACCESS_KEY} ${MINIO_CACHE_SERVER_SECRET_KEY} ${mode}
     # create a symbolic link
     - cd ${ABSOLUTE_CI_PROJECT_DIR}
     - export CYGWIN="winsymlinks:nativestrict"
@@ -13,10 +20,7 @@
 
 .windows_superbuild: &windows_superbuild
   stage: superbuild
-  tags:
-    - windows_10
-  variables:
-    OS: windows_10
+  <<: *windows_10
   stage: superbuild
   script:
     - echo "entering superbuild stage"
@@ -45,7 +49,7 @@
     - cd ..
     - tar zcf archive Superbuild-build/
     - /cygdrive/c/mc.exe config host add superbuild ${MINIO_CACHE_SERVER_ADDRESS} ${MINIO_CACHE_SERVER_ACCESS_KEY} ${MINIO_CACHE_SERVER_SECRET_KEY}
-    - /cygdrive/c/mc.exe cp archive superbuild/runner/minio/project/808/${cache_patch}/${OS}/${CI_COMMIT_REF_NAME}-1
+    - /cygdrive/c/mc.exe cp archive superbuild/runner/minio/project/808/${cache_patch}/${OS}/${CI_COMMIT_REF_NAME}-${mode}
 
 windows_superbuild_manual: &windows_superbuild_manual
   when: manual
@@ -59,13 +63,9 @@ windows_superbuild_schedule: &windows_superbuild_schedule
 
 windows_build:
   stage: build
+  <<: *windows_10
   extends: .only-important
   before_script: *windows_get_superbuild
-  tags:
-    - windows_10
-  variables:
-    OS: windows_10
-  stage: build
   script:
     - git submodule update --init Superbuild/common-superbuild
     - cd /cygdrive/c/Superbuild-build # provided by windows_get_superbuild
@@ -76,13 +76,9 @@ windows_build:
 
 windows_test:
   stage: test
+  <<: *windows_10
   extends: .only-important
   before_script: *windows_get_superbuild
-  tags:
-    - windows_10
-  variables:
-    OS: windows_10
-  stage: test
   script:
     - git submodule update --init Superbuild/common-superbuild
     - git submodule update --init TestData
@@ -101,12 +97,8 @@ windows_test:
 
 .windows_package: &windows_package
   stage: package
+  <<: *windows_10
   before_script: *windows_get_superbuild
-  tags:
-    - windows_10
-  variables:
-    OS: windows_10
-  stage: package
   script:
     - git submodule update --init Superbuild/common-superbuild
     - cd /cygdrive/c/Superbuild-build # provided by windows_get_superbuild

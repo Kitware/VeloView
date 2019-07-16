@@ -13,6 +13,11 @@ variables:
   # cmake superbuild option
   cmake_option_CMAKE_BUILD_TYPE: "Release"
 
+  # two mode exist:
+  # - "full": with all optional dependancies
+  # - "light": with only the required dependancies
+  mode: "full"
+
   test_blacklist: "TestLidarStream"
 
   slash_separator: "/"

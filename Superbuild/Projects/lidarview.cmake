@@ -13,6 +13,10 @@ superbuild_add_project(lidarview
     -DBOOST_LIBRARYDIR:PATH=<INSTALL_DIR>/lib
     -Dqt_version:STRING=${qt_version}
     -DPCL_DIR:PATH=<INSTALL_DIR>/share/pcl-1.8/
+    -DENABLE_pcl=${ENABLE_pcl}
+    -DENABLE_ceres=${ENABLE_ceres}
+    -DENABLE_opencv=${ENABLE_opencv}
+    -DENABLE_nanoflann=${ENABLE_nanoflann}
 )
 
 if (WIN32 OR APPLE)
