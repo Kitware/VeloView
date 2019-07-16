@@ -17,6 +17,7 @@
 
 #include <vtkDataObjectAlgorithm.h>
 #include <vtkPolyData.h>
+#include <chrono>
 
 #include "LASFileWriter.h"
 
@@ -50,14 +51,25 @@ public:
   vtkSetStringMacro(FileName)
   vtkGetStringMacro(FileName)
 
+  vtkSetMacro(SkipMetaDataPass, bool)
+
   vtkSetMacro(FirstFrame, int)
   vtkGetMacro(FirstFrame, int)
+
+  vtkSetMacro(WriteSRS, bool)
+  vtkGetMacro(WriteSRS, bool)
+
+  vtkSetMacro(WriteColor, bool)
+  vtkGetMacro(WriteColor, bool)
 
   vtkSetMacro(LastFrame, int)
   vtkGetMacro(LastFrame, int)
 
   vtkSetMacro(FrameStride, int)
   vtkGetMacro(FrameStride, int)
+
+  vtkSetMacro(ExportType, int)
+  vtkGetMacro(ExportType, int)
 
   vtkSetMacro(InOutSignedUTMZone, int)
   vtkGetMacro(InOutSignedUTMZone, int)
@@ -78,6 +90,12 @@ public:
   // For debug purpose only:
   void Update() VTK_OVERRIDE; // from vtkAlgorithm
 
+  enum
+  {
+    EXPORT_UTM = 0,
+    EXPORT_LATLONG = 1,
+  };
+
 protected:
   vtkLASFileWriter();
   ~vtkLASFileWriter();
@@ -97,17 +115,24 @@ private:
   void operator =(const vtkLASFileWriter&) = delete;
 
   char* FileName = nullptr;
+  bool WriteSRS = true;
+  bool WriteColor = false;
   int FirstFrame = 0;
   int LastFrame = -1; // negative numbers can be used à la Python list indexes
   int FrameStride = 1;
   int NumberOfFrames = 0;
   int CurrentFrame = 0;
+  int ExportType = EXPORT_UTM;
   int InOutSignedUTMZone = 0;
+  bool SkipMetaDataPass = false;
   int CurrentPass = 0; // pass 0 is to compute the header, pass 1 is to write
   static const int PassCount = 2;
   // This Offset must be applied to the coordinates of the points inside the
   // vtkPolyData in order to find their correct position.
   double Offset[3]; // TODO: decide if should be named "Origin"
+
+  std::chrono::steady_clock::time_point Start;
+  std::chrono::steady_clock::time_point End;
 
   int PolyFirstPass(vtkPolyData *polyData);
   int PolySecondPass(vtkPolyData *polyData);

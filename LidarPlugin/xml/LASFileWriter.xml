@@ -51,6 +51,20 @@
       </IntVectorProperty>
 
       <IntVectorProperty
+          name="ExportType"
+          command="SetExportType"
+          number_of_elements="1"
+          default_values="0">
+      <EnumerationDomain name="enum">
+        <Entry value="0" text="UTM"/>
+	<Entry value="1" text="Lat/Lon"/>
+      </EnumerationDomain>
+      <Documentation>
+                What type of export should be done?
+      </Documentation>
+      </IntVectorProperty>
+
+      <IntVectorProperty
           name="InOutSignedUTMZone"
           command="SetInOutSignedUTMZone"
           default_values="31"
@@ -72,6 +86,38 @@
 		Also used as origin for writing the LAS File (this offset is written in the header and is not applied to the points).
         </Documentation>
       </DoubleVectorProperty>
+
+      <IntVectorProperty name="SkipMetaDataPass"
+                         command="SetSkipMetaDataPass"
+                         number_of_elements="1"
+                         default_values="0">
+        <BooleanDomain name="bool"/>
+        <Documentation>
+          If enabled, only one pass is done which can provides a significant speedup. In this case the axis aligned bounding box of all points will be set to (0.0, 0.0, 0.0) to (0.0, 0.0, 0.0) (which is incorrect).
+        </Documentation>
+      </IntVectorProperty>
+
+      <IntVectorProperty
+          name="WriteSRS"
+          command="SetWriteSRS"
+          default_values="1"
+	  number_of_elements="1">
+        <BooleanDomain name="bool"/>
+        <Documentation>
+		Should the SRS (Spatial Reference System) information be written in the LAS file ? If you do not know, leave to true.
+        </Documentation>
+      </IntVectorProperty>
+
+      <IntVectorProperty
+          name="WriteColor"
+          command="SetWriteColor"
+          default_values="0"
+	  number_of_elements="1">
+        <BooleanDomain name="bool"/>
+        <Documentation>
+		Should the RGB color (if available) be written in the LAS file ? Resulting LAS will be bigger.
+        </Documentation>
+      </IntVectorProperty>
 
       <Hints>
         <Property name="Input"

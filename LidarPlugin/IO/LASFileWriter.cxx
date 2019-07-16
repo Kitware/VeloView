@@ -123,7 +123,14 @@ int LASFileWriter::Open(const char* filename)
   }
 
   this->header.SetSoftwareId(SOFTWARE_NAME);
-  this->header.SetDataFormatId(liblas::ePointFormat1);
+  if (this->WriteColor)
+  {
+    this->header.SetDataFormatId(liblas::ePointFormat3); // the first format with color and time
+  }
+  else
+  {
+    this->header.SetDataFormatId(liblas::ePointFormat1);
+  }
   this->header.SetScale(1e-3, 1e-3, 1e-3);
 
   return 1;
@@ -194,21 +201,28 @@ void LASFileWriter::SetOrigin(double easting, double northing, double height)
 
   // Update header
   this->header.SetOffset(origin[0], origin[1], origin[2]);
-  try
+  if (this->WriteSRS)
   {
-    liblas::SpatialReference srs;
-    std::ostringstream ss;
-    ss << "EPSG:" << this->OutGcsEPSG;
-    srs.SetFromUserInput(ss.str());
-    this->header.SetSRS(srs);
+    try
+    {
+      liblas::SpatialReference srs;
+      std::ostringstream ss;
+      ss << "EPSG:" << this->OutGcsEPSG;
+      srs.SetFromUserInput(ss.str());
+      this->header.SetSRS(srs);
+    }
+    catch (std::logic_error &e)
+    {
+      std::cerr << "failed to set SRS (logic_error): " << e.what() << std::endl;
+    }
+    catch (std::runtime_error &e)
+    {
+      std::cerr << "failed to set SRS (runtime_error): " << e.what() << std::endl;
+    }
   }
-  catch (std::logic_error &e)
+  else
   {
-    std::cerr << "failed to set SRS (logic_error): " << e.what() << std::endl;
-  }
-  catch (std::runtime_error &e)
-  {
-    std::cerr << "failed to set SRS (runtime_error): " << e.what() << std::endl;
+    std::cout << "As asked, not setting SRS in LAS Header." << std::endl;
   }
 }
 
@@ -252,6 +266,8 @@ void LASFileWriter::SetGeoConversionUTM(int inOutSignedUTMZone, bool useLatLonFo
     utmparamsOut << "+no_defs ";
     this->OutProj = pj_init_plus(utmparamsOut.str().c_str());
     std::cout << "init Out : " << utmparamsOut.str() << std::endl;
+    // 4326 is EPSG ID code for lat-long-alt coordinates
+    this->OutGcsEPSG = 4326;
   }
   else
   {
@@ -269,9 +285,8 @@ void LASFileWriter::SetGeoConversionUTM(int inOutSignedUTMZone, bool useLatLonFo
     utmparamsOut << "+datum=WGS84 ";
     utmparamsOut << "+no_defs ";
     this->OutProj = pj_init_plus(utmparamsOut.str().c_str());
+    this->OutGcsEPSG = SignedUTMToEPSG(inOutSignedUTMZone);
   }
-
-  this->OutGcsEPSG = SignedUTMToEPSG(inOutSignedUTMZone);
 
   std::cout << "InProj created : " << this->InProj << std::endl;
   std::cout << "OutProj created : " << this->OutProj << std::endl;
@@ -309,6 +324,7 @@ void LASFileWriter::WriteFrame(vtkPolyData* data)
   vtkDataArray* const intensityData = data->GetPointData()->GetArray("intensity");
   vtkDataArray* const laserIdData = data->GetPointData()->GetArray("laser_id");
   vtkDataArray* const timestampData = data->GetPointData()->GetArray("adjustedtime");
+  vtkDataArray* const colorData = data->GetPointData()->GetArray("camera_color");
 
   const vtkIdType numPoints = points->GetNumberOfPoints();
   for (vtkIdType n = 0; n < numPoints; ++n)
@@ -332,6 +348,15 @@ void LASFileWriter::WriteFrame(vtkPolyData* data)
       p.SetReturnNumber(1);
       p.SetNumberOfReturns(1);
       p.SetUserData(static_cast<uint8_t>(laserIdData == nullptr ? 0.0 : laserIdData->GetComponent(n, 0)));
+      if (this->WriteColor && colorData != nullptr)
+      {
+        liblas::Color color = liblas::Color(
+              static_cast<uint32_t>(colorData->GetComponent(n, 0)),
+              static_cast<uint32_t>(colorData->GetComponent(n, 1)),
+              static_cast<uint32_t>(colorData->GetComponent(n, 2))
+              );
+        p.SetColor(color);
+      }
       p.SetTime(time);
 
       this->Writer->WritePoint(p);
@@ -383,4 +408,27 @@ void LASFileWriter::UpdateMetaData(vtkPolyData* data)
       }
     }
   }
+}
+
+void LASFileWriter::SetMaxPt(double const* pt)
+{
+  this->MaxPt[0] = pt[0];
+  this->MaxPt[1] = pt[1];
+  this->MaxPt[2] = pt[2];
+}
+void LASFileWriter::SetMinPt(double const* pt)
+{
+  this->MinPt[0] = pt[0];
+  this->MinPt[1] = pt[1];
+  this->MinPt[2] = pt[2];
+}
+
+void LASFileWriter::SetWriteSRS(bool shouldWrite)
+{
+  this->WriteSRS = shouldWrite;
+}
+
+void LASFileWriter::SetWriteColor(bool shouldWrite)
+{
+  this->WriteColor = shouldWrite;
 }
