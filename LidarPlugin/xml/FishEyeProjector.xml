@@ -28,6 +28,7 @@
 
     <OutputPort name="Image With Projection" index="0" id="port0" />
     <OutputPort name="Colored Frame" index="1" id="port1" />
+    <OutputPort name="Projected Frame" index="2" id="port2" />
 
 
     </SourceProxy>
