@@ -1,5 +1,5 @@
 superbuild_add_project(lidarview
-  DEPENDS paraview qt5 pcap boost eigen liblas
+  DEPENDS paraview qt5 pcap boost eigen liblas yaml
   DEFAULT_ON
   CMAKE_ARGS
     -DBUILD_SHARED_LIBS:BOOL=ON
@@ -13,6 +13,7 @@ superbuild_add_project(lidarview
     -DBOOST_LIBRARYDIR:PATH=<INSTALL_DIR>/lib
     -Dqt_version:STRING=${qt_version}
     -DPCL_DIR:PATH=<INSTALL_DIR>/share/pcl-1.8/
+    -DYAML_DIR:PATH=<INSTALL_DIR>/include/yaml-cpp/
     -DENABLE_pcl=${ENABLE_pcl}
     -DENABLE_ceres=${ENABLE_ceres}
     -DENABLE_opencv=${ENABLE_opencv}

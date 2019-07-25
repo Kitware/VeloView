@@ -77,6 +77,12 @@ find_package(Eigen REQUIRED)
 include_directories(${SYSTEM_OPTION} ${EIGEN_INCLUDE_DIR})
 
 #--------------------------------------
+# Yaml dependency
+#--------------------------------------
+find_package(yaml-cpp REQUIRED)
+include_directories(${SYSTEM_OPTION} ${yaml-cpp_DIR})
+
+#--------------------------------------
 # PCL dependency
 #--------------------------------------
 option(ENABLE_pcl "PCL will be required for filters using pcl (PCLRansacFilter, Slam, ...)" OFF)
@@ -352,6 +358,7 @@ list(APPEND deps
   ${PCL_LIBRARIES}
   ${CERES_LIBRARIES}
   ${OpenCV_LIBRARIES}
+  ${YAML_CPP_LIBRARIES}
   )
 
 # folder where to look for header file

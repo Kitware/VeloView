@@ -86,6 +86,7 @@ function (superbuild_find_projects var)
     qhull
     flann
     nanoflann
+    yaml
     )
 
   if (UNIX)
