@@ -1,11 +1,11 @@
 <ServerManagerConfiguration>
-  <!-- Begin FishEyeProjector -->
+  <!-- Begin CameraProjector -->
   <ProxyGroup name="filters">
-    <SourceProxy name="FishEyeProjector" class="vtkFishEyeProjector" label="FishEyeProjector">
+    <SourceProxy name="CameraProjector" class="vtkCameraProjector" label="CameraProjector">
       <Documentation
-        short_help="Project 3D points into the image using a FishEye camera model"
-        long_help="Project 3D points into the image using a FishEye camera model">
-        Project 3D points into the image using a FishEye camera model
+        short_help="Project 3D points into the image using a camera model"
+        long_help="Project 3D points into the image using a camera model">
+        Project 3D points into the image using a camera model
       </Documentation>
 
     <InputProperty
@@ -30,8 +30,19 @@
     <OutputPort name="Colored Frame" index="1" id="port1" />
     <OutputPort name="Projected Frame" index="2" id="port2" />
 
+    <StringVectorProperty
+        name="FileName"
+        animateable="0"
+        command="SetFileName"
+        number_of_elements="1">
+        <FileListDomain name="files"/>
+        <Documentation>
+          This property specifies the file name for camera parameters and model.
+        </Documentation>
+    </StringVectorProperty>
+
 
     </SourceProxy>
   </ProxyGroup>
-  <!-- End FishEyeProjector -->
+  <!-- End CameraProjector -->
 </ServerManagerConfiguration>

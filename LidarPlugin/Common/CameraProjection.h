@@ -62,11 +62,15 @@ Eigen::Vector2d FisheyeProjection(const Eigen::Matrix<double, 15, 1>& W,
    *
    * @param W pinhole Brown-Conrady camera model parameters
    * @param X 3D point to project
-   * @param shouldClip Clip points that are behind the camera plane
+   * @param shouldPlaneClip Clip points that are behind the camera plane
+   * @param shouldFoVClip Clip points that are not in the FoV of the camera
+   *        this is usefull since high distortion parameters can introduce
+   *        non injective behaviour between 3D direction and 2D pixels
+   * @param fovAngle angle of the field of view
    */
 Eigen::Vector2d BrownConradyPinholeProjection(const Eigen::Matrix<double, 17, 1>& W,
                                               const Eigen::Vector3d& X,
-                                              bool shouldClip = false);
+                                              bool shouldPlaneClip = false);
 
 /**
    * @brief GetRGBColourFromReflectivity map the reflectivity signal

@@ -80,7 +80,7 @@ include_directories(${SYSTEM_OPTION} ${EIGEN_INCLUDE_DIR})
 # Yaml dependency
 #--------------------------------------
 find_package(yaml-cpp REQUIRED)
-include_directories(${SYSTEM_OPTION} ${yaml-cpp_DIR})
+include_directories(${SYSTEM_OPTION} ${YAML_CPP_INCLUDE_DIR})
 
 #--------------------------------------
 # PCL dependency
@@ -210,7 +210,7 @@ list(APPEND servermanager_sources
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/vtkLASFileWriter.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/MotionDetector/vtkMotionDetector.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/BirdEyeViewSnap/vtkBirdEyeViewSnap.cxx
-  ${CMAKE_CURRENT_SOURCE_DIR}/Filter/FishEyeProjector/vtkFishEyeProjector.cxx
+  ${CMAKE_CURRENT_SOURCE_DIR}/Filter/CameraProjector/vtkCameraProjector.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/LidarRawSignalImage/vtkLidarRawSignalImage.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/PointCloudLinearProjector/vtkPointCloudLinearProjector.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/LaplacianInfilling/vtkLaplacianInfilling.cxx
@@ -276,7 +276,7 @@ list(APPEND servermanager_xml
   xml/RansacPlaneModel.xml
   xml/TrailingFrame.xml
   xml/ProcessingSample.xml
-  xml/FishEyeProjector.xml
+  xml/CameraProjector.xml
   xml/GridSource.xml
   xml/TemporalTransformsReader.xml
   xml/TemporalTransformsWriter.xml
@@ -329,6 +329,7 @@ list(APPEND sources_which_do_not_inherit_from_vtkObject
   ${CMAKE_CURRENT_SOURCE_DIR}/Common/Network/vvPacketSender.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/Common/vtkEigenTools.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/Common/CameraProjection.cxx
+  ${CMAKE_CURRENT_SOURCE_DIR}/Common/Calib/Camera/CameraModel.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/${interpolator_pach_until_vtk_update}
   ${CMAKE_CURRENT_SOURCE_DIR}/Common/vtkConversions.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/Common/Calib/Temporal/vtkTimeCalibration.cxx
@@ -382,7 +383,7 @@ set(plugin_include_dirs
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/CalibrationFromPoses
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/MotionDetector
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/BirdEyeViewSnap
-  ${CMAKE_CURRENT_SOURCE_DIR}/Filter/FishEyeProjector
+  ${CMAKE_CURRENT_SOURCE_DIR}/Filter/CameraProjector
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/LidarRawSignalImage
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/PointCloudLinearProjector
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/LaplacianInfilling
