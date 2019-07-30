@@ -105,10 +105,18 @@ double NonLinearFisheyeCalibration(const std::vector<Eigen::Vector3d>& X, const 
    *        to have a good estimation and then use the non linear method
    * @param X 3D keypoints associated to the 2D keypoints
    * @param x 2D keypoints associated to the 3D keypoints
-   * @param P W camera model parameters estimated
+   * @param W camera model parameters estimated
+   * @param it Maximum number of Levenberg-Maquardt iteration
+   * @param initLossScale initial loss scale to saturate cost function of outliers
+   *        the default value correspond to a saturation around 10 pixels of
+   *        reprojection error
+   * @param finalLossScale final loss scale to saturate cost function of outliers
+   *        the default value correspond to a saturation around 3 pixels of
+   *        reprojection error
    */
 double BrownConradyPinholeCalibration(const std::vector<Eigen::Vector3d>& X, const std::vector<Eigen::Vector2d>& x,
-                                      Eigen::Matrix<double, 17, 1>& W, unsigned int it = 1000);
+                                      Eigen::Matrix<double, 17, 1>& W, unsigned int it = 1000,
+                                      double initLossScale = 5.0, double finalLossScale = 0.60);
 
 /**
    * @brief CalibrationMatrixDecomposition Decompose the pinhole camera model
@@ -141,5 +149,15 @@ void GetParametersFromMatrix(const Eigen::Matrix3d& K, const Eigen::Matrix3d& R,
    */
 void GetMatrixFromParameters(const Eigen::Matrix<double, 11, 1>& W, Eigen::Matrix<double, 3, 4>& P);
 Eigen::Matrix<double, 3, 4> GetMatrixFromParameters(const Eigen::Matrix<double, 11, 1>& W);
+
+/**
+   * @brief FullCalibrationPipelineFromMatches Estimate the calibration
+   *        parameters of a camera using 3D - 2D matches by combining
+   *        a linear algorithm as first initial guess to a second non-linear
+   *        algorithm
+   *
+   * @param filename file containing the matches
+   */
+Eigen::VectorXd FullCalibrationPipelineFromMatches(std::string filename);
 
 #endif // CAMERA_CALIBRATION_H
