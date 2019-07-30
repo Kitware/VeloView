@@ -141,4 +141,13 @@ void EuclideanMLSSmoothing(const std::vector<Eigen::VectorXd>& X,
                            std::vector<Eigen::VectorXd>& Y,
                            int polDeg, int kernelRadius);
 
+/**
+   * @brief MultivariateMedian Computes the multivariate median of a set of
+   *        vectors belonging to R^n. The median is obtained by minimizing the
+   *        sum of the L2-distance using the Weiszfeld algorithm which is a gradient
+   *        descent algorithm with specific step value
+   * @param X The list of R^n vectors we want to compute the median
+   */
+Eigen::VectorXd MultivariateMedian(const std::vector<Eigen::VectorXd> X, double epsilon = 1e-6);
+
 #endif // VTK_EIGEN_TOOLS_H
