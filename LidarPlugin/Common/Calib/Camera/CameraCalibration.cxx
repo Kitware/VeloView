@@ -255,31 +255,45 @@ double NonLinearFisheyeCalibration(const std::vector<Eigen::Vector3d>& X, const 
 
 //----------------------------------------------------------------------------
 double BrownConradyPinholeCalibration(const std::vector<Eigen::Vector3d>& X, const std::vector<Eigen::Vector2d>& x,
-                                      Eigen::Matrix<double, 17, 1>& W, unsigned int it)
+                                      Eigen::Matrix<double, 17, 1>& W, unsigned int it,
+                                      double initLossScale, double finalLossScale)
 {
-  // We want to estimate our 17-DOF parameters using a non
-  // linear least square minimization. The non linear part
-  // comes from the Euler Angle parametrization of the rotation
-  // endomorphism of SO(3), the homographie rescaling and
-  // the lens distortions
-  // To minimize it, we use CERES to perform
-  // the Levenberg-Marquardt algorithm.
-  ceres::Problem problem;
-  for (unsigned int k = 0; k < X.size(); ++k)
+  unsigned int N = 100;
+
+  // The minimization algorithm will be ran multiple time
+  // with an outlier rejection loss function more restrictive
+  // at each iteration. We don't want to have a higly restrictive
+  // outlier rejection at the beginning since the initial point can
+  // be far from the global minimum and it could create convergence
+  // issues.
+  for (unsigned int minId = 0; minId < N; ++minId)
   {
-    ceres::CostFunction* cost_function = new ceres::AutoDiffCostFunction<CostFunctions::BrownConradyAlgebraicDistance, 1, 17>(
-                                         new CostFunctions::BrownConradyAlgebraicDistance(X[k], x[k]));
-    problem.AddResidualBlock(cost_function, nullptr, W.data());
+    double lossScale = initLossScale + static_cast<double>(minId) * (finalLossScale - initLossScale) / (1.0 * N);
+
+    // We want to estimate our 17-DOF parameters using a non
+    // linear least square minimization. The non linear part
+    // comes from the Euler Angle parametrization of the rotation
+    // endomorphism of SO(3), the homographie rescaling and
+    // the lens distortions
+    // To minimize it, we use CERES to perform
+    // the Levenberg-Marquardt algorithm.
+    ceres::Problem problem;
+    for (unsigned int k = 0; k < X.size(); ++k)
+    {
+      ceres::CostFunction* cost_function = new ceres::AutoDiffCostFunction<CostFunctions::BrownConradyAlgebraicDistance, 1, 17>(
+                                           new CostFunctions::BrownConradyAlgebraicDistance(X[k], x[k]));
+      problem.AddResidualBlock(cost_function, new ceres::ArctanLoss(lossScale), W.data());
+    }
+
+    ceres::Solver::Options options;
+    options.max_num_iterations = it;
+    options.linear_solver_type = ceres::DENSE_QR;
+    options.minimizer_progress_to_stdout = false;
+
+    ceres::Solver::Summary summary;
+    ceres::Solve(options, &problem, &summary);
+    std::cout << summary.BriefReport() << std::endl;
   }
-
-  ceres::Solver::Options options;
-  options.max_num_iterations = it;
-  options.linear_solver_type = ceres::DENSE_QR;
-  options.minimizer_progress_to_stdout = false;
-
-  ceres::Solver::Summary summary;
-  ceres::Solve(options, &problem, &summary);
-  std::cout << summary.BriefReport() << std::endl;
 
   double meanErr = 0;
   for (int k = 0; k < X.size(); ++k)
@@ -318,4 +332,99 @@ Eigen::Matrix<double, 3, 4> GetMatrixFromParameters(const Eigen::Matrix<double, 
   Eigen::Matrix<double, 3, 4> P;
   GetMatrixFromParameters(W, P);
   return P;
+}
+
+//----------------------------------------------------------------------------
+Eigen::VectorXd FullCalibrationPipelineFromMatches(std::string filename)
+{
+  Eigen::VectorXd Wf = Eigen::VectorXd::Zero(17, 1);
+
+  // Load the 3D - 2D matches
+  std::vector<Eigen::Vector3d> X;
+  std::vector<Eigen::Vector2d> x;
+  LoadMatchesFromCSV(filename, X, x);
+  if (X.size() == 0)
+  {
+    return Wf;
+  }
+
+  // First, launch a linear pinhole camera model
+  // projection matrix estimation
+  Eigen::Matrix<double, 3, 4> P;
+  double rmse1 = LinearPinholeCalibration(X, x, P);
+
+  // From this first linear pinhole projection matrix
+  // estimation, extract the pinhole model parameters
+  Eigen::Matrix3d K, R;
+  Eigen::Vector3d T;
+  CalibrationMatrixDecomposition(P, K, R, T);
+
+  // Check that the optical axis of the camera is
+  // correctly oriented according to the 3D points
+  Eigen::Vector3d Xmean = Eigen::Vector3d::Zero();
+  for (int i = 0; i < X.size(); ++i)
+  {
+    Xmean += X[i] / static_cast<double>(X.size());
+  }
+  Eigen::Vector3d ez = R.col(2);
+  double angle = std::acos((Xmean.transpose() * ez)(0) / (Xmean.norm() * ez.norm())) / vtkMath::Pi() * 180.0;
+
+  // In this case, the linear algorithm has provided
+  // a solution where the camera is looking backward and
+  // the resulting symmetry is handled by the intrinsic matrix.
+  // To avoid that, we return the camera if it is not looking
+  // forward
+  if (angle > 90.0)
+  {
+    Eigen::Matrix3d S;
+    S << -1.0, 0.0,  0.0,
+          0.0, 1.0,  0.0,
+          0.0, 0.0, -1.0;
+
+    Eigen::Matrix3d Rtilde = R * S * R.transpose();
+
+    // So that K' * R' = K * R, meaning that
+    // the global projection is unchanged but
+    // the camera orientation has made a 180
+    // rotation around its y-axis
+    K = K * Rtilde.transpose();
+    K = K / K(2, 2);
+    R = Rtilde * R;
+  }
+
+  Eigen::Matrix<double, 11, 1> Wpinhole;
+  GetParametersFromMatrix(K, R, T, Wpinhole);
+  Eigen::Matrix<double, 11, 1> Wpi = Wpinhole;
+
+  // Then, refine the model obtained using linear
+  // estimation by using a non-linear pinhole parameters
+  // estimation
+  double rmse2 = NonLinearPinholeCalibration(X, x, Wpinhole);
+
+  // Finally, create a first parameter vector estimation
+  // by using the pinhole parameters and setting the distortion
+  // coefficients to 0
+  Eigen::Matrix<double, 17, 1> West = Eigen::Matrix<double, 17, 1>::Zero();
+  West.block(0, 0, 11, 1) = Wpinhole;
+  double rmse3 = BrownConradyPinholeCalibration(X, x, West, 2500);
+
+  // copy params
+  for (int i = 0; i < 17; ++i)
+  {
+    Wf(i) = West(i);
+  }
+
+  Eigen::Vector3d angles(Wf(0), Wf(1), Wf(2));
+  R = RollPitchYawToMatrix(angles);
+
+  std::cout << "RMSE1: " << rmse1 << std::endl;
+  std::cout << "RMSE2: " << rmse2 << std::endl;
+  std::cout << "RMSE3: " << rmse3 << std::endl;
+  std::cout << "W: ";
+  for (int i = 0; i < 17; ++i)
+  {
+    std::cout << Wf(i) << ",";
+  }
+  std::cout << std::endl;
+  return Wf;
 }
