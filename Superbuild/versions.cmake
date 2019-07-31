@@ -73,3 +73,7 @@ superbuild_set_revision(opencv
 superbuild_set_revision(nanoflann
   GIT_REPOSITORY https://github.com/jlblancoc/nanoflann.git
   GIT_TAG v1.3.0)
+
+superbuild_set_revision(yaml
+  GIT_REPOSITORY https://github.com/jbeder/yaml-cpp.git
+  GIT_TAG yaml-cpp-0.6.2)

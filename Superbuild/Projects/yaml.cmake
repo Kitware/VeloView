@@ -1,0 +1,9 @@
+superbuild_add_project(yaml
+  DEPENDS
+  
+  CMAKE_ARGS
+  -DCMAKE_CXX_STANDARD=11
+  -DCMAKE_CXX_STANDARD_REQUIRED=true
+  -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>/yaml
+  -DGFLAGS=false
+  )

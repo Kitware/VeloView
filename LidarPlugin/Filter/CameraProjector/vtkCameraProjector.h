@@ -17,8 +17,8 @@
 // limitations under the License.
 //=========================================================================
 
-#ifndef VTK_FISH_EYE_PROJECTOR_H
-#define VTK_FISH_EYE_PROJECTOR_H
+#ifndef VTK_CAMERA_PROJECTOR_H
+#define VTK_CAMERA_PROJECTOR_H
 
 // VTK
 #include <vtkImageAlgorithm.h>
@@ -26,25 +26,39 @@
 // EIGEN
 #include <Eigen/Dense>
 
-class VTK_EXPORT vtkFishEyeProjector : public vtkImageAlgorithm
+// LOCAL
+#include "CameraModel.h"
+
+class VTK_EXPORT vtkCameraProjector : public vtkImageAlgorithm
 {
 public:
-  static vtkFishEyeProjector *New();
-  vtkTypeMacro(vtkFishEyeProjector, vtkImageAlgorithm)
+  static vtkCameraProjector *New();
+  vtkTypeMacro(vtkCameraProjector, vtkImageAlgorithm)
+
+  void SetFileName(const std::string &argfilename);
 
 protected:
-  vtkFishEyeProjector();
+  vtkCameraProjector();
 
   int FillInputPortInformation(int port, vtkInformation *info) override;
   int FillOutputPortInformation(int port, vtkInformation *info) override;
   int RequestData(vtkInformation *, vtkInformationVector **, vtkInformationVector *) override;
 
 private:
-  vtkFishEyeProjector(const vtkFishEyeProjector&) = delete;
-  void operator=(const vtkFishEyeProjector&) = delete;
+  vtkCameraProjector(const vtkCameraProjector&) = delete;
+  void operator=(const vtkCameraProjector&) = delete;
 
-  //! Parameters of the fisheye camera model
-  Eigen::Matrix<double, 15, 1> W = Eigen::Matrix<double, 15, 1>::Zero();
+  //! Camera model
+  CameraModel Model;
+
+  //! File containing the camera model and parameters
+  std::string Filename;
+
+  //! Type of the camera model projection
+  ProjectionType Type = ProjectionType::FishEye;
+
+  //! Name of the color array
+  std::string ColorArrayName = "RGB";
 };
 
-#endif // VTK_FISH_EYE_PROJECTOR_H
+#endif // VTK_CAMERA_PROJECTOR_H

@@ -18,8 +18,9 @@
 //=========================================================================
 
 // LOCAL
-#include "vtkFishEyeProjector.h"
+#include "vtkCameraProjector.h"
 #include "CameraProjection.h"
+#include "vtkHelper.h"
 
 // VTK
 #include <vtkImageData.h>
@@ -33,17 +34,17 @@
 #include <vtkSmartPointer.h>
 
 // Implementation of the New function
-vtkStandardNewMacro(vtkFishEyeProjector)
+vtkStandardNewMacro(vtkCameraProjector)
 
 //-----------------------------------------------------------------------------
-vtkFishEyeProjector::vtkFishEyeProjector()
+vtkCameraProjector::vtkCameraProjector()
 {
   this->SetNumberOfInputPorts(2);
   this->SetNumberOfOutputPorts(3);
 }
 
 //-----------------------------------------------------------------------------
-int vtkFishEyeProjector::FillInputPortInformation(int port, vtkInformation *info)
+int vtkCameraProjector::FillInputPortInformation(int port, vtkInformation *info)
 {
   if (port == 0)
   {
@@ -59,7 +60,7 @@ int vtkFishEyeProjector::FillInputPortInformation(int port, vtkInformation *info
 }
 
 //-----------------------------------------------------------------------------
-int vtkFishEyeProjector::FillOutputPortInformation(int port, vtkInformation *info)
+int vtkCameraProjector::FillOutputPortInformation(int port, vtkInformation *info)
 {
   if (port == 0)
   {
@@ -80,7 +81,7 @@ int vtkFishEyeProjector::FillOutputPortInformation(int port, vtkInformation *inf
 }
 
 //-----------------------------------------------------------------------------
-int vtkFishEyeProjector::RequestData(vtkInformation *vtkNotUsed(request),
+int vtkCameraProjector::RequestData(vtkInformation *vtkNotUsed(request),
   vtkInformationVector **inputVector, vtkInformationVector *outputVector)
 {
   // Get inputs
@@ -109,19 +110,34 @@ int vtkFishEyeProjector::RequestData(vtkInformation *vtkNotUsed(request),
 
   vtkDataArray* intensity = outCloud->GetPointData()->GetArray("intensity");
 
-  vtkSmartPointer<vtkIntArray> rgbArray = vtkSmartPointer<vtkIntArray>::New();
-  rgbArray->SetNumberOfComponents(3);
-  rgbArray->SetNumberOfTuples(outCloud->GetNumberOfPoints());
-  rgbArray->SetName("RGB");
-  outCloud->GetPointData()->AddArray(rgbArray);
+  // Try to get RGB array, if it does not exist, create it and fill it
+  vtkSmartPointer<vtkIntArray> rgbArray = vtkIntArray::SafeDownCast(outCloud->GetPointData()->GetArray(this->ColorArrayName.c_str()));
+  if (!rgbArray)
+  {
+    rgbArray = createArray<vtkIntArray>(std::string(this->ColorArrayName), 3, outCloud->GetNumberOfPoints());
+    outCloud->GetPointData()->AddArray(rgbArray);
 
+    // fill tuples to (255, 255, 255)
+    rgbArray->Fill(255);
+  }
+
+  Eigen::VectorXd W = this->Model.GetParametersVector();
 
   // Project the points in the image
   for (int pointIndex = 0; pointIndex < outCloud->GetNumberOfPoints(); ++pointIndex)
   {
     double* pos = outCloud->GetPoint(pointIndex);
     Eigen::Vector3d X(pos[0], pos[1], pos[2]);
-    Eigen::Vector2d y = FisheyeProjection(W, X, true);
+    Eigen::Vector2d y;
+
+    if (this->Type == ProjectionType::BrownConradyPinhole)
+    {
+      y = BrownConradyPinholeProjection(W, X, true);
+    }
+    else
+    {
+      y = FisheyeProjection(W, X, true);
+    }
 
     // y represents the pixel coordinates using opencv convention, we need to
     // go back to vtkImageData pixel convention
@@ -131,9 +147,9 @@ int vtkFishEyeProjector::RequestData(vtkInformation *vtkNotUsed(request),
     if ((vtkRaw < 0) || (vtkRaw >= inImg->GetDimensions()[1]) ||
         (vtkCol < 0) || (vtkCol >= inImg->GetDimensions()[0]))
     {
-      rgbArray->SetTuple3(pointIndex, 255, 255, 255);
       continue;
     }
+
     vtkRaw = std::min(std::max(0, vtkRaw), inImg->GetDimensions()[1] - 1);
     vtkCol = std::min(std::max(0, vtkCol), inImg->GetDimensions()[0] - 1);
 
@@ -172,4 +188,12 @@ int vtkFishEyeProjector::RequestData(vtkInformation *vtkNotUsed(request),
   projectedCloud->SetVerts(cellArray);
 
   return 1;
+}
+
+//------------------------------------------------------------------------------
+void vtkCameraProjector::SetFileName(const std::string &argfilename)
+{
+  this->Filename = argfilename;
+  this->Model.LoadParamsFromFile(this->Filename);
+  this->Modified();
 }
