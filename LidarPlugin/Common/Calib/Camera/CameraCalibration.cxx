@@ -256,7 +256,8 @@ double NonLinearFisheyeCalibration(const std::vector<Eigen::Vector3d>& X, const 
 //----------------------------------------------------------------------------
 double BrownConradyPinholeCalibration(const std::vector<Eigen::Vector3d>& X, const std::vector<Eigen::Vector2d>& x,
                                       Eigen::Matrix<double, 17, 1>& W, unsigned int it,
-                                      double initLossScale, double finalLossScale)
+                                      double initLossScale, double finalLossScale,
+                                      const std::vector<bool>& shouldOptimizeParam)
 {
   unsigned int N = 100;
 
@@ -280,8 +281,10 @@ double BrownConradyPinholeCalibration(const std::vector<Eigen::Vector3d>& X, con
     ceres::Problem problem;
     for (unsigned int k = 0; k < X.size(); ++k)
     {
-      ceres::CostFunction* cost_function = new ceres::AutoDiffCostFunction<CostFunctions::BrownConradyAlgebraicDistance, 1, 17>(
-                                           new CostFunctions::BrownConradyAlgebraicDistance(X[k], x[k]));
+      CostFunctions::BrownConradyAlgebraicDistance* resFct = new CostFunctions::BrownConradyAlgebraicDistance(X[k], x[k]);
+      resFct->SetW0(W);
+      resFct->SetActivatedParams(shouldOptimizeParam);
+      ceres::CostFunction* cost_function = new ceres::AutoDiffCostFunction<CostFunctions::BrownConradyAlgebraicDistance, 1, 17>(resFct);
       problem.AddResidualBlock(cost_function, new ceres::ArctanLoss(lossScale), W.data());
     }
 
@@ -335,7 +338,7 @@ Eigen::Matrix<double, 3, 4> GetMatrixFromParameters(const Eigen::Matrix<double, 
 }
 
 //----------------------------------------------------------------------------
-Eigen::VectorXd FullCalibrationPipelineFromMatches(std::string filename)
+Eigen::VectorXd FullCalibrationPipelineFromMatches(std::string filename, const std::vector<bool>& activatedParams)
 {
   Eigen::VectorXd Wf = Eigen::VectorXd::Zero(17, 1);
 
@@ -406,7 +409,8 @@ Eigen::VectorXd FullCalibrationPipelineFromMatches(std::string filename)
   // coefficients to 0
   Eigen::Matrix<double, 17, 1> West = Eigen::Matrix<double, 17, 1>::Zero();
   West.block(0, 0, 11, 1) = Wpinhole;
-  double rmse3 = BrownConradyPinholeCalibration(X, x, West, 2500);
+
+  double rmse3 = BrownConradyPinholeCalibration(X, x, West, 2500, 5.0, 0.6, activatedParams);
 
   // copy params
   for (int i = 0; i < 17; ++i)

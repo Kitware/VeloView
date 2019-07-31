@@ -235,18 +235,50 @@ public:
     this->x = argx;
   }
 
+  void SetActivatedParams(const std::vector<bool>& argActivatedParams)
+  {
+    this->ActivatedParams = argActivatedParams;
+  }
+
+  void SetW0(Eigen::VectorXd argW0)
+  {
+    this->W0 = argW0;
+  }
+
   template <typename T>
   bool operator()(const T* const w, T* residual) const
   {
+    // Copy w so that we will be able to set to zero the
+    // infinitesimal part of a parameter which will have
+    // the effect to disable the optimization according
+    // to this parameter
+    std::vector<T> wcopy(17);
+    for (int i = 0; i < 17; ++i)
+    {
+      wcopy[i] = w[i];
+    }
+
+    // Check which parameters should not be optimized
+    if (this->ActivatedParams.size() == 17)
+    {
+      for (int i = 0; i < 17; ++i)
+      {
+        if (!this->ActivatedParams[i])
+        {
+          wcopy[i] = T(this->W0(i));
+        }
+      }
+    }
+
     // Convert internal double matrix
     // to a Jet matrix for auto diff calculous
     Eigen::Matrix<T, 3, 1> Xc(T(this->X(0)), T(this->X(1)), T(this->X(2)));
     Eigen::Matrix<T, 2, 1> xc(T(this->x(0)), T(this->x(1)));
 
     // store sin / cos values for this angle
-    T crx = ceres::cos(w[0]); T srx = ceres::sin(w[0]);
-    T cry = ceres::cos(w[1]); T sry = ceres::sin(w[1]);
-    T crz = ceres::cos(w[2]); T srz = ceres::sin(w[2]);
+    T crx = ceres::cos(wcopy[0]); T srx = ceres::sin(wcopy[0]);
+    T cry = ceres::cos(wcopy[1]); T sry = ceres::sin(wcopy[1]);
+    T crz = ceres::cos(wcopy[2]); T srz = ceres::sin(wcopy[2]);
 
     // Create current rotation
     Eigen::Matrix<T, 3, 3> R;
@@ -255,15 +287,15 @@ public:
             -sry,               srx*cry,               crx*cry;
 
     // Create current position
-    Eigen::Matrix<T, 3, 1> C(w[3], w[4], w[5]);
+    Eigen::Matrix<T, 3, 1> C(wcopy[3], wcopy[4], wcopy[5]);
 
     // Create current intrinsic parameters
     Eigen::Matrix<T, 3, 3> K = Eigen::Matrix<T, 3, 3>::Zero();
-    K(0, 0) = T(w[6]);
-    K(1, 1) = T(w[7]);
-    K(0, 2) = T(w[8]);
-    K(1, 2) = T(w[9]);
-    K(0, 1) = T(w[10]);
+    K(0, 0) = T(wcopy[6]);
+    K(1, 1) = T(wcopy[7]);
+    K(0, 2) = T(wcopy[8]);
+    K(1, 2) = T(wcopy[9]);
+    K(0, 1) = T(wcopy[10]);
     K(2, 2) = T(1);
 
     // First, express the 3D point in the camera
@@ -277,9 +309,9 @@ public:
 
     // Undistorded the projected image
     T r = Xp1.norm();
-    T k1 = w[11]; T k2 = w[12];
-    T p1 = w[13]; T p2 = w[14];
-    T p3 = w[15]; T p4 = w[16];
+    T k1 = wcopy[11]; T k2 = wcopy[12];
+    T p1 = wcopy[13]; T p2 = wcopy[14];
+    T p3 = wcopy[15]; T p4 = wcopy[16];
 
     T xdist = Xp1(0) + Xp1(0) * (k1 * ceres::pow(r, 2) + k2 * ceres::pow(r, 4)) +
                    (p1 * (ceres::pow(r, 2) + T(2) * ceres::pow(Xp1(0), 2)) +
@@ -319,6 +351,8 @@ public:
 private:
   Eigen::Vector3d X;
   Eigen::Vector2d x;
+  std::vector<bool> ActivatedParams = std::vector<bool>(0);
+  Eigen::VectorXd W0;
 };
 }
 

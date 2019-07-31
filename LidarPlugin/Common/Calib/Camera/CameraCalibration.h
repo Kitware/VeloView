@@ -113,10 +113,12 @@ double NonLinearFisheyeCalibration(const std::vector<Eigen::Vector3d>& X, const 
    * @param finalLossScale final loss scale to saturate cost function of outliers
    *        the default value correspond to a saturation around 3 pixels of
    *        reprojection error
+   * @param shouldOptimizeParam Indicates which parameters should be optimized
    */
 double BrownConradyPinholeCalibration(const std::vector<Eigen::Vector3d>& X, const std::vector<Eigen::Vector2d>& x,
                                       Eigen::Matrix<double, 17, 1>& W, unsigned int it = 1000,
-                                      double initLossScale = 5.0, double finalLossScale = 0.60);
+                                      double initLossScale = 5.0, double finalLossScale = 0.60,
+                                      const std::vector<bool>& shouldOptimizeParam = std::vector<bool>(0));
 
 /**
    * @brief CalibrationMatrixDecomposition Decompose the pinhole camera model
@@ -157,7 +159,9 @@ Eigen::Matrix<double, 3, 4> GetMatrixFromParameters(const Eigen::Matrix<double, 
    *        algorithm
    *
    * @param filename file containing the matches
+   * @param activatedParams Indicates which params should be optimized
    */
-Eigen::VectorXd FullCalibrationPipelineFromMatches(std::string filename);
+Eigen::VectorXd FullCalibrationPipelineFromMatches(std::string filename,
+                                                   const std::vector<bool>& activatedParams = std::vector<bool>(0));
 
 #endif // CAMERA_CALIBRATION_H
