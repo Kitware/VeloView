@@ -1,0 +1,38 @@
+<ServerManagerConfiguration>
+  <ProxyGroup name="filters">
+    <SourceProxy name="BoundingBox" class="vtkBoundingBoxReader" label="BoundingBoxReader">
+      <Documentation
+        short_help="Create 2D and 3D bounding"
+        long_help="Create 2D and 3D bounding">
+        Create 2D and 3D bounding
+      </Documentation>
+
+      <StringVectorProperty
+          name="FileName"
+          animateable="0"
+          command="SetFileName"
+          number_of_elements="1">
+          <FileListDomain name="files"/>
+          <Documentation>
+            This property specifies the file name for the reader.
+          </Documentation>
+      </StringVectorProperty>
+
+      <IntVectorProperty
+          name="Image Height"
+          command="SetImageHeight"
+          default_values="360"
+          number_of_elements="1">
+        <Documentation>
+          image height need because vtk has a different referential and origin
+        </Documentation>
+      </IntVectorProperty>
+
+      <Hints>
+        <ReaderFactory extensions="yaml"
+           file_description="Bounding Box File"/>
+      </Hints>
+
+    </SourceProxy>
+  </ProxyGroup>
+</ServerManagerConfiguration>

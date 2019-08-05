@@ -208,6 +208,7 @@ list(APPEND servermanager_sources
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/vtkTemporalTransformsReader.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/vtkTemporalTransformsWriter.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/vtkLASFileWriter.cxx
+  ${CMAKE_CURRENT_SOURCE_DIR}/IO/vtkBoundingBoxReader.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/MotionDetector/vtkMotionDetector.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/BirdEyeViewSnap/vtkBirdEyeViewSnap.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/CameraProjector/vtkCameraProjector.cxx
@@ -267,6 +268,7 @@ list(APPEND servermanager_xml
   xml/VelodyneHDLPositionReader.xml
   xml/ApplanixPositionReader.xml
   xml/ArduPilotDataFlashLogReader.xml
+  xml/BoundingBoxReader.xml
   xml/MotionDetector.xml
   xml/BirdEyeViewSnap.xml
   xml/LidarRawSignalImage.xml
