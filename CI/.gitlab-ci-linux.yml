@@ -27,8 +27,10 @@
       fi
     - cmake -DCMAKE_BUILD_TYPE:STRING=${cmake_option_CMAKE_BUILD_TYPE}
       -DBUILD_TESTING=True
-      -DENABLE_all=${optional_dependancies}
+      -DENABLE_all=${optional_dependancies}    
       ${CI_PROJECT_DIR}/Superbuild
+    # disable darknet on CI because no GPU available
+    - cmake -DENABLE_all=False -DENABLE_darknet=False .
     # force pcl to build only with 3 thread because we don't have enough RAM
     - >
       if mode="full"; then

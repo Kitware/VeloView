@@ -77,3 +77,7 @@ superbuild_set_revision(nanoflann
 superbuild_set_revision(yaml
   GIT_REPOSITORY https://github.com/jbeder/yaml-cpp.git
   GIT_TAG yaml-cpp-0.6.2)
+
+superbuild_set_revision(darknet
+  GIT_REPOSITORY https://github.com/pjreddie/darknet.git
+  GIT_TAG master)

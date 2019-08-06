@@ -87,6 +87,7 @@ function (superbuild_find_projects var)
     flann
     nanoflann
     yaml
+    darknet
     )
 
   if (UNIX)
@@ -203,12 +204,13 @@ list(APPEND superbuild_project_roots
 
 set(_superbuild_default_cxx11 ON)
 
-option(ENABLE_all "Enable all optional dependancy like pcl, ceres, opencv, ..." OFF)
+option(ENABLE_all "Enable all optional dependancy like pcl, ceres, opencv, darknet, ..." OFF)
 if (ENABLE_all)
-  set(ENABLE_opencv ON)
-  set(ENABLE_ceres ON)
-  set(ENABLE_pcl ON)
-  set(ENABLE_nanoflann ON)
+  set(ENABLE_opencv ON CACHE BOOL "enable OpenCV")
+  set(ENABLE_ceres ON CACHE BOOL "enable Ceres")
+  set(ENABLE_pcl ON CACHE BOOL "enable PCL")
+  set(ENABLE_nanoflann ON CACHE BOOL "enable nanoflann")
+  set(ENABLE_darknet ON CACHE BOOL "enable darknet")
 endif(ENABLE_all)
 
 add_subdirectory(common-superbuild)
