@@ -20,7 +20,7 @@
     - cd Superbuild-build/
     # configure & generate
     - >
-      if [ ${mode} == "full" ]; then
+      if [ "${mode}" == "full" ]; then
         optional_dependancies="ON"
       else
         optional_dependancies="OFF"
