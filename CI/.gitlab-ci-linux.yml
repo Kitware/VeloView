@@ -20,7 +20,7 @@
     - cd Superbuild-build/
     # configure & generate
     - >
-      if mode="full"; then
+      if [ "${mode}" == "full" ]; then
         optional_dependancies="ON"
       else
         optional_dependancies="OFF"
@@ -31,7 +31,7 @@
       ${CI_PROJECT_DIR}/Superbuild
     # force pcl to build only with 3 thread because we don't have enough RAM
     - >
-      if mode="full"; then
+      if [ "${mode}" == "full" ]; then
         cmake -DSUPERBUILD_PROJECT_PARALLELISM=3 .
         make pcl -j8
         cmake -DSUPERBUILD_PROJECT_PARALLELISM=$(nproc) .
