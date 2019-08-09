@@ -1,3 +1,5 @@
+# Please use https links whenever possible because some people
+# cannot clone using ssh (git://) due to a firewalled network.
 # This maintains the links for all sources used by this superbuild.
 # Simply update this file to change the revision.
 # One can use different revision on different platforms.
@@ -55,15 +57,15 @@ superbuild_set_revision(glog
   GIT_TAG 8d7a107d68c127f3f494bb7807b796c8c5a97a82)
 
 superbuild_set_revision(pcl
-  GIT_REPOSITORY git://github.com/PointCloudLibrary/pcl.git
+  GIT_REPOSITORY https://github.com/PointCloudLibrary/pcl.git
   GIT_TAG pcl-1.8.1)
 
 superbuild_set_revision(qhull
-    GIT_REPOSITORY git://github.com/qhull/qhull.git
+    GIT_REPOSITORY https://github.com/qhull/qhull.git
     GIT_TAG master)
 
 superbuild_set_revision(flann
-  GIT_REPOSITORY git://github.com/mariusmuja/flann.git
+  GIT_REPOSITORY https://github.com/mariusmuja/flann.git
   GIT_TAG 1.9.1)
 
 superbuild_set_revision(opencv
