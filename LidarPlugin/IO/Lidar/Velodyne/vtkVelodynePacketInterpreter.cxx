@@ -1428,7 +1428,7 @@ bool vtkVelodynePacketInterpreter::PreProcessPacket(unsigned char const * data, 
   this->ParserMetaData.FilePosition = filePosition;
 
   // update the timestamps information
-  this->ParserMetaData.FirstPacketDataTime = dataPacket->gpsTimestamp;
+  this->ParserMetaData.FirstPacketDataTime = 1e-6 * dataPacket->gpsTimestamp;
   this->ParserMetaData.FirstPacketNetworkTime = packetNetworkTime;
 
   this->IsHDL64Data |= dataPacket->isHDL64();

@@ -18,6 +18,8 @@
 
 #include <vtkNew.h>
 #include <vtkTimerLog.h>
+#include <vtkPVXMLParser.h>
+#include <vtkPVXMLElement.h>
 
 /**
  * @brief TestFile Runs all the tests on a given pcap and its corresponding VTP files
@@ -28,20 +30,50 @@
  */
 int main(int argc, char* argv[])
 {
-  if (argc < 4)
+  std::cout << "argc: " << argc << std::endl;
+  if (argc < 5)
   {
-    std::cerr << "Wrong number of arguments. Usage: TestLidarReader <pcapFileName> <referenceFileName> <correctionFileName>" << std::endl;
+    std::cerr << "Wrong number of arguments. Usage: TestLidarReader <pcapFileName> <referenceFileName> <correctionFileName> <reference-data.xml>" << std::endl;
 
     return 1;
   }
 
-    // return value indicate if the test passed
+  // return value indicate if the test passed
   int retVal = 0;
 
   // get command line parameter
   std::string pcapFileName = argv[1];
   std::string referenceFileName = argv[2];
   std::string correctionFileName = argv[3];
+  std::string referenceDataXML = argv[4];
+
+  vtkSmartPointer<vtkPVXMLParser> parser = vtkSmartPointer<vtkPVXMLParser>::New();
+  parser->SetFileName(referenceDataXML.c_str());
+  if (parser->Parse() == 0)
+  {
+    std::cerr << "Invalid XML in file: " << referenceDataXML << "." << std::endl;
+    return 1;
+  }
+
+  vtkPVXMLElement* root = parser->GetRootElement();
+  if (root == 0)
+  {
+    std::cerr << "Invalid XML in file: " << referenceDataXML << "." << std::endl;
+    return 1;
+  }
+
+  // read referenceNetworkTimeToDataTime
+  const char* foundReferenceNetworkTimeToDataTime = root->GetAttribute("referenceNetworkTimeToDataTime");
+  if (foundReferenceNetworkTimeToDataTime == 0)
+  {
+    std::cerr << "No referenceNetworkTimeToDataTime element was found." << std::endl;
+    return 1;
+  }
+
+  double referenceNetworkTimeToDataTime = std::stod(foundReferenceNetworkTimeToDataTime);
+  std::cout << referenceNetworkTimeToDataTime << std::endl;
+
+  std::cout << std::string(foundReferenceNetworkTimeToDataTime) << std::endl;
 
   std::cout << "-------------------------------------------------------------------------" << std::endl
             << "Pcap :\t" << pcapFileName << std::endl
@@ -111,6 +143,8 @@ int main(int argc, char* argv[])
   // Check processing options
   retVal  += TestProcessingOptions(HDLReader.Get());
 
+  retVal  += TestNetworkTimeToLidarTime(HDLReader.Get(),
+                                        referenceNetworkTimeToDataTime);
 
   return  retVal;
 }

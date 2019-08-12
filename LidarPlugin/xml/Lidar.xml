@@ -134,6 +134,13 @@
           <TimeStepsInformationHelper/>
     </DoubleVectorProperty>
 
+    <DoubleVectorProperty
+      name="NetworkTimeToDataTime"
+      command="GetNetworkTimeToDataTime"
+      information_only="1">
+      <SimpleDoubleInformationHelper />
+    </DoubleVectorProperty>
+
     <Hints>
       <ReaderFactory extensions="pcap"
          file_description="Lidar Data File"/>

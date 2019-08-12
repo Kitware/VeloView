@@ -5,6 +5,7 @@
 #include "vtkLidarPacketInterpreter.h"
 #include "vtkPacketFileWriter.h"
 #include "vtkPacketFileReader.h"
+#include "statistics.h"
 
 #include <vtkInformationVector.h>
 #include <vtkInformation.h>
@@ -69,6 +70,18 @@ int vtkLidarReader::ReadFrameInformation()
   {
     vtkErrorMacro("The reader could not parse the pcap file")
   }
+
+  this->NetworkTimeToDataTime = 0.0; // default value if no frames seen
+  if (this->FrameCatalog.size() > 0)
+  {
+      std::vector<double> diffs(this->FrameCatalog.size());
+      for (size_t i = 0; i < this->FrameCatalog.size(); i++)
+      {
+          diffs[i] = this->FrameCatalog[i].FirstPacketDataTime - this->FrameCatalog[i].FirstPacketNetworkTime;
+      }
+      this->NetworkTimeToDataTime = ComputeMedian(diffs);
+  }
+
   return this->GetNumberOfFrames();
 }
 

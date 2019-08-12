@@ -587,3 +587,31 @@ int TestRPMValues(vtkPolyData* currentFrame, vtkPolyData* currentReference)
   std::cout << "passed" << std::endl;
   return 0;
 }
+
+//-----------------------------------------------------------------------------
+int TestNetworkTimeToLidarTime(vtkLidarReader* HDLReader,
+                               double referenceNetworkTimeToLidarTime)
+{
+  std::cout << "NetworkTimeToLidarTime : \t";
+  double currentNetworkTimeToLidarTime = HDLReader->GetNetworkTimeToDataTime();
+
+  // We do not want to be too strict because this timeshift is currently
+  // computed using the timestamp of the first data packet inside the
+  // network packet (not of the first used data packet) so this timeshift
+  // can be improved.
+  if (!vtkMathUtilities::FuzzyCompare(currentNetworkTimeToLidarTime,
+                                      referenceNetworkTimeToLidarTime,
+                                      1.0))
+  {
+    std::cerr << "failed : Wrong NetworkTimeToLidarTime value. Expected "
+	      << referenceNetworkTimeToLidarTime
+	      << ", got " << std::fixed << std::setprecision(17) << currentNetworkTimeToLidarTime
+              << std::endl;
+
+    return 1;
+  }
+
+  std::cout << "passed" << std::endl;
+  return 0;
+}
+

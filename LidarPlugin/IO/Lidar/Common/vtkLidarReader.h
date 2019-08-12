@@ -36,6 +36,10 @@ public:
   vtkGetMacro(FileName, std::string)
   virtual void SetFileName(const std::string& filename);
 
+  /**
+   * @copydoc NetworkTimeToDataTime
+   */
+  vtkGetMacro(NetworkTimeToDataTime, double)
 
   /**
    * @brief GetFrame returns the requested frame
@@ -141,6 +145,14 @@ private:
 
   vtkLidarReader(const vtkLidarReader&) = delete;
   void operator=(const vtkLidarReader&) = delete;
+
+  /**
+   * @brief The timeshift between these two times.
+   * When added to "network time" it gives "data time".
+   * Example of "network time": the pipeline time (in general)
+   * Example of "data time": the time of the lidar points.
+   */
+  double NetworkTimeToDataTime = 0.0;
 };
 
 #endif // VTKLIDARREADER_H

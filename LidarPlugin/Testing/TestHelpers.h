@@ -132,4 +132,7 @@ int TestProcessingOptions(vtkLidarReader* HDLReader);
 int TestProcessingOptions(vtkLidarStream* HDLSource, std::string pcapFileName,
   std::string destinationIp, int dataPort);
 
+int TestNetworkTimeToLidarTime(vtkLidarReader* HDLReader,
+                               double referenceNetworkTimeToLidarTime);
+
 #endif
