@@ -76,6 +76,15 @@ superbuild_add_project(paraview
 
     -DModule_vtklibproj4:BOOL=TRUE
 
+    # beginning of modules required when opening a .series
+    -DModule_vtkIOAMR:BOOL=TRUE
+    -DModule_vtkIOLSDyna:BOOL=TRUE
+    -DModule_vtkIOParallelLSDyna:BOOL=TRUE
+    -DModule_vtkIOTecplotTable:BOOL=TRUE
+    -DModule_vtkIOTRUCHAS:BOOL=TRUE
+    -DModule_vtkIOVPIC:BOOL=TRUE
+    # end of modules required when opening a .series
+
     -DPQWIDGETS_DISABLE_QTWEBKIT:BOOL=ON
 
     # specify the apple app install prefix. No harm in specifying it for all
