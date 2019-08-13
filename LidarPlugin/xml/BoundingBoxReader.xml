@@ -1,5 +1,6 @@
 <ServerManagerConfiguration>
-  <ProxyGroup name="filters">
+
+  <ProxyGroup name="internal_sources">
     <SourceProxy name="BoundingBox" class="vtkBoundingBoxReader" label="BoundingBoxReader">
       <Documentation
         short_help="Create 2D and 3D bounding"
@@ -29,10 +30,60 @@
       </IntVectorProperty>
 
       <Hints>
-        <ReaderFactory extensions="yaml"
+        <ReaderFactory extensions="yml"
            file_description="Bounding Box File"/>
       </Hints>
 
+    </SourceProxy>
+  </ProxyGroup>
+
+
+  <ProxyGroup name="sources">
+    <SourceProxy class="vtkFileSeriesReader"
+                 file_name_method="SetFileName"
+                 label="Bounding Box Reader"
+                 name="BoundingBoxReader"
+                 si_class="vtkSIMetaReaderProxy">
+
+      <SubProxy>
+        <Proxy name="Reader"
+               proxygroup="internal_sources"
+               proxyname="BoundingBox"></Proxy>
+      </SubProxy>
+
+      <StringVectorProperty command="GetCurrentFileName"
+                            information_only="1"
+                            name="FileNameInfo">
+      <SimpleStringInformationHelper />
+      </StringVectorProperty>
+
+      <StringVectorProperty animateable="0"
+                            clean_command="RemoveAllFileNames"
+                            command="AddFileName"
+                            information_property="FileNameInfo"
+                            name="FileName"
+                            number_of_elements="1"
+                            panel_visibility="never"
+                            repeat_command="1">
+        <FileListDomain name="files" />
+        <Documentation>The list of files to be read by the reader. Each file is
+        expected to be in the a specigic yaml format. The standard extension is
+        .yml. If more than one file is specified, the reader will switch to file
+        series mode in which it will pretend that it can support time and provide
+        one file per time step.</Documentation>
+      </StringVectorProperty>
+
+      <DoubleVectorProperty information_only="1"
+                            name="TimestepValues"
+                            repeatable="1">
+        <TimeStepsInformationHelper />
+        <Documentation>Available timestep values.</Documentation>
+      </DoubleVectorProperty>
+
+      <Hints>
+        <ReaderFactory extensions="yml"
+                       file_description="bounding box file" />
+      </Hints>
     </SourceProxy>
   </ProxyGroup>
 </ServerManagerConfiguration>
