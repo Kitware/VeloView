@@ -87,12 +87,14 @@ foreach(sensor ${sensors})
       ${CMAKE_SOURCE_DIR}/TestData/${sensor}_Single.pcap
       ${CMAKE_SOURCE_DIR}/TestData/${sensor}_Single/files.txt
       ${CMAKE_SOURCE_DIR}/share/${sensor}.xml
+      ${CMAKE_SOURCE_DIR}/TestData/${sensor}_Single-reference-data.xml
     )
     add_test(TestLidarReader_${sensor}_Dual
       ${INSTALL_LOCAL_DIR}/TestLidarReader
       ${CMAKE_SOURCE_DIR}/TestData/${sensor}_Dual.pcap
       ${CMAKE_SOURCE_DIR}/TestData/${sensor}_Dual/files.txt
       ${CMAKE_SOURCE_DIR}/share/${sensor}.xml
+      ${CMAKE_SOURCE_DIR}/TestData/${sensor}_Dual-reference-data.xml
     )
 
 endforeach(sensor)
@@ -118,12 +120,14 @@ add_test(TestLidarReader_HDL-64_Single-autocalib
   ${CMAKE_SOURCE_DIR}/TestData/HDL-64_Single-autocalib.pcap
   ${CMAKE_SOURCE_DIR}/TestData/HDL-64_Single-autocalib/files.txt
   ""
+  ${CMAKE_SOURCE_DIR}/TestData/HDL-64_Single-autocalib-reference-data.xml
 )
 add_test(TestLidarReader_HDL-64_Dual-autocalib
   ${INSTALL_LOCAL_DIR}/TestLidarReader
   ${CMAKE_SOURCE_DIR}/TestData/HDL-64_Dual-autocalib.pcap
   ${CMAKE_SOURCE_DIR}/TestData/HDL-64_Dual-autocalib/files.txt
   ""
+  ${CMAKE_SOURCE_DIR}/TestData/HDL-64_Dual-autocalib-reference-data.xml
 )
 
 add_test(TestVelodyneHDLPositionReader
