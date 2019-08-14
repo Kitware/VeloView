@@ -166,7 +166,7 @@ int vtkBoundingBoxReader::RequestData(vtkInformation *, vtkInformationVector **,
       {
         std::vector<double> center = objects[i]["selector"]["center"].as<std::vector<double>>();
         center[1] = this->ImageHeight - center[1]; // due to image processing vs vtk convention
-        std::vector<double> dimension= objects[i]["selector"]["dimension"].as<std::vector<double>>();
+        std::vector<double> dimension= objects[i]["selector"]["dimensions"].as<std::vector<double>>();
 
         bb = CreateBoundingBox2D(center[0] - dimension[0]/2.,center[1] - dimension[1]/2., dimension[0], dimension[1]);
       }
@@ -179,7 +179,7 @@ int vtkBoundingBoxReader::RequestData(vtkInformation *, vtkInformationVector **,
         Eigen::Translation3d t(center[0], center[1], center[2]);
         Eigen::Isometry3d pose(t*Eigen::Quaterniond(r));
 
-        std::vector<double> dimension= objects[i]["selector"]["dimension"].as<std::vector<double>>();
+        std::vector<double> dimension= objects[i]["selector"]["dimensions"].as<std::vector<double>>();
         Eigen::Vector3d d(dimension.data());
 
         bb = CreateBoundingBox3D(pose, d);
