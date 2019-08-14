@@ -40,6 +40,9 @@ target_link_libraries(TestVelodynePPSIdentification LidarPlugin)
 custom_add_executable(TestVtkEigenTools TestVtkEigenTools.cxx TestHelpers.cxx)
 target_link_libraries(TestVtkEigenTools LidarPlugin)
 
+custom_add_executable(TestBoundingBox TestBoundingBox.cxx)
+target_link_libraries(TestBoundingBox LidarPlugin)
+
 if (ENABLE_ceres)
   add_executable(TestCameraCalibration TestCameraCalibration.cxx)
   target_link_libraries(TestCameraCalibration LidarPlugin)
@@ -217,4 +220,8 @@ add_test(TestTemporalTransformsReaderWriter
 
 add_test(TestVtkEigenTools
   ${INSTALL_LOCAL_DIR}/TestVtkEigenTools
+)
+
+add_test(TestBoundingBox
+  ${INSTALL_LOCAL_DIR}/TestBoundingBox
 )

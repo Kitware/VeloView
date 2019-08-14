@@ -148,6 +148,6 @@ void EuclideanMLSSmoothing(const std::vector<Eigen::VectorXd>& X,
    *        descent algorithm with specific step value
    * @param X The list of R^n vectors we want to compute the median
    */
-Eigen::VectorXd MultivariateMedian(const std::vector<Eigen::VectorXd> X, double epsilon = 1e-6);
+Eigen::VectorXd MultivariateMedian(const std::vector<Eigen::VectorXd> X, double epsilon = 1e-6, unsigned int maxCount = 10000);
 
 #endif // VTK_EIGEN_TOOLS_H
