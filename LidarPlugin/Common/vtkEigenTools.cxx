@@ -276,11 +276,16 @@ void EuclideanMLSSmoothing(const std::vector<Eigen::VectorXd>& X,
 }
 
 //-----------------------------------------------------------------------------
-Eigen::VectorXd MultivariateMedian(const std::vector<Eigen::VectorXd> X, double epsilon)
+Eigen::VectorXd MultivariateMedian(const std::vector<Eigen::VectorXd> X, double epsilon, unsigned int maxCount)
 {
   if (X.size() == 0)
   {
     return Eigen::VectorXd::Zero(1, 1);
+  }
+
+  if (X.size() == 1)
+  {
+    return X[0];
   }
 
   // Initialize the first median estimation to the mean
@@ -291,8 +296,9 @@ Eigen::VectorXd MultivariateMedian(const std::vector<Eigen::VectorXd> X, double 
   }
 
   // Refine the median estimation by iteratively re-weight least squares
+  unsigned int count = 0;
   bool shouldIterate = true;
-  while (shouldIterate)
+  while (shouldIterate && (count < maxCount))
   {
     Eigen::VectorXd nextMedian = Eigen::VectorXd::Zero(X[0].size(), 1);
     double sumInvDist = 0;
@@ -312,5 +318,7 @@ Eigen::VectorXd MultivariateMedian(const std::vector<Eigen::VectorXd> X, double 
       residual += (X[i] - Median).normalized();
     }
     shouldIterate = residual.norm() > epsilon;
+    count++;
   }
+  return Median;
 }

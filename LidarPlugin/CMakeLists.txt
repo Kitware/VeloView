@@ -447,6 +447,17 @@ if(WIN32)
 endif(WIN32)
 
 #-----------------------------------------------------------------------------
+# Build StandAlone targets which provide different thirparty tools
+#-----------------------------------------------------------------------------
+if (ENABLE_opencv)
+  add_executable(BBoxFromImagesDetections StandAloneTools/BBoxFromImagesDetections.cxx)
+  target_include_directories(BBoxFromImagesDetections PRIVATE ${plugin_include_dirs})
+  target_link_libraries(BBoxFromImagesDetections LINK_PUBLIC ${VV_PLUGIN_LIBRARY} ${ALL_BOOST_LIBRARIES})
+  if(WIN32)
+    target_compile_definitions(BBoxFromImagesDetections PRIVATE -DWIN32 -DBOOST_PROGRAM_OPTIONS_DYN_LINK=1)
+  endif(WIN32)
+endif (ENABLE_opencv)
+#-----------------------------------------------------------------------------
 # As we don't want our paraview pluging to have a dependancies to PythonQt we
 # we create another target which contain all the code "glue" code.
 #-----------------------------------------------------------------------------
@@ -511,6 +522,12 @@ set(libraries_to_install
 set(executables_to_install
   PacketFileSender
   )
+
+if (ENABLE_opencv)
+  set(executables_to_install
+    BBoxFromImagesDetections
+    )
+endif (ENABLE_opencv)
 
 if (APPLE)
 

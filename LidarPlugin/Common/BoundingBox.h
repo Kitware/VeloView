@@ -31,6 +31,13 @@ template <unsigned int N>
 class OrientedBoundingBox
 {
 public:
+  OrientedBoundingBox()
+  {
+    this->Center = Eigen::Matrix<double, N, 1>::Zero();
+    this->Width = Eigen::Matrix<double, N, 1>::Zero();
+    this->Orientation = Eigen::Matrix<double, N, N>::Identity();
+  }
+
   OrientedBoundingBox(Eigen::Matrix<double, N, 1> argCenter,
                       Eigen::Matrix<double, N, 1> argWidth,
                       Eigen::Matrix<double, N, N> argOrientation)
@@ -57,9 +64,9 @@ public:
   // -Center position
   // -Width along dimensions
   // -Orientation to the non-oriented bb
-  Eigen::Matrix<double, N, 1> Center = Eigen::Matrix<double, N, 1>::Zero();
-  Eigen::Matrix<double, N, 1> Width = Eigen::Matrix<double, N, 1>::Zero();
-  Eigen::Matrix<double, N, N> Orientation = Eigen::Matrix<double, N, N>::Identity();
+  Eigen::Matrix<double, N, 1> Center;
+  Eigen::Matrix<double, N, 1> Width;
+  Eigen::Matrix<double, N, N> Orientation;
 
   // Semantic of the bounding box
   std::string Type = "N.A.";
