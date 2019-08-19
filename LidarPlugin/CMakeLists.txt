@@ -524,7 +524,7 @@ set(executables_to_install
   )
 
 if (ENABLE_opencv)
-  set(executables_to_install
+  list(APPEND executables_to_install
     BBoxFromImagesDetections
     )
 endif (ENABLE_opencv)
