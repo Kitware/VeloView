@@ -23,33 +23,8 @@
         command="SetResolution"
         number_of_elements="2">
         <Documentation>
-          Image resolution when a fixed image resolution is used. The size of each pixel will be adapted accordingly.
+            The image resolution. The actual pixel size will vary as a function of the projected bounding box.
         </Documentation>
-    </IntVectorProperty>
-
-    <DoubleVectorProperty
-        name="PixelSize"
-        label="Pixel Size"
-        animateable="0"
-        default_values="0.1 0.1"
-        command="SetPixelSize"
-        number_of_elements="2">
-        <Documentation>
-          The size of each pixel when the image resolution is adaptive. The image resolution will change to fit all of the pixels.
-        </Documentation>
-    </DoubleVectorProperty>
-
-    <IntVectorProperty
-      name="AdaptiveResolution"
-      label="Adaptive Resolution"
-      animateable="0"
-      default_values="0"
-      command="SetAdaptiveResolution"
-      number_of_elements="1">
-      <BooleanDomain name="bool" />
-      <Documentation>
-          When true, a fixed pixel size will be used and the image resolution will change to accommodate the pixels. When false, the image resolution will be fixed and the pixel size will change to accommodate the resolution.
-      </Documentation>
     </IntVectorProperty>
 
     <DoubleVectorProperty
@@ -70,7 +45,7 @@
         command="SetRankPercentile"
         number_of_elements="1">
         <Documentation>
-          The height value to keep for a voxel is the one that corresponds to this percentil.
+            The percentile of the value to keep for each pixel. 0.5 indicates the median value.
         </Documentation>
     </DoubleVectorProperty>
 
@@ -112,7 +87,7 @@
       number_of_elements="1">
         <BooleanDomain name="SetShiftToZero" />
             <Documentation>
-                If checked, shift all values so that the minimum lies at zero.
+                If checked, shift all values so that the minimum value becomes zero.
             </Documentation>
     </IntVectorProperty>
 
@@ -136,7 +111,7 @@
       number_of_elements="1">
         <BooleanDomain name="SetShouldMedianFilterBool" />
             <Documentation>
-                Indicate if the result should be post-processed with median filter
+                If checked, apply a median filter to the image.
             </Documentation>
     </IntVectorProperty>
 

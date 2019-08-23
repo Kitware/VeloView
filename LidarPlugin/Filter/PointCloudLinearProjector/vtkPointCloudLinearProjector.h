@@ -40,14 +40,8 @@ public:
   vtkGetVector2Macro(Resolution, unsigned int)
   vtkSetVector2Macro(Resolution, unsigned int)
 
-  vtkGetVector2Macro(PixelSize, double)
-  vtkSetVector2Macro(PixelSize, double)
-
   vtkGetMacro(RankPercentile, double)
   vtkSetMacro(RankPercentile, double)
-
-  vtkGetMacro(AdaptiveResolution, bool)
-  vtkSetMacro(AdaptiveResolution, bool)
 
   vtkGetMacro(ExportAsChar, bool)
   vtkSetMacro(ExportAsChar, bool)
@@ -78,18 +72,12 @@ private:
 
   // Information of the Image data
   double Origin[3] = {0, 0, 0};
-  // Dimensions are calculated either from Resolution or from PixelSize,
-  // depending on AdaptiveResolution.
-  unsigned int Dimensions[2] = {750, 750};
   unsigned int Resolution[2] = {750, 750};
   double PixelSize[2] = {0.1, 0.1};
   double Spacing[3] = {1, 1, 1};
 
   // Percentile to extract when performing rank filter.
   double RankPercentile = 0.5;
-
-  // Adapt image resolution to input cloud.
-  bool AdaptiveResolution = true;
 
   // Export as double if false or unsigned char if true.
   bool ExportAsChar = false;
