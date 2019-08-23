@@ -1186,8 +1186,7 @@ void Slam::ComputeEgoMotion()
   this->TimeValues.resize(toReserve);
   this->residualCoefficient.resize(toReserve);
 
-  double initLossScale = 2.0; // saturation around 5 meters
-  double finalLossScale = 0.2; // saturation around 1.5 meters
+
 
   // ICP - Levenberg-Marquardt loop:
   // At each step of this loop an ICP matching is performed
@@ -1250,7 +1249,8 @@ void Slam::ComputeEgoMotion()
       std::cout << "Too few geometric features, frame skipped" << std::endl;
       break;
     }
-    double lossScale = initLossScale + static_cast<double>(icpCount) * (finalLossScale - initLossScale) / (1.0 * this->EgoMotionICPMaxIter);
+
+    double lossScale = this->EgoMotionInitLossScale + static_cast<double>(icpCount) * (this->EgoMotionFinalLossScale - this->EgoMotionInitLossScale) / (1.0 * this->EgoMotionICPMaxIter);
 
     // We want to estimate our 6-DOF parameters using a non
     // linear least square minimization. The non linear part
@@ -1372,9 +1372,6 @@ void Slam::Mapping()
   this->TimeValues.resize(toReserve);
   this->residualCoefficient.resize(toReserve);
 
-  double initLossScale = 0.7; // saturation around 2.5 meters
-  double finalLossScale = 0.05; // saturation around 0.4 meters
-
   // ICP - Levenberg-Marquardt loop:
   // At each step of this loop an ICP matching is performed
   // Once the keypoints matched, we estimate the the 6-DOF
@@ -1442,7 +1439,7 @@ void Slam::Mapping()
       break;
     }
 
-    double lossScale = initLossScale + static_cast<double>(icpCount) * (finalLossScale - initLossScale) / (1.0 * this->MappingICPMaxIter);
+    double lossScale = this->MappingInitLossScale + static_cast<double>(icpCount) * (this->MappingFinalLossScale - this->MappingInitLossScale) / (1.0 * this->MappingICPMaxIter);
 
     // We want to estimate our 6-DOF parameters using a non
     // linear least square minimization. The non linear part

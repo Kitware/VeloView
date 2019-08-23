@@ -239,6 +239,22 @@
         </Documentation>
       </DoubleVectorProperty>
 
+      <DoubleVectorProperty
+          name="Ego Motion Init Loss Scale"
+          command="SetEgoMotionInitLossScale"
+          default_values="2.0"
+          number_of_elements="1"
+          panel_visibility="advanced">
+      </DoubleVectorProperty>
+
+      <DoubleVectorProperty
+          name="Ego Motion Final Loss Scale"
+          command="SetEgoMotionFinalLossScale"
+          default_values="0.2"
+          number_of_elements="1"
+          panel_visibility="advanced">
+      </DoubleVectorProperty>
+
       <PropertyGroup label="Ego-Motion ICP Matching And Optimization Parameters">
         <Property name="Lev-Mardt Maximum Iteration" />
         <Property name="ICP Maximum Itertation" />
@@ -250,6 +266,8 @@
         <Property name="Planarity Factor #2" />
         <Property name="Max Edge-Neighbors Distance To Fitted Line" />
         <Property name="Max Plane-Neighbors Distance To Fitted Plane" />
+        <Property name="Ego Motion Init Loss Scale" />
+        <Property  name="Ego Motion Final Loss Scale" />
      </PropertyGroup>
 
      <!-- ==================== Mapping Parameters ==================== -->
@@ -392,6 +410,22 @@
         </Documentation>
       </DoubleVectorProperty>
 
+      <DoubleVectorProperty
+          name="Mapping Init Loss Scale"
+          command="SetMappingInitLossScale"
+          default_values="0.7"
+          number_of_elements="1"
+          panel_visibility="advanced">
+      </DoubleVectorProperty>
+
+      <DoubleVectorProperty
+          name="Mapping Final Loss Scale"
+          command="SetMappingFinalLossScale"
+          default_values="0.05"
+          number_of_elements="1"
+          panel_visibility="advanced">
+      </DoubleVectorProperty>
+
      <PropertyGroup label="Mapping ICP Matching And Optimization Parameters">
        <Property name="Lev-Mardt Maximum Iteration M" />
        <Property name="ICP Maximum Itertation M" />
@@ -404,6 +438,8 @@
        <Property name="Maximum Inlier Distance Ransac Line Fitting" />
        <Property name="Max Edge-Neighbors Distance To Fitted Line M" />
        <Property name="Max Plane-Neighbors Distance To Fitted Plane M" />
+       <Property name="Mapping Init Loss Scale" />
+       <Property name="Mapping Final Loss Scale" />
      </PropertyGroup>
 
      <!-- ==================== Map Parameters ==================== -->
