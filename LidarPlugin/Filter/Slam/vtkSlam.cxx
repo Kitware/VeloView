@@ -78,6 +78,7 @@
 // STD
 #include <algorithm>
 #include <numeric>
+#include <cstring>
 
 // VTK
 #include <vtkCellArray.h>
@@ -263,13 +264,9 @@ vtkInformationVector **inputVector, vtkInformationVector *outputVector)
         this->KeyPointsExtractor->GetExtractor()->GetDebugArray();
     for (const auto& it : debugArray)
     {
-      auto array = vtkSmartPointer<vtkDoubleArray>::New();
-      array->SetName(it.first.c_str());
-      array->Allocate(it.second.size());
-      for (const auto& a : it.second)
-      {
-        array->InsertNextTuple1(a);
-      }
+      auto array = createArray<vtkDoubleArray>(it.first.c_str(), 1, it.second.size());
+      // memcpy is a better alternative than looping on all tuples
+      std::memcpy(array->GetVoidPointer(0), it.second.data(), sizeof(double) * it.second.size());
       output0->GetPointData()->AddArray(array);
     }
   }
