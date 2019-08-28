@@ -1089,13 +1089,13 @@ bool vtkVelodyneLegacyPacketInterpreter::CheckReportedSensorAndCalibrationFileCo
 std::string vtkVelodyneLegacyPacketInterpreter::GetSensorInformation()
 {
   std::stringstream streamInfo;
-  streamInfo << "Factory Field 1: " << (int)this->ReportedFactoryField1 << " (hex: 0x"
-             << std::hex << (int)this->ReportedFactoryField1 << std::dec << " ) "
+  streamInfo << "Factory Field 1: " << (int)this->ReportedFactoryField1 << " (0x"
+             << std::hex << (int)this->ReportedFactoryField1 << std::dec << ") "
              << DataPacketFixedLength::DualReturnSensorModeToString(
                   static_cast<DataPacketFixedLength::DualReturnSensorMode>(this->ReportedFactoryField1))
              << "  |  "
-             << "Factory Field 2: " << (int)this->ReportedFactoryField2 << " (hex: 0x"
-             << std::hex << (int)this->ReportedFactoryField2 << std::dec << " ) "
+             << "FF 2: " << (int)this->ReportedFactoryField2 << " (0x"
+             << std::hex << (int)this->ReportedFactoryField2 << std::dec << ") "
              << DataPacketFixedLength::SensorTypeToString(
                   static_cast<SensorType>(this->ReportedFactoryField2));
 
