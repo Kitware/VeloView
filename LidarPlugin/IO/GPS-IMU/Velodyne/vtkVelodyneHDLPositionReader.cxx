@@ -747,7 +747,7 @@ std::string vtkVelodyneHDLPositionReader::GetTimeSyncInfo()
                         << " to get GPS UTC time (mod. 1 hour).");
   }
 
-  return " Lidar PPS signal: "
+  return "PPS: "
       + PPSDesc
       + " - "
       + (this->PPSSynced ? "Lidar clock synced on GPS UTC ToH"
