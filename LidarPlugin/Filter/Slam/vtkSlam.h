@@ -245,14 +245,13 @@ private:
 
   // Polydata which represents the trajectory computed
   vtkSmartPointer<vtkTemporalTransforms> Trajectory;
-  std::vector<std::vector<double>> TrajectoryCovariance;
   std::vector<size_t> GetLaserIdMapping(vtkTable *calib);
 
   // Indicate if we are in display mode or not
   // Display mode will add arrays showing some
   // results of the slam algorithm such as
   // the keypoints extracted, curvature etc
-  bool DisplayMode = false;
+  bool DisplayMode = true;
 
   // Indicate if the variance-covariance matrix of a
   // pose estimation should be export in the trajectory
