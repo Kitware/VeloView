@@ -74,10 +74,12 @@
 #include "vtkTemporalTransforms.h"
 #include "vtkSpinningSensorKeypointExtractor.h"
 #include "vtkEigenTools.h"
+#include "vtkHelper.h"
 
 // STD
 #include <algorithm>
 #include <numeric>
+#include <cstring>
 
 // VTK
 #include <vtkCellArray.h>
@@ -112,22 +114,6 @@ namespace {
 double Rad2Deg(double val)
 {
   return val / vtkMath::Pi() * 180;
-}
-
-//-----------------------------------------------------------------------------
-template <typename T>
-vtkSmartPointer<T> CreateDataArray(const char* name, vtkIdType np, vtkPolyData* pd)
-{
-  vtkSmartPointer<T> array = vtkSmartPointer<T>::New();
-  array->Allocate(np);
-  array->SetName(name);
-
-  if (pd)
-    {
-    pd->GetPointData()->AddArray(array);
-    }
-
-  return array;
 }
 
 //-----------------------------------------------------------------------------
@@ -218,7 +204,7 @@ std::vector<size_t> vtkSlam::GetLaserIdMapping(vtkTable *calib)
   }
   else
   {
-    vtkErrorMacro("<< The calibration data has no colomn named 'verticalCorrection'");
+    vtkErrorMacro(<< "The calibration data has no column named 'verticalCorrection'");
   }
   return laserIdMapping;
 }
@@ -263,13 +249,9 @@ vtkInformationVector **inputVector, vtkInformationVector *outputVector)
         this->KeyPointsExtractor->GetExtractor()->GetDebugArray();
     for (const auto& it : debugArray)
     {
-      auto array = vtkSmartPointer<vtkDoubleArray>::New();
-      array->SetName(it.first.c_str());
-      array->Allocate(it.second.size());
-      for (const auto& a : it.second)
-      {
-        array->InsertNextTuple1(a);
-      }
+      auto array = createArray<vtkDoubleArray>(it.first.c_str(), 1, it.second.size());
+      // memcpy is a better alternative than looping on all tuples
+      std::memcpy(array->GetVoidPointer(0), it.second.data(), sizeof(double) * it.second.size());
       output0->GetPointData()->AddArray(array);
     }
   }
@@ -277,7 +259,6 @@ vtkInformationVector **inputVector, vtkInformationVector *outputVector)
   // output 1 - Trajectory
   Eigen::AngleAxisd m(RollPitchYawToMatrix(Tworld.rx, Tworld.ry, Tworld.rz));
   this->Trajectory->PushBack(pc->points[0].time, m, Eigen::Vector3d(Tworld.position));
-  this->TrajectoryCovariance.push_back(this->SlamAlgo.GetTransformCovariance());
   auto *output1 = vtkPolyData::GetData(outputVector->GetInformationObject(1));
   output1->ShallowCopy(this->Trajectory);
 
@@ -293,19 +274,8 @@ vtkInformationVector **inputVector, vtkInformationVector *outputVector)
     }
   }
 
-  // export the variance-covariance matrix if required
-  if (this->ShouldExportCovariance)
-  {
-    auto covArray = vtkSmartPointer<vtkDoubleArray>::New();
-    covArray->SetName("Variance Covariance Matrix");
-    covArray->SetNumberOfComponents(36);
-    covArray->SetNumberOfTuples(this->TrajectoryCovariance.size());
-    for (int i = 0; i < this->TrajectoryCovariance.size(); ++i)
-    {
-      covArray->SetTuple(i, this->TrajectoryCovariance[i].data());
-    }
-    output1->GetPointData()->AddArray(covArray);
-  }
+  auto array = this->Trajectory->GetPointData()->GetArray("Covariance");
+  array->InsertNextTuple(this->SlamAlgo.GetTransformCovariance().data());
 
   // output 2 - Edges Points Map
   auto *EdgeMap = vtkPolyData::GetData(outputVector->GetInformationObject(2));
@@ -363,13 +333,18 @@ void vtkSlam::Reset()
   // output of the vtk filter
   this->Trajectory = vtkSmartPointer<vtkTemporalTransforms>::New();
 
+  this->Trajectory->GetPointData()->AddArray(createArray<vtkDoubleArray>("Covariance", 36));
+
   // add the required array in the trajectory
-  CreateDataArray<vtkDoubleArray>("Variance Error", 0, this->Trajectory);
-  CreateDataArray<vtkIntArray>("Mapping: edges used", 0, this->Trajectory);
-  CreateDataArray<vtkIntArray>("Mapping: planes used", 0, this->Trajectory);
-  CreateDataArray<vtkIntArray>("Mapping: blobs used", 0, this->Trajectory);
-  CreateDataArray<vtkIntArray>("EgoMotion: edges used", 0, this->Trajectory);
-  CreateDataArray<vtkIntArray>("EgoMotion: planes used", 0, this->Trajectory);
+  if (this->DisplayMode)
+  {
+      this->Trajectory->GetPointData()->AddArray(createArray<vtkDoubleArray>("EgoMotion: edges used"));
+      this->Trajectory->GetPointData()->AddArray(createArray<vtkDoubleArray>("EgoMotion: planes used"));
+      this->Trajectory->GetPointData()->AddArray(createArray<vtkDoubleArray>("Mapping: edges used"));
+      this->Trajectory->GetPointData()->AddArray(createArray<vtkDoubleArray>("Mapping: planes used"));
+      this->Trajectory->GetPointData()->AddArray(createArray<vtkDoubleArray>("Mapping: blobs used"));
+      this->Trajectory->GetPointData()->AddArray(createArray<vtkDoubleArray>("Mapping: variance error"));
+  }
 }
 
 //-----------------------------------------------------------------------------

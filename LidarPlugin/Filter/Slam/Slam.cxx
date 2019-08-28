@@ -486,7 +486,7 @@ std::unordered_map<std::string, double> Slam::GetDebugInformation()
   map["Mapping: edges used"] = this->MappingEdgesPointsUsed;
   map["Mapping: planes used"] = this->MappingPlanesPointsUsed;
   map["Mapping: blobs used"] = this->MappingBlobsPointsUsed;
-  map["Variance Error"] = this->MappingVarianceError;
+  map["Mapping: variance error"] = this->MappingVarianceError;
   return map;
 }
 
