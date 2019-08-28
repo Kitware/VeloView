@@ -218,7 +218,7 @@ std::vector<size_t> vtkSlam::GetLaserIdMapping(vtkTable *calib)
   }
   else
   {
-    vtkErrorMacro("<< The calibration data has no colomn named 'verticalCorrection'");
+    vtkErrorMacro(<< "The calibration data has no column named 'verticalCorrection'");
   }
   return laserIdMapping;
 }
