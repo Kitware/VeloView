@@ -274,11 +274,8 @@ vtkInformationVector **inputVector, vtkInformationVector *outputVector)
     }
   }
 
-  if (this->ShouldExportCovariance)
-  {
-      auto array = this->Trajectory->GetPointData()->GetArray("Covariance");
-      array->InsertNextTuple(this->SlamAlgo.GetTransformCovariance().data());
-  }
+  auto array = this->Trajectory->GetPointData()->GetArray("Covariance");
+  array->InsertNextTuple(this->SlamAlgo.GetTransformCovariance().data());
 
   // output 2 - Edges Points Map
   auto *EdgeMap = vtkPolyData::GetData(outputVector->GetInformationObject(2));
@@ -336,10 +333,7 @@ void vtkSlam::Reset()
   // output of the vtk filter
   this->Trajectory = vtkSmartPointer<vtkTemporalTransforms>::New();
 
-  if (this->ShouldExportCovariance)
-  {
-      this->Trajectory->GetPointData()->AddArray(createArray<vtkDoubleArray>("Covariance", 36));
-  }
+  this->Trajectory->GetPointData()->AddArray(createArray<vtkDoubleArray>("Covariance", 36));
 
   // add the required array in the trajectory
   if (this->DisplayMode)

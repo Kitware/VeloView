@@ -122,9 +122,6 @@ public:
   vtkGetMacro(DisplayMode, bool)
   vtkSetMacro(DisplayMode, bool)
 
-  vtkGetMacro(ShouldExportCovariance, bool)
-  vtkSetMacro(ShouldExportCovariance, bool)
-
   vtkCustomGetMacro(MaxDistBetweenTwoFrames, double)
   vtkCustomSetMacro(MaxDistBetweenTwoFrames, double)
 
@@ -252,10 +249,6 @@ private:
   // results of the slam algorithm such as
   // the keypoints extracted, curvature etc
   bool DisplayMode = true;
-
-  // Indicate if the variance-covariance matrix of a
-  // pose estimation should be export in the trajectory
-  bool ShouldExportCovariance = true;
 };
 
 #endif // VTK_SLAM_H
