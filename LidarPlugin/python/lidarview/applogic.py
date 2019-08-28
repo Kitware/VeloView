@@ -504,7 +504,13 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
     app.reader = reader
     app.trailingFramesSpinBox.enabled = True
     app.trailingFrame = smp.TrailingFrame(guiName="TrailingFrame", Input=getLidar(), NumberOfTrailingFrames=app.trailingFramesSpinBox.value)
-    app.filenameLabel.setText('File: %s' % os.path.basename(filename))
+
+    displayableFilename = os.path.basename(filename)
+    # shorten the name to display because the status bar gives a lower bound to main window width
+    shortDisplayableFilename = (displayableFilename[:20] + '...' + displayableFilename[-20:]) if len(displayableFilename) > 43 else displayableFilename
+    app.filenameLabel.setText('File: %s' % shortDisplayableFilename)
+    app.filenameLabel.setToolTip('File: %s' % displayableFilename)
+
     app.positionPacketInfoLabel.setText('') # will be updated later if possible
     onCropReturns(False) # Dont show the dialog just restore settings
 
@@ -1528,6 +1534,8 @@ def onFiringsSkipChanged(pr):
 
 
 def setupStatusBar():
+    # by using a QScrollArea inside the statusBar it should be possible
+    # to reduce the minimum main window's width
 
     statusBar = getMainWindow().statusBar()
     statusBar.addPermanentWidget(app.logoLabel)
