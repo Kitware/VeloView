@@ -15,8 +15,8 @@
 =========================================================================*/
 
 // LOCAL
-#include "vtkEigenTools.h"
 #include "vtkPointCloudLinearProjector.h"
+#include "vtkEigenTools.h"
 
 // STD
 #include <cmath>
