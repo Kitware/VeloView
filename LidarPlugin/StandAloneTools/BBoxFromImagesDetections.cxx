@@ -74,14 +74,29 @@ std::vector<YAML::Node> LoadImgInfos(std::vector<std::string> imageFolders)
   }
 }
 
-//------------------------------------------------------------------------------
-vtkSmartPointer<vtkPolyData> ReadCloudFrame(std::string cloudFramesFolder, int frameIndex)
+size_t GetNumberOfClouds(std::string cloudFrameSeries)
 {
+  YAML::Node series = YAML::LoadFile(cloudFrameSeries);
+  return series["files"].size();
+}
+
+//------------------------------------------------------------------------------
+vtkSmartPointer<vtkPolyData> ReadCloudFrame(std::string cloudFrameSeries, size_t frameIndex, double& frameTime)
+{
+  YAML::Node series = YAML::LoadFile(cloudFrameSeries);
+  YAML::Node files = series["files"];
+  if (frameIndex >= files.size()) {
+      frameTime = 0.0;
+      return nullptr;
+  }
+
+  // compute absolute file paths from the relative one present in the .series
+  boost::filesystem::path dirname = boost::filesystem::path(cloudFrameSeries).parent_path();
+  boost::filesystem::path basename = boost::filesystem::path(files[frameIndex]["name"].as<std::string>());
+  boost::filesystem::path path = dirname / basename;
+
   vtkSmartPointer<vtkXMLPolyDataReader> reader = vtkSmartPointer<vtkXMLPolyDataReader>::New();
-  std::stringstream ss, ss2;
-  ss2 << std::setw(4) << std::setfill('0') << frameIndex;
-  ss << cloudFramesFolder << "/cloud" << ss2.str() << ".vtp";
-  reader->SetFileName(ss.str().c_str());
+  reader->SetFileName(path.string().c_str());
   reader->Update();
   vtkSmartPointer<vtkPolyData> cloud = reader->GetOutput();
 
@@ -364,6 +379,11 @@ std::vector<SemanticCentroid> LaunchDetectionBackProjection(vtkSmartPointer<vtkP
     }
   }
 
+  if (maxTemporalDist > 1.0) {
+      std::cout << "image closest to lidar frame is too far in time. Are exports complete ? You could try running on less lidar frames" << std::endl;
+      exit(1);
+  }
+
   // Express the closest image time in the lidar time clock system
   closestImgTime = closestImgTime + timeshift;
 
@@ -473,24 +493,28 @@ void Export3DBBAsYaml(std::vector<std::vector<SemanticCentroid>> objects,
 }
 
 //------------------------------------------------------------------------------
+// negative numbers (python like indexes) are accepted for {first,last}LidarFrameToProcess
+// so to run on all frames pass respectively 0 and -1
 int main(int argc, char* argv[])
 {
   // Check if there is the minimal number of inputs
-  if (argc < 6)
+  if (argc < 8)
   {
     std::cout << "Not enough program inputs" << std::endl;
     return EXIT_FAILURE;
   }
 
-  std::string cloudFramesFolder(argv[1]);
-  std::string trajectoryFilename(argv[2]);
-  std::string export3DBBFolder(argv[3]);
-  double timeshift = std::atof(argv[4]);
-  unsigned int nbrCameras = std::atoi(argv[5]);
+  int firstLidarFrameToProcess = stoi(std::string(argv[1]));
+  int lastLidarFrameToProcess = stoi(std::string(argv[2]));
+  std::string cloudFrameSeries(argv[3]);
+  std::string trajectoryFilename(argv[4]);
+  std::string export3DBBFolder(argv[5]);
+  double timeshift = std::atof(argv[6]);
+  unsigned int nbrCameras = std::atoi(argv[7]);
 
 
   // Check if there is the expected number of inputs
-  unsigned int expectedNbrInput = 6 + nbrCameras * 4;
+  unsigned int expectedNbrInput = 8 + nbrCameras * 4;
   if (argc != expectedNbrInput)
   {
     std::cout << "Unexpected nbr of inputs" << std::endl;
@@ -506,19 +530,19 @@ int main(int argc, char* argv[])
   std::vector<std::string> calibFilenames(0);
   for (unsigned int cameraIndex = 0; cameraIndex < nbrCameras; ++cameraIndex)
   {
-    imageFolders.push_back(std::string(argv[6 + cameraIndex]));
-    pspnetFolders.push_back(std::string(argv[6 + nbrCameras + cameraIndex]));
-    yoloFolders.push_back(std::string(argv[6 + 2 * nbrCameras + cameraIndex]));
-    calibFilenames.push_back(std::string(argv[6 + 3 * nbrCameras + cameraIndex]));
+    imageFolders.push_back(std::string(argv[8 + cameraIndex]));
+    pspnetFolders.push_back(std::string(argv[8 + nbrCameras + cameraIndex]));
+    yoloFolders.push_back(std::string(argv[8 + 2 * nbrCameras + cameraIndex]));
+    calibFilenames.push_back(std::string(argv[8 + 3 * nbrCameras + cameraIndex]));
 
     std::cout << cameraIndex << std::endl;
-    std::cout << std::string(argv[6 + cameraIndex]) << std::endl;
+    std::cout << std::string(argv[8 + cameraIndex]) << std::endl;
     std::cout << "-------------------------------------------------------" << std::endl;
-    std::cout << std::string(argv[6 + nbrCameras + cameraIndex]) << std::endl;
+    std::cout << std::string(argv[8 + nbrCameras + cameraIndex]) << std::endl;
     std::cout << "-------------------------------------------------------" << std::endl;
-    std::cout << std::string(argv[6 + 2 * nbrCameras + cameraIndex]) << std::endl;
+    std::cout << std::string(argv[8 + 2 * nbrCameras + cameraIndex]) << std::endl;
     std::cout << "-------------------------------------------------------" << std::endl;
-    std::cout << std::string(argv[6 + 3 * nbrCameras + cameraIndex]) << std::endl;
+    std::cout << std::string(argv[8 + 3 * nbrCameras + cameraIndex]) << std::endl;
     std::cout << std::endl;
   }
 
@@ -531,17 +555,22 @@ int main(int argc, char* argv[])
   vtkSmartPointer<vtkCustomTransformInterpolator> interpolator = trajectory->CreateInterpolator();
   interpolator->SetInterpolationTypeToLinear();
 
-  // Get the number of clouds available
-  boost::filesystem::path cloudsPath(cloudFramesFolder);
-  int nbrClouds = std::count_if(boost::filesystem::directory_iterator(cloudsPath),
-                                boost::filesystem::directory_iterator(),
-                                static_cast<bool(*)(const boost::filesystem::path&)>(boost::filesystem::is_regular_file));
+  size_t nbrClouds = GetNumberOfClouds(cloudFrameSeries);
+
+  // allow negative (python like) indexes
+  if (firstLidarFrameToProcess < 0) {
+      firstLidarFrameToProcess += nbrClouds;
+  }
+  if (lastLidarFrameToProcess < 0) {
+      lastLidarFrameToProcess += nbrClouds;
+  }
 
   // For each lidar frame, launch the detection and tracking process
-  for (int cloudIndex = 0; cloudIndex < nbrClouds; ++cloudIndex)
+  for (size_t cloudIndex = firstLidarFrameToProcess; cloudIndex < lastLidarFrameToProcess + 1; ++cloudIndex)
   {
     // read cloud
-    vtkSmartPointer<vtkPolyData> cloud = ReadCloudFrame(cloudFramesFolder, cloudIndex);
+    double unusedPipelineTime = 0.0; // unused as we use the (lidar) time of the points, not the pipeline (network) time of the frames
+    vtkSmartPointer<vtkPolyData> cloud = ReadCloudFrame(cloudFrameSeries, cloudIndex, unusedPipelineTime);
 
     // object detected
     std::vector<std::vector<SemanticCentroid>> objects;
