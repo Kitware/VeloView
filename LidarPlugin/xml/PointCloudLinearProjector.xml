@@ -1,7 +1,7 @@
 <ServerManagerConfiguration>
   <!-- Begin vtkPointCloudLinearProjector -->
   <ProxyGroup name="filters">
-    <SourceProxy name="PointCloudLinearProjector" class="vtkPointCloudLinearProjector" label="PointCloudLinearProjector">
+    <SourceProxy name="PointCloudLinearProjector" class="vtkPointCloudLinearProjector" label="PointCloud Linear Projector">
       <Documentation
         short_help="Create a linear projection image of the current frame"
         long_help="Create a linear projection image of the current frame">
@@ -17,13 +17,13 @@
     </InputProperty>
 
     <IntVectorProperty
-        name="Dimensions"
+        name="Resolution"
         animateable="0"
-        default_values="1000 1000"
-        command="SetDimensions"
+        default_values="750 750"
+        command="SetResolution"
         number_of_elements="2">
         <Documentation>
-          Image resolution
+            The image resolution. The actual pixel size will vary as a function of the projected bounding box.
         </Documentation>
     </IntVectorProperty>
 
@@ -39,15 +39,57 @@
     </DoubleVectorProperty>
 
     <DoubleVectorProperty
-        name="Rank Percentil"
+        name="Rank Percentile"
         animateable="0"
         default_values="0.5"
-        command="SetRankPercentil"
+        command="SetRankPercentile"
         number_of_elements="1">
         <Documentation>
-          The height value to keep for a voxel is the one that corresponds to this percentil.
+            The percentile of the value to keep for each pixel. 0.5 indicates the median value.
         </Documentation>
     </DoubleVectorProperty>
+
+    <StringVectorProperty name="SelectValueArray"
+                          label="Value"
+                          command="SetInputArrayToProcess"
+                          number_of_elements="5"
+                          element_types="0 0 0 0 2"
+                          default_values_delimiter=";"
+                          default_values="0;0;0;0;Intensity"
+                          animateable="0">
+      <ArrayListDomain name="array_list"
+                       attribute_type="Scalars">
+        <RequiredProperties>
+          <Property name="Input"
+                    function="Input" />
+        </RequiredProperties>
+      </ArrayListDomain>
+     <!-- In versions of ParaView greater than 5.6, the FieldDataDomain element is not needed. -->
+      <FieldDataDomain name="field_list">
+        <RequiredProperties>
+          <Property name="Input"
+                    function="Input" />
+        </RequiredProperties>
+      </FieldDataDomain>
+      <Hints>
+        <PropertyWidgetDecorator type="GenericDecorator"
+                                 mode="visibility"
+                                 property="InterpolateEachPoint"
+                                 value="1" />
+      </Hints>
+    </StringVectorProperty>
+
+    <IntVectorProperty
+      name="Shift To Zero"
+      animateable="0"
+      command="SetShiftToZero"
+      default_values="0"
+      number_of_elements="1">
+        <BooleanDomain name="SetShiftToZero" />
+            <Documentation>
+                If checked, shift all values so that the minimum value becomes zero.
+            </Documentation>
+    </IntVectorProperty>
 
     <IntVectorProperty
       name="Export As Char"
@@ -57,7 +99,7 @@
       number_of_elements="1">
         <BooleanDomain name="SetExportAsCharBool" />
             <Documentation>
-                Indicate if the result should be char
+                If checked, scale all image values to unsigned chars in the range [0,255].
             </Documentation>
     </IntVectorProperty>
 
@@ -69,7 +111,7 @@
       number_of_elements="1">
         <BooleanDomain name="SetShouldMedianFilterBool" />
             <Documentation>
-                Indicate if the result should be post-processed with median filter
+                If checked, apply a median filter to the image.
             </Documentation>
     </IntVectorProperty>
 

@@ -37,14 +37,17 @@ public:
   static vtkPointCloudLinearProjector *New();
   vtkTypeMacro(vtkPointCloudLinearProjector, vtkImageAlgorithm)
 
-  vtkGetVector2Macro(Dimensions, int)
-  vtkSetVector2Macro(Dimensions, int)
+  vtkGetVector2Macro(Resolution, unsigned int)
+  vtkSetVector2Macro(Resolution, unsigned int)
 
-  vtkGetMacro(RankPercentil, double)
-  vtkSetMacro(RankPercentil, double)
+  vtkGetMacro(RankPercentile, double)
+  vtkSetMacro(RankPercentile, double)
 
   vtkGetMacro(ExportAsChar, bool)
   vtkSetMacro(ExportAsChar, bool)
+
+  vtkGetMacro(ShiftToZero, bool)
+  vtkSetMacro(ShiftToZero, bool)
 
   vtkGetMacro(ShouldMedianFilter, bool)
   vtkSetMacro(ShouldMedianFilter, bool)
@@ -69,14 +72,18 @@ private:
 
   // Information of the Image data
   double Origin[3] = {0, 0, 0};
-  int Dimensions[2] = {750, 750};
+  unsigned int Resolution[2] = {750, 750};
+  double PixelSize[2] = {0.1, 0.1};
   double Spacing[3] = {1, 1, 1};
 
-  // percentil to extract when performing rank filter
-  double RankPercentil = 0.5;
+  // Percentile to extract when performing rank filter.
+  double RankPercentile = 0.5;
 
-  // Export as double or char
+  // Export as double if false or unsigned char if true.
   bool ExportAsChar = false;
+
+  // Shift all values so that the minimum lies at 0.
+  bool ShiftToZero = false;
 
   // Run median filter or nit
   bool ShouldMedianFilter = false;
