@@ -43,6 +43,9 @@ public:
   vtkGetMacro(RankPercentile, double)
   vtkSetMacro(RankPercentile, double)
 
+  vtkGetMacro(HeightMap, bool)
+  vtkSetMacro(HeightMap, bool)
+
   vtkGetMacro(ExportAsChar, bool)
   vtkSetMacro(ExportAsChar, bool)
 
@@ -78,6 +81,9 @@ private:
 
   // Percentile to extract when performing rank filter.
   double RankPercentile = 0.5;
+
+  // Show the height of the projected points instead of one of the array values.
+  bool HeightMap = false;
 
   // Export as double if false or unsigned char if true.
   bool ExportAsChar = false;
