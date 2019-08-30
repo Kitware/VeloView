@@ -39,7 +39,7 @@ bool OrientedBoundingBox<N>::IsPointInside(Eigen::Matrix<double, N, 1> query)
   Eigen::Matrix<double, N, 1> recentered = this->Orientation.transpose() * (query - this->Center);
 
   bool isInside = true;
-  for (int k = 0; k < N; ++k)
+  for (size_t k = 0; k < N; ++k)
   {
     isInside &= std::abs(recentered(k)) <= this->Width(k) / 2.0;
   }

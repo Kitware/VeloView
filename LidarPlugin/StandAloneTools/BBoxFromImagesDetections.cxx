@@ -30,7 +30,6 @@
 
 // STD
 #include <iostream>
-#include <strstream>
 #include <sstream>
 
 // BOOST
@@ -55,6 +54,7 @@
 #include <vtkPNGReader.h>
 #include <vtkMultiBlockDataSet.h>
 #include <vtkFieldData.h>
+#include <vtk_jsoncpp.h>
 
 class SemanticCentroid
 {
@@ -65,23 +65,30 @@ public:
 };
 
 //------------------------------------------------------------------------------
-std::vector<YAML::Node> LoadImgInfos(std::vector<std::string> imageFolders)
+size_t GetNumberOfClouds(std::string cloudFrameSeries)
 {
-  std::vector<YAML::Node> imgInfos(imageFolders.size());
-  for (int i = 0; i < imageFolders.size(); ++i)
-  {
-    imgInfos[i] = YAML::LoadFile(imageFolders[i] + "/image.jpg.series");
-  }
+  YAML::Node series = YAML::LoadFile(cloudFrameSeries);
+  return series["files"].size();
+}
+
+void ReadFromSeries(std::string fileSeries, size_t index, std::string& path, double& time)
+{
+  YAML::Node series = YAML::LoadFile(fileSeries);
+  YAML::Node files = series["files"];
+
+  // compute absolute file paths from the relative one present in the .series
+  boost::filesystem::path dirname = boost::filesystem::path(fileSeries).parent_path();
+  boost::filesystem::path basename = boost::filesystem::path(files[index]["name"].as<std::string>());
+  path = (dirname / basename).string();
+
+  time = files[index]["time"].as<double>();
 }
 
 //------------------------------------------------------------------------------
-vtkSmartPointer<vtkPolyData> ReadCloudFrame(std::string cloudFramesFolder, int frameIndex)
+vtkSmartPointer<vtkPolyData> ReadCloudFrame(std::string pathToVTP)
 {
   vtkSmartPointer<vtkXMLPolyDataReader> reader = vtkSmartPointer<vtkXMLPolyDataReader>::New();
-  std::stringstream ss, ss2;
-  ss2 << std::setw(4) << std::setfill('0') << frameIndex;
-  ss << cloudFramesFolder << "/cloud" << ss2.str() << ".vtp";
-  reader->SetFileName(ss.str().c_str());
+  reader->SetFileName(pathToVTP.c_str());
   reader->Update();
   vtkSmartPointer<vtkPolyData> cloud = reader->GetOutput();
 
@@ -144,7 +151,7 @@ vtkSmartPointer<vtkPolyData> ReferenceFrameChange(vtkSmartPointer<vtkPolyData> c
 }
 
 //------------------------------------------------------------------------------
-std::vector<OrientedBoundingBox<2>> Create2DBBFromPolyData(vtkSmartPointer<vtkMultiBlockDataSet> vtkBBs, double H)
+std::vector<OrientedBoundingBox<2>> Create2DBBFromPolyData(vtkSmartPointer<vtkMultiBlockDataSet> vtkBBs)
 {
   std::vector<OrientedBoundingBox<2>> bbList;
   for (unsigned int bbIdx = 0; bbIdx < vtkBBs->GetNumberOfBlocks(); ++bbIdx)
@@ -165,8 +172,8 @@ std::vector<OrientedBoundingBox<2>> Create2DBBFromPolyData(vtkSmartPointer<vtkMu
 std::vector<Eigen::VectorXd> RemovePercentilFarthest(std::vector<Eigen::VectorXd> inputList, double percentil)
 {
   std::vector<Eigen::VectorXd> closestPoints(0);
-  std::vector<std::pair<double, int>> toSortWithDist(inputList.size());
-  for (int i = 0; i < inputList.size(); ++i)
+  std::vector<std::pair<double, size_t>> toSortWithDist(inputList.size());
+  for (size_t i = 0; i < inputList.size(); ++i)
   {
     toSortWithDist[i].first = inputList[i].norm();
     toSortWithDist[i].second = i;
@@ -174,8 +181,8 @@ std::vector<Eigen::VectorXd> RemovePercentilFarthest(std::vector<Eigen::VectorXd
 
   std::sort(toSortWithDist.begin(), toSortWithDist.end());
 
-  int maxIndex = static_cast<int>(std::ceil(static_cast<double>(inputList.size() - 1) * percentil));
-  for (int i = 0; i <= maxIndex; ++i)
+  size_t maxIndex = static_cast<size_t>(std::ceil(static_cast<double>(inputList.size() - 1) * percentil));
+  for (size_t i = 0; i <= maxIndex; ++i)
   {
     closestPoints.push_back(inputList[toSortWithDist[i].second]);
   }
@@ -211,7 +218,7 @@ std::vector<bool> ComputeBBPSPNetConsistency(std::vector<OrientedBoundingBox<2>>
                                              vtkSmartPointer<vtkImageData> pspMsk)
 {
   std::vector<bool> isConsistent(bbList.size(), true);
-  for (int bbIdx = 0; bbIdx < bbList.size(); ++bbIdx)
+  for (size_t bbIdx = 0; bbIdx < bbList.size(); ++bbIdx)
   {
     double pixelCount = 0;
     double pixelConsistentCount = 0;
@@ -222,9 +229,9 @@ std::vector<bool> ComputeBBPSPNetConsistency(std::vector<OrientedBoundingBox<2>>
         if (bbList[bbIdx].IsPointInside(Eigen::Vector2d(col, row)))
         {
           pixelCount += 1.0;
-          int r = pspMsk->GetScalarComponentAsDouble(col, row, 0, 0);
-          int g = pspMsk->GetScalarComponentAsDouble(col, row, 0, 1);
-          int b = pspMsk->GetScalarComponentAsDouble(col, row, 0, 2);
+          int r = static_cast<int>(std::round(pspMsk->GetScalarComponentAsDouble(col, row, 0, 0)));
+          int g = static_cast<int>(std::round(pspMsk->GetScalarComponentAsDouble(col, row, 0, 1)));
+          int b = static_cast<int>(std::round(pspMsk->GetScalarComponentAsDouble(col, row, 0, 2)));
 
           if (CheckYoloPspConsistency(bbList[bbIdx].Type, r, g, b))
           {
@@ -252,7 +259,7 @@ std::vector<SemanticCentroid> DetectAndComputeCentroid(vtkSmartPointer<vtkPolyDa
                                                        Eigen::VectorXd W)
 {
   // Convert the polydata to 2D boundingbox structure
-  std::vector<OrientedBoundingBox<2>> bbList = Create2DBBFromPolyData(bbs, img->GetDimensions()[1]);
+  std::vector<OrientedBoundingBox<2>> bbList = Create2DBBFromPolyData(bbs);
   std::vector<std::vector<Eigen::VectorXd>> pointsInBB(bbList.size());
 
   // Discard a potential bounding box if there is no
@@ -271,8 +278,8 @@ std::vector<SemanticCentroid> DetectAndComputeCentroid(vtkSmartPointer<vtkPolyDa
 
     // y represents the pixel coordinates using opencv convention, we need to
     // go back to vtkImageData pixel convention
-    int vtkRaw = y(1);
-    int vtkCol = y(0);
+    int vtkRaw = static_cast<int>(std::round(y(1)));
+    int vtkCol = static_cast<int>(std::round(y(0)));
 
     // Check if the projected point is in the region of interest of the image
     if ((vtkRaw < 0) || (vtkRaw >= img->GetDimensions()[1]) ||
@@ -297,9 +304,9 @@ std::vector<SemanticCentroid> DetectAndComputeCentroid(vtkSmartPointer<vtkPolyDa
         {
           // if it is, we still need to check the consistency with
           // the psp-net semantic segmentation
-          int r = pspMsk->GetScalarComponentAsDouble(vtkCol, vtkRaw, 0, 0);
-          int g = pspMsk->GetScalarComponentAsDouble(vtkCol, vtkRaw, 0, 1);
-          int b = pspMsk->GetScalarComponentAsDouble(vtkCol, vtkRaw, 0, 2);
+          int r = static_cast<int>(std::round(pspMsk->GetScalarComponentAsDouble(vtkCol, vtkRaw, 0, 0)));
+          int g = static_cast<int>(std::round(pspMsk->GetScalarComponentAsDouble(vtkCol, vtkRaw, 0, 1)));
+          int b = static_cast<int>(std::round(pspMsk->GetScalarComponentAsDouble(vtkCol, vtkRaw, 0, 2)));
 
           if (CheckYoloPspConsistency(type, r, g, b))
           {
@@ -359,9 +366,14 @@ std::vector<SemanticCentroid> LaunchDetectionBackProjection(vtkSmartPointer<vtkP
     {
       maxTemporalDist = std::abs(imgTime - time);
       closestImgTime = imgTime;
-      closestImgIndex = imgIndex;
+      closestImgIndex = static_cast<int>(imgIndex);
       closestImgName = imageInfo["files"][imgIndex]["name"].as<std::string>();
     }
+  }
+
+  if (maxTemporalDist > 1.0) {
+      std::cout << "image closest to lidar frame is too far in time. Are exports complete ? You could try running on less lidar frames" << std::endl;
+      exit(1);
   }
 
   // Express the closest image time in the lidar time clock system
@@ -407,12 +419,8 @@ std::vector<SemanticCentroid> LaunchDetectionBackProjection(vtkSmartPointer<vtkP
 
 //------------------------------------------------------------------------------
 void Export3DBBAsYaml(std::vector<std::vector<SemanticCentroid>> objects,
-                      std::string export3DBBFolder,
-                      unsigned int cloudIndex)
+                      std::string outputYamlFile)
 {
-  std::stringstream ss; ss << std::setw(4) << std::setfill('0') << cloudIndex;
-  std::string filename = export3DBBFolder + "/" + ss.str() + ".yml";
-
   YAML::Node ymlFile;
   ymlFile["meta"] = YAML::Node();
   ymlFile["objects"] = YAML::Node();
@@ -421,15 +429,15 @@ void Export3DBBAsYaml(std::vector<std::vector<SemanticCentroid>> objects,
   ymlFile["meta"]["source"] = std::string("N.A.");
 
   std::vector<SemanticCentroid> allObjects;
-  for (int i = 0; i < objects.size(); ++i)
+  for (size_t i = 0; i < objects.size(); ++i)
   {
-    for (int j = 0; j < objects[i].size(); ++j)
+    for (size_t j = 0; j < objects[i].size(); ++j)
     {
       allObjects.push_back(objects[i][j]);
     }
   }
 
-  for (int i = 0; i < allObjects.size(); ++i)
+  for (size_t i = 0; i < allObjects.size(); ++i)
   {
     YAML::Node currentBB;
     std::string type = allObjects[i].type;
@@ -468,30 +476,34 @@ void Export3DBBAsYaml(std::vector<std::vector<SemanticCentroid>> objects,
     ymlFile["objects"].push_back(currentBB);
   }
 
-  std::ofstream fout(filename.c_str());
+  std::ofstream fout(outputYamlFile.c_str());
   fout << ymlFile;
 }
 
 //------------------------------------------------------------------------------
+// negative numbers (python like indexes) are accepted for {first,last}LidarFrameToProcess
+// so to run on all frames pass respectively 0 and -1
 int main(int argc, char* argv[])
 {
   // Check if there is the minimal number of inputs
-  if (argc < 6)
+  if (argc < 8)
   {
     std::cout << "Not enough program inputs" << std::endl;
     return EXIT_FAILURE;
   }
 
-  std::string cloudFramesFolder(argv[1]);
-  std::string trajectoryFilename(argv[2]);
-  std::string export3DBBFolder(argv[3]);
-  double timeshift = std::atof(argv[4]);
-  unsigned int nbrCameras = std::atoi(argv[5]);
+  int firstLidarFrameToProcess = stoi(std::string(argv[1]));
+  int lastLidarFrameToProcess = stoi(std::string(argv[2]));
+  std::string cloudFrameSeries(argv[3]);
+  std::string trajectoryFilename(argv[4]);
+  std::string export3DBBFolder(argv[5]);
+  double timeshift = std::atof(argv[6]);
+  unsigned int nbrCameras = static_cast<unsigned int>(std::atoi(argv[7]));
 
 
   // Check if there is the expected number of inputs
-  unsigned int expectedNbrInput = 6 + nbrCameras * 4;
-  if (argc != expectedNbrInput)
+  unsigned int expectedNbrInput = 8 + nbrCameras * 4;
+  if (static_cast<unsigned int>(argc) != expectedNbrInput)
   {
     std::cout << "Unexpected nbr of inputs" << std::endl;
     std::cout << "Got: " << argc << " inputs" << std::endl;
@@ -506,19 +518,19 @@ int main(int argc, char* argv[])
   std::vector<std::string> calibFilenames(0);
   for (unsigned int cameraIndex = 0; cameraIndex < nbrCameras; ++cameraIndex)
   {
-    imageFolders.push_back(std::string(argv[6 + cameraIndex]));
-    pspnetFolders.push_back(std::string(argv[6 + nbrCameras + cameraIndex]));
-    yoloFolders.push_back(std::string(argv[6 + 2 * nbrCameras + cameraIndex]));
-    calibFilenames.push_back(std::string(argv[6 + 3 * nbrCameras + cameraIndex]));
+    imageFolders.push_back(std::string(argv[8 + cameraIndex]));
+    pspnetFolders.push_back(std::string(argv[8 + nbrCameras + cameraIndex]));
+    yoloFolders.push_back(std::string(argv[8 + 2 * nbrCameras + cameraIndex]));
+    calibFilenames.push_back(std::string(argv[8 + 3 * nbrCameras + cameraIndex]));
 
     std::cout << cameraIndex << std::endl;
-    std::cout << std::string(argv[6 + cameraIndex]) << std::endl;
+    std::cout << std::string(argv[8 + cameraIndex]) << std::endl;
     std::cout << "-------------------------------------------------------" << std::endl;
-    std::cout << std::string(argv[6 + nbrCameras + cameraIndex]) << std::endl;
+    std::cout << std::string(argv[8 + nbrCameras + cameraIndex]) << std::endl;
     std::cout << "-------------------------------------------------------" << std::endl;
-    std::cout << std::string(argv[6 + 2 * nbrCameras + cameraIndex]) << std::endl;
+    std::cout << std::string(argv[8 + 2 * nbrCameras + cameraIndex]) << std::endl;
     std::cout << "-------------------------------------------------------" << std::endl;
-    std::cout << std::string(argv[6 + 3 * nbrCameras + cameraIndex]) << std::endl;
+    std::cout << std::string(argv[8 + 3 * nbrCameras + cameraIndex]) << std::endl;
     std::cout << std::endl;
   }
 
@@ -531,17 +543,27 @@ int main(int argc, char* argv[])
   vtkSmartPointer<vtkCustomTransformInterpolator> interpolator = trajectory->CreateInterpolator();
   interpolator->SetInterpolationTypeToLinear();
 
-  // Get the number of clouds available
-  boost::filesystem::path cloudsPath(cloudFramesFolder);
-  int nbrClouds = std::count_if(boost::filesystem::directory_iterator(cloudsPath),
-                                boost::filesystem::directory_iterator(),
-                                static_cast<bool(*)(const boost::filesystem::path&)>(boost::filesystem::is_regular_file));
+  size_t nbrClouds = GetNumberOfClouds(cloudFrameSeries);
+
+  // allow negative (python like) indexes
+  if (firstLidarFrameToProcess < 0) {
+      firstLidarFrameToProcess += nbrClouds;
+  }
+  if (lastLidarFrameToProcess < 0) {
+      lastLidarFrameToProcess += nbrClouds;
+  }
+
+  Json::Value outputSeries;
+  Json::Value files(Json::arrayValue);
 
   // For each lidar frame, launch the detection and tracking process
-  for (int cloudIndex = 0; cloudIndex < nbrClouds; ++cloudIndex)
+  for (size_t cloudIndex = static_cast<size_t>(firstLidarFrameToProcess); cloudIndex < static_cast<size_t>(lastLidarFrameToProcess + 1); ++cloudIndex)
   {
     // read cloud
-    vtkSmartPointer<vtkPolyData> cloud = ReadCloudFrame(cloudFramesFolder, cloudIndex);
+    std::string vtpPath = "";
+    double vtpPipelineTime = 0.0; // network time, not used for projection (points have their own lidar time)
+    ReadFromSeries(cloudFrameSeries, cloudIndex, vtpPath, vtpPipelineTime);
+    vtkSmartPointer<vtkPolyData> cloud = ReadCloudFrame(vtpPath);
 
     // object detected
     std::vector<std::vector<SemanticCentroid>> objects;
@@ -559,8 +581,21 @@ int main(int argc, char* argv[])
     }
 
     // Export as yaml
-    Export3DBBAsYaml(objects, export3DBBFolder, cloudIndex);
+    std::string yamlOutput = (boost::filesystem::path(export3DBBFolder) / boost::filesystem::path(vtpPath).stem()).string() + ".yml";
+    Export3DBBAsYaml(objects, yamlOutput);
+    //std::vector<std::string>["files"] = YAML::NodeType.
+    Json::Value node;
+    node["name"] = boost::filesystem::path(yamlOutput).filename().string();
+    node["time"] = vtpPipelineTime;
+    files.append(node);
   }
+
+  outputSeries["files"] = files;
+  outputSeries["file-series-version"] = "1.0";
+
+  std::ofstream outputSeriesStream((boost::filesystem::path(export3DBBFolder) / boost::filesystem::path("detections.yml.series")).c_str());
+  outputSeriesStream << outputSeries;
+  outputSeriesStream.close();
 
   return EXIT_SUCCESS;
 }
