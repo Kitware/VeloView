@@ -54,6 +54,7 @@
 #include <vtkPNGReader.h>
 #include <vtkMultiBlockDataSet.h>
 #include <vtkFieldData.h>
+#include <vtk_jsoncpp.h>
 
 class SemanticCentroid
 {
@@ -70,23 +71,24 @@ size_t GetNumberOfClouds(std::string cloudFrameSeries)
   return series["files"].size();
 }
 
-//------------------------------------------------------------------------------
-vtkSmartPointer<vtkPolyData> ReadCloudFrame(std::string cloudFrameSeries, size_t frameIndex, double& frameTime)
+void ReadFromSeries(std::string fileSeries, size_t index, std::string& path, double& time)
 {
-  YAML::Node series = YAML::LoadFile(cloudFrameSeries);
+  YAML::Node series = YAML::LoadFile(fileSeries);
   YAML::Node files = series["files"];
-  if (frameIndex >= files.size()) {
-      frameTime = 0.0;
-      return nullptr;
-  }
 
   // compute absolute file paths from the relative one present in the .series
-  boost::filesystem::path dirname = boost::filesystem::path(cloudFrameSeries).parent_path();
-  boost::filesystem::path basename = boost::filesystem::path(files[frameIndex]["name"].as<std::string>());
-  boost::filesystem::path path = dirname / basename;
+  boost::filesystem::path dirname = boost::filesystem::path(fileSeries).parent_path();
+  boost::filesystem::path basename = boost::filesystem::path(files[index]["name"].as<std::string>());
+  path = (dirname / basename).string();
 
+  time = files[index]["time"].as<double>();
+}
+
+//------------------------------------------------------------------------------
+vtkSmartPointer<vtkPolyData> ReadCloudFrame(std::string pathToVTP)
+{
   vtkSmartPointer<vtkXMLPolyDataReader> reader = vtkSmartPointer<vtkXMLPolyDataReader>::New();
-  reader->SetFileName(path.string().c_str());
+  reader->SetFileName(pathToVTP.c_str());
   reader->Update();
   vtkSmartPointer<vtkPolyData> cloud = reader->GetOutput();
 
@@ -417,12 +419,8 @@ std::vector<SemanticCentroid> LaunchDetectionBackProjection(vtkSmartPointer<vtkP
 
 //------------------------------------------------------------------------------
 void Export3DBBAsYaml(std::vector<std::vector<SemanticCentroid>> objects,
-                      std::string export3DBBFolder,
-                      size_t cloudIndex)
+                      std::string outputYamlFile)
 {
-  std::stringstream ss; ss << std::setw(4) << std::setfill('0') << cloudIndex;
-  std::string filename = export3DBBFolder + "/" + ss.str() + ".yml";
-
   YAML::Node ymlFile;
   ymlFile["meta"] = YAML::Node();
   ymlFile["objects"] = YAML::Node();
@@ -478,7 +476,7 @@ void Export3DBBAsYaml(std::vector<std::vector<SemanticCentroid>> objects,
     ymlFile["objects"].push_back(currentBB);
   }
 
-  std::ofstream fout(filename.c_str());
+  std::ofstream fout(outputYamlFile.c_str());
   fout << ymlFile;
 }
 
@@ -555,12 +553,17 @@ int main(int argc, char* argv[])
       lastLidarFrameToProcess += nbrClouds;
   }
 
+  Json::Value outputSeries;
+  Json::Value files(Json::arrayValue);
+
   // For each lidar frame, launch the detection and tracking process
   for (size_t cloudIndex = static_cast<size_t>(firstLidarFrameToProcess); cloudIndex < static_cast<size_t>(lastLidarFrameToProcess + 1); ++cloudIndex)
   {
     // read cloud
-    double unusedPipelineTime = 0.0; // unused as we use the (lidar) time of the points, not the pipeline (network) time of the frames
-    vtkSmartPointer<vtkPolyData> cloud = ReadCloudFrame(cloudFrameSeries, cloudIndex, unusedPipelineTime);
+    std::string vtpPath = "";
+    double vtpPipelineTime = 0.0; // network time, not used for projection (points have their own lidar time)
+    ReadFromSeries(cloudFrameSeries, cloudIndex, vtpPath, vtpPipelineTime);
+    vtkSmartPointer<vtkPolyData> cloud = ReadCloudFrame(vtpPath);
 
     // object detected
     std::vector<std::vector<SemanticCentroid>> objects;
@@ -578,8 +581,21 @@ int main(int argc, char* argv[])
     }
 
     // Export as yaml
-    Export3DBBAsYaml(objects, export3DBBFolder, cloudIndex);
+    std::string yamlOutput = (boost::filesystem::path(export3DBBFolder) / boost::filesystem::path(vtpPath).stem()).string() + ".yml";
+    Export3DBBAsYaml(objects, yamlOutput);
+    //std::vector<std::string>["files"] = YAML::NodeType.
+    Json::Value node;
+    node["name"] = boost::filesystem::path(yamlOutput).filename().string();
+    node["time"] = vtpPipelineTime;
+    files.append(node);
   }
+
+  outputSeries["files"] = files;
+  outputSeries["file-series-version"] = "1.0";
+
+  std::ofstream outputSeriesStream((boost::filesystem::path(export3DBBFolder) / boost::filesystem::path("detections.yml.series")).c_str());
+  outputSeriesStream << outputSeries;
+  outputSeriesStream.close();
 
   return EXIT_SUCCESS;
 }
