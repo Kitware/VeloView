@@ -95,9 +95,6 @@ int vtkPointCloudLinearProjector::RequestData(vtkInformation* vtkNotUsed(request
   double point[3];
   Eigen::Vector3d X;
   vtkDataArray* values = this->GetInputArrayToProcess(0, inputVector);
-  double valueRange[2];
-
-  values->GetRange(valueRange);
 
   // Express the data in an other reference frame to align the new
   // Z-axis with a settled direction (typically, the gravity acceleration
@@ -164,10 +161,22 @@ int vtkPointCloudLinearProjector::RequestData(vtkInformation* vtkNotUsed(request
     int xPixelCoord = std::floor((point[0] - boundingBox[0]) * scaleX);
     int yPixelCoord = std::floor((point[1] - boundingBox[2]) * scaleY);
     perPixelDistribution[xPixelCoord + this->Resolution[0] * yPixelCoord].push_back(
-      values->GetTuple1(pointIndex));
+      this->HeightMap ? point[2] : values->GetTuple1(pointIndex)
+    );
   }
 
   // fill the image
+  double valueRange[2];
+  if (this->HeightMap)
+  {
+    valueRange[0] = boundingBox[4];
+    valueRange[1] = boundingBox[5];
+  }
+  else
+  {
+    values->GetRange(valueRange);
+  }
+
   double valueShift = (this->ExportAsChar || this->ShiftToZero) ? valueRange[0] : 0.0;
   double valueScale = valueRange[1] - valueRange[0];
   for (unsigned int y = 0; y < this->Resolution[1]; ++y)
@@ -179,7 +188,6 @@ int vtkPointCloudLinearProjector::RequestData(vtkInformation* vtkNotUsed(request
       // if the pixel is empty, skip it
       if (perPixelDistribution[imageIndex].size() > 0)
       {
-        // sort the heights values
         std::sort(perPixelDistribution[imageIndex].begin(), perPixelDistribution[imageIndex].end());
         unsigned int rankIndex = std::floor((perPixelDistribution[imageIndex].size() - 1) * this->RankPercentile);
         value = perPixelDistribution[imageIndex][rankIndex];
@@ -236,7 +244,14 @@ int vtkPointCloudLinearProjector::RequestData(vtkInformation* vtkNotUsed(request
   vtkImageData* outputImage = vtkImageData::GetData(outputVector->GetInformationObject(0));
   outputImage->ShallowCopy(image);
   // Use the input name to share the color scale.
-  outputImage->GetPointData()->GetScalars()->SetName(values->GetName());
+  if (this->HeightMap)
+  {
+    outputImage->GetPointData()->GetScalars()->SetName("DistanceToPlane");
+  }
+  else
+  {
+    outputImage->GetPointData()->GetScalars()->SetName(values->GetName());
+  }
   this->Modified();
   return VTK_OK;
 }
