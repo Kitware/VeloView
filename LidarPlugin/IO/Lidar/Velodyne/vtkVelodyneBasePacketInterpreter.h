@@ -31,7 +31,6 @@ private:
 
 protected:
   bool IsCorrectionFromLiveStream { false };
-  int CalibrationReportedNumLasers { -1 };
   unsigned char SensorPowerMode { 0 };
   DualReturnSensorMode ReportedSensorReturnMode;
 

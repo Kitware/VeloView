@@ -42,6 +42,20 @@ bool vtkLidarPacketInterpreter::SplitFrame(bool force)
 }
 
 //-----------------------------------------------------------------------------
+void vtkLidarPacketInterpreter::SetLaserSelection(const bool* v)
+{
+  this->LaserSelection = std::vector<bool>(v, v + this->CalibrationReportedNumLasers);
+  this->Modified();
+}
+
+//-----------------------------------------------------------------------------
+void vtkLidarPacketInterpreter::SetLaserSelection(const std::vector<bool>& v)
+{
+  this->LaserSelection = v;
+  this->Modified();
+}
+
+//-----------------------------------------------------------------------------
 bool vtkLidarPacketInterpreter::shouldBeCroppedOut(double pos[3], double theta)
 {
   bool pointInside = true;

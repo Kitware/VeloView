@@ -208,9 +208,9 @@ public:
   /**
    * @copydoc LidarPacketInterpreter::LaserSelection
    */
-  virtual void SetLaserSelection(const bool* v) { this->LaserSelection = std::vector<bool>(v, v + this->CalibrationReportedNumLasers); }
+  virtual void SetLaserSelection(const bool* v);
   virtual void GetLaserSelection(bool* v) { std::copy(this->LaserSelection.begin(), this->LaserSelection.end(), v);}
-  virtual void SetLaserSelection(const std::vector<bool>& v) { this->LaserSelection = v; }
+  virtual void SetLaserSelection(const std::vector<bool>& v);
   virtual std::vector<bool> GetLaserSelection() { return this->LaserSelection; }
 
   vtkGetMacro(DistanceResolutionM, double)
