@@ -39,16 +39,30 @@
 #include <vector>
 #include <unordered_map>
 
+/*
+ * Useful links to get started with IPv4 and IPv6 headers:
+ * - https://en.wikipedia.org/wiki/IPv4#Packet_structure
+ * - https://en.wikipedia.org/wiki/IPv6_packet
+ */
+
 // Some versions of libpcap do not have PCAP_NETMASK_UNKNOWN
 #if !defined(PCAP_NETMASK_UNKNOWN)
 #define PCAP_NETMASK_UNKNOWN 0xffffffff
 #endif
 
+//------------------------------------------------------------------------------
+// IPv6 fragment IDs are 4 bytes, IPv4 are only 2.
+typedef uint32_t FragmentIdentificationT;
+
+//------------------------------------------------------------------------------
 // Packet fragment offsets are given in steps of 8 bytes.
 constexpr unsigned int FRAGMENT_OFFSET_STEP = 8;
 
-//! @brief Track fragment reassembly to confirm that all data has been
-//!        reassembled before passing it on.
+//------------------------------------------------------------------------------
+/*!
+ * @brief Track fragment reassembly to confirm that all data has been
+ *        reassembled before passing it on.
+ */
 struct FragmentTracker
 {
   // The incrementally reassembled data.
@@ -59,8 +73,49 @@ struct FragmentTracker
   unsigned int CurrentSize = 0;
 };
 
+//------------------------------------------------------------------------------
+/*!
+ * @brief Fragment info required for reconstructing fragmented IP packets.
+ */
+struct FragmentInfo
+{
+  FragmentIdentificationT Identification = 0;
+  uint16_t Offset = 0;
+  bool MoreFragments = false;
+
+  void Reset()
+  {
+    this->Identification = 0;
+    this->Offset = 0;
+    this->MoreFragments = false;
+  }
+};
 
 
+namespace IPHeaderFunctions
+{
+  //----------------------------------------------------------------------------
+  /*!
+   * @brief      Inspect the IP header to get fragment information.
+   * @param[in]  data         A pointer to the bytes of the IP header.
+   * @param[out] fragmentInfo The collected fragment info.
+   * @return     True if the information could be retrieved, false otherwise.
+   */
+  bool getFragmentInfo(unsigned char const * data, FragmentInfo & fragmentInfo);
+
+  //----------------------------------------------------------------------------
+  /*!
+   * @brief     Determine the IP header length by inspection.
+   * @param[in] data A pointer to the first byte of the IP header.
+   * @return    The number of bytes in the IP header, or 0 if this could not be
+   *            determined.
+   */
+  unsigned int getIPHeaderLength(unsigned char const* data);
+}
+
+
+
+//------------------------------------------------------------------------------
 class vtkPacketFileReader
 {
 public:
@@ -180,11 +235,11 @@ public:
     }
 
     dataLength = 0;
-    bool moreFragments = true;
-    uint16_t fragmentOffset = 0;
     pcap_pkthdr* header;
+    FragmentInfo fragmentInfo;
+    fragmentInfo.MoreFragments = true;
 
-    while (moreFragments)
+    while (fragmentInfo.MoreFragments)
     {
       unsigned char const * tmpData = nullptr;
       unsigned int tmpDataLength;
@@ -197,14 +252,15 @@ public:
       }
 
       // Collect header values before they are removed.
-      uint16_t identification = 0x100 * tmpData[0x12] + tmpData[0x13];
-      unsigned char const flags = tmpData[0x14] >> 4;
-      moreFragments = flags & 0x2;
-      fragmentOffset = (tmpData[0x14] & 0x1F) * 0x100 + tmpData[0x15];
+      IPHeaderFunctions::getFragmentInfo(tmpData + this->FrameHeaderLength, fragmentInfo);
 
       // Only return the payload.
-      // We read the actual IP header length (v4 & v6) + assumes UDP
-      const unsigned int ipHeaderLength = (tmpData[this->FrameHeaderLength + 0] & 0xf) * 4;
+      // We read the actual IP header length (v4 & v6) + assume UDP
+      const unsigned int ipHeaderLength = IPHeaderFunctions::getIPHeaderLength(tmpData + this->FrameHeaderLength);
+      if (ipHeaderLength == 0)
+      {
+        continue;
+      }
       const unsigned int udpHeaderLength = 8;
       const unsigned int bytesToSkip = this->FrameHeaderLength + ipHeaderLength + udpHeaderLength;
 
@@ -222,12 +278,12 @@ public:
 
       // pcap_next_ex may reallocate the buffers it returns so the data must be
       // copied between each call.
-      if (dataLength > 0 || moreFragments || fragmentOffset > 0)
+      if (dataLength > 0 || fragmentInfo.MoreFragments || fragmentInfo.Offset > 0)
       {
-        decltype(tmpDataLength) offset = fragmentOffset * FRAGMENT_OFFSET_STEP;
-        unsigned requiredSize = offset + tmpDataLength;
+        decltype(tmpDataLength) offset = fragmentInfo.Offset * FRAGMENT_OFFSET_STEP;
+        decltype(tmpDataLength) requiredSize = offset + tmpDataLength;
 
-        auto & fragmentTracker = this->Fragments[identification];
+        auto & fragmentTracker = this->Fragments[fragmentInfo.Identification];
         auto & reassembledData = fragmentTracker.Data;
 
         if (requiredSize > reassembledData.size())
@@ -246,7 +302,7 @@ public:
         // Note that this assumes that <number of fragments - 1> *
         // FRAGMENT_OFFSET_STEP is never larger than any given fragment so that
         // it will not be omitted accidentally.
-        if (moreFragments)
+        if (fragmentInfo.MoreFragments)
         {
           fragmentTracker.CurrentSize += FRAGMENT_OFFSET_STEP;
         }
@@ -263,7 +319,7 @@ public:
           data = reassembledData.data();
           dataLength = reassembledData.size();
           // Delete the associated data on the next iteration.
-          this->AssembledId = identification;
+          this->AssembledId = fragmentInfo.Identification;
           this->RemoveAssembled = true;
           return true;
         }
@@ -294,10 +350,10 @@ protected:
 
 private:
   //! @brief A map of fragmented packet IDs to the collected array of fragments.
-  std::unordered_map<uint16_t, FragmentTracker> Fragments;
+  std::unordered_map<FragmentIdentificationT, FragmentTracker> Fragments;
 
   //! @brief The ID of the last completed fragment.
-  uint16_t AssembledId = 0;
+  FragmentIdentificationT AssembledId = 0;
 
   //! @brief True if there is a reassembled packet to remove.
   bool RemoveAssembled = false;
