@@ -38,7 +38,7 @@ int TestSignedAngle()
 
     double signedAngle = SignedAngle(v1, v2);
     double signedAngle2 = SignedAngle(v2, v1);
-    if (std::abs(std::abs(signedAngle) - std::abs(groundTruthAngle)) > 2.0 * std::numeric_limits<double>::epsilon())
+    if (std::abs(std::abs(signedAngle) - std::abs(groundTruthAngle)) > 1e-6)
     {
       nbrErrors++;
     }

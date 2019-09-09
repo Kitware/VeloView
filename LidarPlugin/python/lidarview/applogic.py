@@ -1615,6 +1615,8 @@ def onLaserSelectionChanged():
     LidarInterpreter = getLidarPacketInterpreter()
     if LidarInterpreter:
         LidarInterpreter.GetClientSideObject().SetLaserSelection(mask)
+        smp.Hide()
+        smp.Show(app.trailingFrame)
         smp.Render()
 
 
