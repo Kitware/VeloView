@@ -56,6 +56,11 @@ if (ENABLE_pcl AND ENABLE_ceres)
   target_link_libraries(TestGeometricCalibration-LaDoua LidarPlugin)
 endif(ENABLE_pcl AND ENABLE_ceres)
 
+if (ENABLE_pcl AND ENABLE_ceres AND ENABLE_nanoflann)
+  custom_add_executable(TestSlam TestSlam.cxx TestHelpers.cxx)
+  target_link_libraries(TestSlam LINK_PUBLIC LidarPlugin)
+endif(ENABLE_pcl AND ENABLE_ceres AND ENABLE_nanoflann)
+
 custom_add_executable(TestTemporalTransformsReaderWriter TestTemporalTransformsReaderWriter.cxx TestHelpers.cxx)
 target_link_libraries(TestTemporalTransformsReaderWriter LidarPlugin)
 
@@ -168,6 +173,15 @@ if (ENABLE_pcl AND ENABLE_ceres)
     ${CMAKE_SOURCE_DIR}/TestData/trajectories/la_doua_dataset
   )
 endif(ENABLE_pcl AND ENABLE_ceres)
+
+if (ENABLE_pcl AND ENABLE_ceres AND ENABLE_nanoflann)
+  add_test(TestSlam
+    ${INSTALL_LOCAL_DIR}/TestSlam
+    ${CMAKE_SOURCE_DIR}/TestData/Slam/VLP-16_slam_test_data.pcap
+    ${CMAKE_SOURCE_DIR}/TestData/Slam/RefSlam.vtp
+    ${CMAKE_SOURCE_DIR}/share/VLP-16.xml
+  )
+endif(ENABLE_pcl AND ENABLE_ceres AND ENABLE_nanoflann)
 
 add_test(TestVelodynePPSIdentification
   ${INSTALL_LOCAL_DIR}/TestVelodynePPSIdentification
