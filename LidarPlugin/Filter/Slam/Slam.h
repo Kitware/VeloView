@@ -339,7 +339,7 @@ private:
   // is rejected. We also make a filter upon the ratio of the eigen
   // values of the variance-covariance matrix of the neighborhood
   // to check if the points are distributed upon a line or a plane
-  unsigned int MappingLineDistanceNbrNeighbors = 15;
+  unsigned int MappingLineDistanceNbrNeighbors = 10;
   unsigned int MappingMinimumLineNeighborRejection = 4;
   double MappingLineDistancefactor = 5.0;
 
