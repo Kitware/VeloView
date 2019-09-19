@@ -251,4 +251,9 @@ private:
   bool DisplayMode = true;
 };
 
+template <typename T>
+std::vector<size_t> sortIdx(const std::vector<T> &v);
+
+void PointCloudFromPolyData(vtkPolyData* poly, pcl::PointCloud<Slam::Point>::Ptr pc);
+
 #endif // VTK_SLAM_H

@@ -117,18 +117,30 @@ double Rad2Deg(double val)
 }
 
 //-----------------------------------------------------------------------------
-template <typename T>
-std::vector<size_t> sortIdx(const std::vector<T> &v)
+void PolyDataFromPointCloud(pcl::PointCloud<Slam::Point>::Ptr pc, vtkPolyData* poly)
 {
-  // initialize original index locations
-  std::vector<size_t> idx(v.size());
-  std::iota(idx.begin(), idx.end(), 0);
+  auto pts = vtkSmartPointer<vtkPoints>::New();
+  poly->SetPoints(pts);
+  for (size_t i = 0; i < pc->size(); i++)
+  {
+    Slam::Point p = pc->points[i];
+    if (!poly->GetPoints())
+      cout << "no point cloud" << endl;
+    poly->GetPoints()->InsertNextPoint(p.x, p.y, p.z);
+  }
+  vtkNew<vtkIdTypeArray> cells;
+  cells->SetNumberOfValues(pc->size() * 2);
+  vtkIdType* ids = cells->GetPointer(0);
+  for (vtkIdType i = 0; i < pc->size(); ++i)
+  {
+    ids[i * 2] = 1;
+    ids[i * 2 + 1] = i;
+  }
 
-  // sort indexes based on comparing values in v
-  std::sort(idx.begin(), idx.end(),
-       [&v](size_t i1, size_t i2) {return v[i1] > v[i2];});
-
-  return idx;
+  auto cellArray = vtkSmartPointer<vtkCellArray>::New();
+  cellArray->SetCells(pc->size(), cells.GetPointer());
+  poly->SetVerts(cellArray);
+}
 }
 
 //-----------------------------------------------------------------------------
@@ -154,30 +166,18 @@ void PointCloudFromPolyData(vtkPolyData* poly, pcl::PointCloud<Slam::Point>::Ptr
 }
 
 //-----------------------------------------------------------------------------
-void PolyDataFromPointCloud(pcl::PointCloud<Slam::Point>::Ptr pc, vtkPolyData* poly)
+template <typename T>
+std::vector<size_t> sortIdx(const std::vector<T> &v)
 {
-  auto pts = vtkSmartPointer<vtkPoints>::New();
-  poly->SetPoints(pts);
-  for (size_t i = 0; i < pc->size(); i++)
-  {
-    Slam::Point p = pc->points[i];
-    if (!poly->GetPoints())
-      cout << "no point cloud" << endl;
-    poly->GetPoints()->InsertNextPoint(p.x, p.y, p.z);
-  }
-  vtkNew<vtkIdTypeArray> cells;
-  cells->SetNumberOfValues(pc->size() * 2);
-  vtkIdType* ids = cells->GetPointer(0);
-  for (vtkIdType i = 0; i < pc->size(); ++i)
-  {
-    ids[i * 2] = 1;
-    ids[i * 2 + 1] = i;
-  }
+  // initialize original index locations
+  std::vector<size_t> idx(v.size());
+  std::iota(idx.begin(), idx.end(), 0);
 
-  auto cellArray = vtkSmartPointer<vtkCellArray>::New();
-  cellArray->SetCells(pc->size(), cells.GetPointer());
-  poly->SetVerts(cellArray);
-}
+  // sort indexes based on comparing values in v
+  std::sort(idx.begin(), idx.end(),
+       [&v](size_t i1, size_t i2) {return v[i1] > v[i2];});
+
+  return idx;
 }
 
 //-----------------------------------------------------------------------------

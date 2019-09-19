@@ -450,6 +450,10 @@ void Slam::Reset()
   this->Trelative = Eigen::Matrix<double, 6, 1>::Zero();
   this->MotionParametersEgoMotion = Eigen::VectorXd::Zero(12, 1);
   this->MotionParametersMapping = Eigen::VectorXd::Zero(12, 1);
+
+  this->SetVoxelGridLeafSizeEdges(0.45);
+  this->SetVoxelGridLeafSizePlanes(0.6);
+  this->SetVoxelGridLeafSizeBlobs(0.12);
 }
 
 //-----------------------------------------------------------------------------

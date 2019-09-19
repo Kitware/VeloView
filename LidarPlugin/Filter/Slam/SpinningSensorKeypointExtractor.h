@@ -115,7 +115,7 @@ private:
 
   // maximal angle resolution of the lidar
   // azimutal resolution of the VLP-16. We add an extra 20 %
-  double AngleResolution = 0.00698132; // 0.4 degree
+  double AngleResolution = 0.00698; // 0.4 degree
 
   // Threshold upon sphricity of a neighborhood
   // to select a blob point
