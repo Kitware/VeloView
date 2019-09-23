@@ -251,11 +251,13 @@ endif(ENABLE_pcl AND ENABLE_ceres AND ENABLE_nanoflann)
 if (ENABLE_opencv)
   list(APPEND servermanager_sources
     ${CMAKE_CURRENT_SOURCE_DIR}/IO/Camera/vtkPCAPImageReader.cxx
+    ${CMAKE_CURRENT_SOURCE_DIR}/IO/Camera/vtkOpenCVVideoReader.cxx
     )
   list(APPEND servermanager_xml
     xml/PCAPImageReader.xml
     )
   list(APPEND sources_which_do_not_inherit_from_vtkObject
+    ${CMAKE_CURRENT_SOURCE_DIR}/Common/vtkOpenCVConversions.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/Common/vtkOpenCVConversions.cxx
     )
 endif(ENABLE_opencv)
@@ -285,6 +287,7 @@ list(APPEND servermanager_xml
   xml/TemporalTransformsApplier.xml
   xml/TemporalTransformsRemapper.xml
   xml/LASFileWriter.xml
+  xml/OpenCVVideoReader.xml
   )
 
 if (ENABLE_pcl)
@@ -348,8 +351,8 @@ if (ENABLE_ceres)
       ${CMAKE_CURRENT_SOURCE_DIR}/Common/Calib/Camera/CameraCalibration.cxx
       ${CMAKE_CURRENT_SOURCE_DIR}/Filter/Slam/MotionModel/MotionModel.cxx
       )
-endif (ENABLE_ceres)
 
+endif (ENABLE_ceres)
 
 # plugin dependencies
 list(APPEND deps
@@ -373,6 +376,7 @@ set(plugin_include_dirs
   ${CMAKE_CURRENT_SOURCE_DIR}/Common/Calib/Geometric
   ${CMAKE_CURRENT_SOURCE_DIR}/Common/Calib/Temporal
   ${CMAKE_CURRENT_SOURCE_DIR}/Common/NanoflannAdaptor
+  ${CMAKE_CURRENT_SOURCE_DIR}/IO/Camera
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/Lidar/Common
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/Lidar/KITTIDataSet
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/Lidar/Velodyne
