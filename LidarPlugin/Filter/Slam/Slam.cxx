@@ -377,7 +377,7 @@ public:
 
   void SetPointCoudMaxRange(const double maxdist)
   {
-    this->PointCloudSize = std::ceil(2 * maxdist / this->VoxelResolution);
+    this->PointCloudSize = 2.0 * std::ceil(maxdist / this->VoxelResolution);
   }
 
   void SetSize(int size)
