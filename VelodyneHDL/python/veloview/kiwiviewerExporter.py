@@ -101,7 +101,7 @@ def zipDir(inputDirectory, zipName):
     inputDirectory = os.path.abspath(inputDirectory)
     parentDirectory = os.path.dirname(inputDirectory) + os.sep
 
-    with contextlib.closing(zipfile.ZipFile(zipName, 'w', zipfile.ZIP_DEFLATED)) as archive:
+    with contextlib.closing(zipfile.ZipFile(zipName, 'w', zipfile.ZIP_DEFLATED, allowZip64=True)) as archive:
         for root, dirs, files in os.walk(inputDirectory):
             for filename in files:
                 absoluteFilename = os.path.join(root, filename)
