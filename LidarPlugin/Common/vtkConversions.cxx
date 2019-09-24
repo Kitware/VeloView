@@ -21,8 +21,11 @@
 #include "vtkEigenTools.h"
 
 // VTK
+#include <vtkCell.h>
+#include <vtkDoubleArray.h>
 #include <vtkMatrix4x4.h>
-
+#include <vtkNew.h>
+#include <vtkPointData.h>
 
 //----------------------------------------------------------------------------
 std::vector<Eigen::Vector3d> vtkPointsToEigenVector(vtkPoints* points)

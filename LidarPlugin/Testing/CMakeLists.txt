@@ -54,7 +54,10 @@ if (ENABLE_pcl AND ENABLE_ceres)
 
   add_executable(TestGeometricCalibration-LaDoua TestGeometricCalibration-LaDoua.cxx)
   target_link_libraries(TestGeometricCalibration-LaDoua LidarPlugin)
-endif(ENABLE_pcl AND ENABLE_ceres)
+
+  add_executable(TestTrajectoryReoptimization TestTrajectoryReoptimization.cxx)
+  target_link_libraries(TestTrajectoryReoptimization LidarPlugin)
+endif(ENABLE_PCL AND ENABLE_Ceres)
 
 if (ENABLE_pcl AND ENABLE_ceres AND ENABLE_nanoflann)
   custom_add_executable(TestSlam TestSlam.cxx TestHelpers.cxx)
@@ -172,7 +175,12 @@ if (ENABLE_pcl AND ENABLE_ceres)
     ${INSTALL_LOCAL_DIR}/TestGeometricCalibration-LaDoua
     ${CMAKE_SOURCE_DIR}/TestData/trajectories/la_doua_dataset
   )
-endif(ENABLE_pcl AND ENABLE_ceres)
+
+  add_test(TestTrajectoryReoptimization
+    ${INSTALL_LOCAL_DIR}/TestTrajectoryReoptimization
+    ${CMAKE_SOURCE_DIR}/TestData/trajectories/mm05_reoptimization
+  )
+endif(ENABLE_PCL AND ENABLE_Ceres)
 
 if (ENABLE_pcl AND ENABLE_ceres AND ENABLE_nanoflann)
   add_test(TestSlam

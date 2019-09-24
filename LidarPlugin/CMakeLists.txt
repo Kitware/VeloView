@@ -343,6 +343,7 @@ list(APPEND sources_which_do_not_inherit_from_vtkObject
 if (ENABLE_pcl)
   list(APPEND sources_which_do_not_inherit_from_vtkObject
     ${CMAKE_CURRENT_SOURCE_DIR}/Common/vtkPCLConversions.cxx
+    ${CMAKE_CURRENT_SOURCE_DIR}/Common/RegistrationTools.cxx
     )
 endif(ENABLE_pcl)
 if (ENABLE_ceres)
@@ -351,8 +352,12 @@ if (ENABLE_ceres)
       ${CMAKE_CURRENT_SOURCE_DIR}/Common/Calib/Camera/CameraCalibration.cxx
       ${CMAKE_CURRENT_SOURCE_DIR}/Filter/Slam/MotionModel/MotionModel.cxx
       )
-
 endif (ENABLE_ceres)
+if (ENABLE_pcl AND ENABLE_ceres)
+  list(APPEND sources_which_do_not_inherit_from_vtkObject
+      ${CMAKE_CURRENT_SOURCE_DIR}/Filter/Slam/TrajectoryReoptimization.cxx
+      )
+endif(ENABLE_pcl AND ENABLE_ceres)
 
 # plugin dependencies
 list(APPEND deps
@@ -403,6 +408,7 @@ set(plugin_include_dirs
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/Slam
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/Slam/MotionModel
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/TemporalTransformsRemapper
+  ${CMAKE_CURRENT_SOURCE_DIR}/Filter/TrajectoryReoptimization
   ${CMAKE_CURRENT_SOURCE_DIR}/Source/Grid
   )
 
