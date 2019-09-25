@@ -65,8 +65,8 @@ superbuild_set_revision(qhull
     GIT_TAG master)
 
 superbuild_set_revision(flann
-  GIT_REPOSITORY https://github.com/mariusmuja/flann.git
-  GIT_TAG 1.9.1)
+  GIT_REPOSITORY https://gitlab.kitware.com/gabriel.devillers/flann.git
+  GIT_TAG 1.9.1-patched)
 
 superbuild_set_revision(opencv
   GIT_REPOSITORY https://github.com/opencv/opencv.git
