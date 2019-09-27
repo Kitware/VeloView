@@ -64,6 +64,11 @@ if (ENABLE_pcl AND ENABLE_ceres AND ENABLE_nanoflann)
   target_link_libraries(TestSlam LINK_PUBLIC LidarPlugin)
 endif(ENABLE_pcl AND ENABLE_ceres AND ENABLE_nanoflann)
 
+if (ENABLE_pcl AND ENABLE_Ceres AND ENABLE_OpenCV)
+  add_executable(TestMIDHOG TestMIDHOG.cxx)
+  target_link_libraries(TestMIDHOG LidarPlugin)
+endif(ENABLE_pcl AND ENABLE_Ceres AND ENABLE_OpenCV)
+
 custom_add_executable(TestTemporalTransformsReaderWriter TestTemporalTransformsReaderWriter.cxx TestHelpers.cxx)
 target_link_libraries(TestTemporalTransformsReaderWriter LidarPlugin)
 
@@ -190,6 +195,12 @@ if (ENABLE_pcl AND ENABLE_ceres AND ENABLE_nanoflann)
     ${CMAKE_SOURCE_DIR}/share/VLP-16.xml
   )
 endif(ENABLE_pcl AND ENABLE_ceres AND ENABLE_nanoflann)
+
+if (ENABLE_pcl AND ENABLE_Ceres AND ENABLE_OpenCV)
+  add_test(TestMIDHOG
+  ${INSTALL_LOCAL_DIR}/TestMIDHOG
+  )
+endif(ENABLE_pcl AND ENABLE_Ceres AND ENABLE_OpenCV)
 
 add_test(TestVelodynePPSIdentification
   ${INSTALL_LOCAL_DIR}/TestVelodynePPSIdentification

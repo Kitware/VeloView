@@ -63,6 +63,9 @@ public:
   static pcl::PointCloud<pcl::PointXYZ>::Ptr PointCloudFromPolyData(
     vtkPolyData* polyData);
 
+  static pcl::PointCloud<pcl::PointXYZINormal>::Ptr PointCloudFromPolyDataWithIntensity(
+      vtkPolyData* polyData);
+
   static vtkSmartPointer<vtkCellArray> NewVertexCells(vtkIdType numberOfVerts);
 
   static vtkSmartPointer<vtkIntArray> NewLabelsArray(pcl::IndicesConstPtr indices, vtkIdType length);

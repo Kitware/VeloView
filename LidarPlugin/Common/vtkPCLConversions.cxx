@@ -323,6 +323,69 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr vtkPCLConversions::PointCloudFromPolyData(vt
 }
 
 //----------------------------------------------------------------------------
+pcl::PointCloud<pcl::PointXYZINormal>::Ptr vtkPCLConversions::PointCloudFromPolyDataWithIntensity(vtkPolyData* polyData)
+{
+  const vtkIdType numberOfPoints = polyData->GetNumberOfPoints();
+
+  pcl::PointCloud<pcl::PointXYZINormal>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZINormal>);
+  cloud->width = numberOfPoints;
+  cloud->height = 1;
+  cloud->is_dense = true;
+  cloud->points.resize(numberOfPoints);
+
+  if (!numberOfPoints)
+  {
+    return cloud;
+  }
+
+  vtkFloatArray* floatPoints = vtkFloatArray::SafeDownCast(polyData->GetPoints()->GetData());
+  vtkDoubleArray* doublePoints = vtkDoubleArray::SafeDownCast(polyData->GetPoints()->GetData());
+  assert(floatPoints || doublePoints);
+
+  if (floatPoints)
+  {
+    float* data = floatPoints->GetPointer(0);
+    for (vtkIdType i = 0; i < numberOfPoints; ++i)
+    {
+      cloud->points[i].x = data[i*3];
+      cloud->points[i].y = data[i*3+1];
+      cloud->points[i].z = data[i*3+2];
+    }
+  }
+  else if (doublePoints)
+  {
+    double* data = doublePoints->GetPointer(0);
+    for (vtkIdType i = 0; i < numberOfPoints; ++i)
+    {
+      cloud->points[i].x = data[i*3];
+      cloud->points[i].y = data[i*3+1];
+      cloud->points[i].z = data[i*3+2];
+    }
+  }
+
+  // Set normal to zero
+  for (vtkIdType i = 0; i < numberOfPoints; ++i)
+  {
+    cloud->points[i].normal_x = 0;
+    cloud->points[i].normal_y = 0;
+    cloud->points[i].normal_z = 0;
+  }
+
+
+  // finally copy the intensity information
+  vtkDataArray* intensity = polyData->GetPointData()->GetArray("intensity");
+  if (intensity)
+  {
+    for (vtkIdType i = 0; i < numberOfPoints; ++i)
+    {
+      cloud->points[i].intensity = intensity->GetTuple1(i);
+    }
+  }
+
+  return cloud;
+}
+
+//----------------------------------------------------------------------------
 vtkSmartPointer<vtkCellArray> vtkPCLConversions::NewVertexCells(vtkIdType numberOfVerts)
 {
   vtkNew<vtkIdTypeArray> cells;

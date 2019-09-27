@@ -359,6 +359,12 @@ if (ENABLE_pcl AND ENABLE_ceres)
       )
 endif(ENABLE_pcl AND ENABLE_ceres)
 
+if (ENABLE_pcl AND ENABLE_ceres AND ENABLE_opencv)
+  list(APPEND sources_which_do_not_inherit_from_vtkObject
+    ${CMAKE_CURRENT_SOURCE_DIR}/Common/Calib/CameraLidar/MIDHOG.cxx
+    )
+endif(ENABLE_pcl AND ENABLE_ceres AND ENABLE_opencv)
+
 # plugin dependencies
 list(APPEND deps
   ${PCAP_LIBRARY}
@@ -380,6 +386,7 @@ set(plugin_include_dirs
   ${CMAKE_CURRENT_SOURCE_DIR}/Common/Calib/Camera
   ${CMAKE_CURRENT_SOURCE_DIR}/Common/Calib/Geometric
   ${CMAKE_CURRENT_SOURCE_DIR}/Common/Calib/Temporal
+  ${CMAKE_CURRENT_SOURCE_DIR}/Common/Calib/CameraLidar
   ${CMAKE_CURRENT_SOURCE_DIR}/Common/NanoflannAdaptor
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/Camera
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/Lidar/Common
