@@ -463,6 +463,13 @@ if(WIN32)
   target_compile_definitions(PacketFileSender PRIVATE -DWIN32 -DBOOST_PROGRAM_OPTIONS_DYN_LINK=1)
 endif(WIN32)
 
+add_executable(PCAPTester StandAloneTools/PCAPTester.cxx)
+target_include_directories(${VV_PLUGIN_LIBRARY} PRIVATE ${plugin_include_dirs})
+target_link_libraries(PCAPTester LINK_PUBLIC ${VV_PLUGIN_LIBRARY} ${ALL_BOOST_LIBRARIES})
+if(WIN32)
+  target_compile_definitions(PCAPTester PRIVATE -DWIN32 -DBOOST_PROGRAM_OPTIONS_DYN_LINK=1)
+endif(WIN32)
+
 #-----------------------------------------------------------------------------
 # Build StandAlone targets which provide different thirparty tools
 #-----------------------------------------------------------------------------
@@ -538,6 +545,7 @@ set(libraries_to_install
 
 set(executables_to_install
   PacketFileSender
+  PCAPTester
   )
 
 if (ENABLE_opencv)

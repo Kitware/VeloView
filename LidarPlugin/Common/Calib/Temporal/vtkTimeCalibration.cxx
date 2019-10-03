@@ -46,7 +46,7 @@ std::string ToString(CorrelationStrategy correlationStrategy)
     case CorrelationStrategy::DERIVATED_ORIENTATION_ARC:
       return "derivated_orientation_arc";
     default:
-      return "unkown";
+      return "unknown";
   }
 }
 

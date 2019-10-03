@@ -51,6 +51,7 @@ set(CPACK_RESOURCE_FILE_LICENSE "${LidarViewSuperBuild_SOURCE_DIR}/LICENSE")
 list(APPEND lidarview_executables
 	"${SOFTWARE_NAME}"
 	"PacketFileSender"
+	"PCAPTester"
 	)
 
 
