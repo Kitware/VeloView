@@ -65,6 +65,7 @@ protected slots:
   void PressSlider();
   void ReleaseSlider();
   void setTimeStep(int);
+  void onSetLiveMode(bool liveModeEnabled);
 
 signals:
   void speedChange(double);
