@@ -36,6 +36,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "vtkSMIntVectorProperty.h"
 #include "vtkSMProxy.h"
 #include "vtkSMTrace.h"
+#include "vtkPVXMLElement.h"
 
 // Qt includes.
 #include <QPointer>
@@ -49,6 +50,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqPipelineSource.h"
 #include "pqSMAdaptor.h"
 #include "pqUndoStack.h"
+#include "pqLiveSourceBehavior.h"
+#include "pqServerManagerModel.h"
 #include "vtkAnimationScene.h"
 
 namespace {
@@ -66,6 +69,9 @@ vvPlayerControlsController::vvPlayerControlsController(QObject* _parent/*=null*/
     speed(1),
     duration(0)
 {
+  pqServerManagerModel* smmodel = pqApplicationCore::instance()->getServerManagerModel();
+  this->connect(smmodel, SIGNAL(sourceAdded(pqPipelineSource*)), SLOT(onSourceAdded(pqPipelineSource*)));
+  this->connect(smmodel, SIGNAL(sourceRemoved(pqPipelineSource*)), SLOT(onSourceRemoved(pqPipelineSource*)));
 }
 
 //-----------------------------------------------------------------------------
@@ -124,36 +130,44 @@ void vvPlayerControlsController::onTimeRangesChanged()
 //-----------------------------------------------------------------------------
 void vvPlayerControlsController::onPlay()
 {
-  if (!this->Scene)
-    {
-    qDebug() << "No active scene. Cannot play.";
-    return;
-    }
-
-  BEGIN_UNDO_EXCLUDE();
-
-  SM_SCOPED_TRACE(CallMethod)
-    .arg(this->Scene->getProxy())
-    .arg("Play");
-
-  if (speed != 0)
+  if (this->weAreLive())
   {
-    SetProperty(this->Scene, "Duration", this->duration / this->speed);
-    SetProperty(this->Scene, "PlayMode", vtkAnimationScene::PLAYMODE_REALTIME);
+    emit this->playing(true);
+    pqLiveSourceBehavior::resume();
   }
   else
   {
-    // there is no enum for mode 2...
-    SetProperty(this->Scene, "PlayMode", 2);
+    if (!this->Scene)
+    {
+      qDebug() << "No active scene. Cannot play.";
+      return;
+    }
+
+    BEGIN_UNDO_EXCLUDE();
+
+    SM_SCOPED_TRACE(CallMethod)
+      .arg(this->Scene->getProxy())
+      .arg("Play");
+
+    if (speed != 0)
+    {
+      SetProperty(this->Scene, "Duration", this->duration / this->speed);
+      SetProperty(this->Scene, "PlayMode", vtkAnimationScene::PLAYMODE_REALTIME);
+    }
+    else
+    {
+      // there is no enum for mode 2...
+      SetProperty(this->Scene, "PlayMode", 2);
+    }
+
+    this->Scene->getProxy()->InvokeCommand("Play");
+
+    // NOTE: This is a blocking call, returns only after the
+    // the animation has stopped.
+    END_UNDO_EXCLUDE();
+
+    pqApplicationCore::instance()->render();
   }
-
-  this->Scene->getProxy()->InvokeCommand("Play");
-
-  // NOTE: This is a blocking call, returns only after the
-  // the animation has stopped.
-  END_UNDO_EXCLUDE();
-
-  pqApplicationCore::instance()->render();
 }
 
 //-----------------------------------------------------------------------------
@@ -177,9 +191,13 @@ void vvPlayerControlsController::onBeginPlay()
 //-----------------------------------------------------------------------------
 void vvPlayerControlsController::onEndPlay()
 {
-  emit this->playing(false);
-  emit this->endNonUndoableChanges();
+  if (!this->weAreLive())
+  {
+    emit this->playing(false);
+    emit this->endNonUndoableChanges();
+  }
 }
+
 
 //-----------------------------------------------------------------------------
 void vvPlayerControlsController::onLoopPropertyChanged()
@@ -201,13 +219,21 @@ void vvPlayerControlsController::onLoop(bool checked)
 //-----------------------------------------------------------------------------
 void vvPlayerControlsController::onPause()
 {
-  if (!this->Scene)
+  if (this->weAreLive())
+  {
+    emit this->playing(false);
+    pqLiveSourceBehavior::pause();
+  }
+  else
+  {
+    if (!this->Scene)
     {
-    qDebug() << "No active scene. Cannot play.";
-    return;
+      qDebug() << "No active scene. Cannot play.";
+      return;
     }
-  this->Scene->getProxy()->InvokeCommand("Stop");
-  SetProperty(this->Scene, "PlayMode", 2);
+    this->Scene->getProxy()->InvokeCommand("Stop");
+    SetProperty(this->Scene, "PlayMode", 2);
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -261,5 +287,57 @@ void vvPlayerControlsController::onSpeedChange(double speed)
 {
   this->speed = speed;
   this->onPause();
+}
+
+
+namespace
+{
+  bool sourceIsLive(pqPipelineSource* src)
+  {
+    return (src != nullptr
+            && src->getProxy() != nullptr
+            && src->getProxy()->GetHints() != nullptr
+            && src->getProxy()->GetHints()->FindNestedElementByName("LiveSource"));
+  }
+}
+
+//-----------------------------------------------------------------------------
+void vvPlayerControlsController::onSourceAdded(pqPipelineSource* src)
+{
+  if (!sourceIsLive(src))
+  {
+    return;
+  }
+  this->liveSourceCount++;
+  if (this->liveSourceCount == 1)
+  {
+    emit setLiveMode(true);
+    if (pqLiveSourceBehavior::isPaused()) {
+      // this is needed to allow the user to open a new stream wh
+      pqLiveSourceBehavior::resume();
+    }
+    emit this->playing(true); // play right after source added, without user action
+  }
+}
+
+//-----------------------------------------------------------------------------
+void vvPlayerControlsController::onSourceRemoved(pqPipelineSource *src)
+{
+  if (!sourceIsLive(src))
+  {
+    return;
+  }
+  this->liveSourceCount -= 1;
+  if (this->liveSourceCount == 0)
+  {
+    emit setLiveMode(false);
+    emit this->playing(false); // nothing left to play
+  }
+  QApplication::processEvents();
+}
+
+bool vvPlayerControlsController::weAreLive()
+{
+  return this->liveSourceCount > 0;
 }
 

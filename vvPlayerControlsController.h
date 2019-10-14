@@ -81,6 +81,8 @@ signals:
   /// emitted when the animation ends playing.
   void endNonUndoableChanges();
 
+  void setLiveMode(bool liveModeEnabled);
+
 public slots:
   // Set the animation scene. If null, the VCR control is disabled
   // (emits enabled(false)).
@@ -104,6 +106,8 @@ protected slots:
   void onLoopPropertyChanged();
   void onBeginPlay();
   void onEndPlay();
+  void onSourceAdded(pqPipelineSource* src);
+  void onSourceRemoved(pqPipelineSource* src);
 
 private:
   vvPlayerControlsController(const vvPlayerControlsController&); // Not implemented.
@@ -112,6 +116,8 @@ private:
   QPointer<pqAnimationScene> Scene;
   double speed;
   double duration;
+  int liveSourceCount = 0;
+  bool weAreLive(); // at least one source is live (sensor data received in real time from network)
 };
 
 #endif // VVPLAYERCONTROLSCONTROLLER_H

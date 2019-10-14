@@ -126,6 +126,8 @@ vvPlayerControlsToolbar::vvPlayerControlsToolbar(QWidget* parentObject)
     SIGNAL(activeSceneChanged(pqAnimationScene*)),
     SLOT(setAnimationScene(pqAnimationScene*)));
 
+  this->connect(controller, SIGNAL(setLiveMode(bool)), SLOT(onSetLiveMode(bool)));
+
   //------------------------//
   // Add the speed control
   //------------------------//
@@ -242,6 +244,7 @@ vvPlayerControlsToolbar::vvPlayerControlsToolbar(QWidget* parentObject)
 vvPlayerControlsToolbar::~vvPlayerControlsToolbar()
 {
   delete this->UI;
+  delete this->Controller;
   this->UI = 0;
 }
 
@@ -385,3 +388,18 @@ vtkSMProxy* vvPlayerControlsToolbar::timeKeeper() const
   return vtkSMPropertyHelper(this->Controller->getAnimationScene()->getProxy(), "TimeKeeper").GetAsProxy();
 }
 
+//-----------------------------------------------------------------------------
+void vvPlayerControlsToolbar::onSetLiveMode(bool liveModeEnabled)
+{
+  bool enableFullUI = !liveModeEnabled;
+  this->UI->actionFirstFrame->setEnabled(enableFullUI);
+  this->UI->actionPreviousFrame->setEnabled(enableFullUI);
+  this->UI->actionNextFrame->setEnabled(enableFullUI);
+  this->UI->actionLastFrame->setEnabled(enableFullUI);
+  this->UI->actionLoop->setEnabled(enableFullUI);
+  this->UI->speedComboBox->setEnabled(enableFullUI);
+  this->UI->frameSlider->setEnabled(enableFullUI);
+  this->UI->timeSpinBox->setEnabled(enableFullUI);
+  this->UI->frameQSpinBox->setEnabled(enableFullUI);
+  this->UI->frameLabel->setEnabled(enableFullUI);
+}
