@@ -28,10 +28,9 @@ void vtkVelodyneMetaPacketInterpreter::LoadCalibration(const std::string &filena
   }
   else
   {
-    this->PotentialInterps->InitTraversal();
     for (int i = 0; i < this->PotentialInterps->GetNumberOfItems(); ++i)
     {
-      vtkLidarPacketInterpreter* pt = vtkLidarPacketInterpreter::SafeDownCast(this->PotentialInterps->GetNextItemAsObject());
+      vtkLidarPacketInterpreter* pt = vtkLidarPacketInterpreter::SafeDownCast(this->PotentialInterps->GetItemAsObject(i));
       pt->LoadCalibration(filename);
     }
   }
@@ -46,10 +45,9 @@ bool vtkVelodyneMetaPacketInterpreter::IsLidarPacket(const unsigned char *data, 
   }
   else
   {
-    this->PotentialInterps->InitTraversal();
     for (int i = 0; i < this->PotentialInterps->GetNumberOfItems(); ++i)
     {
-      vtkLidarPacketInterpreter* pt = vtkLidarPacketInterpreter::SafeDownCast(this->PotentialInterps->GetNextItemAsObject());
+      vtkLidarPacketInterpreter* pt = vtkLidarPacketInterpreter::SafeDownCast(this->PotentialInterps->GetItemAsObject(i));
       if (pt->IsLidarPacket(data, dataLength))
       {
         if (!this->SelectedInterp)
@@ -77,10 +75,9 @@ void vtkVelodyneMetaPacketInterpreter::ResetCurrentFrame()
   }
   else
   {
-    this->PotentialInterps->InitTraversal();
     for (int i = 0; i < this->PotentialInterps->GetNumberOfItems(); ++i)
     {
-      vtkLidarPacketInterpreter* pt = vtkLidarPacketInterpreter::SafeDownCast(this->PotentialInterps->GetNextItemAsObject());
+      vtkLidarPacketInterpreter* pt = vtkLidarPacketInterpreter::SafeDownCast(this->PotentialInterps->GetItemAsObject(i));
       pt->ResetCurrentFrame();
     }
   }
@@ -108,10 +105,9 @@ void vtkVelodyneMetaPacketInterpreter::ResetParserMetaData()
   }
   else
   {
-    this->PotentialInterps->InitTraversal();
     for (int i = 0; i < this->PotentialInterps->GetNumberOfItems(); ++i)
     {
-      vtkLidarPacketInterpreter* pt = vtkLidarPacketInterpreter::SafeDownCast(this->PotentialInterps->GetNextItemAsObject());
+      vtkLidarPacketInterpreter* pt = vtkLidarPacketInterpreter::SafeDownCast(this->PotentialInterps->GetItemAsObject(i));
       pt->ResetParserMetaData();
     }
   }
@@ -126,10 +122,9 @@ void vtkVelodyneMetaPacketInterpreter::SetLaserSelection(const bool *v)
   }
   else
   {
-    this->PotentialInterps->InitTraversal();
     for (int i = 0; i < this->PotentialInterps->GetNumberOfItems(); ++i)
     {
-      vtkLidarPacketInterpreter* pt = vtkLidarPacketInterpreter::SafeDownCast(this->PotentialInterps->GetNextItemAsObject());
+      vtkLidarPacketInterpreter* pt = vtkLidarPacketInterpreter::SafeDownCast(this->PotentialInterps->GetItemAsObject(i));
       pt->SetLaserSelection(v);
     }
   }
@@ -144,10 +139,9 @@ void vtkVelodyneMetaPacketInterpreter::GetLaserSelection(bool *v)
   }
   else
   {
-    this->PotentialInterps->InitTraversal();
     for (int i = 0; i < this->PotentialInterps->GetNumberOfItems(); ++i)
     {
-      vtkLidarPacketInterpreter* pt = vtkLidarPacketInterpreter::SafeDownCast(this->PotentialInterps->GetNextItemAsObject());
+      vtkLidarPacketInterpreter* pt = vtkLidarPacketInterpreter::SafeDownCast(this->PotentialInterps->GetItemAsObject(i));
       pt->GetLaserSelection(v);
     }
   }
@@ -162,10 +156,9 @@ void vtkVelodyneMetaPacketInterpreter::SetLaserSelection(const std::vector<bool>
   }
   else
   {
-    this->PotentialInterps->InitTraversal();
     for (int i = 0; i < this->PotentialInterps->GetNumberOfItems(); ++i)
     {
-      vtkLidarPacketInterpreter* pt = vtkLidarPacketInterpreter::SafeDownCast(this->PotentialInterps->GetNextItemAsObject());
+      vtkLidarPacketInterpreter* pt = vtkLidarPacketInterpreter::SafeDownCast(this->PotentialInterps->GetItemAsObject(i));
       pt->SetLaserSelection(v);
     }
   }
@@ -180,10 +173,9 @@ void vtkVelodyneMetaPacketInterpreter::SetCropRegion(double _arg1, double _arg2,
   }
   else
   {
-    this->PotentialInterps->InitTraversal();
     for (int i = 0; i < this->PotentialInterps->GetNumberOfItems(); ++i)
     {
-      vtkLidarPacketInterpreter* pt = vtkLidarPacketInterpreter::SafeDownCast(this->PotentialInterps->GetNextItemAsObject());
+      vtkLidarPacketInterpreter* pt = vtkLidarPacketInterpreter::SafeDownCast(this->PotentialInterps->GetItemAsObject(i));
       pt->SetCropRegion(_arg1, _arg2, _arg3, _arg4, _arg5, _arg6);
     }
   }
@@ -224,11 +216,10 @@ void vtkVelodyneMetaPacketInterpreter::GetLaserCorrections(double verticalCorrec
 //-----------------------------------------------------------------------------
 vtkMTimeType vtkVelodyneMetaPacketInterpreter::GetMTime()
 {
-  this->PotentialInterps->InitTraversal();
   vtkMTimeType time = this->Superclass::GetMTime();
   for (int i = 0; i < this->PotentialInterps->GetNumberOfItems(); ++i)
   {
-    time = std::max(time, this->PotentialInterps->GetNextItemAsObject()->GetMTime());
+    time = std::max(time, this->PotentialInterps->GetItemAsObject(i)->GetMTime());
   }
   return time;
 }
