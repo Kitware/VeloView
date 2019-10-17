@@ -286,17 +286,17 @@ struct HDLDataPacket
   {
     if (static_cast<DualReturnSensorMode>(factoryField1) == DUAL_RETURN)
     {
-      if (firingBlock > 6)
-        firingBlock = 6;
-      return static_cast<int>((36000 + firingData[firingBlock + 2].rotationalPosition -
+      if (firingBlock > 11 - 8)
+        firingBlock = 3;
+      return static_cast<int>((36000 + firingData[firingBlock + 8].rotationalPosition -
                                 firingData[firingBlock].rotationalPosition) %
         36000);
     }
     else
     {
-      if (firingBlock % 4 == 3)
-        firingBlock--;
-      return static_cast<int>((36000 + firingData[firingBlock + 1].rotationalPosition -
+      if (firingBlock > 11 - 4)
+        firingBlock = 7;
+      return static_cast<int>((36000 + firingData[firingBlock + 4].rotationalPosition -
                                 firingData[firingBlock].rotationalPosition) %
         36000);
     }

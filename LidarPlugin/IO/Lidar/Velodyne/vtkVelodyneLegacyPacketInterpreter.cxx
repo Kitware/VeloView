@@ -211,13 +211,19 @@ double HDL64EAdjustTimeStamp(int firingblock, int dsr, const bool isDualReturnMo
 //-----------------------------------------------------------------------------
 double VLS128AdjustTimeStamp(int firingblock, int dsr, const bool isDualReturnMode)
 {
+  const static double dt = 2.665;
+  const static double firingblock_num_cycles = 20;
+  const static double firingblock_duration = (dt * firingblock_num_cycles);
+  const static int n_blocks_per_firing = 4;
   if (!isDualReturnMode)
   {
-    return 13.0 * (firingblock) + (dsr / 4) * 1.4;
+    return (firingblock_duration * static_cast<int>(firingblock / n_blocks_per_firing)) +
+      (static_cast<int>(dsr / 8) + (static_cast<int>(dsr / 64) * 2)) * dt;
   }
   else
   {
-    return 13.0 * (firingblock / 2) + (dsr / 4) * 1.4;
+    return (firingblock_duration * static_cast<int>(firingblock / (n_blocks_per_firing * 2))) +
+      (static_cast<int>(dsr / 8) + (static_cast<int>(dsr / 64) * 2)) * dt;
   }
 }
 
@@ -434,9 +440,20 @@ void vtkVelodyneLegacyPacketInterpreter::ProcessPacket(unsigned char const * dat
   std::vector<int> diffs(HDL_FIRING_PER_PKT - 1);
   for (int i = 0; i < HDL_FIRING_PER_PKT - 1; ++i)
   {
-    int localDiff = (36000 + 18000 + dataPacket->firingData[i + 1].getRotationalPosition() -
+    int localDiff = 0;
+
+    if (isVLS128)
+    {
+        localDiff = (36000 + 18000 + dataPacket->firingData[i + 4].getRotationalPosition() -
                       dataPacket->firingData[i].getRotationalPosition()) %
-      36000 - 18000;
+                      36000 - 18000;
+    }
+    else
+    {
+        localDiff = (36000 + 18000 + dataPacket->firingData[i + 1].getRotationalPosition() -
+                      dataPacket->firingData[i].getRotationalPosition()) %
+                      36000 - 18000;
+    }
     diffs[i] = localDiff;
   }
 
