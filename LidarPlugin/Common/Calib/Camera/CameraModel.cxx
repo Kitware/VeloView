@@ -157,38 +157,69 @@ Eigen::VectorXd CameraModel::GetParametersVector()
 }
 
 //------------------------------------------------------------------------------
-void CameraModel::LoadParamsFromFile(std::string filename)
+bool CameraModel::LoadParamsFromFile(std::string filename)
 {
   Eigen::VectorXd W;
   YAML::Node calib = YAML::LoadFile(filename);
 
   std::string type = calib["calib"]["type"].as<std::string>();
-  if (type == "BrownConradyPinhole")
+
+  if (type == "Pinhole")
+  {
+    W = Eigen::VectorXd(11);
+    this->Type = ProjectionType::Pinhole;
+  }
+  else if (type == "FishEye")
+  {
+    W = Eigen::VectorXd(15);
+    this->Type = ProjectionType::FishEye;
+    // Set distortion parameters
+    for (int i = 0; i < 2; ++i)
+    {
+      W(i + 11) = calib["calib"]["distortion"]["k_coeff"][i].as<double>();
+    }
+    for (int i = 0; i < 2; ++i)
+    {
+      W(i + 13) = calib["calib"]["distortion"]["p_coeff"][i].as<double>();
+    }
+  }
+  else if (type == "BrownConradyPinhole")
   {
     W = Eigen::VectorXd(17);
     this->Type = ProjectionType::BrownConradyPinhole;
-
-    // Load extrinsic parameters
-    for (int i = 0; i < 3; ++i)
-    {
-      W(i) = calib["calib"]["extrinsic"]["rotation"][i].as<double>();
-      W(i + 3) = calib["calib"]["extrinsic"]["translation"][i].as<double>();
-    }
-
-    // Load intrinsic parameters
+    // Set distortion parameters
     for (int i = 0; i < 2; ++i)
     {
-      W(i + 6) = calib["calib"]["intrinsic"]["focal"][i].as<double>();
-      W(i + 8) = calib["calib"]["intrinsic"]["optical_center"][i].as<double>();
       W(i + 11) = calib["calib"]["distortion"]["k_coeff"][i].as<double>();
     }
     for (int i = 0; i < 4; ++i)
     {
       W(i + 13) = calib["calib"]["distortion"]["p_coeff"][i].as<double>();
     }
-    W(10) = calib["calib"]["intrinsic"]["skew"].as<double>();
   }
+  else
+  {
+    return false;
+  }
+
+  // Load extrinsic parameters
+  for (int i = 0; i < 3; ++i)
+  {
+    W(i) = calib["calib"]["extrinsic"]["rotation"][i].as<double>();
+    W(i + 3) = calib["calib"]["extrinsic"]["translation"][i].as<double>();
+  }
+
+  // Load intrinsic parameters
+  for (int i = 0; i < 2; ++i)
+  {
+    W(i + 6) = calib["calib"]["intrinsic"]["focal"][i].as<double>();
+    W(i + 8) = calib["calib"]["intrinsic"]["optical_center"][i].as<double>();
+  }
+  W(10) = calib["calib"]["intrinsic"]["skew"].as<double>();
+
   this->SetParams(W);
+
+  return true;
 }
 
 //------------------------------------------------------------------------------

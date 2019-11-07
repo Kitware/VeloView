@@ -385,7 +385,11 @@ std::vector<SemanticCentroid> LaunchDetectionBackProjection(vtkSmartPointer<vtkP
 
   // Load the calibration
   CameraModel Model;
-  Model.LoadParamsFromFile(calibFilename);
+  int ret = Model.LoadParamsFromFile(calibFilename);
+  if (!ret)
+  {
+    std::cout << "Warning: Calibration parameters could not be read from file." << std::endl;
+  }
 
   // load the image
   std::stringstream ss; ss << std::setw(4) << std::setfill('0') << closestImgIndex;

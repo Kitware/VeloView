@@ -194,6 +194,10 @@ int vtkCameraProjector::RequestData(vtkInformation *vtkNotUsed(request),
 void vtkCameraProjector::SetFileName(const std::string &argfilename)
 {
   this->Filename = argfilename;
-  this->Model.LoadParamsFromFile(this->Filename);
+  int ret = this->Model.LoadParamsFromFile(this->Filename);
+  if (!ret)
+  {
+    vtkWarningMacro("Calibration parameters could not be read from file.")
+  }
   this->Modified();
 }
