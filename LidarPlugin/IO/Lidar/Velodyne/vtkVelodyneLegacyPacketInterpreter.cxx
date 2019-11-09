@@ -209,12 +209,17 @@ double HDL64EAdjustTimeStamp(int firingblock, int dsr, const bool isDualReturnMo
 }
 
 //-----------------------------------------------------------------------------
-double VLS128AdjustTimeStamp(int firingblock, int dsr, const bool isDualReturnMode)
+double VLS128AdjustTimeStamp(int firingblock, int dsrBase32, const bool isDualReturnMode)
 {
   const static double dt = 2.665;
   const static double firingblock_num_cycles = 20;
   const static double firingblock_duration = (dt * firingblock_num_cycles);
   const static int n_blocks_per_firing = 4;
+
+  int dsr = (dsrBase32 + 32 * (firingblock % n_blocks_per_firing));
+
+  //dsr >= 64 needs an additional two cycles of delay to account for interleaved maintenance cycles
+
   if (!isDualReturnMode)
   {
     return (firingblock_duration * static_cast<int>(firingblock / n_blocks_per_firing)) +
@@ -598,9 +603,11 @@ void vtkVelodyneLegacyPacketInterpreter::ProcessFiring(const HDLFiringData *firi
         case 128:
         {
           timestampadjustment = VLS128AdjustTimeStamp(firingBlock, dsr, isDualReturnPacket);
+
+          // dsr0 occurs every fourth block on VLS-128
           nextblockdsr0 = VLS128AdjustTimeStamp(
-            firingBlock + (isDualReturnPacket ? 8 : 4), 0, isDualReturnPacket);
-          blockdsr0 = VLS128AdjustTimeStamp(firingBlock, 0, isDualReturnPacket);
+            (firingBlock / 4) * 4 + (isDualReturnPacket ? 8 : 4), 0, isDualReturnPacket);
+          blockdsr0 = VLS128AdjustTimeStamp((firingBlock / 4) * 4, 0, isDualReturnPacket);
           break;
         }
         case 64:
