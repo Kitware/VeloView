@@ -6,34 +6,14 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>474</width>
-    <height>264</height>
+    <width>632</width>
+    <height>349</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Crop Returns</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="1" column="1">
-    <widget class="QDialogButtonBox" name="buttonBox">
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
-     </property>
-     <property name="standardButtons">
-      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
-     </property>
-    </widget>
-   </item>
-   <item row="1" column="0">
-    <widget class="QCheckBox" name="saveCheckBox">
-     <property name="text">
-      <string>Update saved settings (for future sessions)</string>
-     </property>
-     <property name="checked">
-      <bool>false</bool>
-     </property>
-    </widget>
-   </item>
    <item row="0" column="0" colspan="2">
     <widget class="QGroupBox" name="CropGroupBox">
      <property name="title">
@@ -214,6 +194,16 @@
        </widget>
       </item>
      </layout>
+    </widget>
+   </item>
+   <item row="1" column="1">
+    <widget class="QDialogButtonBox" name="buttonBox">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+     <property name="standardButtons">
+      <set>QDialogButtonBox::NoButton</set>
+     </property>
     </widget>
    </item>
   </layout>
