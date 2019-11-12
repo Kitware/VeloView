@@ -87,7 +87,7 @@ void NetworkSource::Start()
     {
       appDir = getenv("HOME");
       appDir += "/";
-      appDir += SOFTWARE_NAME;
+      appDir += "SOFTWARE_NAME";
       appDir += "/";
     }
     else
@@ -96,7 +96,7 @@ void NetworkSource::Start()
       appDir = getenv("HOMEDRIVE");
       appDir += getenv("HOMEPATH");
       appDir += "\\";
-      appDir += SOFTWARE_NAME;
+      appDir += "SOFTWARE_NAME";
       appDir += "\\";
     }
 

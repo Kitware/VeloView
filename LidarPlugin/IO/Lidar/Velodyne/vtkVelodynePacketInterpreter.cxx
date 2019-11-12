@@ -1530,7 +1530,7 @@ bool vtkVelodynePacketInterpreter::CheckReportedSensorAndCalibrationFileConsiste
                      << "(0x" << hex << this->ReportedSensor << dec << ") "
                      << "recognized as having " << reportedSensorNumberLaser << " lasers";
     }
-    warningMessage << ", " << SOFTWARE_NAME << " will interpret data-packets and show points"
+    warningMessage << ", " << "SOFTWARE_NAME" << " will interpret data-packets and show points"
                    << " based on the XML calibration file only (currently: "
                    << this->CalibrationReportedNumLasers << " lasers).";
     vtkGenericWarningMacro(<< warningMessage.str());

@@ -122,7 +122,7 @@ int LASFileWriter::Open(const char* filename)
     return 0;
   }
 
-  this->header.SetSoftwareId(SOFTWARE_NAME);
+  this->header.SetSoftwareId("SOFTWARE_NAME");
   if (this->WriteColor)
   {
     this->header.SetDataFormatId(liblas::ePointFormat3); // the first format with color and time

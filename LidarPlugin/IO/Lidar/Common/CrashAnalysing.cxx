@@ -126,7 +126,7 @@ void CrashAnalysisWriter::ArchivePreviousLogIfExist()
   if (fileHasBeenRenamed)
   {
     vtkGenericWarningMacro("We found log files in folder: " << this->Filename
-                           << " which may be due to " << SOFTWARE_NAME << " previous crash. "
+                           << " which may be due to " << "SOFTWARE_NAME" << " previous crash. "
                            << "The log files have been renamed using timestamp: " << timeStr);
   }
 }
