@@ -18,8 +18,10 @@
 #include <pqApplicationCore.h>
 #include <pqSettings.h>
 
+#include <QPushButton>
 #include <QDialog>
 #include <QFileDialog>
+#include <QStyle>
 
 #include "ctkDoubleRangeSlider.h"
 
@@ -29,9 +31,24 @@
 class vvCropReturnsDialog::pqInternal : public Ui::vvCropReturnsDialog
 {
 public:
-  pqInternal()
+  pqInternal(QDialog *external)
     : Settings(pqApplicationCore::instance()->settings())
   {
+    this->External = external;
+    this->setupUi(external);
+
+    this->CancelButton = new QPushButton("Cancel");
+    this->CancelButton->setIcon(external->style()->standardIcon(QStyle::SP_DialogCancelButton));
+
+    this->ApplyButton = new QPushButton("Apply");
+    this->ApplyButton->setIcon(external->style()->standardIcon(QStyle::SP_DialogOkButton));
+
+    this->ApplyAndSaveButton = new QPushButton("Apply and save for future sessions");
+    this->ApplyAndSaveButton->setIcon(external->style()->standardIcon(QStyle::SP_DialogSaveButton));
+
+    this->buttonBox->addButton(this->CancelButton, QDialogButtonBox::ActionRole);
+    this->buttonBox->addButton(this->ApplyButton, QDialogButtonBox::ActionRole);
+    this->buttonBox->addButton(this->ApplyAndSaveButton, QDialogButtonBox::ActionRole);
   }
 
   void saveSettings();
@@ -47,6 +64,12 @@ public:
   void onYSliderChanged(double vmin, double vmax);
   void onZSliderChanged(double vmin, double vmax);
   void updateRangeValues(bool isSliderMode);
+
+  QDialog *External;
+
+  QPushButton *CancelButton;
+  QPushButton *ApplyButton;
+  QPushButton *ApplyAndSaveButton;
 
   ctkDoubleRangeSlider XDoubleRangeSlider;
   ctkDoubleRangeSlider YDoubleRangeSlider;
@@ -161,10 +184,8 @@ void vvCropReturnsDialog::pqInternal::restoreSettings()
 //-----------------------------------------------------------------------------
 vvCropReturnsDialog::vvCropReturnsDialog(QWidget* p)
   : QDialog(p)
-  , Internal(new pqInternal)
+  , Internal(new pqInternal(this))
 {
-  this->Internal->setupUi(this);
-
   this->Internal->InitializeDoubleRangeSlider();
 
   connect(
@@ -191,6 +212,10 @@ vvCropReturnsDialog::vvCropReturnsDialog(QWidget* p)
   connect(
     this->Internal->sphericalRadioButton, SIGNAL(clicked()), this, SLOT(onSphericalToggled()));
   connect(this->Internal->CropGroupBox, SIGNAL(clicked()), this, SLOT(onCropGroupBoxToggled()));
+
+  connect(this->Internal->CancelButton, SIGNAL(clicked()), this, SLOT(reject()));
+  connect(this->Internal->ApplyButton, SIGNAL(clicked()), this, SLOT(apply()));
+  connect(this->Internal->ApplyAndSaveButton, SIGNAL(clicked()), this, SLOT(applyAndSave()));
 
   this->Internal->restoreSettings();
 }
@@ -277,13 +302,15 @@ void vvCropReturnsDialog::setSecondCorner(QVector3D corner)
 }
 
 //-----------------------------------------------------------------------------
-void vvCropReturnsDialog::accept()
+void vvCropReturnsDialog::apply()
 {
-  if (this->Internal->saveCheckBox->isChecked())
-  {
-    this->Internal->saveSettings();
-  }
+  QDialog::accept();
+}
 
+//-----------------------------------------------------------------------------
+void vvCropReturnsDialog::applyAndSave()
+{
+  this->Internal->saveSettings();
   QDialog::accept();
 }
 
