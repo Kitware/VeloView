@@ -47,7 +47,6 @@ public:
 
 public slots:
   virtual void accept();
-  void onNoneToggled();
   void onCartesianToggled();
   void onSphericalToggled();
   void onSliderBoxToggled();
