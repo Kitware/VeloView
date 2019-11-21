@@ -21,16 +21,8 @@
 #else
 #define LidarPlugin_EXPORT __declspec(dllimport)
 #endif
-
-#if defined(LidarPythonQT_EXPORTS)
-#define LidarPythonQT_EXPORT __declspec(dllexport)
-#else
-#define LidarPythonQT_EXPORT __declspec(dllimport)
-#endif
-
 #else
 #define LidarPlugin_EXPORT
-#define LidarPythonQT_EXPORT
 #endif
 
 #endif // __vvConfigure_h

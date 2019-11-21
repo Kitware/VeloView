@@ -25,7 +25,7 @@
 #include <QSlider>
 
 // CTK includes
-#include <ctkPimpl.h>
+#include "ctkPimpl.h"
 
 #include "ctkWidgetsExport.h"
 

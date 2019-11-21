@@ -21,7 +21,7 @@
 #include <QDialog>
 #include <QFileDialog>
 
-#include <ctkDoubleRangeSlider.h>
+#include "ctkDoubleRangeSlider.h"
 
 #include <sstream>
 

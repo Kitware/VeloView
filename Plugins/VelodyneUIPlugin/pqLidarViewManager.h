@@ -34,6 +34,16 @@ class QAction;
 class QLabel;
 class QWidget;
 
+#if defined(_WIN32)
+#if defined(LidarPythonQT_EXPORTS)
+#define LidarPythonQT_EXPORT __declspec(dllexport)
+#else
+#define LidarPythonQT_EXPORT __declspec(dllimport)
+#endif
+#else
+#define LidarPythonQT_EXPORT
+#endif
+
 class LidarPythonQT_EXPORT pqLidarViewManager : public QObject
 {
 

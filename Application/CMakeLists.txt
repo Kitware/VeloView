@@ -40,7 +40,7 @@ target_include_directories(${SOFTWARE_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(${SOFTWARE_NAME}
   PUBLIC
     ${VV_PLUGIN_LIBRARY}
-    ${VV_NONE_PLUGIN_LIBRARY}
+    VelodyneUI
     ${PYTHONQTPLUGIN_LIBRARY}
     ${PYTHONQT_LIBRARIES}
     lqApplicationComponents)

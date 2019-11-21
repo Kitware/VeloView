@@ -157,30 +157,8 @@ endif()
 # Add the reader plugin and any other plugins.
 set(VV_PLUGIN_LIBRARY LidarPlugin) # lidarview plugin
 set(VV_NONE_PLUGIN_LIBRARY LidarPythonQT) # code needed by lidarview but that is not part of the plugin
-add_subdirectory(LidarPlugin)
-include_directories(LidarPlugin)
 
-
-# Install data files
-set (VV_SHARED_FILES VLP-16.xml HDL-32.xml VLP-32c.xml "Puck Hi-Res.xml" "Puck LITE.xml")
-if(NOT APPLE)
-  set(vv_configurefile_dest "${CMAKE_CURRENT_BINARY_DIR}/share/")
-  set(vv_installfile_dest share)
-else()
-  set(vv_configurefile_dest "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${SOFTWARE_NAME}.app/Contents/Resources/")
-  set(vv_installfile_dest "${VV_INSTALL_RUNTIME_DIR}/${SOFTWARE_NAME}.app/Contents/Resources")
-endif()
-set(vv_installed_xml_files "")
-foreach(vv_xml_file ${VV_SHARED_FILES})
-  configure_file("share/${vv_xml_file}" "${vv_configurefile_dest}${vv_xml_file}" COPYONLY)
-  list(APPEND vv_installed_xml_files "share/${vv_xml_file}")
-endforeach()
-install(FILES ${vv_installed_xml_files} DESTINATION ${vv_installfile_dest})
-unset(VV_SHARED_FILES)
-unset(vv_installed_xml_files)
-unset(vv_configurefile_dest)
-unset(vv_installfile_dest)
-
+add_subdirectory(Plugins)
 
 # TODO: once we use Qt built from source on Windows, remove this manual installation
 # currently: PythonQt fails to build against our own build of Qt

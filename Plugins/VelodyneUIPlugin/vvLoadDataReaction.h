@@ -17,8 +17,6 @@
 #include "pqLoadDataReaction.h"
 #include <QPointer>
 
-#include "vvConfigure.h"
-
 /// vvLoadDataReaction extends pqLoadDataReaction to ensure the following:
 /// \li as soon as the data is loaded, we show it in the active view.
 /// \li any previous data opened is closed, we only show 1 data at a time.

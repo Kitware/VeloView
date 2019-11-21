@@ -2,7 +2,7 @@
 #ifndef __vvPythonQtDecorators_h
 #define __vvPythonQtDecorators_h
 
-#include "PythonQt.h"
+#include <PythonQt.h>
 #include <QObject>
 
 #include "pqLidarViewManager.h"

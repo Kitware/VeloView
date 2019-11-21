@@ -1,8 +1,6 @@
 project(LidarPlugin)
 cmake_minimum_required(VERSION 3.1 FATAL_ERROR)
 
-include_directories("ctk")
-
 #-----------------------------------------------------------------------------
 # Temporary Fix
 #-----------------------------------------------------------------------------
@@ -44,10 +42,8 @@ else(ParaView_SOURCE_DIR)
   include(${PARAVIEW_USE_FILE})
 
 endif(ParaView_SOURCE_DIR)
-
 vtk_module_load(vtklibproj4)
-include_directories(${SYSTEM_OPTION} ${vtklibproj4_INCLUDE_DIRS})
-include_directories(${SYSTEM_OPTION} ${PYTHONQT_INCLUDE_DIRS})
+
 
 #--------------------------------------
 # pcap dependency
@@ -74,7 +70,7 @@ include_directories(${SYSTEM_OPTION} ${liblas_INCLUDE_DIR})
 # Eigen dependency
 #--------------------------------------
 find_package(Eigen REQUIRED)
-include_directories(${SYSTEM_OPTION} ${EIGEN_INCLUDE_DIR})
+#include_directories(${SYSTEM_OPTION} ${EIGEN_INCLUDE_DIR})
 
 #--------------------------------------
 # Yaml dependency
@@ -137,60 +133,7 @@ endif(ENABLE_nanoflann)
 #-----------------------------------------------------------------------------
 # Build Paraview Plugin
 #-----------------------------------------------------------------------------
-# The plugin contain both server code and gui code.
-# It's possible to only build the server code and skip the gui code
-# Currently it's not working well...
 
-# gui specific code
-if(PARAVIEW_BUILD_QT_GUI)
-
-  set(UI_FILES
-    Ui/vvCalibrationDialog.ui
-    Ui/vvCropReturnsDialog.ui
-    Ui/vvLaserSelectionDialog.ui
-    Ui/vvSelectFramesDialog.ui
-    )
-
-  set(MOC_HEADERS
-    Ui/vvCalibrationDialog.h
-    Ui/vvCropReturnsDialog.h
-    Ui/vvLaserSelectionDialog.h
-    Ui/vvSelectFramesDialog.h
-    ctk/ctkValueProxy.h
-    ctk/ctkRangeSlider.h
-    ctk/ctkDoubleRangeSlider.h
-    )
-
-  set(resources
-    Ui/images/resources.qrc)
-
-  # call some qt macro to create moc and code
-  qt5_wrap_cpp(moc_srcs ${MOC_HEADERS})
-  qt5_wrap_ui(ui_srcs ${UI_FILES})
-  qt5_add_resources(resource_srcs ${resources})
-
-  list(APPEND gui_sources
-    ${moc_srcs}
-    ${ui_srcs}
-    ${resource_srcs}
-    Ui/vvCalibrationDialog.cxx
-    Ui/vvCropReturnsDialog.cxx
-    Ui/vvLaserSelectionDialog.cxx
-    Ui/vvSelectFramesDialog.cxx
-    ctk/ctkPimpl.h
-    ctk/ctkCoreExport.h
-    ctk/ctkRangeSlider.cpp
-    ctk/ctkWidgetsExport.h
-    ctk/ctkDoubleRangeSlider.cpp
-    ctk/ctkValueProxy.cpp
-    )
-
-  # TODO I don"t get this dependancy is for
-  list(APPEND deps
-    pqApplicationComponents
-    )
-
-endif()
 
 # sources that will be wrap by paraview
 # this sources will also be wrap in python in another plugin
@@ -200,9 +143,7 @@ list(APPEND servermanager_sources
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/Lidar/Common/vtkLidarReader.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/Lidar/Common/vtkLidarStream.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/Lidar/Common/vtkLidarPacketInterpreter.cxx
-  ${CMAKE_CURRENT_SOURCE_DIR}/IO/Lidar/Velodyne/vtkVelodynePacketInterpreter.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/Lidar/KITTIDataSet/vtkLidarKITTIDataSetReader.cxx
-  ${CMAKE_CURRENT_SOURCE_DIR}/IO/GPS-IMU/Velodyne/vtkVelodyneHDLPositionReader.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/GPS-IMU/Applanix/vtkApplanixPositionReader.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/GPS-IMU/ArduPilotDataFlashLogReader/vtkArduPilotDataFlashLogReader.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/vtkTemporalTransformsReader.cxx
@@ -265,9 +206,7 @@ endif(ENABLE_opencv)
 # xml file that describe the proxy of the wrap sources in paraview
 list(APPEND servermanager_xml
   xml/Lidar.xml
-  xml/VelodyneLidarPacketInterpreter.xml
   xml/LidarKITTIDataSetReader.xml
-  xml/VelodyneHDLPositionReader.xml
   xml/ApplanixPositionReader.xml
   xml/ArduPilotDataFlashLogReader.xml
   xml/BoundingBoxReader.xml
@@ -314,7 +253,6 @@ endif(ENABLE_pcl AND ENABLE_ceres AND ENABLE_nanoflann)
 set(sources_which_inherit_from_vtkObject
   ${CMAKE_CURRENT_SOURCE_DIR}/Common/vtkCustomTransformInterpolator.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/Common/vtkTemporalTransforms.cxx
-  ${CMAKE_CURRENT_SOURCE_DIR}/Filter/OldPlaneFitter/vtkPlaneFitter.cxx
   )
 list(APPEND sources_which_do_not_inherit_from_vtkObject
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/Lidar/Common/CrashAnalysing.cxx
@@ -323,7 +261,6 @@ list(APPEND sources_which_do_not_inherit_from_vtkObject
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/Lidar/Common/PacketFileWriter.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/Lidar/Common/PacketConsumer.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/Common/Network/NetworkPacket.cxx
-  ${CMAKE_CURRENT_SOURCE_DIR}/IO/Lidar/Velodyne/vtkRollingDataAccumulator.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/GPS-IMU/Common/NMEAParser.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/GPS-IMU/Common/GPSProjectionUtils.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/vtkLASFileWriter.cxx
@@ -381,6 +318,9 @@ list(APPEND deps
 
 # folder where to look for header file
 set(plugin_include_dirs
+  ${EIGEN_INCLUDE_DIR}
+  ${vtklibproj4_INCLUDE_DIRS}
+  ${CMAKE_CURRENT_SOURCE_DIR}
   ${CMAKE_CURRENT_SOURCE_DIR}/Common
   ${CMAKE_CURRENT_SOURCE_DIR}/Common/ML
   ${CMAKE_CURRENT_SOURCE_DIR}/Common/Network
@@ -392,11 +332,9 @@ set(plugin_include_dirs
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/Camera
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/Lidar/Common
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/Lidar/KITTIDataSet
-  ${CMAKE_CURRENT_SOURCE_DIR}/IO/Lidar/Velodyne
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/Camera
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/GPS-IMU/Applanix
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/GPS-IMU/ArduPilotDataFlashLogReader/
-  ${CMAKE_CURRENT_SOURCE_DIR}/IO/GPS-IMU/Velodyne
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/GPS-IMU/Common
   ${CMAKE_CURRENT_SOURCE_DIR}/IO
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/CalibrationFromPoses
@@ -407,7 +345,6 @@ set(plugin_include_dirs
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/PointCloudLinearProjector
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/LaplacianInfilling
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/MLSPosesSmoothing
-  ${CMAKE_CURRENT_SOURCE_DIR}/Filter/OldPlaneFitter
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/Ransac
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/TrailingFrame
   ${CMAKE_CURRENT_SOURCE_DIR}/Filter/TemporalTransformsApplier
@@ -432,8 +369,8 @@ add_paraview_plugin(${VV_PLUGIN_LIBRARY} "1.0"
   SERVER_SOURCES ${sources_which_inherit_from_vtkObject} ${sources_which_do_not_inherit_from_vtkObject}
   GUI_SOURCES ${gui_sources}
   REQUIRED_ON_SERVER)
-target_include_directories(${VV_PLUGIN_LIBRARY} PRIVATE ${plugin_include_dirs})
-target_link_libraries(${VV_PLUGIN_LIBRARY} LINK_PUBLIC ${deps})
+target_include_directories(${VV_PLUGIN_LIBRARY} PUBLIC ${plugin_include_dirs})
+target_link_libraries(${VV_PLUGIN_LIBRARY} PUBLIC ${deps})
 if(WIN32)
   # -DBOOST_PROGRAM_OPTIONS_DYN_LINK is necessary to use boost as a dynamic library
   # more about it here: https://svn.boost.org/trac10/ticket/13326
@@ -464,12 +401,12 @@ if(WIN32)
   target_compile_definitions(PacketFileSender PRIVATE -DWIN32 -DBOOST_PROGRAM_OPTIONS_DYN_LINK=1)
 endif(WIN32)
 
-add_executable(PCAPTester StandAloneTools/PCAPTester.cxx)
-target_include_directories(${VV_PLUGIN_LIBRARY} PRIVATE ${plugin_include_dirs})
-target_link_libraries(PCAPTester LINK_PUBLIC ${VV_PLUGIN_LIBRARY} ${ALL_BOOST_LIBRARIES})
-if(WIN32)
-  target_compile_definitions(PCAPTester PRIVATE -DWIN32 -DBOOST_PROGRAM_OPTIONS_DYN_LINK=1)
-endif(WIN32)
+#add_executable(PCAPTester StandAloneTools/PCAPTester.cxx)
+#target_include_directories(${VV_PLUGIN_LIBRARY} PRIVATE ${plugin_include_dirs})
+#target_link_libraries(PCAPTester LINK_PUBLIC ${VV_PLUGIN_LIBRARY} ${ALL_BOOST_LIBRARIES})
+#if(WIN32)
+#  target_compile_definitions(PCAPTester PRIVATE -DWIN32 -DBOOST_PROGRAM_OPTIONS_DYN_LINK=1)
+#endif(WIN32)
 
 #-----------------------------------------------------------------------------
 # Build StandAlone targets which provide different thirparty tools
@@ -482,32 +419,7 @@ if (ENABLE_opencv)
     target_compile_definitions(BBoxFromImagesDetections PRIVATE -DWIN32 -DBOOST_PROGRAM_OPTIONS_DYN_LINK=1)
   endif(WIN32)
 endif (ENABLE_opencv)
-#-----------------------------------------------------------------------------
-# As we don't want our paraview pluging to have a dependancies to PythonQt we
-# we create another target which contain all the code "glue" code.
-#-----------------------------------------------------------------------------
-set(MOC_HEADERS
-  pqLidarViewManager.h
-  vvPythonQtDecorators.h
-  )
 
-set(moc_srcs)
-qt5_wrap_cpp(moc_srcs "${MOC_HEADERS}")
-
-set(gui_sources)
-list(APPEND gui_sources
-  ${moc_srcs}
-  pqLidarViewManager.cxx
-  )
-
-# give default target name if not specify otherwise
-if (NOT VV_NONE_PLUGIN_LIBRARY)
-  set(VV_NONE_PLUGIN_LIBRARY LidarPythonQT)
-endif()
-
-add_library(${VV_NONE_PLUGIN_LIBRARY} ${gui_sources})
-target_include_directories(${VV_NONE_PLUGIN_LIBRARY} PRIVATE ${plugin_include_dirs})
-target_link_libraries(${VV_NONE_PLUGIN_LIBRARY} ${VV_PLUGIN_LIBRARY} ${PYTHONQT_LIBRARIES})
 
 #-----------------------------------------------------------------------------
 # This code is here for LEGACY REASON and should NOT BE USED and even REMOVE at some point !!!!
@@ -539,14 +451,13 @@ WRAP_PLUGIN_FOR_PYTHON(${VV_PLUGIN_LIBRARY} "${towrap}" "NOTTHERE")
 
 set(libraries_to_install
   ${VV_PLUGIN_LIBRARY}
-  ${VV_NONE_PLUGIN_LIBRARY}
   ${VV_PLUGIN_LIBRARY}Python
   ${VV_PLUGIN_LIBRARY}PythonD
   )
 
 set(executables_to_install
   PacketFileSender
-  PCAPTester
+#  PCAPTester
   )
 
 if (ENABLE_opencv)
@@ -594,12 +505,6 @@ else()
           LIBRARY DESTINATION ${VV_INSTALL_LIBRARY_DIR}
           COMPONENT Runtime)
 endif()
-
-#-----------------------------------------------------------------------------
-# Add python source
-#-----------------------------------------------------------------------------
-
-add_subdirectory(python)
 
 #-----------------------------------------------------------------------------
 # Option to build some tests
