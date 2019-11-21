@@ -1,26 +1,33 @@
-qt5_wrap_cpp(moc_source_files
-  vvColorToolbar.h
-  vvToggleSpreadSheetReaction.h
-  vvPlayerControlsToolbar.h
-  vvPlayerControlsController.h
-  )
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTORCC ON)
+set(CMAKE_AUTOUIC ON)
 
-qt5_wrap_ui(ui_source_files
-  vvColorToolbar.ui
-  vvPlayerControlsToolbar.ui
-  )
-
-set(source_files
-  ${moc_source_files}
-  ${ui_source_files}
+add_library(lqApplicationComponents
+  ctk/ctkCoreExport.h
+  ctk/ctkDoubleRangeSlider.cpp
+  ctk/ctkDoubleRangeSlider.h
+  ctk/ctkPimpl.h
+  ctk/ctkRangeSlider.cpp
+  ctk/ctkRangeSlider.h
+  ctk/ctkValueProxy.cpp
+  ctk/ctkValueProxy.h
+  ctk/ctkWidgetsExport.h
   vvColorToolbar.cxx
-  vvToggleSpreadSheetReaction.cxx
+  vvColorToolbar.h
+  vvColorToolbar.ui
   vvPlayerControlsToolbar.cxx
+  vvPlayerControlsToolbar.h
+  vvPlayerControlsToolbar.ui
   vvPlayerControlsController.cxx
-  )
+  vvPlayerControlsController.h
+  vvToggleSpreadSheetReaction.h
+  vvToggleSpreadSheetReaction.cxx
 
-add_library(lqApplicationComponents ${source_files})
-target_include_directories(lqApplicationComponents PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+  )
+target_include_directories(lqApplicationComponents PUBLIC
+  ${CMAKE_CURRENT_SOURCE_DIR}
+  ${CMAKE_CURRENT_SOURCE_DIR}/ctk/
+  )
 target_link_libraries(lqApplicationComponents PUBLIC pqApplicationComponents)
 
 # install libraries

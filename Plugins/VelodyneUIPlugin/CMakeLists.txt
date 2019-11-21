@@ -16,16 +16,6 @@ add_library(VelodyneUI
   Ui/vvSelectFramesDialog.h
   Ui/vvSelectFramesDialog.ui
 
-  ctk/ctkCoreExport.h
-  ctk/ctkDoubleRangeSlider.cpp
-  ctk/ctkDoubleRangeSlider.h
-  ctk/ctkPimpl.h
-  ctk/ctkRangeSlider.cpp
-  ctk/ctkRangeSlider.h
-  ctk/ctkValueProxy.cpp
-  ctk/ctkValueProxy.h
-  ctk/ctkWidgetsExport.h
-
   pqLidarViewManager.cxx
   pqLidarViewManager.h
   vvLoadDataReaction.cxx
