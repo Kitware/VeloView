@@ -19,10 +19,6 @@ superbuild_set_revision(paraview
   GIT_REPOSITORY https://gitlab.kitware.com/bjacquet/paraview.git
   GIT_TAG origin/5.4CustomForLidarView)
 
-superbuild_set_revision(lidarview
-    SOURCE_DIR ${CMAKE_SOURCE_DIR}/..
-    DOWNLOAD_COMMAND "")
-
 if (WIN32)
   superbuild_set_revision(pcap
     GIT_REPOSITORY http://github.com/patmarion/winpcap.git

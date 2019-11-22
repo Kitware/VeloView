@@ -78,7 +78,6 @@ function (superbuild_find_projects var)
     python
     pythonqt
     qt5
-    lidarview
     zlib
     ceres
     glog
@@ -103,6 +102,7 @@ function (superbuild_find_projects var)
     endif()
   endif()
 
+  add_project_to_superbuild(projects)
   set("${var}"
     ${projects}
     PARENT_SCOPE)
