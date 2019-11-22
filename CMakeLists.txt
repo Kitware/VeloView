@@ -71,7 +71,7 @@ if(BUILD_DOC)
 endif()
 
 #-------------------------------------------------------------------------------
-set (LidarView_CMAKE_DIR "${LidarView_SOURCE_DIR}/CMake")
+set (LidarView_CMAKE_DIR "${LidarView_SOURCE_DIR}/LidarViewCore/CMake")
 set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${LidarView_CMAKE_DIR})
 
 include(Git)
@@ -142,10 +142,6 @@ if(WIN32 AND MSVC)
   add_definitions(/Dinline=__inline)
 endif()
 
-include_directories(
-  ${CMAKE_CURRENT_SOURCE_DIR}
-  ${CMAKE_CURRENT_BINARY_DIR})
-
 
 if (APPLE)
   set(CMAKE_INSTALL_NAME_DIR "@executable_path/../Libraries")
@@ -159,6 +155,8 @@ set(VV_PLUGIN_LIBRARY LidarPlugin) # lidarview plugin
 set(VV_NONE_PLUGIN_LIBRARY LidarPythonQT) # code needed by lidarview but that is not part of the plugin
 
 add_subdirectory(Plugins)
+add_subdirectory(LidarViewCore)
+add_subdirectory(Application)
 
 # TODO: once we use Qt built from source on Windows, remove this manual installation
 # currently: PythonQt fails to build against our own build of Qt
@@ -179,14 +177,3 @@ if (WIN32)
     DESTINATION "bin"
   )
 endif ()
-
-
-# This ensure that build_paraview_client() adds an "forwarding path" to locate
-# paraview from installed location.
-set (PARAVIEW_INSTALL_LIB_DIR "lib/paraview-${PARAVIEW_VERSION_MAJOR}.${PARAVIEW_VERSION_MINOR}")
-
-add_subdirectory("ApplicationComponents/")
-add_subdirectory("Application/")
-
-# Add subdirectory containing python script for animation
-add_subdirectory("Utilities/Animation")

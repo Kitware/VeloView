@@ -22,7 +22,7 @@ add_library(VelodyneUI
   vvLoadDataReaction.h
   vvPythonQtDecorators.h
   )
-target_link_libraries(VelodyneUI PUBLIC LidarPlugin ${PYTHONQT_LIBRARIES})
+target_link_libraries(VelodyneUI PUBLIC LidarPlugin ${PYTHONQT_LIBRARIES} lqApplicationComponents)
 target_include_directories(VelodyneUI PUBLIC
   ${PYTHONQT_INCLUDE_DIRS}
   ${CMAKE_CURRENT_SOURCE_DIR}

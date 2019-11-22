@@ -17,7 +17,8 @@ ADD_PARAVIEW_PLUGIN(VelodynePlugin "1.0"
   REQUIRED_ON_SERVER
   SERVER_MANAGER_XML ${server_manager_xml}
   SERVER_MANAGER_SOURCES ${server_manager_sources}
-  SERVER_SOURCES)
+  SERVER_SOURCES ${server_sources}
+  REQUIRED_ON_SERVER)
 
 target_link_libraries(VelodynePlugin PUBLIC LidarPlugin)
 target_include_directories(VelodynePlugin
@@ -26,6 +27,12 @@ target_include_directories(VelodynePlugin
   VelodyneHDLPositionReader/
   VelodynePacketInterpreter/
   )
+
+# install libraries
+install(TARGETS VelodynePlugin
+        RUNTIME DESTINATION ${VV_INSTALL_RUNTIME_DIR}
+        LIBRARY DESTINATION ${VV_INSTALL_LIBRARY_DIR}
+        COMPONENT Runtime)
 
 # Install data files
 #set (VV_SHARED_FILES VLP-16.xml HDL-32.xml VLP-32c.xml "Puck Hi-Res.xml" "Puck LITE.xml")
