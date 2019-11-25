@@ -1,6 +1,6 @@
 [submodule "TestData"]
 	path = TestData
 	url = ../VeloView-TestData.git
-[submodule "Superbuild/common-superbuild"]
-	path = Superbuild/lidarview-common-superbuild/common-superbuild
-	url = https://gitlab.kitware.com/paraview/common-superbuild
+[submodule "Superbuild/lidarview-superbuild"]
+	path = Superbuild/lidarview-superbuild
+	url = ../LidarView-Superbuild

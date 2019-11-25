@@ -5,7 +5,7 @@ project(LidarViewSuperBuild)
 # All the function and variable bellow are here because we rely on lidarview's
 # superbuild.
 # To see which function/variable cana/needs to be set, please take a look at
-# the CMakeLists.txt inside "lidarview-common-superbuild"
+# the CMakeLists.txt inside "lidarview-superbuild"
 #-----------------------------------------------------------------------------
 
 # Setup CMAKE_MODULE_PATH so that platform specific configurations are processed
@@ -23,4 +23,4 @@ endfunction ()
 list(APPEND superbuild_version_files
   "${CMAKE_CURRENT_LIST_DIR}/versions.cmake")
 
-add_subdirectory(lidarview-common-superbuild/)
+add_subdirectory(lidarview-superbuild/)
