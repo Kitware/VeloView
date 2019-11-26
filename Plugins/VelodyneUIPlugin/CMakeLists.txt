@@ -15,6 +15,7 @@ add_library(VelodyneUI
   Ui/vvSelectFramesDialog.cxx
   Ui/vvSelectFramesDialog.h
   Ui/vvSelectFramesDialog.ui
+  Ui/images/resources.qrc
 
   pqLidarViewManager.cxx
   pqLidarViewManager.h
