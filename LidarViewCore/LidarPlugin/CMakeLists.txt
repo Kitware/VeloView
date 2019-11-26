@@ -316,9 +316,11 @@ list(APPEND deps
   ${YAML_CPP_LIBRARIES}
   )
 
+message(STATUS "Boost_INCLUDE_DIRS: ${Boost_INCLUDE_DIRS}")
 # folder where to look for header file
 set(plugin_include_dirs
   ${EIGEN_INCLUDE_DIR}
+  ${Boost_INCLUDE_DIRS}
   ${vtklibproj4_INCLUDE_DIRS}
   ${CMAKE_CURRENT_SOURCE_DIR}
   ${CMAKE_CURRENT_SOURCE_DIR}/Common
@@ -485,12 +487,12 @@ if (APPLE)
   file(GLOB python_libs ${ParaView_DIR}/lib/*Python.so)
   install(FILES ${python_libs} DESTINATION ${VV_INSTALL_RUNTIME_DIR}/${SOFTWARE_NAME}.app/Contents/Libraries)
 
-  # install some pdf
-  install(FILES ${LidarView_SOURCE_DIR}/Documentation/LidarView_Developer_Guide.pdf DESTINATION ${VV_INSTALL_RUNTIME_DIR}/${SOFTWARE_NAME}.app/Contents/Resources)
-  configure_file(${LidarView_SOURCE_DIR}/Documentation/LidarView_Developer_Guide.pdf ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${SOFTWARE_NAME}.app/Contents/Resources/LidarView_Developer_Guide.pdf)
+  # # install some pdf
+  # install(FILES ${LidarView_SOURCE_DIR}/Documentation/LidarView_Developer_Guide.pdf DESTINATION ${VV_INSTALL_RUNTIME_DIR}/${SOFTWARE_NAME}.app/Contents/Resources)
+  # configure_file(${LidarView_SOURCE_DIR}/Documentation/LidarView_Developer_Guide.pdf ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${SOFTWARE_NAME}.app/Contents/Resources/LidarView_Developer_Guide.pdf)
 
-  install(FILES ${LidarView_SOURCE_DIR}/Documentation/LidarView_User_Guide.pdf DESTINATION ${VV_INSTALL_RUNTIME_DIR}/${SOFTWARE_NAME}.app/Contents/Resources)
-  configure_file(${LidarView_SOURCE_DIR}/Documentation/LidarView_User_Guide.pdf ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${SOFTWARE_NAME}.app/Contents/Resources/LidarView_User_Guide.pdf)
+  # install(FILES ${LidarView_SOURCE_DIR}/Documentation/LidarView_User_Guide.pdf DESTINATION ${VV_INSTALL_RUNTIME_DIR}/${SOFTWARE_NAME}.app/Contents/Resources)
+  # configure_file(${LidarView_SOURCE_DIR}/Documentation/LidarView_User_Guide.pdf ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${SOFTWARE_NAME}.app/Contents/Resources/LidarView_User_Guide.pdf)
 
 else()
   # install libraries
