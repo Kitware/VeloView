@@ -26,7 +26,7 @@
     - echo "entering superbuild stage"
     - WIN_CI_PROJECT_DIR=$(cygpath -w $(pwd))
     - echo "WIN_CI_PROJECT_DIR is $WIN_CI_PROJECT_DIR"
-    - git submodule update --init Superbuild/common-superbuild
+    - git submodule update --init --recursive Superbuild/lidarview-superbuild
     # we want short paths so we build at the root of a drive
     - mkdir /cygdrive/c/Superbuild-build
     - cd /cygdrive/c/Superbuild-build
@@ -43,8 +43,8 @@
     - chmod +x superbuild.bat
     - ./superbuild.bat
     - echo "build terminated"
-    - echo "removing common-superbuild/lidarview"
-    - rm -rf common-superbuild/lidarview
+    - echo "removing lidarview-superbuild/common-superbuild/lidarview"
+    - rm -rf lidarview-superbuild/common-superbuild/lidarview
     - echo "compressing and uploading Superbuild. This take some time..."
     - cd ..
     - tar zcf archive Superbuild-build/
@@ -67,7 +67,7 @@ windows_build:
   extends: .only-important
   before_script: *windows_get_superbuild
   script:
-    - git submodule update --init Superbuild/common-superbuild
+    - git submodule update --init --recursive Superbuild/lidarview-superbuild
     - cd /cygdrive/c/Superbuild-build # provided by windows_get_superbuild
     - echo "call \"C:\\Users\\vagrant\\Desktop\\cmd-env-variables.cmd\"" > build.bat
     - echo "ninja lidarview" >> build.bat
@@ -80,14 +80,14 @@ windows_test:
   extends: .only-important
   before_script: *windows_get_superbuild
   script:
-    - git submodule update --init Superbuild/common-superbuild
+    - git submodule update --init --recursive Superbuild/lidarview-superbuild
     - git submodule update --init TestData
     - cd /cygdrive/c/Superbuild-build # provided by windows_get_superbuild
     - echo "call \"C:\\Users\\vagrant\\Desktop\\cmd-env-variables.cmd\"" > test.bat
     - echo "ninja lidarview" >> test.bat
     - chmod +x test.bat
     - ./test.bat
-    - cd common-superbuild/lidarview/build
+    - cd lidarview-superbuild/common-superbuild/lidarview/build
     - echo "call \"C:\\Users\\vagrant\\Desktop\\cmd-env-variables.cmd\"" > test.bat
     - echo "cmake -DBUILD_TESTING=True ." >> test.bat
     - echo "ninja install" >> test.bat
@@ -100,7 +100,7 @@ windows_test:
   <<: *windows_10
   before_script: *windows_get_superbuild
   script:
-    - git submodule update --init Superbuild/common-superbuild
+    - git submodule update --init --recursive Superbuild/lidarview-superbuild
     - cd /cygdrive/c/Superbuild-build # provided by windows_get_superbuild
     - echo "call \"C:\\Users\\vagrant\\Desktop\\cmd-env-variables.cmd\"" > package.bat
     - echo "ninja lidarview" >> package.bat
