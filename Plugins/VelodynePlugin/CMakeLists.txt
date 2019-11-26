@@ -35,21 +35,23 @@ install(TARGETS VelodynePlugin
         COMPONENT Runtime)
 
 # Install data files
-#set (VV_SHARED_FILES VLP-16.xml HDL-32.xml VLP-32c.xml "Puck Hi-Res.xml" "Puck LITE.xml")
-#if(NOT APPLE)
-#  set(vv_configurefile_dest "${CMAKE_CURRENT_BINARY_DIR}/share/")
-#  set(vv_installfile_dest share)
-#else()
-#  set(vv_configurefile_dest "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${SOFTWARE_NAME}.app/Contents/Resources/")
-#  set(vv_installfile_dest "${VV_INSTALL_RUNTIME_DIR}/${SOFTWARE_NAME}.app/Contents/Resources")
-#endif()
-#set(vv_installed_xml_files "")
-#foreach(vv_xml_file ${VV_SHARED_FILES})
-#  configure_file("share/${vv_xml_file}" "${vv_configurefile_dest}${vv_xml_file}" COPYONLY)
-#  list(APPEND vv_installed_xml_files "share/${vv_xml_file}")
-#endforeach()
-#install(FILES ${vv_installed_xml_files} DESTINATION ${vv_installfile_dest})
-#unset(VV_SHARED_FILES)
-#unset(vv_installed_xml_files)
-#unset(vv_configurefile_dest)
-#unset(vv_installfile_dest)
+set (calib_files
+  VLP-16.xml
+  HDL-32.xml
+  VLP-32c.xml
+  "Puck Hi-Res.xml"
+  "Puck LITE.xml")
+
+# copy the calibration to the build folder
+foreach(file ${calib_files})
+  configure_file("CalibrationsFiles/${file}" "${PROJECT_BINARY_DIR}/share/${file}" COPYONLY)
+endforeach()
+
+# install step
+set(installfile_dest share)
+if(APPLE)
+  set(installfile_dest "${VV_INSTALL_RUNTIME_DIR}/${SOFTWARE_NAME}.app/Contents/Resources")
+endif()
+foreach(file ${calib_files})
+  install(FILES "${PROJECT_BINARY_DIR}/share/${file}" DESTINATION ${installfile_dest})
+endforeach()
