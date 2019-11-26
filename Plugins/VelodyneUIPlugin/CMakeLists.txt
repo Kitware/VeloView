@@ -28,8 +28,20 @@ target_include_directories(VelodyneUI PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}
   ${CMAKE_CURRENT_SOURCE_DIR}/ctk/
   )
-install(TARGETS VelodyneUI
-        RUNTIME DESTINATION lib)
+
+# install libraries
+if (APPLE)
+  install(TARGETS VelodyneUI
+          RUNTIME DESTINATION ${VV_INSTALL_RUNTIME_DIR}/${SOFTWARE_NAME}.app/Contents/Libraries
+          LIBRARY DESTINATION ${VV_INSTALL_RUNTIME_DIR}/${SOFTWARE_NAME}.app/Contents/Libraries
+          COMPONENT Runtime)
+else()
+  install(TARGETS VelodyneUI
+          RUNTIME DESTINATION ${VV_INSTALL_RUNTIME_DIR}
+          LIBRARY DESTINATION ${VV_INSTALL_LIBRARY_DIR}
+          COMPONENT Runtime)
+endif()
+
 
 #-----------------------------------------------------------------------------
 # Add python source
