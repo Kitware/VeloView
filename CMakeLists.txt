@@ -71,7 +71,7 @@ if(BUILD_DOC)
 endif()
 
 #-------------------------------------------------------------------------------
-set (LidarView_CMAKE_DIR "${LidarView_SOURCE_DIR}/LidarViewCore/CMake")
+set (LidarView_CMAKE_DIR "${LidarView_SOURCE_DIR}/LVCore/CMake")
 set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${LidarView_CMAKE_DIR})
 
 include(Git)
@@ -155,7 +155,7 @@ set(VV_PLUGIN_LIBRARY LidarPlugin) # lidarview plugin
 set(VV_NONE_PLUGIN_LIBRARY LidarPythonQT) # code needed by lidarview but that is not part of the plugin
 
 add_subdirectory(Plugins)
-add_subdirectory(LidarViewCore)
+add_subdirectory(LVCore)
 add_subdirectory(Application)
 
 # TODO: once we use Qt built from source on Windows, remove this manual installation
