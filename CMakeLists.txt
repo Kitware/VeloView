@@ -14,6 +14,7 @@
 
 cmake_minimum_required(VERSION 3.1 FATAL_ERROR)
 project(LidarView)
+include("Application/SoftwareInformation/branding.cmake")
 
 set (CMAKE_CXX_STANDARD 14)
 set (CMAKE_CXX_EXTENSIONS OFF)

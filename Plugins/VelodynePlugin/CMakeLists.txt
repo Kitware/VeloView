@@ -29,10 +29,17 @@ target_include_directories(VelodynePlugin
   )
 
 # install libraries
-install(TARGETS VelodynePlugin
-        RUNTIME DESTINATION ${VV_INSTALL_RUNTIME_DIR}
-        LIBRARY DESTINATION ${VV_INSTALL_LIBRARY_DIR}
-        COMPONENT Runtime)
+if (APPLE)
+  install(TARGETS VelodynePlugin
+          RUNTIME DESTINATION ${VV_INSTALL_RUNTIME_DIR}/${SOFTWARE_NAME}.app/Contents/Libraries
+          LIBRARY DESTINATION ${VV_INSTALL_RUNTIME_DIR}/${SOFTWARE_NAME}.app/Contents/Libraries
+          COMPONENT Runtime)
+else()
+  install(TARGETS VelodynePlugin
+          RUNTIME DESTINATION ${VV_INSTALL_RUNTIME_DIR}
+          LIBRARY DESTINATION ${VV_INSTALL_LIBRARY_DIR}
+          COMPONENT Runtime)
+endif()
 
 # Install data files
 set (calib_files

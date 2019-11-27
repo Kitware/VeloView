@@ -8,11 +8,8 @@ project(LidarViewSuperBuild)
 # the CMakeLists.txt inside "lidarview-superbuild"
 #-----------------------------------------------------------------------------
 
-# Setup CMAKE_MODULE_PATH so that platform specific configurations are processed
-# before the generic ones.
-set (CMAKE_MODULE_PATH
-  "${CMAKE_CURRENT_SOURCE_DIR}/Projects"
-  ${CMAKE_MODULE_PATH})
+list(APPEND superbuild_project_roots
+  "${CMAKE_CURRENT_SOURCE_DIR}/Projects")
 
 function (add_project_to_superbuild var)
   # list cannot append to parent's scope so we do it in two steps
