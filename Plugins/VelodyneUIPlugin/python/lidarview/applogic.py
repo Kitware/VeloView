@@ -533,12 +533,14 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
     if positionFilename is None:
         posreader = smp.VelodyneHDLPositionReader(guiName="Position",
                                                   FileName=filename)
-        posreader.GetClientSideObject().SetShouldWarnOnWeirdGPSData(app.geolocationToolBar.visible)
+        # wrapping not currently working for plugins:
+        # posreader.GetClientSideObject().SetShouldWarnOnWeirdGPSData(app.geolocationToolBar.visible)
     else:
         posreader = smp.ApplanixPositionReader(guiName="Position",
                                                FileName=positionFilename)
 
-    posreader.GetClientSideObject().SetCalibrationTransform(calibration.gpsTransform)
+    # wrapping not currently working for plugins:
+    # posreader.GetClientSideObject().SetCalibrationTransform(calibration.gpsTransform)
     smp.Show(posreader)
     smp.Show(app.trailingFrame)
 
@@ -547,7 +549,9 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
         # this information must be read after an update
         # GetTimeSyncInfo() has the side effect of showing a message in the error
         # console in the cases where the timeshift if computed
-        app.positionPacketInfoLabel.setText(posreader.GetClientSideObject().GetTimeSyncInfo())
+        # wrapping not currently working for plugins:
+        # app.positionPacketInfoLabel.setText(posreader.GetClientSideObject().GetTimeSyncInfo())
+        pass
 
     if posreader.GetClientSideObject().GetOutput().GetNumberOfPoints():
         trange = posreader.GetPointDataInformation().GetArray('time').GetRange()
@@ -1566,6 +1570,8 @@ def onLaserSelection(show = True):
 
     lidar = getLidar()
     lidarPacketInterpreter = getLidarPacketInterpreter()
+    # wrapping not currently working for plugins:
+    lidarPacketInterpreter = None
     if lidarPacketInterpreter:
         lidarPacketInterpreter.GetClientSideObject().GetLaserSelection(oldmask)
         lidarPacketInterpreter.GetClientSideObject().GetLaserCorrections(verticalCorrection,
