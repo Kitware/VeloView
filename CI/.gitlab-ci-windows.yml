@@ -117,7 +117,7 @@ windows_package_manual: &windows_package_manual
     paths:
      - Superbuild-build/*.exe # Superbuild-build links to ../Superbuild-build
      - Superbuild-build/*.zip
-    expire_in: 1 hr
+    expire_in: 3 day
 
 windows_package_schedule: &windows_package_schedule
   <<: *windows_package
@@ -126,6 +126,6 @@ windows_package_schedule: &windows_package_schedule
     paths:
      - Superbuild-build/*.exe # Superbuild-build links to ../Superbuild-build
      - Superbuild-build/*.zip
-    expire_in: 1 day
+    expire_in: 2 day
   only:
     - schedules
