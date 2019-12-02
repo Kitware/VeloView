@@ -31,6 +31,8 @@ MODE=$6
 echo "inside findRightSuperbuildCache, OS is: $OS"
 if [ $OS == "windows_10" ]; then
     MC=/cygdrive/c/mc.exe
+elif [ $OS == "OSX_ElCapitan" ]; then
+    MC=mc
 else
     MC=~/mc
 fi
