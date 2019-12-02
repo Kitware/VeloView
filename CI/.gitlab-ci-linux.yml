@@ -16,6 +16,7 @@
     - git submodule update --init --recursive
     # prepare directory
     - cd ..
+    - rm -rf Superbuild-build/
     - mkdir Superbuild-build/
     - cd Superbuild-build/
     # configure & generate
@@ -61,7 +62,7 @@
   only:
     - schedules
 
-.linux_build: &linux_build
+.unix_build: &unix_build
   stage: build
   extends: .only-important
   before_script: *unix_get_superbuild
@@ -70,10 +71,10 @@
     - cd ../Superbuild-build/ # created by extracting cache in "unix_get_superbuild"
     - make lidarview -j8
 
-.linux_test: &linux_test
+.unix_test: &unix_test
   stage: test
   extends: .only-important
-  before_script: *unix_get_superbuild # you cannot put linux_build here
+  before_script: *unix_get_superbuild # you cannot put unix_build here
   script:
     # get test data and baseline
     - git submodule update --init --recursive
@@ -88,28 +89,28 @@
     # This need to be fixed !
     - ctest -E "$test_blacklist"
 
-.linux_package: &linux_package
+.unix_package: &unix_package
   stage: package
-  before_script: *unix_get_superbuild # you cannot put linux_build here
+  before_script: *unix_get_superbuild # you cannot put unix_build here
   script:
     - git submodule update --init --recursive
     - cd ../Superbuild-build/ # created by extracting cache in "unix_get_superbuild"
     - make lidarview -j8
     - ctest -R cpack-lidarview-TGZ -V
 
-.linux_package_manual: &linux_package_manual
+.unix_package_manual: &unix_package_manual
   when: manual
-  <<: *linux_package
+  <<: *unix_package
   stage: manual
   artifacts:
     name: ${CI_JOB_NAME}-${mode}
     paths:
-     - Superbuild-build/*.tar.gz # Superbuild-build links to ../Superbuild-build
-     - Superbuild-build/*.dmg
+     - ../Superbuild-build/*.tar.gz
+     - ../Superbuild-build/*.dmg
     expire_in: 3 day
 
-.linux_package_schedule: &linux_package_schedule
-  <<: *linux_package
+.unix_package_schedule: &unix_package_schedule
+  <<: *unix_package
   artifacts:
     name: ${CI_JOB_NAME}-${mode}
     paths:
@@ -120,7 +121,7 @@
     - schedules
 
 #-------------------------------------------------------------------------------
-# jobs for ubunu 16.04
+# jobs for Ubuntu 16.04
 #-------------------------------------------------------------------------------
 .ubuntu_16_04: &ubuntu_16_04
   tags:
@@ -128,6 +129,13 @@
   variables:
     OS: ubuntu_16.04
 
+ubuntu16.04_build:
+  <<: *ubuntu_16_04
+  <<: *unix_build
+
+ubuntu16.04_test:
+  <<: *ubuntu_16_04
+  <<: *unix_test
 
 # For SuperBuild and package
 # the "mode" variable should be used for choosing light/full
@@ -139,18 +147,10 @@ ubuntu16.04_superbuild_schedule:
   <<: *ubuntu_16_04
   <<: *linux_superbuild_schedule
 
-ubuntu16.04_build:
-  <<: *ubuntu_16_04
-  <<: *linux_build
-
-ubuntu16.04_test:
-  <<: *ubuntu_16_04
-  <<: *linux_test
-
 ubuntu16.04_package_manual:
   <<: *ubuntu_16_04
-  <<: *linux_package_manual
+  <<: *unix_package_manual
 
 ubuntu16.04_package_schedule:
   <<: *ubuntu_16_04
-  <<: *linux_package_schedule
+  <<: *unix_package_schedule

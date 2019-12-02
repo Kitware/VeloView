@@ -59,7 +59,7 @@
   only:
     - schedules
 
-.OSX_build: &OSX_build
+.unix_build: &unix_build
   stage: build
   extends: .only-important
   before_script: *unix_get_superbuild
@@ -68,10 +68,10 @@
     - cd ../Superbuild-build/ # created by extracting cache in "unix_get_superbuild"
     - make lidarview -j8
 
-.OSX_test: &OSX_test
+.unix_test: &unix_test
   stage: test
   extends: .only-important
-  before_script: *unix_get_superbuild
+  before_script: *unix_get_superbuild # you cannot put unix_build here
   script:
     # get test data and baseline
     - git submodule update --init Superbuild/common-superbuild
@@ -88,7 +88,7 @@
 
 .OSX_package: &OSX_package
   stage: package
-  before_script: *unix_get_superbuild
+  before_script: *unix_get_superbuild # you cannot put unix_build here
   script:
     - git submodule update --init Superbuild/common-superbuild
     - cd ../Superbuild-build/ # created by extracting cache in "unix_get_superbuild"
@@ -134,11 +134,11 @@
 
 OSX_ElCapitan_build:
   <<: *OSX_ElCapitan
-  <<: *OSX_build
+  <<: *unix_build
 
 OSX_ElCapitan_test:
   <<: *OSX_ElCapitan
-  <<: *OSX_test
+  <<: *unix_test
 
 # For SuperBuild and package
 # the "mode" variable should be used for choosing light/full
