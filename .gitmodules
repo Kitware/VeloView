@@ -1,6 +1,3 @@
-[submodule "TestData"]
-	path = TestData
-	url = ../VeloView-TestData.git
 [submodule "Superbuild/lidarview-superbuild"]
 	path = Superbuild/lidarview-superbuild
 	url = ../LidarView-Superbuild
