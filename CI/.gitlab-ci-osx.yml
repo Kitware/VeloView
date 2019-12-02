@@ -15,9 +15,8 @@
   stage: superbuild
   script:
     - git submodule update --init Superbuild/common-superbuild
+    # prepare directory
     - cd ..
-    # prepare directory, on OSX as we use the shell executor we need to remove
-    # the old directory
     - rm -rf Superbuild-build/
     - mkdir Superbuild-build/
     - cd Superbuild-build/
@@ -32,6 +31,7 @@
       -DCMAKE_OSX_ARCHITECTURES:STRING=${cmake_option_CMAKE_OSX_ARCHITECTURES}
       -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING=${cmake_option_CMAKE_OSX_DEPLOYMENT_TARGET}
       -DCMAKE_OSX_SYSROOT:STRING=${cmake_option_CMAKE_OSX_SYSROOT}
+      -DCMAKE_OSX_SDK:STRING=${cmake_option_CMAKE_OSX_SDK}
       -DBUILD_TESTING=True
       -DENABLE_all=${optional_dependancies}
       ${CI_PROJECT_DIR}/Superbuild
@@ -45,7 +45,7 @@
     # produce corrupted file for large file, so we need to upload the cache manually
     - cd ..
     - echo "compressing and uploading Superbuild. This take some time..."
-    - tar jcf archive Superbuild-build/
+    - tar zcf archive Superbuild-build/
     - ~/mc config host add superbuild ${MINIO_CACHE_SERVER_ADDRESS} ${MINIO_CACHE_SERVER_ACCESS_KEY} ${MINIO_CACHE_SERVER_SECRET_KEY}
     - ~/mc cp archive superbuild/runner/minio/project/808/${cache_patch}/${OS}/${CI_COMMIT_REF_NAME}-${mode}
 
@@ -90,7 +90,7 @@
   stage: package
   before_script: *unix_get_superbuild
   script:
-    - cd Superbuild-build
+    - git submodule update --init Superbuild/common-superbuild
     - cd ../Superbuild-build/ # created by extracting cache in "unix_get_superbuild"
     - make lidarview -j8
     - ctest -R cpack
@@ -128,7 +128,9 @@
 # options specific to macOS builds
     cmake_option_CMAKE_OSX_ARCHITECTURES: "x86_64"
     cmake_option_CMAKE_OSX_DEPLOYMENT_TARGET: "10.10"
+    cmake_option_CMAKE_OSX_SDK: "macosx10.12"
     cmake_option_CMAKE_OSX_SYSROOT: "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.12.sdk"
+
 
 OSX_ElCapitan_build:
   <<: *OSX_ElCapitan
