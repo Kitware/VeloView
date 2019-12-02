@@ -27,8 +27,11 @@ target_link_libraries(VelodyneUI PUBLIC LidarPlugin ${PYTHONQT_LIBRARIES} lqAppl
 target_include_directories(VelodyneUI PUBLIC
   ${PYTHONQT_INCLUDE_DIRS}
   ${CMAKE_CURRENT_SOURCE_DIR}
-  ${CMAKE_CURRENT_SOURCE_DIR}/ctk/
+  ${CMAKE_CURRENT_BINARY_DIR}
   )
+include(GenerateExportHeader)
+generate_export_header(VelodyneUI)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/velodyneui_export.h DESTINATION ${VV_INSTALL_LIBRARY_DIR})
 
 # install libraries
 if (APPLE)

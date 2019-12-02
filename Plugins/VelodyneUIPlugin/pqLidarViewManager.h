@@ -16,8 +16,7 @@
 #define __pqLidarViewManager_h
 
 #include <QObject>
-
-#include "vvConfigure.h"
+#include "velodyneui_export.h"
 
 class vtkLidarReader;
 class vvAppLogic;
@@ -34,17 +33,7 @@ class QAction;
 class QLabel;
 class QWidget;
 
-#if defined(_WIN32)
-#if defined(LidarPythonQT_EXPORTS)
-#define LidarPythonQT_EXPORT __declspec(dllexport)
-#else
-#define LidarPythonQT_EXPORT __declspec(dllimport)
-#endif
-#else
-#define LidarPythonQT_EXPORT
-#endif
-
-class LidarPythonQT_EXPORT pqLidarViewManager : public QObject
+class VELODYNEUI_EXPORT pqLidarViewManager : public QObject
 {
 
   Q_OBJECT

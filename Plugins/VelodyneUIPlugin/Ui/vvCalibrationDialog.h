@@ -14,12 +14,10 @@
 #ifndef __vvCalibrationDialog_h
 #define __vvCalibrationDialog_h
 
-#include "vvConfigure.h"
-
 #include <QDialog>
 #include <QMatrix4x4>
 
-class LidarPlugin_EXPORT vvCalibrationDialog : public QDialog
+class vvCalibrationDialog : public QDialog
 {
   Q_OBJECT
 

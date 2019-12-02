@@ -16,13 +16,11 @@
 
 #include <QDialog>
 
-#include "vvConfigure.h"
-
 class QTableWidgetItem;
 template<typename T>
 class QVector;
 
-class LidarPlugin_EXPORT vvLaserSelectionDialog : public QDialog
+class vvLaserSelectionDialog : public QDialog
 {
   Q_OBJECT
 public:

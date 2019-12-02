@@ -14,12 +14,10 @@
 #ifndef __vvCropReturnsDialog_h
 #define __vvCropReturnsDialog_h
 
-#include "vvConfigure.h"
-
 #include <QDialog>
 #include <QVector3D>
 
-class LidarPlugin_EXPORT vvCropReturnsDialog : public QDialog
+class vvCropReturnsDialog : public QDialog
 {
   Q_OBJECT
   Q_PROPERTY(bool croppingEnabled READ croppingEnabled WRITE setCroppingEnabled)
