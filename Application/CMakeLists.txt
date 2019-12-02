@@ -38,7 +38,9 @@ build_paraview_client(${SOFTWARE_NAME}
   INSTALL_LIB_DIR ${VV_INSTALL_LIBRARY_DIR}
 )
 
-target_include_directories(${SOFTWARE_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(${SOFTWARE_NAME} PUBLIC
+  ${CMAKE_CURRENT_SOURCE_DIR}
+  ${CMAKE_CURRENT_BINARY_DIR})
 
 # We directly link against the plugin and import them statically.
 target_link_libraries(${SOFTWARE_NAME}
