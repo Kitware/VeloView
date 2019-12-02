@@ -13,7 +13,7 @@
 .linux_superbuild: &linux_superbuild
   stage: superbuild
   script:
-    - git submodule update --init --recursive Superbuild/lidarview-superbuild
+    - git submodule update --init --recursive
     # prepare directory
     - cd ..
     - mkdir Superbuild-build/
@@ -66,7 +66,7 @@
   extends: .only-important
   before_script: *unix_get_superbuild
   script:
-    - git submodule update --init --recursive Superbuild/lidarview-superbuild
+    - git submodule update --init --recursive
     - cd ../Superbuild-build/ # created by extracting cache in "unix_get_superbuild"
     - make lidarview -j8
 
@@ -76,7 +76,7 @@
   before_script: *unix_get_superbuild # you cannot put linux_build here
   script:
     # get test data and baseline
-    - git submodule update --init --recursive Superbuild/lidarview-superbuild
+    - git submodule update --init --recursive
     - git submodule update --init TestData
     - cd ../Superbuild-build/ # created by extracting cache in "unix_get_superbuild"
     - make lidarview -j8
@@ -92,7 +92,7 @@
   stage: package
   before_script: *unix_get_superbuild # you cannot put linux_build here
   script:
-    - git submodule update --init --recursive Superbuild/lidarview-superbuild
+    - git submodule update --init --recursive
     - cd ../Superbuild-build/ # created by extracting cache in "unix_get_superbuild"
     - make lidarview -j8
     - ctest -R cpack-lidarview-TGZ -V

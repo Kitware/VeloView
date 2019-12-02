@@ -26,7 +26,7 @@
     - echo "entering superbuild stage"
     - WIN_CI_PROJECT_DIR=$(cygpath -w $(pwd))
     - echo "WIN_CI_PROJECT_DIR is $WIN_CI_PROJECT_DIR"
-    - git submodule update --init --recursive Superbuild/lidarview-superbuild
+    - git submodule update --init --recursive
     # we want short paths so we build at the root of a drive
     - mkdir /cygdrive/c/Superbuild-build
     - cd /cygdrive/c/Superbuild-build
@@ -67,7 +67,7 @@ windows_build:
   extends: .only-important
   before_script: *windows_get_superbuild
   script:
-    - git submodule update --init --recursive Superbuild/lidarview-superbuild
+    - git submodule update --init --recursive
     - cd /cygdrive/c/Superbuild-build # provided by windows_get_superbuild
     - echo "call \"C:\\Users\\vagrant\\Desktop\\cmd-env-variables.cmd\"" > build.bat
     - echo "ninja lidarview" >> build.bat
@@ -80,7 +80,7 @@ windows_test:
   extends: .only-important
   before_script: *windows_get_superbuild
   script:
-    - git submodule update --init --recursive Superbuild/lidarview-superbuild
+    - git submodule update --init --recursive
     - git submodule update --init TestData
     - cd /cygdrive/c/Superbuild-build # provided by windows_get_superbuild
     - echo "call \"C:\\Users\\vagrant\\Desktop\\cmd-env-variables.cmd\"" > test.bat
@@ -100,7 +100,7 @@ windows_test:
   <<: *windows_10
   before_script: *windows_get_superbuild
   script:
-    - git submodule update --init --recursive Superbuild/lidarview-superbuild
+    - git submodule update --init --recursive
     - cd /cygdrive/c/Superbuild-build # provided by windows_get_superbuild
     - echo "call \"C:\\Users\\vagrant\\Desktop\\cmd-env-variables.cmd\"" > package.bat
     - echo "ninja lidarview" >> package.bat
