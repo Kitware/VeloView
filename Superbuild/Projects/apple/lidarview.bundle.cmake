@@ -20,7 +20,7 @@
 #   (we do not want to modify the common-superbuild)
 
 include(lidarview.bundle.common)
-include(${LidarViewSuperBuild_SOURCE_DIR}/../SoftwareInformation/branding.cmake)
+include("${LidarViewSuperBuild_SOURCE_DIR}/../Application/SoftwareInformation/branding.cmake")
 
 # the variable lidarview_appname:
 # - must be a valid dirname: will be a directory at the top of the .dmg

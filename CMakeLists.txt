@@ -13,8 +13,8 @@
 # limitations under the License.
 
 cmake_minimum_required(VERSION 3.1 FATAL_ERROR)
-include("SoftwareInformation/branding.cmake")
 project(LidarView)
+include("Application/SoftwareInformation/branding.cmake")
 
 set (CMAKE_CXX_STANDARD 14)
 set (CMAKE_CXX_EXTENSIONS OFF)
@@ -72,7 +72,7 @@ if(BUILD_DOC)
 endif()
 
 #-------------------------------------------------------------------------------
-set (LidarView_CMAKE_DIR "${LidarView_SOURCE_DIR}/CMake")
+set (LidarView_CMAKE_DIR "${LidarView_SOURCE_DIR}/LVCore/CMake")
 set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${LidarView_CMAKE_DIR})
 
 include(Git)
@@ -143,38 +143,6 @@ if(WIN32 AND MSVC)
   add_definitions(/Dinline=__inline)
 endif()
 
-set (source_files
-  vvMainWindow.cxx
-  vvColorToolbar.cxx
-  vvToggleSpreadSheetReaction.cxx
-  vvLoadDataReaction.cxx
-  vvPlayerControlsToolbar.cxx
-  vvPlayerControlsController.cxx
-  )
-
-qt5_wrap_cpp(moc_source_files
-  vvColorToolbar.h
-  vvMainWindow.h
-  vvToggleSpreadSheetReaction.h
-  vvLoadDataReaction.h
-  vvPlayerControlsToolbar.h
-  vvPlayerControlsController.h
-  )
-
-qt5_wrap_ui(ui_source_files
-  vvColorToolbar.ui
-  vvMainWindow.ui
-  vvAboutDialog.ui
-  vvPlayerControlsToolbar.ui
-  )
-
-qt5_add_resources(rcs_source_files
-  vvResources.qrc)
-
-include_directories(
-  ${CMAKE_CURRENT_SOURCE_DIR}
-  ${CMAKE_CURRENT_BINARY_DIR})
-
 
 if (APPLE)
   set(CMAKE_INSTALL_NAME_DIR "@executable_path/../Libraries")
@@ -186,30 +154,10 @@ endif()
 # Add the reader plugin and any other plugins.
 set(VV_PLUGIN_LIBRARY LidarPlugin) # lidarview plugin
 set(VV_NONE_PLUGIN_LIBRARY LidarPythonQT) # code needed by lidarview but that is not part of the plugin
-add_subdirectory(LidarPlugin)
-include_directories(LidarPlugin)
 
-
-# Install data files
-set (VV_SHARED_FILES VLP-16.xml HDL-32.xml VLP-32c.xml "Puck Hi-Res.xml" "Puck LITE.xml")
-if(NOT APPLE)
-  set(vv_configurefile_dest "${CMAKE_CURRENT_BINARY_DIR}/share/")
-  set(vv_installfile_dest share)
-else()
-  set(vv_configurefile_dest "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${SOFTWARE_NAME}.app/Contents/Resources/")
-  set(vv_installfile_dest "${VV_INSTALL_RUNTIME_DIR}/${SOFTWARE_NAME}.app/Contents/Resources")
-endif()
-set(vv_installed_xml_files "")
-foreach(vv_xml_file ${VV_SHARED_FILES})
-  configure_file("share/${vv_xml_file}" "${vv_configurefile_dest}${vv_xml_file}" COPYONLY)
-  list(APPEND vv_installed_xml_files "share/${vv_xml_file}")
-endforeach()
-install(FILES ${vv_installed_xml_files} DESTINATION ${vv_installfile_dest})
-unset(VV_SHARED_FILES)
-unset(vv_installed_xml_files)
-unset(vv_configurefile_dest)
-unset(vv_installfile_dest)
-
+add_subdirectory(Plugins)
+add_subdirectory(LVCore)
+add_subdirectory(Application)
 
 # TODO: once we use Qt built from source on Windows, remove this manual installation
 # currently: PythonQt fails to build against our own build of Qt
@@ -230,40 +178,3 @@ if (WIN32)
     DESTINATION "bin"
   )
 endif ()
-
-
-# This ensure that build_paraview_client() adds an "forwarding path" to locate
-# paraview from installed location.
-set (PARAVIEW_INSTALL_LIB_DIR "lib/paraview-${PARAVIEW_VERSION_MAJOR}.${PARAVIEW_VERSION_MINOR}")
-
-build_paraview_client(${SOFTWARE_NAME}
-  TITLE "${SOFTWARE_NAME} ${VV_VERSION_FULL} ${VV_BUILD_ARCHITECTURE}-bit"
-  ORGANIZATION "${VENDOR}"
-  VERSION_MAJOR ${VV_VERSION_MAJOR}
-  VERSION_MINOR ${VV_VERSION_MINOR}
-  VERSION_PATCH ${VV_VERSION_PATCH}
-  PVMAIN_WINDOW vvMainWindow
-  PVMAIN_WINDOW_INCLUDE vvMainWindow.h
-  SPLASH_IMAGE "${CMAKE_CURRENT_SOURCE_DIR}/SoftwareInformation/${PARAVIEW_SPLASH_IMAGE}"
-  # right now the bundle's logo.icns file must be at the root of LidarView sources
-  # this problem is due to paraview/src/CMake/ParaViewBranding.cmake,
-  # on line: GET_FILENAME_COMPONENT(bundle_icon_file "${BPC_BUNDLE_ICON}" NAME)
-  BUNDLE_ICON "${CMAKE_CURRENT_SOURCE_DIR}/${PARAVIEW_BUNDLE_ICON}"
-  APPLICATION_ICON "${CMAKE_CURRENT_SOURCE_DIR}/SoftwareInformation/${PARAVIEW_APPLICATION_ICON}"
-  SOURCES
-    ${source_files}
-    ${moc_source_files}
-    ${ui_source_files}
-    ${rcs_source_files}
-  GUI_CONFIGURATION_XMLS
-    ${CMAKE_CURRENT_SOURCE_DIR}/vvSources.xml
-    ${CMAKE_CURRENT_SOURCE_DIR}/vvFilters.xml
-  INSTALL_BIN_DIR ${VV_INSTALL_RUNTIME_DIR}
-  INSTALL_LIB_DIR ${VV_INSTALL_LIBRARY_DIR}
-)
-
-# We directly link against the plugin and import them statically.
-target_link_libraries(${SOFTWARE_NAME} LINK_PUBLIC ${VV_PLUGIN_LIBRARY} ${VV_NONE_PLUGIN_LIBRARY} ${PYTHONQTPLUGIN_LIBRARY} ${PYTHONQT_LIBRARIES})
-
-# Add subdirectory containing python script for animation
-add_subdirectory("Utilities/Animation")
