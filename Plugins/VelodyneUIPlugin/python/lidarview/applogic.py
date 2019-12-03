@@ -1066,26 +1066,6 @@ def getVersionString():
   return " ".join(getMainWindow().windowTitle.split(" ")[1:])
 
 
-def onDeveloperGuide():
-    basePath = PythonQt.QtGui.QApplication.instance().applicationDirPath()
-
-    paths = ['../Resources/LidarView_Developer_Guide.pdf']
-
-    for path in paths:
-        filename = os.path.join(basePath, path)
-        if os.path.isfile(filename):
-            QtGui.QDesktopServices.openUrl(QtCore.QUrl('file:///%s' % filename, QtCore.QUrl.TolerantMode))
-
-def onUserGuide():
-    basePath = PythonQt.QtGui.QApplication.instance().applicationDirPath()
-
-    paths = ['../Resources/LidarView_User_Guide.pdf']
-
-    for path in paths:
-        filename = os.path.join(basePath, path)
-        if os.path.isfile(filename):
-            QtGui.QDesktopServices.openUrl(QtCore.QUrl('file:///%s' % filename, QtCore.QUrl.TolerantMode))
-
 def onAbout():
     aboutDialog.showDialog(getMainWindow())
 
@@ -1798,7 +1778,6 @@ def setupActions():
     app.actions['actionCropReturns'].connect('triggered()', onCropReturns)
     app.actions['actionNative_File_Dialogs'].connect('triggered()', onNativeFileDialogsAction)
     app.actions['actionAbout_LidarView'].connect('triggered()', onAbout)
-    app.actions['actionLidarViewDeveloperGuide'].connect('triggered()', onDeveloperGuide)
     app.actions['actionClear_Menu'].connect('triggered()', onClearMenu)
 
     app.actions['actionToggleProjection'].connect('triggered()', toggleProjectionType)

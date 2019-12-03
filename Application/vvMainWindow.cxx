@@ -379,16 +379,6 @@ vvMainWindow::vvMainWindow()
   this->Internals->Ui.actionAbout_LidarView->setText(text);
   ss.str("");
   ss.clear();
-
-  ss << SOFTWARE_NAME << " Developer Guide";
-  text = QString(ss.str().c_str());
-  this->Internals->Ui.actionLidarViewDeveloperGuide->setText(text);
-  ss.str("");
-  ss.clear();
-
-  ss << SOFTWARE_NAME << " User Guide";
-  text = QString(ss.str().c_str());
-  this->Internals->Ui.actionLidarViewUserGuide->setText(text);
 }
 
 //-----------------------------------------------------------------------------
