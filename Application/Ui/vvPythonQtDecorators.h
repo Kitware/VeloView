@@ -6,10 +6,10 @@
 #include <QObject>
 
 #include "pqLidarViewManager.h"
-#include "Ui/vvCalibrationDialog.h"
-#include "Ui/vvCropReturnsDialog.h"
-#include "Ui/vvLaserSelectionDialog.h"
-#include "Ui/vvSelectFramesDialog.h"
+#include "Widgets/vvCalibrationDialog.h"
+#include "Widgets/vvCropReturnsDialog.h"
+#include "Widgets/vvLaserSelectionDialog.h"
+#include "Widgets/vvSelectFramesDialog.h"
 
 class vvPythonQtDecorators : public QObject
 {
