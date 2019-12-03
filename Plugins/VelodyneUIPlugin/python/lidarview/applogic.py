@@ -29,7 +29,6 @@ from vtkIOXMLPython import vtkXMLPolyDataWriter
 import kiwiviewerExporter
 import gridAdjustmentDialog
 import aboutDialog
-import planefit
 import bisect
 
 from PythonQt.paraview import vvCalibrationDialog, vvCropReturnsDialog, vvSelectFramesDialog
@@ -152,10 +151,6 @@ def openData(filename):
     app.actions['actionCropReturns'].setEnabled(False)
     app.actions['actionRecord'].setEnabled(False)
     app.actions['actionShowRPM'].enabled = True
-
-
-def planeFit():
-    planefit.fitPlane()
 
 
 def findPresetByName(name):
@@ -1616,8 +1611,6 @@ def setupActions():
     app.actions['actionRecord'].setCheckable(True)
 
     app.actions['actionAdvanceFeature'].connect('triggered()', onToogleAdvancedGUI)
-
-    app.actions['actionPlaneFit'].connect('triggered()', planeFit)
 
     app.actions['actionClose'].connect('triggered()', close)
     app.actions['actionRecord'].connect('triggered()', onRecord)
