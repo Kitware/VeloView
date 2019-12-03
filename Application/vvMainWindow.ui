@@ -83,13 +83,6 @@
      </property>
      <addaction name="actionNative_File_Dialogs"/>
     </widget>
-    <widget class="QMenu" name="menuProcessing_Options">
-     <property name="title">
-      <string>Processing Options</string>
-     </property>
-     <addaction name="actionIgnoreZeroDistances"/>
-     <addaction name="actionIgnoreEmptyFrames"/>
-    </widget>
     <addaction name="actionSpreadsheet"/>
     <addaction name="actionMeasurement_Grid"/>
     <addaction name="actionShowRPM"/>
@@ -99,7 +92,6 @@
     <addaction name="actionLaserSelection"/>
     <addaction name="actionCropReturns"/>
     <addaction name="separator"/>
-    <addaction name="menuProcessing_Options"/>
     <addaction name="separator"/>
     <addaction name="separator"/>
     <addaction name="actionPython_Console"/>
@@ -675,31 +667,6 @@
    </property>
    <property name="toolTip">
     <string>Show the error console.</string>
-   </property>
-  </action>
-  <action name="actionIgnoreZeroDistances">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="checked">
-    <bool>true</bool>
-   </property>
-   <property name="enabled">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Ignore returns with distance equals to 0</string>
-   </property>
-  </action>
-  <action name="actionIgnoreEmptyFrames">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="checked">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Ignore empty frames</string>
    </property>
   </action>
   <action name="actionAdvanceFeature">
