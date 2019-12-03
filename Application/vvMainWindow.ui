@@ -89,7 +89,6 @@
     <addaction name="actionGrid_Properties"/>
     <addaction name="separator"/>
     <addaction name="actionChoose_Calibration_File"/>
-    <addaction name="actionLaserSelection"/>
     <addaction name="actionCropReturns"/>
     <addaction name="separator"/>
     <addaction name="separator"/>
@@ -604,11 +603,6 @@
    </property>
    <property name="toolTip">
     <string>Geolocation in absolute coordinates</string>
-   </property>
-  </action>
-  <action name="actionLaserSelection">
-   <property name="text">
-    <string>Laser Selection...</string>
    </property>
   </action>
   <action name="actionSaveLAS">

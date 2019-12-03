@@ -73,8 +73,6 @@ class AppLogic(object):
         self.position = None
         self.sensor = None
 
-        self.laserSelectionDialog = None
-
         self.gridProperties = None
 
         smp.LoadPlugin(vtkGetFileNameFromPluginName('PointCloudPlugin'))
@@ -336,21 +334,6 @@ def chooseCalibration(calibrationFilename=None):
         return result
 
 
-def restoreLaserSelectionDialog():
-
-    reopenLaserSelectionDialog = False
-    isDisplayMoreSelectionsChecked = False
-
-    if app.laserSelectionDialog != None:
-        reopenLaserSelectionDialog = app.laserSelectionDialog.isVisible()
-        isDisplayMoreSelectionsChecked = app.laserSelectionDialog.isDisplayMoreSelectionsChecked()
-        app.laserSelectionDialog.close()
-        app.laserSelectionDialog = None
-
-    onLaserSelection(reopenLaserSelectionDialog)
-    app.laserSelectionDialog.setDisplayMoreSelectionsChecked(isDisplayMoreSelectionsChecked)
-
-
 def openSensor():
 
     calibration = chooseCalibration()
@@ -395,7 +378,6 @@ def openSensor():
     enableSaveActions()
 
     onCropReturns(False) # Dont show the dialog just restore settings
-    onLaserSelection(False)
 
     rep = smp.Show(sensor)
 #    rep.InterpolateScalarsBeforeMapping = 0
@@ -469,11 +451,6 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
 
     app.positionPacketInfoLabel.setText('') # will be updated later if possible
     onCropReturns(False) # Dont show the dialog just restore settings
-
-    # Resetting laser selection dialog according to the opened PCAP file
-    # and restoring the dialog visibility afterward
-
-    restoreLaserSelectionDialog()
 
     reader.Interpreter.GetClientSideObject().SetSensorTransform(sensorTransform)
 
@@ -1207,9 +1184,6 @@ def getLidarPacketInterpreter():
 def getPosition():
     return getattr(app, 'position', None)
 
-def getLaserSelectionDialog():
-    return getattr(app, 'laserSelectionDialog', None)
-
 def onChooseCalibrationFile():
 
     calibration = chooseCalibration()
@@ -1224,8 +1198,6 @@ def onChooseCalibrationFile():
         lidar.Interpreter.GetClientSideObject().SetSensorTransform(sensorTransform)
         lidar.CalibrationFile = calibrationFile
         updateUIwithNewLidar()
-
-    restoreLaserSelectionDialog()
 
 
 def onCropReturns(show = True):
@@ -1461,80 +1433,6 @@ def onGridProperties():
         smp.Render()
 
 
-def onLaserSelection(show = True):
-    nchannels = 128
-    oldmask = [1] * nchannels
-    reader = getReader()
-    sensor = getSensor()
-    verticalCorrection = [0] * nchannels
-    rotationalCorrection = [0] * nchannels
-    distanceCorrection = [0] * nchannels
-    distanceCorrectionX = [0] * nchannels
-    distanceCorrectionY = [0] * nchannels
-    verticalOffsetCorrection = [0] * nchannels
-    horizontalOffsetCorrection = [0] * nchannels
-    focalDistance = [0] * nchannels
-    focalSlope = [0] * nchannels
-    minIntensity = [0] * nchannels
-    maxIntensity = [0] * nchannels
-
-    lidar = getLidar()
-    lidarPacketInterpreter = getLidarPacketInterpreter()
-    # wrapping not currently working for plugins:
-    lidarPacketInterpreter = None
-    if lidarPacketInterpreter:
-        lidarPacketInterpreter.GetClientSideObject().GetLaserSelection(oldmask)
-        lidarPacketInterpreter.GetClientSideObject().GetLaserCorrections(verticalCorrection,
-            rotationalCorrection,
-            distanceCorrection,
-            distanceCorrectionX,
-            distanceCorrectionY,
-            verticalOffsetCorrection,
-            horizontalOffsetCorrection,
-            focalDistance,
-            focalSlope,
-            minIntensity,
-            maxIntensity)
-        nchannels = lidarPacketInterpreter.GetClientSideObject().GetNumberOfChannels()
-
-    # Initializing the laser selection dialog
-    if app.laserSelectionDialog == None:
-        app.laserSelectionDialog = PythonQt.paraview.vvLaserSelectionDialog(getMainWindow())
-        app.laserSelectionDialog.connect('accepted()', onLaserSelectionChanged)
-        app.laserSelectionDialog.connect('laserSelectionChanged()', onLaserSelectionChanged)
-
-    # Need a way to initialize the mask
-    app.laserSelectionDialog.setLaserSelectionSelector(oldmask)
-
-    app.laserSelectionDialog.setLasersCorrections(verticalCorrection,
-        rotationalCorrection,
-        distanceCorrection,
-        distanceCorrectionX,
-        distanceCorrectionY,
-        verticalOffsetCorrection,
-        horizontalOffsetCorrection,
-        focalDistance,
-        focalSlope,
-        minIntensity,
-        maxIntensity,
-        nchannels)
-
-    app.laserSelectionDialog.onDisplayMoreCorrectionsChanged()
-    if show:
-        app.laserSelectionDialog.show()
-
-
-def onLaserSelectionChanged():
-    dialog = getLaserSelectionDialog();
-    lidar = getLidar()
-
-    mask = dialog.getLaserSelectionSelector()
-    LidarInterpreter = getLidarPacketInterpreter()
-    if LidarInterpreter:
-        LidarInterpreter.GetClientSideObject().SetLaserSelection(mask)
-        smp.Render()
-
-
 def hideColorByComponent():
     getMainWindow().findChild('vvColorToolbar').findChild('pqDisplayColorWidget').findChildren('QComboBox')[1].hide()
 
@@ -1730,7 +1628,6 @@ def setupActions():
     app.actions['actionSaveScreenshot'].connect('triggered()', onSaveScreenshot)
     app.actions['actionExport_To_KiwiViewer'].connect('triggered()', onKiwiViewerExport)
     app.actions['actionGrid_Properties'].connect('triggered()', onGridProperties)
-    app.actions['actionLaserSelection'].connect('triggered()', onLaserSelection)
     app.actions['actionChoose_Calibration_File'].connect('triggered()', onChooseCalibrationFile)
     app.actions['actionCropReturns'].connect('triggered()', onCropReturns)
     app.actions['actionNative_File_Dialogs'].connect('triggered()', onNativeFileDialogsAction)
