@@ -380,7 +380,6 @@ def openSensor():
     sensor.GetClientSideObject().SetForwardedIpAddress(ipAddressForwarding)
     sensor.Interpreter.GetClientSideObject().SetSensorTransform(sensorTransform)
     sensor.Interpreter.IgnoreZeroDistances = app.actions['actionIgnoreZeroDistances'].isChecked()
-    sensor.Interpreter.UseIntraFiringAdjustment = app.actions['actionIntraFiringAdjust'].isChecked()
     sensor.Interpreter.IgnoreEmptyFrames = app.actions['actionIgnoreEmptyFrames'].isChecked()
     sensor.UpdatePipeline()
     sensor.Start()
@@ -413,8 +412,6 @@ def openSensor():
     showSourceInSpreadSheet(sensor)
 
     app.actions['actionShowRPM'].enabled = True
-    app.actions['actionCorrectIntensityValues'].enabled = True
-    app.actions['actionFastRenderer'].enabled = True
 
     #Auto adjustment of the grid size with the distance resolution
     app.DistanceResolutionM = sensor.Interpreter.GetClientSideObject().GetDistanceResolutionM()
@@ -484,7 +481,6 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
 
     lidarPacketInterpreter = getLidarPacketInterpreter()
     lidarPacketInterpreter.IgnoreZeroDistances = app.actions['actionIgnoreZeroDistances'].isChecked()
-    lidarPacketInterpreter.UseIntraFiringAdjustment = app.actions['actionIntraFiringAdjust'].isChecked()
     lidarPacketInterpreter.IgnoreEmptyFrames = app.actions['actionIgnoreEmptyFrames'].isChecked()
 
     if SAMPLE_PROCESSING_MODE:
@@ -556,8 +552,6 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
     app.actions['actionRecord'].setEnabled(False)
 
     app.actions['actionShowRPM'].enabled = True
-    app.actions['actionCorrectIntensityValues'].enabled = True
-    app.actions['actionFastRenderer'].enabled = True
 
     #Auto adjustment of the grid size with the distance resolution
     app.DistanceResolutionM = reader.Interpreter.GetClientSideObject().GetDistanceResolutionM()
@@ -1095,9 +1089,6 @@ def close():
     app.statusLabel.setText('')
     disableSaveActions()
     app.actions['actionRecord'].setChecked(False)
-
-    app.actions['actionCorrectIntensityValues'].enabled = False
-    app.actions['actionFastRenderer'].enabled = False
 
 
 def _setSaveActionsEnabled(enabled):
@@ -1692,24 +1683,6 @@ def geolocationChanged(setting):
     setTransformMode(setting)
     smp.Render(view=app.mainView)
 
-def fastRendererChanged():
-    """ Enable/Disable fast rendering by using the point cloud representation (currently only for VLS-128)
-    this representation hardcode the color map and their LookUpTable, which improve execution speed significantly """
-
-    source = smp.FindSource("TrailingFrame")
-    if source:
-        rep = smp.GetRepresentation(source)
-
-        if app.actions['actionFastRenderer'].isChecked():
-            rep.Representation = 'Point Cloud'
-        else:
-            rep.Representation = 'Surface'
-
-def intensitiesCorrectedChanged():
-    lidarInterpreter = getLidarPacketInterpreter()
-    if lidarInterpreter:
-        lidarInterpreter.CorrectIntensity = app.actions['actionCorrectIntensityValues'].isChecked()
-
 def onToogleAdvancedGUI(updateSettings = True):
   """ Switch the GUI between advanced and classic mode"""
   # hide/show Sources menu
@@ -1759,7 +1732,6 @@ def setupActions():
     app.actions['actionAdvanceFeature'].connect('triggered()', onToogleAdvancedGUI)
 
     app.actions['actionIgnoreZeroDistances'].connect('triggered()', onIgnoreZeroDistances)
-    app.actions['actionIntraFiringAdjust'].connect('triggered()', onIntraFiringAdjust)
     app.actions['actionIgnoreEmptyFrames'].connect('triggered()', onIgnoreEmptyFrames)
 
     app.actions['actionPlaneFit'].connect('triggered()', planeFit)
@@ -1785,13 +1757,10 @@ def setupActions():
     app.actions['actionShowPosition'].connect('triggered()', ShowPosition)
 
     app.actions['actionShowRPM'].connect('triggered()', toggleRPM)
-    app.actions['actionCorrectIntensityValues'].connect('triggered()',intensitiesCorrectedChanged)
-    app.actions['actionFastRenderer'].connect('triggered()',fastRendererChanged)
 
     # Restore action states from settings
     settings = getPVSettings()
     app.actions['actionIgnoreZeroDistances'].setChecked(int(settings.value('LidarPlugin/IgnoreZeroDistances', 1)))
-    app.actions['actionIntraFiringAdjust'].setChecked(int(settings.value('LidarPlugin/IntraFiringAdjust', 1)))
     app.actions['actionIgnoreEmptyFrames'].setChecked(int(settings.value('LidarPlugin/IgnoreEmptyFrames', 1)))
 
 
@@ -1910,19 +1879,6 @@ def onIgnoreZeroDistances():
     lidarInterpreter = getLidarPacketInterpreter()
     if lidarInterpreter:
         lidarInterpreter.IgnoreZeroDistances = IgnoreZeroDistances
-        smp.Render()
-
-def onIntraFiringAdjust():
-    # Get the check box value as an int to save it into the PV settings (there's incompatibility with python booleans)
-    intraFiringAdjust = int(app.actions['actionIntraFiringAdjust'].isChecked())
-
-    # Save the setting for future session
-    getPVSettings().setValue('LidarPlugin/IntraFiringAdjust', intraFiringAdjust)
-
-    # Apply it to the current source if any
-    lidarInterpreter = getLidarPacketInterpreter()
-    if lidarInterpreter:
-        lidarInterpreter.UseIntraFiringAdjustment = intraFiringAdjust
         smp.Render()
 
 
