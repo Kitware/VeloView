@@ -83,16 +83,6 @@
      </property>
      <addaction name="actionNative_File_Dialogs"/>
     </widget>
-    <widget class="QMenu" name="menuDualReturnMode">
-     <property name="title">
-      <string>&amp;Dual Return Mode</string>
-     </property>
-     <addaction name="actionDualReturnModeDual"/>
-     <addaction name="actionDualReturnDistanceNear"/>
-     <addaction name="actionDualReturnDistanceFar"/>
-     <addaction name="actionDualReturnIntensityHigh"/>
-     <addaction name="actionDualReturnIntensityLow"/>
-    </widget>
     <widget class="QMenu" name="menuProcessing_Options">
      <property name="title">
       <string>Processing Options</string>
@@ -111,8 +101,6 @@
     <addaction name="actionChoose_Calibration_File"/>
     <addaction name="actionLaserSelection"/>
     <addaction name="actionCropReturns"/>
-    <addaction name="menuDualReturnMode"/>
-    <addaction name="actionSelectDualReturn"/>
     <addaction name="separator"/>
     <addaction name="menuProcessing_Options"/>
     <addaction name="separator"/>
@@ -187,7 +175,6 @@
    <addaction name="actionCropReturns"/>
    <addaction name="separator"/>
    <addaction name="actionSelect_All_Points"/>
-   <addaction name="actionSelectDualReturn2"/>
    <addaction name="actionSpreadsheet"/>
    <addaction name="actionPython_Console"/>
    <addaction name="actionShowErrorDialog"/>
@@ -671,79 +658,6 @@
     <string>Crop Returns...</string>
    </property>
   </action>
-  <action name="actionDualReturnModeDual">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="checked">
-    <bool>true</bool>
-   </property>
-   <property name="enabled">
-    <bool>false</bool>
-   </property>
-   <property name="text">
-    <string>&amp;Dual</string>
-   </property>
-   <property name="toolTip">
-    <string>Show both returns of a dual return</string>
-   </property>
-  </action>
-  <action name="actionDualReturnDistanceNear">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="enabled">
-    <bool>false</bool>
-   </property>
-   <property name="text">
-    <string>&amp;Near Distance</string>
-   </property>
-   <property name="toolTip">
-    <string>Show nearer distance return of a dual return</string>
-   </property>
-  </action>
-  <action name="actionDualReturnDistanceFar">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="enabled">
-    <bool>false</bool>
-   </property>
-   <property name="text">
-    <string>&amp;Far Distance</string>
-   </property>
-   <property name="toolTip">
-    <string>Show farther distance return of a dual return</string>
-   </property>
-  </action>
-  <action name="actionDualReturnIntensityHigh">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="enabled">
-    <bool>false</bool>
-   </property>
-   <property name="text">
-    <string>&amp;High Intensity</string>
-   </property>
-   <property name="toolTip">
-    <string>Show higher intensity return of a dual return</string>
-   </property>
-  </action>
-  <action name="actionDualReturnIntensityLow">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="enabled">
-    <bool>false</bool>
-   </property>
-   <property name="text">
-    <string>&amp;Low Intensity</string>
-   </property>
-   <property name="toolTip">
-    <string>Show lower intensity return of a dual return</string>
-   </property>
-  </action>
   <action name="actionShowRPM">
    <property name="checkable">
     <bool>true</bool>
@@ -767,32 +681,6 @@
    </property>
    <property name="text">
     <string>Apply HDL-64E Intensity Corrections</string>
-   </property>
-  </action>
-  <action name="actionSelectDualReturn">
-   <property name="text">
-    <string>Select dual returns</string>
-   </property>
-   <property name="toolTip">
-    <string>Select the dual returns of the current selection</string>
-   </property>
-   <property name="shortcut">
-    <string>Ctrl+D</string>
-   </property>
-  </action>
-  <action name="actionSelectDualReturn2">
-   <property name="enabled">
-    <bool>false</bool>
-   </property>
-   <property name="icon">
-    <iconset resource="vvResources.qrc">
-     <normaloff>:/vvResources/Icons/pqSurfaceSelectionPoint24.png</normaloff>:/vvResources/Icons/pqSurfaceSelectionPoint24.png</iconset>
-   </property>
-   <property name="text">
-    <string>SelectDualReturn</string>
-   </property>
-   <property name="toolTip">
-    <string>Select the dual returns of the current selection</string>
    </property>
   </action>
   <action name="actionPersisting_Grid_Properties">
