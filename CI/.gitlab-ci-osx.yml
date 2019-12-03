@@ -49,8 +49,8 @@
     - cd ..
     - echo "compressing and uploading Superbuild. This take some time..."
     - tar zcf archive Superbuild-build/
-    - ~/mc config host add superbuild ${MINIO_CACHE_SERVER_ADDRESS} ${MINIO_CACHE_SERVER_ACCESS_KEY} ${MINIO_CACHE_SERVER_SECRET_KEY}
-    - ~/mc cp archive superbuild/runner/minio/project/808/${cache_patch}/${OS}/${CI_COMMIT_REF_NAME}-${mode}
+    - mc config host add superbuild ${MINIO_CACHE_SERVER_ADDRESS} ${MINIO_CACHE_SERVER_ACCESS_KEY} ${MINIO_CACHE_SERVER_SECRET_KEY}
+    - mc cp archive superbuild/runner/minio/project/808/${cache_patch}/${OS}/${CI_COMMIT_REF_NAME}-${mode}
 
 .OSX_superbuild_manual: &OSX_superbuild_manual
   when: manual
