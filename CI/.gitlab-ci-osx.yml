@@ -33,13 +33,16 @@
       -DCMAKE_OSX_SYSROOT:STRING=${cmake_option_CMAKE_OSX_SYSROOT}
       -DCMAKE_OSX_SDK:STRING=${cmake_option_CMAKE_OSX_SDK}
       -DBUILD_TESTING=True
+      -DENABLE_all=${optional_dependancies}
       -Dsuperbuild_download_location="../downloads"
       -DSUPERBUILD_PROJECT_PARALLELISM=1
       ${CI_PROJECT_DIR}/Superbuild
-    # -DENABLE_all=${optional_dependancies}
     # parallelism seems to fails on OSX with boost/blas/qt5
     # disable darknet on CI because no GPU available
-    - cmake -DENABLE_all=False -DENABLE_darknet=False .
+    - cmake -DENABLE_all=False -DENABLE_darknet=False . -DENABLE_png=False .
+     -DENABLE_pcl=False
+    # Tested on OSX_ElCapitan: opencv,nanoflann,ceres
+    # PCL not working yet with weird error related to boost linking
     # compile
     - make -j8
     # remove lidarview
