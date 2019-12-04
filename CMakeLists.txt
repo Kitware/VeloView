@@ -151,8 +151,6 @@ if (APPLE)
   set(VTK_BUILD_FORWARDING_EXECUTABLES FALSE)
 endif()
 
-set(VV_NONE_PLUGIN_LIBRARY LidarPythonQT) # code needed by lidarview but that is not part of the plugin
-
 add_subdirectory(Plugins)
 add_subdirectory(LVCore)
 add_subdirectory(Application)
