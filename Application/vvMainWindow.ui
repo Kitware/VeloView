@@ -83,38 +83,14 @@
      </property>
      <addaction name="actionNative_File_Dialogs"/>
     </widget>
-    <widget class="QMenu" name="menuDualReturnMode">
-     <property name="title">
-      <string>&amp;Dual Return Mode</string>
-     </property>
-     <addaction name="actionDualReturnModeDual"/>
-     <addaction name="actionDualReturnDistanceNear"/>
-     <addaction name="actionDualReturnDistanceFar"/>
-     <addaction name="actionDualReturnIntensityHigh"/>
-     <addaction name="actionDualReturnIntensityLow"/>
-    </widget>
-    <widget class="QMenu" name="menuProcessing_Options">
-     <property name="title">
-      <string>Processing Options</string>
-     </property>
-     <addaction name="actionCorrectIntensityValues"/>
-     <addaction name="actionFastRenderer"/>
-     <addaction name="actionIgnoreZeroDistances"/>
-     <addaction name="actionIntraFiringAdjust"/>
-     <addaction name="actionIgnoreEmptyFrames"/>
-    </widget>
     <addaction name="actionSpreadsheet"/>
     <addaction name="actionMeasurement_Grid"/>
     <addaction name="actionShowRPM"/>
     <addaction name="actionGrid_Properties"/>
     <addaction name="separator"/>
     <addaction name="actionChoose_Calibration_File"/>
-    <addaction name="actionLaserSelection"/>
     <addaction name="actionCropReturns"/>
-    <addaction name="menuDualReturnMode"/>
-    <addaction name="actionSelectDualReturn"/>
     <addaction name="separator"/>
-    <addaction name="menuProcessing_Options"/>
     <addaction name="separator"/>
     <addaction name="separator"/>
     <addaction name="actionPython_Console"/>
@@ -137,8 +113,6 @@
     </action>
     <addaction name="actionAbout_LidarView"/>
     <addaction name="separator"/>
-    <addaction name="actionLidarViewUserGuide"/>
-    <addaction name="actionLidarViewDeveloperGuide"/>
     <addaction name="actionResetDefaultSettings"/>
     <addaction name="actionAdvanceFeature"/>
    </widget>
@@ -187,7 +161,6 @@
    <addaction name="actionCropReturns"/>
    <addaction name="separator"/>
    <addaction name="actionSelect_All_Points"/>
-   <addaction name="actionSelectDualReturn2"/>
    <addaction name="actionSpreadsheet"/>
    <addaction name="actionPython_Console"/>
    <addaction name="actionShowErrorDialog"/>
@@ -215,7 +188,6 @@
    </attribute>
    <addaction name="actionToggleProjection"/>
    <addaction name="actionMeasure"/>
-   <addaction name="actionPlaneFit"/>
    <addaction name="separator"/>
   </widget>
   <widget class="QToolBar" name="geolocationToolbar">
@@ -509,11 +481,6 @@
     <string>About ...</string>
    </property>
   </action>
-  <action name="actionLidarViewDeveloperGuide">
-   <property name="text">
-    <string>Developer's Guide</string>
-   </property>
-  </action>
   <action name="actionRecent_file1">
    <property name="text">
     <string>recent_file1</string>
@@ -571,14 +538,6 @@
     <string>Toggle between projective and orthogonal view</string>
    </property>
   </action>
-  <action name="actionLidarViewUserGuide">
-   <property name="text">
-    <string>User's Guide</string>
-   </property>
-   <property name="shortcut">
-    <string>F1</string>
-   </property>
-  </action>
   <action name="actionMeasure">
    <property name="checkable">
     <bool>true</bool>
@@ -592,18 +551,6 @@
    </property>
    <property name="toolTip">
     <string>Measure the distance (in meters) between two screen points.&lt;br/&gt;To draw a ruler line, click this button, then hold down the &lt;b&gt;Ctrl key&lt;/b&gt; and the &lt;b&gt;left button&lt;/b&gt; of your mouse. &lt;br/&gt;&lt;u&gt;This feature is only available in orthogonal projection.&lt;/u&gt;</string>
-   </property>
-  </action>
-  <action name="actionPlaneFit">
-   <property name="icon">
-    <iconset resource="vvResources.qrc">
-     <normaloff>:/vvResources/Icons/planefit.png</normaloff>:/vvResources/Icons/planefit.png</iconset>
-   </property>
-   <property name="text">
-    <string>Plane Fit</string>
-   </property>
-   <property name="toolTip">
-    <string>Plane Fit to selection</string>
    </property>
   </action>
   <action name="actionSavePositionCSV">
@@ -645,11 +592,6 @@
     <string>Geolocation in absolute coordinates</string>
    </property>
   </action>
-  <action name="actionLaserSelection">
-   <property name="text">
-    <string>Laser Selection...</string>
-   </property>
-  </action>
   <action name="actionSaveLAS">
    <property name="icon">
     <iconset resource="../Plugins/VelodyneUIPlugin/Ui/images/resources.qrc">
@@ -671,79 +613,6 @@
     <string>Crop Returns...</string>
    </property>
   </action>
-  <action name="actionDualReturnModeDual">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="checked">
-    <bool>true</bool>
-   </property>
-   <property name="enabled">
-    <bool>false</bool>
-   </property>
-   <property name="text">
-    <string>&amp;Dual</string>
-   </property>
-   <property name="toolTip">
-    <string>Show both returns of a dual return</string>
-   </property>
-  </action>
-  <action name="actionDualReturnDistanceNear">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="enabled">
-    <bool>false</bool>
-   </property>
-   <property name="text">
-    <string>&amp;Near Distance</string>
-   </property>
-   <property name="toolTip">
-    <string>Show nearer distance return of a dual return</string>
-   </property>
-  </action>
-  <action name="actionDualReturnDistanceFar">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="enabled">
-    <bool>false</bool>
-   </property>
-   <property name="text">
-    <string>&amp;Far Distance</string>
-   </property>
-   <property name="toolTip">
-    <string>Show farther distance return of a dual return</string>
-   </property>
-  </action>
-  <action name="actionDualReturnIntensityHigh">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="enabled">
-    <bool>false</bool>
-   </property>
-   <property name="text">
-    <string>&amp;High Intensity</string>
-   </property>
-   <property name="toolTip">
-    <string>Show higher intensity return of a dual return</string>
-   </property>
-  </action>
-  <action name="actionDualReturnIntensityLow">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="enabled">
-    <bool>false</bool>
-   </property>
-   <property name="text">
-    <string>&amp;Low Intensity</string>
-   </property>
-   <property name="toolTip">
-    <string>Show lower intensity return of a dual return</string>
-   </property>
-  </action>
   <action name="actionShowRPM">
    <property name="checkable">
     <bool>true</bool>
@@ -756,43 +625,6 @@
    </property>
    <property name="toolTip">
     <string>Display the rotations per minute</string>
-   </property>
-  </action>
-  <action name="actionCorrectIntensityValues">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="enabled">
-    <bool>false</bool>
-   </property>
-   <property name="text">
-    <string>Apply HDL-64E Intensity Corrections</string>
-   </property>
-  </action>
-  <action name="actionSelectDualReturn">
-   <property name="text">
-    <string>Select dual returns</string>
-   </property>
-   <property name="toolTip">
-    <string>Select the dual returns of the current selection</string>
-   </property>
-   <property name="shortcut">
-    <string>Ctrl+D</string>
-   </property>
-  </action>
-  <action name="actionSelectDualReturn2">
-   <property name="enabled">
-    <bool>false</bool>
-   </property>
-   <property name="icon">
-    <iconset resource="vvResources.qrc">
-     <normaloff>:/vvResources/Icons/pqSurfaceSelectionPoint24.png</normaloff>:/vvResources/Icons/pqSurfaceSelectionPoint24.png</iconset>
-   </property>
-   <property name="text">
-    <string>SelectDualReturn</string>
-   </property>
-   <property name="toolTip">
-    <string>Select the dual returns of the current selection</string>
    </property>
   </action>
   <action name="actionPersisting_Grid_Properties">
@@ -816,56 +648,6 @@
    </property>
    <property name="toolTip">
     <string>Show the error console.</string>
-   </property>
-  </action>
-  <action name="actionIgnoreZeroDistances">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="checked">
-    <bool>true</bool>
-   </property>
-   <property name="enabled">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Ignore returns with distance equals to 0</string>
-   </property>
-  </action>
-  <action name="actionIntraFiringAdjust">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="checked">
-    <bool>true</bool>
-   </property>
-   <property name="enabled">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Adjust intra-firing timings and azimuths</string>
-   </property>
-  </action>
-  <action name="actionIgnoreEmptyFrames">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="checked">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Ignore empty frames</string>
-   </property>
-  </action>
-  <action name="actionFastRenderer">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="enabled">
-    <bool>false</bool>
-   </property>
-   <property name="text">
-    <string>Apply VLS-128 Fast Renderering</string>
    </property>
   </action>
   <action name="actionAdvanceFeature">

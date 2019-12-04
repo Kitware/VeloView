@@ -29,7 +29,6 @@ from vtkIOXMLPython import vtkXMLPolyDataWriter
 import kiwiviewerExporter
 import gridAdjustmentDialog
 import aboutDialog
-import planefit
 import bisect
 
 from PythonQt.paraview import vvCalibrationDialog, vvCropReturnsDialog, vvSelectFramesDialog
@@ -72,8 +71,6 @@ class AppLogic(object):
         self.trailingFrame = None
         self.position = None
         self.sensor = None
-
-        self.laserSelectionDialog = None
 
         self.gridProperties = None
 
@@ -153,16 +150,7 @@ def openData(filename):
     app.actions['actionChoose_Calibration_File'].setEnabled(False)
     app.actions['actionCropReturns'].setEnabled(False)
     app.actions['actionRecord'].setEnabled(False)
-    app.actions['actionDualReturnModeDual'].enabled = True
-    app.actions['actionDualReturnDistanceNear'].enabled = True
-    app.actions['actionDualReturnDistanceFar'].enabled = True
-    app.actions['actionDualReturnIntensityHigh'].enabled = True
-    app.actions['actionDualReturnIntensityLow'].enabled = True
     app.actions['actionShowRPM'].enabled = True
-
-
-def planeFit():
-    planefit.fitPlane()
 
 
 def findPresetByName(name):
@@ -237,24 +225,6 @@ def setDefaultLookupTables(sourceProxy):
       RGBPoints=[0.0, 0.0, 0.0, 1.0,
                100.0, 1.0, 1.0, 0.0,
                256.0, 1.0, 0.0, 0.0])
-
-    # LUT for 'dual_distance'
-    smp.GetLookupTableForArray(
-      'dual_distance', 1,
-      InterpretValuesAsCategories=True, NumberOfTableValues=3,
-      RGBPoints=[-1.0, 0.1, 0.5, 0.7,
-                  0.0, 0.9, 0.9, 0.9,
-                 +1.0, 0.8, 0.2, 0.3],
-      Annotations=['-1', 'near', '0', 'dual', '1', 'far'])
-
-    # LUT for 'dual_intensity'
-    smp.GetLookupTableForArray(
-      'dual_intensity', 1,
-      InterpretValuesAsCategories=True, NumberOfTableValues=3,
-      RGBPoints=[-1.0, 0.5, 0.2, 0.8,
-                  0.0, 0.6, 0.6, 0.6,
-                 +1.0, 1.0, 0.9, 0.4],
-      Annotations=['-1', 'low', '0', 'dual', '1', 'high'])
 
     # LUT for 'laser_id'. This LUT is extracted from the XML calibration file
     # which doesn't exist in live stream mode
@@ -359,21 +329,6 @@ def chooseCalibration(calibrationFilename=None):
         return result
 
 
-def restoreLaserSelectionDialog():
-
-    reopenLaserSelectionDialog = False
-    isDisplayMoreSelectionsChecked = False
-
-    if app.laserSelectionDialog != None:
-        reopenLaserSelectionDialog = app.laserSelectionDialog.isVisible()
-        isDisplayMoreSelectionsChecked = app.laserSelectionDialog.isDisplayMoreSelectionsChecked()
-        app.laserSelectionDialog.close()
-        app.laserSelectionDialog = None
-
-    onLaserSelection(reopenLaserSelectionDialog)
-    app.laserSelectionDialog.setDisplayMoreSelectionsChecked(isDisplayMoreSelectionsChecked)
-
-
 def openSensor():
 
     calibration = chooseCalibration()
@@ -402,9 +357,6 @@ def openSensor():
     sensor.GetClientSideObject().SetIsCrashAnalysing(calibration.isCrashAnalysing)
     sensor.GetClientSideObject().SetForwardedIpAddress(ipAddressForwarding)
     sensor.Interpreter.GetClientSideObject().SetSensorTransform(sensorTransform)
-    sensor.Interpreter.IgnoreZeroDistances = app.actions['actionIgnoreZeroDistances'].isChecked()
-    sensor.Interpreter.UseIntraFiringAdjustment = app.actions['actionIntraFiringAdjust'].isChecked()
-    sensor.Interpreter.IgnoreEmptyFrames = app.actions['actionIgnoreEmptyFrames'].isChecked()
     sensor.UpdatePipeline()
     sensor.Start()
 
@@ -421,7 +373,6 @@ def openSensor():
     enableSaveActions()
 
     onCropReturns(False) # Dont show the dialog just restore settings
-    onLaserSelection(False)
 
     rep = smp.Show(sensor)
 #    rep.InterpolateScalarsBeforeMapping = 0
@@ -436,21 +387,12 @@ def openSensor():
     showSourceInSpreadSheet(sensor)
 
     app.actions['actionShowRPM'].enabled = True
-    app.actions['actionCorrectIntensityValues'].enabled = True
-    app.actions['actionFastRenderer'].enabled = True
 
     #Auto adjustment of the grid size with the distance resolution
     app.DistanceResolutionM = sensor.Interpreter.GetClientSideObject().GetDistanceResolutionM()
     app.actions['actionMeasurement_Grid'].setChecked(True)
     showMeasurementGrid()
 
-    # Always enable dual return mode selection. A warning will be raised if
-    # there's no dual return on the current frame later on
-    app.actions['actionDualReturnModeDual'].enabled = True
-    app.actions['actionDualReturnDistanceNear'].enabled = True
-    app.actions['actionDualReturnDistanceFar'].enabled = True
-    app.actions['actionDualReturnIntensityHigh'].enabled = True
-    app.actions['actionDualReturnIntensityLow'].enabled = True
     app.actions['actionRecord'].enabled = True
 
     updateUIwithNewLidar()
@@ -505,17 +447,9 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
     app.positionPacketInfoLabel.setText('') # will be updated later if possible
     onCropReturns(False) # Dont show the dialog just restore settings
 
-    # Resetting laser selection dialog according to the opened PCAP file
-    # and restoring the dialog visibility afterward
-
-    restoreLaserSelectionDialog()
-
     reader.Interpreter.GetClientSideObject().SetSensorTransform(sensorTransform)
 
     lidarPacketInterpreter = getLidarPacketInterpreter()
-    lidarPacketInterpreter.IgnoreZeroDistances = app.actions['actionIgnoreZeroDistances'].isChecked()
-    lidarPacketInterpreter.UseIntraFiringAdjustment = app.actions['actionIntraFiringAdjust'].isChecked()
-    lidarPacketInterpreter.IgnoreEmptyFrames = app.actions['actionIgnoreEmptyFrames'].isChecked()
 
     if SAMPLE_PROCESSING_MODE:
         processor = smp.ProcessingSample(reader)
@@ -585,19 +519,7 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
     addRecentFile(filename)
     app.actions['actionRecord'].setEnabled(False)
 
-    # Always enable dual return mode selection. A warning will be raised if
-    # there's no dual return on the current frame later on
-    app.actions['actionSelectDualReturn'].enabled = True
-    app.actions['actionSelectDualReturn2'].enabled = True
-    app.actions['actionDualReturnModeDual'].enabled = True
-    app.actions['actionDualReturnDistanceNear'].enabled = True
-    app.actions['actionDualReturnDistanceFar'].enabled = True
-    app.actions['actionDualReturnIntensityHigh'].enabled = True
-    app.actions['actionDualReturnIntensityLow'].enabled = True
-
     app.actions['actionShowRPM'].enabled = True
-    app.actions['actionCorrectIntensityValues'].enabled = True
-    app.actions['actionFastRenderer'].enabled = True
 
     #Auto adjustment of the grid size with the distance resolution
     app.DistanceResolutionM = reader.Interpreter.GetClientSideObject().GetDistanceResolutionM()
@@ -1106,26 +1028,6 @@ def getVersionString():
   return " ".join(getMainWindow().windowTitle.split(" ")[1:])
 
 
-def onDeveloperGuide():
-    basePath = PythonQt.QtGui.QApplication.instance().applicationDirPath()
-
-    paths = ['../Resources/LidarView_Developer_Guide.pdf']
-
-    for path in paths:
-        filename = os.path.join(basePath, path)
-        if os.path.isfile(filename):
-            QtGui.QDesktopServices.openUrl(QtCore.QUrl('file:///%s' % filename, QtCore.QUrl.TolerantMode))
-
-def onUserGuide():
-    basePath = PythonQt.QtGui.QApplication.instance().applicationDirPath()
-
-    paths = ['../Resources/LidarView_User_Guide.pdf']
-
-    for path in paths:
-        filename = os.path.join(basePath, path)
-        if os.path.isfile(filename):
-            QtGui.QDesktopServices.openUrl(QtCore.QUrl('file:///%s' % filename, QtCore.QUrl.TolerantMode))
-
 def onAbout():
     aboutDialog.showDialog(getMainWindow())
 
@@ -1155,17 +1057,6 @@ def close():
     app.statusLabel.setText('')
     disableSaveActions()
     app.actions['actionRecord'].setChecked(False)
-    app.actions['actionDualReturnModeDual'].setChecked(True)
-
-    app.actions['actionSelectDualReturn'].enabled = False
-    app.actions['actionSelectDualReturn2'].enabled = False
-    app.actions['actionDualReturnModeDual'].enabled = False
-    app.actions['actionDualReturnDistanceNear'].enabled = False
-    app.actions['actionDualReturnDistanceFar'].enabled = False
-    app.actions['actionDualReturnIntensityHigh'].enabled = False
-    app.actions['actionDualReturnIntensityLow'].enabled = False
-    app.actions['actionCorrectIntensityValues'].enabled = False
-    app.actions['actionFastRenderer'].enabled = False
 
 
 def _setSaveActionsEnabled(enabled):
@@ -1288,9 +1179,6 @@ def getLidarPacketInterpreter():
 def getPosition():
     return getattr(app, 'position', None)
 
-def getLaserSelectionDialog():
-    return getattr(app, 'laserSelectionDialog', None)
-
 def onChooseCalibrationFile():
 
     calibration = chooseCalibration()
@@ -1305,8 +1193,6 @@ def onChooseCalibrationFile():
         lidar.Interpreter.GetClientSideObject().SetSensorTransform(sensorTransform)
         lidar.CalibrationFile = calibrationFile
         updateUIwithNewLidar()
-
-    restoreLaserSelectionDialog()
 
 
 def onCropReturns(show = True):
@@ -1474,7 +1360,6 @@ def start():
 
     setupActions()
     disableSaveActions()
-    app.actions['actionSelectDualReturn'].setEnabled(False)
     app.actions['actionMeasure'].setEnabled(view.CameraParallelProjection)
     setupStatusBar()
     hideColorByComponent()
@@ -1522,14 +1407,6 @@ def onTrailingFramesChanged(numFrames):
         smp.Render()
 
 
-def onFiringsSkipChanged(pr):
-    lidarPacketInterpreter = getLidarPacketInterpreter()
-    if lidarPacketInterpreter:
-        lidarPacketInterpreter.FiringsSkip = pr
-        smp.Render()
-        smp.Render(getSpreadSheetViewProxy())
-
-
 def setupStatusBar():
     # by using a QScrollArea inside the statusBar it should be possible
     # to reduce the minimum main window's width
@@ -1548,80 +1425,6 @@ def onGridProperties():
         rep.LineWidth = app.grid.LineWidth
         rep.DiffuseColor = app.grid.Color
         app.actions['actionMeasurement_Grid'].setChecked(True)
-        smp.Render()
-
-
-def onLaserSelection(show = True):
-    nchannels = 128
-    oldmask = [1] * nchannels
-    reader = getReader()
-    sensor = getSensor()
-    verticalCorrection = [0] * nchannels
-    rotationalCorrection = [0] * nchannels
-    distanceCorrection = [0] * nchannels
-    distanceCorrectionX = [0] * nchannels
-    distanceCorrectionY = [0] * nchannels
-    verticalOffsetCorrection = [0] * nchannels
-    horizontalOffsetCorrection = [0] * nchannels
-    focalDistance = [0] * nchannels
-    focalSlope = [0] * nchannels
-    minIntensity = [0] * nchannels
-    maxIntensity = [0] * nchannels
-
-    lidar = getLidar()
-    lidarPacketInterpreter = getLidarPacketInterpreter()
-    # wrapping not currently working for plugins:
-    lidarPacketInterpreter = None
-    if lidarPacketInterpreter:
-        lidarPacketInterpreter.GetClientSideObject().GetLaserSelection(oldmask)
-        lidarPacketInterpreter.GetClientSideObject().GetLaserCorrections(verticalCorrection,
-            rotationalCorrection,
-            distanceCorrection,
-            distanceCorrectionX,
-            distanceCorrectionY,
-            verticalOffsetCorrection,
-            horizontalOffsetCorrection,
-            focalDistance,
-            focalSlope,
-            minIntensity,
-            maxIntensity)
-        nchannels = lidarPacketInterpreter.GetClientSideObject().GetNumberOfChannels()
-
-    # Initializing the laser selection dialog
-    if app.laserSelectionDialog == None:
-        app.laserSelectionDialog = PythonQt.paraview.vvLaserSelectionDialog(getMainWindow())
-        app.laserSelectionDialog.connect('accepted()', onLaserSelectionChanged)
-        app.laserSelectionDialog.connect('laserSelectionChanged()', onLaserSelectionChanged)
-
-    # Need a way to initialize the mask
-    app.laserSelectionDialog.setLaserSelectionSelector(oldmask)
-
-    app.laserSelectionDialog.setLasersCorrections(verticalCorrection,
-        rotationalCorrection,
-        distanceCorrection,
-        distanceCorrectionX,
-        distanceCorrectionY,
-        verticalOffsetCorrection,
-        horizontalOffsetCorrection,
-        focalDistance,
-        focalSlope,
-        minIntensity,
-        maxIntensity,
-        nchannels)
-
-    app.laserSelectionDialog.onDisplayMoreCorrectionsChanged()
-    if show:
-        app.laserSelectionDialog.show()
-
-
-def onLaserSelectionChanged():
-    dialog = getLaserSelectionDialog();
-    lidar = getLidar()
-
-    mask = dialog.getLaserSelectionSelector()
-    LidarInterpreter = getLidarPacketInterpreter()
-    if LidarInterpreter:
-        LidarInterpreter.GetClientSideObject().SetLaserSelection(mask)
         smp.Render()
 
 
@@ -1730,78 +1533,8 @@ def toggleRPM():
         smp.Render()
 
 
-def toggleSelectDualReturn():
-    # test if we are on osx os
-    osName = str(sys.platform)
-    if osName == 'darwin':
-        QtGui.QMessageBox.warning(getMainWindow(), 'Information', 'This functionality is not yet available on %s' % osName)
-        return
-
-    #Get the active source
-    source = smp.FindSource("TrailingFrame")
-    lidarPacketInterpreter = getLidarPacketInterpreter()
-
-    #If no data are available
-    if not source :
-        return
-
-    if not lidarPacketInterpreter.GetClientSideObject().GetHasDualReturn() :
-        QtGui.QMessageBox.warning(getMainWindow(), 'Dual returns not found',
-        "The functionality only works with dual returns, and the current"
-        "frame has no dual returns.")
-        return
-
-    #Get the selected Points
-    selectedPoints = source.GetSelectionOutput(0)
-    polyData = selectedPoints.GetClientSideObject().GetOutput()
-    nSelectedPoints = polyData.GetNumberOfPoints()
-
-    if nSelectedPoints > 0:
-        idArray = polyData.GetPointData().GetArray('dual_return_matching')
-        idArray = polyData.GetBlock(0).GetPointData().GetArray('dual_return_matching')
-        # It should be possible to filter -1 from the idArray and then just use
-        # np.in1d below, but doing so generates errors (either an invalid
-        # expression, even when handling the case of an empty array, or an
-        # invalid non-mask return value.
-        selectedDualIds = set(str(int(idArray.GetValue(i))) for i in range(nSelectedPoints))
-        query = 'np.logical_and(dual_return_matching > -1, np.in1d(id, [{}]))'.format(','.join(selectedDualIds))
-    else:
-        query = 'dual_return_matching > -1'
-    smp.SelectPoints(query)
-    smp.Render()
-
-
 def toggleCrashAnalysis():
     app.EnableCrashAnalysis = app.actions['actionEnableCrashAnalysis'].isChecked()
-
-def setFilterToDual():
-    setFilterTo("Dual")
-
-def setFilterToDistanceNear():
-    setFilterTo("Near Distance")
-
-def setFilterToDistanceFar():
-    setFilterTo("Far Distance")
-
-def setFilterToIntensityHigh():
-    setFilterTo("High Intensity")
-
-def setFilterToIntensityLow():
-    setFilterTo("Low Intensity")
-
-def setFilterTo(mask):
-
-    interp = getLidarPacketInterpreter()
-    if interp:
-        if interp.GetClientSideObject().GetHasDualReturn():
-            interp.DualReturnFilter = mask
-            smp.Render()
-            smp.Render(getSpreadSheetViewProxy())
-        else:
-            app.actions['actionDualReturnModeDual'].setChecked(True)
-            QtGui.QMessageBox.warning(getMainWindow(), 'Dual returns not found',
-            "The functionality only works with dual returns, and the current"
-            "frame has no dual returns.")
 
 
 def transformMode():
@@ -1830,24 +1563,6 @@ def setTransformMode(mode):
 def geolocationChanged(setting):
     setTransformMode(setting)
     smp.Render(view=app.mainView)
-
-def fastRendererChanged():
-    """ Enable/Disable fast rendering by using the point cloud representation (currently only for VLS-128)
-    this representation hardcode the color map and their LookUpTable, which improve execution speed significantly """
-
-    source = smp.FindSource("TrailingFrame")
-    if source:
-        rep = smp.GetRepresentation(source)
-
-        if app.actions['actionFastRenderer'].isChecked():
-            rep.Representation = 'Point Cloud'
-        else:
-            rep.Representation = 'Surface'
-
-def intensitiesCorrectedChanged():
-    lidarInterpreter = getLidarPacketInterpreter()
-    if lidarInterpreter:
-        lidarInterpreter.CorrectIntensity = app.actions['actionCorrectIntensityValues'].isChecked()
 
 def onToogleAdvancedGUI(updateSettings = True):
   """ Switch the GUI between advanced and classic mode"""
@@ -1897,12 +1612,6 @@ def setupActions():
 
     app.actions['actionAdvanceFeature'].connect('triggered()', onToogleAdvancedGUI)
 
-    app.actions['actionIgnoreZeroDistances'].connect('triggered()', onIgnoreZeroDistances)
-    app.actions['actionIntraFiringAdjust'].connect('triggered()', onIntraFiringAdjust)
-    app.actions['actionIgnoreEmptyFrames'].connect('triggered()', onIgnoreEmptyFrames)
-
-    app.actions['actionPlaneFit'].connect('triggered()', planeFit)
-
     app.actions['actionClose'].connect('triggered()', close)
     app.actions['actionRecord'].connect('triggered()', onRecord)
     app.actions['actionSaveCSV'].connect('triggered()', onSaveCSV)
@@ -1912,34 +1621,20 @@ def setupActions():
     app.actions['actionSaveScreenshot'].connect('triggered()', onSaveScreenshot)
     app.actions['actionExport_To_KiwiViewer'].connect('triggered()', onKiwiViewerExport)
     app.actions['actionGrid_Properties'].connect('triggered()', onGridProperties)
-    app.actions['actionLaserSelection'].connect('triggered()', onLaserSelection)
     app.actions['actionChoose_Calibration_File'].connect('triggered()', onChooseCalibrationFile)
     app.actions['actionCropReturns'].connect('triggered()', onCropReturns)
     app.actions['actionNative_File_Dialogs'].connect('triggered()', onNativeFileDialogsAction)
     app.actions['actionAbout_LidarView'].connect('triggered()', onAbout)
-    app.actions['actionLidarViewDeveloperGuide'].connect('triggered()', onDeveloperGuide)
     app.actions['actionClear_Menu'].connect('triggered()', onClearMenu)
 
     app.actions['actionToggleProjection'].connect('triggered()', toggleProjectionType)
     app.actions['actionMeasure'].connect('triggered()', toggleRulerContext)
     app.actions['actionShowPosition'].connect('triggered()', ShowPosition)
 
-    app.actions['actionDualReturnModeDual'].connect('triggered()', setFilterToDual)
-    app.actions['actionDualReturnDistanceNear'].connect('triggered()', setFilterToDistanceNear)
-    app.actions['actionDualReturnDistanceFar'].connect('triggered()', setFilterToDistanceFar)
-    app.actions['actionDualReturnIntensityHigh'].connect('triggered()', setFilterToIntensityHigh)
-    app.actions['actionDualReturnIntensityLow'].connect('triggered()', setFilterToIntensityLow)
     app.actions['actionShowRPM'].connect('triggered()', toggleRPM)
-    app.actions['actionCorrectIntensityValues'].connect('triggered()',intensitiesCorrectedChanged)
-    app.actions['actionFastRenderer'].connect('triggered()',fastRendererChanged)
-    app.actions['actionSelectDualReturn'].connect('triggered()',toggleSelectDualReturn)
-    app.actions['actionSelectDualReturn2'].connect('triggered()',toggleSelectDualReturn)
 
     # Restore action states from settings
     settings = getPVSettings()
-    app.actions['actionIgnoreZeroDistances'].setChecked(int(settings.value('LidarPlugin/IgnoreZeroDistances', 1)))
-    app.actions['actionIntraFiringAdjust'].setChecked(int(settings.value('LidarPlugin/IntraFiringAdjust', 1)))
-    app.actions['actionIgnoreEmptyFrames'].setChecked(int(settings.value('LidarPlugin/IgnoreEmptyFrames', 1)))
 
 
     advanceMode = int(settings.value("LidarPlugin/AdvanceFeature/Enable", 0))
@@ -1992,20 +1687,6 @@ def setupActions():
     app.actions['actionTrailingFramesSelector'] = timeToolBar.addWidget(spinBox)
     app.actions['actionTrailingFramesSelector'].setVisible(True)
 
-    FiringsSkipLabel = QtGui.QLabel('Skip:')
-    FiringsSkipLabel.toolTip = "Number of Points to Skip"
-    timeToolBar.addWidget(FiringsSkipLabel)
-
-    FiringsSkipBox = QtGui.QSpinBox()
-    FiringsSkipBox.toolTip = "Number of Points to Skip"
-    FiringsSkipBox.setMinimum(0)
-    FiringsSkipBox.setMaximum(100)
-    FiringsSkipBox.connect('valueChanged(int)', onFiringsSkipChanged)
-    app.FiringsSkipSpinBox = FiringsSkipBox
-
-    app.actions['actionFiringsSkipSelector'] = timeToolBar.addWidget(FiringsSkipBox)
-    app.actions['actionFiringsSkipSelector'].setVisible(True)
-
     displayWidget = getMainWindow().findChild('vvColorToolbar').findChild('pqDisplayColorWidget')
     displayWidget.connect('arraySelectionChanged ()',adjustScalarBarRangeLabelFormat)
     app.actions['actionScalarBarVisibility'].connect('triggered()',adjustScalarBarRangeLabelFormat)
@@ -2045,46 +1726,6 @@ def end_cue(self):
     # force to be consistant with the UI
     toggleRPM()
 
-
-def onIgnoreZeroDistances():
-    # Get the check box value as an int to save it into the PV settings (there's incompatibility with python booleans)
-    IgnoreZeroDistances = int(app.actions['actionIgnoreZeroDistances'].isChecked())
-
-    # Save the setting for future session
-    getPVSettings().setValue('LidarPlugin/IgnoreZeroDistances', IgnoreZeroDistances)
-
-    # Apply it to the current source if any
-    lidarInterpreter = getLidarPacketInterpreter()
-    if lidarInterpreter:
-        lidarInterpreter.IgnoreZeroDistances = IgnoreZeroDistances
-        smp.Render()
-
-def onIntraFiringAdjust():
-    # Get the check box value as an int to save it into the PV settings (there's incompatibility with python booleans)
-    intraFiringAdjust = int(app.actions['actionIntraFiringAdjust'].isChecked())
-
-    # Save the setting for future session
-    getPVSettings().setValue('LidarPlugin/IntraFiringAdjust', intraFiringAdjust)
-
-    # Apply it to the current source if any
-    lidarInterpreter = getLidarPacketInterpreter()
-    if lidarInterpreter:
-        lidarInterpreter.UseIntraFiringAdjustment = intraFiringAdjust
-        smp.Render()
-
-
-def onIgnoreEmptyFrames():
-    # Get the check box value as an int to save it into the PV settings (there's incompatibility with python booleans)
-    ignoreEmptyFrames = int(app.actions['actionIgnoreEmptyFrames'].isChecked())
-
-    # Save the setting for future session
-    getPVSettings().setValue('LidarPlugin/IgnoreEmptyFrames', ignoreEmptyFrames)
-
-    # Apply it to the current source if any
-    lidarInterpreter = getLidarPacketInterpreter()
-    if lidarInterpreter:
-        lidarInterpreter.IgnoreEmptyFrames = ignoreEmptyFrames
-        smp.Render()
 
 def updateUIwithNewLidar():
     lidar = getLidar()
