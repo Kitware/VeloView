@@ -24,6 +24,12 @@
   stage: superbuild
   script:
     - echo "entering superbuild stage"
+    - >
+      if [ "${mode}" == "full" ]; then
+        optional_dependancies="ON"
+      else
+        optional_dependancies="OFF"
+      fi
     - WIN_CI_PROJECT_DIR=$(cygpath -w $(pwd))
     - echo "WIN_CI_PROJECT_DIR is $WIN_CI_PROJECT_DIR"
     - git submodule update --init --recursive
@@ -37,7 +43,9 @@
     - echo "call \"C:\\Users\\vagrant\\Desktop\\cmd-env-variables.cmd\"" > superbuild.bat
     # note that we use forward slashes in Qt5_DIR path (i.e. Unix PATH),
     # else \Q is taken by MSVC as an option
-    - echo "cmake $WIN_CI_PROJECT_DIR/Superbuild -GNinja -DCMAKE_BUILD_TYPE:STRING=${cmake_option_CMAKE_BUILD_TYPE} -DBUILD_TESTING=True -DUSE_SYSTEM_qt5=True -DQt5_DIR=\"C:/Qt/Qt5.10.0/5.10.0/msvc2015_64/lib/cmake/Qt5\"" >> superbuild.bat
+    - echo "cmake $WIN_CI_PROJECT_DIR/Superbuild -GNinja -DCMAKE_BUILD_TYPE:STRING=${cmake_option_CMAKE_BUILD_TYPE} -DBUILD_TESTING=True -DUSE_SYSTEM_qt5=True -DQt5_DIR=\"C:/Qt/Qt5.10.0/5.10.0/msvc2015_64/lib/cmake/Qt5\" -DENABLE_all=${optional_dependancies}" >> superbuild.bat
+    # disable darknet on CI because no GPU available
+    - echo "cmake -DENABLE_all=False -DENABLE_darknet=False ." >> superbuild.bat
     - echo "ninja" >> superbuild.bat
     - cat superbuild.bat
     - chmod +x superbuild.bat
