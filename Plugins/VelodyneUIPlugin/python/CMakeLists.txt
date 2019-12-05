@@ -4,6 +4,7 @@ set(lidarview_python_files
   lidarview/applogic.py
   lidarview/gridAdjustmentDialog.py
   lidarview/kiwiviewerExporter.py
+  lidarview/planefit.py
   lidarview/timer.py
   lidarview/aboutDialog.py
   lidarview/DTMFilter/__init__.py
