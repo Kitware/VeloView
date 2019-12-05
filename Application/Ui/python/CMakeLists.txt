@@ -6,6 +6,5 @@ python_module_install(NAME lidarview
                       lidarview/applogic.py
                       lidarview/gridAdjustmentDialog.py
                       lidarview/planefit.py
-                      lidarview/timer.py
                       lidarview/aboutDialog.py
                       )
