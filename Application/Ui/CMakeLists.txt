@@ -2,20 +2,20 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
-add_library(VelodyneUI
-  Ui/vvCalibrationDialog.cxx
-  Ui/vvCalibrationDialog.h
-  Ui/vvCalibrationDialog.ui
-  Ui/vvCropReturnsDialog.cxx
-  Ui/vvCropReturnsDialog.h
-  Ui/vvCropReturnsDialog.ui
-  Ui/vvLaserSelectionDialog.cxx
-  Ui/vvLaserSelectionDialog.h
-  Ui/vvLaserSelectionDialog.ui
-  Ui/vvSelectFramesDialog.cxx
-  Ui/vvSelectFramesDialog.h
-  Ui/vvSelectFramesDialog.ui
-  Ui/images/resources.qrc
+add_library(ApplicationUi
+  Widgets/vvCalibrationDialog.cxx
+  Widgets/vvCalibrationDialog.h
+  Widgets/vvCalibrationDialog.ui
+  Widgets/vvCropReturnsDialog.cxx
+  Widgets/vvCropReturnsDialog.h
+  Widgets/vvCropReturnsDialog.ui
+  Widgets/vvLaserSelectionDialog.cxx
+  Widgets/vvLaserSelectionDialog.h
+  Widgets/vvLaserSelectionDialog.ui
+  Widgets/vvSelectFramesDialog.cxx
+  Widgets/vvSelectFramesDialog.h
+  Widgets/vvSelectFramesDialog.ui
+  Widgets/images/resources.qrc
 
   pqLidarViewManager.cxx
   pqLidarViewManager.h
@@ -23,24 +23,24 @@ add_library(VelodyneUI
   vvLoadDataReaction.h
   vvPythonQtDecorators.h
   )
-target_link_libraries(VelodyneUI PUBLIC LidarPlugin ${PYTHONQT_LIBRARIES} lqApplicationComponents)
-target_include_directories(VelodyneUI PUBLIC
+target_link_libraries(ApplicationUi PUBLIC LidarPlugin ${PYTHONQT_LIBRARIES} lqApplicationComponents)
+target_include_directories(ApplicationUi PUBLIC
   ${PYTHONQT_INCLUDE_DIRS}
   ${CMAKE_CURRENT_SOURCE_DIR}
   ${CMAKE_CURRENT_BINARY_DIR}
   )
 include(GenerateExportHeader)
-generate_export_header(VelodyneUI)
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/velodyneui_export.h DESTINATION ${VV_INSTALL_LIBRARY_DIR})
+generate_export_header(ApplicationUi)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/applicationui_export.h DESTINATION ${VV_INSTALL_LIBRARY_DIR})
 
 # install libraries
 if (APPLE)
-  install(TARGETS VelodyneUI
+  install(TARGETS ApplicationUi
           RUNTIME DESTINATION ${VV_INSTALL_RUNTIME_DIR}/${SOFTWARE_NAME}.app/Contents/Libraries
           LIBRARY DESTINATION ${VV_INSTALL_RUNTIME_DIR}/${SOFTWARE_NAME}.app/Contents/Libraries
           COMPONENT Runtime)
 else()
-  install(TARGETS VelodyneUI
+  install(TARGETS ApplicationUi
           RUNTIME DESTINATION ${VV_INSTALL_RUNTIME_DIR}
           LIBRARY DESTINATION ${VV_INSTALL_LIBRARY_DIR}
           COMPONENT Runtime)

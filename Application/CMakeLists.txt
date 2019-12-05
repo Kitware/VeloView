@@ -1,5 +1,7 @@
 include("SoftwareInformation/branding.cmake")
 
+add_subdirectory("Ui/")
+
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
@@ -46,7 +48,7 @@ target_include_directories(${SOFTWARE_NAME} PUBLIC
 target_link_libraries(${SOFTWARE_NAME}
   PUBLIC
     LidarPlugin
-    VelodyneUI
+    ApplicationUi
     VelodynePlugin
     ${PYTHONQTPLUGIN_LIBRARY}
     ${PYTHONQT_LIBRARIES}
