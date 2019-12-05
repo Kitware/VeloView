@@ -92,7 +92,7 @@
     # This need to be fixed !
     - ctest -E "$test_blacklist"
 
-.OSX_package: &OSX_package
+.unix_package: &unix_package
   stage: package
   before_script: *unix_get_superbuild # you cannot put unix_build here
   script:
@@ -101,9 +101,9 @@
     - make lidarview -j8
     - ctest -R cpack
 
-.OSX_package_manual: &OSX_package_manual
+.unix_package_manual: &unix_package_manual
   when: manual
-  <<: *OSX_package
+  <<: *unix_package
   stage: manual
   artifacts:
     name: ${CI_JOB_NAME}-${mode}
@@ -112,8 +112,8 @@
      - Superbuild-build/*.dmg
     expire_in: 3 day
 
-.OSX_package_schedule: &OSX_package_schedule
-  <<: *OSX_package
+.unix_package_schedule: &unix_package_schedule
+  <<: *unix_package
   artifacts:
     name: ${CI_JOB_NAME}-${mode}
     paths:
@@ -158,8 +158,8 @@ OSX_ElCapitan_superbuild_schedule:
 
 OSX_ElCapitan_package_manual:
   <<: *OSX_ElCapitan
-  <<: *OSX_package_manual
+  <<: *unix_package_manual
 
 OSX_ElCapitan_package_schedule:
   <<: *OSX_ElCapitan
-  <<: *OSX_package_schedule
+  <<: *unix_package_schedule

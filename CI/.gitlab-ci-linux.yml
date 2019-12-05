@@ -29,6 +29,7 @@
     - cmake -DCMAKE_BUILD_TYPE:STRING=${cmake_option_CMAKE_BUILD_TYPE}
       -DBUILD_TESTING=True
       -DENABLE_all=${optional_dependancies}
+      -Dsuperbuild_download_location="../downloads"
       ${CI_PROJECT_DIR}/Superbuild
     # disable darknet on CI because no GPU available
     - cmake -DENABLE_all=False -DENABLE_darknet=False .
@@ -43,9 +44,8 @@
     - make -j8
     # remove lidarview
     - rm -rf lidarview-superbuild/common-superbuild/lidarview
-    # - cd ${CI_PROJECT_DIR}
-    # create a symbolic link, inside the source tree else "push" will not work
-    # - ln -s ../Superbuild-build Superbuild-build # not working witth
+    # upload superbuild, Apple's Zip Utility, which I guess is use by gilab-ci
+    # produce corrupted file for large file, so we need to upload the cache manually
     - cd ..
     - echo "compressing and uploading Superbuild. This take some time..."
     - tar zcf archive Superbuild-build/
@@ -96,7 +96,8 @@
     - git submodule update --init --recursive
     - cd ../Superbuild-build/ # created by extracting cache in "unix_get_superbuild"
     - make lidarview -j8
-    - ctest -R cpack-lidarview-TGZ -V
+    - ctest -R cpack
+#    - ctest -R cpack-lidarview-TGZ -V
 
 .unix_package_manual: &unix_package_manual
   when: manual
@@ -105,8 +106,8 @@
   artifacts:
     name: ${CI_JOB_NAME}-${mode}
     paths:
-     - ../Superbuild-build/*.tar.gz
-     - ../Superbuild-build/*.dmg
+     - Superbuild-build/*.tar.gz
+     - Superbuild-build/*.dmg
     expire_in: 3 day
 
 .unix_package_schedule: &unix_package_schedule
@@ -116,7 +117,7 @@
     paths:
      - Superbuild-build/*.tar.gz # Superbuild-build links to ../Superbuild-build
      - Superbuild-build/*.dmg
-    expire_in: 2 day
+    expire_in: 7 day
   only:
     - schedules
 
