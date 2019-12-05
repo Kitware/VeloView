@@ -14,7 +14,7 @@
 .OSX_superbuild: &OSX_superbuild
   stage: superbuild
   script:
-    - git submodule update --init Superbuild/common-superbuild
+    - git submodule update --init --recursive
     # prepare directory
     - cd ..
     - rm -rf Superbuild-build/
@@ -39,14 +39,14 @@
       ${CI_PROJECT_DIR}/Superbuild
     # parallelism seems to fails on OSX with boost/blas/qt5
     # disable darknet on CI because no GPU available
-    - cmake -DENABLE_all=False -DENABLE_darknet=False . -DENABLE_png=False .
-     -DENABLE_pcl=False
+    - cmake -DENABLE_all=False -DENABLE_darknet=False .
+     -DENABLE_png=False -DENABLE_pcl=False
     # Tested on OSX_ElCapitan: opencv,nanoflann,ceres
     # PCL not working yet with weird error related to boost linking
     # compile
     - make -j8
     # remove lidarview
-    - rm -rf common-superbuild/lidarview
+    - rm -rf lidarview-superbuild/common-superbuild/lidarview
     # upload superbuild, Apple's Zip Utility, which I guess is use by gilab-ci
     # produce corrupted file for large file, so we need to upload the cache manually
     - cd ..
@@ -70,7 +70,7 @@
   extends: .only-important
   before_script: *unix_get_superbuild
   script:
-    - git submodule update --init Superbuild/common-superbuild
+    - git submodule update --init --recursive
     - cd ../Superbuild-build/ # created by extracting cache in "unix_get_superbuild"
     - make lidarview -j8
 
@@ -80,11 +80,11 @@
   before_script: *unix_get_superbuild # you cannot put unix_build here
   script:
     # get test data and baseline
-    - git submodule update --init Superbuild/common-superbuild
+    - git submodule update --init --recursive
     - git submodule update --init TestData
     - cd ../Superbuild-build/ # created by extracting cache in "unix_get_superbuild"
     - make lidarview -j8
-    - cd ../Superbuild-build/common-superbuild/lidarview/build
+    - cd ../Superbuild-build/lidarview-superbuild/common-superbuild/lidarview/build
     - cmake . -DBUILD_TESTING=True
     - make -j8
     # excluding packaging test targets (packaging is done later)
@@ -96,8 +96,8 @@
   stage: package
   before_script: *unix_get_superbuild # you cannot put unix_build here
   script:
-    - git submodule update --init Superbuild/common-superbuild
-    - cd ../Superbuild-build/ # folder & link created by extracting cache in "unix_get_superbuild"
+    - git submodule update --init --recursive
+    - cd ../Superbuild-build/ # created by extracting cache in "unix_get_superbuild"
     - make lidarview -j8
     - ctest -R cpack
 
