@@ -3,7 +3,7 @@
 # This script enable to find the cache superbuild for this branch:
 # - fisrt: the branch specific superbuild
 # - then: a parent/master branch specific superbuild
-# - finally: the kitware-master branch superbuild
+# - finally: the master branch superbuild
 #
 # Let's give you a example to be more specific:
 # Suppose my branch name is feature/Slam/.../test/Nick and with try
@@ -17,7 +17,7 @@
 #   ---> os-feature/Slam/master
 #   ---> os-feature/master
 # finally:
-#   ---> os-kitware-master
+#   ---> os-master
 
 # not protecting against spaces in OS name or commit name,
 # because that is something that is very wrong and should not be
@@ -65,7 +65,7 @@ while ! cache_exist "$superbuild_cache"; do
     superbuild_cache="${prefix}/${path}/master-${MODE}"
     echo "looking for superbuild cache at: $superbuild_cache"
   else
-    superbuild_cache="${prefix}/${OS}/kitware-master-${MODE}"
+    superbuild_cache="${prefix}/${OS}/master-${MODE}"
     echo "top level reached, looking for superbuild cache at: ${superbuild_cache}"
     if ! cache_exist "$superbuild_cache"; then
       echo "!!!WARNING!!! Default superbuild : ${superbuild_cache} does not exists"
