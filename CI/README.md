@@ -13,7 +13,7 @@ Each time a commit is pushed to gitlab, the following steps happen:
     - **The best superbuild is found given the folowing criteria:**
         - fisrt: the branch specific superbuild
         - then: a parent/master branch specific superbuild
-        - finally: the kitware-master branch superbuild
+        - finally: the master branch superbuild
 
 #### example of how the best superbuild is found:
 
@@ -26,7 +26,7 @@ Suppose a commit is pushed on the branch named feature/Slam/.../test/Nick
   - ---> feature/Slam/master
   - ---> feature/master
 - finally:
-  - ---> kitware-master
+  - ---> master
 
 ## Overview of the different tools that are used
 
