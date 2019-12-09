@@ -125,6 +125,8 @@
     </action>
     <addaction name="actionAbout_LidarView"/>
     <addaction name="separator"/>
+    <addaction name="actionLidarViewUserGuide"/>
+    <addaction name="actionLidarViewDeveloperGuide"/>
     <addaction name="actionResetDefaultSettings"/>
     <addaction name="actionAdvanceFeature"/>
    </widget>
@@ -494,6 +496,11 @@
     <string>About ...</string>
    </property>
   </action>
+  <action name="actionLidarViewDeveloperGuide">
+   <property name="text">
+    <string>Developer's Guide</string>
+   </property>
+  </action>
   <action name="actionRecent_file1">
    <property name="text">
     <string>recent_file1</string>
@@ -549,6 +556,14 @@
    </property>
    <property name="toolTip">
     <string>Toggle between projective and orthogonal view</string>
+   </property>
+  </action>
+  <action name="actionLidarViewUserGuide">
+   <property name="text">
+    <string>User's Guide</string>
+   </property>
+   <property name="shortcut">
+    <string>F1</string>
    </property>
   </action>
   <action name="actionMeasure">
