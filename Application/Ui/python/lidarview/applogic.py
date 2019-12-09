@@ -1444,6 +1444,14 @@ def onTrailingFramesChanged(numFrames):
         smp.Render()
 
 
+def onFiringsSkipChanged(pr):
+    lidarPacketInterpreter = getLidarPacketInterpreter()
+    if lidarPacketInterpreter:
+        lidarPacketInterpreter.FiringsSkip = pr
+        smp.Render()
+        smp.Render(getSpreadSheetViewProxy())
+
+
 def setupStatusBar():
     # by using a QScrollArea inside the statusBar it should be possible
     # to reduce the minimum main window's width
@@ -1800,6 +1808,20 @@ def setupActions():
 
     app.actions['actionTrailingFramesSelector'] = timeToolBar.addWidget(spinBox)
     app.actions['actionTrailingFramesSelector'].setVisible(True)
+
+    FiringsSkipLabel = QtGui.QLabel('Skip:')
+    FiringsSkipLabel.toolTip = "Number of Points to Skip"
+    timeToolBar.addWidget(FiringsSkipLabel)
+
+    FiringsSkipBox = QtGui.QSpinBox()
+    FiringsSkipBox.toolTip = "Number of Points to Skip"
+    FiringsSkipBox.setMinimum(0)
+    FiringsSkipBox.setMaximum(100)
+    FiringsSkipBox.connect('valueChanged(int)', onFiringsSkipChanged)
+    app.FiringsSkipSpinBox = FiringsSkipBox
+
+    app.actions['actionFiringsSkipSelector'] = timeToolBar.addWidget(FiringsSkipBox)
+    app.actions['actionFiringsSkipSelector'].setVisible(True)
 
     displayWidget = getMainWindow().findChild('vvColorToolbar').findChild('pqDisplayColorWidget')
     displayWidget.connect('arraySelectionChanged ()',adjustScalarBarRangeLabelFormat)
