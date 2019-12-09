@@ -382,6 +382,8 @@ def openSensor():
     sensor.GetClientSideObject().SetIsCrashAnalysing(calibration.isCrashAnalysing)
     sensor.GetClientSideObject().SetForwardedIpAddress(ipAddressForwarding)
     sensor.Interpreter.GetClientSideObject().SetSensorTransform(sensorTransform)
+    sensor.Interpreter.IgnoreZeroDistances = app.actions['actionIgnoreZeroDistances'].isChecked()
+    sensor.Interpreter.IgnoreEmptyFrames = app.actions['actionIgnoreEmptyFrames'].isChecked()
     sensor.UpdatePipeline()
     sensor.Start()
 
@@ -481,6 +483,8 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
     reader.Interpreter.GetClientSideObject().SetSensorTransform(sensorTransform)
 
     lidarPacketInterpreter = getLidarPacketInterpreter()
+    lidarPacketInterpreter.IgnoreZeroDistances = app.actions['actionIgnoreZeroDistances'].isChecked()
+    lidarPacketInterpreter.IgnoreEmptyFrames = app.actions['actionIgnoreEmptyFrames'].isChecked()
 
     if SAMPLE_PROCESSING_MODE:
         processor = smp.ProcessingSample(reader)
@@ -1731,6 +1735,9 @@ def setupActions():
 
     app.actions['actionAdvanceFeature'].connect('triggered()', onToogleAdvancedGUI)
 
+    app.actions['actionIgnoreZeroDistances'].connect('triggered()', onIgnoreZeroDistances)
+    app.actions['actionIgnoreEmptyFrames'].connect('triggered()', onIgnoreEmptyFrames)
+
     app.actions['actionPlaneFit'].connect('triggered()', planeFit)
 
     app.actions['actionClose'].connect('triggered()', close)
@@ -1757,6 +1764,8 @@ def setupActions():
 
     # Restore action states from settings
     settings = getPVSettings()
+    app.actions['actionIgnoreZeroDistances'].setChecked(int(settings.value('LidarPlugin/IgnoreZeroDistances', 1)))
+    app.actions['actionIgnoreEmptyFrames'].setChecked(int(settings.value('LidarPlugin/IgnoreEmptyFrames', 1)))
 
 
     advanceMode = int(settings.value("LidarPlugin/AdvanceFeature/Enable", 0))
@@ -1875,6 +1884,33 @@ def end_cue(self):
     # force to be consistant with the UI
     toggleRPM()
 
+
+def onIgnoreZeroDistances():
+    # Get the check box value as an int to save it into the PV settings (there's incompatibility with python booleans)
+    IgnoreZeroDistances = int(app.actions['actionIgnoreZeroDistances'].isChecked())
+
+    # Save the setting for future session
+    getPVSettings().setValue('LidarPlugin/IgnoreZeroDistances', IgnoreZeroDistances)
+
+    # Apply it to the current source if any
+    lidarInterpreter = getLidarPacketInterpreter()
+    if lidarInterpreter:
+        lidarInterpreter.IgnoreZeroDistances = IgnoreZeroDistances
+        smp.Render()
+
+
+def onIgnoreEmptyFrames():
+    # Get the check box value as an int to save it into the PV settings (there's incompatibility with python booleans)
+    ignoreEmptyFrames = int(app.actions['actionIgnoreEmptyFrames'].isChecked())
+
+    # Save the setting for future session
+    getPVSettings().setValue('LidarPlugin/IgnoreEmptyFrames', ignoreEmptyFrames)
+
+    # Apply it to the current source if any
+    lidarInterpreter = getLidarPacketInterpreter()
+    if lidarInterpreter:
+        lidarInterpreter.IgnoreEmptyFrames = ignoreEmptyFrames
+        smp.Render()
 
 def updateUIwithNewLidar():
     lidar = getLidar()
