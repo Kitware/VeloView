@@ -88,6 +88,13 @@ public:
     this->paraviewInit(window);
     this->setupUi();
 
+    QActionGroup* dualReturnFilterActions = new QActionGroup(window);
+    dualReturnFilterActions->addAction(this->Ui.actionDualReturnModeDual);
+    dualReturnFilterActions->addAction(this->Ui.actionDualReturnDistanceNear);
+    dualReturnFilterActions->addAction(this->Ui.actionDualReturnDistanceFar);
+    dualReturnFilterActions->addAction(this->Ui.actionDualReturnIntensityHigh);
+    dualReturnFilterActions->addAction(this->Ui.actionDualReturnIntensityLow);
+
     window->show();
     window->raise();
     window->activateWindow();

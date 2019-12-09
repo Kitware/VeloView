@@ -156,6 +156,11 @@ def openData(filename):
     app.actions['actionChoose_Calibration_File'].setEnabled(False)
     app.actions['actionCropReturns'].setEnabled(False)
     app.actions['actionRecord'].setEnabled(False)
+    app.actions['actionDualReturnModeDual'].enabled = True
+    app.actions['actionDualReturnDistanceNear'].enabled = True
+    app.actions['actionDualReturnDistanceFar'].enabled = True
+    app.actions['actionDualReturnIntensityHigh'].enabled = True
+    app.actions['actionDualReturnIntensityLow'].enabled = True
     app.actions['actionShowRPM'].enabled = True
 
 
@@ -235,6 +240,24 @@ def setDefaultLookupTables(sourceProxy):
       RGBPoints=[0.0, 0.0, 0.0, 1.0,
                100.0, 1.0, 1.0, 0.0,
                256.0, 1.0, 0.0, 0.0])
+
+    # LUT for 'dual_distance'
+    smp.GetLookupTableForArray(
+      'dual_distance', 1,
+      InterpretValuesAsCategories=True, NumberOfTableValues=3,
+      RGBPoints=[-1.0, 0.1, 0.5, 0.7,
+                  0.0, 0.9, 0.9, 0.9,
+                 +1.0, 0.8, 0.2, 0.3],
+      Annotations=['-1', 'near', '0', 'dual', '1', 'far'])
+
+    # LUT for 'dual_intensity'
+    smp.GetLookupTableForArray(
+      'dual_intensity', 1,
+      InterpretValuesAsCategories=True, NumberOfTableValues=3,
+      RGBPoints=[-1.0, 0.5, 0.2, 0.8,
+                  0.0, 0.6, 0.6, 0.6,
+                 +1.0, 1.0, 0.9, 0.4],
+      Annotations=['-1', 'low', '0', 'dual', '1', 'high'])
 
     # LUT for 'laser_id'. This LUT is extracted from the XML calibration file
     # which doesn't exist in live stream mode
@@ -424,6 +447,13 @@ def openSensor():
     app.actions['actionMeasurement_Grid'].setChecked(True)
     showMeasurementGrid()
 
+    # Always enable dual return mode selection. A warning will be raised if
+    # there's no dual return on the current frame later on
+    app.actions['actionDualReturnModeDual'].enabled = True
+    app.actions['actionDualReturnDistanceNear'].enabled = True
+    app.actions['actionDualReturnDistanceFar'].enabled = True
+    app.actions['actionDualReturnIntensityHigh'].enabled = True
+    app.actions['actionDualReturnIntensityLow'].enabled = True
     app.actions['actionRecord'].enabled = True
 
     updateUIwithNewLidar()
@@ -557,6 +587,16 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
     enableSaveActions()
     addRecentFile(filename)
     app.actions['actionRecord'].setEnabled(False)
+
+    # Always enable dual return mode selection. A warning will be raised if
+    # there's no dual return on the current frame later on
+    app.actions['actionSelectDualReturn'].enabled = True
+    app.actions['actionSelectDualReturn2'].enabled = True
+    app.actions['actionDualReturnModeDual'].enabled = True
+    app.actions['actionDualReturnDistanceNear'].enabled = True
+    app.actions['actionDualReturnDistanceFar'].enabled = True
+    app.actions['actionDualReturnIntensityHigh'].enabled = True
+    app.actions['actionDualReturnIntensityLow'].enabled = True
 
     app.actions['actionShowRPM'].enabled = True
     app.actions['actionCorrectIntensityValues'].enabled = True
@@ -1118,7 +1158,15 @@ def close():
     app.statusLabel.setText('')
     disableSaveActions()
     app.actions['actionRecord'].setChecked(False)
+    app.actions['actionDualReturnModeDual'].setChecked(True)
 
+    app.actions['actionSelectDualReturn'].enabled = False
+    app.actions['actionSelectDualReturn2'].enabled = False
+    app.actions['actionDualReturnModeDual'].enabled = False
+    app.actions['actionDualReturnDistanceNear'].enabled = False
+    app.actions['actionDualReturnDistanceFar'].enabled = False
+    app.actions['actionDualReturnIntensityHigh'].enabled = False
+    app.actions['actionDualReturnIntensityLow'].enabled = False
     app.actions['actionCorrectIntensityValues'].enabled = False
     app.actions['actionFastRenderer'].enabled = False
 
@@ -1430,6 +1478,7 @@ def start():
 
     setupActions()
     disableSaveActions()
+    app.actions['actionSelectDualReturn'].setEnabled(False)
     app.actions['actionMeasure'].setEnabled(view.CameraParallelProjection)
     setupStatusBar()
     hideColorByComponent()
@@ -1685,8 +1734,78 @@ def toggleRPM():
         smp.Render()
 
 
+def toggleSelectDualReturn():
+    # test if we are on osx os
+    osName = str(sys.platform)
+    if osName == 'darwin':
+        QtGui.QMessageBox.warning(getMainWindow(), 'Information', 'This functionality is not yet available on %s' % osName)
+        return
+
+    #Get the active source
+    source = smp.FindSource("TrailingFrame")
+    lidarPacketInterpreter = getLidarPacketInterpreter()
+
+    #If no data are available
+    if not source :
+        return
+
+    if not lidarPacketInterpreter.GetClientSideObject().GetHasDualReturn() :
+        QtGui.QMessageBox.warning(getMainWindow(), 'Dual returns not found',
+        "The functionality only works with dual returns, and the current"
+        "frame has no dual returns.")
+        return
+
+    #Get the selected Points
+    selectedPoints = source.GetSelectionOutput(0)
+    polyData = selectedPoints.GetClientSideObject().GetOutput()
+    nSelectedPoints = polyData.GetNumberOfPoints()
+
+    if nSelectedPoints > 0:
+        idArray = polyData.GetPointData().GetArray('dual_return_matching')
+        idArray = polyData.GetBlock(0).GetPointData().GetArray('dual_return_matching')
+        # It should be possible to filter -1 from the idArray and then just use
+        # np.in1d below, but doing so generates errors (either an invalid
+        # expression, even when handling the case of an empty array, or an
+        # invalid non-mask return value.
+        selectedDualIds = set(str(int(idArray.GetValue(i))) for i in range(nSelectedPoints))
+        query = 'np.logical_and(dual_return_matching > -1, np.in1d(id, [{}]))'.format(','.join(selectedDualIds))
+    else:
+        query = 'dual_return_matching > -1'
+    smp.SelectPoints(query)
+    smp.Render()
+
+
 def toggleCrashAnalysis():
     app.EnableCrashAnalysis = app.actions['actionEnableCrashAnalysis'].isChecked()
+
+def setFilterToDual():
+    setFilterTo("Dual")
+
+def setFilterToDistanceNear():
+    setFilterTo("Near Distance")
+
+def setFilterToDistanceFar():
+    setFilterTo("Far Distance")
+
+def setFilterToIntensityHigh():
+    setFilterTo("High Intensity")
+
+def setFilterToIntensityLow():
+    setFilterTo("Low Intensity")
+
+def setFilterTo(mask):
+
+    interp = getLidarPacketInterpreter()
+    if interp:
+        if interp.GetClientSideObject().GetHasDualReturn():
+            interp.DualReturnFilter = mask
+            smp.Render()
+            smp.Render(getSpreadSheetViewProxy())
+        else:
+            app.actions['actionDualReturnModeDual'].setChecked(True)
+            QtGui.QMessageBox.warning(getMainWindow(), 'Dual returns not found',
+            "The functionality only works with dual returns, and the current"
+            "frame has no dual returns.")
 
 
 def transformMode():
@@ -1809,9 +1928,16 @@ def setupActions():
     app.actions['actionMeasure'].connect('triggered()', toggleRulerContext)
     app.actions['actionShowPosition'].connect('triggered()', ShowPosition)
 
+    app.actions['actionDualReturnModeDual'].connect('triggered()', setFilterToDual)
+    app.actions['actionDualReturnDistanceNear'].connect('triggered()', setFilterToDistanceNear)
+    app.actions['actionDualReturnDistanceFar'].connect('triggered()', setFilterToDistanceFar)
+    app.actions['actionDualReturnIntensityHigh'].connect('triggered()', setFilterToIntensityHigh)
+    app.actions['actionDualReturnIntensityLow'].connect('triggered()', setFilterToIntensityLow)
     app.actions['actionShowRPM'].connect('triggered()', toggleRPM)
     app.actions['actionCorrectIntensityValues'].connect('triggered()',intensitiesCorrectedChanged)
     app.actions['actionFastRenderer'].connect('triggered()',fastRendererChanged)
+    app.actions['actionSelectDualReturn'].connect('triggered()',toggleSelectDualReturn)
+    app.actions['actionSelectDualReturn2'].connect('triggered()',toggleSelectDualReturn)
 
     # Restore action states from settings
     settings = getPVSettings()
