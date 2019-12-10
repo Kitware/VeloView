@@ -23,6 +23,7 @@
       fi
     - WIN_CI_PROJECT_DIR=$(cygpath -w $(pwd))
     - echo "WIN_CI_PROJECT_DIR is $WIN_CI_PROJECT_DIR"
+    - git submodule sync
     - git submodule update --init --recursive
     # we want short paths so we build at the root of a drive
     - mkdir /cygdrive/c/lv-b
@@ -75,6 +76,7 @@ windows_build:
   extends: .only-important
   before_script: *windows_get_superbuild
   script:
+    - git submodule sync
     - git submodule update --init --recursive
     - cd /cygdrive/c/lv-b # provided by windows_get_superbuild
     - echo "call \"C:\\Users\\vagrant\\Desktop\\cmd-env-variables.cmd\"" > build.bat
@@ -88,6 +90,8 @@ windows_test:
   extends: .only-important
   before_script: *windows_get_superbuild
   script:
+    # get test data and baseline
+    - git submodule sync
     - git submodule update --init --recursive
     - git submodule update --init TestData
     - cd /cygdrive/c/lv-b # provided by windows_get_superbuild
@@ -108,6 +112,7 @@ windows_test:
   <<: *windows_10
   before_script: *windows_get_superbuild
   script:
+    - git submodule sync
     - git submodule update --init --recursive
     - cd /cygdrive/c/lv-b # provided by windows_get_superbuild
     - echo "call \"C:\\Users\\vagrant\\Desktop\\cmd-env-variables.cmd\"" > package.bat
