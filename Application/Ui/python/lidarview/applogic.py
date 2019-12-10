@@ -26,7 +26,7 @@ import PythonQt
 from PythonQt import QtCore, QtGui
 
 from vtkIOXMLPython import vtkXMLPolyDataWriter
-import kiwiviewerExporter
+import lidarviewcore.kiwiviewerExporter
 import gridAdjustmentDialog
 import aboutDialog
 import planefit
