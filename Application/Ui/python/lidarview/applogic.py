@@ -81,7 +81,7 @@ class AppLogic(object):
         self.gridProperties = None
 
         smp.LoadPlugin(vtkGetFileNameFromPluginName('PointCloudPlugin'))
-        smp.LoadPlugin(vtkGetFileNameFromPluginName('EyeDomeLightingView'))
+#        smp.LoadPlugin(vtkGetFileNameFromPluginName('EyeDomeLightingView'))
 
 
     def createStatusBarWidgets(self):
@@ -144,8 +144,6 @@ def openData(filename):
     colorByIntensity(reader)
 
     showSourceInSpreadSheet(reader)
-
-    smp.GetActiveView().ViewTime = 0.0
 
     app.reader = reader
     app.filenameLabel.setText('File: %s' % os.path.basename(filename))
@@ -272,14 +270,18 @@ def setDefaultLookupTables(sourceProxy):
           RGBPoints=rgbRaw)
 
 def colorByIntensity(sourceProxy):
-
-    if not hasArrayName(sourceProxy, 'intensity'):
-        return False
+    arrayName = "intensity"
+    #  try:
+    #      _ = sourceProxy.Interpreter.UseIntraFiringAdjustment
+    #      arrayName =  "intensity"
+    #  #hasArrayName(sourceProxy, 'Intensity'):
+    #  except AttributeError:
+    #      arrayName = "Intensity"
 
     setDefaultLookupTables(sourceProxy)
     rep = smp.GetDisplayProperties(sourceProxy)
-    rep.ColorArrayName = 'intensity'
-    rep.LookupTable = smp.GetLookupTableForArray('intensity', 1)
+    rep.ColorArrayName = arrayName
+    rep.LookupTable = smp.GetLookupTableForArray(arrayName, 1)
     return True
 
 
@@ -331,6 +333,7 @@ def chooseCalibration(calibrationFilename=None):
             self.sensorTransform = vtk.vtkTransform()
             self.gpsTransform = vtk.vtkTransform()
             self.isCrashAnalysing = dialog.isCrashAnalysing()
+            self.interpreterType = dialog.interpreterType()
 
             qm = dialog.sensorTransform()
             vmLidar = vtk.vtkMatrix4x4()
@@ -392,10 +395,21 @@ def openSensor():
     isForwarding = calibration.isForwarding
     ipAddressForwarding = calibration.ipAddressForwarding
 
+    # Get the interpreter type that should be used
+    # - 0: Legacy Packet Format
+    # - 1: Advanced Packet Format
+    interpreterType = calibration.interpreterType
+
     close()
     app.grid = createGrid()
 
     sensor = smp.LidarStream(guiName='Data', CalibrationFile=calibrationFile)
+    if (interpreterType == 0): # Legacy
+        sensor.Interpreter = 'Velodyne Interpreter'
+        sensor.Interpreter.UseIntraFiringAdjustment = app.actions['actionIntraFiringAdjust'].isChecked()
+    else: # Advanced
+        sensor.Interpreter = 'Velodyne Advanced Interpreter'
+
     sensor.LidarPort = LidarPort
     sensor.GetClientSideObject().EnableGPSListening(True)
     sensor.GetClientSideObject().SetGPSPort(GPSPort)
@@ -406,15 +420,12 @@ def openSensor():
     sensor.GetClientSideObject().SetForwardedIpAddress(ipAddressForwarding)
     sensor.Interpreter.GetClientSideObject().SetSensorTransform(sensorTransform)
     sensor.Interpreter.IgnoreZeroDistances = app.actions['actionIgnoreZeroDistances'].isChecked()
-    sensor.Interpreter.UseIntraFiringAdjustment = app.actions['actionIntraFiringAdjust'].isChecked()
     sensor.Interpreter.IgnoreEmptyFrames = app.actions['actionIgnoreEmptyFrames'].isChecked()
     sensor.UpdatePipeline()
     sensor.Start()
 
     if SAMPLE_PROCESSING_MODE:
         processor = smp.ProcessingSample(sensor)
-
-    smp.GetActiveView().ViewTime = 0.0
 
     app.sensor = sensor
     app.trailingFramesSpinBox.enabled = False
@@ -436,7 +447,8 @@ def openSensor():
         prep = smp.Show(processor)
     smp.Render()
 
-    showSourceInSpreadSheet(sensor)
+    showSourceInSpreadSheet(app.trailingFrame)
+    colorByIntensity(sensor)
 
     app.actions['actionShowRPM'].enabled = True
     app.actions['actionCorrectIntensityValues'].enabled = True
@@ -457,6 +469,8 @@ def openSensor():
     app.actions['actionRecord'].enabled = True
 
     updateUIwithNewLidar()
+    smp.Render()
+    colorByIntensity(sensor)
 
 
 def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrationUIArgs=None):
@@ -472,6 +486,11 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
 
     calibrationFile = calibration.calibrationFile
     sensorTransform = calibration.sensorTransform
+
+    # Get the interpreter type that should be used
+    # - 0: Legacy Packet Format
+    # - 1: Advanced Packet Format
+    interpreterType = calibration.interpreterType
 
     close()
 
@@ -494,17 +513,17 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
     reader = smp.LidarReader(guiName='Data',
                              FileName = filename,
                              CalibrationFile = calibrationFile)
+    if (interpreterType == 0): # Legacy
+        reader.Interpreter = 'Velodyne Interpreter'
+        reader.Interpreter.UseIntraFiringAdjustment = app.actions['actionIntraFiringAdjust'].isChecked()
+    else: # Advanced
+      reader.Interpreter = 'Velodyne Advanced Interpreter'
 
+    reader.UpdatePipelineInformation()
     app.reader = reader
     app.trailingFramesSpinBox.enabled = True
     app.trailingFrame = smp.TrailingFrame(guiName="TrailingFrame", Input=getLidar(), NumberOfTrailingFrames=app.trailingFramesSpinBox.value)
-
-    displayableFilename = os.path.basename(filename)
-    # shorten the name to display because the status bar gives a lower bound to main window width
-    shortDisplayableFilename = (displayableFilename[:20] + '...' + displayableFilename[-20:]) if len(displayableFilename) > 43 else displayableFilename
-    app.filenameLabel.setText('File: %s' % shortDisplayableFilename)
-    app.filenameLabel.setToolTip('File: %s' % displayableFilename)
-
+    app.filenameLabel.setText('File: %s' % os.path.basename(filename))
     app.positionPacketInfoLabel.setText('') # will be updated later if possible
     onCropReturns(False) # Dont show the dialog just restore settings
 
@@ -517,7 +536,6 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
 
     lidarPacketInterpreter = getLidarPacketInterpreter()
     lidarPacketInterpreter.IgnoreZeroDistances = app.actions['actionIgnoreZeroDistances'].isChecked()
-    lidarPacketInterpreter.UseIntraFiringAdjustment = app.actions['actionIntraFiringAdjust'].isChecked()
     lidarPacketInterpreter.IgnoreEmptyFrames = app.actions['actionIgnoreEmptyFrames'].isChecked()
 
     if SAMPLE_PROCESSING_MODE:
@@ -526,8 +544,6 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
     handler.RemoveObserver(tag)
     handler.SetProgressFrequency(freq)
     progressDialog.close()
-
-    smp.GetActiveView().ViewTime = 0.0
 
     if SAMPLE_PROCESSING_MODE:
         prep = smp.Show(processor)
@@ -632,29 +648,29 @@ def createRuler():
     pxm = servermanager.ProxyManager()
     distancerep = pxm.NewProxy('representations', 'DistanceWidgetRepresentation')
     distancerepeasy = servermanager._getPyProxy(distancerep)
-    smp.GetActiveView().Representations.append(distancerepeasy)
+    app.mainView.Representations.append(distancerepeasy)
     distancerepeasy.Visibility = False
-    smp.Render()
+    smp.Render(app.mainView)
 
     return distancerepeasy
 
 
 def hideRuler():
     app.ruler.Visibility = False
-    smp.Render()
+    smp.Render(app.mainView)
 
 
 def showRuler():
     app.ruler.Visibility = True
-    smp.Render()
+    smp.Render(app.mainView)
 
 def getPointFromCoordinate(coord, midPlaneDistance = 0.5):
     assert len(coord) == 2
 
-    windowHeight = smp.GetActiveView().ViewSize[1]
+    windowHeight = app.mainView.ViewSize[1]
 
     displayPoint = [coord[0], windowHeight - coord[1], midPlaneDistance]
-    renderer = smp.GetActiveView().GetRenderer()
+    renderer = app.mainView.GetRenderer()
     renderer.SetDisplayPoint(displayPoint)
     renderer.DisplayToWorld()
     world1 = renderer.GetWorldPoint()
@@ -680,7 +696,7 @@ def toggleRulerContext():
 
 def setRulerCoordinates(mouseEvent):
 
-    pqView = smp.GetActiveView()
+    pqView = app.mainView
     rW = pqView.GetRenderWindow()
     windowInteractor = rW.GetInteractor()
     currentMouseState = mouseEvent.buttons()
@@ -1072,7 +1088,7 @@ def saveToKiwiViewer(filename, timesteps):
 
     filenames = exportToDirectory(outDir, timesteps)
 
-    kiwiviewerExporter.writeJsonData(outDir, smp.GetActiveView(), smp.GetDisplayProperties(), filenames)
+    kiwiviewerExporter.writeJsonData(outDir, app.mainView, smp.GetDisplayProperties(), filenames)
 
     kiwiviewerExporter.zipDir(outDir, filename)
     kiwiviewerExporter.shutil.rmtree(tempDir)
@@ -1358,7 +1374,7 @@ def onCropReturns(show = True):
 
 def resetCameraToBirdsEyeView(view=None):
 
-    view = view or smp.GetActiveView()
+    view = view or smp.app.mainView
     view.CameraFocalPoint = [0, 0, 0]
     view.CameraViewUp = [0, 1, 0]
     view.CameraPosition = [0, 0, 40]
@@ -1368,7 +1384,7 @@ def resetCameraToBirdsEyeView(view=None):
 
 def resetCameraToForwardView(view=None):
 
-    view = view or smp.GetActiveView()
+    view = view or app.mainView
     view.CameraFocalPoint = [0,0,0]
     view.CameraViewUp = [0, 0.27, 0.96]
     view.CameraPosition = [0, -72, 18.0]
@@ -1422,7 +1438,8 @@ def createGrid(view=None):
     grid = smp.GridSource(guiName='Measurement Grid')
 
     if app.gridProperties.Persist == False:
-        grid.GridNbTicks = (int(math.ceil(50000 * app.DistanceResolutionM/ grid.Scale )))
+         grid.GridNbTicks = 10
+#        grid.GridNbTicks = (int(math.ceil(50000 * app.DistanceResolutionM/ grid.Scale )))
     else:
         # Restore grid properties
         grid.Normal = app.gridProperties.Normal
@@ -1528,15 +1545,13 @@ def onTrailingFramesChanged(numFrames):
 
 def onFiringsSkipChanged(pr):
     lidarPacketInterpreter = getLidarPacketInterpreter()
-    if lidarPacketInterpreter:
+    if lidarPacketInterpreter and hasattr(lidarPacketInterpreter, "FiringsSkip"):
         lidarPacketInterpreter.FiringsSkip = pr
         smp.Render()
         smp.Render(getSpreadSheetViewProxy())
 
 
 def setupStatusBar():
-    # by using a QScrollArea inside the statusBar it should be possible
-    # to reduce the minimum main window's width
 
     statusBar = getMainWindow().statusBar()
     statusBar.addPermanentWidget(app.logoLabel)
@@ -1576,7 +1591,7 @@ def onLaserSelection(show = True):
     lidarPacketInterpreter = getLidarPacketInterpreter()
     # wrapping not currently working for plugins:
     lidarPacketInterpreter = None
-    if lidarPacketInterpreter:
+    if lidarPacketInterpreter and hasattr(lidarPacketInterpreter.GetClientSideObject(), "GetLaserCorrections") :
         lidarPacketInterpreter.GetClientSideObject().GetLaserSelection(oldmask)
         lidarPacketInterpreter.GetClientSideObject().GetLaserCorrections(verticalCorrection,
             rotationalCorrection,
@@ -1711,7 +1726,7 @@ def onClearMenu():
 
 def toggleProjectionType():
 
-    view = smp.GetActiveView()
+    view = app.mainView
 
     view.CameraParallelProjection = not view.CameraParallelProjection
     if app.actions['actionMeasure'].isChecked():
@@ -1722,7 +1737,7 @@ def toggleProjectionType():
     if not view.CameraParallelProjection:
         app.actions['actionMeasure'].setChecked(False)
 
-    smp.Render()
+    smp.Render(app.mainView)
 
 def toggleRPM():
     rpm = smp.FindSource("RPM")
@@ -1748,6 +1763,9 @@ def toggleSelectDualReturn():
     #If no data are available
     if not source :
         return
+    if not hasattr(lidarPacketInterpreter.GetClientSideObject(), "GetHasDualReturn"):
+      QtGui.QMessageBox.warning(getMainWindow(), 'Warning', 'This function is not implemented for the Advanced Packet Format')
+      return
 
     if not lidarPacketInterpreter.GetClientSideObject().GetHasDualReturn() :
         QtGui.QMessageBox.warning(getMainWindow(), 'Dual returns not found',
@@ -1797,8 +1815,11 @@ def setFilterTo(mask):
 
     interp = getLidarPacketInterpreter()
     if interp:
-        if interp.GetClientSideObject().GetHasDualReturn():
-            interp.DualReturnFilter = mask
+        if not hasattr(interp, "GetHasDualReturn"):
+          QtGui.QMessageBox.warning(getMainWindow(), 'Warning', 'This function is not implemented for the Advanced Packet Format')
+          return
+        elif interp.GetClientSideObject().GetHasDualReturn():
+            interp.GetClientSideObject().SetDualReturnFilter(mask)
             smp.Render()
             smp.Render(getSpreadSheetViewProxy())
         else:
@@ -1857,15 +1878,20 @@ def onToogleAdvancedGUI(updateSettings = True):
   """ Switch the GUI between advanced and classic mode"""
   # hide/show Sources menu
   menuSources = getMainWindow().findChild("QMenu", "menuSources").menuAction()
-  menuSources.visible = not menuSources.visible
+  menuSources.visible = False # not menuSources.visible
   # hide/show Filters menu
   menuFilters = getMainWindow().findChild("QMenu", "menuFilters").menuAction()
-  menuFilters.visible = not menuFilters.visible
+  menuFilters.visible = False # not menuFilters.visible
   # hide/show Advance menu
   menuAdvance = getMainWindow().findChild("QMenu", "menuAdvance").menuAction()
-  menuAdvance.visible = not menuAdvance.visible
+  menuAdvance.visible = False # not menuAdvance.visible
   # hide/show view decorator
   getMainWindow().centralWidget().toggleWidgetDecoration()
+  # hide/show some views
+  advance_action = ["Display", "Information", "Memory Inspector", "Pipeline Browser", "Properties", "View"]
+  for action in getMainWindow().findChild("QMenu", "menuViews").actions():
+    if action.text in advance_action:
+      action.visible = not action.visible
   # update the UserSettings
   if updateSettings:
     # booleans must be store as int
@@ -2077,6 +2103,9 @@ def onIgnoreZeroDistances():
         smp.Render()
 
 def onIntraFiringAdjust():
+    if not hasattr(getLidarPacketInterpreter(), "UseIntraFiringAdjustment"):
+        QtGui.QMessageBox.warning(getMainWindow(), 'Warning', 'This function is not implemented for the Advanced Packet Format')
+        return
     # Get the check box value as an int to save it into the PV settings (there's incompatibility with python booleans)
     intraFiringAdjust = int(app.actions['actionIntraFiringAdjust'].isChecked())
 

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>716</width>
-    <height>523</height>
+    <width>844</width>
+    <height>566</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -206,6 +206,46 @@
       <string>Sensor Calibration</string>
      </property>
      <layout class="QGridLayout" name="gridLayout">
+      <item row="3" column="2">
+       <widget class="QPushButton" name="ClearSettingsPushButton">
+        <property name="toolTip">
+         <string>Reset the advanced configuration by default</string>
+        </property>
+        <property name="text">
+         <string>Reset advanced configuration</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="0" colspan="3">
+       <widget class="QListWidget" name="ListWidget"/>
+      </item>
+      <item row="1" column="0">
+       <widget class="QToolButton" name="AddButton">
+        <property name="text">
+         <string>Add</string>
+        </property>
+        <property name="icon">
+         <iconset theme="list-add">
+          <normaloff>.</normaloff>.</iconset>
+        </property>
+        <property name="toolButtonStyle">
+         <enum>Qt::ToolButtonTextBesideIcon</enum>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="1">
+       <spacer name="horizontalSpacer_5">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>220</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
       <item row="1" column="1">
        <widget class="QToolButton" name="RemoveButton">
         <property name="text">
@@ -233,52 +273,26 @@
         </property>
        </spacer>
       </item>
-      <item row="0" column="0" colspan="3">
-       <widget class="QListWidget" name="ListWidget"/>
-      </item>
-      <item row="1" column="0">
-       <widget class="QToolButton" name="AddButton">
-        <property name="text">
-         <string>Add</string>
-        </property>
-        <property name="icon">
-         <iconset theme="list-add">
-          <normaloff>.</normaloff>.</iconset>
-        </property>
-        <property name="toolButtonStyle">
-         <enum>Qt::ToolButtonTextBesideIcon</enum>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="0">
+      <item row="3" column="0">
        <widget class="QCheckBox" name="AdvancedConfiguration">
         <property name="text">
          <string>Advanced configuration</string>
         </property>
        </widget>
       </item>
-      <item row="2" column="2">
-       <widget class="QPushButton" name="ClearSettingsPushButton">
-        <property name="toolTip">
-         <string>Reset the advanced configuration by default</string>
-        </property>
-        <property name="text">
-         <string>Reset advanced configuration</string>
-        </property>
+      <item row="2" column="0">
+       <widget class="QComboBox" name="InterpreterSelectionComboBox">
+        <item>
+         <property name="text">
+          <string>Legacy Packet Format</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Advanced Packet Format</string>
+         </property>
+        </item>
        </widget>
-      </item>
-      <item row="2" column="1">
-       <spacer name="horizontalSpacer_5">
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>220</width>
-          <height>20</height>
-         </size>
-        </property>
-       </spacer>
       </item>
      </layout>
     </widget>

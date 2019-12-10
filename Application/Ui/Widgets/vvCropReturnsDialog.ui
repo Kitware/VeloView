@@ -159,14 +159,14 @@
       <item row="7" column="1">
        <widget class="QCheckBox" name="CropOutsideCheckBox">
         <property name="text">
-         <string>Inverse Cropping : Keep only the points that lay outside the volume defined above.</string>
+         <string>Inverse Cropping : Keep points outside the range</string>
         </property>
        </widget>
       </item>
       <item row="2" column="1">
        <widget class="QGroupBox" name="radioButtonGroupBox">
         <property name="title">
-         <string>Coordinates mode selection:</string>
+         <string>Coordinates mode selection</string>
         </property>
         <layout class="QGridLayout" name="radioButtonGroupBoxLayout">
          <item row="1" column="1">
@@ -189,7 +189,7 @@
       <item row="1" column="1">
        <widget class="QLabel" name="label">
         <property name="text">
-         <string>Keep only the points that lay inside the volume defined below.</string>
+         <string> Keep only points with coordinates in range defined below.</string>
         </property>
        </widget>
       </item>

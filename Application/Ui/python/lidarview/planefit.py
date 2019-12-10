@@ -44,7 +44,15 @@ def fitPlane():
     smp.Show(extracter)
 
     try:
-        pd = extracter.GetClientSideObject().GetOutput().GetBlock(0)
+        pd = extracter.GetClientSideObject().GetOutput()
+
+        if pd.IsTypeOf("vtkMultiBlockDataSet"):
+            appendFilter = vtk.vtkAppendFilter()
+            for i in range(pd.GetNumberOfBlocks()):
+                appendFilter.AddInputData(pd.GetBlock(i))
+            appendFilter.Update()
+            pd = appendFilter.GetOutput()
+
         max_laser_id = pd.GetPointData().GetArray("laser_id").GetRange()[1]
         nchannels = 2**vtk.vtkMath.CeilLog2(int(max_laser_id))
 
