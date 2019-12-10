@@ -51,16 +51,6 @@
     - /cygdrive/c/mc.exe config host add superbuild ${MINIO_CACHE_SERVER_ADDRESS} ${MINIO_CACHE_SERVER_ACCESS_KEY} ${MINIO_CACHE_SERVER_SECRET_KEY}
     - /cygdrive/c/mc.exe cp archive superbuild/runner/minio/project/808/${cache_patch}/${OS}/${CI_COMMIT_REF_NAME}-${mode}
 
-windows_superbuild_manual: &windows_superbuild_manual
-  when: manual
-  <<: *windows_superbuild
-  stage: manual
-
-windows_superbuild_schedule: &windows_superbuild_schedule
-  <<: *windows_superbuild
-  only:
-    - schedules
-
 #-------------------------------------------------------------------------------
 # jobs for Windows 10
 #-------------------------------------------------------------------------------
@@ -106,6 +96,20 @@ windows_test:
     - echo "ctest -E \"$test_blacklist\"" >> test.bat
     - chmod +x test.bat
     - ./test.bat
+
+# For SuperBuild and package
+# the "mode" variable should be used for choosing light/full
+windows_superbuild_manual: &windows_superbuild_manual
+  when: manual
+  <<: *windows_superbuild
+  <<: *windows_10
+  stage: manual
+
+windows_superbuild_schedule: &windows_superbuild_schedule
+  <<: *windows_superbuild
+  <<: *windows_10
+  only:
+    - schedules
 
 .windows_package: &windows_package
   stage: package
