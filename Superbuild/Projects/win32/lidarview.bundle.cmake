@@ -8,7 +8,7 @@ endif ()
 
 set(CPACK_NSIS_HELP_LINK "https://www.paraview.org/lidarview/")
 set(${SOFTWARE_NAME}_description "${SOFTWARE_NAME} ${lidarview_version_full}")
-set(CPACK_NSIS_MUI_ICON "${CMAKE_CURRENT_LIST_DIR}/../../../SoftwareInformation/logo.ico")
+set(CPACK_NSIS_MUI_ICON "${CMAKE_CURRENT_LIST_DIR}/../../../Application/SoftwareInformation/logo.ico")
 
 
 set(library_paths "lib")
