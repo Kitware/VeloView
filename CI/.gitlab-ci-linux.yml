@@ -10,15 +10,20 @@
     - cd ${CI_PROJECT_DIR}
     - ln -s ../Superbuild-build Superbuild-build
 
+# this removes previous superbuild build files
+.superbuild_remove_old_dir:
+  script: &superbuild_remove_old_dir
+  - rm -rf ../Superbuild-build/
+
 .linux_superbuild: &linux_superbuild
   stage: superbuild
+  before_script: *superbuild_remove_old_dir
   script:
     - git submodule sync
     - git submodule update --init --recursive
     # prepare directory
     - cd ..
-    - rm -rf Superbuild-build/
-    - mkdir Superbuild-build/
+    - mkdir -p Superbuild-build/
     - cd Superbuild-build/
     # configure & generate
     - >
