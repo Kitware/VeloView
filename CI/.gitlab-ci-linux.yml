@@ -10,12 +10,14 @@
     - cd ${CI_PROJECT_DIR}
     - ln -s ../Superbuild-build Superbuild-build
 
+# Currently the OSX job are executed in a shell runner, every folder that is created remains
+# the archived superbuild dir has its lidarview subproject builddir removed
 # this removes previous superbuild build files
 .superbuild_remove_old_dir:
   script: &superbuild_remove_old_dir
   - rm -rf ../Superbuild-build/
 
-.linux_superbuild: &linux_superbuild
+.unix_superbuild: &unix_superbuild
   stage: superbuild
   before_script: *superbuild_remove_old_dir
   script:
@@ -32,19 +34,36 @@
       else
         optional_dependancies="OFF"
       fi
-    - cmake -DCMAKE_BUILD_TYPE:STRING=${cmake_option_CMAKE_BUILD_TYPE}
+    - >
+      if [ "${OS}" == "OSX_ElCapitan" ]; then
+        osx_args="-DCMAKE_OSX_ARCHITECTURES:STRING=${cmake_option_CMAKE_OSX_ARCHITECTURES}
+         -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING=${cmake_option_CMAKE_OSX_DEPLOYMENT_TARGET}
+         -DCMAKE_OSX_SYSROOT:STRING=${cmake_option_CMAKE_OSX_SYSROOT}
+         -DCMAKE_OSX_SDK:STRING=${cmake_option_CMAKE_OSX_SDK}"
+      else
+        osx_args=""
+      fi
+    - cmake -DCMAKE_BUILD_TYPE:STRING=${cmake_option_CMAKE_BUILD_TYPE} ${osx_args}
       -DBUILD_TESTING=True
       -DENABLE_all=${optional_dependancies}
       -Dsuperbuild_download_location="../downloads"
       ${CI_PROJECT_DIR}/Superbuild
     # disable darknet on CI because no GPU available
     - cmake -DENABLE_all=False -DENABLE_darknet=False .
+    # Tested on OSX_ElCapitan: opencv,nanoflann,ceres
+    # PCL not working yet with weird error related to boost linking
+    - >
+      if [ "${OS}" == "OSX_ElCapitan" ]; then
+        cmake -DENABLE_png=False -DENABLE_pcl=False .
+      fi
     # force pcl to build only with 3 thread because we don't have enough RAM
     - >
-      if [ "${mode}" == "full" ]; then
-        cmake -DSUPERBUILD_PROJECT_PARALLELISM=3 .
-        make pcl -j8
-        cmake -DSUPERBUILD_PROJECT_PARALLELISM=$(nproc) .
+      if [ "${OS}" != "OSX_ElCapitan" ]; then
+        if [ "${mode}" == "full" ]; then
+          cmake -DSUPERBUILD_PROJECT_PARALLELISM=3 .
+          make pcl -j8
+          cmake -DSUPERBUILD_PROJECT_PARALLELISM=$(nproc) .
+        fi
       fi
     # compile
     - make -j8
@@ -55,16 +74,17 @@
     - cd ..
     - echo "compressing and uploading Superbuild. This take some time..."
     - tar zcf archive Superbuild-build/
+    - which mc && ln -s `which mc` ~/mc
     - ~/mc config host add superbuild ${MINIO_CACHE_SERVER_ADDRESS} ${MINIO_CACHE_SERVER_ACCESS_KEY} ${MINIO_CACHE_SERVER_SECRET_KEY}
     - ~/mc cp archive superbuild/runner/minio/project/808/${cache_patch}/${OS}/${CI_COMMIT_REF_NAME}-${mode}
 
-.linux_superbuild_manual: &linux_superbuild_manual
+.unix_superbuild_manual: &unix_superbuild_manual
   when: manual
-  <<: *linux_superbuild
+  <<: *unix_superbuild
   stage: manual
 
-.linux_superbuild_schedule: &linux_superbuild_schedule
-  <<: *linux_superbuild
+.unix_superbuild_schedule: &unix_superbuild_schedule
+  <<: *unix_superbuild
   only:
     - schedules
 
@@ -106,7 +126,6 @@
     - cd ../Superbuild-build/ # created by extracting cache in "unix_get_superbuild"
     - make lidarview -j8
     - ctest -R cpack
-#    - ctest -R cpack-lidarview-TGZ -V
 
 .unix_package_manual: &unix_package_manual
   when: manual
@@ -151,11 +170,11 @@ ubuntu16.04_test:
 # the "mode" variable should be used for choosing light/full
 ubuntu16.04_superbuild_manual:
   <<: *ubuntu_16_04
-  <<: *linux_superbuild_manual
+  <<: *unix_superbuild_manual
 
 ubuntu16.04_superbuild_schedule:
   <<: *ubuntu_16_04
-  <<: *linux_superbuild_schedule
+  <<: *unix_superbuild_schedule
 
 ubuntu16.04_package_manual:
   <<: *ubuntu_16_04

@@ -17,7 +17,7 @@
   script: &superbuild_remove_old_dir
   - rm -rf ../Superbuild-build/
 
-.OSX_superbuild: &OSX_superbuild
+.unix_superbuild: &unix_superbuild
   stage: superbuild
   before_script: *superbuild_remove_old_dir
   script:
@@ -34,22 +34,37 @@
       else
         optional_dependancies="OFF"
       fi
-    - cmake -DCMAKE_BUILD_TYPE:STRING=${cmake_option_CMAKE_BUILD_TYPE}
-      -DCMAKE_OSX_ARCHITECTURES:STRING=${cmake_option_CMAKE_OSX_ARCHITECTURES}
-      -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING=${cmake_option_CMAKE_OSX_DEPLOYMENT_TARGET}
-      -DCMAKE_OSX_SYSROOT:STRING=${cmake_option_CMAKE_OSX_SYSROOT}
-      -DCMAKE_OSX_SDK:STRING=${cmake_option_CMAKE_OSX_SDK}
+    - >
+      if [ "${OS}" == "OSX_ElCapitan" ]; then
+        osx_args="-DCMAKE_OSX_ARCHITECTURES:STRING=${cmake_option_CMAKE_OSX_ARCHITECTURES}
+         -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING=${cmake_option_CMAKE_OSX_DEPLOYMENT_TARGET}
+         -DCMAKE_OSX_SYSROOT:STRING=${cmake_option_CMAKE_OSX_SYSROOT}
+         -DCMAKE_OSX_SDK:STRING=${cmake_option_CMAKE_OSX_SDK}"
+      else
+        osx_args=""
+      fi
+    - cmake -DCMAKE_BUILD_TYPE:STRING=${cmake_option_CMAKE_BUILD_TYPE} ${osx_args}
       -DBUILD_TESTING=True
       -DENABLE_all=${optional_dependancies}
       -Dsuperbuild_download_location="../downloads"
-      -DSUPERBUILD_PROJECT_PARALLELISM=1
       ${CI_PROJECT_DIR}/Superbuild
-    # parallelism seems to fails on OSX with boost/blas/qt5
     # disable darknet on CI because no GPU available
     - cmake -DENABLE_all=False -DENABLE_darknet=False .
-     -DENABLE_png=False -DENABLE_pcl=False
     # Tested on OSX_ElCapitan: opencv,nanoflann,ceres
     # PCL not working yet with weird error related to boost linking
+    - >
+      if [ "${OS}" == "OSX_ElCapitan" ]; then
+        cmake -DENABLE_png=False -DENABLE_pcl=False .
+      fi
+    # force pcl to build only with 3 thread because we don't have enough RAM
+    - >
+      if [ "${OS}" != "OSX_ElCapitan" ]; then
+        if [ "${mode}" == "full" ]; then
+          cmake -DSUPERBUILD_PROJECT_PARALLELISM=3 .
+          make pcl -j8
+          cmake -DSUPERBUILD_PROJECT_PARALLELISM=$(nproc) .
+        fi
+      fi
     # compile
     - make -j8
     # remove lidarview
@@ -59,16 +74,17 @@
     - cd ..
     - echo "compressing and uploading Superbuild. This take some time..."
     - tar zcf archive Superbuild-build/
-    - mc config host add superbuild ${MINIO_CACHE_SERVER_ADDRESS} ${MINIO_CACHE_SERVER_ACCESS_KEY} ${MINIO_CACHE_SERVER_SECRET_KEY}
-    - mc cp archive superbuild/runner/minio/project/808/${cache_patch}/${OS}/${CI_COMMIT_REF_NAME}-${mode}
+    - which mc && ln -s `which mc` ~/mc
+    - ~/mc config host add superbuild ${MINIO_CACHE_SERVER_ADDRESS} ${MINIO_CACHE_SERVER_ACCESS_KEY} ${MINIO_CACHE_SERVER_SECRET_KEY}
+    - ~/mc cp archive superbuild/runner/minio/project/808/${cache_patch}/${OS}/${CI_COMMIT_REF_NAME}-${mode}
 
-.OSX_superbuild_manual: &OSX_superbuild_manual
+.unix_superbuild_manual: &unix_superbuild_manual
   when: manual
-  <<: *OSX_superbuild
+  <<: *unix_superbuild
   stage: manual
 
-.OSX_superbuild_schedule: &OSX_superbuild_schedule
-  <<: *OSX_superbuild
+.unix_superbuild_schedule: &unix_superbuild_schedule
+  <<: *unix_superbuild
   only:
     - schedules
 
@@ -160,11 +176,11 @@ OSX_ElCapitan_test:
 # the "mode" variable should be used for choosing light/full
 OSX_ElCapitan_superbuild_manual:
   <<: *OSX_ElCapitan
-  <<: *OSX_superbuild_manual
+  <<: *unix_superbuild_manual
 
 OSX_ElCapitan_superbuild_schedule:
   <<: *OSX_ElCapitan
-  <<: *OSX_superbuild_schedule
+  <<: *unix_superbuild_schedule
 
 OSX_ElCapitan_package_manual:
   <<: *OSX_ElCapitan
