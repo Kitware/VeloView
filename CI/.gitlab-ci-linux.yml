@@ -183,3 +183,45 @@ ubuntu16.04_package_manual:
 ubuntu16.04_package_schedule:
   <<: *ubuntu_16_04
   <<: *unix_package_schedule
+
+
+#-------------------------------------------------------------------------------
+# jobs for OSX ElCapitan
+#-------------------------------------------------------------------------------
+.OSX_ElCapitan: &OSX_ElCapitan
+  tags:
+    - OSX_ElCapitan
+  variables:
+    OS: OSX_ElCapitan
+# options specific to macOS builds
+    cmake_option_CMAKE_OSX_ARCHITECTURES: "x86_64"
+    cmake_option_CMAKE_OSX_DEPLOYMENT_TARGET: "10.10"
+    cmake_option_CMAKE_OSX_SDK: "macosx10.12"
+    cmake_option_CMAKE_OSX_SYSROOT: "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.12.sdk"
+
+
+OSX_ElCapitan_build:
+  <<: *OSX_ElCapitan
+  <<: *unix_build
+
+OSX_ElCapitan_test:
+  <<: *OSX_ElCapitan
+  <<: *unix_test
+
+# For SuperBuild and package
+# the "mode" variable should be used for choosing light/full
+OSX_ElCapitan_superbuild_manual:
+  <<: *OSX_ElCapitan
+  <<: *unix_superbuild_manual
+
+OSX_ElCapitan_superbuild_schedule:
+  <<: *OSX_ElCapitan
+  <<: *unix_superbuild_schedule
+
+OSX_ElCapitan_package_manual:
+  <<: *OSX_ElCapitan
+  <<: *unix_package_manual
+
+OSX_ElCapitan_package_schedule:
+  <<: *OSX_ElCapitan
+  <<: *unix_package_schedule
