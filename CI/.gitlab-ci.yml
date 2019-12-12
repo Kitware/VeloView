@@ -46,8 +46,8 @@ stages:
       - $CI_MERGE_REQUEST_TITLE =~ /^WIP:/
 
 
-# The job are define per OS in a specific file
+# The jobs are defined per OS in a specific file
 include:
-  - local: '/CI/.gitlab-ci-linux.yml'
-#  - local: '/CI/.gitlab-ci-osx.yml' // disable osx job for now
+  - local: '/CI/.gitlab-ci-unix-linux-OSX.yml'
+#  - local: '/CI/.gitlab-ci-osx.yml' # disable osx job for now
   - local: '/CI/.gitlab-ci-windows.yml'
