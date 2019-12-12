@@ -25,6 +25,7 @@
     - echo "WIN_CI_PROJECT_DIR is $WIN_CI_PROJECT_DIR"
     - git submodule sync
     - git submodule update --init --recursive
+    - git describe || git fetch --depth=10000 # needed for git describe to name our package
     # we want short paths so we build at the root of a drive
     - mkdir /cygdrive/c/lv-b
     - cd /cygdrive/c/lv-b
@@ -118,6 +119,7 @@ windows_superbuild_schedule: &windows_superbuild_schedule
   script:
     - git submodule sync
     - git submodule update --init --recursive
+    - git describe || git fetch --depth=10000 # needed for git describe to name our package
     - cd /cygdrive/c/lv-b # provided by windows_get_superbuild
     - echo "call \"C:\\Users\\vagrant\\Desktop\\cmd-env-variables.cmd\"" > package.bat
     - echo "ninja lidarview" >> package.bat

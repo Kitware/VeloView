@@ -23,6 +23,7 @@
   script:
     - git submodule sync
     - git submodule update --init --recursive
+    - git describe || git fetch --depth=10000 # needed for git describe to name our package
     # prepare directory
     - cd ..
     - mkdir -p Superbuild-build/
@@ -127,6 +128,7 @@
   script:
     - git submodule sync
     - git submodule update --init --recursive
+    - git describe || git fetch --depth=10000 # needed for git describe to name our package
     - cd ../Superbuild-build/ # created by extracting cache in "unix_get_superbuild"
     - make lidarview -j8
     - ctest -R cpack
