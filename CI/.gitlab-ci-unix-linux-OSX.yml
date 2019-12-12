@@ -65,6 +65,9 @@
           cmake -DSUPERBUILD_PROJECT_PARALLELISM=$(nproc) .
         fi
       fi
+    # Separately build boost & paraview to avoid their lengthy output to overflow runner's 4MB limit, if empty
+    - >
+      [ "${OS}" == "OSX_ElCapitan" ] && [ ! -e lidarview-superbuild/common-superbuild/paraview/build/CMakeCache.txt ] && make -j8 boost paraview > build.boost.paraview.log 2>&1
     # compile
     - make -j8
     # remove lidarview
@@ -213,6 +216,12 @@ OSX_ElCapitan_test:
 OSX_ElCapitan_superbuild_manual:
   <<: *OSX_ElCapitan
   <<: *unix_superbuild_manual
+
+OSX_ElCapitan_superbuild_manual_noclean:
+  <<: *OSX_ElCapitan
+  <<: *unix_superbuild_manual
+  before_script:
+    - echo "Not clearing the superbuild build dir"
 
 OSX_ElCapitan_superbuild_schedule:
   <<: *OSX_ElCapitan
