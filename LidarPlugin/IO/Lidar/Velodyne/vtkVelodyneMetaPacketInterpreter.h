@@ -151,6 +151,9 @@ public:
   GenericGetMacro(IgnoreZeroDistances, bool)
   GenericSetMacro(IgnoreZeroDistances, bool)
 
+  GenericGetMacro(HideDropPoints, bool)
+  GenericSetMacro(HideDropPoints, bool)
+
   GenericGetMacro(IgnoreEmptyFrames, bool)
   GenericSetMacro(IgnoreEmptyFrames, bool)
 

@@ -209,26 +209,38 @@ double HDL64EAdjustTimeStamp(int firingblock, int dsr, const bool isDualReturnMo
 }
 
 //-----------------------------------------------------------------------------
-double VLS128AdjustTimeStamp(int firingblock, int dsrBase32, const bool isDualReturnMode)
+double VLS128AdjustTimeStamp(int firingblock, int dsrBase32, const bool isDualReturnMode, int extDataPacketType)
 {
   const static double dt = 2.665;
   const static double firingblock_num_cycles = 20;
   const static double firingblock_duration = (dt * firingblock_num_cycles);
   const static int n_blocks_per_firing = 4;
 
-  int dsr = (dsrBase32 + 32 * (firingblock % n_blocks_per_firing));
-
   //dsr >= 64 needs an additional two cycles of delay to account for interleaved maintenance cycles
-
   if (!isDualReturnMode)
   {
+    //convert dsr from 0->31 to 0->127
+    int dsr = (dsrBase32 + 32 * (firingblock % n_blocks_per_firing));
+
     return (firingblock_duration * static_cast<int>(firingblock / n_blocks_per_firing)) +
       (static_cast<int>(dsr / 8) + (static_cast<int>(dsr / 64) * 2)) * dt;
   }
   else
   {
-    return (firingblock_duration * static_cast<int>(firingblock / (n_blocks_per_firing * 2))) +
-      (static_cast<int>(dsr / 8) + (static_cast<int>(dsr / 64) * 2)) * dt;
+      if (extDataPacketType > EXT_MODE_NONE)
+      {
+        //convert dsr from 0->31 to 0->127
+        int dsr = (dsrBase32 + 32 * static_cast<int>(firingblock / 3));
+
+        return (static_cast<int>(dsr / 8) + (static_cast<int>(dsr / 64) * 2)) * dt;
+      }
+      else
+      {
+        //convert dsr from 0->31 to 0->127
+        int dsr = (dsrBase32 + 32 * static_cast<int>(firingblock / 2));
+
+        return (static_cast<int>(dsr / 8) + (static_cast<int>(dsr / 64) * 2)) * dt;
+      }
   }
 }
 
@@ -361,6 +373,8 @@ vtkVelodyneLegacyPacketInterpreter::vtkVelodyneLegacyPacketInterpreter()
   this->SensorPowerMode = 0;
   this->CurrentFrameState = new FramingState;
   this->LastTimestamp = std::numeric_limits<unsigned int>::max();
+  this->LastAzimuth = 0;
+  this->LastAzimuthDiff = 0;
   this->TimeAdjust = std::numeric_limits<double>::quiet_NaN();
   this->FiringsSkip = 0;
   this->ShouldCheckSensor = true;
@@ -416,7 +430,6 @@ void vtkVelodyneLegacyPacketInterpreter::ProcessPacket(unsigned char const * dat
     this->CheckReportedSensorAndCalibrationFileConsistent(dataPacket);
     ShouldCheckSensor = false;
   }
-
   // Check if the time has rolled during this packet
   if (dataPacket->gpsTimestamp < this->ParserMetaData.FirstPacketDataTime)
   {
@@ -447,13 +460,7 @@ void vtkVelodyneLegacyPacketInterpreter::ProcessPacket(unsigned char const * dat
   {
     int localDiff = 0;
 
-    if (isVLS128)
-    {
-        localDiff = (36000 + 18000 + dataPacket->firingData[i + 4].getRotationalPosition() -
-                      dataPacket->firingData[i].getRotationalPosition()) %
-                      36000 - 18000;
-    }
-    else
+    if (!isVLS128)
     {
         localDiff = (36000 + 18000 + dataPacket->firingData[i + 1].getRotationalPosition() -
                       dataPacket->firingData[i].getRotationalPosition()) %
@@ -461,7 +468,6 @@ void vtkVelodyneLegacyPacketInterpreter::ProcessPacket(unsigned char const * dat
     }
     diffs[i] = localDiff;
   }
-
 
   if (!IsHDL64Data)
   { // with HDL64, it should be filled by LoadCorrectionsFromStreamData
@@ -475,10 +481,6 @@ void vtkVelodyneLegacyPacketInterpreter::ProcessPacket(unsigned char const * dat
   if (this->IsHDL64Data)
   {
     azimuthDiff = diffs[HDL_FIRING_PER_PKT - 2];
-  }
-  else if (isVLS128)
-  {
-    azimuthDiff = diffs[HDL_FIRING_PER_PKT - 1];
   }
 
   // assert(azimuthDiff > 0);
@@ -495,6 +497,7 @@ void vtkVelodyneLegacyPacketInterpreter::ProcessPacket(unsigned char const * dat
   for (; firingBlock < HDL_FIRING_PER_PKT; ++firingBlock)
   {
     const HDLFiringData* firingData = &(dataPacket->firingData[firingBlock]);
+    const HDLFiringData* extData = NULL;
     // clang-format off
     int multiBlockLaserIdOffset =
         (firingData->blockIdentifier == BLOCK_0_TO_31)  ?  0 :(
@@ -505,11 +508,27 @@ void vtkVelodyneLegacyPacketInterpreter::ProcessPacket(unsigned char const * dat
     // clang-format on
 
     // Skip dummy blocks of VLS-128 dual mode last 4 blocks
-    if (isVLS128 && (firingData->blockIdentifier == 0 || firingData->blockIdentifier == 0xFFFF))
+    if (isVLS128 && (firingData->blockIdentifier == 0 || firingData->blockIdentifier == 0xFFFF || this->SkipExtDataBlock))
     {
+      this->SkipExtDataBlock = false;
       continue;
     }
 
+    if (isVLS128 && (dataPacket->getExtDataPacketType() > EXT_MODE_NONE))
+    {
+        // For extended data look ahead to every third block
+        if (!dataPacket->isDualReturnFiringBlock(firingBlock))
+        {
+            extData = &(dataPacket->firingData[firingBlock+2]);
+        }
+        else
+        {
+            extData = &(dataPacket->firingData[firingBlock+1]);
+
+            // Skip next block as it contains extended data, not firing data
+            this->SkipExtDataBlock = true;
+        }
+    }
 
     if (this->CurrentFrameState->hasChangedWithValue(*firingData))
     {
@@ -519,7 +538,25 @@ void vtkVelodyneLegacyPacketInterpreter::ProcessPacket(unsigned char const * dat
 
     if (isVLS128)
     {
-      azimuthDiff = dataPacket->getRotationalDiffForVLS128(firingBlock);
+      azimuthDiff = dataPacket->getRotationalDiffForVLS128(firingBlock, LastAzimuth);
+
+      if (dataPacket->isDualModeReturn())
+      {
+        // Save last azimuth from final block in packet
+        if (firingData->blockIdentifier == BLOCK_96_TO_127 && dataPacket->isDualReturnFiringBlock(firingBlock))
+        {
+            this->LastAzimuth = dataPacket->firingData[firingBlock].getRotationalPosition();
+        }
+
+        if (azimuthDiff < 50)
+        {
+            this->LastAzimuthDiff = azimuthDiff;
+        }
+        else
+        {
+            azimuthDiff = this->LastAzimuthDiff;
+        }
+      }
     }
 
     // For variable speed sensors, get this firing block exact azimuthDiff
@@ -534,7 +571,7 @@ void vtkVelodyneLegacyPacketInterpreter::ProcessPacket(unsigned char const * dat
     if (this->FiringsSkip == 0 || firingBlock % (this->FiringsSkip + 1) == 0)
     {
       this->ProcessFiring(firingData, multiBlockLaserIdOffset, firingBlock, azimuthDiff, timestamp,
-        rawtime, dataPacket->isDualReturnFiringBlock(firingBlock), dataPacket->isDualModeReturn());
+        rawtime, dataPacket->isDualReturnFiringBlock(firingBlock), dataPacket->isDualModeReturn(), extData, dataPacket->getExtDataPacketType());
     }
   }
 }
@@ -553,7 +590,7 @@ bool vtkVelodyneLegacyPacketInterpreter::IsLidarPacket(unsigned char const * vtk
 }
 
 //-----------------------------------------------------------------------------
-void vtkVelodyneLegacyPacketInterpreter::ProcessFiring(const HDLFiringData *firingData, int firingBlockLaserOffset, int firingBlock, int azimuthDiff, double timestamp, unsigned int rawtime, bool isThisFiringDualReturnData, bool isDualReturnPacket)
+void vtkVelodyneLegacyPacketInterpreter::ProcessFiring(const HDLFiringData *firingData, int firingBlockLaserOffset, int firingBlock, int azimuthDiff, double timestamp, unsigned int rawtime, bool isThisFiringDualReturnData, bool isDualReturnPacket, const HDLFiringData *extData, int extDataPacketType)
 {
   // First return block of a dual return packet: init last point of laser
   if (!isThisFiringDualReturnData &&
@@ -602,12 +639,29 @@ void vtkVelodyneLegacyPacketInterpreter::ProcessFiring(const HDLFiringData *firi
       {
         case 128:
         {
-          timestampadjustment = VLS128AdjustTimeStamp(firingBlock, dsr, isDualReturnPacket);
+          timestampadjustment = VLS128AdjustTimeStamp(firingBlock, dsr, isDualReturnPacket, extDataPacketType);
 
-          // dsr0 occurs every fourth block on VLS-128
-          nextblockdsr0 = VLS128AdjustTimeStamp(
-            (firingBlock / 4) * 4 + (isDualReturnPacket ? 8 : 4), 0, isDualReturnPacket);
-          blockdsr0 = VLS128AdjustTimeStamp((firingBlock / 4) * 4, 0, isDualReturnPacket);
+          if (isDualReturnPacket)
+          {
+              // With VLS-128 dual return packets only one dsr0 per packet, so this method will be used to 
+              // ensure azimuthadjustment is correctly derived below
+              if (extDataPacketType > EXT_MODE_NONE)
+              {
+                nextblockdsr0 = VLS128AdjustTimeStamp(11, 32, isDualReturnPacket, extDataPacketType);
+                blockdsr0 = VLS128AdjustTimeStamp(0, 0, isDualReturnPacket, extDataPacketType);
+              }
+              else
+              {
+                nextblockdsr0 = VLS128AdjustTimeStamp(7, 32, isDualReturnPacket, extDataPacketType);
+                blockdsr0 = VLS128AdjustTimeStamp(0, 0, isDualReturnPacket, extDataPacketType);
+              }
+          }
+          else
+          {
+            // dsr0 occurs every fourth block with VLS-128 single return packets
+            nextblockdsr0 = VLS128AdjustTimeStamp((firingBlock / 4) * 4 + 4, 0, isDualReturnPacket, extDataPacketType);
+            blockdsr0 = VLS128AdjustTimeStamp((firingBlock / 4) * 4, 0, isDualReturnPacket, extDataPacketType);
+          }
           break;
         }
         case 64:
@@ -662,7 +716,9 @@ void vtkVelodyneLegacyPacketInterpreter::ProcessFiring(const HDLFiringData *firi
       azimuthadjustment = vtkMath::Round(
         azimuthDiff * ((timestampadjustment - blockdsr0) / (nextblockdsr0 - blockdsr0)));
       timestampadjustment = vtkMath::Round(timestampadjustment);
+
     }
+
     if ((!this->IgnoreZeroDistances || firingData->laserReturns[dsr].distance != 0.0) &&
       this->LaserSelection[laserId])
     {
@@ -671,7 +727,7 @@ void vtkVelodyneLegacyPacketInterpreter::ProcessFiring(const HDLFiringData *firi
       this->PushFiringData(laserId, rawLaserId, adjustedAzimuth, firingElevation100th,
         timestamp + timestampadjustment, rawtime + static_cast<unsigned int>(timestampadjustment),
         &(firingData->laserReturns[dsr]), dsr + firingBlockLaserOffset,
-        isThisFiringDualReturnData);
+        isThisFiringDualReturnData, extDataPacketType, &(extData->laserReturns[dsr]));
     }
   }
 }
@@ -681,7 +737,8 @@ void vtkVelodyneLegacyPacketInterpreter::PushFiringData(unsigned char laserId,
               const unsigned char rawLaserId, unsigned short azimuth, const unsigned short firingElevation100th,
               const double timestamp, const unsigned int rawtime, const HDLLaserReturn* laserReturn,
               const unsigned int channelNumber,
-              const bool isFiringDualReturnData)
+              const bool isFiringDualReturnData,
+              const int extDataPacketType, const HDLLaserReturn* extData)
 {
   azimuth %= 36000;
   const vtkIdType thisPointId = this->Points->GetNumberOfPoints();
@@ -705,6 +762,8 @@ void vtkVelodyneLegacyPacketInterpreter::PushFiringData(unsigned char laserId,
   short intensity = correctedValues.intensity;
   double (& pos)[3] = correctedValues.position;
 
+  uint32_t temp = 0;
+
   // Apply sensor transform
 //  cout << "this->SensorTransform" << this->SensorTransform->GetPosition()[0]
 // << " " << this->SensorTransform->GetPosition()[0] << " " << this->SensorTransform->GetPosition()[0] << endl;
@@ -712,6 +771,26 @@ void vtkVelodyneLegacyPacketInterpreter::PushFiringData(unsigned char laserId,
 
   if (this->shouldBeCroppedOut(pos))
     return;
+
+  if (extDataPacketType > EXT_MODE_NONE)
+  {
+      temp = (static_cast<unsigned int>(extData->distance) << 8) | static_cast<unsigned int>(extData->intensity);
+
+      if (isFiringDualReturnData)
+      {
+        if (this->HideDropPoints && ((temp & 0x800000) == 0x800000))
+        {
+          return;
+        }
+      }
+      else
+      {
+        if (this->HideDropPoints && ((temp & 0x800) == 0x800))
+        {
+          return;
+        }
+      }
+  }
 
   // Do not add any data before here as this might short-circuit
   if (isFiringDualReturnData)
@@ -820,6 +899,34 @@ void vtkVelodyneLegacyPacketInterpreter::PushFiringData(unsigned char laserId,
   this->DistanceRaw->InsertNextValue(laserReturn->distance);
   this->LastPointId[rawLaserId] = thisPointId;
   this->VerticalAngle->InsertNextValue(correctedValues.elevation);
+
+  if (extDataPacketType > EXT_MODE_NONE)
+  {
+    if (isFiringDualReturnData)
+    {
+      this->Confidence->InsertNextValue((temp & 0xFFF000) >> 12);
+      this->Drop->InsertNextValue((temp & 0x800000) >> 23);
+      this->SNR->InsertNextValue((temp & 0x007000) >> 12);
+      this->Interference->InsertNextValue((temp & 0x060000) >> 17);
+      this->SunLevel->InsertNextValue((temp & 0x018000) >> 15);
+    }
+    else
+    {
+      this->Confidence->InsertNextValue(temp & 0xFFF);
+      this->Drop->InsertNextValue((temp & 0x800) >> 11);
+      this->SNR->InsertNextValue(temp & 0x007);
+      this->Interference->InsertNextValue((temp & 0x060) >> 5);
+      this->SunLevel->InsertNextValue((temp & 0x018) >> 3);
+    }
+  }
+  else
+  {
+      this->Confidence->InsertNextValue(0);
+      this->Drop->InsertNextValue(0);
+      this->SNR->InsertNextValue(0);
+      this->Interference->InsertNextValue(0);
+      this->SunLevel->InsertNextValue(0);
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -866,6 +973,11 @@ vtkSmartPointer<vtkPolyData> vtkVelodyneLegacyPacketInterpreter::CreateNewEmptyF
   this->PointsY = CreateDataArray<vtkDoubleArray>("Y", numberOfPoints, prereservedNumberOfPoints, polyData);
   this->PointsZ = CreateDataArray<vtkDoubleArray>("Z", numberOfPoints, prereservedNumberOfPoints, polyData);
   this->Intensity = CreateDataArray<vtkUnsignedCharArray>("intensity", numberOfPoints, prereservedNumberOfPoints, polyData);
+  this->Drop = CreateDataArray<vtkUnsignedCharArray>("drop", numberOfPoints, prereservedNumberOfPoints, polyData);
+  this->Confidence = CreateDataArray<vtkUnsignedLongArray>("binary_flags", numberOfPoints, prereservedNumberOfPoints, polyData);
+  this->Interference = CreateDataArray<vtkUnsignedCharArray>("interference", numberOfPoints, prereservedNumberOfPoints, polyData);
+  this->SNR = CreateDataArray<vtkUnsignedCharArray>("confidence", numberOfPoints, prereservedNumberOfPoints, polyData);
+  this->SunLevel = CreateDataArray<vtkUnsignedCharArray>("sun_level", numberOfPoints, prereservedNumberOfPoints, polyData);
   this->LaserId = CreateDataArray<vtkUnsignedCharArray>("laser_id", numberOfPoints, prereservedNumberOfPoints, polyData);
   this->Azimuth = CreateDataArray<vtkUnsignedShortArray>("azimuth", numberOfPoints, prereservedNumberOfPoints, polyData);
   this->Distance = CreateDataArray<vtkDoubleArray>("distance_m", numberOfPoints, prereservedNumberOfPoints, polyData);

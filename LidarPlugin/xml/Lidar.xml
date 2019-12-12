@@ -321,6 +321,15 @@
   </IntVectorProperty>
 
   <IntVectorProperty
+      name="HideDropPoints"
+      animateable="0"
+      command="SetHideDropPoints"
+      default_values="1"
+      number_of_elements="1">
+    <BooleanDomain name="bool" />
+  </IntVectorProperty>
+
+  <IntVectorProperty
       name="IgnoreEmptyFrames"
       animateable="0"
       command="SetIgnoreEmptyFrames"

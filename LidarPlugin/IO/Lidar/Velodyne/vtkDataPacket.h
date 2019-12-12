@@ -123,6 +123,15 @@ enum DualReturnSensorMode
   STRONGEST_RETURN = 0x37,
   LAST_RETURN = 0x38,
   DUAL_RETURN = 0x39,
+  TRIPLE_RETURN = 0x3A,
+  DUAL_RETURN_WITH_CONFIDENCE = 0x3B,
+};
+
+enum extDataPacketModes
+{
+  EXT_MODE_NONE = -1,
+  EXT_MODE_TRIPLE_RETURN = 0,
+  EXT_MODE_CONFIDENCE = 1,
 };
 
 static inline std::string DualReturnSensorModeToString(DualReturnSensorMode type)
@@ -135,6 +144,10 @@ static inline std::string DualReturnSensorModeToString(DualReturnSensorMode type
       return "LAST RETURN";
     case DualReturnSensorMode::DUAL_RETURN:
       return "DUAL RETURN";
+    case DualReturnSensorMode::TRIPLE_RETURN:
+      return "TRIPLE RETURN";
+    case DualReturnSensorMode::DUAL_RETURN_WITH_CONFIDENCE:
+      return "DUAL RETURN WITH CONFIDENCE";
     default:
       return "Unkown";
   }
@@ -256,12 +269,37 @@ struct HDLDataPacket
   {
     return firingData[2].getRotationalPosition() == firingData[0].getRotationalPosition();
   }
-  inline bool isDualModeReturnVLS128() const { return factoryField1 == DUAL_RETURN; }
+
+  inline bool isDualModeReturnVLS128() const { return ((factoryField1 == DUAL_RETURN) || (factoryField1 == DUAL_RETURN_WITH_CONFIDENCE) || (factoryField1 == TRIPLE_RETURN)); }
+
+  inline int getExtDataPacketType() const
+  {
+    if (factoryField1 == TRIPLE_RETURN)
+      return EXT_MODE_TRIPLE_RETURN;
+    else if (factoryField1 == DUAL_RETURN_WITH_CONFIDENCE)
+      return EXT_MODE_CONFIDENCE;
+    else
+      return EXT_MODE_NONE;
+  }
 
   inline bool isDualReturnFiringBlock(const int firingBlock) const
   {
     if (isVLS128())
-      return isDualModeReturnVLS128() && isDualBlockOfDualPacket128(firingBlock);
+    {
+      if (getExtDataPacketType() == EXT_MODE_NONE)
+      {
+        return isDualModeReturnVLS128() && isDualBlockOfDualPacket128(firingBlock);
+      }
+      else
+      {
+          if (isDualModeReturnVLS128() && ((firingBlock == 1) || (firingBlock == 4) || (firingBlock == 7) || (firingBlock == 10)))
+          {
+            return true;
+          }
+
+          return false;
+      }
+    }
     if (isHDL64())
       return isDualModeReturnHDL64() && isDualBlockOfDualPacket64(firingBlock);
     else
@@ -282,15 +320,14 @@ struct HDLDataPacket
     return (firingBlock % 2 == 1);
   }
 
-  inline int getRotationalDiffForVLS128(int firingBlock) const
+  inline int getRotationalDiffForVLS128(int firingBlock, int LastAzimuth) const
   {
-    if (static_cast<DualReturnSensorMode>(factoryField1) == DUAL_RETURN)
+    if (static_cast<DualReturnSensorMode>(factoryField1) == DUAL_RETURN || 
+        static_cast<DualReturnSensorMode>(factoryField1) == TRIPLE_RETURN || 
+        static_cast<DualReturnSensorMode>(factoryField1) == DUAL_RETURN_WITH_CONFIDENCE)
     {
-      if (firingBlock > 11 - 8)
-        firingBlock = 3;
-      return static_cast<int>((36000 + firingData[firingBlock + 8].rotationalPosition -
-                                firingData[firingBlock].rotationalPosition) %
-        36000);
+      return static_cast<int>((36000 + firingData[firingBlock].rotationalPosition -
+                                LastAzimuth) % 36000);
     }
     else
     {
@@ -405,6 +442,7 @@ struct HDLRGB
   uint8_t g;
   uint8_t b;
 };
+
 #pragma pack(pop)
 } // end namespace DataPacketFixedLength
 #endif

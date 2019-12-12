@@ -196,6 +196,7 @@ vtkVelodyneBasePacketInterpreter::vtkVelodyneBasePacketInterpreter()
   this->UseIntraFiringAdjustment        = false;
   this->DualReturnFilter                = 0;
   this->FiringsSkip                     = 0;
+  this->SkipExtDataBlock                = false;
   this->IsHDL64Data                     = false;
   this->HasDualReturn                   = false;
   this->ShouldAddDualReturnArray        = false;

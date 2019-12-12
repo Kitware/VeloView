@@ -408,6 +408,7 @@ def openSensor():
     sensor.GetClientSideObject().SetForwardedIpAddress(ipAddressForwarding)
     sensor.Interpreter.GetClientSideObject().SetSensorTransform(sensorTransform)
     sensor.Interpreter.IgnoreZeroDistances = app.actions['actionIgnoreZeroDistances'].isChecked()
+    sensor.Interpreter.HideDropPoints = app.actions['actionHideDropPoints'].isChecked()
     sensor.Interpreter.IgnoreEmptyFrames = app.actions['actionIgnoreEmptyFrames'].isChecked()
     sensor.UpdatePipeline()
     sensor.Start()
@@ -523,6 +524,7 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
 
     lidarPacketInterpreter = getLidarPacketInterpreter()
     lidarPacketInterpreter.IgnoreZeroDistances = app.actions['actionIgnoreZeroDistances'].isChecked()
+    lidarPacketInterpreter.HideDropPoints = app.actions['actionHideDropPoints'].isChecked()
     lidarPacketInterpreter.IgnoreEmptyFrames = app.actions['actionIgnoreEmptyFrames'].isChecked()
 
     if SAMPLE_PROCESSING_MODE:
@@ -1912,6 +1914,7 @@ def setupActions():
     app.actions['actionAdvanceFeature'].connect('triggered()', onToogleAdvancedGUI)
 
     app.actions['actionIgnoreZeroDistances'].connect('triggered()', onIgnoreZeroDistances)
+    app.actions['actionHideDropPoints'].connect('triggered()', onHideDropPoints)
     app.actions['actionIntraFiringAdjust'].connect('triggered()', onIntraFiringAdjust)
     app.actions['actionIgnoreEmptyFrames'].connect('triggered()', onIgnoreEmptyFrames)
 
@@ -1952,6 +1955,7 @@ def setupActions():
     # Restore action states from settings
     settings = getPVSettings()
     app.actions['actionIgnoreZeroDistances'].setChecked(int(settings.value('LidarPlugin/IgnoreZeroDistances', 1)))
+    app.actions['actionHideDropPoints'].setChecked(int(settings.value('LidarPlugin/HideDropPoints', 1)))
     app.actions['actionIntraFiringAdjust'].setChecked(int(settings.value('LidarPlugin/IntraFiringAdjust', 1)))
     app.actions['actionIgnoreEmptyFrames'].setChecked(int(settings.value('LidarPlugin/IgnoreEmptyFrames', 1)))
 
@@ -2071,6 +2075,19 @@ def onIgnoreZeroDistances():
     lidarInterpreter = getLidarPacketInterpreter()
     if lidarInterpreter:
         lidarInterpreter.IgnoreZeroDistances = IgnoreZeroDistances
+        smp.Render()
+
+def onHideDropPoints():
+    # Get the check box value as an int to save it into the PV settings (there's incompatibility with python booleans)
+    HideDropPoints = int(app.actions['actionHideDropPoints'].isChecked())
+
+    # Save the setting for future session
+    getPVSettings().setValue('LidarPlugin/HideDropPoints', HideDropPoints)
+
+    # Apply it to the current source if any
+    lidarInterpreter = getLidarPacketInterpreter()
+    if lidarInterpreter:
+        lidarInterpreter.HideDropPoints = HideDropPoints
         smp.Render()
 
 def onIntraFiringAdjust():

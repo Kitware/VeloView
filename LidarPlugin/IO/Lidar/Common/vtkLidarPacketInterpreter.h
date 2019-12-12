@@ -220,6 +220,9 @@ public:
   vtkGetMacro(IgnoreZeroDistances, bool)
   vtkSetMacro(IgnoreZeroDistances, bool)
 
+  vtkGetMacro(HideDropPoints, bool)
+  vtkSetMacro(HideDropPoints, bool)
+
   vtkGetMacro(IgnoreEmptyFrames, bool)
   vtkSetMacro(IgnoreEmptyFrames, bool)
 
@@ -298,6 +301,9 @@ protected:
   //! Process/skip points with a zero value distance.
   //! These points correspond to a missing return or a too close return.
   bool IgnoreZeroDistances = true;
+
+  //! Hide points marked with drop flag
+  bool HideDropPoints = true;
 
   //! Proccess/skip frame with 0 points
   bool IgnoreEmptyFrames = false;

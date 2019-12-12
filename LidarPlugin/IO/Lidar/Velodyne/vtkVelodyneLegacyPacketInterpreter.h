@@ -4,6 +4,7 @@
 #include <vtkUnsignedCharArray.h>
 #include <vtkUnsignedIntArray.h>
 #include <vtkUnsignedShortArray.h>
+#include <vtkUnsignedLongArray.h>
 #include "vtkVelodyneBasePacketInterpreter.h"
 
 #include <memory>
@@ -60,12 +61,13 @@ protected:
   // geotransform - georeferencing transform
   void ProcessFiring(const HDLFiringData* firingData,
     int firingBlockLaserOffset, int firingBlock, int azimuthDiff, double timestamp,
-    unsigned int rawtime, bool isThisFiringDualReturnData, bool isDualReturnPacket);
+    unsigned int rawtime, bool isThisFiringDualReturnData, bool isDualReturnPacket, const HDLFiringData* extData, int extDataPacketType);
 
   void PushFiringData(unsigned char laserId, unsigned char rawLaserId,
                       unsigned short azimuth, const unsigned short elevation, const double timestamp,
                       const unsigned int rawtime, const HDLLaserReturn* laserReturn,
-                      const unsigned int channelNumber, const bool isFiringDualReturnData);
+                      const unsigned int channelNumber, const bool isFiringDualReturnData,
+                      const int extDataPacketType, const HDLLaserReturn* extData);
 
 
   void Init();
@@ -80,6 +82,11 @@ protected:
   vtkSmartPointer<vtkDoubleArray> PointsY;
   vtkSmartPointer<vtkDoubleArray> PointsZ;
   vtkSmartPointer<vtkUnsignedCharArray> Intensity;
+  vtkSmartPointer<vtkUnsignedCharArray> Drop;
+  vtkSmartPointer<vtkUnsignedLongArray> Confidence;
+  vtkSmartPointer<vtkUnsignedCharArray> Interference;
+  vtkSmartPointer<vtkUnsignedCharArray> SNR;
+  vtkSmartPointer<vtkUnsignedCharArray> SunLevel;
   vtkSmartPointer<vtkUnsignedCharArray> LaserId;
   vtkSmartPointer<vtkUnsignedShortArray> Azimuth;
   vtkSmartPointer<vtkDoubleArray> Distance;
@@ -91,6 +98,7 @@ protected:
   vtkSmartPointer<vtkIntArray> DistanceFlag;
   vtkSmartPointer<vtkUnsignedIntArray> Flags;
   vtkSmartPointer<vtkIdTypeArray> DualReturnMatching;
+
 
   // sensor information
   unsigned char SensorPowerMode;
@@ -122,6 +130,7 @@ protected:
 
   FramingState* CurrentFrameState;
   unsigned int LastTimestamp;
+  int LastAzimuth, LastAzimuthDiff;
   std::vector<double> RpmByFrames;
   double TimeAdjust;
   vtkIdType LastPointId[HDL_MAX_NUM_LASERS];

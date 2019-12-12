@@ -88,6 +88,7 @@ protected:
   bool UseIntraFiringAdjustment;
   unsigned int DualReturnFilter ;
   int FiringsSkip;
+  bool SkipExtDataBlock;
   bool IsHDL64Data ;
   bool HasDualReturn ;
   bool ShouldAddDualReturnArray;
