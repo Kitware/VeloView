@@ -77,7 +77,8 @@
     - cd ..
     - echo "compressing and uploading Superbuild. This take some time..."
     - tar zcf archive Superbuild-build/
-    - which mc && ln -s `which mc` ~/mc
+    #create a symlink to mc from ~/mc if needed
+    - stat ~/mc || (which mc && ln -s `which mc` ~/mc)
     - ~/mc config host add superbuild ${MINIO_CACHE_SERVER_ADDRESS} ${MINIO_CACHE_SERVER_ACCESS_KEY} ${MINIO_CACHE_SERVER_SECRET_KEY}
     - ~/mc cp archive superbuild/runner/minio/project/808/${cache_patch}/${OS}/${CI_COMMIT_REF_NAME}-${mode}
 
