@@ -100,6 +100,7 @@
      <addaction name="actionCorrectIntensityValues"/>
      <addaction name="actionFastRenderer"/>
      <addaction name="actionIgnoreZeroDistances"/>
+     <addaction name="actionHideDropPoints"/>
      <addaction name="actionIntraFiringAdjust"/>
      <addaction name="actionIgnoreEmptyFrames"/>
     </widget>
@@ -833,6 +834,20 @@
    </property>
    <property name="text">
     <string>Ignore returns with distance equals to 0</string>
+   </property>
+  </action>
+  <action name="actionHideDropPoints">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Hide points marked with drop flag</string>
    </property>
   </action>
   <action name="actionIntraFiringAdjust">
