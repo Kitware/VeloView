@@ -87,4 +87,16 @@ void PacketConsumer::Stop()
 void PacketConsumer::Enqueue(NetworkPacket* packet)
 {
   this->Packets->enqueue(packet);
+
+  // In order to prevent memory usage to grow unbounded, we limit the growth of
+  // the packet cache. Above an arbitrary limit it seems safe to assume that
+  // the lateness of the consuming (decoding) thread has zero chance of being
+  // catched up and that packets can be dropped.
+  // To test: look at memory usage while running PacketFileSender --speed 100
+  if (this->Packets->size() > this->PacketCacheSize)
+  {
+      NetworkPacket* packet = nullptr;
+      this->Packets->dequeue(packet);
+      delete packet;
+  }
 }

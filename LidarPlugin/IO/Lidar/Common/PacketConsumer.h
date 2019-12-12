@@ -60,6 +60,8 @@ protected:
   vtkLidarPacketInterpreter* Interpreter;
 
   boost::shared_ptr<SynchronizedQueue<NetworkPacket*>> Packets;
+  /*!< Number of packets to cache, above: drop oldest packets */
+  size_t PacketCacheSize = 10000;
 
   boost::shared_ptr<boost::thread> Thread;
 };
