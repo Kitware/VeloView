@@ -5,6 +5,7 @@
 #include <vtkDoubleArray.h>
 #include <vtkTransform.h>
 
+#include <bitset>
 #include <boost/property_tree/xml_parser.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/foreach.hpp>
@@ -357,6 +358,18 @@ public:
     return hasChangedWithValue(curValue, hasLastValue, lastValue, lastSlope);
   }
 };
+
+namespace {
+
+std::string u32_to_str(unsigned long x)
+{
+  // note that there is no guarantee that sizeof(unsigned long) == 4
+  // because standard only says sizeof(unsigned long) >= 4
+  // for instance, on Linux x86_amd64 its size is 8
+  return std::bitset<32>(x).to_string();
+}
+
+}
 
 //} // End namespace
 
@@ -904,7 +917,7 @@ void vtkVelodyneLegacyPacketInterpreter::PushFiringData(unsigned char laserId,
   {
     if (isFiringDualReturnData)
     {
-      this->Confidence->InsertNextValue((temp & 0xFFF000) >> 12);
+      this->Confidence->InsertNextValue(u32_to_str((temp & 0xFFF000) >> 12));
       this->Drop->InsertNextValue((temp & 0x800000) >> 23);
       this->SNR->InsertNextValue((temp & 0x007000) >> 12);
       this->Interference->InsertNextValue((temp & 0x060000) >> 17);
@@ -912,7 +925,7 @@ void vtkVelodyneLegacyPacketInterpreter::PushFiringData(unsigned char laserId,
     }
     else
     {
-      this->Confidence->InsertNextValue(temp & 0xFFF);
+      this->Confidence->InsertNextValue(u32_to_str(temp & 0xFFF));
       this->Drop->InsertNextValue((temp & 0x800) >> 11);
       this->SNR->InsertNextValue(temp & 0x007);
       this->Interference->InsertNextValue((temp & 0x060) >> 5);
@@ -921,7 +934,7 @@ void vtkVelodyneLegacyPacketInterpreter::PushFiringData(unsigned char laserId,
   }
   else
   {
-      this->Confidence->InsertNextValue(0);
+      this->Confidence->InsertNextValue(u32_to_str(0));
       this->Drop->InsertNextValue(0);
       this->SNR->InsertNextValue(0);
       this->Interference->InsertNextValue(0);
@@ -974,7 +987,7 @@ vtkSmartPointer<vtkPolyData> vtkVelodyneLegacyPacketInterpreter::CreateNewEmptyF
   this->PointsZ = CreateDataArray<vtkDoubleArray>("Z", numberOfPoints, prereservedNumberOfPoints, polyData);
   this->Intensity = CreateDataArray<vtkUnsignedCharArray>("intensity", numberOfPoints, prereservedNumberOfPoints, polyData);
   this->Drop = CreateDataArray<vtkUnsignedCharArray>("drop", numberOfPoints, prereservedNumberOfPoints, polyData);
-  this->Confidence = CreateDataArray<vtkUnsignedLongArray>("binary_flags", numberOfPoints, prereservedNumberOfPoints, polyData);
+  this->Confidence = CreateDataArray<vtkStringArray>("binary_flags_string", numberOfPoints, prereservedNumberOfPoints, polyData);
   this->Interference = CreateDataArray<vtkUnsignedCharArray>("interference", numberOfPoints, prereservedNumberOfPoints, polyData);
   this->SNR = CreateDataArray<vtkUnsignedCharArray>("confidence", numberOfPoints, prereservedNumberOfPoints, polyData);
   this->SunLevel = CreateDataArray<vtkUnsignedCharArray>("sun_level", numberOfPoints, prereservedNumberOfPoints, polyData);

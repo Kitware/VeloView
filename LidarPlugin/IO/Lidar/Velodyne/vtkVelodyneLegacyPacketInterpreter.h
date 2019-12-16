@@ -5,6 +5,7 @@
 #include <vtkUnsignedIntArray.h>
 #include <vtkUnsignedShortArray.h>
 #include <vtkUnsignedLongArray.h>
+#include <vtkStringArray.h>
 #include "vtkVelodyneBasePacketInterpreter.h"
 
 #include <memory>
@@ -83,7 +84,7 @@ protected:
   vtkSmartPointer<vtkDoubleArray> PointsZ;
   vtkSmartPointer<vtkUnsignedCharArray> Intensity;
   vtkSmartPointer<vtkUnsignedCharArray> Drop;
-  vtkSmartPointer<vtkUnsignedLongArray> Confidence;
+  vtkSmartPointer<vtkStringArray> Confidence;
   vtkSmartPointer<vtkUnsignedCharArray> Interference;
   vtkSmartPointer<vtkUnsignedCharArray> SNR;
   vtkSmartPointer<vtkUnsignedCharArray> SunLevel;
