@@ -121,6 +121,7 @@ if (python_enabled)
     "${lidarview_appname}"
     MODULES paraview
     	    lidarview
+	    lidarviewcore
 	    vtk
             vtkmodules
             ${python_modules}
