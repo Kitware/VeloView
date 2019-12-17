@@ -51,6 +51,9 @@ public:
 
 
 protected:
+  template<typename T>
+  vtkSmartPointer<T> CreateDataArray(bool isAdvanced, const char* name, vtkIdType np, vtkIdType prereserved_np, vtkPolyData* pd);
+
   vtkSmartPointer<vtkPolyData> CreateNewEmptyFrame(vtkIdType numberOfPoints, vtkIdType prereservedNumberOfPoints = 60000) override;
 
   // Process the laser return from the firing data

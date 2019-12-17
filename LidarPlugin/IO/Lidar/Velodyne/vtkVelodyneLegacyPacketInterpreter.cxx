@@ -23,12 +23,34 @@ using namespace DataPacketFixedLength;
     }                                                                                              \
   }
 
+template<typename T, typename U>
+void InsertNextValue(T array, U value)
+{
+  if (array != nullptr)
+  {
+    array->InsertNextValue(value);
+  }
+}
+
+template<typename T, typename U>
+void AddArray(T holder, U array)
+{
+  if (array != nullptr)
+  {
+    holder->AddArray(array);
+  }
+}
+
 //namespace
 //{
 //! @todo this method are actually usefull for every Interpreter and should go to the top
 template<typename T>
-vtkSmartPointer<T> CreateDataArray(const char* name, vtkIdType np, vtkIdType prereserved_np, vtkPolyData* pd)
+vtkSmartPointer<T> vtkVelodyneLegacyPacketInterpreter::CreateDataArray(bool isAdvanced, const char* name, vtkIdType np, vtkIdType prereserved_np, vtkPolyData* pd)
 {
+  if (isAdvanced && !this->EnableAdvancedArrays)
+  {
+    return nullptr;
+  }
   vtkSmartPointer<T> array = vtkSmartPointer<T>::New();
   array->Allocate(prereserved_np);
   array->SetName(name);
@@ -502,9 +524,9 @@ void vtkVelodyneLegacyPacketInterpreter::ProcessPacket(unsigned char const * dat
   if (dataPacket->isDualModeReturn() && !this->HasDualReturn)
   {
     this->HasDualReturn = true;
-    this->CurrentFrame->GetPointData()->AddArray(this->DistanceFlag.GetPointer());
-    this->CurrentFrame->GetPointData()->AddArray(this->IntensityFlag.GetPointer());
-    this->CurrentFrame->GetPointData()->AddArray(this->DualReturnMatching.GetPointer());
+    AddArray(this->CurrentFrame->GetPointData(), this->DistanceFlag.GetPointer());
+    AddArray(this->CurrentFrame->GetPointData(), this->IntensityFlag.GetPointer());
+    AddArray(this->CurrentFrame->GetPointData(), this->DualReturnMatching.GetPointer());
   }
 
   for (; firingBlock < HDL_FIRING_PER_PKT; ++firingBlock)
@@ -812,10 +834,10 @@ void vtkVelodyneLegacyPacketInterpreter::PushFiringData(unsigned char laserId,
     if (dualPointId < this->FirstPointIdOfDualReturnPair)
     {
       // No matching point from first set (skipped?)
-      this->Flags->InsertNextValue(DUAL_DOUBLED);
-      this->DistanceFlag->InsertNextValue(0);
-      this->DualReturnMatching->InsertNextValue(-1); // std::numeric_limits<vtkIdType>::quiet_NaN()
-      this->IntensityFlag->InsertNextValue(0);
+      InsertNextValue(this->Flags, DUAL_DOUBLED);
+      InsertNextValue(this->DistanceFlag, 0);
+      InsertNextValue(this->DualReturnMatching, -1); // std::numeric_limits<vtkIdType>::quiet_NaN()
+      InsertNextValue(this->IntensityFlag, 0);
     }
     else
     {
@@ -879,66 +901,66 @@ void vtkVelodyneLegacyPacketInterpreter::PushFiringData(unsigned char laserId,
         }
       }
 
-      this->Flags->SetValue(dualPointId, firstFlags);
-      this->DistanceFlag->SetValue(dualPointId, MapDistanceFlag(firstFlags));
-      this->IntensityFlag->SetValue(dualPointId, MapIntensityFlag(firstFlags));
-      this->Flags->InsertNextValue(secondFlags);
-      this->DistanceFlag->InsertNextValue(MapDistanceFlag(secondFlags));
-      this->IntensityFlag->InsertNextValue(MapIntensityFlag(secondFlags));
+      if (this->Flags != nullptr) this->Flags->SetValue(dualPointId, firstFlags);
+      if (this->DistanceFlag != nullptr) this->DistanceFlag->SetValue(dualPointId, MapDistanceFlag(firstFlags));
+      if (this->IntensityFlag != nullptr) this->IntensityFlag->SetValue(dualPointId, MapIntensityFlag(firstFlags));
+      InsertNextValue(this->Flags, secondFlags);
+      InsertNextValue(this->DistanceFlag, MapDistanceFlag(secondFlags));
+      InsertNextValue(this->IntensityFlag, MapIntensityFlag(secondFlags));
       // The first return indicates the dual return
       // and the dual return indicates the first return
-      this->DualReturnMatching->InsertNextValue(dualPointId);
-      this->DualReturnMatching->SetValue(dualPointId, thisPointId);
+      InsertNextValue(this->DualReturnMatching, dualPointId);
+      if (this->DualReturnMatching != nullptr) this->DualReturnMatching->SetValue(dualPointId, thisPointId);
     }
   }
   else
   {
-    this->Flags->InsertNextValue(DUAL_DOUBLED);
-    this->DistanceFlag->InsertNextValue(0);
-    this->IntensityFlag->InsertNextValue(0);
-    this->DualReturnMatching->InsertNextValue(-1); // std::numeric_limits<vtkIdType>::quiet_NaN()
+    InsertNextValue(this->Flags, DUAL_DOUBLED);
+    InsertNextValue(this->DistanceFlag, 0);
+    InsertNextValue(this->IntensityFlag, 0);
+    InsertNextValue(this->DualReturnMatching, -1); // std::numeric_limits<vtkIdType>::quiet_NaN()
   }
 
   this->Points->InsertNextPoint(pos);
-  this->PointsX->InsertNextValue(pos[0]);
-  this->PointsY->InsertNextValue(pos[1]);
-  this->PointsZ->InsertNextValue(pos[2]);
-  this->Azimuth->InsertNextValue(azimuth);
-  this->Intensity->InsertNextValue(intensity);
-  this->LaserId->InsertNextValue(laserId);
-  this->Timestamp->InsertNextValue(timestamp);
-  this->RawTime->InsertNextValue(rawtime);
-  this->Distance->InsertNextValue(distanceM);
-  this->DistanceRaw->InsertNextValue(laserReturn->distance);
+  InsertNextValue(this->PointsX, pos[0]);
+  InsertNextValue(this->PointsY, pos[1]);
+  InsertNextValue(this->PointsZ, pos[2]);
+  InsertNextValue(this->Azimuth, azimuth);
+  InsertNextValue(this->Intensity, intensity);
+  InsertNextValue(this->LaserId, laserId);
+  InsertNextValue(this->Timestamp, timestamp);
+  InsertNextValue(this->RawTime, rawtime);
+  InsertNextValue(this->Distance, distanceM);
+  InsertNextValue(this->DistanceRaw, laserReturn->distance);
   this->LastPointId[rawLaserId] = thisPointId;
-  this->VerticalAngle->InsertNextValue(correctedValues.elevation);
+  InsertNextValue(this->VerticalAngle, correctedValues.elevation);
 
   if (extDataPacketType > EXT_MODE_NONE)
   {
     if (isFiringDualReturnData)
     {
-      this->Confidence->InsertNextValue(u32_to_str((temp & 0xFFF000) >> 12));
-      this->Drop->InsertNextValue((temp & 0x800000) >> 23);
-      this->SNR->InsertNextValue((temp & 0x007000) >> 12);
-      this->Interference->InsertNextValue((temp & 0x060000) >> 17);
-      this->SunLevel->InsertNextValue((temp & 0x018000) >> 15);
+      InsertNextValue(this->Confidence, u32_to_str((temp & 0xFFF000) >> 12));
+      InsertNextValue(this->Drop, (temp & 0x800000) >> 23);
+      InsertNextValue(this->SNR, (temp & 0x007000) >> 12);
+      InsertNextValue(this->Interference, (temp & 0x060000) >> 17);
+      InsertNextValue(this->SunLevel, (temp & 0x018000) >> 15);
     }
     else
     {
-      this->Confidence->InsertNextValue(u32_to_str(temp & 0xFFF));
-      this->Drop->InsertNextValue((temp & 0x800) >> 11);
-      this->SNR->InsertNextValue(temp & 0x007);
-      this->Interference->InsertNextValue((temp & 0x060) >> 5);
-      this->SunLevel->InsertNextValue((temp & 0x018) >> 3);
+      InsertNextValue(this->Confidence, u32_to_str(temp & 0xFFF));
+      InsertNextValue(this->Drop, (temp & 0x800) >> 11);
+      InsertNextValue(this->SNR, temp & 0x007);
+      InsertNextValue(this->Interference, (temp & 0x060) >> 5);
+      InsertNextValue(this->SunLevel, (temp & 0x018) >> 3);
     }
   }
   else
   {
-      this->Confidence->InsertNextValue(u32_to_str(0));
-      this->Drop->InsertNextValue(0);
-      this->SNR->InsertNextValue(0);
-      this->Interference->InsertNextValue(0);
-      this->SunLevel->InsertNextValue(0);
+      InsertNextValue(this->Confidence, u32_to_str(0));
+      InsertNextValue(this->Drop, 0);
+      InsertNextValue(this->SNR, 0);
+      InsertNextValue(this->Interference, 0);
+      InsertNextValue(this->SunLevel, 0);
   }
 }
 
@@ -982,28 +1004,28 @@ vtkSmartPointer<vtkPolyData> vtkVelodyneLegacyPacketInterpreter::CreateNewEmptyF
 
   // intensity
   this->Points = points.GetPointer();
-  this->PointsX = CreateDataArray<vtkDoubleArray>("X", numberOfPoints, prereservedNumberOfPoints, polyData);
-  this->PointsY = CreateDataArray<vtkDoubleArray>("Y", numberOfPoints, prereservedNumberOfPoints, polyData);
-  this->PointsZ = CreateDataArray<vtkDoubleArray>("Z", numberOfPoints, prereservedNumberOfPoints, polyData);
-  this->Intensity = CreateDataArray<vtkUnsignedCharArray>("intensity", numberOfPoints, prereservedNumberOfPoints, polyData);
-  this->Drop = CreateDataArray<vtkUnsignedCharArray>("drop", numberOfPoints, prereservedNumberOfPoints, polyData);
-  this->Confidence = CreateDataArray<vtkStringArray>("binary_flags_string", numberOfPoints, prereservedNumberOfPoints, polyData);
-  this->Interference = CreateDataArray<vtkUnsignedCharArray>("interference", numberOfPoints, prereservedNumberOfPoints, polyData);
-  this->SNR = CreateDataArray<vtkUnsignedCharArray>("confidence", numberOfPoints, prereservedNumberOfPoints, polyData);
-  this->SunLevel = CreateDataArray<vtkUnsignedCharArray>("sun_level", numberOfPoints, prereservedNumberOfPoints, polyData);
-  this->LaserId = CreateDataArray<vtkUnsignedCharArray>("laser_id", numberOfPoints, prereservedNumberOfPoints, polyData);
-  this->Azimuth = CreateDataArray<vtkUnsignedShortArray>("azimuth", numberOfPoints, prereservedNumberOfPoints, polyData);
-  this->Distance = CreateDataArray<vtkDoubleArray>("distance_m", numberOfPoints, prereservedNumberOfPoints, polyData);
+  this->PointsX = CreateDataArray<vtkDoubleArray>(true, "X", numberOfPoints, prereservedNumberOfPoints, polyData);
+  this->PointsY = CreateDataArray<vtkDoubleArray>(true, "Y", numberOfPoints, prereservedNumberOfPoints, polyData);
+  this->PointsZ = CreateDataArray<vtkDoubleArray>(true, "Z", numberOfPoints, prereservedNumberOfPoints, polyData);
+  this->Intensity = CreateDataArray<vtkUnsignedCharArray>(false, "intensity", numberOfPoints, prereservedNumberOfPoints, polyData);
+  this->Drop = CreateDataArray<vtkUnsignedCharArray>(true, "drop", numberOfPoints, prereservedNumberOfPoints, polyData);
+  this->Confidence = CreateDataArray<vtkStringArray>(true, "binary_flags_string", numberOfPoints, prereservedNumberOfPoints, polyData);
+  this->Interference = CreateDataArray<vtkUnsignedCharArray>(true, "interference", numberOfPoints, prereservedNumberOfPoints, polyData);
+  this->SNR = CreateDataArray<vtkUnsignedCharArray>(true, "confidence", numberOfPoints, prereservedNumberOfPoints, polyData);
+  this->SunLevel = CreateDataArray<vtkUnsignedCharArray>(true, "sun_level", numberOfPoints, prereservedNumberOfPoints, polyData);
+  this->LaserId = CreateDataArray<vtkUnsignedCharArray>(false, "laser_id", numberOfPoints, prereservedNumberOfPoints, polyData);
+  this->Azimuth = CreateDataArray<vtkUnsignedShortArray>(false, "azimuth", numberOfPoints, prereservedNumberOfPoints, polyData);
+  this->Distance = CreateDataArray<vtkDoubleArray>(false, "distance_m", numberOfPoints, prereservedNumberOfPoints, polyData);
   this->DistanceRaw =
-    CreateDataArray<vtkUnsignedShortArray>("distance_raw", numberOfPoints, prereservedNumberOfPoints, polyData);
-  this->Timestamp = CreateDataArray<vtkDoubleArray>("adjustedtime", numberOfPoints, prereservedNumberOfPoints, polyData);
-  this->RawTime = CreateDataArray<vtkUnsignedIntArray>("timestamp", numberOfPoints, prereservedNumberOfPoints, polyData);
-  this->DistanceFlag = CreateDataArray<vtkIntArray>("dual_distance", numberOfPoints, prereservedNumberOfPoints, nullptr);
-  this->IntensityFlag = CreateDataArray<vtkIntArray>("dual_intensity", numberOfPoints, prereservedNumberOfPoints, nullptr);
-  this->Flags = CreateDataArray<vtkUnsignedIntArray>("dual_flags", numberOfPoints, prereservedNumberOfPoints, nullptr);
+    CreateDataArray<vtkUnsignedShortArray>(true, "distance_raw", numberOfPoints, prereservedNumberOfPoints, polyData);
+  this->Timestamp = CreateDataArray<vtkDoubleArray>(false, "adjustedtime", numberOfPoints, prereservedNumberOfPoints, polyData);
+  this->RawTime = CreateDataArray<vtkUnsignedIntArray>(false, "timestamp", numberOfPoints, prereservedNumberOfPoints, polyData);
+  this->DistanceFlag = CreateDataArray<vtkIntArray>(true, "dual_distance", numberOfPoints, prereservedNumberOfPoints, nullptr);
+  this->IntensityFlag = CreateDataArray<vtkIntArray>(true, "dual_intensity", numberOfPoints, prereservedNumberOfPoints, nullptr);
+  this->Flags = CreateDataArray<vtkUnsignedIntArray>(true, "dual_flags", numberOfPoints, prereservedNumberOfPoints, nullptr);
   this->DualReturnMatching =
-    CreateDataArray<vtkIdTypeArray>("dual_return_matching", numberOfPoints, prereservedNumberOfPoints, nullptr);
-  this->VerticalAngle = CreateDataArray<vtkDoubleArray>("vertical_angle", numberOfPoints, prereservedNumberOfPoints, polyData);
+    CreateDataArray<vtkIdTypeArray>(true, "dual_return_matching", numberOfPoints, prereservedNumberOfPoints, nullptr);
+  this->VerticalAngle = CreateDataArray<vtkDoubleArray>(false, "vertical_angle", numberOfPoints, prereservedNumberOfPoints, polyData);
 
   // FieldData : RPM
   vtkSmartPointer<vtkDoubleArray> rpmData = vtkSmartPointer<vtkDoubleArray>::New();
@@ -1015,9 +1037,9 @@ vtkSmartPointer<vtkPolyData> vtkVelodyneLegacyPacketInterpreter::CreateNewEmptyF
 
   if (this->HasDualReturn)
   {
-    polyData->GetPointData()->AddArray(this->DistanceFlag.GetPointer());
-    polyData->GetPointData()->AddArray(this->IntensityFlag.GetPointer());
-    polyData->GetPointData()->AddArray(this->DualReturnMatching.GetPointer());
+    AddArray(polyData->GetPointData(), this->DistanceFlag.GetPointer());
+    AddArray(polyData->GetPointData(), this->IntensityFlag.GetPointer());
+    AddArray(polyData->GetPointData(), this->DualReturnMatching.GetPointer());
   }
 
   return polyData;

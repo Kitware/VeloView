@@ -198,6 +198,8 @@ public:
 
   vtkMTimeType GetMTime() override;
 
+  GenericSetMacro(EnableAdvancedArrays, bool)
+
 protected:
     vtkVelodyneMetaPacketInterpreter();
 

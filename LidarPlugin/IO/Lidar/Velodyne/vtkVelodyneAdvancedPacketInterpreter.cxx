@@ -422,7 +422,10 @@ vtkVelodyneAdvancedPacketInterpreter::ProcessPacket(
 
 //! @brief Convencience macro for setting info array values.
 #define VAPI_SET_VALUE(my_array, value)                                        \
-  this->INFO_##my_array->SetValue(arrayIndex, value);
+  if (this->INFO_##my_array != nullptr)                                        \
+  {                                                                            \
+    this->INFO_##my_array->SetValue(arrayIndex, value);                        \
+  }
 
         auto distType = distanceTypes[distanceIndex];
         VAPI_SET_VALUE(Xs, position[0])
@@ -443,11 +446,14 @@ vtkVelodyneAdvancedPacketInterpreter::ProcessPacket(
 
         //! @brief Convenience macro for setting intensity values
 #define VAPI_INSERT_INTENSITY(my_array, iset_flag)                             \
-  this->INFO_##my_array->SetValue(                                             \
-    arrayIndex,                                                                \
-    (iset & (ISET_##iset_flag)) ? firingReturn.GetIntensity<uint32_t>(         \
-                                    distanceSize, iset, (ISET_##iset_flag))    \
-                                : 0);
+  if (this->INFO_##my_array != nullptr)                                        \
+  {                                                                            \
+    this->INFO_##my_array->SetValue(                                           \
+      arrayIndex,                                                              \
+      (iset & (ISET_##iset_flag)) ? firingReturn.GetIntensity<uint32_t>(       \
+                                      distanceSize, iset, (ISET_##iset_flag))  \
+                                  : 0);                                        \
+  }
 
         // TODO: Make the inclusion of these columns fully optional at runtime.
 
@@ -571,32 +577,39 @@ vtkVelodyneAdvancedPacketInterpreter::CreateNewEmptyFrame(
   // Replace and initialize all of the associated data arrays.
 
 //! @brief Convencience macro for initializing info arrays.
-#define VAPI_INIT_INFO_ARR(arr_name, disp_name)                                \
-  InitializeDataArrayForPolyData(                                              \
-    this->INFO_##arr_name, disp_name, this->MaxFrameSize, polyData);
+#define VAPI_INIT_INFO_ARR(is_advanced, arr_name, disp_name)                   \
+  if ((is_advanced && !this->EnableAdvancedArrays))                            \
+  {                                                                            \
+    this->INFO_##arr_name = nullptr;                                           \
+  }                                                                            \
+  else                                                                         \
+  {                                                                            \
+    InitializeDataArrayForPolyData(                                            \
+      this->INFO_##arr_name, disp_name, this->MaxFrameSize, polyData);         \
+  }
 
-  VAPI_INIT_INFO_ARR(Xs, "X")
-  VAPI_INIT_INFO_ARR(Ys, "Y")
-  VAPI_INIT_INFO_ARR(Zs, "Z")
-  VAPI_INIT_INFO_ARR(Distances, "distance_m")
-  VAPI_INIT_INFO_ARR(RawDistances, "distance_raw")
-  VAPI_INIT_INFO_ARR(DistanceTypes, "distance_type")
-  VAPI_INIT_INFO_ARR(Azimuths, "azimuth")
-  VAPI_INIT_INFO_ARR(VerticalAngles, "vertical_angle")
+  VAPI_INIT_INFO_ARR(true, Xs, "X")
+  VAPI_INIT_INFO_ARR(true, Ys, "Y")
+  VAPI_INIT_INFO_ARR(true, Zs, "Z")
+  VAPI_INIT_INFO_ARR(false, Distances, "distance_m")
+  VAPI_INIT_INFO_ARR(true, RawDistances, "distance_raw")
+  VAPI_INIT_INFO_ARR(true, DistanceTypes, "distance_type")
+  VAPI_INIT_INFO_ARR(false, Azimuths, "azimuth")
+  VAPI_INIT_INFO_ARR(false, VerticalAngles, "vertical_angle")
 /*
-  VAPI_INIT_INFO_ARR(DistanceTypeStrings  , "distance_type_name")
-  VAPI_INIT_INFO_ARR(FiringModeStrings    , "firing_mode")
-  VAPI_INIT_INFO_ARR(StatusStrings        , "status")
+  VAPI_INIT_INFO_ARR(true, DistanceTypeStrings  , "distance_type_name")
+  VAPI_INIT_INFO_ARR(true, FiringModeStrings    , "firing_mode")
+  VAPI_INIT_INFO_ARR(true, StatusStrings        , "status")
 */
-  VAPI_INIT_INFO_ARR(Intensities, "intensity")
-  VAPI_INIT_INFO_ARR(Confidences, "confidence")
-  VAPI_INIT_INFO_ARR(Reflectivities, "reflectivity")
-  VAPI_INIT_INFO_ARR(ChannelNumbers, "logical_channel_number")
-  VAPI_INIT_INFO_ARR(TimeFractionOffsets, "time_fraction_offset")
-  VAPI_INIT_INFO_ARR(Timestamps, "timestamp")
-  VAPI_INIT_INFO_ARR(Powers, "power")
-  VAPI_INIT_INFO_ARR(Noises, "noise")
-  VAPI_INIT_INFO_ARR(Pseqs, "packet_sequence_number")
+  VAPI_INIT_INFO_ARR(false, Intensities, "intensity")
+  VAPI_INIT_INFO_ARR(true, Confidences, "confidence")
+  VAPI_INIT_INFO_ARR(false, Reflectivities, "reflectivity")
+  VAPI_INIT_INFO_ARR(true, ChannelNumbers, "logical_channel_number")
+  VAPI_INIT_INFO_ARR(true, TimeFractionOffsets, "time_fraction_offset")
+  VAPI_INIT_INFO_ARR(false, Timestamps, "timestamp")
+  VAPI_INIT_INFO_ARR(true, Powers, "power")
+  VAPI_INIT_INFO_ARR(true, Noises, "noise")
+  VAPI_INIT_INFO_ARR(true, Pseqs, "packet_sequence_number")
 
   this->NumberOfPointsInCurrentFrame = 0;
   this->CurrentArraySize             = numberOfPoints;
@@ -739,7 +752,11 @@ vtkVelodyneAdvancedPacketInterpreter::ResizeArrays()
 
   this->Points->Resize(newSize);
 
-#define VAPI_RESIZE(index, data, array) array->Resize(newSize);
+#define VAPI_RESIZE(index, data, array)                                        \
+  if (array != nullptr)                                                        \
+  {                                                                            \
+    array->Resize(newSize);                                                    \
+  }
 
   // "data" is an unused placeholder
   VAPI_FOREACH_INFO_ARRAY(VAPI_RESIZE, data)
@@ -759,7 +776,10 @@ vtkVelodyneAdvancedPacketInterpreter::SetNumberOfItems(size_t numberOfItems)
   this->Points->SetNumberOfPoints(numberOfItems);
 
 #define VAPI_SET_NUMBER_OF_VALUES(index, data, array)                          \
-  array->SetNumberOfValues(numberOfItems);
+  if (array != nullptr)                                                        \
+  {                                                                            \
+    array->SetNumberOfValues(numberOfItems);                                   \
+  }
 
   VAPI_FOREACH_INFO_ARRAY(VAPI_SET_NUMBER_OF_VALUES, data)
 }

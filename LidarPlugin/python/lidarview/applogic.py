@@ -38,6 +38,16 @@ _repCache = {}
 
 SAMPLE_PROCESSING_MODE = False
 
+def enableAdvancedArrays(status):
+    sources = servermanager.ProxyManager().GetProxiesInGroup("sources")
+    for s in sources:
+        if hasattr(sources[s], 'Interpreter'):
+	    sources[s].Interpreter.EnableAdvancedArrays = status
+
+def onSpreadSheetEnabled(status):
+    enableAdvancedArrays(status)
+    smp.SetActiveView(app.mainView)
+
 def vtkGetFileNameFromPluginName(pluginName):
   import os
   if os.name == "nt":
@@ -397,6 +407,7 @@ def openSensor():
     sensor = smp.LidarStream(guiName='Data', CalibrationFile=calibrationFile)
     sensor.Interpreter = 'Velodyne Meta Interpreter'
     sensor.Interpreter.UseIntraFiringAdjustment = app.actions['actionIntraFiringAdjust'].isChecked()
+    sensor.Interpreter.EnableAdvancedArrays = getMainWindow().isSpreadsheetOpen()
 
     sensor.LidarPort = LidarPort
     sensor.GetClientSideObject().EnableGPSListening(True)
@@ -499,6 +510,7 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
                              CalibrationFile = calibrationFile,
                              )
     reader.Interpreter = 'Velodyne Meta Interpreter'
+    reader.Interpreter.EnableAdvancedArrays = getMainWindow().isSpreadsheetOpen()
     reader.Interpreter.UseIntraFiringAdjustment = app.actions['actionIntraFiringAdjust'].isChecked()
 
     reader.UpdatePipelineInformation()
@@ -1401,9 +1413,9 @@ def getSpreadSheetViewProxy():
     return smp.servermanager.ProxyManager().GetProxy("views", "main spreadsheet view")
 
 def clearSpreadSheetView():
-    print("applogic.py:clearing spreadsheetview!")
     view = getSpreadSheetViewProxy()
-    view.Representations = []
+    if view is not None:
+        view.Representations = []
 
 
 def showSourceInSpreadSheet(source):
@@ -2034,6 +2046,7 @@ def setupActions():
     app.PlaybackToolbar = timeToolBar
     app.GeolocationToolbar = getMainWindow().findChild('QToolBar','geolocationToolbar')
 
+    getMainWindow().connect('spreadsheetEnabled(bool)', onSpreadSheetEnabled)
 
 def createRPMBehaviour():
     # create and customize a label to display the rpm

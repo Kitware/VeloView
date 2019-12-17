@@ -354,6 +354,16 @@
          TimeOffset (in seconds) relative to the system clock.
      </Documentation>
    </DoubleVectorProperty>
+
+  <IntVectorProperty
+      name="EnableAdvancedArrays"
+      animateable="0"
+      command="SetEnableAdvancedArrays"
+      default_values="0"
+      number_of_elements="1">
+    <BooleanDomain name="bool" />
+  </IntVectorProperty>
+
   </SourceProxy>
 </ProxyGroup>
 <!-- End LidarPacketInterpreter -->
