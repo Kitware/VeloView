@@ -111,6 +111,9 @@ public:
   }
   Ui::vvMainWindow Ui;
   pqRenderView* MainView;
+  pqServer* Server = nullptr;
+  pqObjectBuilder* Builder = nullptr;
+  pqMultiViewWidget* ssmv = nullptr;
   pqSpreadSheetView* SpreadsheetView = nullptr;
 
 private:
@@ -210,9 +213,9 @@ private:
     }
 
     // Connect to builtin server.
-    pqObjectBuilder* builder = core->getObjectBuilder();
-    pqServer* server = builder->createServer(pqServerResource("builtin:"));
-    pqActiveObjects::instance().setActiveServer(server);
+    this->Builder = core->getObjectBuilder();
+    this->Server = this->Builder->createServer(pqServerResource("builtin:"));
+    pqActiveObjects::instance().setActiveServer(this->Server);
 
     // Set default render view settings
     vtkSMSessionProxyManager* pxm =
@@ -227,24 +230,18 @@ private:
     mv->setTabVisibility(false);
     window->setCentralWidget(mv);
 
-    // create SpreadSheet
-    this->SpreadsheetView = qobject_cast<pqSpreadSheetView*>
-        (builder->createView(pqSpreadSheetView::spreadsheetViewType(), server, true));
-    this->SpreadsheetView->rename("main spreadsheet view");
-    assert(this->SpreadsheetView);
-
-    vtkSMViewLayoutProxy* ssvl = static_cast<vtkSMViewLayoutProxy*>(builder->createProxy(
-          "misc", "ViewLayout", server, ""));
-    pqMultiViewWidget* ssmv = new pqMultiViewWidget;
-    ssmv->setLayoutManager(ssvl);
-    ssmv->assignToFrame(this->SpreadsheetView);
-    ssmv->hideDecorations(); // hide the decoration to split the widget
+    vtkSMViewLayoutProxy* ssvl = static_cast<vtkSMViewLayoutProxy*>(this->Builder->createProxy(
+          "misc", "ViewLayout", this->Server, ""));
+    this->ssmv = new pqMultiViewWidget;
+    this->ssmv->setLayoutManager(ssvl);
+    // this->ssmv->assignToFrame(this->SpreadsheetView);
+    this->ssmv->hideDecorations(); // hide the decoration to split the widget
     this->Ui.spreadSheetDock->setWidget(ssmv);
 
-    QObject::connect(this->Ui.actionSpreadsheet, SIGNAL(triggered()), window, SLOT(onToggleSpreadsheet()));
+    QObject::connect(this->Ui.actionSpreadsheet, SIGNAL(toggled(bool)), window, SLOT(onToggleSpreadsheet(bool)));
 
     pqRenderView* view =
-      qobject_cast<pqRenderView*>(builder->createView(pqRenderView::renderViewType(), server));
+      qobject_cast<pqRenderView*>(this->Builder->createView(pqRenderView::renderViewType(), this->Server));
     assert(view);
     this->MainView = view;
 
@@ -472,15 +469,40 @@ void vvMainWindow::showHelpForProxy(const QString& groupname, const
 }
 
 //-----------------------------------------------------------------------------
-void vvMainWindow::onToggleSpreadsheet()
+void vvMainWindow::constructSpreadsheet()
 {
+  assert(this->Internals->SpreadsheetView == nullptr);
+  this->Internals->SpreadsheetView = qobject_cast<pqSpreadSheetView*>
+      (this->Internals->Builder->createView(pqSpreadSheetView::spreadsheetViewType(), this->Internals->Server, true));
+  this->Internals->SpreadsheetView->rename("main spreadsheet view");
+  assert(this->Internals->SpreadsheetView != nullptr);
+  this->Internals->ssmv->assignToFrame(this->Internals->SpreadsheetView);
+}
+
+//-----------------------------------------------------------------------------
+void vvMainWindow::destructSpreadsheet()
+{
+  this->Internals->ssmv->assignToFrame(nullptr);
+  this->Internals->ssmv->reset();
+  delete this->Internals->SpreadsheetView;
+}
+
+//-----------------------------------------------------------------------------
+void vvMainWindow::onToggleSpreadsheet(bool toggled)
+{
+  if (toggled)
+  {
+    this->constructSpreadsheet();
+    emit this->spreadsheetEnabled(true);
+  }
+
   // Hide / Show Dock
   this->Internals->SpreadsheetView->widget()
                                   ->parentWidget()
                                   ->parentWidget()
                                   ->parentWidget()
                                   ->parentWidget()
-                                  ->setVisible(this->Internals->Ui.actionSpreadsheet->isChecked());
+                                  ->setVisible(toggled);
 
   pqSpreadSheetView* ssview = qobject_cast<pqSpreadSheetView*>(this->Internals->SpreadsheetView);
 
@@ -490,4 +512,16 @@ void vvMainWindow::onToggleSpreadsheet()
   // Display parameters
   ssview->getViewModel()->setDecimalPrecision(3);
   ssview->getViewModel()->setFixedRepresentation(true);
+
+  if (!toggled)
+  {
+    this->destructSpreadsheet();
+    emit this->spreadsheetEnabled(false);
+  }
+}
+
+//-----------------------------------------------------------------------------
+bool vvMainWindow::isSpreadsheetOpen()
+{
+  return this->Internals->SpreadsheetView != nullptr;
 }
