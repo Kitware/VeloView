@@ -1401,6 +1401,7 @@ def getSpreadSheetViewProxy():
     return smp.servermanager.ProxyManager().GetProxy("views", "main spreadsheet view")
 
 def clearSpreadSheetView():
+    print("applogic.py:clearing spreadsheetview!")
     view = getSpreadSheetViewProxy()
     view.Representations = []
 

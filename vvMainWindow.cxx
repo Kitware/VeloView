@@ -28,7 +28,6 @@
 #include "vvMainWindow.h"
 #include "ui_vvMainWindow.h"
 #include "vvLoadDataReaction.h"
-#include "vvToggleSpreadSheetReaction.h"
 
 #include <vtkSMProxyManager.h>
 #include <vtkSMSessionProxyManager.h>
@@ -54,6 +53,7 @@
 #include <pqServer.h>
 #include <pqSettings.h>
 #include <pqSpreadSheetView.h>
+#include <pqSpreadSheetViewModel.h>
 #include <pqSpreadSheetViewDecorator.h>
 #include <pqSpreadSheetVisibilityBehavior.h>
 #include <pqStandardPropertyWidgetInterface.h>
@@ -111,6 +111,7 @@ public:
   }
   Ui::vvMainWindow Ui;
   pqRenderView* MainView;
+  pqSpreadSheetView* SpreadsheetView = nullptr;
 
 private:
   void paraviewInit(vvMainWindow* window)
@@ -227,23 +228,20 @@ private:
     window->setCentralWidget(mv);
 
     // create SpreadSheet
-    pqSpreadSheetView* spreadsheetView = qobject_cast<pqSpreadSheetView*>
+    this->SpreadsheetView = qobject_cast<pqSpreadSheetView*>
         (builder->createView(pqSpreadSheetView::spreadsheetViewType(), server, true));
-    spreadsheetView->rename("main spreadsheet view");
-    assert(spreadsheetView);
+    this->SpreadsheetView->rename("main spreadsheet view");
+    assert(this->SpreadsheetView);
 
     vtkSMViewLayoutProxy* ssvl = static_cast<vtkSMViewLayoutProxy*>(builder->createProxy(
           "misc", "ViewLayout", server, ""));
     pqMultiViewWidget* ssmv = new pqMultiViewWidget;
     ssmv->setLayoutManager(ssvl);
-    ssmv->assignToFrame(spreadsheetView);
+    ssmv->assignToFrame(this->SpreadsheetView);
     ssmv->hideDecorations(); // hide the decoration to split the widget
     this->Ui.spreadSheetDock->setWidget(ssmv);
 
-
-
-    new vvToggleSpreadSheetReaction(this->Ui.actionSpreadsheet, spreadsheetView);
-
+    QObject::connect(this->Ui.actionSpreadsheet, SIGNAL(triggered()), window, SLOT(onToggleSpreadsheet()));
 
     pqRenderView* view =
       qobject_cast<pqRenderView*>(builder->createView(pqRenderView::renderViewType(), server));
@@ -471,4 +469,25 @@ void vvMainWindow::showHelpForProxy(const QString& groupname, const
   QString& proxyname)
 {
   pqHelpReaction::showProxyHelp(groupname, proxyname);
+}
+
+//-----------------------------------------------------------------------------
+void vvMainWindow::onToggleSpreadsheet()
+{
+  // Hide / Show Dock
+  this->Internals->SpreadsheetView->widget()
+                                  ->parentWidget()
+                                  ->parentWidget()
+                                  ->parentWidget()
+                                  ->parentWidget()
+                                  ->setVisible(this->Internals->Ui.actionSpreadsheet->isChecked());
+
+  pqSpreadSheetView* ssview = qobject_cast<pqSpreadSheetView*>(this->Internals->SpreadsheetView);
+
+  // Hide Block ID and XYZ column
+  ssview->getViewModel()->setVisible(0, false);
+  ssview->getViewModel()->setVisible(2, false);
+  // Display parameters
+  ssview->getViewModel()->setDecimalPrecision(3);
+  ssview->getViewModel()->setFixedRepresentation(true);
 }

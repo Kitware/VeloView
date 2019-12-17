@@ -145,7 +145,6 @@ endif()
 set (source_files
   vvMainWindow.cxx
   vvColorToolbar.cxx
-  vvToggleSpreadSheetReaction.cxx
   vvLoadDataReaction.cxx
   vvPlayerControlsToolbar.cxx
   vvPlayerControlsController.cxx
@@ -154,7 +153,6 @@ set (source_files
 qt5_wrap_cpp(moc_source_files
   vvColorToolbar.h
   vvMainWindow.h
-  vvToggleSpreadSheetReaction.h
   vvLoadDataReaction.h
   vvPlayerControlsToolbar.h
   vvPlayerControlsController.h
