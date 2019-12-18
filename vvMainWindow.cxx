@@ -238,6 +238,15 @@ private:
     this->ssmv->hideDecorations(); // hide the decoration to split the widget
     this->Ui.spreadSheetDock->setWidget(ssmv);
 
+    for (QObject* child : this->Ui.spreadSheetDock->children()) {
+      if (child->objectName() == "qt_dockwidget_closebutton") {
+        if (QWidget* button = dynamic_cast<QWidget* >(child)) {
+          button->disconnect();
+          QObject::connect(button, SIGNAL(clicked()), this->Ui.actionSpreadsheet, SLOT(toggle()));
+        }
+      }
+    }
+
     QObject::connect(this->Ui.actionSpreadsheet, SIGNAL(toggled(bool)), window, SLOT(onToggleSpreadsheet(bool)));
 
     pqRenderView* view =
