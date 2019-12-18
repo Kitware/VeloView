@@ -1888,9 +1888,12 @@ def onToogleAdvancedGUI(updateSettings = True):
   getMainWindow().centralWidget().toggleWidgetDecoration()
   # hide/show some views
   advance_action = ["Display", "Information", "Memory Inspector", "Pipeline Browser", "Properties", "View"]
+  hidden_action = ["SpreadSheet"] # this is a (bugged) duplicate coming from pqViewMenuManager.cxx
   for action in getMainWindow().findChild("QMenu", "menuViews").actions():
     if action.text in advance_action:
       action.visible = not action.visible
+    if action.text in hidden_action:
+      action.visible = False
   # update the UserSettings
   if updateSettings:
     # booleans must be store as int
