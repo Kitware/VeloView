@@ -8,6 +8,7 @@
 //----------------------------------------------------------------------------
 //! @brief Simple getter that handles conversion to native unsigned integer types.
 #define GET_NATIVE_UINT(n, attr) uint ## n ##_t Get ## attr() const { return this->attr; }
+#define SET_NATIVE_UINT(n, attr) void Set ## attr(uint ## n ##_t x) { this->attr = x; }
 
 #define BIT(n)                  ( 1<<(n) )
 //! Create a bitmask of length \a len.
@@ -19,7 +20,14 @@
 //! Extract a bitfield of length \a len starting at bit \a start from \a y.
 #define BF_GET(y, start, len)   ( ((y)>>(static_cast<decltype(y)>(start))) & BIT_MASK(len) )
 
+//! Prepare a bitmask for insertion or combining.
+#define BF_PREP(x, start, len)  ( ((x)&BIT_MASK(len)) << (start) )
 
+//! Insert a new bitfield value x into y.
+#define BF_SET(y, x, start, len)    ( y= ((y) &~ BF_MASK(start, len)) | BF_PREP(x, start, len) )
+
+
+namespace SpecialVelarrayPacket {
 #pragma pack(push, 1)
 //! @brief class representing the Special Velarray packet header
 /*
@@ -71,11 +79,15 @@ private:
 
 public:
   GET_NATIVE_UINT(8, NXHDR)
+  SET_NATIVE_UINT(8, NXHDR)
   GET_NATIVE_UINT(8, MIC)
+  SET_NATIVE_UINT(8, MIC)
   GET_NATIVE_UINT(32, PSEQ)
+  SET_NATIVE_UINT(32, PSEQ)
   GET_NATIVE_UINT(64, TREF)
+  SET_NATIVE_UINT(64, TREF)
   GET_NATIVE_UINT(8, DSET)
-  GET_NATIVE_UINT(16, ISET)
+  SET_NATIVE_UINT(8, DSET)
 
   uint8_t GetVER() const
   {
@@ -122,7 +134,7 @@ public:
   |               DIST             |      RFT      |      LCN     |
   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  */
-class SVPFFiringReturn
+class FiringReturn
 {
 private:
   // 1 bit HDIR : Horizontal Direction (0:Clockwise / 1:Counter-clockwise)
@@ -144,21 +156,37 @@ private:
 
 public:
   GET_NATIVE_UINT(16, AZM)
+  SET_NATIVE_UINT(16, AZM)
   GET_NATIVE_UINT(16, DIST)
+  SET_NATIVE_UINT(16, DIST)
   GET_NATIVE_UINT(8, RFT)
+  SET_NATIVE_UINT(8, RFT)
   GET_NATIVE_UINT(8, LCN)
+  SET_NATIVE_UINT(8, LCN)
 
   uint8_t GetHDIR() const
   {
     return BF_GET(HDIR_VDIR_VDFL, 15, 1);
   }
+  void SetHDIR(uint8_t hdir)
+  {
+    BF_SET(HDIR_VDIR_VDFL, hdir, 15, 1);
+  }
   uint8_t GetVDIR() const
   {
     return BF_GET(HDIR_VDIR_VDFL, 14, 1);
   }
+  void SetVDIR(uint8_t vdir)
+  {
+    BF_SET(HDIR_VDIR_VDFL, vdir, 14, 1);
+  }
   uint16_t GetVDFL() const
   {
     return BF_GET(HDIR_VDIR_VDFL, 0, 14);
+  }
+  void SetVDFL(uint16_t vdfl)
+  {
+    BF_SET(HDIR_VDIR_VDFL, vdfl, 0, 14);
   }
 };
 #pragma pack(pop)
@@ -187,18 +215,33 @@ private :
 
 public :
   GET_NATIVE_UINT(16, CRC)
+  SET_NATIVE_UINT(16, CRC)
   GET_NATIVE_UINT(8, AC)
+  SET_NATIVE_UINT(8, AC)
   GET_NATIVE_UINT(8, PSEQF)
+  SET_NATIVE_UINT(8, PSEQF)
 };
 #pragma pack(pop)
 
 #pragma pack(push, 1)
 //! @brief class representing the Special Velarray Packet
-struct SVPacket{
+struct Packet{
   PayloadHeader header;
-  SVPFFiringReturn* firing;
-}
+  FiringReturn firings[];
+
+  const PayloadFooter* GetFooter(size_t packet_size) const
+  {
+    long last_firing_id = FiringCount(packet_size) - 1;
+    return reinterpret_cast<const PayloadFooter*>(&(this->firings[last_firing_id + 1]));
+  }
+  static long FiringCount(long bytes)
+  {
+    return (bytes - sizeof(PayloadHeader) - sizeof(PayloadFooter)) / sizeof(FiringReturn);
+  }
+};
 #pragma pack(pop)
+
+}
 
 
 #endif // SPECIALVELARRAYPACKET_H

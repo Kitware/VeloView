@@ -5,6 +5,7 @@
 #include <boost/predef/detail/endian_compat.h> // deprecated
 // #include <boost/predef/other/endian.h> // replacement
 
+#include <vtkSetGet.h>
 #include "EnumMacros.h"
 #include "VelodyneInterpreterCommon.h"
 

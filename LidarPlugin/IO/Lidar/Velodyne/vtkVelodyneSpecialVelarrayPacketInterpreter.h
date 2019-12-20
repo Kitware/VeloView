@@ -7,21 +7,18 @@
 #include <vtkUnsignedLongArray.h>
 #include <vtkStringArray.h>
 #include "vtkVelodyneBasePacketInterpreter.h"
+#include "vtkVelodyneAdvancedPacketFraming.h"
+#include "SpecialVelarrayPacket.h"
 
 #include <memory>
 
 using namespace DataPacketFixedLength;
 
-class RPMCalculator;
-class FramingState;
-class vtkRollingDataAccumulator;
-
-
-class VTK_EXPORT vtkVelodyneVelarrayPacketInterpreter : public vtkVelodyneBasePacketInterpreter
+class VTK_EXPORT vtkVelodyneSpecialVelarrayPacketInterpreter : public vtkVelodyneBasePacketInterpreter
 {
 public:
-  static vtkVelodyneVelarrayPacketInterpreter* New();
-  vtkTypeMacro(vtkVelodyneVelarrayPacketInterpreter, vtkVelodyneBasePacketInterpreter);
+  static vtkVelodyneSpecialVelarrayPacketInterpreter* New();
+  vtkTypeMacro(vtkVelodyneSpecialVelarrayPacketInterpreter, vtkVelodyneBasePacketInterpreter);
   void PrintSelf(ostream& vtkNotUsed(os), vtkIndent vtkNotUsed(indent)){};
   enum DualFlag
   {
@@ -56,16 +53,9 @@ protected:
 
   vtkSmartPointer<vtkPolyData> CreateNewEmptyFrame(vtkIdType numberOfPoints, vtkIdType prereservedNumberOfPoints = 60000) override;
 
-  // Process the laser return from the firing data
-  // firingData - one of HDL_FIRING_PER_PKT from the packet
-  // hdl64offset - either 0 or 32 to support 64-laser systems
-  // firingBlock - block of packet for firing [0-11]
-  // azimuthDiff - average azimuth change between firings
-  // timestamp - the timestamp of the packet
-  // geotransform - georeferencing transform
-  void ProcessFiring(const HDLFiringData* firingData,
-    int firingBlockLaserOffset, int firingBlock, int azimuthDiff, double timestamp,
-    unsigned int rawtime, bool isThisFiringDualReturnData, bool isDualReturnPacket, const HDLFiringData* extData, int extDataPacketType);
+  void ProcessFiring(const SpecialVelarrayPacket::PayloadHeader* header,
+                     const SpecialVelarrayPacket::FiringReturn* firingData,
+                     const SpecialVelarrayPacket::PayloadFooter* footer);
 
   void PushFiringData(unsigned char laserId, unsigned char rawLaserId,
                       unsigned short azimuth, const unsigned short elevation, const double timestamp,
@@ -73,13 +63,11 @@ protected:
                       const unsigned int channelNumber, const bool isFiringDualReturnData,
                       const int extDataPacketType, const HDLLaserReturn* extData);
 
-
   void Init();
 
   double ComputeTimestamp(unsigned int tohTime, const FrameInformation& frameInfo);
 
-
-  bool CheckReportedSensorAndCalibrationFileConsistent(const HDLDataPacket* dataPacket);
+  bool CheckReportedSensorAndCalibrationFileConsistent(const SpecialVelarrayPacket::Packet* dataPacket);
 
   vtkSmartPointer<vtkPoints> Points;
   vtkSmartPointer<vtkDoubleArray> PointsX;
@@ -102,18 +90,22 @@ protected:
   vtkSmartPointer<vtkIntArray> DistanceFlag;
   vtkSmartPointer<vtkUnsignedIntArray> Flags;
   vtkSmartPointer<vtkIdTypeArray> DualReturnMatching;
+  vtkSmartPointer<vtkUnsignedCharArray> HDir;
+  vtkSmartPointer<vtkUnsignedCharArray> VDir;
+  unsigned int LaserCounter = 0;
+  vtkSmartPointer<vtkUnsignedIntArray> LaserCounters;
+  vtkSmartPointer<vtkUnsignedLongArray> TREF; // reference timestamp in PTP truncated (64-bit) format
+  vtkSmartPointer<vtkUnsignedIntArray> PSEQ; // payload sequence number
+  vtkSmartPointer<vtkUnsignedCharArray> PSEQF; // payload sequence number within a frame
+  vtkSmartPointer<vtkUnsignedCharArray> AC; // alive counter
 
 
   // sensor information
   unsigned char SensorPowerMode;
   SensorType ReportedSensor;
   DualReturnSensorMode ReportedSensorReturnMode;
-  bool IsHDL64Data;
-  bool IsVLS128;
   uint8_t ReportedFactoryField1;
   uint8_t ReportedFactoryField2;
-
-  bool alreadyWarnedForIgnoredHDL64FiringPacket;
 
   bool OutputPacketProcessingDebugInfo;
 
@@ -121,21 +113,9 @@ protected:
   // intensities
   bool WantIntensityCorrection;
 
-  // WIP : We now have two method to compute the RPM :
-  // - One method which computes the rpm using the point cloud
-  // this method is not packets dependant but need a none empty
-  // point cloud which can be tricky (hard cropping, none spinning sensor)
-  // - One method which computes the rpm directly using the packets. the problem
-  // is, if the packets format change, we will have to adapt the rpm computation
-  // - For now, we will use the packet dependant method
-//  std::unique_ptr<RPMCalculator> RpmCalculator_;
-
-  RPMCalculator* RpmCalculator_;
-
-  FramingState* CurrentFrameState;
+  FrameTracker* CurrentFrameState;
   unsigned int LastTimestamp;
   int LastAzimuth, LastAzimuthDiff;
-  std::vector<double> RpmByFrames;
   double TimeAdjust;
   vtkIdType LastPointId[HDL_MAX_NUM_LASERS];
   vtkIdType FirstPointIdOfDualReturnPair;
@@ -144,35 +124,27 @@ protected:
 
   bool IsCorrectionFromLiveStream = true;
 
-  // Sensor parameters presented as rolling data, extracted from enough packets
-  vtkRollingDataAccumulator* rollingCalibrationData;
-
   bool ShouldCheckSensor;
-  uint32_t lastGpsTimestamp = 0;
 
-  vtkVelodyneVelarrayPacketInterpreter();
-  ~vtkVelodyneVelarrayPacketInterpreter();
+  uint8_t ReportedMICField = 0;
+
+  vtkVelodyneSpecialVelarrayPacketInterpreter();
+  ~vtkVelodyneSpecialVelarrayPacketInterpreter();
 
 private:
-  vtkVelodyneVelarrayPacketInterpreter(const vtkVelodyneVelarrayPacketInterpreter&) = delete;
-  void operator=(const vtkVelodyneVelarrayPacketInterpreter&) = delete;
+  vtkVelodyneSpecialVelarrayPacketInterpreter(const vtkVelodyneSpecialVelarrayPacketInterpreter&) = delete;
+  void operator=(const vtkVelodyneSpecialVelarrayPacketInterpreter&) = delete;
 
 };
 
-struct VelarraySpecificFrameInformation : public SpecificFrameInformation
+struct SpecialVelarraySpecificFrameInformation : public SpecificFrameInformation
 {
   //! Offset specific to the lidar data format
   //! Used because some frames start at the middle of a packet
   int FiringToSkip = 0;
 
-  //! Indicates the number of time rolled that has occured
-  //! since the beginning of the .pcap file. hence, to have
-  //! a non rolling timestamp one should add to the rolling
-  //! timestamp NbrOfRollingTime * MaxTimeBeforeRolling
-  int NbrOfRollingTime = 0;
-
-  void reset() { *this = VelarraySpecificFrameInformation(); }
-  std::unique_ptr<SpecificFrameInformation> clone() { return std::make_unique<VelarraySpecificFrameInformation>(*this); }
+  void reset() { *this = SpecialVelarraySpecificFrameInformation(); }
+  std::unique_ptr<SpecificFrameInformation> clone() { return std::make_unique<SpecialVelarraySpecificFrameInformation>(*this); }
 };
 
 #endif // VTKVELODYNEVELARRAYPACKETINTERPRETER_H

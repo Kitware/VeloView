@@ -198,7 +198,7 @@ list(APPEND servermanager_sources
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/Lidar/Velodyne/vtkVelodyneBasePacketInterpreter.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/Lidar/Velodyne/vtkVelodyneLegacyPacketInterpreter.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/Lidar/Velodyne/vtkVelodyneAdvancedPacketInterpreter.cxx
-  ${CMAKE_CURRENT_SOURCE_DIR}/IO/Lidar/Velodyne/vtkVelodyneVelarrayPacketInterpreter.cxx
+  ${CMAKE_CURRENT_SOURCE_DIR}/IO/Lidar/Velodyne/vtkVelodyneSpecialVelarrayPacketInterpreter.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/Lidar/KITTIDataSet/vtkLidarKITTIDataSetReader.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/GPS-IMU/Velodyne/vtkVelodyneHDLPositionReader.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/IO/GPS-IMU/Applanix/vtkApplanixPositionReader.cxx
@@ -251,6 +251,7 @@ list(APPEND servermanager_xml
   xml/Lidar.xml
   xml/VelodyneLidarPacketInterpreter.xml
   xml/VelodyneLidarAdvancedPacketInterpreter.xml
+  xml/VelodyneSpecialVelarrayPacketInterpreter.xml
   xml/LidarKITTIDataSetReader.xml
   xml/VelodyneHDLPositionReader.xml
   xml/ApplanixPositionReader.xml
