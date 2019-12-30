@@ -9,6 +9,7 @@
 #include <vtkDoubleArray.h>
 // #include <vtkStringArray.h>
 #include "vtkVelodyneBasePacketInterpreter.h"
+#include "vtkVelodyneAdvancedPacketFraming.h"
 
 #include <memory>
 #include <limits>
@@ -17,10 +18,6 @@
 using namespace DataPacketFixedLength;
 
 // #define DEBUG_MSG(msg) std::cout << msg << " [line " << __LINE__ << "]" << std::endl;
-
-//------------------------------------------------------------------------------
-// Forward declaration.
-class FrameTracker;
 
 //------------------------------------------------------------------------------
 class VTK_EXPORT vtkVelodyneAdvancedPacketInterpreter : public vtkVelodyneBasePacketInterpreter
