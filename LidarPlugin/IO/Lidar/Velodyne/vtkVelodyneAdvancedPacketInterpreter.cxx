@@ -32,8 +32,8 @@ private:
   HorizontalDirection LastHorDir;
   VerticalDirection LastVertDir;
   int LastSlope;
-  decltype(std::declval<FiringGroupHeader>().GetAzm()) LastAzimuth;
-  decltype(std::declval<FiringGroupHeader>().GetVdfl()) LastVertDeflection;
+  uint16_t LastAzimuth;
+  uint16_t LastVertDeflection;
 
 public:
   FrameTracker()
@@ -57,34 +57,21 @@ public:
 
   /*!
    * @brief     Update the frame tracker.
-   * @param[in] payloadHeader     The payload header, used to determine sensor
-   *                              model.
-   * @param[in] firingGroupHeader The firing group header to inspect for frame
-   *                              changes.
    * @return    True if a new frame is detected, false otherwise.
    */
   bool
-  Update(
-    PayloadHeader const * const vtkNotUsed(payloadHeader),
-    FiringGroupHeader const * const firingGroupHeader)
+  Update(uint16_t azimuth, uint16_t vertDeflection, HorizontalDirection horDir, VerticalDirection vertDir)
   {
     // Get and update all member values here to avoid doing so in various blocks
     // below just before returning.
 
-    decltype(this->LastAzimuth) azimuth     = firingGroupHeader->GetAzm(),
-                                lastAzimuth = this->LastAzimuth;
+    decltype(this->LastAzimuth) lastAzimuth = this->LastAzimuth;
 
-    decltype(this->LastVertDeflection) vertDeflection = firingGroupHeader->GetVdfl(); //,
-                                       // lastVertDeflection = this->LastVertDeflection;
     // Follow the logic of the legacy interpreter.
     int slope = static_cast<int>(azimuth) - static_cast<int>(lastAzimuth),
         lastSlope = this->LastSlope;
 
-    HorizontalDirection horDir = firingGroupHeader->GetHdir(); //,
-                        // lastHorDir = this->LastHorDir;
-
-    VerticalDirection vertDir = firingGroupHeader->GetVdir(),
-                      lastVertDir = this->LastVertDir;
+    VerticalDirection lastVertDir = this->LastVertDir;
 
     bool hasLastState = this->HasLastState;
 
@@ -316,7 +303,10 @@ vtkVelodyneAdvancedPacketInterpreter::ProcessPacket(
       continue;
     }
 
-    bool isNewFrame = this->CurrentFrameTracker->Update(payloadHeader, firingGroupHeader);
+    bool isNewFrame = this->CurrentFrameTracker->Update(firingGroupHeader->GetAzm(),
+                                                        firingGroupHeader->GetVdfl(),
+                                                        firingGroupHeader->GetHdir(),
+                                                        firingGroupHeader->GetVdir());
     if (isNewFrame)
     {
       this->SplitFrame();
@@ -706,7 +696,10 @@ vtkVelodyneAdvancedPacketInterpreter::PreProcessPacket(
     }
     // The payload header checks above ensure that this value is non-zero and
     // that the loop will therefore eventually terminate.
-    isNewFrame = this->CurrentFrameTracker->Update(payloadHeader, firingGroupHeader);
+    bool isNewFrame = this->CurrentFrameTracker->Update(firingGroupHeader->GetAzm(),
+                                                        firingGroupHeader->GetVdfl(),
+                                                        firingGroupHeader->GetHdir(),
+                                                        firingGroupHeader->GetVdir());
 
     if (isNewFrame)
     {
