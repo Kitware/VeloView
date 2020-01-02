@@ -12,6 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+Interpreter = 'Velodyne Special Velarray Interpreter'
+# Interpreter = 'Velodyne Meta Interpreter'
+# Interpreter = 'Velodyne Legacy Interpreter'
+
 import os
 import csv
 import datetime
@@ -405,7 +409,7 @@ def openSensor():
     app.grid = createGrid()
 
     sensor = smp.LidarStream(guiName='Data', CalibrationFile=calibrationFile)
-    sensor.Interpreter = 'Velodyne Meta Interpreter'
+    sensor.Interpreter = Interpreter
     sensor.Interpreter.UseIntraFiringAdjustment = app.actions['actionIntraFiringAdjust'].isChecked()
     sensor.Interpreter.EnableAdvancedArrays = getMainWindow().isSpreadsheetOpen()
 
@@ -509,7 +513,7 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
                              FileName = filename,
                              CalibrationFile = calibrationFile,
                              )
-    reader.Interpreter = 'Velodyne Meta Interpreter'
+    reader.Interpreter = Interpreter
     reader.Interpreter.EnableAdvancedArrays = getMainWindow().isSpreadsheetOpen()
     reader.Interpreter.UseIntraFiringAdjustment = app.actions['actionIntraFiringAdjust'].isChecked()
 
