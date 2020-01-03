@@ -29,9 +29,15 @@ protected:
   void dragEnterEvent(QDragEnterEvent* evt) override;
   void dropEvent(QDropEvent* evt) override;
 
+public slots:
+  bool isSpreadSheetOpen(); // not used as a slot but provides Python wrapping
+
+signals:
+  void spreadSheetEnabled(bool);
+
 protected slots:
   void showHelpForProxy(const QString& proxyname, const QString& groupname);
-  void onToggleSpreadSheet();
+  void onToggleSpreadSheet(bool toggle);
 
 private:
   Q_DISABLE_COPY(vvMainWindow);
@@ -39,6 +45,8 @@ private:
   class pqInternals;
   pqInternals* Internals;
   friend class pqInternals;
+  void constructSpreadSheet();
+  void destructSpreadSheet();
 };
 
 #endif

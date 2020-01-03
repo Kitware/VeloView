@@ -38,6 +38,9 @@ _repCache = {}
 
 SAMPLE_PROCESSING_MODE = False
 
+def onSpreadSheetEnabled(status):
+    smp.SetActiveView(app.mainView)
+
 def vtkGetFileNameFromPluginName(pluginName):
   import os
   if os.name == "nt":
@@ -1703,6 +1706,14 @@ def setupActions():
     app.PlaybackToolbar = timeToolBar
     app.GeolocationToolbar = getMainWindow().findChild('QToolBar','geolocationToolbar')
 
+    getMainWindow().connect('spreadSheetEnabled(bool)', onSpreadSheetEnabled)
+
+    spreadSheetDock = getMainWindow().findChild('QDockWidget', 'spreadSheetDock')
+    if spreadSheetDock.visible:
+        # this is a hack to ensure that the spreadsheet dock which is restored
+        # on startup (if it was enabled) is actually populated with a SpreadSheet
+        button = spreadSheetDock.findChild("QDockWidgetTitleButton", "qt_dockwidget_closebutton")
+        button.click()
 
 def createRPMBehaviour():
     # create and customize a label to display the rpm
