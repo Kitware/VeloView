@@ -28,7 +28,6 @@
 #include "vvMainWindow.h"
 #include "ui_vvMainWindow.h"
 #include "vvLoadDataReaction.h"
-#include "vvToggleSpreadSheetReaction.h"
 
 #include <vtkSMProxyManager.h>
 #include <vtkSMSessionProxyManager.h>
@@ -94,6 +93,7 @@ public:
   }
   Ui::vvMainWindow Ui;
   pqRenderView* MainView;
+  pqSpreadSheetView* SpreadSheetView = nullptr;
 
 private:
   void paraviewInit(vvMainWindow* window)
@@ -209,14 +209,17 @@ private:
     window->setCentralWidget(mv);
 
     // create SpreadSheet
-    pqSpreadSheetView* spreadsheetView = qobject_cast<pqSpreadSheetView*>
+    this->SpreadSheetView = qobject_cast<pqSpreadSheetView*>
         (builder->createView(pqSpreadSheetView::spreadsheetViewType(), server, true));
-    spreadsheetView->rename("main spreadsheet view");
-    assert(spreadsheetView);
-    this->Ui.spreadSheetDock->setWidget(spreadsheetView->widget());
-    spreadsheetView->getProxy()->UpdateVTKObjects();
-    new vvToggleSpreadSheetReaction(this->Ui.actionSpreadsheet, spreadsheetView);
-    pqSpreadSheetViewDecorator* dec = new pqSpreadSheetViewDecorator(spreadsheetView);
+    this->SpreadSheetView->rename("main spreadsheet view");
+    assert(this->SpreadSheetView);
+    this->Ui.spreadSheetDock->setWidget(this->SpreadSheetView->widget());
+    this->SpreadSheetView->getProxy()->UpdateVTKObjects();
+
+    // new vvToggleSpreadSheetReaction(this->Ui.actionSpreadsheet, this->SpreadSheetView);
+    QObject::connect(this->Ui.actionSpreadsheet, SIGNAL(triggered()), window, SLOT(onToggleSpreadsheet()));
+
+    pqSpreadSheetViewDecorator* dec = new pqSpreadSheetViewDecorator(this->SpreadSheetView);
     dec->setPrecision(3);
     dec->setFixedRepresentation(true);
 
@@ -433,4 +436,20 @@ void vvMainWindow::showHelpForProxy(const QString& groupname, const
   QString& proxyname)
 {
   pqHelpReaction::showProxyHelp(groupname, proxyname);
+}
+
+void vvMainWindow::onToggleSpreadSheet()
+{
+  // Hide / Show Dock
+  this->Internals->Ui.spreadSheetDock->setVisible(this->Internals->Ui.actionSpreadsheet->isChecked());
+
+  pqSpreadSheetView* ssview = qobject_cast<pqSpreadSheetView*>(this->Internals->SpreadSheetView);
+
+  // todo: consider enabling this:
+  // // Hide Block ID and XYZ column
+  // ssview->getViewModel()->setVisible(0, false);
+  // ssview->getViewModel()->setVisible(2, false);
+  // // Display parameters
+  // ssview->getViewModel()->setDecimalPrecision(3);
+  // ssview->getViewModel()->setFixedRepresentation(true);
 }

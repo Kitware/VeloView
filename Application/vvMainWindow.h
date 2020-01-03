@@ -31,6 +31,7 @@ protected:
 
 protected slots:
   void showHelpForProxy(const QString& proxyname, const QString& groupname);
+  void onToggleSpreadSheet();
 
 private:
   Q_DISABLE_COPY(vvMainWindow);
