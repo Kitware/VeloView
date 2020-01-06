@@ -59,6 +59,7 @@
 #include "pqAxesToolbar.h"
 #include "pqCameraToolbar.h"
 #include <pqParaViewBehaviors.h>
+#include <pqDataRepresentation.h>
 
 #include <QToolBar>
 #include <QShortcut>
@@ -454,6 +455,8 @@ void vvMainWindow::constructSpreadSheet()
   this->Internals->SpreadSheetView->rename("main spreadsheet view");
   assert(this->Internals->SpreadSheetView != nullptr);
 
+  QObject::connect(this->Internals->SpreadSheetView, SIGNAL(endRender()), this, SLOT(onSpreadSheetEndRender()));
+
   this->Internals->SpreadSheetViewDec = new pqSpreadSheetViewDecorator(this->Internals->SpreadSheetView);
   this->Internals->SpreadSheetViewDec->setPrecision(3);
   this->Internals->SpreadSheetViewDec->setFixedRepresentation(true);
@@ -461,9 +464,6 @@ void vvMainWindow::constructSpreadSheet()
   this->Internals->Ui.spreadSheetDock->setWidget(this->Internals->SpreadSheetView->widget());
   this->Internals->SpreadSheetView->getProxy()->UpdateVTKObjects();
   this->Internals->Ui.spreadSheetDock->setVisible(true);
-
-  this->Internals->SpreadSheetView->getViewModel()->setVisible(0, false);
-  this->Internals->SpreadSheetView->getViewModel()->setVisible(2, false);
 }
 
 //-----------------------------------------------------------------------------
@@ -500,4 +500,39 @@ void vvMainWindow::onToggleSpreadSheet(bool toggled)
 bool vvMainWindow::isSpreadSheetOpen()
 {
   return this->Internals->SpreadSheetView != nullptr;
+}
+
+//-----------------------------------------------------------------------------
+void vvMainWindow::conditionnallyHideColumn(const std::string& conditionSrcName,
+                                           const std::string& columnName)
+{
+  if (!this->Internals->SpreadSheetView
+      || !this->Internals->SpreadSheetView->getViewModel()
+      || !this->Internals->SpreadSheetView->getViewModel()->activeRepresentation()
+      || this->Internals->SpreadSheetView->getViewModel()->activeRepresentation()
+             ->getInput()->getSMName().toStdString() != conditionSrcName)
+  {
+    return;
+  }
+
+  const int cols = this->Internals->SpreadSheetView->getViewModel()->columnCount();
+  for (int i = 0; i < cols; i++)
+  {
+    QVariant colHeader = this->Internals->SpreadSheetView->getViewModel()->headerData(i, Qt::Orientation::Horizontal);
+    if (colHeader.toString().toStdString() == columnName)
+    {
+      this->Internals->SpreadSheetView->getViewModel()->setVisible(i, false);
+    }
+  }
+}
+
+//-----------------------------------------------------------------------------
+void vvMainWindow::onSpreadSheetEndRender()
+{
+  // endRender may not be the best signal to use because it will be called at
+  // each frame whereas we would prefer to update only when the source is
+  // changed. However I tried pqSpreadSheetView::showing and
+  // pqSpreadSheetView::viewportUpdated but none worked.
+  conditionnallyHideColumn("Data", "Points_m_XYZ"); // hide duplicated Point coordinates
+  conditionnallyHideColumn("TrailingFrame", "Points_m_XYZ");
 }
