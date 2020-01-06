@@ -1715,6 +1715,11 @@ def setupActions():
         button = spreadSheetDock.findChild("QDockWidgetTitleButton", "qt_dockwidget_closebutton")
         button.click()
 
+    hidden_action = ["SpreadSheet"] # this is a (bugged) duplicate coming from pqViewMenuManager.cxx
+    for action in getMainWindow().findChild("QMenu", "menuViews").actions():
+        if action.text in hidden_action:
+            action.visible = False
+
 def createRPMBehaviour():
     # create and customize a label to display the rpm
     rpm = smp.Text(guiName="RPM", Text="No RPM")
