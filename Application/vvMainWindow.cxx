@@ -447,6 +447,21 @@ void vvMainWindow::showHelpForProxy(const QString& groupname, const
   pqHelpReaction::showProxyHelp(groupname, proxyname);
 }
 
+namespace {
+std::vector<QObject*> findChildrenByClassName(QObject* object, std::string className)
+{
+  std::vector<QObject*> found;
+  for (QObject* child : object->children())
+  {
+     if (std::string(child->metaObject()->className()) == className)
+     {
+       found.push_back(child);
+     }
+  }
+  return found;
+}
+}
+
 void vvMainWindow::constructSpreadSheet()
 {
   assert(this->Internals->SpreadSheetView == nullptr);
@@ -464,6 +479,21 @@ void vvMainWindow::constructSpreadSheet()
   this->Internals->Ui.spreadSheetDock->setWidget(this->Internals->SpreadSheetView->widget());
   this->Internals->SpreadSheetView->getProxy()->UpdateVTKObjects();
   this->Internals->Ui.spreadSheetDock->setVisible(true);
+
+  // Hacky way to hide the line numbers in the spreadsheet (they bring no information)
+  std::vector<QObject*> headers = findChildrenByClassName(
+                                    findChildrenByClassName(
+                                      this->Internals->Ui.spreadSheetDock->findChild<QObject *>("Viewport"),
+                                      "pqSpreadSheetViewWidget")[0],
+                                    "QHeaderView");
+  // of the two QHeaderViews, we hide the one wich is "vertical"
+  for (size_t i = 0; i < headers.size(); i++)
+  {
+    if (reinterpret_cast<QWidget*>(headers[i])->height() > reinterpret_cast<QWidget*>(headers[i])->width())
+    {
+      reinterpret_cast<QWidget*>(headers[i])->hide();
+    }
+  }
 }
 
 //-----------------------------------------------------------------------------
