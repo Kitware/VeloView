@@ -78,4 +78,13 @@ HDL-64E sensor.
 # How to build
 
 Detailed instructions for building and packaging are available in the
-[LidarView Developer Guide](Documentation/LidarView_Developer_Guide.md) .
+[LidarView Developer Guide (link non working in Gitlab UI)](
+LVCore/Documentation/LidarView_Developer_Guide.md).
+In Gitlab UI click `LVCore` above then `Documentation` then
+`LidarView_Developer_Guide.md`.
+<!--
+This link indeed does not work in Gitlab web UI. We could link relatively
+to the version blob/master of LVCore but this has the big risk of giving a
+version ahead of what the user needs, thus desynced!
+This link is however useful in IDEs that support following links.
+-->
