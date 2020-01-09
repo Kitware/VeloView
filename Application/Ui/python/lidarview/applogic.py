@@ -301,7 +301,7 @@ def getDefaultSaveFileName(extension, suffix='', appendFrameNumber=False):
     reader = getReader()
 
     if sensor:
-        nchannels =  sensor.GetPropertyValue('NumberOfChannels')
+        nchannels =  sensor.GetPropertyValue('NumberOfChannelsInformation')
         base = 'HDL-'
         if nchannels <= 16:
             base = 'VLP-'
@@ -1581,22 +1581,22 @@ def onLaserSelection(show = True):
 
     lidar = getLidar()
     lidarPacketInterpreter = getLidarPacketInterpreter()
-    # wrapping not currently working for plugins:
-    lidarPacketInterpreter = None
-    if lidarPacketInterpreter and hasattr(lidarPacketInterpreter.GetClientSideObject(), "GetLaserCorrections") :
-        lidarPacketInterpreter.GetClientSideObject().GetLaserSelection(oldmask)
-        lidarPacketInterpreter.GetClientSideObject().GetLaserCorrections(verticalCorrection,
-            rotationalCorrection,
-            distanceCorrection,
-            distanceCorrectionX,
-            distanceCorrectionY,
-            verticalOffsetCorrection,
-            horizontalOffsetCorrection,
-            focalDistance,
-            focalSlope,
-            minIntensity,
-            maxIntensity)
-        nchannels = lidarPacketInterpreter.GetClientSideObject().GetNumberOfChannels()
+    lidarPacketInterpreter.UpdatePipelineInformation()
+    if lidarPacketInterpreter and lidarPacketInterpreter.GetProperty("LaserSelectionInformation") is not None:
+        oldmask = list(lidarPacketInterpreter.GetProperty("LaserSelectionInformation"))
+        verticalCorrection = list(lidarPacketInterpreter.GetProperty("verticalCorrectionInformation"))
+        rotationalCorrection = list(lidarPacketInterpreter.GetProperty("rotationalCorrectionInformation"))
+        distanceCorrection = list(lidarPacketInterpreter.GetProperty("distanceCorrectionInformation"))
+        distanceCorrectionX = list(lidarPacketInterpreter.GetProperty("distanceCorrectionXInformation"))
+        distanceCorrectionY = list(lidarPacketInterpreter.GetProperty("distanceCorrectionYInformation"))
+        verticalOffsetCorrection = list(lidarPacketInterpreter.GetProperty("verticalOffsetCorrectionInformation"))
+        horizontalOffsetCorrection = list(lidarPacketInterpreter.GetProperty("horizontalOffsetCorrectionInformation"))
+        focalDistance = list(lidarPacketInterpreter.GetProperty("focalDistanceInformation"))
+        focalSlope = list(lidarPacketInterpreter.GetProperty("focalSlopeInformation"))
+        minIntensity = list(lidarPacketInterpreter.GetProperty("minIntensityInformation"))
+        maxIntensity = list(lidarPacketInterpreter.GetProperty("maxIntensityInformation"))
+
+        nchannels = lidarPacketInterpreter.GetProperty("NumberOfChannelsInformation")[0]
 
     # Initializing the laser selection dialog
     if app.laserSelectionDialog == None:
@@ -1632,7 +1632,7 @@ def onLaserSelectionChanged():
     mask = dialog.getLaserSelectionSelector()
     LidarInterpreter = getLidarPacketInterpreter()
     if LidarInterpreter:
-        LidarInterpreter.GetClientSideObject().SetLaserSelection(mask)
+        LidarInterpreter.LaserSelection = mask
         smp.Hide()
         smp.Show(app.trailingFrame)
         smp.Render()
