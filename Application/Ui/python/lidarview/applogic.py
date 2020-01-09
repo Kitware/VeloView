@@ -1742,6 +1742,11 @@ def toggleRPM():
             smp.Hide(rpm)
         smp.Render()
 
+def warnNoDualReturns():
+  QtGui.QMessageBox.warning(getMainWindow(), 'Dual returns not found',
+  "The functionality only works with dual returns, and the current"
+  " frame has no dual returns, or the interpreter used does not"
+  " support dual returns.")
 
 def toggleSelectDualReturn():
     # test if we are on osx os
@@ -1757,14 +1762,9 @@ def toggleSelectDualReturn():
     #If no data are available
     if not source :
         return
-    if not hasattr(lidarPacketInterpreter.GetClientSideObject(), "GetHasDualReturn"):
-      QtGui.QMessageBox.warning(getMainWindow(), 'Warning', 'This function is not implemented for the Advanced Packet Format')
-      return
 
-    if not lidarPacketInterpreter.GetClientSideObject().GetHasDualReturn() :
-        QtGui.QMessageBox.warning(getMainWindow(), 'Dual returns not found',
-        "The functionality only works with dual returns, and the current"
-        "frame has no dual returns.")
+    if not hasDualReturn(lidarPacketInterpreter):
+        warnNoDualReturns()
         return
 
     #Get the selected Points
@@ -1805,23 +1805,22 @@ def setFilterToIntensityHigh():
 def setFilterToIntensityLow():
     setFilterTo("Low Intensity")
 
+def hasDualReturn(interpreter):
+    interpreter.UpdatePipelineInformation()
+    prop = interpreter.GetProperty("HasDualReturnInformation")
+    return prop != None and len(prop) == 1 and prop[0] == 1
+
 def setFilterTo(mask):
 
     interp = getLidarPacketInterpreter()
     if interp:
-        if not hasattr(interp, "GetHasDualReturn"):
-          QtGui.QMessageBox.warning(getMainWindow(), 'Warning', 'This function is not implemented for the Advanced Packet Format')
-          return
-        elif interp.GetClientSideObject().GetHasDualReturn():
-            interp.GetClientSideObject().SetDualReturnFilter(mask)
+        if  hasDualReturn(interp):
+            interp.DualReturnFilter = mask
             smp.Render()
             smp.Render(getSpreadSheetViewProxy())
         else:
             app.actions['actionDualReturnModeDual'].setChecked(True)
-            QtGui.QMessageBox.warning(getMainWindow(), 'Dual returns not found',
-            "The functionality only works with dual returns, and the current"
-            "frame has no dual returns.")
-
+            warnNoDualReturns()
 
 def transformMode():
     reader = getReader()
@@ -2097,9 +2096,6 @@ def onIgnoreZeroDistances():
         smp.Render()
 
 def onIntraFiringAdjust():
-    if not hasattr(getLidarPacketInterpreter(), "UseIntraFiringAdjustment"):
-        QtGui.QMessageBox.warning(getMainWindow(), 'Warning', 'This function is not implemented for the Advanced Packet Format')
-        return
     # Get the check box value as an int to save it into the PV settings (there's incompatibility with python booleans)
     intraFiringAdjust = int(app.actions['actionIntraFiringAdjust'].isChecked())
 
