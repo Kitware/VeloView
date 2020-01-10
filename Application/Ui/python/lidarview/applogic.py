@@ -1751,6 +1751,8 @@ def warnNoDualReturns():
   " support dual returns.")
 
 def toggleSelectDualReturn():
+    import warnings;warnings.simplefilter(action = "ignore", category = FutureWarning) # try removing this when vtk is upgraded
+
     # test if we are on osx os
     osName = str(sys.platform)
     if osName == 'darwin':
@@ -1775,14 +1777,20 @@ def toggleSelectDualReturn():
     nSelectedPoints = polyData.GetNumberOfPoints()
 
     if nSelectedPoints > 0:
-        idArray = polyData.GetPointData().GetArray('dual_return_matching')
+        # implementation for a non-multiblock object:
+        # idArray = polyData.GetPointData().GetArray('dual_return_matching')
+        # query = 'np.logical_and(dual_return_matching > -1, np.in1d(id, [{}]))'.format(','.join(selectedDualIds))
+
+        if polyData.GetNumberOfBlocks() != 1:
+            QtGui.QMessageBox.warning(getMainWindow(),
+                                      'Cannot select dual return matching',
+                                      'Number of blocks is not 1. Please set 0 trailing frame and retry.')
+            return
+
         idArray = polyData.GetBlock(0).GetPointData().GetArray('dual_return_matching')
-        # It should be possible to filter -1 from the idArray and then just use
-        # np.in1d below, but doing so generates errors (either an invalid
-        # expression, even when handling the case of an empty array, or an
-        # invalid non-mask return value.
         selectedDualIds = set(str(int(idArray.GetValue(i))) for i in range(nSelectedPoints))
-        query = 'np.logical_and(dual_return_matching > -1, np.in1d(id, [{}]))'.format(','.join(selectedDualIds))
+        query = 'dsa.VTKArray([dual_return_matching.Arrays[0][i] > -1 and i in [{}] for i in range(id.size)])' \
+                .format(','.join(selectedDualIds))
     else:
         query = 'dual_return_matching > -1'
     smp.SelectPoints(query)
