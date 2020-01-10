@@ -26,7 +26,7 @@ import PythonQt
 from PythonQt import QtCore, QtGui
 
 from vtkIOXMLPython import vtkXMLPolyDataWriter
-import lidarviewcore.kiwiviewerExporter
+from lidarviewcore import kiwiviewerExporter
 import gridAdjustmentDialog
 import aboutDialog
 import planefit
@@ -747,11 +747,25 @@ def savePositionCSV(filename):
     smp.Delete(w)
 
 def saveCSVCurrentFrame(filename):
-    w = smp.CreateWriter(filename, smp.GetActiveSource())
+    if hasattr(smp.GetActiveSource().GetDataInformation(), "GetCompositeDataInformation"):
+        extractBlock = smp.ExtractBlock(Input=smp.GetActiveSource())
+        extractBlock.BlockIndices = [0]
+        mergeBlocks = smp.MergeBlocks(Input=extractBlock)
+        extractSurface = smp.ExtractSurface(Input=mergeBlocks)
+        extractSurface.UpdatePipeline()
+        sourceToSave = extractSurface
+    else:
+        sourceToSave = smp.GetActiveSource()
+
+    w = smp.CreateWriter(filename, sourceToSave)
     w.Precision = 16
     w.FieldAssociation = 'Points'
     w.UpdatePipeline()
     smp.Delete(w)
+    if hasattr(smp.GetActiveSource().GetDataInformation(), "GetCompositeDataInformation"):
+        smp.Delete(extractSurface)
+        smp.Delete(mergeBlocks)
+        smp.Delete(extractBlock)
     rotateCSVFile(filename)
 
 def saveCSVCurrentFrameSelection(filename):
@@ -802,7 +816,7 @@ def saveLASCurrentFrame(filename, transform = 0):
 
 
 def saveAllFrames(filename, saveFunction):
-    saveFunction(filename, getLidar.TimestepValues())
+    saveFunction(filename, getLidar().TimestepValues)
 
 
 def saveFrameRange(filename, frameStart, frameStop, saveFunction):
@@ -928,32 +942,19 @@ def onSaveCSV():
     if frameOptions is None:
         return
 
-
     if frameOptions.mode == vvSelectFramesDialog.CURRENT_FRAME:
         fileName = getSaveFileName('Save CSV', 'csv', getDefaultSaveFileName('csv', appendFrameNumber=True))
         if fileName:
-            oldTransform = transformMode()
-            setTransformMode(1 if frameOptions.transform else 0)
-
             saveCSVCurrentFrame(fileName)
-
-            setTransformMode(oldTransform)
-
     else:
         fileName = getSaveFileName('Save CSV (to zip file)', 'zip', getDefaultSaveFileName('zip'))
         if fileName:
-            oldTransform = transformMode()
-            setTransformMode(1 if frameOptions.transform else 0)
-
             if frameOptions.mode == vvSelectFramesDialog.ALL_FRAMES:
                 saveAllFrames(fileName, saveCSV)
             else:
                 start = frameOptions.start
                 stop = frameOptions.stop
                 saveFrameRange(fileName, start, stop, saveCSV)
-
-            setTransformMode(oldTransform)
-
 
 def onSavePosition():
     fileName = getSaveFileName('Save CSV', 'csv', getDefaultSaveFileName('csv', '-position'))
@@ -1837,7 +1838,7 @@ def transformMode():
     if not reader:
         return None
 
-    if reader.ApplyTransform:
+    if hasattr(reader, 'ApplyTransform') and reader.ApplyTransform:
         if app.relativeTransform:
             return 2 # relative
         else:
