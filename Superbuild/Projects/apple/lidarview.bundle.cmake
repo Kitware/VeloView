@@ -160,6 +160,8 @@ endforeach()
 set(my_modules)
 list(APPEND my_modules "LidarPluginPython.so")
 list(APPEND my_modules "libLidarPluginPythonD.dylib")
+list(APPEND my_modules "VelodynePluginPython.so")
+list(APPEND my_modules "libVelodynePluginPythonD.dylib")
 foreach (module ${my_modules})
   superbuild_apple_install_module(
     "\${CMAKE_INSTALL_PREFIX}"
