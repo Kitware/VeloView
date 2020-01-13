@@ -42,8 +42,9 @@ def showDialog(mainWindow):
     copyrightText = '''<h1>{0} {1} {2}</h1><br/>
                        Copyright (c) 2013-2017, Velodyne Lidar,
                        Copyright (c) 2016-2020, Kitware<br />
-                       Provided by <a href="Your web site">Your nice company name </a>, coded by <a href="https://www.kitware.com/">Kitware</a>.<br />
+                       Provided by <a href="http://velodynelidar.com/">Velodyne Lidar</a>, coded by <a href="https://www.kitware.com/">Kitware</a>.<br />
                        <br />
+                       Sample Data Repository: <a href="http://midas3.kitware.com/midas/community/29">http://midas3.kitware.com/midas/community/29</a>
                     '''.format(appName, appVersionTag, appBitTag)
     w('copyrightLabel').setText(copyrightText)
     
