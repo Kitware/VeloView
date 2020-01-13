@@ -155,8 +155,10 @@ install(FILES ${pointcloud_dll}
 )
 unset(pointcloud_dll)
 
-
-
-
 set(CMAKE_INSTALL_SYSTEM_RUNTIME_DESTINATION "bin")
 include(InstallRequiredSystemLibraries)
+
+install(FILES "${superbuild_install_location}/doc/VeloView_User_Guide.pdf"
+  DESTINATION "doc"
+  COMPONENT superbuild
+)

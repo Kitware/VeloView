@@ -1119,24 +1119,31 @@ def getVersionString():
 
 
 def onDeveloperGuide():
-    basePath = PythonQt.QtGui.QApplication.instance().applicationDirPath()
+    QtGui.QDesktopServices.openUrl(QtCore.QUrl('https://www.paraview.org/veloview/#developers'))
 
-    paths = ['../Resources/LidarView_Developer_Guide.pdf']
-
-    for path in paths:
-        filename = os.path.join(basePath, path)
-        if os.path.isfile(filename):
-            QtGui.QDesktopServices.openUrl(QtCore.QUrl('file:///%s' % filename, QtCore.QUrl.TolerantMode))
 
 def onUserGuide():
     basePath = PythonQt.QtGui.QApplication.instance().applicationDirPath()
+    filename = 'VeloView_User_Guide.pdf'
+    dirs = ['../Resources', # apple
+            '../../doc', # linux
+            '../doc'] # windows
 
-    paths = ['../Resources/LidarView_User_Guide.pdf']
+    # on Linux we need to temporarily change LD_LIBRARY_PATH as it points to
+    # .so libraries likely to be incompatible with the PDF reader
+    if "LD_LIBRARY_PATH" in os.environ:
+        saved_ld_library_path = os.environ['LD_LIBRARY_PATH']
+        home_dir = os.path.expanduser("~")
+        os.environ['LD_LIBRARY_PATH'] = home_dir
 
-    for path in paths:
-        filename = os.path.join(basePath, path)
-        if os.path.isfile(filename):
-            QtGui.QDesktopServices.openUrl(QtCore.QUrl('file:///%s' % filename, QtCore.QUrl.TolerantMode))
+    for d in dirs:
+        path = os.path.abspath(os.path.join(basePath, os.path.join(d, filename)))
+        if os.path.isfile(path):
+            QtGui.QDesktopServices.openUrl(QtCore.QUrl('file:///%s' % path, QtCore.QUrl.TolerantMode))
+
+    if "LD_LIBRARY_PATH" in os.environ:
+        os.environ['LD_LIBRARY_PATH'] = saved_ld_library_path
+
 
 def onAbout():
     aboutDialog.showDialog(getMainWindow())
@@ -1953,6 +1960,7 @@ def setupActions():
     app.actions['actionCropReturns'].connect('triggered()', onCropReturns)
     app.actions['actionNative_File_Dialogs'].connect('triggered()', onNativeFileDialogsAction)
     app.actions['actionAbout_LidarView'].connect('triggered()', onAbout)
+    app.actions['actionLidarViewUserGuide'].connect('triggered()', onUserGuide)
     app.actions['actionLidarViewDeveloperGuide'].connect('triggered()', onDeveloperGuide)
     app.actions['actionClear_Menu'].connect('triggered()', onClearMenu)
 

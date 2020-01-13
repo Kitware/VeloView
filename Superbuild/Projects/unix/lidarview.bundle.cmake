@@ -55,3 +55,7 @@ install(FILES ${lib_files_so}
   COMPONENT superbuild)
 unset(lib_files_so)
 
+install(FILES "${superbuild_install_location}/doc/VeloView_User_Guide.pdf"
+  DESTINATION "doc"
+  COMPONENT superbuild
+)
