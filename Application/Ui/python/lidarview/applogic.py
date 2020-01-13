@@ -1414,6 +1414,7 @@ def clearSpreadSheetView():
         view.Representations = []
 
 
+
 def showSourceInSpreadSheet(source):
 
     spreadSheetView = getSpreadSheetViewProxy()
