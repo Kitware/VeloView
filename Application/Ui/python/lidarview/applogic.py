@@ -1323,6 +1323,8 @@ def onChooseCalibrationFile():
     if lidar:
         lidar.Interpreter.GetClientSideObject().SetSensorTransform(sensorTransform)
         lidar.CalibrationFile = calibrationFile
+
+        smp.Render()
         updateUIwithNewLidar()
 
     restoreLaserSelectionDialog()
