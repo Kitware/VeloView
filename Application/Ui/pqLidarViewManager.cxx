@@ -190,9 +190,9 @@ void pqLidarViewManager::onResetDefaultSettings()
   QMessageBox messageBox;
   messageBox.setIcon(QMessageBox::Warning);
   std::stringstream ss;
-  ss << "This action will reset " << "SOFTWARE_NAME" << " settings. "
-     << "Some settings will need " << "SOFTWARE_NAME" << " to restart to be completly reset. "
-     << "Every unsaved change will be lost. Are you sure you want to reset " << "SOFTWARE_NAME" << " settings?";
+  ss << "This action will reset " << SOFTWARE_NAME << " settings. "
+     << "Some settings will need " << SOFTWARE_NAME << " to restart to be completly reset. "
+     << "Every unsaved change will be lost. Are you sure you want to reset " << SOFTWARE_NAME << " settings?";
   messageBox.setText(ss.str().c_str());
   messageBox.setStandardButtons(QMessageBox::Cancel | QMessageBox::Ok);
 

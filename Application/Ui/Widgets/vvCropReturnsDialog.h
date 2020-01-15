@@ -46,8 +46,8 @@ public:
   Q_INVOKABLE int GetCropMode() const;
 
 public slots:
-  virtual void accept();
-  void onNoneToggled();
+  virtual void apply();
+  virtual void applyAndSave();
   void onCartesianToggled();
   void onSphericalToggled();
   void onSliderBoxToggled();

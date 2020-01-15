@@ -18,8 +18,10 @@
 #include <pqApplicationCore.h>
 #include <pqSettings.h>
 
+#include <QPushButton>
 #include <QDialog>
 #include <QFileDialog>
+#include <QStyle>
 
 #include "ctkDoubleRangeSlider.h"
 
@@ -29,9 +31,24 @@
 class vvCropReturnsDialog::pqInternal : public Ui::vvCropReturnsDialog
 {
 public:
-  pqInternal()
+  pqInternal(QDialog *external)
     : Settings(pqApplicationCore::instance()->settings())
   {
+    this->External = external;
+    this->setupUi(external);
+
+    this->CancelButton = new QPushButton("Cancel");
+    this->CancelButton->setIcon(external->style()->standardIcon(QStyle::SP_DialogCancelButton));
+
+    this->ApplyButton = new QPushButton("Apply");
+    this->ApplyButton->setIcon(external->style()->standardIcon(QStyle::SP_DialogOkButton));
+
+    this->ApplyAndSaveButton = new QPushButton("Apply and save for future sessions");
+    this->ApplyAndSaveButton->setIcon(external->style()->standardIcon(QStyle::SP_DialogSaveButton));
+
+    this->buttonBox->addButton(this->CancelButton, QDialogButtonBox::ActionRole);
+    this->buttonBox->addButton(this->ApplyButton, QDialogButtonBox::ActionRole);
+    this->buttonBox->addButton(this->ApplyAndSaveButton, QDialogButtonBox::ActionRole);
   }
 
   void saveSettings();
@@ -47,6 +64,12 @@ public:
   void onYSliderChanged(double vmin, double vmax);
   void onZSliderChanged(double vmin, double vmax);
   void updateRangeValues(bool isSliderMode);
+
+  QDialog *External;
+
+  QPushButton *CancelButton;
+  QPushButton *ApplyButton;
+  QPushButton *ApplyAndSaveButton;
 
   ctkDoubleRangeSlider XDoubleRangeSlider;
   ctkDoubleRangeSlider YDoubleRangeSlider;
@@ -72,6 +95,9 @@ void vvCropReturnsDialog::pqInternal::saveSettings()
   this->Settings->setValue(
     "LidarPlugin/CropReturnsDialog/CropOutside", this->CropOutsideCheckBox->isChecked());
 
+  this->Settings->setValue("LidarPlugin/CropReturnsDialog/cartesianRadioButton", this->cartesianRadioButton->isChecked());
+  this->Settings->setValue("LidarPlugin/CropReturnsDialog/sphericalRadioButton", this->sphericalRadioButton->isChecked());
+
   this->Settings->setValue("LidarPlugin/CropReturnsDialog/FirstCornerX", xRange[0]);
   this->Settings->setValue("LidarPlugin/CropReturnsDialog/FirstCornerY", yRange[0]);
   this->Settings->setValue("LidarPlugin/CropReturnsDialog/FirstCornerZ", zRange[0]);
@@ -84,9 +110,8 @@ void vvCropReturnsDialog::pqInternal::saveSettings()
 void vvCropReturnsDialog::pqInternal::restoreSettings()
 {
   this->sphericalRadioButton->setChecked(
-    this->Settings->value("LidarPlugin/CropReturnsDialog/sphericalRadioButton", false)
+    this->Settings->value("LidarPlugin/CropReturnsDialog/sphericalRadioButton", true)
       .toBool());
-
   this->cartesianRadioButton->setChecked(
     this->Settings->value("LidarPlugin/CropReturnsDialog/cartesianRadioButton", false)
       .toBool());
@@ -105,9 +130,9 @@ void vvCropReturnsDialog::pqInternal::restoreSettings()
     this->Settings->value("LidarPlugin/CropReturnsDialog/EnableCropping", false).toBool());
 
   this->CropOutsideCheckBox->setChecked(this->Settings
-                                          ->value("LidarPlugin/CropReturnsDialog/CropOutside",
-                                            this->CropOutsideCheckBox->isChecked())
-                                          .toBool());
+                                            ->value("LidarPlugin/CropReturnsDialog/CropOutside",
+                                                    true)
+                                            .toBool());
 
   this->X1SpinBox->setValue(
     this->Settings
@@ -159,10 +184,8 @@ void vvCropReturnsDialog::pqInternal::restoreSettings()
 //-----------------------------------------------------------------------------
 vvCropReturnsDialog::vvCropReturnsDialog(QWidget* p)
   : QDialog(p)
-  , Internal(new pqInternal)
+  , Internal(new pqInternal(this))
 {
-  this->Internal->setupUi(this);
-
   this->Internal->InitializeDoubleRangeSlider();
 
   connect(
@@ -184,15 +207,16 @@ vvCropReturnsDialog::vvCropReturnsDialog(QWidget* p)
   connect(&this->Internal->ZDoubleRangeSlider, SIGNAL(positionsChanged(double, double)), this,
     SLOT(onZSliderChanged(double, double)));
   connect(this->Internal->sliderModeCheckBox, SIGNAL(clicked()), this, SLOT(onSliderBoxToggled()));
-  connect(this->Internal->noneRadioButton, SIGNAL(clicked()), this, SLOT(onNoneToggled()));
   connect(
     this->Internal->cartesianRadioButton, SIGNAL(clicked()), this, SLOT(onCartesianToggled()));
   connect(
     this->Internal->sphericalRadioButton, SIGNAL(clicked()), this, SLOT(onSphericalToggled()));
   connect(this->Internal->CropGroupBox, SIGNAL(clicked()), this, SLOT(onCropGroupBoxToggled()));
 
-  // Without configuration file, no croping is perform
-  this->Internal->noneRadioButton->setChecked(true);
+  connect(this->Internal->CancelButton, SIGNAL(clicked()), this, SLOT(reject()));
+  connect(this->Internal->ApplyButton, SIGNAL(clicked()), this, SLOT(apply()));
+  connect(this->Internal->ApplyAndSaveButton, SIGNAL(clicked()), this, SLOT(applyAndSave()));
+
   this->Internal->restoreSettings();
 }
 
@@ -278,18 +302,15 @@ void vvCropReturnsDialog::setSecondCorner(QVector3D corner)
 }
 
 //-----------------------------------------------------------------------------
-void vvCropReturnsDialog::accept()
+void vvCropReturnsDialog::apply()
 {
-  if (this->Internal->saveCheckBox->isChecked())
-  {
-    this->Internal->saveSettings();
-  }
+  QDialog::accept();
+}
 
-  this->Internal->Settings->setValue("LidarPlugin/CropReturnsDialog/cartesianRadioButton",
-    this->Internal->cartesianRadioButton->isChecked());
-  this->Internal->Settings->setValue("LidarPlugin/CropReturnsDialog/sphericalRadioButton",
-    this->Internal->sphericalRadioButton->isChecked());
-
+//-----------------------------------------------------------------------------
+void vvCropReturnsDialog::applyAndSave()
+{
+  this->Internal->saveSettings();
   QDialog::accept();
 }
 
@@ -323,7 +344,7 @@ void vvCropReturnsDialog::pqInternal::SetSphericalSettings()
 
   // Here we take the spherical coordinates used in mathematics (and not physic)
   // (r,theta,phi)
-  double minR = 0, maxR = 240;
+  double minR = 0, maxR = 300;
   double minTheta = -360, maxTheta = 360; // Rotational Angle
   double minPhi = -90, maxPhi = 90;    // Vertical Angle
   // theta is between [minTheta,maxTheta] - Rotational Angle
@@ -333,6 +354,8 @@ void vvCropReturnsDialog::pqInternal::SetSphericalSettings()
   this->X1SpinBox->setMaximum(maxTheta);
   this->X2SpinBox->setMaximum(maxTheta);
   this->XDoubleRangeSlider.setMaximum(maxTheta);
+  this->X1SpinBox->setValue(0);
+  this->X2SpinBox->setValue(360.0);
   // phi is between [minPhi,maxPhi] - Vertical Angle
   this->Y1SpinBox->setMinimum(minPhi);
   this->Y2SpinBox->setMinimum(minPhi);
@@ -340,6 +363,8 @@ void vvCropReturnsDialog::pqInternal::SetSphericalSettings()
   this->Y1SpinBox->setMaximum(maxPhi);
   this->Y2SpinBox->setMaximum(maxPhi);
   this->YDoubleRangeSlider.setMaximum(maxPhi);
+  this->Y1SpinBox->setValue(-90.0);
+  this->Y2SpinBox->setValue(90.0);
   // R is positive
   this->Z1SpinBox->setMinimum(minR);
   this->Z2SpinBox->setMinimum(minR);
@@ -347,6 +372,8 @@ void vvCropReturnsDialog::pqInternal::SetSphericalSettings()
   this->Z1SpinBox->setMaximum(maxR);
   this->Z2SpinBox->setMaximum(maxR);
   this->ZDoubleRangeSlider.setMaximum(maxR);
+  this->Z1SpinBox->setValue(0.0);
+  this->Z2SpinBox->setValue(10.0);
 }
 
 //-----------------------------------------------------------------------------
@@ -367,6 +394,8 @@ void vvCropReturnsDialog::pqInternal::SetCartesianSettings()
   this->X1SpinBox->setMaximum(maxV);
   this->X2SpinBox->setMaximum(maxV);
   this->XDoubleRangeSlider.setMaximum(maxV);
+  this->X1SpinBox->setValue(-5.0);
+  this->X2SpinBox->setValue(5.0);
   // Y [-10000,10000]
   this->Y1SpinBox->setMinimum(minV);
   this->Y2SpinBox->setMinimum(minV);
@@ -374,6 +403,8 @@ void vvCropReturnsDialog::pqInternal::SetCartesianSettings()
   this->Y1SpinBox->setMaximum(maxV);
   this->Y2SpinBox->setMaximum(maxV);
   this->YDoubleRangeSlider.setMaximum(maxV);
+  this->Y1SpinBox->setValue(-5.0);
+  this->Y2SpinBox->setValue(5.0);
   // Z [-10000,10000]
   this->Z1SpinBox->setMinimum(minV);
   this->Z2SpinBox->setMinimum(minV);
@@ -381,24 +412,18 @@ void vvCropReturnsDialog::pqInternal::SetCartesianSettings()
   this->Z1SpinBox->setMaximum(maxV);
   this->Z2SpinBox->setMaximum(maxV);
   this->ZDoubleRangeSlider.setMaximum(maxV);
-}
-
-//-----------------------------------------------------------------------------
-void vvCropReturnsDialog::onNoneToggled()
-{
-  this->Internal->DesactivateSpinBox();
-  this->Internal->CropOutsideCheckBox->setChecked(false);
+  this->Z1SpinBox->setValue(-5.0);
+  this->Z2SpinBox->setValue(5.0);
 }
 
 //-----------------------------------------------------------------------------
 int vvCropReturnsDialog::GetCropMode() const
 {
-  // Crop mode :
-  // 0 -> cartesian
-  // 1 -> Spherical
-  // 2 -> Cylindric
-  // 3 -> None
-  if (this->Internal->cartesianRadioButton->isChecked())
+  if (!this->Internal->CropGroupBox->isChecked())
+  {
+    return 0; // i.e. None
+  }
+  else if (this->Internal->cartesianRadioButton->isChecked())
   {
     return 1;
   }
@@ -406,13 +431,9 @@ int vvCropReturnsDialog::GetCropMode() const
   {
     return 2;
   }
-  else if (this->Internal->noneRadioButton->isChecked())
-  {
-    return 0;
-  }
   else
   {
-    return 3;
+    return 0;
   }
 }
 
@@ -435,8 +456,6 @@ void vvCropReturnsDialog::pqInternal::ActivateSpinBox()
   this->XDoubleRangeSlider.setDisabled(false);
   this->YDoubleRangeSlider.setDisabled(false);
   this->ZDoubleRangeSlider.setDisabled(false);
-
-  this->CropOutsideCheckBox->setDisabled(false);
 }
 
 //-----------------------------------------------------------------------------
@@ -546,8 +565,6 @@ void vvCropReturnsDialog::pqInternal::DesactivateSpinBox()
   this->XDoubleRangeSlider.setDisabled(true);
   this->YDoubleRangeSlider.setDisabled(true);
   this->ZDoubleRangeSlider.setDisabled(true);
-
-  this->CropOutsideCheckBox->setDisabled(true);
 }
 
 //-----------------------------------------------------------------------------
@@ -635,7 +652,6 @@ void vvCropReturnsDialog::onCropGroupBoxToggled()
   this->Internal->XDoubleRangeSlider.setDisabled(!this->Internal->CropGroupBox->isChecked());
   this->Internal->YDoubleRangeSlider.setDisabled(!this->Internal->CropGroupBox->isChecked());
   this->Internal->ZDoubleRangeSlider.setDisabled(!this->Internal->CropGroupBox->isChecked());
-  this->Internal->noneRadioButton->setDisabled(!this->Internal->CropGroupBox->isChecked());
   this->Internal->cartesianRadioButton->setDisabled(!this->Internal->CropGroupBox->isChecked());
   this->Internal->sphericalRadioButton->setDisabled(!this->Internal->CropGroupBox->isChecked());
   this->Internal->CropOutsideCheckBox->setDisabled(!this->Internal->CropGroupBox->isChecked());
@@ -645,8 +661,4 @@ void vvCropReturnsDialog::onCropGroupBoxToggled()
 void vvCropReturnsDialog::UpdateDialogWithCurrentSetting()
 {
   this->onCropGroupBoxToggled();
-  if (this->Internal->noneRadioButton->isChecked())
-  {
-    this->onNoneToggled();
-  }
 }
