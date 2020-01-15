@@ -17,6 +17,7 @@ import csv
 import datetime
 import time
 import math
+import bisect
 import sys
 import paraview.simple as smp
 from paraview import servermanager
@@ -302,7 +303,7 @@ def getReaderFileName():
     return filename[0] if isinstance(filename, servermanager.FileNameProperty) else filename
 
 
-def getDefaultSaveFileName(extension, suffix='', appendFrameNumber=False):
+def getDefaultSaveFileName(extension, suffix='', frameId=None):
 
     sensor = getSensor()
     reader = getReader()
@@ -318,8 +319,8 @@ def getDefaultSaveFileName(extension, suffix='', appendFrameNumber=False):
 
     if reader:
         basename =  os.path.splitext(os.path.basename(getReaderFileName()))[0]
-        if appendFrameNumber:
-            suffix = '%s (Frame %04d)' % (suffix, int(app.scene.AnimationTime))
+        if frameId is not None:
+            suffix = '%s (Frame %04d)' % (suffix, frameId)
         return '%s%s.%s' % (basename, suffix, extension)
 
 
@@ -752,11 +753,26 @@ def savePositionCSV(filename):
     smp.Delete(w)
 
 def saveCSVCurrentFrame(filename):
-    w = smp.CreateWriter(filename, smp.GetActiveSource())
+    if False:
+        # this is what you should do if you wanted to save CSV from TrailingFrame:
+        extractBlock = smp.ExtractBlock(Input=smp.GetActiveSource())
+        extractBlock.BlockIndices = [0]
+        mergeBlocks = smp.MergeBlocks(Input=extractBlock)
+        extractSurface = smp.ExtractSurface(Input=mergeBlocks)
+        extractSurface.UpdatePipeline()
+        sourceToSave = extractSurface
+    else:
+        sourceToSave = getLidar()
+
+    w = smp.CreateWriter(filename, sourceToSave)
     w.Precision = 16
     w.FieldAssociation = 'Points'
     w.UpdatePipeline()
     smp.Delete(w)
+    if False:
+        smp.Delete(extractSurface)
+        smp.Delete(mergeBlocks)
+        smp.Delete(extractBlock)
     rotateCSVFile(filename)
 
 def saveCSVCurrentFrameSelection(filename):
@@ -804,10 +820,6 @@ def saveLASFrames(filename, first, last, transform = 0):
 def saveLASCurrentFrame(filename, transform = 0):
     t = app.scene.AnimationTime
     saveLASFrames(filename, t, t, transform)
-
-
-def saveAllFrames(filename, saveFunction):
-    saveFunction(filename, getLidar.TimestepValues())
 
 
 def saveFrameRange(filename, frameStart, frameStop, saveFunction):
@@ -933,32 +945,21 @@ def onSaveCSV():
     if frameOptions is None:
         return
 
-
     if frameOptions.mode == vvSelectFramesDialog.CURRENT_FRAME:
-        fileName = getSaveFileName('Save CSV', 'csv', getDefaultSaveFileName('csv', appendFrameNumber=True))
+        frameNumber = bisect.bisect_left(getLidar().TimestepValues, app.scene.AnimationTime)
+        fileName = getSaveFileName('Save CSV', 'csv', getDefaultSaveFileName('csv', frameId=frameNumber))
         if fileName:
-            oldTransform = transformMode()
-            setTransformMode(1 if frameOptions.transform else 0)
-
             saveCSVCurrentFrame(fileName)
-
-            setTransformMode(oldTransform)
-
     else:
         fileName = getSaveFileName('Save CSV (to zip file)', 'zip', getDefaultSaveFileName('zip'))
         if fileName:
-            oldTransform = transformMode()
-            setTransformMode(1 if frameOptions.transform else 0)
-
             if frameOptions.mode == vvSelectFramesDialog.ALL_FRAMES:
-                saveAllFrames(fileName, saveCSV)
+                start = 0
+                stop = len(getLidar().TimestepValues) - 1
             else:
                 start = frameOptions.start
                 stop = frameOptions.stop
-                saveFrameRange(fileName, start, stop, saveCSV)
-
-            setTransformMode(oldTransform)
-
+            saveFrameRange(fileName, start, stop, saveCSV)
 
 def onSavePosition():
     fileName = getSaveFileName('Save CSV', 'csv', getDefaultSaveFileName('csv', '-position'))
@@ -999,11 +1000,12 @@ def onSaveLAS():
                 saveLAS(filename, timesteps, frameOptions.transform)
 
             if frameOptions.mode == vvSelectFramesDialog.ALL_FRAMES:
-                saveAllFrames(fileName, saveTransformedLAS)
+                start = 0
+                stop = len(getLidar().TimestepValues) - 1
             else:
                 start = frameOptions.start
                 stop = frameOptions.stop
-                saveFrameRange(fileName, start, stop, saveTransformedLAS)
+            saveFrameRange(fileName, start, stop, saveTransformedLAS)
 
             setTransformMode(oldTransform)
 
@@ -1047,7 +1049,7 @@ def onSavePCAP():
 
 def onSaveScreenshot():
 
-    fileName = getSaveFileName('Save Screenshot', 'png', getDefaultSaveFileName('png', appendFrameNumber=True))
+    fileName = getSaveFileName('Save Screenshot', 'png', getDefaultSaveFileName('png', frameId=app.scene.AnimationTime))
     if fileName:
         if fileName[-4:] != ".png":
             fileName += ".png"
@@ -1833,7 +1835,7 @@ def transformMode():
     if not reader:
         return None
 
-    if reader.ApplyTransform:
+    if hasattr(reader, 'ApplyTransform') and reader.ApplyTransform:
         if app.relativeTransform:
             return 2 # relative
         else:
