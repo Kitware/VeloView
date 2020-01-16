@@ -145,6 +145,7 @@ void vtkVelodyneSpecialVelarrayPacketInterpreter::ProcessPacket(unsigned char co
   VelodyneSpecificFrameInformation* velFrameInfo =
       reinterpret_cast<VelodyneSpecificFrameInformation*>(this->ParserMetaData.SpecificInformation.get());
   int firstFiring = velFrameInfo->FiringToSkip;
+  velFrameInfo->FiringToSkip = 0;
 
   const Packet* dataPacket = reinterpret_cast<const Packet*>(data);
 
