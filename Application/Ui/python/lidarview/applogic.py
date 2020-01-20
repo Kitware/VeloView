@@ -1706,7 +1706,7 @@ def setupActions():
     app.PlaybackToolbar = timeToolBar
     app.GeolocationToolbar = getMainWindow().findChild('QToolBar','geolocationToolbar')
 
-    getMainWindow().connect('spreadSheetEnabled(bool)', onSpreadSheetEnabled)
+    getMainWindow().findChild("lvSpreadSheetManager").connect('spreadSheetEnabled(bool)', onSpreadSheetEnabled)
 
     spreadSheetDock = getMainWindow().findChild('QDockWidget', 'spreadSheetDock')
     if spreadSheetDock.visible:
