@@ -1292,7 +1292,8 @@ def getSpreadSheetViewProxy():
 
 def clearSpreadSheetView():
     view = getSpreadSheetViewProxy()
-    view.Representations = []
+    if view is not None:
+        view.Representations = []
 
 
 def showSourceInSpreadSheet(source):
