@@ -521,7 +521,7 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
 
     colorByIntensity(app.trailingFrame)
 
-    showSourceInSpreadSheet(reader)
+    showSourceInSpreadSheet(app.trailingFrame)
 
     enableSaveActions()
     addRecentFile(filename)
