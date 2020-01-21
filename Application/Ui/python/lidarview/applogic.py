@@ -521,7 +521,7 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
 
     colorByIntensity(app.trailingFrame)
 
-    showSourceInSpreadSheet(reader)
+    showSourceInSpreadSheet(app.trailingFrame)
 
     enableSaveActions()
     addRecentFile(filename)
@@ -1292,7 +1292,8 @@ def getSpreadSheetViewProxy():
 
 def clearSpreadSheetView():
     view = getSpreadSheetViewProxy()
-    view.Representations = []
+    if view is not None:
+        view.Representations = []
 
 
 def showSourceInSpreadSheet(source):
