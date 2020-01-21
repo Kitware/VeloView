@@ -12,8 +12,6 @@ set (source_files
   vvResources.qrc
   vvMainWindow.cxx
   vvMainWindow.h
-  lvSpreadSheetManager.h
-  lvSpreadSheetManager.cxx
   )
 
 # This ensure that build_paraview_client() adds an "forwarding path" to locate
