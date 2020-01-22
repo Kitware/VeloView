@@ -77,7 +77,7 @@ class AppLogic(object):
         self.position = None
         self.sensor = None
 
-        self.laserSelectionDialog = None
+        self.laserSelectionSession = {}
 
         self.gridProperties = None
 
@@ -364,22 +364,6 @@ def chooseCalibration(calibrationFilename=None):
         result.calibrationFile = calibrationFilename
         return result
 
-
-def restoreLaserSelectionDialog():
-
-    reopenLaserSelectionDialog = False
-    isDisplayMoreSelectionsChecked = False
-
-    if app.laserSelectionDialog != None:
-        reopenLaserSelectionDialog = app.laserSelectionDialog.isVisible()
-        isDisplayMoreSelectionsChecked = app.laserSelectionDialog.isDisplayMoreSelectionsChecked()
-        app.laserSelectionDialog.close()
-        app.laserSelectionDialog = None
-
-    onLaserSelection(reopenLaserSelectionDialog)
-    app.laserSelectionDialog.setDisplayMoreSelectionsChecked(isDisplayMoreSelectionsChecked)
-
-
 def openSensor():
 
     calibration = chooseCalibration()
@@ -428,7 +412,7 @@ def openSensor():
     enableSaveActions()
 
     onCropReturns(False) # Dont show the dialog just restore settings
-    onLaserSelection(False)
+    restoreLaserSelection()
 
     rep = smp.Show(sensor)
 #    rep.InterpolateScalarsBeforeMapping = 0
@@ -522,7 +506,7 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
     # Resetting laser selection dialog according to the opened PCAP file
     # and restoring the dialog visibility afterward
 
-    restoreLaserSelectionDialog()
+    restoreLaserSelection()
 
     reader.Interpreter.GetClientSideObject().SetSensorTransform(sensorTransform)
 
@@ -1328,8 +1312,6 @@ def onChooseCalibrationFile():
         smp.Render()
         updateUIwithNewLidar()
 
-    restoreLaserSelectionDialog()
-
 
 def onCropReturns(show = True):
     dialog = vvCropReturnsDialog(getMainWindow())
@@ -1576,11 +1558,10 @@ def onGridProperties():
         smp.Render()
 
 
-def onLaserSelection(show = True):
+def onLaserSelection():
+    dialog = PythonQt.paraview.vvLaserSelectionDialog(getMainWindow())
     nchannels = 128
-    oldmask = [1] * nchannels
-    reader = getReader()
-    sensor = getSensor()
+    currentMask = [1] * nchannels
     verticalCorrection = [0] * nchannels
     rotationalCorrection = [0] * nchannels
     distanceCorrection = [0] * nchannels
@@ -1592,12 +1573,12 @@ def onLaserSelection(show = True):
     focalSlope = [0] * nchannels
     minIntensity = [0] * nchannels
     maxIntensity = [0] * nchannels
-
-    lidar = getLidar()
     lidarPacketInterpreter = getLidarPacketInterpreter()
-    lidarPacketInterpreter.UpdatePipelineInformation()
-    if lidarPacketInterpreter and lidarPacketInterpreter.GetProperty("LaserSelectionInformation") is not None:
-        oldmask = list(lidarPacketInterpreter.GetProperty("LaserSelectionInformation"))
+    if lidarPacketInterpreter is not None:
+        lidarPacketInterpreter.UpdatePipelineInformation()
+    if lidarPacketInterpreter is not None \
+        and lidarPacketInterpreter.GetProperty("LaserSelectionInformation") is not None:
+        currentMask = list(lidarPacketInterpreter.GetProperty("LaserSelectionInformation"))
         verticalCorrection = list(lidarPacketInterpreter.GetProperty("verticalCorrectionInformation"))
         rotationalCorrection = list(lidarPacketInterpreter.GetProperty("rotationalCorrectionInformation"))
         distanceCorrection = list(lidarPacketInterpreter.GetProperty("distanceCorrectionInformation"))
@@ -1609,19 +1590,14 @@ def onLaserSelection(show = True):
         focalSlope = list(lidarPacketInterpreter.GetProperty("focalSlopeInformation"))
         minIntensity = list(lidarPacketInterpreter.GetProperty("minIntensityInformation"))
         maxIntensity = list(lidarPacketInterpreter.GetProperty("maxIntensityInformation"))
-
         nchannels = lidarPacketInterpreter.GetProperty("NumberOfChannelsInformation")[0]
+    else:
+        print("Could not locate interpreter with LaserSelectionInformation to use.")
+        return
 
-    # Initializing the laser selection dialog
-    if app.laserSelectionDialog == None:
-        app.laserSelectionDialog = PythonQt.paraview.vvLaserSelectionDialog(getMainWindow())
-        app.laserSelectionDialog.connect('accepted()', onLaserSelectionChanged)
-        app.laserSelectionDialog.connect('laserSelectionChanged()', onLaserSelectionChanged)
+    dialog.setLaserSelectionSelector(currentMask)
 
-    # Need a way to initialize the mask
-    app.laserSelectionDialog.setLaserSelectionSelector(oldmask)
-
-    app.laserSelectionDialog.setLasersCorrections(verticalCorrection,
+    dialog.setLasersCorrections(verticalCorrection,
         rotationalCorrection,
         distanceCorrection,
         distanceCorrectionX,
@@ -1634,21 +1610,36 @@ def onLaserSelection(show = True):
         maxIntensity,
         nchannels)
 
-    app.laserSelectionDialog.onDisplayMoreCorrectionsChanged()
-    if show:
-        app.laserSelectionDialog.show()
+    def onDialogAccepted():
+        mask = dialog.getLaserSelectionSelector()
+        if dialog.applyOrder > 0:
+            lidarPacketInterpreter = getLidarPacketInterpreter()
+            if lidarPacketInterpreter is not None:
+                lidarPacketInterpreter.LaserSelection = mask
+                smp.Render()
+        if dialog.applyOrder > 1:
+            app.laserSelectionSession[nchannels] = mask
+        if dialog.applyOrder > 2:
+            getPVSettings().setValue('LidarPlugin/LaserSelection/{}'.format(nchannels), mask)
 
+    dialog.connect('accepted()', onDialogAccepted)
+    dialog.show()
 
-def onLaserSelectionChanged():
-    dialog = getLaserSelectionDialog();
-    lidar = getLidar()
-
-    mask = dialog.getLaserSelectionSelector()
-    LidarInterpreter = getLidarPacketInterpreter()
-    if LidarInterpreter:
-        LidarInterpreter.LaserSelection = mask
-        smp.Hide()
-        smp.Show(app.trailingFrame)
+def restoreLaserSelection():
+    lidarPacketInterpreter = getLidarPacketInterpreter()
+    if lidarPacketInterpreter is None:
+        return
+    lidarPacketInterpreter.UpdatePipelineInformation()
+    if lidarPacketInterpreter.GetProperty("LaserSelectionInformation") is not None:
+        nchannels = lidarPacketInterpreter.GetProperty("NumberOfChannelsInformation")[0]
+    else:
+        return
+    if nchannels not in app.laserSelectionSession:
+        settingsMask = getPVSettings().value('LidarPlugin/LaserSelection/{}'.format(nchannels))
+        if settingsMask is not None:
+            app.laserSelectionSession[nchannels] = [int(b) for b in settingsMask]
+    if nchannels in app.laserSelectionSession:
+        lidarPacketInterpreter.LaserSelection = app.laserSelectionSession[nchannels]
         smp.Render()
 
 
