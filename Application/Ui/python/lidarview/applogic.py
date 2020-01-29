@@ -1035,43 +1035,6 @@ def onSaveScreenshot():
         saveScreenshot(fileName)
 
 
-def onKiwiViewerExport():
-
-    frameOptions = getFrameSelectionFromUser(frameStrideVisibility=True,
-                                             frameTransformVisibility=False)
-    if frameOptions is None:
-        return
-
-    defaultFileName = getDefaultSaveFileName('zip', suffix=' (KiwiViewer)')
-    fileName = getSaveFileName('Export To KiwiViewer', 'zip', defaultFileName)
-    if not fileName:
-        return
-
-    if frameOptions.mode == vvSelectFramesDialog.CURRENT_FRAME:
-        timesteps = [app.scene.AnimationTime]
-    elif frameOptions.mode == vvSelectFramesDialog.ALL_FRAMES:
-        timesteps = range(int(app.scene.StartTime), int(app.scene.EndTime) + 1, frameOptions.stride)
-    else:
-        timesteps = range(frameOptions.start, frameOptions.stop+1, frameOptions.stride)
-
-    saveToKiwiViewer(fileName, timesteps)
-
-
-def saveToKiwiViewer(filename, timesteps):
-
-    tempDir = kiwiviewerExporter.tempfile.mkdtemp()
-    outDir = os.path.join(tempDir, os.path.splitext(os.path.basename(filename))[0])
-
-    os.makedirs(outDir)
-
-    filenames = exportToDirectory(outDir, timesteps)
-
-    kiwiviewerExporter.writeJsonData(outDir, app.mainView, smp.GetDisplayProperties(), filenames)
-
-    kiwiviewerExporter.zipDir(outDir, filename)
-    kiwiviewerExporter.shutil.rmtree(tempDir)
-
-
 def exportToDirectory(outDir, timesteps):
 
     filenames = []
@@ -1173,7 +1136,7 @@ def close():
 
 
 def _setSaveActionsEnabled(enabled):
-    for action in ('SaveCSV', 'SavePCAP', 'SaveLAS', 'Export_To_KiwiViewer',
+    for action in ('SaveCSV', 'SavePCAP', 'SaveLAS',
                    'Close', 'Choose_Calibration_File', 'CropReturns'):
         app.actions['action'+action].setEnabled(enabled)
     getMainWindow().findChild('QMenu', 'menuSaveAs').enabled = enabled
@@ -1947,7 +1910,6 @@ def setupActions():
     app.actions['actionSaveLAS'].connect('triggered()', onSaveLAS)
     app.actions['actionSavePCAP'].connect('triggered()', onSavePCAP)
     app.actions['actionSaveScreenshot'].connect('triggered()', onSaveScreenshot)
-    app.actions['actionExport_To_KiwiViewer'].connect('triggered()', onKiwiViewerExport)
     app.actions['actionGrid_Properties'].connect('triggered()', onGridProperties)
     app.actions['actionLaserSelection'].connect('triggered()', onLaserSelection)
     app.actions['actionChoose_Calibration_File'].connect('triggered()', onChooseCalibrationFile)

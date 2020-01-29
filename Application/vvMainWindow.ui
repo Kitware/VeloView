@@ -66,7 +66,6 @@
     <addaction name="menuRecent_Files"/>
     <addaction name="separator"/>
     <addaction name="menuSaveAs"/>
-    <addaction name="actionExport_To_KiwiViewer"/>
     <addaction name="actionSaveScreenshot"/>
     <addaction name="separator"/>
     <addaction name="actionClose"/>
@@ -474,18 +473,6 @@
    </property>
    <property name="text">
     <string>Save &amp;CSV...</string>
-   </property>
-  </action>
-  <action name="actionExport_To_KiwiViewer">
-   <property name="icon">
-    <iconset resource="../Plugins/VelodyneUIPlugin/Ui/images/resources.qrc">
-     <normaloff>:/LidarViewPlugin/kiwi_200.png</normaloff>:/LidarViewPlugin/kiwi_200.png</iconset>
-   </property>
-   <property name="text">
-    <string>Export To &amp;KiwiViewer...</string>
-   </property>
-   <property name="toolTip">
-    <string>Export To KiwiViewer</string>
    </property>
   </action>
   <action name="actionGrid_Properties">
