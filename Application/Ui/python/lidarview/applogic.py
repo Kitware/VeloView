@@ -752,7 +752,7 @@ def saveCSVCurrentFrame(filename):
         smp.Delete(extractSurface)
         smp.Delete(mergeBlocks)
         smp.Delete(extractBlock)
-    rotateCSVFile(filename)
+    # rotateCSVFile(filename)
 
 def saveCSVCurrentFrameSelection(filename):
     source = getReader()
@@ -763,7 +763,7 @@ def saveCSVCurrentFrameSelection(filename):
     w.FieldAssociation = 'Points'
     w.UpdatePipeline()
     smp.Delete(w)
-    rotateCSVFile(filename)
+    # rotateCSVFile(filename)
 
 # transform parameter indicates the coordinates system and
 # the referential for the exported points clouds:
@@ -822,7 +822,7 @@ def saveCSV(filename, steps):
         app.scene.AnimationTime = getLidar().TimestepValues[i]
         writer.FileName = filenameTemplate % i
         writer.UpdatePipeline()
-        rotateCSVFile(writer.FileName)
+        # rotateCSVFile(writer.FileName)
 
     smp.Delete(writer)
 
