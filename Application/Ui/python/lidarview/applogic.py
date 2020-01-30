@@ -301,8 +301,12 @@ def getDefaultSaveFileName(extension, suffix='', frameId=None):
     sensor = getSensor()
     reader = getReader()
 
-    if sensor:
-        nchannels =  sensor.GetPropertyValue('NumberOfChannelsInformation')
+    nchannels = None
+    if sensor and sensor.Interpreter:
+        sensor.Interpreter.UpdatePipelineInformation()
+        if sensor.Interpreter.GetProperty("NumberOfChannelsInformation") is not None:
+            nchannels = sensor.Interpreter.GetProperty("NumberOfChannelsInformation")[0]
+
         base = 'HDL-'
         if nchannels <= 16:
             base = 'VLP-'
