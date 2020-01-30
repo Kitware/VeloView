@@ -386,8 +386,10 @@ def openSensor():
     close()
     app.grid = createGrid()
 
-    sensor = smp.LidarStream(guiName='Data', CalibrationFile=calibrationFile)
-    sensor.Interpreter = 'Velodyne Meta Interpreter'
+    sensor = smp.LidarStream(guiName='Data',
+                             CalibrationFile=calibrationFile,
+                             Interpreter='Velodyne Special Velarray Interpreter',
+                             )
     sensor.Interpreter.UseIntraFiringAdjustment = app.actions['actionIntraFiringAdjust'].isChecked()
 
     sensor.LidarPort = LidarPort
@@ -400,7 +402,7 @@ def openSensor():
     sensor.GetClientSideObject().SetForwardedIpAddress(ipAddressForwarding)
     sensor.Interpreter.GetClientSideObject().SetSensorTransform(sensorTransform)
     sensor.Interpreter.IgnoreZeroDistances = app.actions['actionIgnoreZeroDistances'].isChecked()
-    sensor.Interpreter.HideDropPoints = app.actions['actionHideDropPoints'].isChecked()
+    # sensor.Interpreter.HideDropPoints = app.actions['actionHideDropPoints'].isChecked()
     sensor.Interpreter.IgnoreEmptyFrames = app.actions['actionIgnoreEmptyFrames'].isChecked()
     sensor.UpdatePipeline()
     sensor.Start()
@@ -487,10 +489,10 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
     # construct the reader, this calls UpdateInformation on the
     # reader which scans the pcap file and emits progress events
     reader = smp.LidarReader(guiName='Data',
-                             FileName = filename,
-                             CalibrationFile = calibrationFile,
+                             FileName=filename,
+                             CalibrationFile=calibrationFile,
+                             Interpreter='Velodyne Special Velarray Interpreter',
                              )
-    reader.Interpreter = 'Velodyne Meta Interpreter'
     reader.Interpreter.UseIntraFiringAdjustment = app.actions['actionIntraFiringAdjust'].isChecked()
 
     reader.UpdatePipelineInformation()
@@ -516,7 +518,7 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
 
     lidarPacketInterpreter = getLidarPacketInterpreter()
     lidarPacketInterpreter.IgnoreZeroDistances = app.actions['actionIgnoreZeroDistances'].isChecked()
-    lidarPacketInterpreter.HideDropPoints = app.actions['actionHideDropPoints'].isChecked()
+    # lidarPacketInterpreter.HideDropPoints = app.actions['actionHideDropPoints'].isChecked()
     lidarPacketInterpreter.IgnoreEmptyFrames = app.actions['actionIgnoreEmptyFrames'].isChecked()
 
     if SAMPLE_PROCESSING_MODE:
