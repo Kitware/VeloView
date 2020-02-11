@@ -121,7 +121,11 @@ unset(shared_files)
 file(GLOB vtk_dlls
   "${superbuild_install_location}/bin/vtk*.dll"
   "${superbuild_install_location}/bin/LidarPluginPython.pyd"
-  "${superbuild_install_location}/bin/LidarPluginPythonD.dll")
+  "${superbuild_install_location}/bin/LidarPluginPythonD.dll"
+  "${superbuild_install_location}/bin/VelodynePlugin.dll"
+  "${superbuild_install_location}/bin/VelodynePluginPython.pyd"
+  "${superbuild_install_location}/bin/VelodynePluginPythonD.dll"
+  )
 install(FILES ${vtk_dlls}
   DESTINATION "bin"
   COMPONENT superbuild
@@ -151,8 +155,10 @@ install(FILES ${pointcloud_dll}
 )
 unset(pointcloud_dll)
 
-
-
-
 set(CMAKE_INSTALL_SYSTEM_RUNTIME_DESTINATION "bin")
 include(InstallRequiredSystemLibraries)
+
+install(FILES "${superbuild_install_location}/doc/VeloView_User_Guide.pdf"
+  DESTINATION "doc"
+  COMPONENT superbuild
+)

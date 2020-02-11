@@ -23,6 +23,7 @@ class QVector;
 class vvLaserSelectionDialog : public QDialog
 {
   Q_OBJECT
+  Q_PROPERTY(int applyOrder READ applyOrder)
 public:
   vvLaserSelectionDialog(QWidget* p = 0);
   virtual ~vvLaserSelectionDialog();
@@ -47,18 +48,20 @@ public slots:
   void onEnableDisableAll(int);
 
 protected slots:
-  void saveSortIndicator();
+  void saveSettings();
+  void onCancel();
+  void onApply();
+  void onApplyAndSaveSession();
+  void onApplyAndSavePermanent();
 
 public slots:
-  virtual void accept();
   void onDisplayMoreCorrectionsChanged();
-
-signals:
-  void laserSelectionChanged();
 
 private:
   class pqInternal;
   pqInternal* Internal;
+  int applyOrder_;
+  int applyOrder();
 
   Q_DISABLE_COPY(vvLaserSelectionDialog)
 };

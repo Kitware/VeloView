@@ -24,23 +24,6 @@
      </property>
     </widget>
    </item>
-   <item row="7" column="1">
-    <widget class="QCheckBox" name="saveCheckBox">
-     <property name="text">
-      <string>Apply in future sessions</string>
-     </property>
-     <property name="checked">
-      <bool>false</bool>
-     </property>
-    </widget>
-   </item>
-   <item row="7" column="4">
-    <widget class="QPushButton" name="apply">
-     <property name="text">
-      <string>Apply</string>
-     </property>
-    </widget>
-   </item>
    <item row="6" column="1" colspan="4">
     <widget class="QTableWidget" name="LaserTable">
      <property name="selectionBehavior">
@@ -167,20 +150,10 @@
      </column>
     </widget>
    </item>
-   <item row="7" column="2">
-    <widget class="QCheckBox" name="DisplayMoreCorrections">
-     <property name="text">
-      <string>Display more corrections</string>
-     </property>
-    </widget>
-   </item>
    <item row="7" column="3">
     <widget class="QDialogButtonBox" name="buttonBox">
      <property name="orientation">
       <enum>Qt::Horizontal</enum>
-     </property>
-     <property name="standardButtons">
-      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
      </property>
     </widget>
    </item>
@@ -194,6 +167,13 @@
      </property>
      <property name="tristate">
       <bool>false</bool>
+     </property>
+    </widget>
+   </item>
+   <item row="7" column="1">
+    <widget class="QCheckBox" name="DisplayMoreCorrections">
+     <property name="text">
+      <string>Display more corrections</string>
      </property>
     </widget>
    </item>

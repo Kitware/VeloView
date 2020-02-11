@@ -53,3 +53,13 @@ target_link_libraries(${SOFTWARE_NAME}
     ${PYTHONQTPLUGIN_LIBRARY}
     ${PYTHONQT_LIBRARIES}
     lqApplicationComponents)
+
+set(USER_GUIDE_SRC "${LidarView_SOURCE_DIR}/Documentation/VeloView_User_Guide.pdf")
+
+if (APPLE)
+  install(FILES ${USER_GUIDE_SRC} DESTINATION "${VV_INSTALL_RUNTIME_DIR}/${SOFTWARE_NAME}.app/Contents/Resources") # to install tree
+  file(COPY ${USER_GUIDE_SRC} DESTINATION "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${SOFTWARE_NAME}.app/Contents/Resources") # to build tree
+else ()
+  install(FILES ${USER_GUIDE_SRC} DESTINATION "${VV_INSTALL_RUNTIME_DIR}/../doc") # to install tree
+  file(COPY ${USER_GUIDE_SRC} DESTINATION "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/../doc") # to build tree
+endif ()
