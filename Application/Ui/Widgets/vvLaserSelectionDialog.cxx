@@ -180,7 +180,7 @@ void vvLaserSelectionDialog::pqInternal::setup()
 
   this->Table = table;
 
-  for (int i = 3; i < 13; i++)
+  for (int i = 4; i < 13; i++)
   {
     this->Table->setColumnHidden(i, true);
   }
@@ -426,7 +426,7 @@ vvLaserSelectionDialog::~vvLaserSelectionDialog()
 //-----------------------------------------------------------------------------
 void vvLaserSelectionDialog::onDisplayMoreCorrectionsChanged()
 {
-  for (int i = 3; i < 13; i++)
+  for (int i = 4; i < 13; i++)
   {
     this->Internal->Table->setColumnHidden(i, !this->Internal->DisplayMoreCorrections->isChecked());
   }
