@@ -88,6 +88,13 @@ public:
     this->paraviewInit(window);
     this->setupUi();
 
+    QActionGroup* dualReturnFilterActions = new QActionGroup(window);
+    dualReturnFilterActions->addAction(this->Ui.actionDualReturnModeDual);
+    dualReturnFilterActions->addAction(this->Ui.actionDualReturnDistanceNear);
+    dualReturnFilterActions->addAction(this->Ui.actionDualReturnDistanceFar);
+    dualReturnFilterActions->addAction(this->Ui.actionDualReturnIntensityHigh);
+    dualReturnFilterActions->addAction(this->Ui.actionDualReturnIntensityLow);
+
     window->show();
     window->raise();
     window->activateWindow();
@@ -386,6 +393,16 @@ vvMainWindow::vvMainWindow()
   this->Internals->Ui.actionAbout_LidarView->setText(text);
   ss.str("");
   ss.clear();
+
+  ss << SOFTWARE_NAME << " Developer Guide";
+  text = QString(ss.str().c_str());
+  this->Internals->Ui.actionLidarViewDeveloperGuide->setText(text);
+  ss.str("");
+  ss.clear();
+
+  ss << SOFTWARE_NAME << " User Guide";
+  text = QString(ss.str().c_str());
+  this->Internals->Ui.actionLidarViewUserGuide->setText(text);
 }
 
 //-----------------------------------------------------------------------------

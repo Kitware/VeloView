@@ -31,14 +31,47 @@
 class vvLaserSelectionDialog::pqInternal : public Ui::vvLaserSelectionDialog
 {
 public:
-  pqInternal()
+  pqInternal(QDialog *external)
     : Settings(pqApplicationCore::instance()->settings())
   {
+    this->setupUi(external);
+    this->CancelButton = new QPushButton("Cancel");
+    this->CancelButton->setIcon(external->style()->standardIcon(QStyle::SP_DialogCancelButton));
+
+    this->ApplyButton = new QPushButton("Apply");
+    this->ApplyButton->setIcon(external->style()->standardIcon(QStyle::SP_DialogOkButton));
+
+    this->ApplyAndSaveSessionButton = new QPushButton("Apply && save until exit");
+    this->ApplyAndSaveSessionButton->setIcon(external->style()->standardIcon(QStyle::SP_DialogSaveButton));
+
+    this->ApplyAndSavePermanentButton = new QPushButton("Apply && save permanently");
+    this->ApplyAndSavePermanentButton->setIcon(external->style()->standardIcon(QStyle::SP_DialogSaveButton));
+
+    this->CancelButton->setToolTip(
+      "Do not apply this selection and do not save these settings.");
+    this->ApplyButton->setToolTip(
+      "Apply this selection to current PCAP/Stream only.");
+    this->ApplyAndSaveSessionButton->setToolTip(
+      "Apply this selection to current and future PCAPs/Streams with same"
+      " channel count until " SOFTWARE_NAME " is closed.");
+    this->ApplyAndSavePermanentButton->setToolTip(
+      "Apply this selection to current and future PCAPs/Streams with same"
+      " channel count.");
+
+    this->buttonBox->addButton(this->CancelButton, QDialogButtonBox::ActionRole);
+    this->buttonBox->addButton(this->ApplyButton, QDialogButtonBox::ActionRole);
+    this->buttonBox->addButton(this->ApplyAndSaveSessionButton, QDialogButtonBox::ActionRole);
+    this->buttonBox->addButton(this->ApplyAndSavePermanentButton, QDialogButtonBox::ActionRole);
   }
 
   void setup();
   void saveSettings();
   void restoreSettings();
+
+  QPushButton *CancelButton;
+  QPushButton *ApplyButton;
+  QPushButton *ApplyAndSaveSessionButton;
+  QPushButton *ApplyAndSavePermanentButton;
 
   pqSettings* const Settings;
 
@@ -59,46 +92,25 @@ public:
 //-----------------------------------------------------------------------------
 void vvLaserSelectionDialog::pqInternal::saveSettings()
 {
-  for (int i = 0; i < NUM_LASER_MAX; ++i)
-  {
-    QTableWidgetItem* item = this->Table->item(i, 0);
-    QTableWidgetItem* value = this->Table->item(i, 2);
-    int channel = value->data(Qt::EditRole).toInt();
-
-    bool checked = item->checkState() == Qt::Checked;
-    this->Settings->setValue(
-      QString("LidarPlugin/LaserSelectionDialog%1").arg(channel), checked);
-  }
+  this->sortingColumnId =
+    this->Table->horizontalHeader()->sortIndicatorSection();
   this->Settings->setValue(
     QString("LidarPlugin/LaserSelectionDialogSortingColumnId"), this->sortingColumnId);
+  this->sortingColumnOrder =
+    this->Table->horizontalHeader()->sortIndicatorOrder();
   this->Settings->setValue(
     QString("LidarPlugin/LaserSelectionDialogSortingColumnOrder"), this->sortingColumnOrder);
 }
 
 //-----------------------------------------------------------------------------
+void vvLaserSelectionDialog::saveSettings()
+{
+  this->Internal->saveSettings();
+}
+
+//-----------------------------------------------------------------------------
 void vvLaserSelectionDialog::pqInternal::restoreSettings()
 {
-  QVector<int> channel2index(NUM_LASER_MAX, 0);
-
-  for (int i = 0; i < NUM_LASER_MAX; ++i)
-  {
-    QTableWidgetItem* value = this->Table->item(i, 2);
-    int channel = value->data(Qt::EditRole).toInt();
-    channel2index[channel] = i;
-  }
-
-  for (int c = 0; c < NUM_LASER_MAX; ++c)
-  {
-    bool checked = this->Settings
-                     ->value(QString("LidarPlugin/LaserSelectionDialog%1").arg(c),
-                       QVariant::fromValue(true))
-                     .toBool();
-    int index = channel2index[c];
-
-    QTableWidgetItem* item = this->Table->item(index, 0);
-    item->setCheckState(checked ? Qt::Checked : Qt::Unchecked);
-  }
-
   int sortingColumnId =
     this->Settings->value(QString("LidarPlugin/LaserSelectionDialogSortingColumnId")).toInt();
   Qt::SortOrder sortingColumnOrder = Qt::SortOrder(
@@ -192,7 +204,6 @@ void vvLaserSelectionDialog::onToggleSelected()
       sitem->setCheckState(sitem->checkState() == Qt::Checked ? Qt::Unchecked : Qt::Checked);
     }
   }
-  laserSelectionChanged();
 }
 
 //-----------------------------------------------------------------------------
@@ -267,8 +278,7 @@ void vvLaserSelectionDialog::onEnableDisableAll(int state)
 vvLaserSelectionDialog::vvLaserSelectionDialog(QWidget* p)
   : QDialog(p)
 {
-  this->Internal = new pqInternal();
-  this->Internal->setupUi(this);
+  this->Internal = new pqInternal(this);
   this->Internal->setup();
   this->Internal->restoreSettings();
 
@@ -280,14 +290,21 @@ vvLaserSelectionDialog::vvLaserSelectionDialog(QWidget* p)
   QObject::connect(this->Internal->EnableDisableAll, SIGNAL(stateChanged(int)), this,
     SLOT(onEnableDisableAll(int)));
 
-  QObject::connect(this->Internal->apply, SIGNAL(clicked()), this, SIGNAL(laserSelectionChanged()));
-
   QObject::connect(this->Internal->DisplayMoreCorrections, SIGNAL(toggled(bool)), this,
     SLOT(onDisplayMoreCorrectionsChanged()));
 
-  QObject::connect(this, SIGNAL(accepted()), this, SLOT(saveSortIndicator()));
+  QObject::connect(this, SIGNAL(accepted()), this, SLOT(saveSettings()));
+  QObject::connect(this, SIGNAL(rejected()), this, SLOT(saveSettings()));
 
-  QObject::connect(this, SIGNAL(rejected()), this, SLOT(saveSortIndicator()));
+  connect(this->Internal->CancelButton, SIGNAL(clicked()), this, SLOT(saveSettings()));
+  connect(this->Internal->ApplyButton, SIGNAL(clicked()), this, SLOT(saveSettings()));
+  connect(this->Internal->ApplyAndSaveSessionButton, SIGNAL(clicked()), this, SLOT(saveSettings()));
+  connect(this->Internal->ApplyAndSavePermanentButton, SIGNAL(clicked()), this, SLOT(saveSettings()));
+
+  connect(this->Internal->CancelButton, SIGNAL(clicked()), this, SLOT(onCancel()));
+  connect(this->Internal->ApplyButton, SIGNAL(clicked()), this, SLOT(onApply()));
+  connect(this->Internal->ApplyAndSaveSessionButton, SIGNAL(clicked()), this, SLOT(onApplyAndSaveSession()));
+  connect(this->Internal->ApplyAndSavePermanentButton, SIGNAL(clicked()), this, SLOT(onApplyAndSavePermanent()));
 
   this->Internal->Table->setSortingEnabled(true);
 }
@@ -407,16 +424,6 @@ vvLaserSelectionDialog::~vvLaserSelectionDialog()
 }
 
 //-----------------------------------------------------------------------------
-void vvLaserSelectionDialog::accept()
-{
-  if (this->Internal->saveCheckBox->isChecked())
-  {
-    this->Internal->saveSettings();
-  }
-  QDialog::accept();
-}
-
-//-----------------------------------------------------------------------------
 void vvLaserSelectionDialog::onDisplayMoreCorrectionsChanged()
 {
   for (int i = 3; i < 13; i++)
@@ -439,11 +446,35 @@ void vvLaserSelectionDialog::setDisplayMoreSelectionsChecked(bool state)
 }
 
 //-----------------------------------------------------------------------------
-void vvLaserSelectionDialog::saveSortIndicator()
+void vvLaserSelectionDialog::onCancel()
 {
-  this->Internal->sortingColumnId =
-    this->Internal->Table->horizontalHeader()->sortIndicatorSection();
-  this->Internal->sortingColumnOrder =
-    this->Internal->Table->horizontalHeader()->sortIndicatorOrder();
-  this->Internal->saveSettings();
+  this->applyOrder_ = 0;
+  QDialog::accept();
+}
+
+//-----------------------------------------------------------------------------
+void vvLaserSelectionDialog::onApply()
+{
+  this->applyOrder_ = 1;
+  QDialog::accept();
+}
+
+//-----------------------------------------------------------------------------
+void vvLaserSelectionDialog::onApplyAndSaveSession()
+{
+  this->applyOrder_ = 2;
+  QDialog::accept();
+}
+
+//-----------------------------------------------------------------------------
+void vvLaserSelectionDialog::onApplyAndSavePermanent()
+{
+  this->applyOrder_ = 3;
+  QDialog::accept();
+}
+
+//-----------------------------------------------------------------------------
+int vvLaserSelectionDialog::applyOrder()
+{
+  return this->applyOrder_;
 }

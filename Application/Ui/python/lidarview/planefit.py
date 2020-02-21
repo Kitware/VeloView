@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import LidarPluginPython as vvmod
+import LidarPluginPython as lpmod
+import VelodynePluginPython as vpmod
 import paraview.simple as smp
 from paraview import vtk
 import math
@@ -26,7 +27,6 @@ def GetSelectionSource(proxy=None):
         raise RuntimeError, \
         "GetSelectionSource() needs a proxy argument of that an active source is set."
     return proxy.GetSelectionInput(proxy.Port)
-
 
 def fitPlane():
     src = smp.GetActiveSource()
@@ -44,7 +44,15 @@ def fitPlane():
     smp.Show(extracter)
 
     try:
-        pd = extracter.GetClientSideObject().GetOutput().GetBlock(0)
+        pd = extracter.GetClientSideObject().GetOutput()
+
+        if pd.IsTypeOf("vtkMultiBlockDataSet"):
+            appendFilter = vtk.vtkAppendFilter()
+            for i in range(pd.GetNumberOfBlocks()):
+                appendFilter.AddInputData(pd.GetBlock(i))
+            appendFilter.Update()
+            pd = appendFilter.GetOutput()
+
         max_laser_id = pd.GetPointData().GetArray("laser_id").GetRange()[1]
         nchannels = 2**vtk.vtkMath.CeilLog2(int(max_laser_id))
 
@@ -56,7 +64,7 @@ def fitPlane():
         channelStdDev = range(nchannels)
         channelNpts = range(nchannels)
 
-        vvmod.vtkPlaneFitter.PlaneFit(pd, origin, normal, mind, maxd, stddev, channelMean, channelStdDev, channelNpts, nchannels)
+        vpmod.vtkPlaneFitter.PlaneFit(pd, origin, normal, mind, maxd, stddev, channelMean, channelStdDev, channelNpts, nchannels)
         rows = [['overall', origin, normal, 0.0, stddev, stddev, pd.GetNumberOfPoints()]]
         rows = rows + [['%d' % i, origin, normal,
                         channelMean[i], channelStdDev[i],
