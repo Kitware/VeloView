@@ -83,7 +83,9 @@ public:
 void vvCalibrationDialog::pqInternal::saveFileList()
 {
   QStringList files;
-  for (int i = this->BuiltInCalibrationFiles.size(); i < this->ListWidget->count(); ++i)
+  // The first entry in the calibration window is reserved for an online calibration
+  // We start saving new calibration files to size + 1 to not erase the last calibration file
+  for (int i = this->BuiltInCalibrationFiles.size() + 1; i < this->ListWidget->count(); ++i)
   {
     files << this->ListWidget->item(i)->data(Qt::UserRole).toString();
   }
@@ -732,7 +734,9 @@ void vvCalibrationDialog::accept()
 //-----------------------------------------------------------------------------
 void vvCalibrationDialog::onCurrentRowChanged(int row)
 {
-  this->Internal->RemoveButton->setEnabled(row >= this->Internal->BuiltInCalibrationFiles.size());
+  // The first entry in the calibration window is reserved for an online calibration
+  // We forbid to remove all CalibrationFiles + the live calibration item
+  this->Internal->RemoveButton->setEnabled(row >= this->Internal->BuiltInCalibrationFiles.size() + 1);
 }
 
 //-----------------------------------------------------------------------------
@@ -763,7 +767,9 @@ void vvCalibrationDialog::addFile()
 void vvCalibrationDialog::removeSelectedFile()
 {
   const int row = this->Internal->ListWidget->currentRow();
-  if (row >= this->Internal->BuiltInCalibrationFiles.size())
+  // The first entry in the calibration window is reserved for an online calibration
+  // We forbid to remove all CalibrationFiles + the live calibration item
+  if (row >= this->Internal->BuiltInCalibrationFiles.size() + 1)
   {
     delete this->Internal->ListWidget->takeItem(row);
     this->Internal->saveFileList();
