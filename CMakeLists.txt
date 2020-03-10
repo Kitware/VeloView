@@ -18,6 +18,7 @@ include("Application/SoftwareInformation/branding.cmake")
 
 set (CMAKE_CXX_STANDARD 14)
 set (CMAKE_CXX_EXTENSIONS OFF)
+message(STATUS "Building LidarView with C++${CMAKE_CXX_STANDARD} standard")
 
 if (MSVC)
     # warning level all
