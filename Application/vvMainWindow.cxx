@@ -33,6 +33,7 @@
 #include "lqSaveLidarStateReaction.h"
 #include "lqLoadLidarStateReaction.h"
 #include "lqEnableAdvancedArraysReaction.h"
+#include "lqOpenSensorReaction.h"
 
 #include <vtkSMProxyManager.h>
 #include <vtkSMSessionProxyManager.h>
@@ -309,6 +310,7 @@ private:
     this->Ui.viewAnimationDock->hide();
     this->Ui.outputWidgetDock->hide();
     this->Ui.pythonShellDock->hide();
+    this->Ui.sensorListDock->hide();
 
     // Setup the View menu. This must be setup after all toolbars and dockwidgets
     // have been created.
@@ -382,9 +384,7 @@ private:
     this->Ui.actionMeasurement_Grid->setChecked(gridVisible.toBool());
 
     new vvLoadDataReaction(this->Ui.actionOpenPcap, false);
-
-    connect(this->Ui.actionOpen_Sensor_Stream, SIGNAL(triggered()), pqLidarViewManager::instance(),
-      SLOT(onOpenSensor()));
+    new lqOpenSensorReaction(this->Ui.actionOpen_Sensor_Stream);
 
     connect(this->Ui.actionMeasurement_Grid, SIGNAL(toggled(bool)), pqLidarViewManager::instance(),
       SLOT(onMeasurementGrid(bool)));

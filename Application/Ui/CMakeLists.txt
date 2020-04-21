@@ -19,6 +19,8 @@ add_library(ApplicationUi
 
   pqLidarViewManager.cxx
   pqLidarViewManager.h
+  lqOpenSensorReaction.cxx
+  lqOpenSensorReaction.h
   vvLoadDataReaction.cxx
   vvLoadDataReaction.h
   vvPythonQtDecorators.h
