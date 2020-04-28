@@ -34,6 +34,12 @@ vvSelectFramesDialog::vvSelectFramesDialog(QWidget* p)
   this->Internal = new pqInternal;
   this->Internal->setupUi(this);
   this->Internal->FrameStart->clearFocus();
+
+  // Delete "?" Button that appears on windows os
+  Qt::WindowFlags flags = windowFlags();
+  Qt::WindowFlags helpFlag = Qt::WindowContextHelpButtonHint;
+  flags = flags & (~helpFlag);
+  setWindowFlags(flags);
 }
 
 //-----------------------------------------------------------------------------

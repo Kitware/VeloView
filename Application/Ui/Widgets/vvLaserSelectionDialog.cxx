@@ -307,6 +307,12 @@ vvLaserSelectionDialog::vvLaserSelectionDialog(QWidget* p)
   connect(this->Internal->ApplyAndSavePermanentButton, SIGNAL(clicked()), this, SLOT(onApplyAndSavePermanent()));
 
   this->Internal->Table->setSortingEnabled(true);
+
+  // Delete "?" Button that appears on windows os
+  Qt::WindowFlags flags = windowFlags();
+  Qt::WindowFlags helpFlag = Qt::WindowContextHelpButtonHint;
+  flags = flags & (~helpFlag);
+  setWindowFlags(flags);
 }
 
 //-----------------------------------------------------------------------------

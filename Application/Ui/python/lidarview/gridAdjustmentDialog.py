@@ -25,6 +25,11 @@ def showDialog(mainWindow, grid, gridProperties):
     dialog = loader.load(uifile, mainWindow)
     uifile.close()
 
+    # Delete "?" Button that appears on windows os
+    # Rewrite the flags without QtCore.Qt.WindowContextHelpButtonHint
+    flags = QtCore.Qt.Dialog | QtCore.Qt.WindowStaysOnTopHint | QtCore.Qt.WindowTitleHint | QtCore.Qt.WindowCloseButtonHint
+    dialog.setWindowFlags(flags)
+
     def w(name):
         for widget in dialog.children():
             if widget.objectName == name:
