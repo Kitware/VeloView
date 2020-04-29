@@ -30,9 +30,9 @@ public:
   pqInternal()
     : Settings(pqApplicationCore::instance()->settings())
   {
-    const unsigned int nFile = 5; // WARNING update this accordingly.
+    const unsigned int nFile = 6; // WARNING update this accordingly.
     const char* filenames[nFile] = { "HDL-32.xml", "VLP-16.xml", "VLP-32c.xml", "Puck Hi-Res.xml",
-      "Puck LITE.xml" };
+      "Puck LITE.xml", "Alpha Prime.xml" };
     std::vector<QString> calibrationBuiltIn(filenames, filenames + nFile);
     QString prefix;
 #if defined(_WIN32)
