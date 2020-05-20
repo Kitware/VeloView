@@ -42,6 +42,7 @@
     <Proxy group="filters" name="KMeans"/>
     <Proxy group="filters" name="MulticorrelativeStatistics"/>
     <Proxy group="filters" name="PCAStatistics"/>
+    <Proxy group="filters" name="PlaneFitter" icon=":/pqWidgets/Icons/planefit.png"/>
   </Category>
 
   <Category name="Temporal" menu_label="&amp;Temporal">    

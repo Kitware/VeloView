@@ -26,14 +26,49 @@ def GetSelectionSource(proxy=None):
         raise RuntimeError("GetSelectionSource() needs a proxy argument of that an active source is set.")
     return proxy.GetSelectionInput(proxy.Port)
 
+# Clean last planefitting source and the spreadsheet view
+def cleanStats():
+    planeFitter1 = smp.FindSource('PlaneFitter1')
+    if planeFitter1 is not None:
+        smp.Delete(planeFitter1)
+        del planeFitter1
+
+    PVTrivialProducer1 = smp.FindSource('PVTrivialProducer1')
+    if PVTrivialProducer1 is not None:
+        smp.Delete(PVTrivialProducer1)
+        del PVTrivialProducer1
+
+# Find or create a 'SpreadSheet View' to display plane fitting statistics
+def showStats():
+    planeFitter1 = smp.FindSource('PlaneFitter1')
+    if planeFitter1 is None:
+        print("Unable to create spreadsheet view : PlaneFitter1 source missing")
+        return
+
+    renderView1 = smp.FindViewOrCreate('RenderView1', viewtype='RenderView')
+    if not renderView1:
+        print("Unable to find main renderView")
+        return
+
+    spreadSheetView1 = smp.FindViewOrCreate('SpreadSheetView1', viewtype='SpreadSheetView')
+    spreadSheetView1.ColumnToSort = ''
+    spreadSheetView1.BlockSize = 1024
+
+    # show plane fit data in view
+    smp.Show(planeFitter1, spreadSheetView1)
+    spreadSheetView1.Update()
+    spreadSheetView1.FieldAssociation = 'Row Data'
+
 def fitPlane():
     src = smp.GetActiveSource()
     if not src:
+        print("A source need to be selected before running plane fitting")
         return
 
     selection = GetSelectionSource(src)
 
     if not selection:
+        print("Several points has to be selected before running plane fitting")
         return
 
     extracter = smp.ExtractSelection()
@@ -41,55 +76,28 @@ def fitPlane():
     extracter.Input = src
     smp.Show(extracter)
 
-    try:
-        pd = extracter.GetClientSideObject().GetOutput()
+    # Clean last plane fitting stats before processing a new one
+    cleanStats()
 
-        if pd.IsTypeOf("vtkMultiBlockDataSet"):
-            appendFilter = vtk.vtkAppendFilter()
-            for i in range(pd.GetNumberOfBlocks()):
-                appendFilter.AddInputData(pd.GetBlock(i))
-            appendFilter.Update()
-            pd = appendFilter.GetOutput()
+    pd = extracter.GetClientSideObject().GetOutput()
 
-        max_laser_id = pd.GetPointData().GetArray("laser_id").GetRange()[1]
-        nchannels = 2**vtk.vtkMath.CeilLog2(int(max_laser_id))
+    if pd.IsTypeOf("vtkMultiBlockDataSet"):
+        appendFilter = vtk.vtkAppendFilter()
+        for i in range(pd.GetNumberOfBlocks()):
+            appendFilter.AddInputData(pd.GetBlock(i))
+        appendFilter.Update()
+        pd = appendFilter.GetOutput()
 
-        origin = list(range(3))
-        normal = list(range(3))
-        mind, maxd, stddev = vtk.mutable(0), vtk.mutable(0), vtk.mutable(0)
+    PVTrivialProducer1 = smp.PVTrivialProducer()
+    PVTrivialProducer1Client = PVTrivialProducer1.GetClientSideObject()
+    PVTrivialProducer1Client.SetOutput(pd)
 
-        channelMean = list(range(nchannels))
-        channelStdDev = list(range(nchannels))
-        channelNpts = list(range(nchannels))
+    # Create and apply plane fitter filter
+    planeFitter1 = smp.PlaneFitter(Input=PVTrivialProducer1)
+    planeFitter1.UpdatePipeline()
 
-        vpmod.vtkPlaneFitter.PlaneFit(pd, origin, normal, mind, maxd, stddev, channelMean, channelStdDev, channelNpts, nchannels)
-        rows = [['overall', origin, normal, 0.0, stddev, stddev, pd.GetNumberOfPoints()]]
-        rows = rows + [['%d' % i, origin, normal,
-                        channelMean[i], channelStdDev[i],
-                        math.sqrt(channelMean[i]**2 + channelStdDev[i]**2),
-                        channelNpts[i]]
-                       for i in range(nchannels)]
+    # Display results on a spreadsheet view
+    showStats()
 
-        def rowconverter(x):
-            try:
-                return '\t'.join(['%.4f' % d for d in x])
-            except TypeError:
-                try:
-                    x = x.get()
-                except AttributeError:
-                    pass
-                if type(x) == float:
-                    return '%.4f' % x
-                elif type(x) is int:
-                    return '%d' % x
-                else:
-                    return x
-
-        print('\t'.join(['channel','originx','originy','originz','normalx','normaly','normalz','mean','stddev','RMS','npts']))
-        for r in rows:
-            if r[-1] == 0:
-                r[-4:-1] = ['nan', 'nan', 'nan']
-            print('\t'.join([rowconverter(x) for x in r]))
-    finally:
-        smp.Delete(extracter)
-        smp.SetActiveSource(src)
+    smp.Delete(extracter)
+    smp.SetActiveSource(src)
