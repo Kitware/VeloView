@@ -192,7 +192,7 @@
    <addaction name="actionPython_Console"/>
    <addaction name="actionShowErrorDialog"/>
   </widget>
-  <widget class="vvColorToolbar" name="colorToolBar">
+  <widget class="lqColorToolbar" name="colorToolBar">
    <property name="windowTitle">
     <string>Color Controls</string>
    </property>
@@ -902,9 +902,9 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>vvColorToolbar</class>
+   <class>lqColorToolbar</class>
    <extends>QToolBar</extends>
-   <header>vvColorToolbar.h</header>
+   <header>lqColorToolbar.h</header>
   </customwidget>
   <customwidget>
    <class>pqColorMapEditor</class>

@@ -1611,14 +1611,14 @@ def restoreLaserSelection():
 
 
 def hideColorByComponent():
-    getMainWindow().findChild('vvColorToolbar').findChild('pqDisplayColorWidget').findChildren('QComboBox')[1].hide()
+    getMainWindow().findChild('lqColorToolbar').findChild('pqDisplayColorWidget').findChildren('QComboBox')[1].hide()
 
 
 def adjustScalarBarRangeLabelFormat():
     if not app.actions['actionScalarBarVisibility'].isChecked():
         return
 
-    arrayName = getMainWindow().findChild('vvColorToolbar').findChild('pqDisplayColorWidget').findChild('QComboBox').currentText
+    arrayName = getMainWindow().findChild('lqColorToolbar').findChild('pqDisplayColorWidget').findChild('QComboBox').currentText
     if arrayName != '' and hasArrayName(app.reader, arrayName):
         sb = smp.GetScalarBar(smp.GetLookupTableForArray(arrayName, []))
         sb.RangeLabelFormat = '%g'
@@ -2011,7 +2011,7 @@ def setupActions():
     app.actions['actionFiringsSkipSelector'] = timeToolBar.addWidget(FiringsSkipBox)
     app.actions['actionFiringsSkipSelector'].setVisible(True)
 
-    displayWidget = getMainWindow().findChild('vvColorToolbar').findChild('pqDisplayColorWidget')
+    displayWidget = getMainWindow().findChild('lqColorToolbar').findChild('pqDisplayColorWidget')
     displayWidget.connect('arraySelectionChanged ()',adjustScalarBarRangeLabelFormat)
     app.actions['actionScalarBarVisibility'].connect('triggered()',adjustScalarBarRangeLabelFormat)
 
@@ -2020,7 +2020,7 @@ def setupActions():
     app.PlaybackToolbar = timeToolBar
     app.GeolocationToolbar = getMainWindow().findChild('QToolBar','geolocationToolbar')
 
-    getMainWindow().findChild("lvSpreadSheetManager").connect('spreadSheetEnabled(bool)', onSpreadSheetEnabled)
+    getMainWindow().findChild("lqSpreadSheetManager").connect('spreadSheetEnabled(bool)', onSpreadSheetEnabled)
 
     spreadSheetDock = getMainWindow().findChild('QDockWidget', 'spreadSheetDock')
     if spreadSheetDock.visible:
@@ -2122,7 +2122,7 @@ def updateUIwithNewLidar():
     if lidar:
         app.sensorInformationLabel.setText(lidar.GetClientSideObject().GetSensorInformation())
     #Remove some array to display
-    ComboBox = getMainWindow().findChild('vvColorToolbar').findChild('pqDisplayColorWidget').findChildren('QComboBox')[0]
+    ComboBox = getMainWindow().findChild('lqColorToolbar').findChild('pqDisplayColorWidget').findChildren('QComboBox')[0]
     listOfArrayToRemove = ['RotationPerMinute', 'vtkBlockColors', 'vtkCompositeIndex']
     for arrayName in listOfArrayToRemove:
         n = ComboBox.findText(arrayName)
