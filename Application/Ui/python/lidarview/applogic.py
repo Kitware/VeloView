@@ -390,13 +390,13 @@ def openSensor():
     sensor.Interpreter = 'Velodyne Meta Interpreter'
     sensor.Interpreter.UseIntraFiringAdjustment = app.actions['actionIntraFiringAdjust'].isChecked()
 
-    sensor.GetClientSideObject().SetLidarPort(LidarPort)
+    sensor.ListeningPort = LidarPort
     sensor.GetClientSideObject().EnableGPSListening(True)
-    sensor.GetClientSideObject().SetGPSPort(GPSPort)
+    #sensor.GetClientSideObject().SetGPSPort(GPSPort)
     sensor.GetClientSideObject().SetForwardedGPSPort(GPSForwardingPort)
     sensor.GetClientSideObject().SetForwardedLidarPort(LIDARForwardingPort)
     sensor.GetClientSideObject().SetIsForwarding(isForwarding)
-    sensor.GetClientSideObject().SetIsCrashAnalysing(calibration.isCrashAnalysing)
+    sensor.SetIsCrashAnalysing(calibration.isCrashAnalysing)
     sensor.GetClientSideObject().SetForwardedIpAddress(ipAddressForwarding)
     sensor.Interpreter.GetClientSideObject().SetSensorTransform(sensorTransform)
     sensor.Interpreter.IgnoreZeroDistances = app.actions['actionIgnoreZeroDistances'].isChecked()
