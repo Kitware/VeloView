@@ -390,7 +390,7 @@ def openSensor():
     sensor.Interpreter = 'Velodyne Meta Interpreter'
     sensor.Interpreter.UseIntraFiringAdjustment = app.actions['actionIntraFiringAdjust'].isChecked()
 
-    sensor.LidarPort = LidarPort
+    sensor.GetClientSideObject().SetLidarPort(LidarPort)
     sensor.GetClientSideObject().EnableGPSListening(True)
     sensor.GetClientSideObject().SetGPSPort(GPSPort)
     sensor.GetClientSideObject().SetForwardedGPSPort(GPSForwardingPort)
