@@ -396,7 +396,7 @@ def openSensor():
     sensor.GetClientSideObject().SetForwardedGPSPort(GPSForwardingPort)
     sensor.GetClientSideObject().SetForwardedLidarPort(LIDARForwardingPort)
     sensor.GetClientSideObject().SetIsForwarding(isForwarding)
-    sensor.SetIsCrashAnalysing(calibration.isCrashAnalysing)
+    sensor.GetClientSideObject().SetIsCrashAnalysing(calibration.isCrashAnalysing)
     sensor.GetClientSideObject().SetForwardedIpAddress(ipAddressForwarding)
     sensor.Interpreter.GetClientSideObject().SetSensorTransform(sensorTransform)
     sensor.Interpreter.IgnoreZeroDistances = app.actions['actionIgnoreZeroDistances'].isChecked()
