@@ -120,6 +120,7 @@ void pqLidarViewManager::pythonStartup()
       "QtGui = PythonQt.QtGui\n"
       "QtCore = PythonQt.QtCore\n"
       "import lidarview.applogic as lv\n"
+      "import lidarview.applogic as vv\n"
       "lv.start()\n"));
 
   pqSettings* const settings = pqApplicationCore::instance()->settings();
