@@ -922,6 +922,25 @@ def getFrameSelectionFromUser(frameStrideVisibility=False, framePackVisibility=F
     return frameOptions
 
 
+def resetCenterToLidarCenter():
+    view = smp.GetActiveView()
+    view.CenterOfRotation = [0, 0, 0]
+    smp.Render()
+
+
+def resetCameraLidar():
+    view = app.mainView
+    view.CameraFocalPoint = [0,0,0]
+    view.CameraViewUp = [0, 0, 1]
+
+    # Position at 30° [0, -(squareRoot(3)/2)*L, (1/2)*L]
+    L = 100
+    view.CameraPosition = [0, -0.866025 * L, (1.0/2.0) * L]
+
+    view.CenterOfRotation = [0, 0, 0]
+    smp.Render(view)
+
+
 def onSaveCSV():
 
     frameOptions = getFrameSelectionFromUser()
@@ -1939,13 +1958,17 @@ def setupActions():
     app.actions['actionSelectDualReturn'].connect('triggered()',toggleSelectDualReturn)
     app.actions['actionSelectDualReturn2'].connect('triggered()',toggleSelectDualReturn)
 
+    app.actions['actionResetCenterToLidarCenter'].connect('triggered()', resetCenterToLidarCenter)
+    addShortcuts("Ctrl+Alt+l",resetCenterToLidarCenter)
+    app.actions['actionResetCameraLidar'].connect('triggered()', resetCameraLidar)
+    addShortcuts("Ctrl+Alt+v",resetCameraLidar)
+
     # Restore action states from settings
     settings = getPVSettings()
     app.actions['actionIgnoreZeroDistances'].setChecked(int(settings.value('LidarPlugin/IgnoreZeroDistances', 1)))
     app.actions['actionHideDropPoints'].setChecked(int(settings.value('LidarPlugin/HideDropPoints', 1)))
     app.actions['actionIntraFiringAdjust'].setChecked(int(settings.value('LidarPlugin/IntraFiringAdjust', 1)))
     app.actions['actionIgnoreEmptyFrames'].setChecked(int(settings.value('LidarPlugin/IgnoreEmptyFrames', 1)))
-
 
     advanceMode = int(settings.value("LidarPlugin/AdvanceFeature/Enable", 0))
     if not advanceMode:
