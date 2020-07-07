@@ -1,5 +1,4 @@
 include:
   - project: 'LidarView/lidarview-core'
-    file: 'CI/.gitlab-ci.yml'
+    file: 'CI/.gitlab-ci-for-lidarview.yml'
     ref: master
-
