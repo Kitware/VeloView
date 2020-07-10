@@ -933,7 +933,7 @@ def resetCameraLidar():
     view.CameraFocalPoint = [0,0,0]
     view.CameraViewUp = [0, 0, 1]
 
-    # Position at 30° [0, -(squareRoot(3)/2)*L, (1/2)*L]
+    # Position at 30 degrees [0, -(squareRoot(3)/2)*L, (1/2)*L]
     L = 100
     view.CameraPosition = [0, -0.866025 * L, (1.0/2.0) * L]
 
