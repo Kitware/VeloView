@@ -1958,11 +1958,6 @@ def setupActions():
     app.actions['actionSelectDualReturn'].connect('triggered()',toggleSelectDualReturn)
     app.actions['actionSelectDualReturn2'].connect('triggered()',toggleSelectDualReturn)
 
-    app.actions['actionResetCenterToLidarCenter'].connect('triggered()', resetCenterToLidarCenter)
-    addShortcuts("Ctrl+Alt+l",resetCenterToLidarCenter)
-    app.actions['actionResetCameraLidar'].connect('triggered()', resetCameraLidar)
-    addShortcuts("Ctrl+Alt+v",resetCameraLidar)
-
     # Restore action states from settings
     settings = getPVSettings()
     app.actions['actionIgnoreZeroDistances'].setChecked(int(settings.value('LidarPlugin/IgnoreZeroDistances', 1)))

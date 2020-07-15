@@ -402,6 +402,18 @@ void pqLidarViewManager::onOpenSensor()
 }
 
 //-----------------------------------------------------------------------------
+void pqLidarViewManager::onResetCameraLidar()
+{
+  this->runPython("lv.resetCameraLidar()\n");
+}
+
+//-----------------------------------------------------------------------------
+void pqLidarViewManager::onResetCenterToLidarCenter()
+{
+  this->runPython("lv.resetCenterToLidarCenter()\n");
+}
+
+//-----------------------------------------------------------------------------
 pqServer* pqLidarViewManager::getActiveServer()
 {
   pqApplicationCore* app = pqApplicationCore::instance();

@@ -80,6 +80,8 @@ public slots:
   void onMeasurementGrid(bool gridVisible);
   void onEnableCrashAnalysis(bool crashAnalysisEnabled);
   void onResetDefaultSettings();
+  void onResetCameraLidar();
+  void onResetCenterToLidarCenter();
 
 signals:
 
