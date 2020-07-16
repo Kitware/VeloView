@@ -530,17 +530,10 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
         prep = smp.Show(processor)
     app.scene.UpdateAnimationUsingDataTimeSteps()
 
-    if positionFilename is None:
-        posreader = smp.VelodyneHDLPositionReader(guiName="Position",
-                                                  FileName=filename)
-        # wrapping not currently working for plugins:
-        # posreader.GetClientSideObject().SetShouldWarnOnWeirdGPSData(app.geolocationToolBar.visible)
-    else:
-        posreader = smp.ApplanixPositionReader(guiName="Position",
-                                               FileName=positionFilename)
+    posreader = smp.PositionOrientationReader(guiName='PositionData', FileName = filename)
 
     # wrapping not currently working for plugins:
-    # posreader.GetClientSideObject().SetCalibrationTransform(calibration.gpsTransform)
+    #posreader.GetClientSideObject().SetCalibrationTransform(calibration.gpsTransform)
     smp.Show(posreader)
     smp.Show(app.trailingFrame)
 
@@ -553,8 +546,11 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
         # app.positionPacketInfoLabel.setText(posreader.GetClientSideObject().GetTimeSyncInfo())
         pass
 
-    if posreader.GetClientSideObject().GetOutput().GetNumberOfPoints():
-        trange = posreader.GetPointDataInformation().GetArray('time').GetRange()
+    output0 = posreader.GetClientSideObject().GetOutput(0)
+    if output0.GetNumberOfPoints() != 0:
+
+        output1 = posreader.GetClientSideObject().GetOutputDataObject(1)
+        trange = output1.GetColumnByName("time").GetRange()
 
         # Setup scalar bar
         rep = smp.GetDisplayProperties(posreader)
