@@ -391,19 +391,25 @@ def openSensor():
     sensor.Interpreter.UseIntraFiringAdjustment = app.actions['actionIntraFiringAdjust'].isChecked()
 
     sensor.ListeningPort = LidarPort
-    sensor.GetClientSideObject().EnableGPSListening(True)
-    #sensor.GetClientSideObject().SetGPSPort(GPSPort)
-    sensor.GetClientSideObject().SetForwardedGPSPort(GPSForwardingPort)
-    sensor.GetClientSideObject().SetForwardedLidarPort(LIDARForwardingPort)
-    sensor.GetClientSideObject().SetIsForwarding(isForwarding)
-    sensor.GetClientSideObject().SetIsCrashAnalysing(calibration.isCrashAnalysing)
-    sensor.GetClientSideObject().SetForwardedIpAddress(ipAddressForwarding)
+    sensor.ForwardedPort = LIDARForwardingPort
+    sensor.IsForwarding = isForwarding
+    sensor.ForwardedIpAddress = ipAddressForwarding
+    sensor.IsCrashAnalysing = calibration.isCrashAnalysing
     sensor.Interpreter.GetClientSideObject().SetSensorTransform(sensorTransform)
     sensor.Interpreter.IgnoreZeroDistances = app.actions['actionIgnoreZeroDistances'].isChecked()
     sensor.Interpreter.HideDropPoints = app.actions['actionHideDropPoints'].isChecked()
     sensor.Interpreter.IgnoreEmptyFrames = app.actions['actionIgnoreEmptyFrames'].isChecked()
     sensor.UpdatePipeline()
     sensor.Start()
+
+    posOrSensor = smp.PositionOrientationStream(guiName='Position Orientation Data')
+    posOrSensor.ListeningPort = GPSPort
+    posOrSensor.ForwardedPort = GPSForwardingPort
+    posOrSensor.IsForwarding = isForwarding
+    posOrSensor.ForwardedIpAddress = ipAddressForwarding
+    posOrSensor.IsCrashAnalysing = calibration.isCrashAnalysing
+    posOrSensor.UpdatePipeline()
+    posOrSensor.Start()
 
     if SAMPLE_PROCESSING_MODE:
         processor = smp.ProcessingSample(sensor)
@@ -530,13 +536,12 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
         prep = smp.Show(processor)
     app.scene.UpdateAnimationUsingDataTimeSteps()
 
-    posreader = smp.PositionOrientationReader(guiName='PositionData', FileName = filename)
+    posreader = smp.PositionOrientationReader(guiName='Position Orientation Data', FileName = filename)
 
     # wrapping not currently working for plugins:
     #posreader.GetClientSideObject().SetCalibrationTransform(calibration.gpsTransform)
     smp.Show(posreader)
     smp.Show(app.trailingFrame)
-
     if positionFilename is None:
         # only VelodyneHDLReader provides this information
         # this information must be read after an update
