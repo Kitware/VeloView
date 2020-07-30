@@ -219,8 +219,6 @@
    <addaction name="actionMeasure"/>
    <addaction name="actionPlaneFit"/>
    <addaction name="separator"/>
-   <addaction name="actionResetCenterToLidarCenter"/>
-   <addaction name="actionResetCameraLidar"/>
   </widget>
   <widget class="QToolBar" name="geolocationToolbar">
    <property name="windowTitle">

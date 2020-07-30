@@ -45,7 +45,7 @@ def showDialog(mainWindow):
     appBitTag = mainWindow.windowTitle.split(" ")[2]
     dialog.windowTitle = "About " + appName + " ..."
     copyrightText = '''<h1>{0} {1} {2}</h1><br/>
-                       Copyright (c) 2013-2017, Velodyne Lidar,
+                       Copyright (c) 2013-2020, Velodyne Lidar,
                        Copyright (c) 2016-2020, Kitware<br />
                        Provided by <a href="http://velodynelidar.com/">Velodyne Lidar</a>, coded by <a href="https://www.kitware.com/">Kitware</a>.<br />
                        <br />

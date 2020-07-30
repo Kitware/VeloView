@@ -85,7 +85,7 @@ public:
   {
     this->Ui.setupUi(window);
     this->paraviewInit(window);
-    this->setupUi();
+    this->setupUi(window);
 
     QActionGroup* dualReturnFilterActions = new QActionGroup(window);
     dualReturnFilterActions->addAction(this->Ui.actionDualReturnModeDual);
@@ -331,7 +331,7 @@ private:
   }
 
   //-----------------------------------------------------------------------------
-  void setupUi()
+  void setupUi(vvMainWindow* window)
   {
     new pqRenderViewSelectionReaction(this->Ui.actionSelect_Visible_Points, this->MainView,
       pqRenderViewSelectionReaction::SELECT_SURFACE_POINTS);
@@ -360,6 +360,26 @@ private:
 
     connect(this->Ui.actionShowErrorDialog, SIGNAL(triggered()), pqApplicationCore::instance(),
       SLOT(showOutputWindow()));
+
+    // Add Reset Camera Lidar action to camera toolbar
+    QToolBar* cameraToolbar = window->findChild<QToolBar *>(QString("cameraToolbar"));
+    QAction* actionResetCameraLidar = new QAction();
+    actionResetCameraLidar->setIcon(QIcon(":/vvResources/Icons/pqResetCameraLidar.png"));
+    actionResetCameraLidar->setText("Reset camera view to predefined viewpoint - 30 degrees behind the grid center (Ctrl+Alt+v)");
+    actionResetCameraLidar->setShortcut(QKeySequence("Ctrl+Alt+v"));
+    connect(actionResetCameraLidar, SIGNAL(triggered()), pqLidarViewManager::instance(), SLOT(onResetCameraLidar()));
+    QAction* position1 = (cameraToolbar->actions())[1];
+    cameraToolbar->insertAction(position1, actionResetCameraLidar);
+
+    // Add Reset Center to Lidar center action to axes toolbar
+    QToolBar* axesToolbar = window->findChild<QToolBar *>(QString("axesToolbar"));
+    QAction* actionResetCenterToLidarCenter = new QAction();
+    actionResetCenterToLidarCenter->setIcon(QIcon(":/vvResources/Icons/pqResetCenterLidar.png"));
+    actionResetCenterToLidarCenter->setText("Reset center to lidar (Ctrl+Alt+l)");
+    actionResetCenterToLidarCenter->setShortcut(QKeySequence("Ctrl+Alt+l"));
+    connect(actionResetCenterToLidarCenter, SIGNAL(triggered()), pqLidarViewManager::instance(), SLOT(onResetCenterToLidarCenter()));
+    QAction* position2 = (axesToolbar->actions())[2];
+    axesToolbar->insertAction(position2, actionResetCenterToLidarCenter);
   }
 };
 
