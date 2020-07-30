@@ -29,6 +29,7 @@
 #include "ui_vvMainWindow.h"
 #include "lqSpreadSheetManager.h"
 #include "vvLoadDataReaction.h"
+#include "lqStreamRecordReaction.h"
 
 #include <vtkSMProxyManager.h>
 #include <vtkSMSessionProxyManager.h>
@@ -233,6 +234,8 @@ private:
         }
       }
     }
+
+    new lqStreamRecordReaction(this->Ui.actionRecord);
 
     this->MainView =
       qobject_cast<pqRenderView*>(this->Builder->createView(pqRenderView::renderViewType(), this->Server));
