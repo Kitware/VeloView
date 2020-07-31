@@ -116,6 +116,8 @@
     <addaction name="separator"/>
     <addaction name="menuProcessing_Options"/>
     <addaction name="separator"/>
+    <addaction name="actionRecord"/>
+    <addaction name="separator"/>
     <addaction name="separator"/>
     <addaction name="actionPython_Console"/>
     <addaction name="actionShowErrorDialog"/>
@@ -899,6 +901,33 @@
     <string>Show the GPS Track</string>
    </property>
   </action>
+  <action name="actionResetCenterToLidarCenter">
+   <property name="icon">
+    <iconset resource="vvResources.qrc">
+     <normaloff>:/vvResources/Icons/pqResetCenterLidar.png</normaloff>:/vvResources/Icons/pqResetCenterLidar.png</iconset>
+   </property>
+   <property name="text">
+    <string>Reset center to lidar (Ctrl+Alt+l)</string>
+   </property>
+   </action>
+  <action name="actionResetCameraLidar">
+   <property name="icon">
+    <iconset resource="vvResources.qrc">
+     <normaloff>:/vvResources/Icons/pqResetCameraLidar.png</normaloff>:/vvResources/Icons/pqResetCameraLidar.png</iconset>
+   </property>
+   <property name="text">
+    <string>Reset camera view to predefined viewpoint - 30 degrees behind the grid center (Ctrl+Alt+v)</string>
+   </property>
+   </action>
+   <action name="actionRecord">
+    <property name="icon">
+     <iconset resource="Ui/Widgets/images/resources.qrc">
+      <normaloff>:/LidarViewPlugin/media-record.png</normaloff>:/LidarViewPlugin/media-record.png</iconset>
+    </property>
+    <property name="text">
+     <string>Record</string>
+    </property>
+   </action>
  </widget>
  <customwidgets>
   <customwidget>

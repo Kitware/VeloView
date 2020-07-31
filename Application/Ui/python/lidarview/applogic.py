@@ -154,7 +154,6 @@ def openData(filename):
     app.actions['actionSavePCAP'].setEnabled(False)
     app.actions['actionChoose_Calibration_File'].setEnabled(False)
     app.actions['actionCropReturns'].setEnabled(False)
-    app.actions['actionRecord'].setEnabled(False)
     app.actions['actionDualReturnModeDual'].enabled = True
     app.actions['actionDualReturnDistanceNear'].enabled = True
     app.actions['actionDualReturnDistanceFar'].enabled = True
@@ -391,19 +390,25 @@ def openSensor():
     sensor.Interpreter.UseIntraFiringAdjustment = app.actions['actionIntraFiringAdjust'].isChecked()
 
     sensor.ListeningPort = LidarPort
-    sensor.GetClientSideObject().EnableGPSListening(True)
-    #sensor.GetClientSideObject().SetGPSPort(GPSPort)
-    sensor.GetClientSideObject().SetForwardedGPSPort(GPSForwardingPort)
-    sensor.GetClientSideObject().SetForwardedLidarPort(LIDARForwardingPort)
-    sensor.GetClientSideObject().SetIsForwarding(isForwarding)
-    sensor.GetClientSideObject().SetIsCrashAnalysing(calibration.isCrashAnalysing)
-    sensor.GetClientSideObject().SetForwardedIpAddress(ipAddressForwarding)
+    sensor.ForwardedPort = LIDARForwardingPort
+    sensor.IsForwarding = isForwarding
+    sensor.ForwardedIpAddress = ipAddressForwarding
+    sensor.IsCrashAnalysing = calibration.isCrashAnalysing
     sensor.Interpreter.GetClientSideObject().SetSensorTransform(sensorTransform)
     sensor.Interpreter.IgnoreZeroDistances = app.actions['actionIgnoreZeroDistances'].isChecked()
     sensor.Interpreter.HideDropPoints = app.actions['actionHideDropPoints'].isChecked()
     sensor.Interpreter.IgnoreEmptyFrames = app.actions['actionIgnoreEmptyFrames'].isChecked()
     sensor.UpdatePipeline()
     sensor.Start()
+
+    posOrSensor = smp.PositionOrientationStream(guiName='Position Orientation Data')
+    posOrSensor.ListeningPort = GPSPort
+    posOrSensor.ForwardedPort = GPSForwardingPort
+    posOrSensor.IsForwarding = isForwarding
+    posOrSensor.ForwardedIpAddress = ipAddressForwarding
+    posOrSensor.IsCrashAnalysing = calibration.isCrashAnalysing
+    posOrSensor.UpdatePipeline()
+    posOrSensor.Start()
 
     if SAMPLE_PROCESSING_MODE:
         processor = smp.ProcessingSample(sensor)
@@ -447,7 +452,6 @@ def openSensor():
     app.actions['actionDualReturnDistanceFar'].enabled = True
     app.actions['actionDualReturnIntensityHigh'].enabled = True
     app.actions['actionDualReturnIntensityLow'].enabled = True
-    app.actions['actionRecord'].enabled = True
 
     updateUIwithNewLidar()
     smp.Render()
@@ -530,20 +534,12 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
         prep = smp.Show(processor)
     app.scene.UpdateAnimationUsingDataTimeSteps()
 
-    if positionFilename is None:
-        posreader = smp.VelodyneHDLPositionReader(guiName="Position",
-                                                  FileName=filename)
-        # wrapping not currently working for plugins:
-        # posreader.GetClientSideObject().SetShouldWarnOnWeirdGPSData(app.geolocationToolBar.visible)
-    else:
-        posreader = smp.ApplanixPositionReader(guiName="Position",
-                                               FileName=positionFilename)
+    posreader = smp.PositionOrientationReader(guiName='Position Orientation Data', FileName = filename)
 
     # wrapping not currently working for plugins:
-    # posreader.GetClientSideObject().SetCalibrationTransform(calibration.gpsTransform)
+    #posreader.GetClientSideObject().SetCalibrationTransform(calibration.gpsTransform)
     smp.Show(posreader)
     smp.Show(app.trailingFrame)
-
     if positionFilename is None:
         # only VelodyneHDLReader provides this information
         # this information must be read after an update
@@ -553,8 +549,11 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
         # app.positionPacketInfoLabel.setText(posreader.GetClientSideObject().GetTimeSyncInfo())
         pass
 
-    if posreader.GetClientSideObject().GetOutput().GetNumberOfPoints():
-        trange = posreader.GetPointDataInformation().GetArray('time').GetRange()
+    output0 = posreader.GetClientSideObject().GetOutput(0)
+    if output0.GetNumberOfPoints() != 0:
+
+        output1 = posreader.GetClientSideObject().GetOutputDataObject(1)
+        trange = output1.GetColumnByName("time").GetRange()
 
         # Setup scalar bar
         rep = smp.GetDisplayProperties(posreader)
@@ -583,7 +582,6 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
 
     enableSaveActions()
     addRecentFile(filename)
-    app.actions['actionRecord'].setEnabled(False)
 
     # Always enable dual return mode selection. A warning will be raised if
     # there's no dual return on the current frame later on
@@ -1144,7 +1142,6 @@ def close():
     app.filenameLabel.setText('')
     app.statusLabel.setText('')
     disableSaveActions()
-    app.actions['actionRecord'].setChecked(False)
     app.actions['actionDualReturnModeDual'].setChecked(True)
 
     app.actions['actionSelectDualReturn'].enabled = False
@@ -1174,44 +1171,6 @@ def enableSaveActions():
 def disableSaveActions():
     _setSaveActionsEnabled(False)
     app.actions['actionSavePositionCSV'].setEnabled(False)
-
-
-def recordFile(filename):
-
-    sensor = getSensor()
-    if sensor:
-        stopStream()
-        sensor.OutputFile = filename
-        app.statusLabel.setText('  Recording file: %s.' % os.path.basename(filename))
-        startStream()
-
-
-def onRecord():
-
-    recordAction = app.actions['actionRecord']
-
-    if not recordAction.isChecked():
-        stopRecording()
-
-    else:
-
-        fileName = getSaveFileName('Choose Output File', 'pcap', getDefaultSaveFileName('pcap'))
-        if not fileName:
-            recordAction.setChecked(False)
-            return
-
-        recordFile(fileName)
-    recordAction.setChecked(recordAction.isChecked())
-
-
-def stopRecording():
-
-    app.statusLabel.setText('')
-    sensor = getSensor()
-    if sensor:
-        stopStream()
-        sensor.OutputFile = ''
-        startStream()
 
 
 def startStream():
@@ -1911,12 +1870,6 @@ def setupActions():
     for a in actions:
         app.actions[a.objectName] = a
 
-    app.actions['actionRecord'] = QtGui.QAction( \
-      QtGui.QIcon(QtGui.QPixmap(':/LidarViewPlugin/media-record.png')), \
-      "actionRecord",\
-      mW)
-    app.actions['actionRecord'].setCheckable(True)
-
     app.actions['actionAdvanceFeature'].connect('triggered()', onToogleAdvancedGUI)
 
     app.actions['actionIgnoreZeroDistances'].connect('triggered()', onIgnoreZeroDistances)
@@ -1927,7 +1880,6 @@ def setupActions():
     app.actions['actionPlaneFit'].connect('triggered()', planeFit)
 
     app.actions['actionClose'].connect('triggered()', close)
-    app.actions['actionRecord'].connect('triggered()', onRecord)
     app.actions['actionSaveCSV'].connect('triggered()', onSaveCSV)
     app.actions['actionSavePositionCSV'].connect('triggered()', onSavePosition)
     app.actions['actionSaveLAS'].connect('triggered()', onSaveLAS)
@@ -2003,7 +1955,9 @@ def setupActions():
     # Setup and add the playback speed control toolbar
     timeToolBar = mW.findChild('QToolBar','Player Control')
 
+    # Place the record button at the right place
     timeToolBar.addAction(app.actions['actionRecord'])
+
     spinBoxLabel = QtGui.QLabel('TF:')
     spinBoxLabel.toolTip = "Number of trailing frames"
     timeToolBar.addWidget(spinBoxLabel)
