@@ -453,6 +453,10 @@ def openSensor():
     app.actions['actionDualReturnIntensityHigh'].enabled = True
     app.actions['actionDualReturnIntensityLow'].enabled = True
 
+    # Hide Position Orientation Stream by default and select lidarStream as active source
+    smp.SetActiveSource(sensor)
+    smp.Hide(posOrSensor)
+
     updateUIwithNewLidar()
     smp.Render()
     colorByIntensity(sensor)
