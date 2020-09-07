@@ -192,6 +192,15 @@ foreach (qt5_plugin_path IN LISTS qt5_plugin_paths)
     SEARCH_DIRECTORIES  "${library_paths}")
 endforeach ()
 
+# Install all auto-loaded plugins located in bin/VeloView.app/Contents/MacOS/plugins and their dependencies
+file(GLOB lv_plugins "${superbuild_install_location}/bin/${lidarview_appname}/Contents/MacOS/plugins/*.dylib")
+foreach (lv_plugin IN LISTS lv_plugins)
+  superbuild_apple_install_module(
+    "\${CMAKE_INSTALL_PREFIX}"
+    "${lidarview_appname}"
+    "${lv_plugin}"
+    "Contents/MacOS/plugins")
+endforeach ()
 
 install(DIRECTORY "${superbuild_install_location}/bin/${lidarview_appname}/Contents/Resources"
   DESTINATION "${lidarview_appname}/Contents"

@@ -155,6 +155,16 @@ install(FILES ${pointcloud_dll}
 )
 unset(pointcloud_dll)
 
+# Install all auto-loaded plugins located in bin/plugins and their dependencies
+file(GLOB lv_plugins "${superbuild_install_location}/bin/plugins/*.dll")
+foreach (lv_plugin IN LISTS lv_plugins)
+  superbuild_windows_install_plugin(
+    "${lv_plugin}"
+    "bin"
+    "bin/plugins"
+    SEARCH_DIRECTORIES "${superbuild_install_location}/bin")
+endforeach ()
+
 set(CMAKE_INSTALL_SYSTEM_RUNTIME_DESTINATION "bin")
 include(InstallRequiredSystemLibraries)
 

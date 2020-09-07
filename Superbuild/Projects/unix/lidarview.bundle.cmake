@@ -55,6 +55,15 @@ install(FILES ${lib_files_so}
   COMPONENT superbuild)
 unset(lib_files_so)
 
+# Install all auto-loaded plugins located in lib/lidarview-version/plugins and their dependencies
+file(GLOB lv_plugins "${superbuild_install_location}/lib/lidarview-${VV_VERSION}/plugins/*.so*")
+foreach (lv_plugin IN LISTS lv_plugins)
+  superbuild_unix_install_plugin(
+    "${lv_plugin}"
+    "lib"
+    "lib/lidarview-${VV_VERSION}/plugins")
+endforeach ()
+
 install(FILES "${superbuild_install_location}/doc/VeloView_User_Guide.pdf"
   DESTINATION "doc"
   COMPONENT superbuild
