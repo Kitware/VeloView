@@ -63,6 +63,7 @@ public:
   void saveAdvancedConfiguration();
   void saveForwardIpAddress();
   void saveIsCrashAnalysing();
+  void saveEnableInterpretGPSPackets();
 
   void restoreSensorTransform();
   void restoreGpsTransform();
@@ -74,6 +75,7 @@ public:
   void restoreAdvancedConfiguration();
   void restoreForwardIpAddress();
   void restoreCrashAnalysing();
+  void restoreEnableInterpretGPSPackets();
 
   pqSettings* const Settings;
   QStringList BuiltInCalibrationFiles;
@@ -220,6 +222,30 @@ void vvCalibrationDialog::pqInternal::restoreCrashAnalysing()
     this->CrashAnalysisCheckBox->setChecked(this->Settings
                                    ->value("LidarPlugin/CalibrationFileDialog/IsCrashAnalysing",
                                      this->CrashAnalysisCheckBox->isChecked())
+                                   .toBool());
+  }
+}
+
+//-----------------------------------------------------------------------------
+void vvCalibrationDialog::pqInternal::saveEnableInterpretGPSPackets()
+{
+  // Only save the state if the Interpreter GPS Packet is enabled
+  if (this->EnableInterpretGPSPackets->isEnabled())
+  {
+    this->Settings->setValue(
+      "LidarPlugin/CalibrationFileDialog/EnableInterpretGPSPackets", this->EnableInterpretGPSPackets->isChecked());
+  }
+}
+
+//-----------------------------------------------------------------------------
+void vvCalibrationDialog::pqInternal::restoreEnableInterpretGPSPackets()
+{
+  // Only restore the state if the Interpreter GPS Packet is enabled
+  if (this->EnableInterpretGPSPackets->isEnabled())
+  {
+    this->EnableInterpretGPSPackets->setChecked(this->Settings
+                                   ->value("LidarPlugin/CalibrationFileDialog/EnableInterpretGPSPackets",
+                                     this->EnableInterpretGPSPackets->isChecked())
                                    .toBool());
   }
 }
@@ -396,6 +422,10 @@ vvCalibrationDialog::vvCalibrationDialog(QWidget* p)
   this->Internal->CrashAnalysisCheckBox->setEnabled(true);
   this->Internal->CrashAnalysisCheckBox->setChecked(false);
 
+  this->Internal->EnableInterpretGPSPackets->setVisible(true);
+  this->Internal->EnableInterpretGPSPackets->setEnabled(true);
+  this->Internal->EnableInterpretGPSPackets->setChecked(false);
+
   liveCalibrationItem->setText("HDL64 Live Corrections");
   liveCalibrationItem->setToolTip("Get Corrections from the data stream");
   liveCalibrationItem->setData(Qt::UserRole, "");
@@ -444,6 +474,8 @@ vvCalibrationDialog::vvCalibrationDialog(QWidget* p)
   this->Internal->restoreLidarForwardingPort();
   this->Internal->restoreForwardIpAddress();
   this->Internal->restoreCrashAnalysing();
+  this->Internal->restoreEnableInterpretGPSPackets();
+  this->Internal->restoreEnableForwarding();
   this->Internal->restoreAdvancedConfiguration();
 
   const QVariant& geometry =
@@ -529,6 +561,12 @@ QString vvCalibrationDialog::selectedCalibrationFile() const
 bool vvCalibrationDialog::isCrashAnalysing() const
 {
   return this->Internal->CrashAnalysisCheckBox->isChecked();
+}
+
+//-----------------------------------------------------------------------------
+bool vvCalibrationDialog::isEnableInterpretGPSPackets() const
+{
+  return this->Internal->EnableInterpretGPSPackets->isChecked();
 }
 
 //-----------------------------------------------------------------------------
@@ -734,6 +772,8 @@ void vvCalibrationDialog::accept()
   this->Internal->saveAdvancedConfiguration();
   this->Internal->saveForwardIpAddress();
   this->Internal->saveIsCrashAnalysing();
+  this->Internal->saveEnableInterpretGPSPackets();
+
   QDialog::accept();
 }
 
