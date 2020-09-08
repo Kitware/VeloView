@@ -337,6 +337,7 @@ def chooseCalibration(calibrationFilename=None):
             self.sensorTransform = vtk.vtkTransform()
             self.gpsTransform = vtk.vtkTransform()
             self.isCrashAnalysing = dialog.isCrashAnalysing()
+            self.isEnableInterpretGPSPackets = dialog.isEnableInterpretGPSPackets()
 
             qm = dialog.sensorTransform()
             vmLidar = vtk.vtkMatrix4x4()
@@ -401,14 +402,15 @@ def openSensor():
     sensor.UpdatePipeline()
     sensor.Start()
 
-    posOrSensor = smp.PositionOrientationStream(guiName='Position Orientation Data')
-    posOrSensor.ListeningPort = GPSPort
-    posOrSensor.ForwardedPort = GPSForwardingPort
-    posOrSensor.IsForwarding = isForwarding
-    posOrSensor.ForwardedIpAddress = ipAddressForwarding
-    posOrSensor.IsCrashAnalysing = calibration.isCrashAnalysing
-    posOrSensor.UpdatePipeline()
-    posOrSensor.Start()
+    if calibration.isEnableInterpretGPSPackets :
+        posOrSensor = smp.PositionOrientationStream(guiName='Position Orientation Data')
+        posOrSensor.ListeningPort = GPSPort
+        posOrSensor.ForwardedPort = GPSForwardingPort
+        posOrSensor.IsForwarding = isForwarding
+        posOrSensor.ForwardedIpAddress = ipAddressForwarding
+        posOrSensor.IsCrashAnalysing = calibration.isCrashAnalysing
+        posOrSensor.UpdatePipeline()
+        posOrSensor.Start()
 
     if SAMPLE_PROCESSING_MODE:
         processor = smp.ProcessingSample(sensor)
@@ -455,7 +457,6 @@ def openSensor():
 
     # Hide Position Orientation Stream by default and select lidarStream as active source
     smp.SetActiveSource(sensor)
-    smp.Hide(posOrSensor)
 
     updateUIwithNewLidar()
     smp.Render()
@@ -538,45 +539,46 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
         prep = smp.Show(processor)
     app.scene.UpdateAnimationUsingDataTimeSteps()
 
-    posreader = smp.PositionOrientationReader(guiName='Position Orientation Data', FileName = filename)
+    if calibration.isEnableInterpretGPSPackets :
+        posreader = smp.PositionOrientationReader(guiName='Position Orientation Data', FileName = filename)
 
-    # wrapping not currently working for plugins:
-    #posreader.GetClientSideObject().SetCalibrationTransform(calibration.gpsTransform)
-    smp.Show(posreader)
-    smp.Show(app.trailingFrame)
-    if positionFilename is None:
-        # only VelodyneHDLReader provides this information
-        # this information must be read after an update
-        # GetTimeSyncInfo() has the side effect of showing a message in the error
-        # console in the cases where the timeshift if computed
         # wrapping not currently working for plugins:
-        # app.positionPacketInfoLabel.setText(posreader.GetClientSideObject().GetTimeSyncInfo())
-        pass
+        #posreader.GetClientSideObject().SetCalibrationTransform(calibration.gpsTransform)
+        smp.Show(posreader)
 
-    output0 = posreader.GetClientSideObject().GetOutput(0)
-    if output0.GetNumberOfPoints() != 0:
+        if positionFilename is None:
+            # only VelodyneHDLReader provides this information
+            # this information must be read after an update
+            # GetTimeSyncInfo() has the side effect of showing a message in the error
+            # console in the cases where the timeshift if computed
+            # wrapping not currently working for plugins:
+            # app.positionPacketInfoLabel.setText(posreader.GetClientSideObject().GetTimeSyncInfo())
+            pass
 
-        output1 = posreader.GetClientSideObject().GetOutputDataObject(1)
-        trange = output1.GetColumnByName("time").GetRange()
+        output0 = posreader.GetClientSideObject().GetOutput(0)
+        if output0.GetNumberOfPoints() != 0:
 
-        # Setup scalar bar
-        rep = smp.GetDisplayProperties(posreader)
-        rep.ColorArrayName = 'time'
-        rgbPoints = [trange[0], 0.0, 0.0, 1.0,
-                     trange[1], 1.0, 0.0, 0.0]
-        rep.LookupTable = smp.GetLookupTableForArray('time', 1,
-                                                     RGBPoints=rgbPoints,
-                                                     ScalarRangeInitialized=1.0)
-        sb = smp.CreateScalarBar(LookupTable=rep.LookupTable, Title='Time')
-        sb.Orientation = 'Horizontal'
-        app.position = posreader
-        if not app.actions['actionShowPosition'].isChecked():
-            smp.Hide(app.position)
-    else:
-        if positionFilename is not None:
-            QtGui.QMessageBox.warning(getMainWindow(), 'Georeferencing data invalid',
-                                      'File %s is empty or not supported' % positionFilename)
-        smp.Delete(posreader)
+            output1 = posreader.GetClientSideObject().GetOutputDataObject(1)
+            trange = output1.GetColumnByName("time").GetRange()
+
+            # Setup scalar bar
+            rep = smp.GetDisplayProperties(posreader)
+            rep.ColorArrayName = 'time'
+            rgbPoints = [trange[0], 0.0, 0.0, 1.0,
+                         trange[1], 1.0, 0.0, 0.0]
+            rep.LookupTable = smp.GetLookupTableForArray('time', 1,
+                                                         RGBPoints=rgbPoints,
+                                                         ScalarRangeInitialized=1.0)
+            sb = smp.CreateScalarBar(LookupTable=rep.LookupTable, Title='Time')
+            sb.Orientation = 'Horizontal'
+            app.position = posreader
+            if not app.actions['actionShowPosition'].isChecked():
+                smp.Hide(app.position)
+        else:
+            if positionFilename is not None:
+                QtGui.QMessageBox.warning(getMainWindow(), 'Georeferencing data invalid',
+                                          'File %s is empty or not supported' % positionFilename)
+            smp.Delete(posreader)
 
     smp.SetActiveView(app.mainView)
 

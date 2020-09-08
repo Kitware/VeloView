@@ -403,6 +403,16 @@
         </property>
        </widget>
       </item>
+      <item row="3" column="0">
+       <widget class="QCheckBox" name="EnableInterpretGPSPackets">
+        <property name="enabled">
+         <bool>true</bool>
+        </property>
+        <property name="text">
+         <string>Enable interpreting GPS packets</string>
+        </property>
+       </widget>
+      </item>
      </layout>
     </widget>
    </item>
