@@ -379,7 +379,12 @@ def openSensor():
     app.grid = createGrid()
 
     sensor = smp.LidarStream(guiName='Data', CalibrationFile=calibrationFile)
-    sensor.Interpreter = 'Velodyne Meta Interpreter'
+
+    if "velarray" in calibrationFile.lower():
+        sensor.Interpreter = 'Velodyne Special Velarray Interpreter'
+    else :
+        sensor.Interpreter = 'Velodyne Meta Interpreter'
+
     sensor.Interpreter.UseIntraFiringAdjustment = app.actions['actionIntraFiringAdjust'].isChecked()
 
     sensor.ListeningPort = LidarPort
@@ -491,7 +496,12 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
                              FileName = filename,
                              CalibrationFile = calibrationFile,
                              )
-    reader.Interpreter = 'Velodyne Meta Interpreter'
+
+    if "velarray" in calibrationFile.lower():
+        reader.Interpreter = 'Velodyne Special Velarray Interpreter'
+    else :
+        reader.Interpreter = 'Velodyne Meta Interpreter'
+
     reader.Interpreter.UseIntraFiringAdjustment = app.actions['actionIntraFiringAdjust'].isChecked()
 
     reader.UpdatePipelineInformation()
