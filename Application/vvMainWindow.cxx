@@ -30,6 +30,8 @@
 #include "lqSpreadSheetManager.h"
 #include "vvLoadDataReaction.h"
 #include "lqStreamRecordReaction.h"
+#include "lqSaveLidarStateReaction.h"
+#include "lqLoadLidarStateReaction.h"
 
 #include <vtkSMProxyManager.h>
 #include <vtkSMSessionProxyManager.h>
@@ -248,6 +250,10 @@ private:
     // MultiSamples doesn't work, we need to set that up before registering the proxy.
     // vtkSMPropertyHelper(view->getProxy(),"MultiSamples").Set(1);
     this->MainView->getProxy()->UpdateVTKObjects();
+
+    // Add save/load lidar state action
+    new lqSaveLidarStateReaction(this->Ui.actionSaveLidarState);
+    new lqLoadLidarStateReaction(this->Ui.actionLoadLidarState);
 
     // Specify each Properties Panel as we do want to present one panel per dock
     this->Ui.propertiesPanel->setPanelMode(pqPropertiesPanel::SOURCE_PROPERTIES);
