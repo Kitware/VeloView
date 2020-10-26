@@ -36,8 +36,8 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/applicationui_export.h DESTINATION ${V
 # install libraries
 if (APPLE)
   install(TARGETS ApplicationUi
-          RUNTIME DESTINATION ${VV_INSTALL_RUNTIME_DIR}/${SOFTWARE_NAME}.app/Contents/Libraries
-          LIBRARY DESTINATION ${VV_INSTALL_RUNTIME_DIR}/${SOFTWARE_NAME}.app/Contents/Libraries
+          RUNTIME DESTINATION ${VV_INSTALL_LIBRARY_DIR}
+          LIBRARY DESTINATION ${VV_INSTALL_LIBRARY_DIR}
           COMPONENT Runtime)
 else()
   install(TARGETS ApplicationUi

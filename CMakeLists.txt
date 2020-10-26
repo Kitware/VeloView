@@ -114,12 +114,12 @@ SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 set(VV_INSTALL_RUNTIME_DIR bin)
 if (WIN32)
   set(VV_INSTALL_LIBRARY_DIR bin)
+elseif(APPLE)
+  set(VV_INSTALL_LIBRARY_DIR bin/${SOFTWARE_NAME}.app/Contents/Libraries)
 else()
-  set(VV_INSTALL_LIBRARY_DIR
-    lib/lidarview-${VV_VERSION_MAJOR}.${VV_VERSION_MINOR})
+  set(VV_INSTALL_LIBRARY_DIR lib/lidarview-${VV_VERSION_MAJOR}.${VV_VERSION_MINOR})
 endif()
-set(VV_INSTALL_ARCHIVE_DIR
-    lib/lidarview-${VV_VERSION_MAJOR}.${VV_VERSION_MINOR})
+set(VV_INSTALL_ARCHIVE_DIR lib/lidarview-${VV_VERSION_MAJOR}.${VV_VERSION_MINOR})
 
 # Find and include PythonQt
 find_package(PythonQt REQUIRED)
