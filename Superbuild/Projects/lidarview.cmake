@@ -1,5 +1,5 @@
 superbuild_add_project(lidarview
-  DEPENDS paraview qt5 pcap boost eigen liblas yaml
+  DEPENDS paraview qt5 pcap boost eigen liblas yaml python python2 pythonqt
   DEPENDS_OPTIONAL pcl ceres opencv nanoflann g2o
   DEFAULT_ON
   CMAKE_ARGS

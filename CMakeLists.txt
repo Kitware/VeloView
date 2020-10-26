@@ -86,8 +86,15 @@ endif()
 include(CTest)
 
 find_package(ParaView REQUIRED)
-find_package(PythonInterp 2 REQUIRED)
-find_package(PythonLibs 2 REQUIRED)
+
+# Include findpythonlibs to get the function PYTHON_ADD_MODULE
+# needed in WRAP_PLUGIN_FOR_PYTHON
+# Warning : Do not use find_package(PythonLibs) because it reset 
+# some PYTHON paths that can enter in conflicts with those found
+# during the superbuild (specially right on APPLE when a second
+# python version has been installed using homebrew)
+include(FindPythonLibs)
+find_package(Python2 2.7 QUIET REQUIRED COMPONENTS Interpreter)
 set(Python_VERSION "${Python2_VERSION_MAJOR}.${Python2_VERSION_MINOR}")
 
 include(${PARAVIEW_USE_FILE})
