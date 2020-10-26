@@ -30,10 +30,17 @@ from vtk import vtkXMLPolyDataWriter
 import lidarviewcore.kiwiviewerExporter
 import gridAdjustmentDialog
 import aboutDialog
-import planefit
 import bisect
 
 from PythonQt.paraview import vvCalibrationDialog, vvCropReturnsDialog, vvSelectFramesDialog
+
+# import the vtk wrapping of the Lidar Plugin
+# this enable to get the specific vtkObject behind a proxy via GetClientSideObject()
+# without this plugin, GetClientSideObject(), would return the first mother class known by paraview
+import LidarPluginPython
+
+import planefit
+
 
 _repCache = {}
 
