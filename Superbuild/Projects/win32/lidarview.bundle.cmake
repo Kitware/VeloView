@@ -10,20 +10,13 @@ set(CPACK_NSIS_HELP_LINK "https://www.paraview.org/lidarview/")
 set(${SOFTWARE_NAME}_description "${SOFTWARE_NAME} ${lidarview_version_full}")
 set(CPACK_NSIS_MUI_ICON "${CMAKE_CURRENT_LIST_DIR}/../../../Application/SoftwareInformation/logo.ico")
 
+set(library_paths "${superbuild_install_location}/lib"
+                  "${superbuild_install_location}/bin"
+                  "${superbuild_install_location}/Python")
+
 if (Qt5_DIR)
   list(APPEND library_paths
     "${Qt5_DIR}/../../../bin")
-endif ()
-
-set(exclude_regexes)
-if (python2_enabled)
-  if (python2_built_by_superbuild)
-    list(APPEND library_paths
-      "${superbuild_install_location}/Python")
-  else()
-    list(APPEND exclude_regexes
-        ".*python3[0-9]+.dll")
-  endif()
 endif ()
 
 # Install lidarview executables to bin.
@@ -45,9 +38,18 @@ if (EXISTS "${superbuild_install_location}/bin/lidarview.conf")
     COMPONENT   "runtime")
 endif ()
 
+# install paraview plugins
+foreach (paraview_plugin_path IN LISTS paraview_plugin_paths)
+  superbuild_windows_install_plugin("${paraview_plugin_path}"
+    "bin"
+    "${paraview_plugin_subdir}"
+    SEARCH_DIRECTORIES "${library_paths}"
+    LOCATION "${paraview_plugin_subdir}")
+endforeach ()
 
-
-
+install(FILES       "${plugins_file}"
+        DESTINATION ${paraview_plugin_subdir}
+        COMPONENT   superbuild)
 
 if (python3_enabled)
   if (python3_built_by_superbuild)
@@ -59,10 +61,7 @@ if (python3_enabled)
     MODULES ${python_modules}
     MODULE_DIRECTORIES  "${superbuild_install_location}/bin/Lib"
                         "${superbuild_install_location}/bin/Lib/site-packages"
-    SEARCH_DIRECTORIES  "${superbuild_install_location}/lib"
-                        "${superbuild_install_location}/bin"
-                        "${superbuild_install_location}/Python"
-    EXCLUDE_REGEXES     ${exclude_regexes})
+    SEARCH_DIRECTORIES  "${library_paths}")
 endif ()
 
 foreach (qt5_plugin_path IN LISTS qt5_plugin_paths)
@@ -116,15 +115,6 @@ install(FILES ${boost_bin_dll}
   COMPONENT superbuild
 )
 unset(boost_bin_dll)
-
-file(GLOB pointcloud_dll
-	"${superbuild_install_location}/bin/PointCloudPlugin.dll"
-	"${superbuild_install_location}/bin/EyeDomeLightingView.dll")
-install(FILES ${pointcloud_dll}
-  DESTINATION "bin"
-  COMPONENT superbuild
-)
-unset(pointcloud_dll)
 
 set(CMAKE_INSTALL_SYSTEM_RUNTIME_DESTINATION "bin")
 include(InstallRequiredSystemLibraries)

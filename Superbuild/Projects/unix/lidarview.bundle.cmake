@@ -1,53 +1,50 @@
-set(paraview_plugin_path "lib/paraview-${PARAVIEW_VERSION}/plugins")
 include(lidarview.bundle.common)
 
-set(library_paths "${superbuild_install_location}/lib")
+set(library_paths "${superbuild_install_location}/lib"
+                  "${superbuild_install_location}/lib/lidarview-${VV_VERSION_MAJOR}.${VV_VERSION_MINOR}"
+                  "${superbuild_install_location}/bin")
 
 if (Qt5_DIR)
   list(APPEND library_paths
     "${Qt5_DIR}/../..")
 endif ()
 
-set(include_regexes)
-set(exclude_regexes)
-
-
-
-file(GLOB paraview_so_names
-  "${superbuild_install_location}/lib/lib*.so*")
-foreach (paraview_so_name IN LISTS paraview_so_names)
-  superbuild_unix_install_plugin("${paraview_so_name}"
-    "lib"
-    "${lidarview_plugin_path}"
-    LOADER_PATHS "${library_paths}"
-    LOCATION     "lib")
-endforeach ()
-
 # Install lidarview executable.
 superbuild_unix_install_program_fwd("${SOFTWARE_NAME}"
-  "${lidarview_plugin_path}"
-  INCLUDE_REGEXES     ${include_regexes}
-  EXCLUDE_REGEXES     ${exclude_regexes})
+  "lib/lidarview-${VV_VERSION_MAJOR}.${VV_VERSION_MINOR}"
+  SEARCH_DIRECTORIES  "${library_paths}")
 
 # Install PacketFileSender executables.
 superbuild_unix_install_program("${superbuild_install_location}/bin/PacketFileSender"
   "lib"
-  SEARCH_DIRECTORIES  "${library_paths}"
-  INCLUDE_REGEXES     ${include_regexes}
-  EXCLUDE_REGEXES     ${exclude_regexes})
+  SEARCH_DIRECTORIES  "${library_paths}")
 
-# install everything under lidarview.
+# install paraview plugins
+foreach (paraview_plugin_path IN LISTS paraview_plugin_paths)
+  superbuild_unix_install_plugin("${paraview_plugin_path}"
+    "lib/lidarview-${VV_VERSION_MAJOR}.${VV_VERSION_MINOR}"
+    "${paraview_plugin_subdir}"
+    LOADER_PATHS  "${library_paths}"
+    LOCATION  "${paraview_plugin_subdir}")
+endforeach ()
+
+# install .plugins file list
+install(FILES       "${plugins_file}"
+        DESTINATION ${paraview_plugin_subdir}
+        COMPONENT   superbuild)
+
+# These module are not processed automatically by superbuild because there is 
+# no path leading to them in binary LidarView or in any of its .so dependencies
 file(GLOB so_names
   RELATIVE
-  "${superbuild_install_location}/${lidarview_plugin_path}"
-  "${superbuild_install_location}/${lidarview_plugin_path}/*.so*")
+  "${superbuild_install_location}/lib/lidarview-${VV_VERSION_MAJOR}.${VV_VERSION_MINOR}"
+  "${superbuild_install_location}/lib/lidarview-${VV_VERSION_MAJOR}.${VV_VERSION_MINOR}/*PluginPython*.so*")
 foreach (so_name IN LISTS so_names)
   superbuild_unix_install_plugin("${so_name}"
-    "${lidarview_plugin_path}"
-    "${lidarview_plugin_path}"
+    "lib/lidarview-${VV_VERSION_MAJOR}.${VV_VERSION_MINOR}"
+    "lib/lidarview-${VV_VERSION_MAJOR}.${VV_VERSION_MINOR}"
     LOADER_PATHS "${library_paths}"
-    LOCATION     "${lidarview_plugin_path}"
-    SEARCH_DIRECTORIES  "${library_paths}")
+    LOCATION  "lib/lidarview-${VV_VERSION_MAJOR}.${VV_VERSION_MINOR}")
 endforeach ()
 
 if (python_enabled)
@@ -57,19 +54,24 @@ if (python_enabled)
   endif ()
 
   superbuild_unix_install_python(
-    LIBDIR              "lib"
+    LIBDIR              "lib/lidarview-${VV_VERSION_MAJOR}.${VV_VERSION_MINOR}"
     MODULES             ${python_modules}
-    INCLUDE_REGEXES     ${include_regexes}
-    EXCLUDE_REGEXES     ${exclude_regexes}
     MODULE_DIRECTORIES  "${superbuild_install_location}/lib/python${superbuild_python_version}/site-packages"
     LOADER_PATHS        "${library_paths}")
 endif ()
 
+# An empty paraview directory is created as it is needed to run lidarview
+# This is because all plugins are now stored in the lib/lidarview-{version}/plugins directory
+file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/lib/paraview-${PARAVIEW_VERSION}")
+install(DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/lib/paraview-${PARAVIEW_VERSION}"
+        DESTINATION "lib"
+        COMPONENT   superbuild)
+        
 if (qt5_enabled AND qt5_plugin_paths)
   # install an empty qt.cong file
   file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/qt.conf" "[Paths]\nPrefix = ..\n")
-  install(FILES       "${CMAKE_CURRENT_BINARY_DIR}/qt.conf"
-  DESTINATION "lib"
+  install(FILES "${CMAKE_CURRENT_BINARY_DIR}/qt.conf"
+          DESTINATION "lib"
           COMPONENT   superbuild)
 endif()
 
@@ -79,19 +81,16 @@ foreach (qt5_plugin_path IN LISTS qt5_plugin_paths)
   get_filename_component(qt5_plugin_group "${qt5_plugin_group}" NAME)
 
   superbuild_unix_install_plugin("${qt5_plugin_path}"
-    "${lidarview_plugin_path}"
-    "${lidarview_plugin_path}/${qt5_plugin_group}/"
-    LOADER_PATHS    "${library_paths}"
-    INCLUDE_REGEXES     ${include_regexes}
-    EXCLUDE_REGEXES     ${exclude_regexes})
+    "lib/lidarview-${VV_VERSION_MAJOR}.${VV_VERSION_MINOR}"
+    "lib/lidarview-${VV_VERSION_MAJOR}.${VV_VERSION_MINOR}/${qt5_plugin_group}/"
+    LOADER_PATHS "${library_paths}")
 endforeach ()
 
 # Sensor calibration files
 file(GLOB shared_files "${superbuild_install_location}/share/*.xml")
 install(FILES ${shared_files}
-  DESTINATION "share"
-  COMPONENT superbuild
-)
+        DESTINATION "share"
+        COMPONENT superbuild)
 unset(shared_files)
 
 install(FILES "${superbuild_install_location}/doc/VeloView_User_Guide.pdf"

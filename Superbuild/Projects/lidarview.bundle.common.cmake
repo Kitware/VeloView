@@ -67,6 +67,59 @@ list(APPEND python_modules
   temporal_animation_cue_helpers
   example_temporal_animation
   example_non_temporal_animation)
+
+#auto load eye dome lighting plugin
+set(paraview_plugin_EyeDomeLightingView_auto_load ON)
+
+function (paraview_add_plugin output)
+  set(contents "<?xml version=\"1.0\"?>\n<Plugins>\n</Plugins>\n")
+  foreach (name IN LISTS ARGN)
+    set(auto_load 0)
+    if (DEFINED paraview_plugin_${name}_auto_load)
+      set(auto_load 1)
+    endif ()
+    set(plugin_directive "  <Plugin name=\"${name}\" auto_load=\"${auto_load}\" />\n")
+    string(REPLACE "</Plugins>" "${plugin_directive}</Plugins>" contents "${contents}")
+  endforeach ()
+  file(WRITE "${output}" "${contents}")
+endfunction ()
+
+
+# set the relative path in which we can find plugins for each platform 
+if (WIN32)
+  set(paraview_plugin_subdir "bin/plugins")
+elseif (APPLE)
+  set(paraview_plugin_subdir "bin/${SOFTWARE_NAME}.app/Contents/Plugins")
+elseif (UNIX)
+  set(paraview_plugin_subdir "lib/lidarview-${VV_VERSION_MAJOR}.${VV_VERSION_MINOR}/plugins")
+endif ()
+
+# get all plugins installed in the lib/lidarview install dir
+if(WIN32)
+  set(plugin_prefix "")
+  set(plugin_ext "dll")
+elseif(APPLE)
+  set(plugin_prefix "lib")
+  set(plugin_ext "dylib")
+else()
+  set(plugin_prefix "lib")
+  set(plugin_ext "so")
+endif()
+
+set(paraview_plugin_dir "${superbuild_install_location}/${paraview_plugin_subdir}")
+file(GLOB_RECURSE paraview_plugin_paths ${paraview_plugin_dir}/${plugin_prefix}*.${plugin_ext})
+
+# Get plugins name and set up the .plugins file list
+set(paraview_plugins)
+foreach(paraview_plugin_path ${paraview_plugin_paths})
+  get_filename_component(paraview_plugin "${paraview_plugin_path}" NAME_WE)  
+  string(REPLACE "${plugin_prefix}" "" paraview_plugin "${paraview_plugin}")
+  list(APPEND paraview_plugins ${paraview_plugin})
+endforeach()
+
+set(plugins_file "${CMAKE_CURRENT_BINARY_DIR}/.plugins")
+paraview_add_plugin("${plugins_file}" ${paraview_plugins})
+
 if (qt5_enabled)
   include(qt5.functions)
 
