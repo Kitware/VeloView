@@ -88,6 +88,8 @@ include(CTest)
 find_package(ParaView REQUIRED)
 find_package(PythonInterp 2 REQUIRED)
 find_package(PythonLibs 2 REQUIRED)
+set(Python_VERSION "${Python2_VERSION_MAJOR}.${Python2_VERSION_MINOR}")
+
 include(${PARAVIEW_USE_FILE})
 option(BUILD_SHARED_LIBS "Build shared libs" ON)
 
