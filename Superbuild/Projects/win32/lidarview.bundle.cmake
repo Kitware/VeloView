@@ -10,12 +10,20 @@ set(CPACK_NSIS_HELP_LINK "https://www.paraview.org/lidarview/")
 set(${SOFTWARE_NAME}_description "${SOFTWARE_NAME} ${lidarview_version_full}")
 set(CPACK_NSIS_MUI_ICON "${CMAKE_CURRENT_LIST_DIR}/../../../Application/SoftwareInformation/logo.ico")
 
-
-set(library_paths "lib")
-
 if (Qt5_DIR)
   list(APPEND library_paths
     "${Qt5_DIR}/../../../bin")
+endif ()
+
+set(exclude_regexes)
+if (python2_enabled)
+  if (python2_built_by_superbuild)
+    list(APPEND library_paths
+      "${superbuild_install_location}/Python")
+  else()
+    list(APPEND exclude_regexes
+        ".*python3[0-9]+.dll")
+  endif()
 endif ()
 
 # Install lidarview executables to bin.
@@ -25,38 +33,36 @@ foreach (executable IN LISTS lidarview_executables)
       "bin/${executable}.exe" "${${executable}_description}")
   endif ()
 
-  superbuild_windows_install_program("${executable}" "bin" SEARCH_DIRECTORIES
-    "${library_paths}")
+  superbuild_windows_install_program("${executable}" "bin"
+    SEARCH_DIRECTORIES "${library_paths}"
+    EXCLUDE_REGEXES    ${exclude_regexes})
 endforeach()
 
-# previously was:
-# install(DIRECTORY "${superbuild_install_location}/bin/"
-#         DESTINATION "bin"
-#         COMPONENT superbuild)
-#
+if (EXISTS "${superbuild_install_location}/bin/lidarview.conf")
+  install(
+    FILES       "${superbuild_install_location}/bin/lidarview.conf"
+    DESTINATION "bin"
+    COMPONENT   "runtime")
+endif ()
 
 
-if (python_enabled)
-  include(python.functions)
-  superbuild_install_superbuild_python()
+
+
+
+if (python2_enabled)
+  if (python2_built_by_superbuild)
+    include(python2.functions)
+    superbuild_install_superbuild_python2()
+  endif ()
 
   superbuild_windows_install_python(
-    MODULES paraview
-            vtk
-            vtkmodules
-            ${python_modules}
-    MODULE_DIRECTORIES  "${superbuild_install_location}/bin/Lib/site-packages"
-                        "${superbuild_install_location}/lib/site-packages"
-                        "${superbuild_install_location}/lib/python2.7/site-packages"
-                        "${superbuild_install_location}/lib/paraview-${paraview_version_major}.${paraview_version_minor}/site-packages"
-    SEARCH_DIRECTORIES  "lib" "${superbuild_install_location}/bin")
-
-  if (matplotlib_enabled)
-    install(
-      DIRECTORY   "${superbuild_install_location}/bin/Lib/site-packages/matplotlib/mpl-data/"
-      DESTINATION "bin/Lib/site-packages/matplotlib/mpl-data"
-      COMPONENT   superbuild)
-  endif ()
+    MODULES ${python_modules}
+    MODULE_DIRECTORIES  "${superbuild_install_location}/bin/Lib"
+                        "${superbuild_install_location}/bin/Lib/site-packages"
+    SEARCH_DIRECTORIES  "${superbuild_install_location}/lib"
+                        "${superbuild_install_location}/bin"
+                        "${superbuild_install_location}/Python"
+    EXCLUDE_REGEXES     ${exclude_regexes})
 endif ()
 
 foreach (qt5_plugin_path IN LISTS qt5_plugin_paths)
@@ -79,34 +85,7 @@ if (qt5_enabled)
       "bin"
       SEARCH_DIRECTORIES "${library_paths}")
   endforeach ()
-  # file(GLOB platforms_dll "${Qt5_DIR}/../../../plugins/platforms/*.dll")
-  install(DIRECTORY "${Qt5_DIR}/../../../plugins/platforms"
-    DESTINATION "bin"
-    COMPONENT superbuild
-  )
-  # required to have Windows Vista style (else Windows 98 look):
-  # see https://gitlab.kitware.com/paraview/paraview/issues/18551
-  # the bug fix is not yet integrated to the Superbuild,
-  # and we do not use the superbuild for Qt (yet) anyway
-  # note that this will only add the directoy to the package,
-  # not to build_dir/install
-  install(DIRECTORY "${Qt5_DIR}/../../../plugins/styles"
-    DESTINATION "bin"
-    COMPONENT superbuild
-  )
-  # unset(platforms_dll)
 endif ()
-
-install(DIRECTORY "${superbuild_install_location}/lib/paraview-${PARAVIEW_VERSION}"
-        DESTINATION "lib"
-        USE_SOURCE_PERMISSIONS
-        COMPONENT superbuild
-        PATTERN "*.lib" EXCLUDE)
-
-# could/should be done with superbuild_windows_install_python ?
-install(DIRECTORY "${superbuild_install_location}/bin/site-packages"
-        DESTINATION "bin"
-        COMPONENT superbuild)
 
 # Sensor calibration files
 file(GLOB shared_files "${superbuild_install_location}/share/*.xml")
@@ -124,20 +103,12 @@ file(GLOB vtk_dlls
   "${superbuild_install_location}/bin/LidarPluginPythonD.dll"
   "${superbuild_install_location}/bin/VelodynePlugin.dll"
   "${superbuild_install_location}/bin/VelodynePluginPython.pyd"
-  "${superbuild_install_location}/bin/VelodynePluginPythonD.dll"
-  )
+  "${superbuild_install_location}/bin/VelodynePluginPythonD.dll")
 install(FILES ${vtk_dlls}
   DESTINATION "bin"
   COMPONENT superbuild
 )
 unset(vtk_dlls)
-
-file(GLOB boost_lib_dll "${superbuild_install_location}/lib/boost*.dll")
-install(FILES ${boost_lib_dll}
-  DESTINATION "lib"
-  COMPONENT superbuild
-)
-unset(boost_lib_dll)
 
 file(GLOB boost_bin_dll "${superbuild_install_location}/bin/boost*.dll")
 install(FILES ${boost_bin_dll}

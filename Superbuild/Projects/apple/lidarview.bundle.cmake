@@ -63,19 +63,6 @@ superbuild_apple_create_app(
   SEARCH_DIRECTORIES "${superbuild_install_location}/lib" "${superbuild_install_location}/bin/${lidarview_appname}/Contents/Libraries"
   INCLUDE_REGEXES     ${include_regexes})
 
-
-function (paraview_add_plugin output)
-  set(contents "<?xml version=\"1.0\"?>\n<Plugins>\n</Plugins>\n")
-  foreach (name IN LISTS ARGN)
-    set(auto_load 0)
-    if (DEFINED paraview_plugin_${name}_auto_load)
-      set(auto_load 1)
-    endif ()
-    set(plugin_directive "  <Plugin name=\"${name}\" auto_load=\"${auto_load}\" />\n")
-    string(REPLACE "</Plugins>" "${plugin_directive}</Plugins>" contents "${contents}")
-  endforeach ()
-  file(WRITE "${output}" "${contents}")
-endfunction ()
 set(plugins_file "${CMAKE_CURRENT_BINARY_DIR}/lidarview.plugins")
 paraview_add_plugin("${plugins_file}" ${paraview_plugins})
 
@@ -115,29 +102,26 @@ if (qt5_enabled)
     COMPONENT   superbuild)
 endif ()
 
-if (python_enabled)
-  superbuild_apple_install_python(
-    "\${CMAKE_INSTALL_PREFIX}"
-    "${lidarview_appname}"
-    MODULES paraview
-    	    lidarview
-	    lidarviewcore
-	    vtk
-            vtkmodules
-            ${python_modules}
-    MODULE_DIRECTORIES
-            "${superbuild_install_location}/bin/${lidarview_appname}/Contents/Python"
-            "${superbuild_install_location}/lib/python2.7/site-packages"
-    SEARCH_DIRECTORIES
-            "${superbuild_install_location}/bin/${lidarview_appname}/Contents/Libraries"
-            "${superbuild_install_location}/lib")
+if (python2_enabled)
+  # install python modules
+  if (python2_built_by_superbuild)
+    include(python2.functions)
+    superbuild_install_superbuild_python2(BUNDLE "${lidarview_appname}")
+  endif()
 
-  if (matplotlib_enabled)
-    install(
-      DIRECTORY   "${superbuild_install_location}/lib/python2.7/site-packages/matplotlib/mpl-data/"
-      DESTINATION "${lidarview_appname}/Contents/Python/matplotlib/mpl-data"
-      COMPONENT   superbuild)
-  endif ()
+  superbuild_apple_install_python(
+  "\${CMAKE_INSTALL_PREFIX}"
+  "${lidarview_appname}"
+  MODULES ${python_modules}
+  MODULE_DIRECTORIES
+          "${superbuild_install_location}/Applications/paraview.app/Contents/Python"
+          "${superbuild_install_location}/bin/${lidarview_appname}/Contents/Python"
+          "${superbuild_install_location}/lib/python${superbuild_python_version}/site-packages"
+  SEARCH_DIRECTORIES
+          "${superbuild_install_location}/Applications/paraview.app/Contents/Libraries"
+          "${superbuild_install_location}/bin/${lidarview_appname}/Contents/Libraries"
+          "${superbuild_install_location}/lib")
+
 endif ()
 
 # For some reason these .so files are not processed by the command

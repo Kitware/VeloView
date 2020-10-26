@@ -1,20 +1,90 @@
-# include(paraview-version)
-
+set(paraview_plugin_path "lib/paraview-${PARAVIEW_VERSION}/plugins")
 include(lidarview.bundle.common)
 
-set(lidarview_component "${SOFTWARE_NAME}")
-include(lidarview.bundle.unix)
+set(library_paths "${superbuild_install_location}/lib")
 
-install(DIRECTORY "${superbuild_install_location}/lib/paraview-${PARAVIEW_VERSION}"
-  DESTINATION "lib"
-  USE_SOURCE_PERMISSIONS
-  COMPONENT superbuild)
+if (Qt5_DIR)
+  list(APPEND library_paths
+    "${Qt5_DIR}/../..")
+endif ()
 
-# install all libraries
-install(DIRECTORY "${superbuild_install_location}/lib/lidarview-${VV_VERSION}"
+set(include_regexes)
+set(exclude_regexes)
+
+
+
+file(GLOB paraview_so_names
+  "${superbuild_install_location}/lib/lib*.so*")
+foreach (paraview_so_name IN LISTS paraview_so_names)
+  superbuild_unix_install_plugin("${paraview_so_name}"
+    "lib"
+    "${lidarview_plugin_path}"
+    LOADER_PATHS "${library_paths}"
+    LOCATION     "lib")
+endforeach ()
+
+# Install lidarview executable.
+superbuild_unix_install_program_fwd("${SOFTWARE_NAME}"
+  "${lidarview_plugin_path}"
+  INCLUDE_REGEXES     ${include_regexes}
+  EXCLUDE_REGEXES     ${exclude_regexes})
+
+# Install PacketFileSender executables.
+superbuild_unix_install_program("${superbuild_install_location}/bin/PacketFileSender"
+  "lib"
+  SEARCH_DIRECTORIES  "${library_paths}"
+  INCLUDE_REGEXES     ${include_regexes}
+  EXCLUDE_REGEXES     ${exclude_regexes})
+
+# install everything under lidarview.
+file(GLOB so_names
+  RELATIVE
+  "${superbuild_install_location}/${lidarview_plugin_path}"
+  "${superbuild_install_location}/${lidarview_plugin_path}/*.so*")
+foreach (so_name IN LISTS so_names)
+  superbuild_unix_install_plugin("${so_name}"
+    "${lidarview_plugin_path}"
+    "${lidarview_plugin_path}"
+    LOADER_PATHS "${library_paths}"
+    LOCATION     "${lidarview_plugin_path}"
+    SEARCH_DIRECTORIES  "${library_paths}")
+endforeach ()
+
+if (python_enabled)
+  if (python2_built_by_superbuild)
+    include(python2.functions)
+    superbuild_install_superbuild_python2(LIBSUFFIX "/python${superbuild_python_version}")
+  endif ()
+
+  superbuild_unix_install_python(
+    LIBDIR              "lib"
+    MODULES             ${python_modules}
+    INCLUDE_REGEXES     ${include_regexes}
+    EXCLUDE_REGEXES     ${exclude_regexes}
+    MODULE_DIRECTORIES  "${superbuild_install_location}/lib/python${superbuild_python_version}/site-packages"
+    LOADER_PATHS        "${library_paths}")
+endif ()
+
+if (qt5_enabled AND qt5_plugin_paths)
+  # install an empty qt.cong file
+  file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/qt.conf" "[Paths]\nPrefix = ..\n")
+  install(FILES       "${CMAKE_CURRENT_BINARY_DIR}/qt.conf"
   DESTINATION "lib"
-  USE_SOURCE_PERMISSIONS
-  COMPONENT superbuild)
+          COMPONENT   superbuild)
+endif()
+
+# install qt plugins
+foreach (qt5_plugin_path IN LISTS qt5_plugin_paths)
+  get_filename_component(qt5_plugin_group "${qt5_plugin_path}" DIRECTORY)
+  get_filename_component(qt5_plugin_group "${qt5_plugin_group}" NAME)
+
+  superbuild_unix_install_plugin("${qt5_plugin_path}"
+    "${lidarview_plugin_path}"
+    "${lidarview_plugin_path}/${qt5_plugin_group}/"
+    LOADER_PATHS    "${library_paths}"
+    INCLUDE_REGEXES     ${include_regexes}
+    EXCLUDE_REGEXES     ${exclude_regexes})
+endforeach ()
 
 # Sensor calibration files
 file(GLOB shared_files "${superbuild_install_location}/share/*.xml")
@@ -23,37 +93,6 @@ install(FILES ${shared_files}
   COMPONENT superbuild
 )
 unset(shared_files)
-
-
-# Workaround to ship required .so in the .sh installer
-file(GLOB lib_files_so
-  "${superbuild_install_location}/lib/libPythonQt.so"
-  "${superbuild_install_location}/lib/libpcap*.so*"
-  "${superbuild_install_location}/lib/liblas*.so*"
-  "${superbuild_install_location}/lib/libboost*.so*" # could be replaced by a package dependency
-  "${superbuild_install_location}/lib/libQt*.so*" #  could be replaced by a package dependency
-  "${superbuild_install_location}/lib/libfreetype*.so*"
-  "${superbuild_install_location}/lib/libfontconfig*.so*"
-)
-
-install(DIRECTORY
-  # install all qt plugins (including sqllite).
-  # FIXME: we can reconfigure Qt to be built with inbuilt sqllite support to
-  # avoid the need for plugins.
-  "${superbuild_install_location}/plugins/"
-  DESTINATION "lib/lidarview-${VV_VERSION}"
-  COMPONENT superbuild
-  PATTERN "*.a" EXCLUDE
-  PATTERN "lidarview-${VV_VERSION}" EXCLUDE
-  PATTERN "fontconfig" EXCLUDE
-  PATTERN "*.jar" EXCLUDE
-  PATTERN "*.debug.*" EXCLUDE
-  PATTERN "libboost*" EXCLUDE)
-
-install(FILES ${lib_files_so}
-  DESTINATION "lib/lidarview-${VV_VERSION}"
-  COMPONENT superbuild)
-unset(lib_files_so)
 
 install(FILES "${superbuild_install_location}/doc/VeloView_User_Guide.pdf"
   DESTINATION "doc"

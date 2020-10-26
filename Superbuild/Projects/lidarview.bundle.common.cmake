@@ -48,13 +48,25 @@ message(STATUS "Bundled package name will be: ${CPACK_PACKAGE_FILE_NAME}" )
 # Set the license file.
 set(CPACK_RESOURCE_FILE_LICENSE "${LidarViewSuperBuild_SOURCE_DIR}/lidarview-superbuild/LICENSE")
 
-list(APPEND lidarview_executables
-	"${SOFTWARE_NAME}"
-	"PacketFileSender"
-	# "PCAPTester"
+set(lidarview_executables
+  "${SOFTWARE_NAME}"
+  PacketFileSender
+  # "PCAPTester"
 	)
 
+set(python_modules
+  paraview
+  vtk
+  vtkmodules
+  lidarview
+  lidarviewcore)
 
+list(APPEND python_modules
+  camera_path
+  colormap_tools
+  temporal_animation_cue_helpers
+  example_temporal_animation
+  example_non_temporal_animation)
 if (qt5_enabled)
   include(qt5.functions)
 
