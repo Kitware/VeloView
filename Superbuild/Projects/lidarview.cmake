@@ -31,3 +31,16 @@ if (WIN32 OR APPLE)
   superbuild_append_flags(cxx_flags "-DBOOST_ALL_NO_LIB" PROJECT_ONLY)
   superbuild_append_flags(cxx_flags "-DBOOST_ALL_DYN" PROJECT_ONLY)
 endif()
+
+# reset boost RPATH on OSX
+# this is applied on LidarView app and tests
+# for more information see comments in lidarview.osx-boost-rpath.cmake
+if (APPLE)
+  superbuild_project_add_step(osx-boost-rpath
+    COMMAND   "${CMAKE_COMMAND}"
+              -Dinstall_location:PATH=<INSTALL_DIR> #location to get LidarView
+              -P "<SOURCE_DIR>/Superbuild/lidarview-superbuild/Projects/scripts/lidarview.osx-boost-rpath.cmake"
+    DEPENDEES install
+    COMMENT   "Reset rpath for all boost dependencies"
+    WORKING_DIRECTORY <BINARY_DIR>)
+endif ()
