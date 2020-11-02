@@ -172,6 +172,14 @@ if (WIN32)
   install(FILES "${paraview_lib_location}/plugins/PythonQtPlugin/PythonQtPlugin.dll"
           DESTINATION ${VV_INSTALL_RUNTIME_DIR})
 
+  # install some python libs needed to launch Lidarview from the install dir
+  get_filename_component(python_lib_location ${Python3_LIBRARY} PATH)
+  install(DIRECTORY "${python_lib_location}/../Lib" 
+          DESTINATION ${VV_INSTALL_RUNTIME_DIR})
+
+  install(FILES "${python_lib_location}/../python${Python3_VERSION_MAJOR}${Python3_VERSION_MINOR}.dll" 
+    DESTINATION "bin")
+
   foreach (qt5_opengl_lib IN ITEMS opengl32sw libEGL libGLESv2 libEGLd
       Qt5Core Qt5Gui Qt5Widgets Qt5Help Qt5Network Qt5PrintSupport Qt5Sql)
     install(
