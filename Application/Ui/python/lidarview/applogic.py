@@ -1053,9 +1053,26 @@ def onSavePCAP():
     PythonQt.paraview.pqLidarViewManager.saveFramesToPCAP(getReader().SMProxy, frameOptions.start, frameOptions.stop, fileName)
 
 
-def onSaveScreenshot():
+def getFrameFromAnimationTime(time):
+    reader = getReader()
+    if reader:
+        numberOfFrames = reader.GetClientSideObject().GetNumberOfFrames()
+        if not reader.GetClientSideObject().GetShowFirstAndLastFrame():
+            numberOfFrames = numberOfFrames - 2
 
-    fileName = getSaveFileName('Save Screenshot', 'png', getDefaultSaveFileName('png', frameId=app.scene.AnimationTime))
+        for i in range(0, numberOfFrames):
+            timeOfFrame = getAnimationScene().TimeKeeper.TimestepValues[i]
+            if abs(time - timeOfFrame) < 1e-6:
+                return i
+    return -1
+
+
+def onSaveScreenshot():
+    numCurrentFrame = getFrameFromAnimationTime(app.scene.AnimationTime)
+    if numCurrentFrame == -1:
+        numCurrentFrame = app.scene.AnimationTime
+
+    fileName = getSaveFileName('Save Screenshot', 'png', getDefaultSaveFileName('png', frameId=numCurrentFrame))
     if fileName:
         if fileName[-4:] != ".png":
             fileName += ".png"
