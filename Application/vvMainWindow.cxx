@@ -56,7 +56,6 @@
 #include <vtkPVPlugin.h>
 #include <vtkSMPropertyHelper.h>
 #include "pqAxesToolbar.h"
-#include "pqCameraToolbar.h"
 #include <pqParaViewBehaviors.h>
 #include <pqDataRepresentation.h>
 
@@ -71,6 +70,7 @@
 #include <sstream>
 
 #include "lqPlayerControlsToolbar.h"
+#include "lqLidarCameraToolbar.h"
 
 // Declare the plugin to load.
 PV_PLUGIN_IMPORT_INIT(LidarPlugin);
@@ -116,9 +116,10 @@ private:
       << pqSetName("Player Control");
     window->addToolBar(Qt::TopToolBarArea, vcrToolbar);
 
-    QToolBar* cameraToolbar = new pqCameraToolbar(window)
-      << pqSetName("cameraToolbar");
-    window->addToolBar(Qt::TopToolBarArea, cameraToolbar);
+    // Add the Lidar camera toolbar at the place of the paraview camera toolbar
+    QToolBar* lidarCameraToolbar = new lqLidarCameraToolbar(window)
+      << pqSetName("lidarCameraToolbar");
+    window->addToolBar(Qt::TopToolBarArea, lidarCameraToolbar);
 
     QToolBar* axesToolbar = new pqAxesToolbar(window)
       << pqSetName("axesToolbar");
@@ -368,7 +369,7 @@ private:
       SLOT(showOutputWindow()));
 
     // Add Reset Camera Lidar action to camera toolbar
-    QToolBar* cameraToolbar = window->findChild<QToolBar *>(QString("cameraToolbar"));
+    QToolBar* cameraToolbar = window->findChild<QToolBar *>(QString("lidarCameraToolbar"));
     QAction* actionResetCameraLidar = new QAction();
     actionResetCameraLidar->setIcon(QIcon(":/vvResources/Icons/pqResetCameraLidar.png"));
     actionResetCameraLidar->setText("Reset camera view to predefined viewpoint - 30 degrees behind the grid center (Ctrl+Alt+v)");
