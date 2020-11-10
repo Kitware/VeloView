@@ -185,6 +185,8 @@
    </attribute>
    <addaction name="actionOpenPcap"/>
    <addaction name="actionOpen_Sensor_Stream"/>
+   <addaction name="actionSaveLidarState"/>
+   <addaction name="actionLoadLidarState"/>
    <addaction name="actionChoose_Calibration_File"/>
    <addaction name="actionCropReturns"/>
    <addaction name="separator"/>
@@ -403,6 +405,24 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+K</string>
+   </property>
+  </action>
+  <action name="actionSaveLidarState">
+   <property name="icon">
+    <iconset resource="../LVCore/ApplicationComponents/lqResources.qrc">
+     <normaloff>:/lqResources/Icons/pqSaveState.png</normaloff>:/lqResources/Icons/pqSaveState.png</iconset>
+   </property>
+   <property name="text">
+    <string>Save Lidar state</string>
+   </property>
+  </action>
+  <action name="actionLoadLidarState">
+   <property name="icon">
+    <iconset resource="../LVCore/ApplicationComponents/lqResources.qrc">
+     <normaloff>:/lqResources/Icons/pqLoadState.png</normaloff>:/lqResources/Icons/pqLoadState.png</iconset>
+   </property>
+   <property name="text">
+    <string>Load Lidar state</string>
    </property>
   </action>
   <action name="actionChoose_Calibration_File">
@@ -980,7 +1000,8 @@
  <resources>
   <include location="../Plugins/VelodyneUIPlugin/Ui/images/resources.qrc"/>
   <include location="vvResources.qrc"/>
- </resources>
+  <include location="../LVCore/ApplicationComponents/lqResources.qrc"/>
+</resources>
  <connections>
   <connection>
    <sender>actionE_xit</sender>
