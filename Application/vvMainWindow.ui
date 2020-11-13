@@ -374,7 +374,7 @@
     <string>Select All Points</string>
    </property>
    <property name="toolTip">
-    <string>Select All Points</string>
+    <string>Select All Points (g)</string>
    </property>
   </action>
   <action name="actionSpreadsheet">
