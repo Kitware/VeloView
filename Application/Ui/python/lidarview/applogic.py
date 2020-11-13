@@ -295,7 +295,7 @@ def getReaderFileName():
     return filename[0] if isinstance(filename, servermanager.FileNameProperty) else filename
 
 
-def getDefaultSaveFileName(extension, suffix='', frameId=None):
+def getDefaultSaveFileName(extension, suffix='', frameId=None, baseName="Frame"):
 
     sensor = getSensor()
     reader = getReader()
@@ -303,20 +303,12 @@ def getDefaultSaveFileName(extension, suffix='', frameId=None):
     nchannels = None
     if sensor and sensor.Interpreter:
         sensor.Interpreter.UpdatePipelineInformation()
-        if sensor.Interpreter.GetProperty("NumberOfChannelsInformation") is not None:
-            nchannels = sensor.Interpreter.GetProperty("NumberOfChannelsInformation")[0]
-
-        base = 'HDL-'
-        if nchannels <= 16:
-            base = 'VLP-'
-        sensortype = base + str(nchannels)
-
-        return '%s_Velodyne-%s-Data.%s' % (getTimeStamp(), sensortype, extension)
+        return '%s.%s' % (sensor.Interpreter.GetProperty("DefaultRecordFileName")[0], extension)
 
     if reader:
         basename =  os.path.splitext(os.path.basename(getReaderFileName()))[0]
         if frameId is not None:
-            suffix = '%s (Frame %04d)' % (suffix, frameId)
+            suffix = '%s (%s %04d)' % (suffix, baseName, frameId)
         return '%s%s.%s' % (basename, suffix, extension)
 
 
@@ -1060,19 +1052,25 @@ def getFrameFromAnimationTime(time):
         if not reader.GetClientSideObject().GetShowFirstAndLastFrame():
             numberOfFrames = numberOfFrames - 2
 
+        previousTime = 0
         for i in range(0, numberOfFrames):
             timeOfFrame = getAnimationScene().TimeKeeper.TimestepValues[i]
-            if abs(time - timeOfFrame) < 1e-6:
+            if previousTime < time and time <= timeOfFrame:
                 return i
+            previousTime = timeOfFrame
+
     return -1
 
 
 def onSaveScreenshot():
+    nameCurrentFrame= "Frame"
     numCurrentFrame = getFrameFromAnimationTime(app.scene.AnimationTime)
+    # If we did not find a frame number, we use the animation time
     if numCurrentFrame == -1:
         numCurrentFrame = app.scene.AnimationTime
+        nameCurrentFrame = "Time"
 
-    fileName = getSaveFileName('Save Screenshot', 'png', getDefaultSaveFileName('png', frameId=numCurrentFrame))
+    fileName = getSaveFileName('Save Screenshot', 'png', getDefaultSaveFileName('png', frameId=numCurrentFrame, baseName=nameCurrentFrame))
     if fileName:
         if fileName[-4:] != ".png":
             fileName += ".png"
