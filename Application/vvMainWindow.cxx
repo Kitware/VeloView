@@ -32,6 +32,7 @@
 #include "lqStreamRecordReaction.h"
 #include "lqSaveLidarStateReaction.h"
 #include "lqLoadLidarStateReaction.h"
+#include "lqEnableAdvancedArraysReaction.h"
 
 #include <vtkSMProxyManager.h>
 #include <vtkSMSessionProxyManager.h>
@@ -367,6 +368,9 @@ private:
 
     connect(this->Ui.actionShowErrorDialog, SIGNAL(triggered()), pqApplicationCore::instance(),
       SLOT(showOutputWindow()));
+
+    // Add save/load lidar state action
+    new lqEnableAdvancedArraysReaction(this->Ui.actionEnableAdvancedArrays);
 
     // Add Reset Camera Lidar action to camera toolbar
     QToolBar* cameraToolbar = window->findChild<QToolBar *>(QString("lidarCameraToolbar"));
