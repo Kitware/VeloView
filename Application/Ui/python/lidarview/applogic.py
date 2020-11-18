@@ -511,7 +511,7 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
 
     displayableFilename = os.path.basename(filename)
     # shorten the name to display because the status bar gives a lower bound to main window width
-    shortDisplayableFilename = (displayableFilename[:20] + '...' + displayableFilename[-20:]) if len(displayableFilename) > 43 else displayableFilename
+    shortDisplayableFilename = (displayableFilename[:59] + '...' + displayableFilename[-58:]) if len(displayableFilename) > 120 else displayableFilename
     app.filenameLabel.setText('File: %s' % shortDisplayableFilename)
     app.filenameLabel.setToolTip('File: %s' % displayableFilename)
 
@@ -2126,7 +2126,8 @@ def onIgnoreEmptyFrames():
 def updateUIwithNewLidar():
     lidar = getLidar()
     if lidar:
-        app.sensorInformationLabel.setText(lidar.GetClientSideObject().GetSensorInformation())
+        app.sensorInformationLabel.setText(lidar.GetClientSideObject().GetSensorInformation(True))
+        app.sensorInformationLabel.setToolTip(lidar.GetClientSideObject().GetSensorInformation())
     #Remove some array to display
     ComboBox = getMainWindow().findChild('lqColorToolbar').findChild('pqDisplayColorWidget').findChildren('QComboBox')[0]
     listOfArrayToRemove = ['RotationPerMinute', 'vtkBlockColors', 'vtkCompositeIndex']
