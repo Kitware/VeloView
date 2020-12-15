@@ -81,6 +81,7 @@
       <string>Debugging</string>
      </property>
      <addaction name="actionNative_File_Dialogs"/>
+     <addaction name="actionAdvanceFeature"/>
     </widget>
     <widget class="QMenu" name="menuDualReturnMode">
      <property name="title">
@@ -142,7 +143,6 @@
     <addaction name="actionLidarViewUserGuide"/>
     <addaction name="actionLidarViewDeveloperGuide"/>
     <addaction name="actionResetDefaultSettings"/>
-    <addaction name="actionAdvanceFeature"/>
    </widget>
    <widget class="QMenu" name="menuViews">
     <property name="title">
