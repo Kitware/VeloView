@@ -115,7 +115,7 @@ void vvCalibrationDialog::pqInternal::saveSensorTransform()
   this->Settings->setValue(
     "LidarPlugin/CalibrationFileDialog/LidarOriginX", this->LidarXSpinBox->value());
   this->Settings->setValue(
-    "LidarPlugin/CalibrationFileDialog/lidarOriginY", this->LidarYSpinBox->value());
+    "LidarPlugin/CalibrationFileDialog/LidarOriginY", this->LidarYSpinBox->value());
   this->Settings->setValue(
     "LidarPlugin/CalibrationFileDialog/LidarOriginZ", this->LidarZSpinBox->value());
   this->Settings->setValue(
