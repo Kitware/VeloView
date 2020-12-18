@@ -948,26 +948,23 @@ def resetCameraLidar():
 
 
 def onSaveCSV():
-
     frameOptions = getFrameSelectionFromUser()
     if frameOptions is None:
         return
 
     if frameOptions.mode == vvSelectFramesDialog.CURRENT_FRAME:
-        frameNumber = bisect.bisect_left(getLidar().TimestepValues, app.scene.AnimationTime)
+        frameNumber = getFrameFromAnimationTime(getAnimationScene().AnimationTime)
         fileName = getSaveFileName('Save CSV', 'csv', getDefaultSaveFileName('csv', frameId=frameNumber))
         if fileName:
             saveCSVCurrentFrame(fileName)
     else:
-        fileName = getSaveFileName('Save CSV (to zip file)', 'zip', getDefaultSaveFileName('zip'))
+        if frameOptions.mode == vvSelectFramesDialog.ALL_FRAMES:
+            frameOptions.start = 0
+            frameOptions.stop = len(getLidar().TimestepValues) - 1
+        defaultFileName = getDefaultSaveFileName('zip')
+        fileName = getSaveFileName('Save CSV (to zip file)', 'zip', defaultFileName)
         if fileName:
-            if frameOptions.mode == vvSelectFramesDialog.ALL_FRAMES:
-                start = 0
-                stop = len(getLidar().TimestepValues) - 1
-            else:
-                start = frameOptions.start
-                stop = frameOptions.stop
-            saveFrameRange(fileName, start, stop, saveCSV)
+            saveFrameRange(fileName, frameOptions.start, frameOptions.stop, saveCSV)
 
 def onSavePosition():
     fileName = getSaveFileName('Save CSV', 'csv', getDefaultSaveFileName('csv', '-position'))
@@ -1034,20 +1031,21 @@ def onSaveLAS():
 
 
 def onSavePCAP():
-
     frameOptions = getFrameSelectionFromUser(frameTransformVisibility=False)
     if frameOptions is None:
         return
 
     if frameOptions.mode == vvSelectFramesDialog.CURRENT_FRAME:
-        frameOptions.start = frameOptions.stop = bisect.bisect_left(
-          getAnimationScene().TimeKeeper.TimestepValues,
-          getAnimationScene().TimeKeeper.Time)
+        frameOptions.start = getFrameFromAnimationTime(getAnimationScene().AnimationTime)
+        frameOptions.stop = frameOptions.start
+        defaultFileName = getDefaultSaveFileName('pcap', frameId=frameOptions.start)
     elif frameOptions.mode == vvSelectFramesDialog.ALL_FRAMES:
         frameOptions.start = 0
-        frameOptions.stop = 0 if app.reader is None else app.reader.GetClientSideObject().GetNumberOfFrames() - 1
+        frameOptions.stop = 0 if getReader() is None else getReader().GetClientSideObject().GetNumberOfFrames() - 1
+        defaultFileName = getDefaultSaveFileName('pcap')
+    else:
+        defaultFileName = getDefaultSaveFileName('pcap', suffix=' (Frame %d to %d)' % (frameOptions.start, frameOptions.stop))
 
-    defaultFileName = getDefaultSaveFileName('pcap', suffix=' (Frame %d to %d)' % (frameOptions.start, frameOptions.stop))
     fileName = getSaveFileName('Save PCAP', 'pcap', defaultFileName)
     if not fileName:
         return
