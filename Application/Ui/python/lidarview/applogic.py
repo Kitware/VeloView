@@ -1054,20 +1054,15 @@ def onSavePCAP():
 
 
 def getFrameFromAnimationTime(time):
-    reader = getReader()
-    if reader:
-        numberOfFrames = reader.GetClientSideObject().GetNumberOfFrames()
-        if not reader.GetClientSideObject().GetShowFirstAndLastFrame():
-            numberOfFrames = numberOfFrames - 2
+    if not getReader():
+        return -1
 
-        previousTime = 0
-        for i in range(0, numberOfFrames):
-            timeOfFrame = getAnimationScene().TimeKeeper.TimestepValues[i]
-            if previousTime < time and time <= timeOfFrame:
-                return i
-            previousTime = timeOfFrame
-
-    return -1
+    index = bisect.bisect_right(getAnimationScene().TimeKeeper.TimestepValues, time)
+    if index > 0:
+        previousTime = getAnimationScene().TimeKeeper.TimestepValues[index - 1]
+        nextTime     = getAnimationScene().TimeKeeper.TimestepValues[index]
+        index = index - 1 if (abs(previousTime - time) < abs(nextTime - time)) else index
+    return index
 
 
 def onSaveScreenshot():
