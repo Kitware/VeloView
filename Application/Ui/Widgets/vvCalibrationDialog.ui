@@ -82,23 +82,6 @@
           </property>
          </widget>
         </item>
-        <item row="3" column="0">
-         <widget class="QLabel" name="lidarTimeOffsetLabel">
-          <property name="text">
-           <string>Time offset</string>
-          </property>
-         </widget>
-        </item>
-        <item row="3" column="1">
-         <widget class="QDoubleSpinBox" name="lidarTimeOffsetSpinBox">
-          <property name="minimum">
-           <double>-1000000000.000000000000000</double>
-          </property>
-          <property name="maximum">
-           <double>1000000000.000000000000000</double>
-          </property>
-         </widget>
-        </item>
        </layout>
       </item>
       <item>
@@ -475,23 +458,6 @@
           </property>
           <property name="maximum">
            <double>100.000000000000000</double>
-          </property>
-         </widget>
-        </item>
-        <item row="3" column="0">
-         <widget class="QLabel" name="gpsTimeOffsetLabel">
-          <property name="text">
-           <string>Time offset</string>
-          </property>
-         </widget>
-        </item>
-        <item row="3" column="1">
-         <widget class="QDoubleSpinBox" name="gpsTimeOffsetSpinBox">
-          <property name="minimum">
-           <double>-1000000000.000000000000000</double>
-          </property>
-          <property name="maximum">
-           <double>1000000000.000000000000000</double>
           </property>
          </widget>
         </item>
