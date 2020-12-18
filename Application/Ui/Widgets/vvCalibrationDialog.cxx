@@ -511,6 +511,8 @@ void vvCalibrationDialog::setDefaultConfiguration()
   this->Internal->ipAddresslineEdit->setText(defaultIpAddress);
   this->Internal->AdvancedConfiguration->setChecked(false);
   this->Internal->EnableForwardingCheckBox->setChecked(false);
+  this->Internal->CrashAnalysisCheckBox->setChecked(false);
+  this->Internal->EnableInterpretGPSPackets->setChecked(false);
   // lidar orientation values
   this->Internal->LidarPitchSpinBox->setValue(defaultSensorValue);
   this->Internal->LidarYawSpinBox->setValue(defaultSensorValue);
