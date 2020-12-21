@@ -948,6 +948,14 @@ def resetCameraLidar():
 
 
 def onSaveCSV():
+    # It is not possible to save as CSV during stream as we need frame numbers
+    if getSensor():
+        QtGui.QMessageBox.information(getMainWindow(),
+                                      'Save As CSV not available during stream',
+                                      'Saving as CSV is not possible during lidar stream mode. '
+                                      'Please use the "Record" tool, and open the resulting pcap offline to process it.')
+        return
+
     frameOptions = getFrameSelectionFromUser()
     if frameOptions is None:
         return
@@ -973,6 +981,13 @@ def onSavePosition():
 
 
 def onSaveLAS():
+    # It is not possible to save as LAS during stream as we need frame numbers
+    if getSensor():
+        QtGui.QMessageBox.information(getMainWindow(),
+                                      'Save As LAS not available during stream',
+                                      'Saving as LAS is not possible during lidar stream mode. '
+                                      'Please use the "Record" tool, and open the resulting pcap offline to process it.')
+        return
 
     frameOptions = getFrameSelectionFromUser(framePackVisibility=True, frameTransformVisibility=False)
     if frameOptions is None:
@@ -1031,6 +1046,14 @@ def onSaveLAS():
 
 
 def onSavePCAP():
+    # It is not possible to save as PCAP during stream as we need frame numbers
+    if getSensor():
+        QtGui.QMessageBox.information(getMainWindow(),
+                                      'Save As PCAP not available during stream',
+                                      'Saving as PCAP is not possible during lidar stream mode. '
+                                      'Please use the "Record" tool, and open the resulting pcap offline to process it.')
+        return
+
     frameOptions = getFrameSelectionFromUser(frameTransformVisibility=False)
     if frameOptions is None:
         return
