@@ -326,29 +326,12 @@ def chooseCalibration(calibrationFilename=None):
             self.lidarForwardingPort = dialog.lidarForwardingPort()
             self.isForwarding = dialog.isForwarding()
             self.ipAddressForwarding = dialog.ipAddressForwarding()
-            self.sensorTransform = vtk.vtkTransform()
             self.gpsTransform = vtk.vtkTransform()
             self.isCrashAnalysing = dialog.isCrashAnalysing()
             self.isEnableInterpretGPSPackets = dialog.isEnableInterpretGPSPackets()
 
-            qm = dialog.sensorTransform()
-            vmLidar = vtk.vtkMatrix4x4()
-            for row in xrange(4):
-                vmLidar.SetElement(row, 0, qm.row(row).x())
-                vmLidar.SetElement(row, 1, qm.row(row).y())
-                vmLidar.SetElement(row, 2, qm.row(row).z())
-                vmLidar.SetElement(row, 3, qm.row(row).w())
-            self.sensorTransform.SetMatrix(vmLidar)
-
-            qm = dialog.gpsTransform()
-            vmGps = vtk.vtkMatrix4x4()
-            for row in xrange(4):
-                vmGps.SetElement(row, 0, qm.row(row).x())
-                vmGps.SetElement(row, 1, qm.row(row).y())
-                vmGps.SetElement(row, 2, qm.row(row).z())
-                vmGps.SetElement(row, 3, qm.row(row).w())
-            self.gpsTransform.SetMatrix(vmGps)
-
+            self.sensorTranslation = [dialog.lidarX(), dialog.lidarY(), dialog.lidarZ()]
+            self.sensorRotation = [dialog.lidarRoll(), dialog.lidarPitch(), dialog.lidarYaw()]
 
     dialog = vvCalibrationDialog(getMainWindow())
     if calibrationFilename is None:
@@ -367,7 +350,6 @@ def openSensor():
         return
 
     calibrationFile = calibration.calibrationFile
-    sensorTransform = calibration.sensorTransform
     LidarPort = calibration.lidarPort
     GPSPort = calibration.gpsPort
     LIDARForwardingPort = calibration.lidarForwardingPort
@@ -392,7 +374,9 @@ def openSensor():
     sensor.IsForwarding = isForwarding
     sensor.ForwardedIpAddress = ipAddressForwarding
     sensor.IsCrashAnalysing = calibration.isCrashAnalysing
-    sensor.Interpreter.GetClientSideObject().SetSensorTransform(sensorTransform)
+    sensor.Interpreter.SensorTransform.Translate = calibration.sensorTranslation
+    sensor.Interpreter.SensorTransform.Rotate = calibration.sensorRotation
+
     sensor.Interpreter.IgnoreZeroDistances = app.actions['actionIgnoreZeroDistances'].isChecked()
     sensor.Interpreter.HideDropPoints = app.actions['actionHideDropPoints'].isChecked()
     sensor.Interpreter.IgnoreEmptyFrames = app.actions['actionIgnoreEmptyFrames'].isChecked()
@@ -472,7 +456,6 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
             setattr(calibration, k, calibrationUIArgs[k])
 
     calibrationFile = calibration.calibrationFile
-    sensorTransform = calibration.sensorTransform
 
     close()
 
@@ -523,7 +506,8 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
 
     restoreLaserSelection()
 
-    reader.Interpreter.GetClientSideObject().SetSensorTransform(sensorTransform)
+    reader.Interpreter.SensorTransform.Translate = calibration.sensorTranslation
+    reader.Interpreter.SensorTransform.Rotate = calibration.sensorRotation
 
     lidarPacketInterpreter = getLidarPacketInterpreter()
     lidarPacketInterpreter.IgnoreZeroDistances = app.actions['actionIgnoreZeroDistances'].isChecked()
@@ -1294,16 +1278,33 @@ def onChooseCalibrationFile():
         return
 
     calibrationFile = calibration.calibrationFile
-    sensorTransform = calibration.sensorTransform
 
     lidar = getLidar()
     if lidar:
-        lidar.Interpreter.GetClientSideObject().SetSensorTransform(sensorTransform)
         lidar.CalibrationFile = calibrationFile
+        lidar.Interpreter.SensorTransform.Translate = calibration.sensorTranslation
+        lidar.Interpreter.SensorTransform.Rotate = calibration.sensorRotation
 
-        smp.Render()
-        updateUIwithNewLidar()
+    lidarStream = getSensor()
+    if lidarStream:
+      lidarStream.ListeningPort = calibration.lidarPort
+      lidarStream.ForwardedPort = calibration.lidarForwardingPort
+      lidarStream.IsForwarding = calibration.isForwarding
+      lidarStream.ForwardedIpAddress = calibration.ipAddressForwarding
+      lidarStream.IsCrashAnalysing = calibration.isCrashAnalysing
 
+
+    posOr = getPosition()
+    if posOr:
+        posOr.ListeningPort = calibration.gpsPort
+        posOr.ForwardedPort = calibration.gpsForwardingPort
+        posOr.IsForwarding = calibration.isForwarding
+        posOr.ForwardedIpAddress = calibration.ipAddressForwarding
+        posOr.IsCrashAnalysing = calibration.isCrashAnalysing
+
+    updateUIwithNewLidar()
+
+    smp.Render()
 
 def onCropReturns(show = True):
     dialog = vvCropReturnsDialog(getMainWindow())
