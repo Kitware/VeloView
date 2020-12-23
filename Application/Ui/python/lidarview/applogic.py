@@ -1293,15 +1293,6 @@ def onChooseCalibrationFile():
       lidarStream.ForwardedIpAddress = calibration.ipAddressForwarding
       lidarStream.IsCrashAnalysing = calibration.isCrashAnalysing
 
-
-    posOr = getPosition()
-    if posOr:
-        posOr.ListeningPort = calibration.gpsPort
-        posOr.ForwardedPort = calibration.gpsForwardingPort
-        posOr.IsForwarding = calibration.isForwarding
-        posOr.ForwardedIpAddress = calibration.ipAddressForwarding
-        posOr.IsCrashAnalysing = calibration.isCrashAnalysing
-
     updateUIwithNewLidar()
 
     smp.Render()
