@@ -39,6 +39,7 @@ public:
   Q_INVOKABLE double gpsX() const;
   Q_INVOKABLE double gpsY() const;
   Q_INVOKABLE double gpsZ() const;
+  Q_INVOKABLE double gpsTimeOffset() const;
 
   Q_INVOKABLE double lidarYaw() const;
   Q_INVOKABLE double lidarRoll() const;
@@ -46,6 +47,7 @@ public:
   Q_INVOKABLE double lidarX() const;
   Q_INVOKABLE double lidarY() const;
   Q_INVOKABLE double lidarZ() const;
+  Q_INVOKABLE double lidarTimeOffset() const;
 
   Q_INVOKABLE int lidarPort() const;
   Q_INVOKABLE int gpsPort() const;
