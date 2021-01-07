@@ -435,8 +435,8 @@ vvCalibrationDialog::vvCalibrationDialog(QWidget* p)
   // The advancedConfiguration checkbox hides the three followings groupbox
   connect(this->Internal->AdvancedConfiguration, SIGNAL(toggled(bool)),
     this->Internal->LidarPositionOrientationGroup, SLOT(setVisible(bool)));
-  //connect(this->Internal->AdvancedConfiguration, SIGNAL(toggled(bool)),
-  //  this->Internal->GPSPositionOrientationGroup, SLOT(setVisible(bool)));
+  connect(this->Internal->AdvancedConfiguration, SIGNAL(toggled(bool)),
+    this->Internal->GPSPositionOrientationGroup, SLOT(setVisible(bool)));
   connect(this->Internal->AdvancedConfiguration, SIGNAL(toggled(bool)),
     this->Internal->NetworkGroup, SLOT(setVisible(bool)));
   connect(this->Internal->AdvancedConfiguration, SIGNAL(toggled(bool)),
