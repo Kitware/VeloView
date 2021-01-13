@@ -330,8 +330,8 @@ def chooseCalibration(calibrationFilename=None):
             self.isCrashAnalysing = dialog.isCrashAnalysing()
             self.isEnableInterpretGPSPackets = dialog.isEnableInterpretGPSPackets()
 
-            self.sensorTranslation = [dialog.lidarX(), dialog.lidarY(), dialog.lidarZ()]
-            self.sensorRotation = [dialog.lidarRoll(), dialog.lidarPitch(), dialog.lidarYaw()]
+            self.lidarTranslation = [dialog.lidarX(), dialog.lidarY(), dialog.lidarZ()]
+            self.lidarRotation = [dialog.lidarRoll(), dialog.lidarPitch(), dialog.lidarYaw()]
 
     dialog = vvCalibrationDialog(getMainWindow())
     if calibrationFilename is None:
@@ -374,8 +374,8 @@ def openSensor():
     sensor.IsForwarding = isForwarding
     sensor.ForwardedIpAddress = ipAddressForwarding
     sensor.IsCrashAnalysing = calibration.isCrashAnalysing
-    sensor.Interpreter.SensorTransform.Translate = calibration.sensorTranslation
-    sensor.Interpreter.SensorTransform.Rotate = calibration.sensorRotation
+    sensor.Interpreter.SensorTransform.Translate = calibration.lidarTranslation
+    sensor.Interpreter.SensorTransform.Rotate = calibration.lidarRotation
 
     sensor.Interpreter.IgnoreZeroDistances = app.actions['actionIgnoreZeroDistances'].isChecked()
     sensor.Interpreter.HideDropPoints = app.actions['actionHideDropPoints'].isChecked()
@@ -506,8 +506,8 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
 
     restoreLaserSelection()
 
-    reader.Interpreter.SensorTransform.Translate = calibration.sensorTranslation
-    reader.Interpreter.SensorTransform.Rotate = calibration.sensorRotation
+    reader.Interpreter.SensorTransform.Translate = calibration.lidarTranslation
+    reader.Interpreter.SensorTransform.Rotate = calibration.lidarRotation
 
     lidarPacketInterpreter = getLidarPacketInterpreter()
     lidarPacketInterpreter.IgnoreZeroDistances = app.actions['actionIgnoreZeroDistances'].isChecked()
@@ -1282,8 +1282,8 @@ def onChooseCalibrationFile():
     lidar = getLidar()
     if lidar:
         lidar.CalibrationFile = calibrationFile
-        lidar.Interpreter.SensorTransform.Translate = calibration.sensorTranslation
-        lidar.Interpreter.SensorTransform.Rotate = calibration.sensorRotation
+        lidar.Interpreter.SensorTransform.Translate = calibration.lidarTranslation
+        lidar.Interpreter.SensorTransform.Rotate = calibration.lidarRotation
 
     lidarStream = getSensor()
     if lidarStream:
