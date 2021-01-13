@@ -326,12 +326,14 @@ def chooseCalibration(calibrationFilename=None):
             self.lidarForwardingPort = dialog.lidarForwardingPort()
             self.isForwarding = dialog.isForwarding()
             self.ipAddressForwarding = dialog.ipAddressForwarding()
-            self.gpsTransform = vtk.vtkTransform()
             self.isCrashAnalysing = dialog.isCrashAnalysing()
             self.isEnableInterpretGPSPackets = dialog.isEnableInterpretGPSPackets()
 
             self.lidarTranslation = [dialog.lidarX(), dialog.lidarY(), dialog.lidarZ()]
             self.lidarRotation = [dialog.lidarRoll(), dialog.lidarPitch(), dialog.lidarYaw()]
+
+            self.gpsTranslation = [dialog.gpsX(), dialog.gpsY(), dialog.gpsZ()]
+            self.gpsRotation = [dialog.gpsRoll(), dialog.gpsPitch(), dialog.gpsYaw()]
 
     dialog = vvCalibrationDialog(getMainWindow())
     if calibrationFilename is None:
@@ -390,6 +392,9 @@ def openSensor():
         posOrSensor.IsForwarding = isForwarding
         posOrSensor.ForwardedIpAddress = ipAddressForwarding
         posOrSensor.IsCrashAnalysing = calibration.isCrashAnalysing
+        posOrSensor.Interpreter.SensorTransform.Translate = calibration.gpsTranslation
+        posOrSensor.Interpreter.SensorTransform.Rotate = calibration.gpsRotation
+        app.position = posOrSensor
         posOrSensor.UpdatePipeline()
         posOrSensor.Start()
 
@@ -528,8 +533,9 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
     if calibration.isEnableInterpretGPSPackets :
         posreader = smp.PositionOrientationReader(guiName='Position Orientation Data', FileName = filename)
 
-        # wrapping not currently working for plugins:
-        #posreader.GetClientSideObject().SetCalibrationTransform(calibration.gpsTransform)
+        posreader.Interpreter.SensorTransform.Translate = calibration.gpsTranslation
+        posreader.Interpreter.SensorTransform.Rotate = calibration.gpsRotation
+
         smp.Show(posreader)
 
         if positionFilename is None:
@@ -565,6 +571,8 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
                 QtGui.QMessageBox.warning(getMainWindow(), 'Georeferencing data invalid',
                                           'File %s is empty or not supported' % positionFilename)
             smp.Delete(posreader)
+
+        app.position = posreader
 
     smp.SetActiveView(app.mainView)
 
@@ -1292,6 +1300,19 @@ def onChooseCalibrationFile():
       lidarStream.IsForwarding = calibration.isForwarding
       lidarStream.ForwardedIpAddress = calibration.ipAddressForwarding
       lidarStream.IsCrashAnalysing = calibration.isCrashAnalysing
+
+    positionOrientation = getPosition()
+    if positionOrientation:
+      positionOrientation.Interpreter.SensorTransform.Translate = calibration.gpsTranslation
+      positionOrientation.Interpreter.SensorTransform.Rotate = calibration.gpsRotation
+      # If positionOrientation has an attribute "ListeningPort"
+      # This is a PositionOrientationstream so we have to update network part too
+      if(hasattr(positionOrientation, "ListeningPort")) :
+        positionOrientation.ListeningPort = calibration.gpsPort
+        positionOrientation.ForwardedPort = calibration.gpsForwardingPort
+        positionOrientation.IsForwarding = calibration.isForwarding
+        positionOrientation.ForwardedIpAddress = calibration.ipAddressForwarding
+        positionOrientation.IsCrashAnalysing = calibration.isCrashAnalysing
 
     updateUIwithNewLidar()
 
