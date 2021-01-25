@@ -36,8 +36,8 @@ build_paraview_client(${SOFTWARE_NAME}
   GUI_CONFIGURATION_XMLS
     ${CMAKE_CURRENT_SOURCE_DIR}/vvSources.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/vvFilters.xml
-  INSTALL_BIN_DIR ${VV_INSTALL_RUNTIME_DIR}
-  INSTALL_LIB_DIR ${VV_INSTALL_LIBRARY_DIR}
+  INSTALL_BIN_DIR "bin"
+  INSTALL_LIB_DIR ${LV_INSTALL_LIBRARY_DIR}
 )
 
 target_include_directories(${SOFTWARE_NAME} PUBLIC
@@ -57,9 +57,9 @@ target_link_libraries(${SOFTWARE_NAME}
 set(USER_GUIDE_SRC "${LidarView_SOURCE_DIR}/Documentation/VeloView_User_Guide.pdf")
 
 if (APPLE)
-  install(FILES ${USER_GUIDE_SRC} DESTINATION "${VV_INSTALL_RUNTIME_DIR}/${SOFTWARE_NAME}.app/Contents/Resources") # to install tree
+  install(FILES ${USER_GUIDE_SRC} DESTINATION "${LV_INSTALL_LIBRARY_DIR}/../Resources") # to install tree
   file(COPY ${USER_GUIDE_SRC} DESTINATION "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${SOFTWARE_NAME}.app/Contents/Resources") # to build tree
 else ()
-  install(FILES ${USER_GUIDE_SRC} DESTINATION "${VV_INSTALL_RUNTIME_DIR}/../doc") # to install tree
+  install(FILES ${USER_GUIDE_SRC} DESTINATION "doc") # to install tree
   file(COPY ${USER_GUIDE_SRC} DESTINATION "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/../doc") # to build tree
 endif ()

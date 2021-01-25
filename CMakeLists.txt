@@ -121,15 +121,13 @@ SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 #------------------------------------------------------------------------------
 # Setup install directories (we use names with VTK_ prefix, since ParaView now
 # is built as a custom "VTK" library.
-set(VV_INSTALL_RUNTIME_DIR bin)
 if (WIN32)
-  set(VV_INSTALL_LIBRARY_DIR bin)
+  set(LV_INSTALL_LIBRARY_DIR bin)
 elseif(APPLE)
-  set(VV_INSTALL_LIBRARY_DIR bin/${SOFTWARE_NAME}.app/Contents/Libraries)
+  set(LV_INSTALL_LIBRARY_DIR bin/${SOFTWARE_NAME}.app/Contents/Libraries)
 else()
-  set(VV_INSTALL_LIBRARY_DIR lib/lidarview-${VV_VERSION_MAJOR}.${VV_VERSION_MINOR})
+  set(LV_INSTALL_LIBRARY_DIR lib/lidarview-${VV_VERSION_MAJOR}.${VV_VERSION_MINOR})
 endif()
-set(VV_INSTALL_ARCHIVE_DIR lib/lidarview-${VV_VERSION_MAJOR}.${VV_VERSION_MINOR})
 
 # Find and include PythonQt
 find_package(PythonQt REQUIRED)
@@ -170,23 +168,20 @@ add_subdirectory(Application)
 # currently: PythonQt fails to build against our own build of Qt
 if (WIN32)
   install(FILES "${paraview_lib_location}/plugins/PythonQtPlugin/PythonQtPlugin.dll"
-          DESTINATION ${VV_INSTALL_RUNTIME_DIR})
+          DESTINATION "bin")
 
   # install some python libs needed to launch Lidarview from the install dir
   get_filename_component(python_lib_location ${Python3_LIBRARY} PATH)
   install(DIRECTORY "${python_lib_location}/../Lib" 
-          DESTINATION ${VV_INSTALL_RUNTIME_DIR})
+    DESTINATION "bin")
 
   install(FILES "${python_lib_location}/../python${Python3_VERSION_MAJOR}${Python3_VERSION_MINOR}.dll" 
     DESTINATION "bin")
 
   foreach (qt5_opengl_lib IN ITEMS opengl32sw libEGL libGLESv2 libEGLd
       Qt5Core Qt5Gui Qt5Widgets Qt5Help Qt5Network Qt5PrintSupport Qt5Sql)
-    install(
-       FILES
-      "${Qt5_DIR}/../../../bin/${qt5_opengl_lib}.dll"
-      DESTINATION
-      "bin")
+    install(FILES "${Qt5_DIR}/../../../bin/${qt5_opengl_lib}.dll"
+      DESTINATION "bin")
   endforeach ()
   install(DIRECTORY "${Qt5_DIR}/../../../plugins/platforms"
     DESTINATION "bin"
