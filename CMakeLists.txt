@@ -94,8 +94,9 @@ find_package(ParaView REQUIRED)
 # during the superbuild (specially right on APPLE when a second
 # python version has been installed using homebrew)
 include(FindPythonLibs)
-find_package(Python2 2.7 QUIET REQUIRED COMPONENTS Interpreter)
-set(Python_VERSION "${Python2_VERSION_MAJOR}.${Python2_VERSION_MINOR}")
+# We force python to version 3.7 as it is the only one that has been tested
+find_package(Python3 3.7 EXACT QUIET REQUIRED COMPONENTS Interpreter)
+set(Python_VERSION "${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}")
 
 include(${PARAVIEW_USE_FILE})
 option(BUILD_SHARED_LIBS "Build shared libs" ON)

@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+from __future__ import print_function
 import VelodynePluginPython as vpmod
 import paraview.simple as smp
 from paraview import vtk
@@ -23,8 +23,7 @@ def GetSelectionSource(proxy=None):
     if not proxy:
         proxy = smp.GetActiveSource()
     if not proxy:
-        raise RuntimeError, \
-        "GetSelectionSource() needs a proxy argument of that an active source is set."
+        raise RuntimeError("GetSelectionSource() needs a proxy argument of that an active source is set.")
     return proxy.GetSelectionInput(proxy.Port)
 
 def fitPlane():
@@ -55,13 +54,13 @@ def fitPlane():
         max_laser_id = pd.GetPointData().GetArray("laser_id").GetRange()[1]
         nchannels = 2**vtk.vtkMath.CeilLog2(int(max_laser_id))
 
-        origin = range(3)
-        normal = range(3)
+        origin = list(range(3))
+        normal = list(range(3))
         mind, maxd, stddev = vtk.mutable(0), vtk.mutable(0), vtk.mutable(0)
 
-        channelMean = range(nchannels)
-        channelStdDev = range(nchannels)
-        channelNpts = range(nchannels)
+        channelMean = list(range(nchannels))
+        channelStdDev = list(range(nchannels))
+        channelNpts = list(range(nchannels))
 
         vpmod.vtkPlaneFitter.PlaneFit(pd, origin, normal, mind, maxd, stddev, channelMean, channelStdDev, channelNpts, nchannels)
         rows = [['overall', origin, normal, 0.0, stddev, stddev, pd.GetNumberOfPoints()]]
@@ -81,17 +80,16 @@ def fitPlane():
                     pass
                 if type(x) == float:
                     return '%.4f' % x
-                elif type(x) in (int, long):
+                elif type(x) is int:
                     return '%d' % x
                 else:
                     return x
 
-        print '\t'.join(['channel','originx','originy','originz','normalx','normaly','normalz',
-                         'mean','stddev','RMS','npts'])
+        print('\t'.join(['channel','originx','originy','originz','normalx','normaly','normalz','mean','stddev','RMS','npts']))
         for r in rows:
             if r[-1] == 0:
                 r[-4:-1] = ['nan', 'nan', 'nan']
-            print '\t'.join([rowconverter(x) for x in r])
+            print('\t'.join([rowconverter(x) for x in r]))
     finally:
         smp.Delete(extracter)
         smp.SetActiveSource(src)

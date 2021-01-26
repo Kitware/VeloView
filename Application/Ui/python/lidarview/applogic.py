@@ -1261,7 +1261,7 @@ def getNumberOfTimesteps():
 def unloadData():
     _repCache.clear()
 
-    for k, src in smp.GetSources().iteritems():
+    for k, src in smp.GetSources().items():
         if src != app.grid and src != smp.FindSource("RPM"):
             smp.Delete(src)
 

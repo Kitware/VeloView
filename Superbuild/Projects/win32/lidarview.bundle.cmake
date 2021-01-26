@@ -49,10 +49,10 @@ endif ()
 
 
 
-if (python2_enabled)
-  if (python2_built_by_superbuild)
-    include(python2.functions)
-    superbuild_install_superbuild_python2()
+if (python3_enabled)
+  if (python3_built_by_superbuild)
+    include(python3.functions)
+    superbuild_install_superbuild_python3()
   endif ()
 
   superbuild_windows_install_python(

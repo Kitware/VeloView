@@ -102,11 +102,11 @@ if (qt5_enabled)
     COMPONENT   superbuild)
 endif ()
 
-if (python2_enabled)
+if (python3_enabled)
   # install python modules
-  if (python2_built_by_superbuild)
-    include(python2.functions)
-    superbuild_install_superbuild_python2(BUNDLE "${lidarview_appname}")
+  if (python3_built_by_superbuild)
+    include(python3.functions)
+    superbuild_install_superbuild_python3(BUNDLE "${lidarview_appname}")
   endif()
 
   superbuild_apple_install_python(

@@ -51,9 +51,9 @@ foreach (so_name IN LISTS so_names)
 endforeach ()
 
 if (python_enabled)
-  if (python2_built_by_superbuild)
-    include(python2.functions)
-    superbuild_install_superbuild_python2(LIBSUFFIX "/python${superbuild_python_version}")
+  if (python3_built_by_superbuild)
+    include(python3.functions)
+    superbuild_install_superbuild_python3(LIBSUFFIX "/python${superbuild_python_version}")
   endif ()
 
   superbuild_unix_install_python(
