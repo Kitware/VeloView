@@ -322,6 +322,22 @@
    </attribute>
    <widget class="pqPVAnimationWidget" name="animationPanel"/>
   </widget>
+  <widget class="QDockWidget" name="outputWidgetDock">
+   <property name="floating">
+    <bool>false</bool>
+   </property>
+   <property name="windowTitle">
+    <string>Output Messages</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>8</number>
+   </attribute>
+   <widget class="pqOutputWidget" name="outputWidget">
+    <property name="settingsKey" stdset="0">
+     <string>OutputMessages</string>
+    </property>
+   </widget>
+  </widget>
   <action name="actionE_xit">
    <property name="text">
     <string>E&amp;xit</string>
@@ -1007,6 +1023,12 @@
    <class>pqPVAnimationWidget</class>
    <extends>QWidget</extends>
    <header>pqPVAnimationWidget.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>pqOutputWidget</class>
+   <extends>QWidget</extends>
+   <header>pqOutputWidget.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

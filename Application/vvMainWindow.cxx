@@ -42,7 +42,7 @@
 #include <pqInterfaceTracker.h>
 #include <pqObjectBuilder.h>
 #include <pqPythonShellReaction.h>
-#include <pqQtMessageHandlerBehavior.h>
+#include <pqOutputWidget.h>
 #include <pqRenderView.h>
 #include <pqRenderViewSelectionReaction.h>
 #include <pqDeleteReaction.h>
@@ -65,6 +65,7 @@
 #include <QMenu>
 #include <QMimeData>
 #include <QUrl>
+#include <QDockWidget>
 
 #include <cassert>
 #include <iostream>
@@ -138,8 +139,6 @@ private:
     }
 
     // Define application behaviors.
-    new pqQtMessageHandlerBehavior(window);
-
     pqParaViewBehaviors::enableQuickLaunchShortcuts();
     pqParaViewBehaviors::enableSpreadSheetVisibilityBehavior();
     pqParaViewBehaviors::enableObjectPickingBehavior();
@@ -299,6 +298,7 @@ private:
     this->Ui.informationDock->hide();
     this->Ui.memoryInspectorDock->hide();
     this->Ui.viewAnimationDock->hide();
+    this->Ui.outputWidgetDock->hide();
 
     // Setup the View menu. This must be setup after all toolbars and dockwidgets
     // have been created.
@@ -366,8 +366,8 @@ private:
     connect(this->Ui.actionResetDefaultSettings, SIGNAL(triggered()),
       pqLidarViewManager::instance(), SLOT(onResetDefaultSettings()));
 
-    connect(this->Ui.actionShowErrorDialog, SIGNAL(triggered()), pqApplicationCore::instance(),
-      SLOT(showOutputWindow()));
+    connect(this->Ui.actionShowErrorDialog, SIGNAL(triggered()), this->Ui.outputWidgetDock,
+      SLOT(show()));
 
     // Add save/load lidar state action
     new lqEnableAdvancedArraysReaction(this->Ui.actionEnableAdvancedArrays);
@@ -401,6 +401,10 @@ vvMainWindow::vvMainWindow()
   pqApplicationCore::instance()->registerManager(
     "COLOR_EDITOR_PANEL", this->Internals->Ui.colorMapEditorDock);
   this->Internals->Ui.colorMapEditorDock->hide();
+
+  // show output widget if we received an error message.
+  this->connect(this->Internals->Ui.outputWidget, SIGNAL(messageDisplayed(const QString&, int)),
+    SLOT(handleMessage(const QString&, int)));
 
   PV_PLUGIN_IMPORT(LidarPlugin);
   PV_PLUGIN_IMPORT(PythonQtPlugin);
@@ -489,4 +493,30 @@ void vvMainWindow::showHelpForProxy(const QString& groupname, const
   QString& proxyname)
 {
   pqHelpReaction::showProxyHelp(groupname, proxyname);
+}
+
+void vvMainWindow::handleMessage(const QString &, int type)
+{
+  QDockWidget* dock = this->Internals->Ui.outputWidgetDock;
+  if (!dock)
+    return;
+    
+  if (!dock->isVisible() && (type == QtCriticalMsg || type == QtFatalMsg || type == QtWarningMsg))
+  {
+    // if dock is not visible, we always pop it up as a floating dialog. This
+    // avoids causing re-renders which may cause more errors and more confusion.
+    QRect rectApp = this->geometry();
+
+    QRect rectDock(
+      QPoint(0, 0), QSize(static_cast<int>(rectApp.width() * 0.4), dock->sizeHint().height()));
+    rectDock.moveCenter(
+      QPoint(rectApp.center().x(), rectApp.bottom() - dock->sizeHint().height() / 2));
+    dock->setFloating(true);
+    dock->setGeometry(rectDock);
+    dock->show();
+  }
+  if (dock->isVisible())
+  {
+    dock->raise();
+  }
 }
