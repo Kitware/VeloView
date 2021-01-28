@@ -17,12 +17,15 @@
 #include <QDialog>
 #include <QMatrix4x4>
 
+class vtkSMProxy;
 class vvCalibrationDialog : public QDialog
 {
   Q_OBJECT
 
 public:
   vvCalibrationDialog(QWidget* p = 0);
+  vvCalibrationDialog(vtkSMProxy * lidarProxy, vtkSMProxy * GPSProxy, QWidget* p = 0);
+
   virtual ~vvCalibrationDialog();
 
   Q_INVOKABLE QString selectedCalibrationFile() const;
