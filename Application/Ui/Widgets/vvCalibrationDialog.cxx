@@ -449,8 +449,27 @@ vvCalibrationDialog::vvCalibrationDialog(QWidget* p)
   // The advancedConfiguration checkbox hides the three followings groupbox
   connect(this->Internal->AdvancedConfiguration, SIGNAL(toggled(bool)),
     this->Internal->LidarPositionOrientationGroup, SLOT(setVisible(bool)));
+  // The GPS Position Orientation group (and GPS port) is grey (not settable by the user)
+  // if "EnableInterpreterGPSPacket" is disable
   connect(this->Internal->AdvancedConfiguration, SIGNAL(toggled(bool)),
     this->Internal->GPSPositionOrientationGroup, SLOT(setVisible(bool)));
+  connect(this->Internal->EnableInterpretGPSPackets, SIGNAL(toggled(bool)),
+    this->Internal->GpsRollSpinBox, SLOT(setEnabled(bool)));
+  connect(this->Internal->EnableInterpretGPSPackets, SIGNAL(toggled(bool)),
+    this->Internal->GpsPitchSpinBox, SLOT(setEnabled(bool)));
+  connect(this->Internal->EnableInterpretGPSPackets, SIGNAL(toggled(bool)),
+    this->Internal->GpsYawSpinBox, SLOT(setEnabled(bool)));
+  connect(this->Internal->EnableInterpretGPSPackets, SIGNAL(toggled(bool)),
+    this->Internal->GpsXSpinBox, SLOT(setEnabled(bool)));
+  connect(this->Internal->EnableInterpretGPSPackets, SIGNAL(toggled(bool)),
+    this->Internal->GpsYSpinBox, SLOT(setEnabled(bool)));
+  connect(this->Internal->EnableInterpretGPSPackets, SIGNAL(toggled(bool)),
+    this->Internal->GpsZSpinBox, SLOT(setEnabled(bool)));
+  connect(this->Internal->EnableInterpretGPSPackets, SIGNAL(toggled(bool)),
+    this->Internal->GPSPortSpinBox, SLOT(setEnabled(bool)));
+  connect(this->Internal->EnableInterpretGPSPackets, SIGNAL(toggled(bool)),
+    this->Internal->gpsTimeOffsetSpinBox, SLOT(setEnabled(bool)));
+
   connect(this->Internal->AdvancedConfiguration, SIGNAL(toggled(bool)),
     this->Internal->NetworkGroup, SLOT(setVisible(bool)));
   connect(this->Internal->AdvancedConfiguration, SIGNAL(toggled(bool)),
