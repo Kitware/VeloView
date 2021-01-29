@@ -20,14 +20,6 @@ set (CMAKE_CXX_STANDARD 14)
 set (CMAKE_CXX_EXTENSIONS OFF)
 message(STATUS "Building LidarView with C++${CMAKE_CXX_STANDARD} standard")
 
-if (MSVC)
-    # warning level all
-    add_compile_options(/Wall)
-else()
-    # warning level all and extra
-    add_compile_options(-Wall -Wextra)
-endif()
-
 # Disallow in-source build
 if ("${LidarView_SOURCE_DIR}"  STREQUAL "${LidarView_BINARY_DIR}")
   message(FATAL_ERROR
@@ -76,6 +68,7 @@ endif()
 set (LidarView_CMAKE_DIR "${LidarView_SOURCE_DIR}/LVCore/CMake")
 set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${LidarView_CMAKE_DIR})
 
+include(SetCompilationWarnings)
 include(Git)
 include(ParaViewDetermineVersion)
 # Sets VV_VERSION_{MAJOR,MINOR,PATCH} using PARAVIEW determine_version
