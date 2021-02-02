@@ -5,21 +5,21 @@ include("${LidarViewSuperBuild_SOURCE_DIR}/../Application/SoftwareInformation/br
 # Include CMake scripts for geting the version from Git
 include("${LidarViewSuperBuild_SOURCE_DIR}/../LVCore/CMake/Git.cmake")
 include("${LidarViewSuperBuild_SOURCE_DIR}/../LVCore/CMake/ParaViewDetermineVersion.cmake")
-# Sets VV_VERSION_{MAJOR,MINOR,PATCH} for git
-set(VV_VERSION_FILE ${LidarViewSuperBuild_SOURCE_DIR}/../version.txt)
-file(STRINGS "${VV_VERSION_FILE}" version_txt)
-extract_version_components("${version_txt}" "VV")
-determine_version(${LidarViewSuperBuild_SOURCE_DIR} ${GIT_EXECUTABLE} "VV")
+# Sets LV_VERSION_{MAJOR,MINOR,PATCH} for git
+set(LV_VERSION_FILE ${LidarViewSuperBuild_SOURCE_DIR}/../version.txt)
+file(STRINGS "${LV_VERSION_FILE}" version_txt)
+extract_version_components("${version_txt}" "LV")
+determine_version(${LidarViewSuperBuild_SOURCE_DIR} ${GIT_EXECUTABLE} "LV")
 # Update the hard-coded version
-extract_version_components("${version_txt}" "VV_file")
-if((version_txt VERSION_LESS VV_VERSION_FULL)
-   OR (version_txt VERSION_EQUAL VV_VERSION_FULL
-       AND (VV_file_VERSION_PATCH_EXTRA STRLESS VV_VERSION_PATCH_EXTRA)))
-  message(STATUS "Outdated version file updated from ${version_txt} to ${VV_VERSION_FULL} in " ${VV_VERSION_FILE})
-  file(WRITE "${VV_VERSION_FILE}" "${VV_VERSION_FULL}")
+extract_version_components("${version_txt}" "LV_file")
+if((version_txt VERSION_LESS LV_VERSION_FULL)
+   OR (version_txt VERSION_EQUAL LV_VERSION_FULL
+       AND (LV_file_VERSION_PATCH_EXTRA STRLESS LV_VERSION_PATCH_EXTRA)))
+  message(STATUS "Outdated version file updated from ${version_txt} to ${LV_VERSION_FULL} in " ${LV_VERSION_FILE})
+  file(WRITE "${LV_VERSION_FILE}" "${LV_VERSION_FULL}")
 endif()
-if(NOT (version_txt STREQUAL VV_VERSION_FULL))
-  message(STATUS "Git version (${VV_VERSION_FULL}) differs from version in file (${version_txt}) at " ${VV_VERSION_FILE})
+if(NOT (version_txt STREQUAL LV_VERSION_FULL))
+  message(STATUS "Git version (${LV_VERSION_FULL}) differs from version in file (${version_txt}) at " ${LV_VERSION_FILE})
 endif()
 
 # Sets GD_YEAR, GD_MONTH, GD_DAY
@@ -28,20 +28,20 @@ GET_DATE()
 set(PACKAGE_TIMESTAMP "${GD_YEAR}${GD_MONTH}${GD_DAY}")
 
 set(CPACK_COMPONENT_LIDARVIEW_DISPLAY_NAME ${SOFTWARE_NAME})
-set(CPACK_PACKAGE_VERSION_MAJOR ${VV_VERSION_MAJOR})
-set(CPACK_PACKAGE_VERSION_MINOR ${VV_VERSION_MINOR})
-set(CPACK_PACKAGE_VERSION_PATCH ${VV_VERSION_PATCH})
-if (NOT VV_VERSION_IS_RELEASE)
-  set(CPACK_PACKAGE_VERSION_PATCH ${VV_VERSION_PATCH}-${VV_VERSION_PATCH_EXTRA})
+set(CPACK_PACKAGE_VERSION_MAJOR ${LV_VERSION_MAJOR})
+set(CPACK_PACKAGE_VERSION_MINOR ${LV_VERSION_MINOR})
+set(CPACK_PACKAGE_VERSION_PATCH ${LV_VERSION_PATCH})
+if (NOT LV_VERSION_IS_RELEASE)
+  set(CPACK_PACKAGE_VERSION_PATCH ${LV_VERSION_PATCH}-${LV_VERSION_PATCH_EXTRA})
 else()
 endif()
 
-if (NOT VV_VERSION_IS_RELEASE)
+if (NOT LV_VERSION_IS_RELEASE)
   set(CPACK_PACKAGE_FILE_NAME
-      "${CPACK_PACKAGE_NAME}-${VV_VERSION_FULL}-${PACKAGE_TIMESTAMP}-${package_suffix}")
+      "${CPACK_PACKAGE_NAME}-${LV_VERSION_FULL}-${PACKAGE_TIMESTAMP}-${package_suffix}")
 else()
   set(CPACK_PACKAGE_FILE_NAME
-      "${CPACK_PACKAGE_NAME}-${VV_VERSION_FULL}-${package_suffix}")
+      "${CPACK_PACKAGE_NAME}-${LV_VERSION_FULL}-${package_suffix}")
 endif()
 message(STATUS "Bundled package name will be: ${CPACK_PACKAGE_FILE_NAME}" )
 
@@ -91,7 +91,7 @@ if (WIN32)
 elseif (APPLE)
   set(paraview_plugin_subdir "bin/${SOFTWARE_NAME}.app/Contents/Plugins")
 elseif (UNIX)
-  set(paraview_plugin_subdir "lib/lidarview-${VV_VERSION_MAJOR}.${VV_VERSION_MINOR}/plugins")
+  set(paraview_plugin_subdir "lib/lidarview-${LV_VERSION_MAJOR}.${LV_VERSION_MINOR}/plugins")
 endif ()
 
 # get all plugins installed in the lib/lidarview install dir

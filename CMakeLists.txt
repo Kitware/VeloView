@@ -71,16 +71,16 @@ set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${LidarView_CMAKE_DIR})
 include(SetCompilationWarnings)
 include(Git)
 include(ParaViewDetermineVersion)
-# Sets VV_VERSION_{MAJOR,MINOR,PATCH} using PARAVIEW determine_version
+# Sets LV_VERSION_{MAJOR,MINOR,PATCH} using PARAVIEW determine_version
 file(STRINGS version.txt version_txt)
-extract_version_components("${version_txt}" "VV")
-determine_version(${LidarView_SOURCE_DIR} ${GIT_EXECUTABLE} "VV")
+extract_version_components("${version_txt}" "LV")
+determine_version(${LidarView_SOURCE_DIR} ${GIT_EXECUTABLE} "LV")
 
 # Is this a 32 bit or 64bit build. Display this in about dialog.
 if ("${CMAKE_SIZEOF_VOID_P}" EQUAL 8)
-  set(VV_BUILD_ARCHITECTURE "64")
+  set(LV_BUILD_ARCHITECTURE "64")
 else()
-  set(VV_BUILD_ARCHITECTURE "32")
+  set(LV_BUILD_ARCHITECTURE "32")
 endif()
 
 include(CTest)
@@ -126,7 +126,7 @@ if (WIN32)
 elseif(APPLE)
   set(LV_INSTALL_LIBRARY_DIR bin/${SOFTWARE_NAME}.app/Contents/Libraries)
 else()
-  set(LV_INSTALL_LIBRARY_DIR lib/lidarview-${VV_VERSION_MAJOR}.${VV_VERSION_MINOR})
+  set(LV_INSTALL_LIBRARY_DIR lib/lidarview-${LV_VERSION_MAJOR}.${LV_VERSION_MINOR})
 endif()
 
 # Find and include PythonQt
