@@ -1,8 +1,6 @@
 include(lidarview.bundle.common)
 
-set(library_paths "${superbuild_install_location}/lib"
-                  "${superbuild_install_location}/lib/lidarview-${LV_VERSION_MAJOR}.${LV_VERSION_MINOR}"
-                  "${superbuild_install_location}/bin")
+set(library_paths "${superbuild_install_location}/lib")
 
 if (Qt5_DIR)
   list(APPEND library_paths
@@ -11,7 +9,7 @@ endif ()
 
 # Install lidarview executable.
 superbuild_unix_install_program_fwd("${SOFTWARE_NAME}"
-  "lib/lidarview-${LV_VERSION_MAJOR}.${LV_VERSION_MINOR}"
+  "lib"
   SEARCH_DIRECTORIES  "${library_paths}")
 
 # Install PacketFileSender executables.
@@ -22,7 +20,7 @@ superbuild_unix_install_program("${superbuild_install_location}/bin/PacketFileSe
 # install paraview plugins
 foreach (paraview_plugin_path IN LISTS paraview_plugin_paths)
   superbuild_unix_install_plugin("${paraview_plugin_path}"
-    "lib/lidarview-${LV_VERSION_MAJOR}.${LV_VERSION_MINOR}"
+    "lib"
     "${paraview_plugin_subdir}"
     LOADER_PATHS  "${library_paths}"
     LOCATION  "${paraview_plugin_subdir}")
@@ -37,14 +35,13 @@ install(FILES       "${plugins_file}"
 # no path leading to them in binary LidarView or in any of its .so dependencies
 file(GLOB so_names
   RELATIVE
-  "${superbuild_install_location}/lib/lidarview-${LV_VERSION_MAJOR}.${LV_VERSION_MINOR}"
-  "${superbuild_install_location}/lib/lidarview-${LV_VERSION_MAJOR}.${LV_VERSION_MINOR}/*PluginPython*.so*")
+  "${superbuild_install_location}/lib"
+  "${superbuild_install_location}/lib/*PluginPython*.so*")
 foreach (so_name IN LISTS so_names)
   superbuild_unix_install_plugin("${so_name}"
-    "lib/lidarview-${LV_VERSION_MAJOR}.${LV_VERSION_MINOR}"
-    "lib/lidarview-${LV_VERSION_MAJOR}.${LV_VERSION_MINOR}"
-    LOADER_PATHS "${library_paths}"
-    LOCATION  "lib/lidarview-${LV_VERSION_MAJOR}.${LV_VERSION_MINOR}")
+    "lib"
+    "lib"
+    LOADER_PATHS "${library_paths}")
 endforeach ()
 
 if (python_enabled)
@@ -54,7 +51,7 @@ if (python_enabled)
   endif ()
 
   superbuild_unix_install_python(
-    LIBDIR              "lib/lidarview-${LV_VERSION_MAJOR}.${LV_VERSION_MINOR}"
+    LIBDIR              "lib"
     MODULES             ${python_modules}
     MODULE_DIRECTORIES  "${superbuild_install_location}/lib/python${superbuild_python_version}/site-packages"
     LOADER_PATHS        "${library_paths}")
@@ -81,8 +78,8 @@ foreach (qt5_plugin_path IN LISTS qt5_plugin_paths)
   get_filename_component(qt5_plugin_group "${qt5_plugin_group}" NAME)
 
   superbuild_unix_install_plugin("${qt5_plugin_path}"
-    "lib/lidarview-${LV_VERSION_MAJOR}.${LV_VERSION_MINOR}"
-    "lib/lidarview-${LV_VERSION_MAJOR}.${LV_VERSION_MINOR}/${qt5_plugin_group}/"
+    "lib"
+    "lib/${qt5_plugin_group}/"
     LOADER_PATHS "${library_paths}")
 endforeach ()
 

@@ -91,7 +91,7 @@ if (WIN32)
 elseif (APPLE)
   set(paraview_plugin_subdir "bin/${SOFTWARE_NAME}.app/Contents/Plugins")
 elseif (UNIX)
-  set(paraview_plugin_subdir "lib/lidarview-${LV_VERSION_MAJOR}.${LV_VERSION_MINOR}/plugins")
+  set(paraview_plugin_subdir "lib/plugins")
 endif ()
 
 # get all plugins installed in the lib/lidarview install dir

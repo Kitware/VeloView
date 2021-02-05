@@ -126,7 +126,7 @@ if (WIN32)
 elseif(APPLE)
   set(LV_INSTALL_LIBRARY_DIR bin/${SOFTWARE_NAME}.app/Contents/Libraries)
 else()
-  set(LV_INSTALL_LIBRARY_DIR lib/lidarview-${LV_VERSION_MAJOR}.${LV_VERSION_MINOR})
+  set(LV_INSTALL_LIBRARY_DIR lib)
 endif()
 
 # Find and include PythonQt
