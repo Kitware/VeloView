@@ -41,7 +41,6 @@
 #include <pqApplicationCore.h>
 #include <pqInterfaceTracker.h>
 #include <pqObjectBuilder.h>
-#include <pqPythonShellReaction.h>
 #include <pqOutputWidget.h>
 #include <pqRenderView.h>
 #include <pqRenderViewSelectionReaction.h>
@@ -59,6 +58,7 @@
 #include "pqAxesToolbar.h"
 #include <pqParaViewBehaviors.h>
 #include <pqDataRepresentation.h>
+#include <pqPythonShell.h>
 
 #include <QToolBar>
 #include <QShortcut>
@@ -126,6 +126,13 @@ private:
     QToolBar* axesToolbar = new pqAxesToolbar(window)
       << pqSetName("axesToolbar");
     window->addToolBar(Qt::TopToolBarArea, axesToolbar);
+
+    // create pythonshell
+    pqPythonShell* shell = new pqPythonShell(window);
+    shell->setObjectName("pythonShell");
+    shell->initialize();
+    shell->setFontSize(8);
+    this->Ui.pythonShellDock->setWidget(shell);
 
     // Give the macros menu to the pqPythonMacroSupervisor
     pqPythonManager* manager =
@@ -287,6 +294,8 @@ private:
     window->tabifyDockWidget(this->Ui.spreadSheetDock, this->Ui.informationDock);
     window->tabifyDockWidget(this->Ui.spreadSheetDock, this->Ui.memoryInspectorDock);
     window->tabifyDockWidget(this->Ui.spreadSheetDock, this->Ui.viewAnimationDock);
+    window->tabifyDockWidget(this->Ui.spreadSheetDock, this->Ui.outputWidgetDock);
+    window->tabifyDockWidget(this->Ui.spreadSheetDock, this->Ui.pythonShellDock);
 
     // hide docker by default
     this->Ui.pipelineBrowserDock->hide();
@@ -299,6 +308,7 @@ private:
     this->Ui.memoryInspectorDock->hide();
     this->Ui.viewAnimationDock->hide();
     this->Ui.outputWidgetDock->hide();
+    this->Ui.pythonShellDock->hide();
 
     // Setup the View menu. This must be setup after all toolbars and dockwidgets
     // have been created.
@@ -346,8 +356,6 @@ private:
     new pqRenderViewSelectionReaction(this->Ui.actionSelect_All_Points, this->MainView,
       pqRenderViewSelectionReaction::SELECT_FRUSTUM_POINTS);
 
-    new pqPythonShellReaction(this->Ui.actionPython_Console);
-
     pqLidarViewManager::instance()->setup();
 
     pqSettings* const settings = pqApplicationCore::instance()->settings();
@@ -368,6 +376,14 @@ private:
 
     connect(this->Ui.actionShowErrorDialog, SIGNAL(triggered()), this->Ui.outputWidgetDock,
       SLOT(show()));
+
+    connect(this->Ui.actionPython_Console, SIGNAL(triggered()), this->Ui.pythonShellDock,
+      SLOT(show()));
+
+    // connect pythonShell to pythonCommand signal to execute python script.
+    pqPythonShell* shell = qobject_cast<pqPythonShell*>(this->Ui.pythonShellDock->widget());
+    connect(pqLidarViewManager::instance(), SIGNAL(pythonCommand(const QString&)), shell,
+      SLOT(executeScript(const QString&)));
 
     // Add save/load lidar state action
     new lqEnableAdvancedArraysReaction(this->Ui.actionEnableAdvancedArrays);
@@ -481,7 +497,8 @@ void vvMainWindow::dropEvent(QDropEvent* evt)
 
   if (files[0].endsWith(".pcap"))
   {
-    pqLidarViewManager::instance()->runPython(QString("lv.openPCAP('" + files[0] + "')"));
+    pqPythonShell* shell = qobject_cast<pqPythonShell*>(this->Internals->Ui.pythonShellDock->widget());
+    shell->executeScript(QString("lv.openPCAP('" + files[0] + "')"));
   }
   else {
     pqLoadDataReaction::loadData(files);

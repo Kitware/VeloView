@@ -24,6 +24,7 @@
 #include <pqPVApplicationCore.h>
 #include <pqPersistentMainWindowStateBehavior.h>
 #include <pqPipelineSource.h>
+#include <pqPythonShell.h>
 #include <pqPythonDialog.h>
 #include <pqPythonManager.h>
 #include <pqRenderView.h>
@@ -148,25 +149,12 @@ void pqLidarViewManager::pythonStartup()
   }
 
   this->onMeasurementGrid(gridVisible.toBool());
-
-  bool showDialogAtStartup = false;
-  if (showDialogAtStartup)
-  {
-    pqPythonManager* manager = pqPVApplicationCore::instance()->pythonManager();
-    pqPythonDialog* dialog = manager->pythonShellDialog();
-    dialog->show();
-    dialog->raise();
-    dialog->activateWindow();
-  }
 }
 
 //-----------------------------------------------------------------------------
 void pqLidarViewManager::runPython(const QString& statements)
 {
-  // printf("runPython(\"%s\")\n", qPrintable(statements));
-  pqPythonManager* manager = pqPVApplicationCore::instance()->pythonManager();
-  pqPythonDialog* dialog = manager->pythonShellDialog();
-  dialog->runString(statements);
+  emit this->pythonCommand(statements);
 }
 
 //-----------------------------------------------------------------------------
