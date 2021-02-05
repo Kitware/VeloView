@@ -71,7 +71,7 @@ list(APPEND python_modules
 #auto load eye dome lighting plugin
 set(paraview_plugin_EyeDomeLightingView_auto_load ON)
 
-function (paraview_add_plugin output)
+function (lidarview_add_plugin output)
   set(contents "<?xml version=\"1.0\"?>\n<Plugins>\n</Plugins>\n")
   foreach (name IN LISTS ARGN)
     set(auto_load 0)
@@ -87,38 +87,37 @@ endfunction ()
 
 # set the relative path in which we can find plugins for each platform 
 if (WIN32)
-  set(paraview_plugin_subdir "bin/plugins")
+  set(lidarview_plugin_subdir "bin/plugins")
+  set(plugin_name_regex "${superbuild_install_location}/${lidarview_plugin_subdir}/*.dll")
 elseif (APPLE)
-  set(paraview_plugin_subdir "bin/${SOFTWARE_NAME}.app/Contents/Plugins")
+  set(paraview_plugin_subdir "Applications/paraview.app/Contents/Plugins")
+  set(lidarview_plugin_subdir "bin/${SOFTWARE_NAME}.app/Contents/Plugins")
+  set(plugin_name_regex "${superbuild_install_location}/${paraview_plugin_subdir}/lib*.dylib"
+                        "${superbuild_install_location}/${lidarview_plugin_subdir}/lib*.dylib")
 elseif (UNIX)
-  set(paraview_plugin_subdir "lib/plugins")
+  set(paraview_plugin_subdir "lib/paraview-${PARAVIEW_VERSION}/plugins")
+  set(lidarview_plugin_subdir "lib/plugins")
+  set(plugin_name_regex "${superbuild_install_location}/${paraview_plugin_subdir}/lib*.so"
+                        "${superbuild_install_location}/${lidarview_plugin_subdir}/lib*.so")
 endif ()
 
 # get all plugins installed in the lib/lidarview install dir
-if(WIN32)
-  set(plugin_prefix "")
-  set(plugin_ext "dll")
-elseif(APPLE)
-  set(plugin_prefix "lib")
-  set(plugin_ext "dylib")
-else()
-  set(plugin_prefix "lib")
-  set(plugin_ext "so")
-endif()
-
-set(paraview_plugin_dir "${superbuild_install_location}/${paraview_plugin_subdir}")
-file(GLOB_RECURSE paraview_plugin_paths ${paraview_plugin_dir}/${plugin_prefix}*.${plugin_ext})
+file(GLOB_RECURSE lidarview_plugin_paths ${plugin_name_regex})
 
 # Get plugins name and set up the .plugins file list
-set(paraview_plugins)
-foreach(paraview_plugin_path ${paraview_plugin_paths})
-  get_filename_component(paraview_plugin "${paraview_plugin_path}" NAME_WE)  
-  string(REPLACE "${plugin_prefix}" "" paraview_plugin "${paraview_plugin}")
-  list(APPEND paraview_plugins ${paraview_plugin})
+set(lidarview_plugins)
+foreach(lidarview_plugin_path ${lidarview_plugin_paths})
+  get_filename_component(paraview_plugin "${lidarview_plugin_path}" NAME_WE)
+
+  # remove 'lib' prefix in plugin name
+  if(UNIX)
+    string(REPLACE "lib" "" paraview_plugin "${paraview_plugin}")
+  endif()
+  list(APPEND lidarview_plugins ${paraview_plugin})
 endforeach()
 
 set(plugins_file "${CMAKE_CURRENT_BINARY_DIR}/.plugins")
-paraview_add_plugin("${plugins_file}" ${paraview_plugins})
+lidarview_add_plugin("${plugins_file}" ${lidarview_plugins})
 
 if (qt5_enabled)
   include(qt5.functions)

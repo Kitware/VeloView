@@ -39,16 +39,16 @@ if (EXISTS "${superbuild_install_location}/bin/lidarview.conf")
 endif ()
 
 # install paraview plugins
-foreach (paraview_plugin_path IN LISTS paraview_plugin_paths)
-  superbuild_windows_install_plugin("${paraview_plugin_path}"
+foreach (lidarview_plugin_path IN LISTS lidarview_plugin_paths)
+  superbuild_windows_install_plugin("${lidarview_plugin_path}"
     "bin"
-    "${paraview_plugin_subdir}"
+    "${lidarview_plugin_subdir}"
     SEARCH_DIRECTORIES "${library_paths}"
-    LOCATION "${paraview_plugin_subdir}")
+    LOCATION "${lidarview_plugin_subdir}")
 endforeach ()
 
 install(FILES       "${plugins_file}"
-        DESTINATION ${paraview_plugin_subdir}
+        DESTINATION ${lidarview_plugin_subdir}
         COMPONENT   superbuild)
 
 if (python3_enabled)

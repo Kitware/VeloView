@@ -33,7 +33,7 @@ superbuild_apple_create_app(
   "${lidarview_appname}"
   "${superbuild_install_location}/bin/${lidarview_appname}/Contents/MacOS/${SOFTWARE_NAME}"
   CLEAN
-  PLUGINS ${paraview_plugin_paths}
+  PLUGINS ${lidarview_plugin_paths}
   SEARCH_DIRECTORIES "${superbuild_install_location}/lib" "${superbuild_install_location}/bin/${lidarview_appname}/Contents/Libraries")
 
 install(

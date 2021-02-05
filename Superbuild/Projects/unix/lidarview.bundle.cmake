@@ -18,17 +18,17 @@ superbuild_unix_install_program("${superbuild_install_location}/bin/PacketFileSe
   SEARCH_DIRECTORIES  "${library_paths}")
 
 # install paraview plugins
-foreach (paraview_plugin_path IN LISTS paraview_plugin_paths)
-  superbuild_unix_install_plugin("${paraview_plugin_path}"
+foreach (lidarview_plugin_path IN LISTS lidarview_plugin_paths)
+  superbuild_unix_install_plugin("${lidarview_plugin_path}"
     "lib"
-    "${paraview_plugin_subdir}"
+    "${lidarview_plugin_subdir}"
     LOADER_PATHS  "${library_paths}"
-    LOCATION  "${paraview_plugin_subdir}")
+    LOCATION  "${lidarview_plugin_subdir}")
 endforeach ()
 
 # install .plugins file list
 install(FILES       "${plugins_file}"
-        DESTINATION ${paraview_plugin_subdir}
+        DESTINATION ${lidarview_plugin_subdir}
         COMPONENT   superbuild)
 
 # These module are not processed automatically by superbuild because there is 
@@ -58,7 +58,7 @@ if (python_enabled)
 endif ()
 
 # An empty paraview directory is created as it is needed to run lidarview
-# This is because all plugins are now stored in the lib/lidarview-{version}/plugins directory
+# This is because plugins are all stored in the lib/plugins directory
 file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/lib/paraview-${PARAVIEW_VERSION}")
 install(DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/lib/paraview-${PARAVIEW_VERSION}"
         DESTINATION "lib"
