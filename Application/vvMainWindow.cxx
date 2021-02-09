@@ -34,6 +34,7 @@
 #include "lqLoadLidarStateReaction.h"
 #include "lqEnableAdvancedArraysReaction.h"
 #include "lqOpenSensorReaction.h"
+#include "lqUpdateCalibrationReaction.h"
 
 #include <vtkSMProxyManager.h>
 #include <vtkSMSessionProxyManager.h>
@@ -263,6 +264,9 @@ private:
     // Add save/load lidar state action
     new lqSaveLidarStateReaction(this->Ui.actionSaveLidarState);
     new lqLoadLidarStateReaction(this->Ui.actionLoadLidarState);
+
+    // Change calibration reaction
+    new lqUpdateCalibrationReaction(this->Ui.actionChoose_Calibration_File);
 
     // Specify each Properties Panel as we do want to present one panel per dock
     this->Ui.propertiesPanel->setPanelMode(pqPropertiesPanel::SOURCE_PROPERTIES);

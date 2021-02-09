@@ -21,6 +21,8 @@ add_library(ApplicationUi
   pqLidarViewManager.h
   lqOpenSensorReaction.cxx
   lqOpenSensorReaction.h
+  lqUpdateCalibrationReaction.cxx
+  lqUpdateCalibrationReaction.h
   vvLoadDataReaction.cxx
   vvLoadDataReaction.h
   vvPythonQtDecorators.h
@@ -29,6 +31,7 @@ target_link_libraries(ApplicationUi PUBLIC LidarPlugin ${PYTHONQT_LIBRARIES} lqA
 target_include_directories(ApplicationUi PUBLIC
   ${PYTHONQT_INCLUDE_DIRS}
   ${CMAKE_CURRENT_SOURCE_DIR}
+  ${CMAKE_CURRENT_SOURCE_DIR}/Widgets
   ${CMAKE_CURRENT_BINARY_DIR}
   )
 include(GenerateExportHeader)
