@@ -118,15 +118,10 @@ def hasArrayName(sourceProxy, arrayName):
     if not sourceProxy:
         return False
 
-    info = sourceProxy.GetDataInformation().DataInformation
+    array = sourceProxy.PointData.GetArray(arrayName)
+    if array:
+        return True
 
-    if info.GetNumberOfPoints() == 0:
-        return False
-
-    info = info.GetAttributeInformation(0)
-    for i in xrange(info.GetNumberOfArrays()):
-        if info.GetArrayInformation(i).GetName() == arrayName:
-            return True
     return False
 
 
@@ -141,8 +136,7 @@ def openData(filename):
 
     rep = smp.Show(reader)
     rep.InterpolateScalarsBeforeMapping = 0
-    setDefaultLookupTables(reader)
-    colorByIntensity(reader)
+    colorByArrayName(reader, "intensity")
 
     showSourceInSpreadSheet(reader)
 
@@ -222,13 +216,22 @@ def createDSRColorsPreset():
         presets.AddPreset("DSR Colors",intensityJSON)
 
 
-def setDefaultLookupTables(sourceProxy):
+def setDefaultLookupTables(sourceProxy, arrayName):
     createDSRColorsPreset()
 
     presets = servermanager.vtkSMTransferFunctionPresets()
 
     dsrIndex = findPresetByName("DSR Colors")
     presetDSR = presets.GetPresetAsString(dsrIndex)
+
+    # LUT for arrayName
+    smp.GetLookupTableForArray(
+      arrayName, 1,
+      ScalarRangeInitialized=1.0,
+      ColorSpace='HSV',
+      RGBPoints=[0.0, 0.0, 0.0, 1.0,
+               100.0, 1.0, 1.0, 0.0,
+               256.0, 1.0, 0.0, 0.0])
 
     # LUT for 'intensity'
     smp.GetLookupTableForArray(
@@ -269,19 +272,13 @@ def setDefaultLookupTables(sourceProxy):
           ColorSpace='RGB',
           RGBPoints=rgbRaw)
 
-def colorByIntensity(sourceProxy):
-    arrayName = "intensity"
-    #  try:
-    #      _ = sourceProxy.Interpreter.UseIntraFiringAdjustment
-    #      arrayName =  "intensity"
-    #  #hasArrayName(sourceProxy, 'Intensity'):
-    #  except AttributeError:
-    #      arrayName = "Intensity"
 
-    setDefaultLookupTables(sourceProxy)
+def colorByArrayName(sourceProxy, arrayName):
+    setDefaultLookupTables(sourceProxy, arrayName)
     rep = smp.GetDisplayProperties(sourceProxy)
     rep.ColorArrayName = arrayName
     rep.LookupTable = smp.GetLookupTableForArray(arrayName, 1)
+
     return True
 
 
@@ -422,7 +419,6 @@ def openSensor():
     smp.Render()
 
     showSourceInSpreadSheet(app.trailingFrame)
-    colorByIntensity(sensor)
 
     app.actions['actionShowRPM'].enabled = True
     app.actions['actionCorrectIntensityValues'].enabled = True
@@ -446,7 +442,14 @@ def openSensor():
 
     updateUIwithNewLidar()
     smp.Render()
-    colorByIntensity(sensor)
+
+    # In OpenSensor we don't have access to the futur available arrays
+    nChannels = sensor.Interpreter.GetProperty("NumberOfChannelsInformation")[0]
+    print(nChannels)
+    arrayName = "intensity"
+    if nChannels == 128:
+        arrayName = "reflectivity"
+    colorByArrayName(sensor, arrayName)
 
 
 def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrationUIArgs=None):
@@ -576,7 +579,10 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
 
     smp.SetActiveView(app.mainView)
 
-    colorByIntensity(app.trailingFrame)
+    arrayName = "reflectivity"
+    if not hasArrayName(app.trailingFrame, arrayName):
+        arrayName = "intensity"
+    colorByArrayName(app.trailingFrame, arrayName)
 
     showSourceInSpreadSheet(app.trailingFrame)
 
