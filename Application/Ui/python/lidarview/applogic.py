@@ -352,70 +352,37 @@ def chooseCalibration(calibrationFilename=None):
         result.calibrationFile = calibrationFilename
         return result
 
-def openSensor():
+def UpdateApplogicLidar(lidarProxyName, gpsProxyName):
 
-    calibration = chooseCalibration()
-    if not calibration:
-        return
 
-    calibrationFile = calibration.calibrationFile
-    LidarPort = calibration.lidarPort
-    GPSPort = calibration.gpsPort
-    LIDARForwardingPort = calibration.lidarForwardingPort
-    GPSForwardingPort = calibration.gpsForwardingPort
-    isForwarding = calibration.isForwarding
-    ipAddressForwarding = calibration.ipAddressForwarding
+    sensor = smp.FindSource(lidarProxyName)
 
-    close()
     app.grid = createGrid()
 
-    sensor = smp.LidarStream(guiName='Data', CalibrationFile=calibrationFile)
-
-    if "velarray" in calibrationFile.lower():
-        sensor.Interpreter = 'Velodyne Special Velarray Interpreter'
-    else :
-        sensor.Interpreter = 'Velodyne Meta Interpreter'
-
     sensor.Interpreter.UseIntraFiringAdjustment = app.actions['actionIntraFiringAdjust'].isChecked()
-
-    sensor.ListeningPort = LidarPort
-    sensor.ForwardedPort = LIDARForwardingPort
-    sensor.IsForwarding = isForwarding
-    sensor.ForwardedIpAddress = ipAddressForwarding
-    sensor.IsCrashAnalysing = calibration.isCrashAnalysing
-    sensor.Interpreter.SensorTransform.Translate = calibration.lidarTranslation
-    sensor.Interpreter.SensorTransform.Rotate = calibration.lidarRotation
-
     sensor.Interpreter.IgnoreZeroDistances = app.actions['actionIgnoreZeroDistances'].isChecked()
     sensor.Interpreter.HideDropPoints = app.actions['actionHideDropPoints'].isChecked()
     sensor.Interpreter.IgnoreEmptyFrames = app.actions['actionIgnoreEmptyFrames'].isChecked()
-    sensor.UpdatePipeline()
-    sensor.Start()
 
-    if calibration.isEnableInterpretGPSPackets :
-        posOrSensor = smp.PositionOrientationStream(guiName='Position Orientation Data')
-        posOrSensor.ListeningPort = GPSPort
-        posOrSensor.ForwardedPort = GPSForwardingPort
-        posOrSensor.IsForwarding = isForwarding
-        posOrSensor.ForwardedIpAddress = ipAddressForwarding
-        posOrSensor.IsCrashAnalysing = calibration.isCrashAnalysing
-        posOrSensor.Interpreter.SensorTransform.Translate = calibration.gpsTranslation
-        posOrSensor.Interpreter.SensorTransform.Rotate = calibration.gpsRotation
-        app.position = posOrSensor
-        posOrSensor.UpdatePipeline()
-        posOrSensor.Start()
+    sensor.UpdatePipeline()
+
+    if gpsProxyName:
+        app.position = smp.FindSource(gpsProxyName)
 
     if SAMPLE_PROCESSING_MODE:
         processor = smp.ProcessingSample(sensor)
 
     app.sensor = sensor
+
     app.trailingFramesSpinBox.enabled = False
     app.colorByInitialized = False
+    LidarPort = sensor.GetClientSideObject().GetListeningPort()
     app.filenameLabel.setText('Live sensor stream (Port:'+str(LidarPort)+')' )
     app.positionPacketInfoLabel.setText('')
     enableSaveActions()
 
     onCropReturns(False) # Dont show the dialog just restore settings
+
     restoreLaserSelection()
 
     rep = smp.Show(sensor)
@@ -428,7 +395,7 @@ def openSensor():
         prep = smp.Show(processor)
     smp.Render()
 
-    showSourceInSpreadSheet(app.trailingFrame)
+    showSourceInSpreadSheet(app.sensor)
 
     app.actions['actionShowRPM'].enabled = True
     app.actions['actionCorrectIntensityValues'].enabled = True
@@ -446,9 +413,6 @@ def openSensor():
     app.actions['actionDualReturnDistanceFar'].enabled = True
     app.actions['actionDualReturnIntensityHigh'].enabled = True
     app.actions['actionDualReturnIntensityLow'].enabled = True
-
-    # Hide Position Orientation Stream by default and select lidarStream as active source
-    smp.SetActiveSource(sensor)
 
     updateUIwithNewLidar()
     smp.Render()
@@ -1964,7 +1928,6 @@ def setupActions():
     app.actions['actionSaveScreenshot'].connect('triggered()', onSaveScreenshot)
     app.actions['actionGrid_Properties'].connect('triggered()', onGridProperties)
     app.actions['actionLaserSelection'].connect('triggered()', onLaserSelection)
-    app.actions['actionChoose_Calibration_File'].connect('triggered()', onChooseCalibrationFile)
     app.actions['actionCropReturns'].connect('triggered()', onCropReturns)
     app.actions['actionNative_File_Dialogs'].connect('triggered()', onNativeFileDialogsAction)
     app.actions['actionAbout_LidarView'].connect('triggered()', onAbout)

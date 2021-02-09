@@ -76,7 +76,6 @@ public slots:
 
   void pythonStartup();
 
-  void onOpenSensor();
   void onMeasurementGrid(bool gridVisible);
   void onEnableCrashAnalysis(bool crashAnalysisEnabled);
   void onResetDefaultSettings();

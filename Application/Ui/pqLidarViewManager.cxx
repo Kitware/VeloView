@@ -375,12 +375,6 @@ void pqLidarViewManager::onMeasurementGrid(bool gridVisible)
 }
 
 //-----------------------------------------------------------------------------
-void pqLidarViewManager::onOpenSensor()
-{
-  this->runPython("lv.openSensor()\n");
-}
-
-//-----------------------------------------------------------------------------
 void pqLidarViewManager::onResetCameraLidar()
 {
   this->runPython("lv.resetCameraLidar()\n");
