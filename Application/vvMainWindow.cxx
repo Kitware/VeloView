@@ -390,6 +390,9 @@ private:
     new vvLoadDataReaction(this->Ui.actionOpenPcap, false);
     new lqOpenSensorReaction(this->Ui.actionOpen_Sensor_Stream);
 
+    lqSensorListWidget * listSensor = lqSensorListWidget::instance();
+    listSensor->setCalibrationFunction(&lqUpdateCalibrationReaction::UpdateExistingSource);
+
     connect(this->Ui.actionMeasurement_Grid, SIGNAL(toggled(bool)), pqLidarViewManager::instance(),
       SLOT(onMeasurementGrid(bool)));
 
