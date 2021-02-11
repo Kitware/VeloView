@@ -7,6 +7,7 @@ superbuild_add_project(lidarview
     -DBUILD_TESTING:BOOL=OFF
     -DParaView_DIR:PATH=${SuperBuild_BINARY_DIR}/common-superbuild/paraview/build
     -DVTK_DIR:PATH=${SuperBuild_BINARY_DIR}/common-superbuild/paraview/build/VTK
+    -DCMAKE_CXX_STANDARD:STRING=${CMAKE_CXX_STANDARD}
     -Dqt_version:STRING=${qt_version}
     -DPYTHONQT_DIR:PATH=<INSTALL_DIR>
     -DBOOST_ROOT:PATH=<INSTALL_DIR>
