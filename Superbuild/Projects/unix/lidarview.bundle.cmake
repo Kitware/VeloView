@@ -12,10 +12,16 @@ superbuild_unix_install_program_fwd("${SOFTWARE_NAME}"
   "lib"
   SEARCH_DIRECTORIES  "${library_paths}")
 
-# Install PacketFileSender executables.
-superbuild_unix_install_program("${superbuild_install_location}/bin/PacketFileSender"
-  "lib"
-  SEARCH_DIRECTORIES  "${library_paths}")
+# Remove "LidarView" from the list since we just installed it above.
+list(REMOVE_ITEM lidarview_executables
+  ${SOFTWARE_NAME})
+
+# Install other executables.
+foreach (executable IN LISTS lidarview_executables)
+  superbuild_unix_install_program("${superbuild_install_location}/bin/${executable}"
+    "lib"
+    SEARCH_DIRECTORIES  "${library_paths}")
+endforeach ()
 
 # install paraview plugins
 foreach (lidarview_plugin_path IN LISTS lidarview_plugin_paths)
