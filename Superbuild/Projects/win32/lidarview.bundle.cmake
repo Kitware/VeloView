@@ -31,13 +31,6 @@ foreach (executable IN LISTS lidarview_executables)
     EXCLUDE_REGEXES    ${exclude_regexes})
 endforeach()
 
-if (EXISTS "${superbuild_install_location}/bin/lidarview.conf")
-  install(
-    FILES       "${superbuild_install_location}/bin/lidarview.conf"
-    DESTINATION "bin"
-    COMPONENT   "runtime")
-endif ()
-
 # install paraview plugins
 foreach (lidarview_plugin_path IN LISTS lidarview_plugin_paths)
   superbuild_windows_install_plugin("${lidarview_plugin_path}"
