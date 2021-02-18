@@ -419,7 +419,6 @@ def UpdateApplogicLidar(lidarProxyName, gpsProxyName):
 
     # In OpenSensor we don't have access to the futur available arrays
     nChannels = sensor.Interpreter.GetProperty("NumberOfChannelsInformation")[0]
-    print(nChannels)
     arrayName = "intensity"
     if nChannels == 128:
         arrayName = "reflectivity"
