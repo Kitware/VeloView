@@ -343,8 +343,26 @@ private:
   {
     new pqRenderViewSelectionReaction(this->Ui.actionSelect_Visible_Points, this->MainView,
       pqRenderViewSelectionReaction::SELECT_SURFACE_POINTS);
-    new pqRenderViewSelectionReaction(this->Ui.actionSelect_All_Points, this->MainView,
-      pqRenderViewSelectionReaction::SELECT_FRUSTUM_POINTS);
+
+    // We add the Select All points action here.
+    // We need to get the real paraview action to avoid any disconnection
+    // between the button and the shortcut for example
+    // "ToolBar" is the name of the paraview toolbar that is associated to the view
+    // see Paraview-src/Qt/Components/pqViewFrame.cxx for the name of the toolbar
+    // and Paraview-src/Qt/ApplicationComponents/pqStandardViewFrameActionsImplementation.cxx
+    // for the add of the action in the toolbar.
+    QToolBar* advancedToolbar = window->findChild<QToolBar *>(QString("ToolBar"));
+    if(advancedToolbar)
+    {
+      for(QAction * action : advancedToolbar->actions())
+      {
+        if(action->objectName().compare("actionSelectFrustumPoints", Qt::CaseInsensitive) == 0)
+        {
+          this->Ui.toolBar->insertAction(this->Ui.actionSelectDualReturn2, action);
+          break;
+        }
+      }
+    }
 
     new pqPythonShellReaction(this->Ui.actionPython_Console);
 

@@ -190,7 +190,6 @@
    <addaction name="actionChoose_Calibration_File"/>
    <addaction name="actionCropReturns"/>
    <addaction name="separator"/>
-   <addaction name="actionSelect_All_Points"/>
    <addaction name="actionSelectDualReturn2"/>
    <addaction name="actionSpreadsheet"/>
    <addaction name="actionPython_Console"/>
@@ -361,21 +360,6 @@
    </property>
    <property name="toolTip">
     <string>Select Visible Points (s)</string>
-   </property>
-  </action>
-  <action name="actionSelect_All_Points">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="icon">
-    <iconset resource="vvResources.qrc">
-     <normaloff>:/vvResources/Icons/pqFrustumSelectionPoint24.png</normaloff>:/vvResources/Icons/pqFrustumSelectionPoint24.png</iconset>
-   </property>
-   <property name="text">
-    <string>Select All Points</string>
-   </property>
-   <property name="toolTip">
-    <string>Select All Points (g)</string>
    </property>
   </action>
   <action name="actionSpreadsheet">
