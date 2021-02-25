@@ -6,4 +6,4 @@
 	url = ../LidarView-Core
 [submodule "Plugins/VelodynePlugin"]
 	path = Plugins/VelodynePlugin
-	url = ../VelodynePlugin-Private
+	url = ../VelodynePlugin
