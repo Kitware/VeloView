@@ -31,18 +31,18 @@ target_include_directories(ApplicationUi PUBLIC
   )
 include(GenerateExportHeader)
 generate_export_header(ApplicationUi)
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/applicationui_export.h DESTINATION ${VV_INSTALL_LIBRARY_DIR})
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/applicationui_export.h DESTINATION ${LV_INSTALL_LIBRARY_DIR})
 
 # install libraries
 if (APPLE)
   install(TARGETS ApplicationUi
-          RUNTIME DESTINATION ${VV_INSTALL_RUNTIME_DIR}/${SOFTWARE_NAME}.app/Contents/Libraries
-          LIBRARY DESTINATION ${VV_INSTALL_RUNTIME_DIR}/${SOFTWARE_NAME}.app/Contents/Libraries
+          RUNTIME DESTINATION ${LV_INSTALL_LIBRARY_DIR}
+          LIBRARY DESTINATION ${LV_INSTALL_LIBRARY_DIR}
           COMPONENT Runtime)
 else()
   install(TARGETS ApplicationUi
-          RUNTIME DESTINATION ${VV_INSTALL_RUNTIME_DIR}
-          LIBRARY DESTINATION ${VV_INSTALL_LIBRARY_DIR}
+          RUNTIME DESTINATION "bin"
+          LIBRARY DESTINATION ${LV_INSTALL_LIBRARY_DIR}
           COMPONENT Runtime)
 endif()
 

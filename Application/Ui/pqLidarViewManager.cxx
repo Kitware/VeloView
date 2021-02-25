@@ -24,6 +24,7 @@
 #include <pqPVApplicationCore.h>
 #include <pqPersistentMainWindowStateBehavior.h>
 #include <pqPipelineSource.h>
+#include <pqPythonShell.h>
 #include <pqPythonDialog.h>
 #include <pqPythonManager.h>
 #include <pqRenderView.h>
@@ -90,18 +91,11 @@ pqLidarViewManager::~pqLidarViewManager()
 void pqLidarViewManager::pythonStartup()
 {
   QStringList pythonDirs;
-  pythonDirs << QCoreApplication::applicationDirPath()  + "/../Python" // MacOSX application bundle
-             << QCoreApplication::applicationDirPath()  + "/../../../../lib" // Mac OS X Plugin build
-             << QCoreApplication::applicationDirPath()  + "/../../../../lib/site-packages" // MacOSX application bundle in build directory
-             << QCoreApplication::applicationDirPath()  + "/site-packages" // Windows NMake build directory and install tree
-             << QCoreApplication::applicationDirPath()  + "/../lib" // Linux build tree
-             << QCoreApplication::applicationDirPath()  + "/../lib/site-packages" // Linux build tree
-             << QCoreApplication::applicationDirPath()  + "/../lib/paraview-" + PARAVIEW_VERSION // Windows install tree
-             << QCoreApplication::applicationDirPath()  + "/../lib/paraview-" + PARAVIEW_VERSION + "/site-packages" // Windows install tree
-             << QCoreApplication::applicationDirPath()  + "/../lib/paraview-" + PARAVIEW_VERSION + "/site-packages/vtk" // Windows install tree
-             << QCoreApplication::applicationDirPath()  + "/../paraview-" + PARAVIEW_VERSION // Linux 4.3+ install tree
-             << QCoreApplication::applicationDirPath()  + "/../paraview-" + PARAVIEW_VERSION + "/site-packages" // Linux 4.3+ install tree
-             << QCoreApplication::applicationDirPath()  + "/../paraview-" + PARAVIEW_VERSION + "/site-packages/vtk"; // Linux 4.3+ install tree
+  pythonDirs << QCoreApplication::applicationDirPath()
+             << QCoreApplication::applicationDirPath() + "/../Libraries" // use lidarpluginpython module from packaging MacOS
+             << QCoreApplication::applicationDirPath() + "/../Python/lidarview" // use lidarview module from install MacOS
+             << QCoreApplication::applicationDirPath() + "/python3.7/site-packages/lidarview" // use lidarview module from install Linux
+             << QCoreApplication::applicationDirPath() + "/Lib/site-packages/lidarview"; // use lidarview module from install Windows
 
   foreach (const QString& dirname, pythonDirs)
   {
@@ -111,9 +105,7 @@ void pqLidarViewManager::pythonStartup()
     }
   }
 
-  vtkPythonInterpreter::RunSimpleString("import PythonQt");
   PythonQt::self()->addDecorators(new vvPythonQtDecorators());
-  vtkPythonInterpreter::RunSimpleString("import lidarview");
 
   this->runPython(QString(
       "import PythonQt\n"
@@ -157,25 +149,12 @@ void pqLidarViewManager::pythonStartup()
   }
 
   this->onMeasurementGrid(gridVisible.toBool());
-
-  bool showDialogAtStartup = false;
-  if (showDialogAtStartup)
-  {
-    pqPythonManager* manager = pqPVApplicationCore::instance()->pythonManager();
-    pqPythonDialog* dialog = manager->pythonShellDialog();
-    dialog->show();
-    dialog->raise();
-    dialog->activateWindow();
-  }
 }
 
 //-----------------------------------------------------------------------------
 void pqLidarViewManager::runPython(const QString& statements)
 {
-  // printf("runPython(\"%s\")\n", qPrintable(statements));
-  pqPythonManager* manager = pqPVApplicationCore::instance()->pythonManager();
-  pqPythonDialog* dialog = manager->pythonShellDialog();
-  dialog->runString(statements);
+  emit this->pythonCommand(statements);
 }
 
 //-----------------------------------------------------------------------------

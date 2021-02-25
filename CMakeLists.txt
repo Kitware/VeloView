@@ -71,23 +71,33 @@ set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${LidarView_CMAKE_DIR})
 include(SetCompilationWarnings)
 include(Git)
 include(ParaViewDetermineVersion)
-# Sets VV_VERSION_{MAJOR,MINOR,PATCH} using PARAVIEW determine_version
+# Sets LV_VERSION_{MAJOR,MINOR,PATCH} using PARAVIEW determine_version
 file(STRINGS version.txt version_txt)
-extract_version_components("${version_txt}" "VV")
-determine_version(${LidarView_SOURCE_DIR} ${GIT_EXECUTABLE} "VV")
+extract_version_components("${version_txt}" "LV")
+determine_version(${LidarView_SOURCE_DIR} ${GIT_EXECUTABLE} "LV")
 
 # Is this a 32 bit or 64bit build. Display this in about dialog.
 if ("${CMAKE_SIZEOF_VOID_P}" EQUAL 8)
-  set(VV_BUILD_ARCHITECTURE "64")
+  set(LV_BUILD_ARCHITECTURE "64")
 else()
-  set(VV_BUILD_ARCHITECTURE "32")
+  set(LV_BUILD_ARCHITECTURE "32")
 endif()
 
 include(CTest)
 
 find_package(ParaView REQUIRED)
-find_package(PythonInterp 2 REQUIRED)
-find_package(PythonLibs 2 REQUIRED)
+
+# Include findpythonlibs to get the function PYTHON_ADD_MODULE
+# needed in WRAP_PLUGIN_FOR_PYTHON
+# Warning : Do not use find_package(PythonLibs) because it reset 
+# some PYTHON paths that can enter in conflicts with those found
+# during the superbuild (specially right on APPLE when a second
+# python version has been installed using homebrew)
+include(FindPythonLibs)
+# We force python to version 3.7 as it is the only one that has been tested
+find_package(Python3 3.7 EXACT QUIET REQUIRED COMPONENTS Interpreter)
+set(Python_VERSION "${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}")
+
 include(${PARAVIEW_USE_FILE})
 option(BUILD_SHARED_LIBS "Build shared libs" ON)
 
@@ -111,15 +121,13 @@ SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 #------------------------------------------------------------------------------
 # Setup install directories (we use names with VTK_ prefix, since ParaView now
 # is built as a custom "VTK" library.
-set(VV_INSTALL_RUNTIME_DIR bin)
 if (WIN32)
-  set(VV_INSTALL_LIBRARY_DIR bin)
+  set(LV_INSTALL_LIBRARY_DIR bin)
+elseif(APPLE)
+  set(LV_INSTALL_LIBRARY_DIR bin/${SOFTWARE_NAME}.app/Contents/Libraries)
 else()
-  set(VV_INSTALL_LIBRARY_DIR
-    lib/lidarview-${VV_VERSION_MAJOR}.${VV_VERSION_MINOR})
+  set(LV_INSTALL_LIBRARY_DIR lib)
 endif()
-set(VV_INSTALL_ARCHIVE_DIR
-    lib/lidarview-${VV_VERSION_MAJOR}.${VV_VERSION_MINOR})
 
 # Find and include PythonQt
 find_package(PythonQt REQUIRED)
@@ -127,7 +135,14 @@ find_package(PythonQt REQUIRED)
 # Find the PythonQt plugin library in ParaView lib directory
 get_target_property(paraview_lib_location pqCore LOCATION)
 get_filename_component(paraview_lib_location ${paraview_lib_location} PATH)
-find_library(PYTHONQTPLUGIN_LIBRARY PythonQtPlugin HINTS ${paraview_lib_location}  DOC "ParaView PythonQt plugin library")
+
+if(WIN32)
+  set(PYTHONQTPLUGIN_DIR ${paraview_lib_location}/../lib)
+else()
+  set(PYTHONQTPLUGIN_DIR ${paraview_lib_location}/paraview-${PARAVIEW_VERSION_MAJOR}.${PARAVIEW_VERSION_MINOR}/plugins/PythonQtPlugin)
+endif()
+
+find_library(PYTHONQTPLUGIN_LIBRARY PythonQtPlugin HINTS ${PYTHONQTPLUGIN_DIR}  DOC "ParaView PythonQt plugin library")
 mark_as_advanced(PYTHONQTPLUGIN_LIBRARY)
 
 if(WIN32 AND MSVC)
@@ -152,13 +167,21 @@ add_subdirectory(Application)
 # TODO: once we use Qt built from source on Windows, remove this manual installation
 # currently: PythonQt fails to build against our own build of Qt
 if (WIN32)
+  install(FILES "${paraview_lib_location}/plugins/PythonQtPlugin/PythonQtPlugin.dll"
+          DESTINATION "bin")
+
+  # install some python libs needed to launch Lidarview from the install dir
+  get_filename_component(python_lib_location ${Python3_LIBRARY} PATH)
+  install(DIRECTORY "${python_lib_location}/../Lib" 
+    DESTINATION "bin")
+
+  install(FILES "${python_lib_location}/../python${Python3_VERSION_MAJOR}${Python3_VERSION_MINOR}.dll" 
+    DESTINATION "bin")
+
   foreach (qt5_opengl_lib IN ITEMS opengl32sw libEGL libGLESv2 libEGLd
       Qt5Core Qt5Gui Qt5Widgets Qt5Help Qt5Network Qt5PrintSupport Qt5Sql)
-    install(
-       FILES
-      "${Qt5_DIR}/../../../bin/${qt5_opengl_lib}.dll"
-      DESTINATION
-      "bin")
+    install(FILES "${Qt5_DIR}/../../../bin/${qt5_opengl_lib}.dll"
+      DESTINATION "bin")
   endforeach ()
   install(DIRECTORY "${Qt5_DIR}/../../../plugins/platforms"
     DESTINATION "bin"

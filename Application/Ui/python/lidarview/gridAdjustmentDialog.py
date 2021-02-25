@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from __future__ import print_function
 from PythonQt import QtCore, QtGui, QtUiTools
 import math
 
@@ -19,7 +20,7 @@ def showDialog(mainWindow, grid, gridProperties):
     loader = QtUiTools.QUiLoader()
     uifile = QtCore.QFile(':/LidarViewPlugin/vvGridAdjustmentDialog.ui')
     if not uifile.open(uifile.ReadOnly):
-        print 'error opening file'
+        print("error opening file")
         return
 
     dialog = loader.load(uifile, mainWindow)

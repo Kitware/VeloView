@@ -41,8 +41,7 @@
 #include <pqApplicationCore.h>
 #include <pqInterfaceTracker.h>
 #include <pqObjectBuilder.h>
-#include <pqPythonShellReaction.h>
-#include <pqQtMessageHandlerBehavior.h>
+#include <pqOutputWidget.h>
 #include <pqRenderView.h>
 #include <pqRenderViewSelectionReaction.h>
 #include <pqDeleteReaction.h>
@@ -59,12 +58,14 @@
 #include "pqAxesToolbar.h"
 #include <pqParaViewBehaviors.h>
 #include <pqDataRepresentation.h>
+#include <pqPythonShell.h>
 
 #include <QToolBar>
 #include <QShortcut>
 #include <QMenu>
 #include <QMimeData>
 #include <QUrl>
+#include <QDockWidget>
 
 #include <cassert>
 #include <iostream>
@@ -126,6 +127,13 @@ private:
       << pqSetName("axesToolbar");
     window->addToolBar(Qt::TopToolBarArea, axesToolbar);
 
+    // create pythonshell
+    pqPythonShell* shell = new pqPythonShell(window);
+    shell->setObjectName("pythonShell");
+    shell->initialize();
+    shell->setFontSize(8);
+    this->Ui.pythonShellDock->setWidget(shell);
+
     // Give the macros menu to the pqPythonMacroSupervisor
     pqPythonManager* manager =
       qobject_cast<pqPythonManager*>(pqApplicationCore::instance()->manager("PYTHON_MANAGER"));
@@ -138,8 +146,6 @@ private:
     }
 
     // Define application behaviors.
-    new pqQtMessageHandlerBehavior(window);
-
     pqParaViewBehaviors::enableQuickLaunchShortcuts();
     pqParaViewBehaviors::enableSpreadSheetVisibilityBehavior();
     pqParaViewBehaviors::enableObjectPickingBehavior();
@@ -288,6 +294,8 @@ private:
     window->tabifyDockWidget(this->Ui.spreadSheetDock, this->Ui.informationDock);
     window->tabifyDockWidget(this->Ui.spreadSheetDock, this->Ui.memoryInspectorDock);
     window->tabifyDockWidget(this->Ui.spreadSheetDock, this->Ui.viewAnimationDock);
+    window->tabifyDockWidget(this->Ui.spreadSheetDock, this->Ui.outputWidgetDock);
+    window->tabifyDockWidget(this->Ui.spreadSheetDock, this->Ui.pythonShellDock);
 
     // hide docker by default
     this->Ui.pipelineBrowserDock->hide();
@@ -299,6 +307,8 @@ private:
     this->Ui.informationDock->hide();
     this->Ui.memoryInspectorDock->hide();
     this->Ui.viewAnimationDock->hide();
+    this->Ui.outputWidgetDock->hide();
+    this->Ui.pythonShellDock->hide();
 
     // Setup the View menu. This must be setup after all toolbars and dockwidgets
     // have been created.
@@ -313,7 +323,7 @@ private:
     pqParaViewMenuBuilders::buildFiltersMenu(*this->Ui.menuFilters, nullptr);
 
     // setup the context menu for the pipeline browser.
-    pqParaViewMenuBuilders::buildPipelineBrowserContextMenu(*this->Ui.pipelineBrowser);
+    pqParaViewMenuBuilders::buildPipelineBrowserContextMenu(*this->Ui.pipelineBrowser->contextMenu());
 
     // build Paraview file menu
     QMenu *paraviewFileMenu = this->Ui.menuAdvance->addMenu("File (Paraview)");
@@ -364,8 +374,6 @@ private:
       }
     }
 
-    new pqPythonShellReaction(this->Ui.actionPython_Console);
-
     pqLidarViewManager::instance()->setup();
 
     pqSettings* const settings = pqApplicationCore::instance()->settings();
@@ -384,8 +392,16 @@ private:
     connect(this->Ui.actionResetDefaultSettings, SIGNAL(triggered()),
       pqLidarViewManager::instance(), SLOT(onResetDefaultSettings()));
 
-    connect(this->Ui.actionShowErrorDialog, SIGNAL(triggered()), pqApplicationCore::instance(),
-      SLOT(showOutputWindow()));
+    connect(this->Ui.actionShowErrorDialog, SIGNAL(triggered()), this->Ui.outputWidgetDock,
+      SLOT(show()));
+
+    connect(this->Ui.actionPython_Console, SIGNAL(triggered()), this->Ui.pythonShellDock,
+      SLOT(show()));
+
+    // connect pythonShell to pythonCommand signal to execute python script.
+    pqPythonShell* shell = qobject_cast<pqPythonShell*>(this->Ui.pythonShellDock->widget());
+    connect(pqLidarViewManager::instance(), SIGNAL(pythonCommand(const QString&)), shell,
+      SLOT(executeScript(const QString&)));
 
     // Add save/load lidar state action
     new lqEnableAdvancedArraysReaction(this->Ui.actionEnableAdvancedArrays);
@@ -419,6 +435,10 @@ vvMainWindow::vvMainWindow()
   pqApplicationCore::instance()->registerManager(
     "COLOR_EDITOR_PANEL", this->Internals->Ui.colorMapEditorDock);
   this->Internals->Ui.colorMapEditorDock->hide();
+
+  // show output widget if we received an error message.
+  this->connect(this->Internals->Ui.outputWidget, SIGNAL(messageDisplayed(const QString&, int)),
+    SLOT(handleMessage(const QString&, int)));
 
   PV_PLUGIN_IMPORT(LidarPlugin);
   PV_PLUGIN_IMPORT(PythonQtPlugin);
@@ -495,7 +515,8 @@ void vvMainWindow::dropEvent(QDropEvent* evt)
 
   if (files[0].endsWith(".pcap"))
   {
-    pqLidarViewManager::instance()->runPython(QString("lv.openPCAP('" + files[0] + "')"));
+    pqPythonShell* shell = qobject_cast<pqPythonShell*>(this->Internals->Ui.pythonShellDock->widget());
+    shell->executeScript(QString("lv.openPCAP('" + files[0] + "')"));
   }
   else {
     pqLoadDataReaction::loadData(files);
@@ -507,4 +528,30 @@ void vvMainWindow::showHelpForProxy(const QString& groupname, const
   QString& proxyname)
 {
   pqHelpReaction::showProxyHelp(groupname, proxyname);
+}
+
+void vvMainWindow::handleMessage(const QString &, int type)
+{
+  QDockWidget* dock = this->Internals->Ui.outputWidgetDock;
+  if (!dock)
+    return;
+    
+  if (!dock->isVisible() && (type == QtCriticalMsg || type == QtFatalMsg || type == QtWarningMsg))
+  {
+    // if dock is not visible, we always pop it up as a floating dialog. This
+    // avoids causing re-renders which may cause more errors and more confusion.
+    QRect rectApp = this->geometry();
+
+    QRect rectDock(
+      QPoint(0, 0), QSize(static_cast<int>(rectApp.width() * 0.4), dock->sizeHint().height()));
+    rectDock.moveCenter(
+      QPoint(rectApp.center().x(), rectApp.bottom() - dock->sizeHint().height() / 2));
+    dock->setFloating(true);
+    dock->setGeometry(rectDock);
+    dock->show();
+  }
+  if (dock->isVisible())
+  {
+    dock->raise();
+  }
 }

@@ -33,6 +33,7 @@ protected:
 
 protected slots:
   void showHelpForProxy(const QString& proxyname, const QString& groupname);
+  void handleMessage(const QString &, int type);
 
 private:
   Q_DISABLE_COPY(vvMainWindow);

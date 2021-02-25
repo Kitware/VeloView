@@ -86,6 +86,8 @@ public slots:
 signals:
 
   void sourceCreated();
+  // this signal can be emited to execute a python script on pqPythonShell
+  void pythonCommand(const QString&);
 
 private:
   pqLidarViewManager(QObject* p);

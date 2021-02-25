@@ -40,7 +40,7 @@ public:
 #elif defined(__APPLE__)
     prefix = QCoreApplication::applicationDirPath() + "/../Resources/";
 #else
-    prefix = QCoreApplication::applicationDirPath() + "/../../share/";
+    prefix = QCoreApplication::applicationDirPath() + "/../share/";
 #endif
     for (size_t k = 0; k < calibrationBuiltIn.size(); ++k)
     {
