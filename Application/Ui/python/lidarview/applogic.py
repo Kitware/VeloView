@@ -491,8 +491,8 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
     # construct the reader, this calls UpdateInformation on the
     # reader which scans the pcap file and emits progress events
     reader = smp.LidarReader(guiName='Data',
-                             FileName = filename,
                              CalibrationFile = calibrationFile,
+                             FileName = filename
                              )
 
     if "velarray" in calibrationFile.lower():
