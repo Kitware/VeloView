@@ -391,6 +391,9 @@
         <property name="maximum">
          <number>65535</number>
         </property>
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
        </widget>
       </item>
       <item row="2" column="0">
@@ -400,16 +403,6 @@
         </property>
         <property name="text">
          <string>Crash Analysis</string>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="0">
-       <widget class="QCheckBox" name="EnableInterpretGPSPackets">
-        <property name="enabled">
-         <bool>true</bool>
-        </property>
-        <property name="text">
-         <string>Enable interpreting GPS packets</string>
         </property>
        </widget>
       </item>
@@ -424,6 +417,18 @@
      <property name="flat">
       <bool>false</bool>
      </property>
+     <layout class="QVBoxLayout" name="verticalLayout_2">
+     <item row="0">
+      <widget class="QCheckBox" name="EnableInterpretGPSPackets">
+       <property name="enabled">
+        <bool>true</bool>
+       </property>
+       <property name="text">
+        <string>Enable interpreting GPS packets</string>
+       </property>
+      </widget>
+     </item>
+     <item>
      <layout class="QHBoxLayout" name="horizontalLayout_2">
       <item>
        <layout class="QFormLayout" name="formLayout_4">
@@ -442,6 +447,9 @@
           <property name="maximum">
            <double>100.000000000000000</double>
           </property>
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
          </widget>
         </item>
         <item row="1" column="0">
@@ -458,6 +466,9 @@
           </property>
           <property name="maximum">
            <double>100.000000000000000</double>
+          </property>
+          <property name="enabled">
+           <bool>false</bool>
           </property>
          </widget>
         </item>
@@ -476,6 +487,9 @@
           <property name="maximum">
            <double>100.000000000000000</double>
           </property>
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
          </widget>
         </item>
         <item row="3" column="0">
@@ -492,6 +506,9 @@
           </property>
           <property name="maximum">
            <double>1000000000.000000000000000</double>
+          </property>
+          <property name="enabled">
+           <bool>false</bool>
           </property>
          </widget>
         </item>
@@ -536,6 +553,9 @@
           <property name="maximum">
            <double>180.000000000000000</double>
           </property>
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
          </widget>
         </item>
         <item row="2" column="0">
@@ -555,6 +575,9 @@
           </property>
           <property name="maximum">
            <double>90.000000000000000</double>
+          </property>
+          <property name="enabled">
+           <bool>false</bool>
           </property>
          </widget>
         </item>
@@ -576,6 +599,9 @@
           <property name="maximum">
            <double>360.000000000000000</double>
           </property>
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
          </widget>
         </item>
        </layout>
@@ -593,6 +619,8 @@
         </property>
        </spacer>
       </item>
+     </layout>
+     </item>
      </layout>
     </widget>
    </item>

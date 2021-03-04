@@ -374,6 +374,15 @@
     </layout>
    </widget>
   </widget>
+  <widget class="QDockWidget" name="sensorListDock">
+   <property name="windowTitle">
+    <string>Sensors List</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>2</number>
+   </attribute>
+   <widget class="lqSensorListWidget" name="sensorListPanel"/>
+  </widget>
   <action name="actionE_xit">
    <property name="text">
     <string>E&amp;xit</string>
@@ -1050,6 +1059,11 @@
    <class>pqOutputWidget</class>
    <extends>QWidget</extends>
    <header>pqOutputWidget.h</header>
+  </customwidget>
+  <customwidget>
+   <class>lqSensorListWidget</class>
+   <extends>QWidget</extends>
+   <header>lqSensorListWidget.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

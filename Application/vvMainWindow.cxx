@@ -33,6 +33,8 @@
 #include "lqSaveLidarStateReaction.h"
 #include "lqLoadLidarStateReaction.h"
 #include "lqEnableAdvancedArraysReaction.h"
+#include "lqOpenSensorReaction.h"
+#include "lqUpdateCalibrationReaction.h"
 
 #include <vtkSMProxyManager.h>
 #include <vtkSMSessionProxyManager.h>
@@ -262,6 +264,9 @@ private:
     new lqSaveLidarStateReaction(this->Ui.actionSaveLidarState);
     new lqLoadLidarStateReaction(this->Ui.actionLoadLidarState);
 
+    // Change calibration reaction
+    new lqUpdateCalibrationReaction(this->Ui.actionChoose_Calibration_File);
+
     // Specify each Properties Panel as we do want to present one panel per dock
     this->Ui.propertiesPanel->setPanelMode(pqPropertiesPanel::SOURCE_PROPERTIES);
     this->Ui.viewPropertiesPanel->setPanelMode(pqPropertiesPanel::VIEW_PROPERTIES);
@@ -308,6 +313,7 @@ private:
     this->Ui.viewAnimationDock->hide();
     this->Ui.outputWidgetDock->hide();
     this->Ui.pythonShellDock->hide();
+    this->Ui.sensorListDock->hide();
 
     // Setup the View menu. This must be setup after all toolbars and dockwidgets
     // have been created.
@@ -381,9 +387,10 @@ private:
     this->Ui.actionMeasurement_Grid->setChecked(gridVisible.toBool());
 
     new vvLoadDataReaction(this->Ui.actionOpenPcap, false);
+    new lqOpenSensorReaction(this->Ui.actionOpen_Sensor_Stream);
 
-    connect(this->Ui.actionOpen_Sensor_Stream, SIGNAL(triggered()), pqLidarViewManager::instance(),
-      SLOT(onOpenSensor()));
+    lqSensorListWidget * listSensor = lqSensorListWidget::instance();
+    listSensor->setCalibrationFunction(&lqUpdateCalibrationReaction::UpdateExistingSource);
 
     connect(this->Ui.actionMeasurement_Grid, SIGNAL(toggled(bool)), pqLidarViewManager::instance(),
       SLOT(onMeasurementGrid(bool)));
