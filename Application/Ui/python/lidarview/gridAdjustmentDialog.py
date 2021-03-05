@@ -57,15 +57,18 @@ def showDialog(mainWindow, grid, gridProperties):
 
     def pickColor():
         colorPicker = QtGui.QColorDialog()
-        qColor = colorPicker.getColor()
+        colorPicker.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
 
-        if not qColor.isValid():
-            return False
+        if(colorPicker.exec()):
+            qColor = colorPicker.selectedColor()
 
-        r = qColor.red()
-        g = qColor.green()
-        b = qColor.blue()
-        w('GridColorPicker').setStyleSheet("background-color: rgb(" + str(r) + "," + str(g) + "," + str(b) +");")
+            if not qColor.isValid():
+                return False
+
+            r = qColor.red()
+            g = qColor.green()
+            b = qColor.blue()
+            w('GridColorPicker').setStyleSheet("background-color: rgb(" + str(r) + "," + str(g) + "," + str(b) +");")
 
     w('GridColorPicker').connect('clicked()', pickColor)
 
