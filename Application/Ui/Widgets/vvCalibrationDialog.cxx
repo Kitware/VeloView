@@ -574,11 +574,7 @@ vvCalibrationDialog::vvCalibrationDialog(vtkSMProxy * lidarProxy, vtkSMProxy * G
 
   if(GPSProxy && IsPositionOrientationProxy(GPSProxy))
   {
-    // Only restore the state if the Interpreter GPS Packet is enabled
-    if (this->Internal->EnableInterpretGPSPackets->isEnabled())
-    {
-      this->Internal->EnableInterpretGPSPackets->setChecked(true);
-    }
+    this->Internal->EnableInterpretGPSPackets->setChecked(true);
 
     int gpsPort = vtkSMPropertyHelper(GPSProxy->GetProperty("ListeningPort")).GetAsInt();
     this->Internal->GPSPortSpinBox->setValue(gpsPort);
@@ -597,6 +593,10 @@ vvCalibrationDialog::vvCalibrationDialog(vtkSMProxy * lidarProxy, vtkSMProxy * G
     this->Internal->GpsRollSpinBox->setValue(gpsRotate[0]);
     this->Internal->GpsPitchSpinBox->setValue(gpsRotate[1]);
     this->Internal->GpsYawSpinBox->setValue(gpsRotate[2]);
+  }
+  else
+  {
+    this->Internal->EnableInterpretGPSPackets->setChecked(false);
   }
 }
 
