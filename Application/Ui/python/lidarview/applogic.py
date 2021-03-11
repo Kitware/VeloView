@@ -1825,7 +1825,7 @@ def transformMode():
     if not reader:
         return None
 
-    if hasattr(reader, 'ApplyTransform') and reader.ApplyTransform:
+    if hasattr(reader.Interpreter, 'ApplyTransform') and reader.Interpreter.ApplyTransform:
         if app.relativeTransform:
             return 2 # relative
         else:
@@ -1839,7 +1839,7 @@ def setTransformMode(mode):
     reader = getReader()
 
     if reader:
-        reader.ApplyTransform = (mode > 0)
+        reader.Interpreter.ApplyTransform = (mode > 0)
     app.transformMode = mode
     app.relativeTransform = (mode == 2)
 
