@@ -848,7 +848,7 @@ def getSaveFileName(title, extension, defaultFileName=None):
     nativeDialog = 0 if app.actions['actionNative_File_Dialogs'].isChecked() else QtGui.QFileDialog.DontUseNativeDialog
 
     filters = '%s (*.%s)' % (extension, extension)
-    selectedFilter = '*.%s' % extension
+    selectedFilter = '%s (*.%s)' % (extension, extension)
     fileName = QtGui.QFileDialog.getSaveFileName(getMainWindow(), title,
                         defaultFileName, filters, selectedFilter, nativeDialog)
 
