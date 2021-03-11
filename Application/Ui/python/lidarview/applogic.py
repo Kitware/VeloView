@@ -697,12 +697,12 @@ def rotateCSVFile(filename):
 
     # read the csv file, move the last 3 columns to the
     # front, and then overwrite the file with the result
-    csvFile = open(filename, 'rb')
+    csvFile = open(filename, 'rt')
     reader = csv.reader(csvFile, quoting=csv.QUOTE_NONNUMERIC)
     rows = [row[-3:] + row[:-3] for row in reader]
     csvFile.close()
 
-    writer = csv.writer(open(filename, 'wb'), quoting=csv.QUOTE_NONNUMERIC, delimiter=',')
+    writer = csv.writer(open(filename, 'wt'), quoting=csv.QUOTE_NONNUMERIC, delimiter=',', lineterminator = '\n')
     writer.writerows(rows)
 
 
