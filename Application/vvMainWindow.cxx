@@ -27,7 +27,7 @@
 
 #include "vvMainWindow.h"
 #include "ui_vvMainWindow.h"
-#include "lqSpreadSheetManager.h"
+#include "lqDockableSpreadSheetReaction.h"
 #include "vvLoadDataReaction.h"
 #include "lqStreamRecordReaction.h"
 #include "lqSaveLidarStateReaction.h"
@@ -87,7 +87,6 @@ public:
   pqInternals(vvMainWindow* window)
     : Ui()
     , MainView(0)
-    , SpreadSheetManager(new lqSpreadSheetManager(window))
   {
     this->Ui.setupUi(window);
     this->paraviewInit(window);
@@ -108,7 +107,6 @@ public:
   pqRenderView* MainView = nullptr;
   pqServer* Server = nullptr;
   pqObjectBuilder* Builder = nullptr;
-  lqSpreadSheetManager* SpreadSheetManager = nullptr;
 
 private:
   void paraviewInit(vvMainWindow* window)
@@ -230,28 +228,12 @@ private:
     mv->setTabVisibility(false);
     window->setCentralWidget(mv);
 
-    this->SpreadSheetManager->setSpreadSheetDockWidget(this->Ui.spreadSheetDock);
-    QObject::connect(this->Ui.actionSpreadsheet, SIGNAL(toggled(bool)), this->SpreadSheetManager, SLOT(onToggleSpreadSheet(bool)));
-
-    // This ensures that closing the dock widget toggles the spreadsheet to off
-    for (QObject* child : this->Ui.spreadSheetDock->children())
-    {
-      if (child->objectName() == "qt_dockwidget_closebutton")
-      {
-        if (QWidget* button = dynamic_cast<QWidget* >(child))
-        {
-          button->disconnect();
-          QObject::connect(button, SIGNAL(clicked()), this->Ui.actionSpreadsheet, SLOT(toggle()));
-        }
-      }
-    }
-
+    new lqDockableSpreadSheetReaction(this->Ui.actionSpreadsheet, window);
     new lqStreamRecordReaction(this->Ui.actionRecord);
 
     this->MainView =
       qobject_cast<pqRenderView*>(this->Builder->createView(pqRenderView::renderViewType(), this->Server));
     assert(this->MainView);
-    this->SpreadSheetManager->setMainView(this->MainView);
 
     vtkSMPropertyHelper(this->MainView->getProxy(), "CenterAxesVisibility").Set(0);
     double bgcolor[3] = { 0, 0, 0 };
@@ -295,11 +277,10 @@ private:
     window->tabifyDockWidget(this->Ui.propertiesDock, this->Ui.colorMapEditorDock);
     window->tabifyDockWidget(this->Ui.viewPropertiesDock, this->Ui.colorMapEditorDock);
     window->tabifyDockWidget(this->Ui.displayPropertiesDock, this->Ui.colorMapEditorDock);
-    window->tabifyDockWidget(this->Ui.spreadSheetDock, this->Ui.informationDock);
-    window->tabifyDockWidget(this->Ui.spreadSheetDock, this->Ui.memoryInspectorDock);
-    window->tabifyDockWidget(this->Ui.spreadSheetDock, this->Ui.viewAnimationDock);
-    window->tabifyDockWidget(this->Ui.spreadSheetDock, this->Ui.outputWidgetDock);
-    window->tabifyDockWidget(this->Ui.spreadSheetDock, this->Ui.pythonShellDock);
+    window->tabifyDockWidget(this->Ui.informationDock, this->Ui.memoryInspectorDock);
+    window->tabifyDockWidget(this->Ui.informationDock, this->Ui.viewAnimationDock);
+    window->tabifyDockWidget(this->Ui.informationDock, this->Ui.outputWidgetDock);
+    window->tabifyDockWidget(this->Ui.informationDock, this->Ui.pythonShellDock);
 
     // hide docker by default
     this->Ui.pipelineBrowserDock->hide();
@@ -307,7 +288,6 @@ private:
     this->Ui.viewPropertiesDock->hide();
     this->Ui.displayPropertiesDock->hide();
     this->Ui.colorMapEditorDock->hide();
-    this->Ui.spreadSheetDock->hide();
     this->Ui.informationDock->hide();
     this->Ui.memoryInspectorDock->hide();
     this->Ui.viewAnimationDock->hide();
