@@ -27,7 +27,7 @@ import PythonQt
 from PythonQt import QtCore, QtGui
 
 from vtk import vtkXMLPolyDataWriter
-import lidarviewcore.kiwiviewerExporter
+import lidarviewcore.kiwiviewerExporter as kiwiviewerExporter
 import gridAdjustmentDialog
 import aboutDialog
 import bisect
@@ -697,12 +697,12 @@ def rotateCSVFile(filename):
 
     # read the csv file, move the last 3 columns to the
     # front, and then overwrite the file with the result
-    csvFile = open(filename, 'rb')
+    csvFile = open(filename, 'rt')
     reader = csv.reader(csvFile, quoting=csv.QUOTE_NONNUMERIC)
     rows = [row[-3:] + row[:-3] for row in reader]
     csvFile.close()
 
-    writer = csv.writer(open(filename, 'wb'), quoting=csv.QUOTE_NONNUMERIC, delimiter=',')
+    writer = csv.writer(open(filename, 'wt'), quoting=csv.QUOTE_NONNUMERIC, delimiter=',', lineterminator = '\n')
     writer.writerows(rows)
 
 
@@ -734,7 +734,7 @@ def saveCSVCurrentFrame(filename):
         smp.Delete(extractSurface)
         smp.Delete(mergeBlocks)
         smp.Delete(extractBlock)
-    # rotateCSVFile(filename)
+    rotateCSVFile(filename)
 
 def saveCSVCurrentFrameSelection(filename):
     source = getReader()
@@ -745,7 +745,7 @@ def saveCSVCurrentFrameSelection(filename):
     w.FieldAssociation = 'Points'
     w.UpdatePipeline()
     smp.Delete(w)
-    # rotateCSVFile(filename)
+    rotateCSVFile(filename)
 
 # transform parameter indicates the coordinates system and
 # the referential for the exported points clouds:
@@ -804,7 +804,7 @@ def saveCSV(filename, steps):
         app.scene.AnimationTime = getLidar().TimestepValues[i]
         writer.FileName = filenameTemplate % i
         writer.UpdatePipeline()
-        # rotateCSVFile(writer.FileName)
+        rotateCSVFile(writer.FileName)
 
     smp.Delete(writer)
 
@@ -848,7 +848,7 @@ def getSaveFileName(title, extension, defaultFileName=None):
     nativeDialog = 0 if app.actions['actionNative_File_Dialogs'].isChecked() else QtGui.QFileDialog.DontUseNativeDialog
 
     filters = '%s (*.%s)' % (extension, extension)
-    selectedFilter = '*.%s' % extension
+    selectedFilter = '%s (*.%s)' % (extension, extension)
     fileName = QtGui.QFileDialog.getSaveFileName(getMainWindow(), title,
                         defaultFileName, filters, selectedFilter, nativeDialog)
 
@@ -1825,7 +1825,7 @@ def transformMode():
     if not reader:
         return None
 
-    if hasattr(reader, 'ApplyTransform') and reader.ApplyTransform:
+    if hasattr(reader.Interpreter, 'ApplyTransform') and reader.Interpreter.ApplyTransform:
         if app.relativeTransform:
             return 2 # relative
         else:
@@ -1839,7 +1839,7 @@ def setTransformMode(mode):
     reader = getReader()
 
     if reader:
-        reader.ApplyTransform = (mode > 0)
+        reader.Interpreter.ApplyTransform = (mode > 0)
     app.transformMode = mode
     app.relativeTransform = (mode == 2)
 
