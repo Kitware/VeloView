@@ -12,19 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from __future__ import print_function
-import VelodynePluginPython as vpmod
 import paraview.simple as smp
 from paraview import vtk
-import math
-
-def GetSelectionSource(proxy=None):
-    """If a selection has exists for the proxy (if proxy is not specified then
-       the active source is used), returns that selection source"""
-    if not proxy:
-        proxy = smp.GetActiveSource()
-    if not proxy:
-        raise RuntimeError("GetSelectionSource() needs a proxy argument of that an active source is set.")
-    return proxy.GetSelectionInput(proxy.Port)
 
 # Clean last planefitting source and the spreadsheet view
 def cleanStats():
@@ -39,36 +28,48 @@ def cleanStats():
         del PVTrivialProducer1
 
 # Find or create a 'SpreadSheet View' to display plane fitting statistics
-def showStats():
+def showStats(actionSpreadsheet=None):
+    if actionSpreadsheet is None:
+        print("Unable to display stats : SpreadSheet action is not defined")
+        return
+    
     planeFitter1 = smp.FindSource('PlaneFitter1')
     if planeFitter1 is None:
         print("Unable to create spreadsheet view : PlaneFitter1 source missing")
         return
 
-    renderView1 = smp.FindViewOrCreate('RenderView1', viewtype='RenderView')
-    if not renderView1:
+    renderView1 = smp.FindView('RenderView1')
+    if renderView1 is None:
         print("Unable to find main renderView")
         return
 
-    spreadSheetView1 = smp.FindViewOrCreate('SpreadSheetView1', viewtype='SpreadSheetView')
+    # Check if main spreadsheet view exist or can be created
+    spreadSheetView1 = smp.FindView('main spreadsheet view')
+    if spreadSheetView1 is None:
+        # try to trigger actionSpreadsheet to display main spreadsheet view
+        actionSpreadsheet.trigger()
+        spreadSheetView1 = smp.FindView('main spreadsheet view')
+        if spreadSheetView1 is None:
+            print("Unable to get main spreadsheet view")
+            return
+
+    # display stats in main spreadsheet view
     spreadSheetView1.ColumnToSort = ''
     spreadSheetView1.BlockSize = 1024
-
-    # show plane fit data in view
+    spreadSheetView1.FieldAssociation = 'Row Data'
     smp.Show(planeFitter1, spreadSheetView1)
     spreadSheetView1.Update()
-    spreadSheetView1.FieldAssociation = 'Row Data'
 
-def fitPlane():
+def fitPlane(actionSpreadsheet=None):
     src = smp.GetActiveSource()
-    if not src:
+    if src is None:
         print("A source need to be selected before running plane fitting")
         return
 
-    selection = GetSelectionSource(src)
+    selection = src.GetSelectionInput(src.Port)
 
-    if not selection:
-        print("Several points has to be selected before running plane fitting")
+    if selection is None:
+        print("A selection has to be defined to run plane fitting")
         return
 
     extracter = smp.ExtractSelection()
@@ -79,25 +80,32 @@ def fitPlane():
     # Clean last plane fitting stats before processing a new one
     cleanStats()
 
-    pd = extracter.GetClientSideObject().GetOutput()
+    try:
+        pd = extracter.GetClientSideObject().GetOutput()
+        if not pd.GetNumberOfBlocks() or not pd.GetNumberOfPoints():
+            print("An empty selection is defined")
+            return
 
-    if pd.IsTypeOf("vtkMultiBlockDataSet"):
-        appendFilter = vtk.vtkAppendFilter()
-        for i in range(pd.GetNumberOfBlocks()):
-            appendFilter.AddInputData(pd.GetBlock(i))
-        appendFilter.Update()
-        pd = appendFilter.GetOutput()
+        # Append data from each block
+        if pd.IsTypeOf("vtkMultiBlockDataSet"):
+            appendFilter = vtk.vtkAppendFilter()
+            for i in range(pd.GetNumberOfBlocks()):
+                appendFilter.AddInputData(pd.GetBlock(i))
+            appendFilter.Update()
+            pd = appendFilter.GetOutput()
 
-    PVTrivialProducer1 = smp.PVTrivialProducer()
-    PVTrivialProducer1Client = PVTrivialProducer1.GetClientSideObject()
-    PVTrivialProducer1Client.SetOutput(pd)
+        # Create a data source from selected points
+        PVTrivialProducer1 = smp.PVTrivialProducer()
+        PVTrivialProducer1Client = PVTrivialProducer1.GetClientSideObject()
+        PVTrivialProducer1Client.SetOutput(pd)
 
-    # Create and apply plane fitter filter
-    planeFitter1 = smp.PlaneFitter(Input=PVTrivialProducer1)
-    planeFitter1.UpdatePipeline()
+        # Create and apply plane fitter filter
+        planeFitter1 = smp.PlaneFitter(Input=PVTrivialProducer1)
+        planeFitter1.UpdatePipeline()
 
-    # Display results on a spreadsheet view
-    showStats()
+        # Display results on the main spreadsheet view
+        showStats(actionSpreadsheet)
 
-    smp.Delete(extracter)
-    smp.SetActiveSource(src)
+    finally:
+        smp.Delete(extracter)
+        smp.SetActiveSource(src)
