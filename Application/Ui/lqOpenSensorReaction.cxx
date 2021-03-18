@@ -53,7 +53,6 @@ void lqOpenSensorReaction::onTriggered()
   // "dataUpdated" of the pqServerManagerModel
   pqPipelineSource* lidarSource = builder->createSource("sources", "LidarStream", server);
   QString lidarName = lidarSource->getSMName();
-  pqActiveObjects::instance().setActiveSource(lidarSource);
   controller->Show(lidarSource->getSourceProxy(), 0, view->getViewProxy());
 
   pqPipelineSource * posOrSource = nullptr;
@@ -76,4 +75,6 @@ void lqOpenSensorReaction::onTriggered()
 
   //Update applogic to be able to use function only define in applogic.
   pqLidarViewManager::instance()->runPython(QString("lv.UpdateApplogicLidar('%1', '%2')\n").arg(lidarName, posOrName));
+
+  pqActiveObjects::instance().setActiveSource(lidarSource);
 }
