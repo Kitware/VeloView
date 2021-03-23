@@ -207,6 +207,17 @@
     <bool>false</bool>
    </attribute>
   </widget>
+  <widget class="pqCustomViewpointsToolbar" name="Custom Viewpoints Toolbar">
+   <property name="windowTitle">
+    <string>Custom Viewpoints</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+  </widget>
   <widget class="QToolBar" name="viewSettings">
    <property name="windowTitle">
     <string>View Controls</string>
@@ -1000,6 +1011,11 @@
    </action>
  </widget>
  <customwidgets>
+  <customwidget>
+   <class>pqCustomViewpointsToolbar</class>
+   <extends>QToolBar</extends>
+   <header>pqCustomViewpointsToolbar.h</header>
+  </customwidget>
   <customwidget>
    <class>lqColorToolbar</class>
    <extends>QToolBar</extends>
