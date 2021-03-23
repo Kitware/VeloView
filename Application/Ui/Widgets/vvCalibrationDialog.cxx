@@ -905,9 +905,8 @@ void vvCalibrationDialog::addFile()
     this->Internal->Settings->value("LidarPlugin/OpenData/DefaultDir", QDir::homePath())
       .toString();
 
-  QString selectedFiler("*.xml");
   QString fileName = QFileDialog::getOpenFileName(
-    this, tr("Choose Calibration File"), defaultDir, tr("xml (*.xml)"), &selectedFiler);
+    this, tr("Choose Calibration File"), defaultDir, tr("xml (*.xml)"));
 
   if (fileName.isEmpty())
   {
