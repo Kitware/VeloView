@@ -40,6 +40,7 @@ void lqOpenSensorReaction::onTriggered()
   // Launch the calibration Dialog before creating the Source to allow to cancel the action
   // (with the "cancel" button in the dialog)
   vvCalibrationDialog dialog(pqLidarViewManager::instance()->getMainWindow());
+  DisplayDialogOnActiveWindow(dialog);
   if (!dialog.exec())
   {
     return;

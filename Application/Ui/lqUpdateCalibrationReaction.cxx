@@ -209,6 +209,7 @@ void lqUpdateCalibrationReaction::UpdateExistingSource(pqPipelineSource* & lidar
   // Create the dialog with the proxy so the dialog has the proxy information
   vvCalibrationDialog dialog(lidarSource->getProxy(), posOrProxy,
                              pqLidarViewManager::instance()->getMainWindow());
+  DisplayDialogOnActiveWindow(dialog);
 
   // Launch the calibration Dialog
   if (!dialog.exec())
