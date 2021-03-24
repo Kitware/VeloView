@@ -24,6 +24,7 @@ class vvAppLogic;
 class pqPipelineSource;
 class pqServer;
 class pqView;
+class pqPythonShell;
 
 class vtkSMSourceProxy;
 
@@ -61,6 +62,7 @@ public:
   pqPipelineSource* source();
 
   void setup();
+  void setPythonShell(pqPythonShell* pythonShell);
 
   void openData(const QString& filename, const QString& positionFilename);
 
@@ -85,14 +87,13 @@ public slots:
 signals:
 
   void sourceCreated();
-  // this signal can be emited to execute a python script on pqPythonShell
-  void pythonCommand(const QString&);
 
 private:
   pqLidarViewManager(QObject* p);
 
   class pqInternal;
   pqInternal* Internal;
+  pqPythonShell* pythonShell;
 
   Q_DISABLE_COPY(pqLidarViewManager);
 };

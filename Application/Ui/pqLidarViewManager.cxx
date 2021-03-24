@@ -154,7 +154,10 @@ void pqLidarViewManager::pythonStartup()
 //-----------------------------------------------------------------------------
 void pqLidarViewManager::runPython(const QString& statements)
 {
-  emit this->pythonCommand(statements);
+  if(this->pythonShell)
+  {
+    this->pythonShell->executeScript(statements);
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -339,6 +342,12 @@ void pqLidarViewManager::saveFramesToLAS(vtkLidarReader* reader, vtkPolyData* po
 void pqLidarViewManager::setup()
 {
   QTimer::singleShot(0, this, SLOT(pythonStartup()));
+}
+
+//-----------------------------------------------------------------------------
+void pqLidarViewManager::setPythonShell(pqPythonShell* shell)
+{
+  this->pythonShell = shell;
 }
 
 //-----------------------------------------------------------------------------
