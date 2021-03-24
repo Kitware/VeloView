@@ -354,7 +354,8 @@ def UpdateApplogicLidar(lidarProxyName, gpsProxyName):
 
     sensor = smp.FindSource(lidarProxyName)
 
-    app.grid = createGrid()
+    if not app.grid :
+        app.grid = createGrid()
 
     sensor.Interpreter.UseIntraFiringAdjustment = app.actions['actionIntraFiringAdjust'].isChecked()
     sensor.Interpreter.IgnoreZeroDistances = app.actions['actionIgnoreZeroDistances'].isChecked()
