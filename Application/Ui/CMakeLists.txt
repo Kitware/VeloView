@@ -26,6 +26,8 @@ add_library(ApplicationUi
   vvLoadDataReaction.cxx
   vvLoadDataReaction.h
   vvPythonQtDecorators.h
+  lqLidarStreamColorByInitBehavior.cxx
+  lqLidarStreamColorByInitBehavior.h
   )
 target_link_libraries(ApplicationUi PUBLIC LidarPlugin ${PYTHONQT_LIBRARIES} lqApplicationComponents)
 target_include_directories(ApplicationUi PUBLIC

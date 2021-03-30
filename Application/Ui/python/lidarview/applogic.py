@@ -385,9 +385,6 @@ def UpdateApplogicLidar(lidarProxyName, gpsProxyName):
 
     rep = smp.Show(sensor)
 #    rep.InterpolateScalarsBeforeMapping = 0
-#    if app.sensor.GetClientSideObject().GetNumberOfChannels() == 128:
-#        rep.Representation = 'Point Cloud'
-#        rep.ColorArrayName = 'intensity'
 
     if SAMPLE_PROCESSING_MODE:
         prep = smp.Show(processor)
@@ -414,14 +411,6 @@ def UpdateApplogicLidar(lidarProxyName, gpsProxyName):
 
     updateUIwithNewLidar()
     smp.Render()
-
-    # In OpenSensor we don't have access to the futur available arrays
-    nChannels = sensor.Interpreter.GetProperty("NumberOfChannelsInformation")[0]
-    arrayName = "intensity"
-    if nChannels == 128:
-        arrayName = "reflectivity"
-    colorByArrayName(sensor, arrayName)
-
 
 def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrationUIArgs=None):
 
