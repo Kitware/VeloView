@@ -70,6 +70,7 @@ public:
   void saveAdvancedConfiguration();
   void saveForwardIpAddress();
   void saveIsCrashAnalysing();
+  void saveEnableMultiSensors();
   void saveEnableInterpretGPSPackets();
 
   void restoreSensorTransform();
@@ -82,6 +83,7 @@ public:
   void restoreAdvancedConfiguration();
   void restoreForwardIpAddress();
   void restoreCrashAnalysing();
+  void restoreEnableMultiSensors();
   void restoreEnableInterpretGPSPackets();
 
   pqSettings* const Settings;
@@ -231,6 +233,26 @@ void vvCalibrationDialog::pqInternal::restoreCrashAnalysing()
                                      this->CrashAnalysisCheckBox->isChecked())
                                    .toBool());
   }
+}
+
+//-----------------------------------------------------------------------------
+void vvCalibrationDialog::pqInternal::saveEnableMultiSensors()
+{
+  // Only save the state if the crash analysing is enabled
+  if (this->EnableMultiSensors->isEnabled())
+  {
+    this->Settings->setValue(
+      "LidarPlugin/CalibrationFileDialog/EnableMultiSensors", this->EnableMultiSensors->isChecked());
+  }
+}
+
+//-----------------------------------------------------------------------------
+void vvCalibrationDialog::pqInternal::restoreEnableMultiSensors()
+{
+  this->EnableMultiSensors->setChecked(this->Settings
+                                 ->value("LidarPlugin/CalibrationFileDialog/EnableMultiSensors",
+                                   this->EnableMultiSensors->isChecked())
+                                 .toBool());
 }
 
 //-----------------------------------------------------------------------------
@@ -500,6 +522,7 @@ vvCalibrationDialog::vvCalibrationDialog(QWidget* p)
   this->Internal->restoreLidarForwardingPort();
   this->Internal->restoreForwardIpAddress();
   this->Internal->restoreCrashAnalysing();
+  this->Internal->restoreEnableMultiSensors();
   this->Internal->restoreEnableInterpretGPSPackets();
   this->Internal->restoreEnableForwarding();
   this->Internal->restoreAdvancedConfiguration();
@@ -559,6 +582,10 @@ vvCalibrationDialog::vvCalibrationDialog(vtkSMProxy * lidarProxy, vtkSMProxy * G
     bool isCrashAnalysing = vtkSMPropertyHelper(lidarProxy->GetProperty("IsCrashAnalysing")).GetAsInt();
     this->Internal->CrashAnalysisCheckBox->setChecked(isCrashAnalysing);
   }
+
+  // We can not change the "Enable Multi Sensor" option
+  // if we update the calibration of an existing proxy
+  this->Internal->EnableMultiSensors->setEnabled(false);
 
   std::vector<double> translate;
   std::vector<double> rotate;
@@ -637,6 +664,7 @@ void vvCalibrationDialog::setDefaultConfiguration()
   this->Internal->AdvancedConfiguration->setChecked(false);
   this->Internal->EnableForwardingCheckBox->setChecked(false);
   this->Internal->CrashAnalysisCheckBox->setChecked(false);
+  this->Internal->EnableMultiSensors->setChecked(false);
   this->Internal->EnableInterpretGPSPackets->setChecked(false);
   // lidar orientation values
   this->Internal->LidarPitchSpinBox->setValue(defaultSensorValue);
@@ -674,6 +702,12 @@ QString vvCalibrationDialog::selectedCalibrationFile() const
 bool vvCalibrationDialog::isCrashAnalysing() const
 {
   return this->Internal->CrashAnalysisCheckBox->isChecked();
+}
+
+//-----------------------------------------------------------------------------
+bool vvCalibrationDialog::isEnableMultiSensors() const
+{
+  return this->Internal->EnableMultiSensors->isChecked();
 }
 
 //-----------------------------------------------------------------------------
@@ -885,6 +919,7 @@ void vvCalibrationDialog::accept()
   this->Internal->saveAdvancedConfiguration();
   this->Internal->saveForwardIpAddress();
   this->Internal->saveIsCrashAnalysing();
+  this->Internal->saveEnableMultiSensors();
   this->Internal->saveEnableInterpretGPSPackets();
 
   QDialog::accept();
