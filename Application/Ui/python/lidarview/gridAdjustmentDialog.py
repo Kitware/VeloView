@@ -15,7 +15,7 @@ from __future__ import print_function
 from PythonQt import QtCore, QtGui, QtUiTools
 import math
 
-def showDialog(mainWindow, grid, gridProperties):
+def showDialog(mainWindow, app):
 
     loader = QtUiTools.QUiLoader()
     uifile = QtCore.QFile(':/LidarViewPlugin/vvGridAdjustmentDialog.ui')
@@ -36,24 +36,24 @@ def showDialog(mainWindow, grid, gridProperties):
             if widget.objectName == name:
                 return widget
 
-    w('SensorUpX').setValue(grid.Normal[0])
-    w('SensorUpY').setValue(grid.Normal[1])
-    w('SensorUpZ').setValue(grid.Normal[2])
+    w('SensorUpX').setValue(app.grid.Normal[0])
+    w('SensorUpY').setValue(app.grid.Normal[1])
+    w('SensorUpZ').setValue(app.grid.Normal[2])
 
-    w('SensorOriginX').setValue(-grid.Origin[0])
-    w('SensorOriginY').setValue(-grid.Origin[1])
-    w('SensorOriginZ').setValue(-grid.Origin[2])
+    w('SensorOriginX').setValue(-app.grid.Origin[0])
+    w('SensorOriginY').setValue(-app.grid.Origin[1])
+    w('SensorOriginZ').setValue(-app.grid.Origin[2])
 
-    w('GridResolution').setValue(grid.Scale)
-    w('GridWidth').setValue(grid.Scale*grid.GridNbTicks)
-    w('GridLineWidth').setValue(grid.LineWidth)
+    w('GridResolution').setValue(app.grid.Scale)
+    w('GridWidth').setValue(app.grid.Scale*app.grid.GridNbTicks)
+    w('GridLineWidth').setValue(app.grid.LineWidth)
 
-    r = grid.Color[0] * 255
-    g = grid.Color[1] * 255
-    b = grid.Color[2] * 255
+    r = app.grid.Color[0] * 255
+    g = app.grid.Color[1] * 255
+    b = app.grid.Color[2] * 255
     w('GridColorPicker').setStyleSheet("background-color: rgb(" + str(r) + "," + str(g) + "," + str(b) +");")
 
-    w('ShouldPropertiesPersist').checked = gridProperties.Persist
+    w('ShouldPropertiesPersist').setChecked(app.gridPropertiesPersist)
 
     def pickColor():
         colorPicker = QtGui.QColorDialog()
@@ -76,13 +76,13 @@ def showDialog(mainWindow, grid, gridProperties):
     if not accepted:
         return False
 
-    grid.Normal = [w('SensorUpX').value, w('SensorUpY').value, w('SensorUpZ').value]
-    grid.Origin = [-w('SensorOriginX').value, -w('SensorOriginY').value, -w('SensorOriginZ').value]
-    grid.Scale = w('GridResolution').value
-    grid.GridNbTicks = int(math.ceil(w('GridWidth').value / w('GridResolution').value))
-    grid.LineWidth = w('GridLineWidth').value
+    app.grid.Normal = [w('SensorUpX').value, w('SensorUpY').value, w('SensorUpZ').value]
+    app.grid.Origin = [-w('SensorOriginX').value, -w('SensorOriginY').value, -w('SensorOriginZ').value]
+    app.grid.Scale = w('GridResolution').value
+    app.grid.GridNbTicks = int(math.ceil(w('GridWidth').value / w('GridResolution').value))
+    app.grid.LineWidth = w('GridLineWidth').value
     color = w('GridColorPicker').palette.color(QtGui.QPalette.Background)
-    grid.Color = [color.redF(), color.greenF(), color.blueF()]
-    gridProperties.Persist = w('ShouldPropertiesPersist').checked
+    app.grid.Color = [color.redF(), color.greenF(), color.blueF()]
+    app.gridPropertiesPersist = w('ShouldPropertiesPersist').checked
 
     return True

@@ -82,8 +82,7 @@ class AppLogic(object):
         self.sensor = None
 
         self.laserSelectionSession = {}
-
-        self.gridProperties = None
+        self.gridPropertiesPersist = False
 
         #smp.LoadPlugin(vtkGetFileNameFromPluginName('PointCloudPlugin'))
         smp.LoadPlugin(vtkGetFileNameFromPluginName('EyeDomeLightingView'))
@@ -99,20 +98,6 @@ class AppLogic(object):
         self.statusLabel = QtGui.QLabel()
         self.sensorInformationLabel = QtGui.QLabel()
         self.positionPacketInfoLabel = QtGui.QLabel()
-
-
-class GridProperties:
-
-    def __init__(self):
-        self.Normal = [0, 0, 0]
-        self.Origin = [0, 0, 0]
-        self.Scale = 0
-        self.GridNbTicks = 0
-        self.LineWidth = 0
-        self.Color = [0, 0, 0]
-        self.Persist = False
-
-
 
 def hasArrayName(sourceProxy, arrayName):
     '''
@@ -1125,14 +1110,6 @@ def onAbout():
 
 
 def close():
-    # Save grid properties for this session
-    app.gridProperties.Normal = app.grid.Normal
-    app.gridProperties.Origin = app.grid.Origin
-    app.gridProperties.Scale = app.grid.Scale
-    app.gridProperties.GridNbTicks = app.grid.GridNbTicks
-    app.gridProperties.LineWidth = app.grid.LineWidth
-    app.gridProperties.Color = app.grid.Color
-
     smp.GetAnimationScene().Stop()
     hideRuler()
     unloadData()
@@ -1395,17 +1372,44 @@ def createGrid(view=None):
     view = view or smp.GetActiveView()
     grid = smp.GridSource(guiName='Measurement Grid')
 
-    if app.gridProperties.Persist == False:
+    if getPVSettings().value('LidarPlugin/grid/gridPropertiesPersist') == "true":
+        app.gridPropertiesPersist = True
+    else :
+      app.gridPropertiesPersist = False
+
+    if app.gridPropertiesPersist == False:
          grid.GridNbTicks = 10
-#        grid.GridNbTicks = (int(math.ceil(50000 * app.DistanceResolutionM/ grid.Scale )))
     else:
         # Restore grid properties
-        grid.Normal = app.gridProperties.Normal
-        grid.Origin = app.gridProperties.Origin
-        grid.Scale = app.gridProperties.Scale
-        grid.GridNbTicks = app.gridProperties.GridNbTicks
-        grid.LineWidth = app.gridProperties.LineWidth
-        grid.Color = app.gridProperties.Color
+        lineWidth = getPVSettings().value('LidarPlugin/grid/LineWidth')
+        if lineWidth :
+            grid.LineWidth = int(lineWidth)
+
+        gridNbTicks = getPVSettings().value('LidarPlugin/grid/GridNbTicks')
+        if gridNbTicks :
+            grid.GridNbTicks = int(gridNbTicks)
+
+        if getPVSettings().value('LidarPlugin/grid/Normal'):
+            normal_x = getPVSettings().value('LidarPlugin/grid/Normal')[0]
+            normal_y = getPVSettings().value('LidarPlugin/grid/Normal')[1]
+            normal_z = getPVSettings().value('LidarPlugin/grid/Normal')[2]
+            grid.Normal = [float(normal_x), float(normal_y), float(normal_z)]
+
+        if getPVSettings().value('LidarPlugin/grid/Origin'):
+            origin_x = getPVSettings().value('LidarPlugin/grid/Origin')[0]
+            origin_y = getPVSettings().value('LidarPlugin/grid/Origin')[1]
+            origin_z = getPVSettings().value('LidarPlugin/grid/Origin')[2]
+            grid.Origin = [float(origin_x), float(origin_y), float(origin_z)]
+
+        scale = getPVSettings().value(getPVSettings().value('LidarPlugin/grid/Scale'))
+        if scale :
+            grid.Scale = float(scale)
+
+        if getPVSettings().value('LidarPlugin/grid/gridColor') :
+            r = getPVSettings().value('LidarPlugin/grid/gridColor')[0]
+            g = getPVSettings().value('LidarPlugin/grid/gridColor')[1]
+            b = getPVSettings().value('LidarPlugin/grid/gridColor')[2]
+            grid.Color = [float(r), float(g), float(b)]
 
     rep = smp.Show(grid, view)
     rep.LineWidth = grid.LineWidth
@@ -1437,7 +1441,6 @@ def start():
     global app
     app = AppLogic()
     app.scene = getAnimationScene()
-    app.gridProperties = GridProperties()
 
     view = smp.GetActiveView()
     view.Background = [0.0, 0.0, 0.0]
@@ -1522,10 +1525,21 @@ def setupStatusBar():
 
 
 def onGridProperties():
-    if gridAdjustmentDialog.showDialog(getMainWindow(), app.grid, app.gridProperties):
+    if gridAdjustmentDialog.showDialog(getMainWindow(), app):
         rep = smp.Show(app.grid, None)
         rep.LineWidth = app.grid.LineWidth
         rep.DiffuseColor = app.grid.Color
+
+        getPVSettings().setValue('LidarPlugin/grid/gridPropertiesPersist', app.gridPropertiesPersist)
+
+        if(app.gridPropertiesPersist) :
+            getPVSettings().setValue('LidarPlugin/grid/gridColor', app.grid.Color)
+            getPVSettings().setValue('LidarPlugin/grid/LineWidth', app.grid.LineWidth)
+            getPVSettings().setValue('LidarPlugin/grid/GridNbTicks', app.grid.GridNbTicks)
+            getPVSettings().setValue('LidarPlugin/grid/Normal', app.grid.Normal)
+            getPVSettings().setValue('LidarPlugin/grid/Origin', app.grid.Origin)
+            getPVSettings().setValue('LidarPlugin/grid/Scale', app.grid.Scale)
+
         app.actions['actionMeasurement_Grid'].setChecked(True)
         smp.Render()
 
