@@ -127,7 +127,7 @@ bool lqLidarStreamColorByInitBehavior::tryLidarStreamInitColorBy(vtkSMSourceProx
 //-----------------------------------------------------------------------------
 void lqLidarStreamColorByInitBehavior::sourceAdded(pqPipelineSource* src)
 {
-  if ( IsLidarProxy(src->getProxy()) )
+  if ( IsLidarStreamProxy(src->getProxy()) )
   {
     //Ask lidarSource to report its updates
     this->connect(src, SIGNAL(dataUpdated(pqPipelineSource*)), SLOT(dataUpdated(pqPipelineSource*)));
