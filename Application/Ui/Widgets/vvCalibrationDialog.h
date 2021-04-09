@@ -58,6 +58,7 @@ public:
   Q_INVOKABLE int gpsForwardingPort() const;
   Q_INVOKABLE bool isForwarding() const;
   Q_INVOKABLE bool isCrashAnalysing() const;
+  Q_INVOKABLE bool isEnableMultiSensors() const;
   Q_INVOKABLE bool isEnableInterpretGPSPackets() const;
   Q_INVOKABLE QString ipAddressForwarding() const;
 
