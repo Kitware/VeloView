@@ -93,6 +93,11 @@ def fitPlane(actionSpreadsheet=None):
             appendFilter.Update()
             pd = appendFilter.GetOutput()
 
+        # Check if laser_id array exist before process
+        if not pd.GetPointData().GetArray('laser_id'):
+            print("The source needs to contain a laser_id array")
+            return
+
         # Create a data source from selected points
         PVTrivialProducer1 = smp.PVTrivialProducer()
         PVTrivialProducer1Client = PVTrivialProducer1.GetClientSideObject()
