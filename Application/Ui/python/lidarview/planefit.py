@@ -58,7 +58,6 @@ def showStats(actionSpreadsheet=None):
     spreadSheetView1.BlockSize = 1024
     spreadSheetView1.FieldAssociation = 'Row Data'
     smp.Show(planeFitter1, spreadSheetView1)
-    spreadSheetView1.Update()
 
 def fitPlane(actionSpreadsheet=None):
     src = smp.GetActiveSource()
