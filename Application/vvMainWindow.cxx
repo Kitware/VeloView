@@ -133,6 +133,7 @@ private:
     shell->setObjectName("pythonShell");
     shell->setFontSize(8);
     this->Ui.pythonShellDock->setWidget(shell);
+    pqLidarViewManager::instance()->setPythonShell(shell);
 
     // Give the macros menu to the pqPythonMacroSupervisor
     pqPythonManager* manager =
@@ -387,11 +388,6 @@ private:
     connect(this->Ui.actionPython_Console, SIGNAL(triggered()), this->Ui.pythonShellDock,
       SLOT(show()));
 
-    // connect pythonShell to pythonCommand signal to execute python script.
-    pqPythonShell* shell = qobject_cast<pqPythonShell*>(this->Ui.pythonShellDock->widget());
-    connect(pqLidarViewManager::instance(), SIGNAL(pythonCommand(const QString&)), shell,
-      SLOT(executeScript(const QString&)));
-
     // Add save/load lidar state action
     new lqEnableAdvancedArraysReaction(this->Ui.actionEnableAdvancedArrays);
 
@@ -504,10 +500,10 @@ void vvMainWindow::dropEvent(QDropEvent* evt)
 
   if (files[0].endsWith(".pcap"))
   {
-    pqPythonShell* shell = qobject_cast<pqPythonShell*>(this->Internals->Ui.pythonShellDock->widget());
-    shell->executeScript(QString("lv.openPCAP('" + files[0] + "')"));
+    pqLidarViewManager::instance()->openData(files[0], QString(""));
   }
-  else {
+  else
+  {
     pqLoadDataReaction::loadData(files);
   }
 }
