@@ -14,3 +14,9 @@ install(FILES ${shared_files}
         DESTINATION "${lidarview_appname}/Contents/Resources"
         COMPONENT superbuild)
 unset(shared_files)
+
+#Install Veloview User Guide
+install(FILES "${superbuild_install_location}/bin/${lidarview_appname}/Contents/Resources/VeloView_User_Guide.pdf"
+  DESTINATION "doc"
+  COMPONENT superbuild
+)
