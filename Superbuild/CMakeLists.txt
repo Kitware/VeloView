@@ -1,6 +1,11 @@
 cmake_minimum_required(VERSION 2.8.8)
 
 project(LidarViewSuperBuild)
+
+#LidarView-based app Branding
+set(SOFTWARE_NAME   "VeloView")
+set(SOFTWARE_VENDOR "Velodyne, Inc.")
+
 #-----------------------------------------------------------------------------
 # All the function and variable bellow are here because we rely on lidarview's
 # superbuild.

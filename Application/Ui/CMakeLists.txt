@@ -1,3 +1,8 @@
+#Sanitize checks
+if(NOT LV_INSTALL_LIBRARY_DIR )
+  message(FATAL_ERROR "LV_INSTALL_LIBRARY_DIR not set")
+endif()
+
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
