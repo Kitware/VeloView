@@ -217,7 +217,7 @@ void pqLidarViewManager::saveFramesToPCAP(
   }
 
   reader->Open();
-  reader->SaveFrame(startFrame, endFrame, filename.toLatin1().data());
+  reader->SaveFrame(startFrame, endFrame, filename.toUtf8().data());
   reader->Close();
 }
 
