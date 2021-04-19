@@ -101,7 +101,7 @@ void pqLidarViewManager::pythonStartup()
   {
     if (QDir(dirname).exists())
     {
-      vtkPythonInterpreter::PrependPythonPath(dirname.toLatin1().data());
+      vtkPythonInterpreter::PrependPythonPath(dirname.toUtf8().data());
     }
   }
 
