@@ -26,7 +26,8 @@ public:
   static void setTransform(vtkSMProxy * proxy, double x, double y, double z, double roll, double pitch, double yaw);
 
   static void setNetworkCalibration(vtkSMProxy * proxy, double listenningPort, double forwardingPort,
-                                    bool isForwarding, QString ipAddressForwarding, bool isCrashAnalysing);
+                                    bool isForwarding, QString ipAddressForwarding,
+                                    bool isCrashAnalysing, bool multiSensors);
 
   static void setCalibrationFileAndDefaultInterpreter(vtkSMProxy * proxy, QString calibrationFile);
 
