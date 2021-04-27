@@ -28,7 +28,6 @@
 #include "vvMainWindow.h"
 #include "ui_vvMainWindow.h"
 #include "lqDockableSpreadSheetReaction.h"
-#include "vvLoadDataReaction.h"
 #include "lqStreamRecordReaction.h"
 #include "lqSaveLidarStateReaction.h"
 #include "lqLoadLidarStateReaction.h"

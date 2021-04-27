@@ -30,8 +30,6 @@ add_library(ApplicationUi
   lqOpenSensorReaction.h
   lqUpdateCalibrationReaction.cxx
   lqUpdateCalibrationReaction.h
-  vvLoadDataReaction.cxx
-  vvLoadDataReaction.h
   vvPythonQtDecorators.h
   lqLidarStreamColorByInitBehavior.cxx
   lqLidarStreamColorByInitBehavior.h
