@@ -398,46 +398,18 @@ def UpdateApplogicLidar(lidarProxyName, gpsProxyName):
     updateUIwithNewLidar()
     smp.Render()
 
-def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrationUIArgs=None):
+def UpdateApplogicReader(lidarName, posOrName):
 
-    calibration = chooseCalibration(calibrationFilename)
-    if not calibration:
-        return
+    reader = smp.FindSource(lidarName)
 
-    if calibrationFilename is not None and calibrationUIArgs is not None and isinstance(calibrationUIArgs, dict):
-        for k in calibrationUIArgs.keys():
-          if hasattr(calibration, k):
-            setattr(calibration, k, calibrationUIArgs[k])
+    if not reader :
+      return
 
-    calibrationFile = calibration.calibrationFile
-
-    close()
-
-    def onProgressEvent(o, e):
-        PythonQt.QtGui.QApplication.instance().processEvents()
-
-    progressDialog = QtGui.QProgressDialog('Reading packet file...', '', 0, 0, getMainWindow())
-    progressDialog.setCancelButton(None)
-    progressDialog.setModal(True)
-    progressDialog.show()
-
-    handler = servermanager.ActiveConnection.Session.GetProgressHandler()
-    handler.PrepareProgress()
-    interval = handler.GetProgressInterval()
-    handler.SetProgressInterval(0.05)
-    tag = handler.AddObserver('ProgressEvent', onProgressEvent)
-
-    # construct the reader, this calls UpdateInformation on the
-    # reader which scans the pcap file and emits progress events
-    reader = smp.LidarReader(guiName='Data',
-                             CalibrationFile = calibrationFile,
-                             FileName = filename
-                             )
-
-    if "velarray" in calibrationFile.lower():
-        reader.Interpreter = 'Velodyne Special Velarray Interpreter'
-    else :
-        reader.Interpreter = 'Velodyne Meta Interpreter'
+    # We create a grid only if there is not a previous one
+    # This avoid creating a grid for every open sensor
+    # In long term this should be moved to the reaction
+    if not app.grid :
+        app.grid = createGrid()
 
     reader.Interpreter.UseIntraFiringAdjustment = app.actions['actionIntraFiringAdjust'].isChecked()
 
@@ -446,6 +418,7 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
     app.trailingFramesSpinBox.enabled = True
     app.trailingFrame = smp.TrailingFrame(guiName="TrailingFrame", Input=getLidar(), NumberOfTrailingFrames=app.trailingFramesSpinBox.value)
 
+    filename = reader.FileName
     displayableFilename = os.path.basename(filename)
     # shorten the name to display because the status bar gives a lower bound to main window width
     shortDisplayableFilename = (displayableFilename[:59] + '...' + displayableFilename[-58:]) if len(displayableFilename) > 120 else displayableFilename
@@ -459,9 +432,6 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
     # and restoring the dialog visibility afterward
 
     restoreLaserSelection()
-
-    reader.Interpreter.SensorTransform.Translate = calibration.lidarTranslation
-    reader.Interpreter.SensorTransform.Rotate = calibration.lidarRotation
 
     lidarPacketInterpreter = getLidarPacketInterpreter()
     lidarPacketInterpreter.IgnoreZeroDistances = app.actions['actionIgnoreZeroDistances'].isChecked()
@@ -480,23 +450,9 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
         prep = smp.Show(processor)
     app.scene.UpdateAnimationUsingDataTimeSteps()
 
-    if calibration.isEnableInterpretGPSPackets :
-        posreader = smp.PositionOrientationReader(guiName='Position Orientation Data', FileName = filename)
+    posreader = smp.FindSource(posOrName)
 
-        posreader.Interpreter.SensorTransform.Translate = calibration.gpsTranslation
-        posreader.Interpreter.SensorTransform.Rotate = calibration.gpsRotation
-
-        smp.Show(posreader)
-
-        if positionFilename is None:
-            # only VelodyneHDLReader provides this information
-            # this information must be read after an update
-            # GetTimeSyncInfo() has the side effect of showing a message in the error
-            # console in the cases where the timeshift if computed
-            # wrapping not currently working for plugins:
-            # app.positionPacketInfoLabel.setText(posreader.GetClientSideObject().GetTimeSyncInfo())
-            pass
-
+    if posreader :
         output0 = posreader.GetClientSideObject().GetOutput(0)
         if output0.GetNumberOfPoints() != 0:
 
@@ -514,15 +470,6 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
             sb = smp.CreateScalarBar(LookupTable=rep.LookupTable, Title='Time')
             sb.Orientation = 'Horizontal'
             app.position = posreader
-            if not app.actions['actionShowPosition'].isChecked():
-                smp.Hide(app.position)
-        else:
-            if positionFilename is not None:
-                QtGui.QMessageBox.warning(getMainWindow(), 'Georeferencing data invalid',
-                                          'File %s is empty or not supported' % positionFilename)
-            smp.Delete(posreader)
-
-        app.position = posreader
 
     smp.SetActiveView(app.mainView)
 
@@ -534,7 +481,6 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
     showSourceInSpreadSheet(app.trailingFrame)
 
     enableSaveActions()
-    addRecentFile(filename)
 
     # Always enable dual return mode selection. A warning will be raised if
     # there's no dual return on the current frame later on
@@ -552,13 +498,12 @@ def openPCAP(filename, positionFilename=None, calibrationFilename=None, calibrat
 
     #Auto adjustment of the grid size with the distance resolution
     app.DistanceResolutionM = reader.Interpreter.GetClientSideObject().GetDistanceResolutionM()
-    app.grid = createGrid()
     app.actions['actionMeasurement_Grid'].setChecked(True)
     showMeasurementGrid()
 
+    smp.Show(app.trailingFrame)
     smp.SetActiveSource(app.trailingFrame)
     updateUIwithNewLidar()
-
 
 
 def hideMeasurementGrid():

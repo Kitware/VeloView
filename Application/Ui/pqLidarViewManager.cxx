@@ -17,6 +17,7 @@
 #include "vtkPVConfig.h" //  needed for PARAVIEW_VERSION
 #include "vtkLidarReader.h"
 #include "vvPythonQtDecorators.h"
+#include "lqOpenPcapReaction.h"
 
 #include <pqActiveObjects.h>
 #include <pqApplicationCore.h>
@@ -353,13 +354,9 @@ void pqLidarViewManager::setPythonShell(pqPythonShell* shell)
 //-----------------------------------------------------------------------------
 void pqLidarViewManager::openData(const QString& filename, const QString& positionFilename)
 {
-  if (!positionFilename.isEmpty())
+  if (QFileInfo(filename).suffix() == "pcap")
   {
-    this->runPython(QString("lv.openPCAP('%1', '%2')\n").arg(filename, positionFilename));
-  }
-  else if (QFileInfo(filename).suffix() == "pcap")
-  {
-    this->runPython(QString("lv.openPCAP('%1')\n").arg(filename));
+    lqOpenPcapReaction::createSourceFromFile(filename);
   }
   else
   {

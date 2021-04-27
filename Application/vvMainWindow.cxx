@@ -34,6 +34,7 @@
 #include "lqLoadLidarStateReaction.h"
 #include "lqEnableAdvancedArraysReaction.h"
 #include "lqOpenSensorReaction.h"
+#include "lqOpenPcapReaction.h"
 #include "lqUpdateCalibrationReaction.h"
 #include "lqLidarStreamColorByInitBehavior.h"
 
@@ -62,6 +63,7 @@
 #include <pqParaViewBehaviors.h>
 #include <pqDataRepresentation.h>
 #include <pqPythonShell.h>
+#include <pqLoadDataReaction.h>
 
 #include <QToolBar>
 #include <QShortcut>
@@ -370,8 +372,8 @@ private:
       settings->value("LidarPlugin/MeasurementGrid/Visibility", true);
     this->Ui.actionMeasurement_Grid->setChecked(gridVisible.toBool());
 
-    new vvLoadDataReaction(this->Ui.actionOpenPcap, false);
     new lqOpenSensorReaction(this->Ui.actionOpen_Sensor_Stream);
+    new lqOpenPcapReaction(this->Ui.actionOpenPcap);
 
     lqSensorListWidget * listSensor = lqSensorListWidget::instance();
     listSensor->setCalibrationFunction(&lqUpdateCalibrationReaction::UpdateExistingSource);
@@ -500,7 +502,7 @@ void vvMainWindow::dropEvent(QDropEvent* evt)
 
   if (files[0].endsWith(".pcap"))
   {
-    pqLidarViewManager::instance()->openData(files[0], QString(""));
+    lqOpenPcapReaction::createSourceFromFile(files[0]);
   }
   else
   {

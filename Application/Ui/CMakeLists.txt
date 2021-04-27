@@ -24,6 +24,8 @@ add_library(ApplicationUi
 
   pqLidarViewManager.cxx
   pqLidarViewManager.h
+  lqOpenPcapReaction.cxx
+  lqOpenPcapReaction.h
   lqOpenSensorReaction.cxx
   lqOpenSensorReaction.h
   lqUpdateCalibrationReaction.cxx
