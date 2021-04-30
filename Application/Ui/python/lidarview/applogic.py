@@ -135,7 +135,6 @@ def openData(filename):
     enableSaveActions()
     addRecentFile(filename)
     app.actions['actionSavePCAP'].setEnabled(False)
-    app.actions['actionChoose_Calibration_File'].setEnabled(False)
     app.actions['actionCropReturns'].setEnabled(False)
     app.actions['actionDualReturnModeDual'].enabled = True
     app.actions['actionDualReturnDistanceNear'].enabled = True
@@ -299,40 +298,6 @@ def getDefaultSaveFileName(extension, suffix='', frameId=None, baseName="Frame")
         if frameId is not None:
             suffix = '%s (%s %04d)' % (suffix, baseName, frameId)
         return '%s%s.%s' % (basename, suffix, extension)
-
-
-def chooseCalibration(calibrationFilename=None):
-
-    class Calibration(object):
-        def __init__(self, dialog):
-            self.calibrationFile = dialog.selectedCalibrationFile()
-            self.gpsYaw = dialog.gpsYaw()
-            self.gpsRoll = dialog.gpsRoll()
-            self.gpsPitch = dialog.gpsPitch()
-            self.lidarPort = dialog.lidarPort()
-            self.gpsPort = dialog.gpsPort()
-            self.gpsForwardingPort = dialog.gpsForwardingPort()
-            self.lidarForwardingPort = dialog.lidarForwardingPort()
-            self.isForwarding = dialog.isForwarding()
-            self.ipAddressForwarding = dialog.ipAddressForwarding()
-            self.isCrashAnalysing = dialog.isCrashAnalysing()
-            self.isEnableInterpretGPSPackets = dialog.isEnableInterpretGPSPackets()
-
-            self.lidarTranslation = [dialog.lidarX(), dialog.lidarY(), dialog.lidarZ()]
-            self.lidarRotation = [dialog.lidarRoll(), dialog.lidarPitch(), dialog.lidarYaw()]
-
-            self.gpsTranslation = [dialog.gpsX(), dialog.gpsY(), dialog.gpsZ()]
-            self.gpsRotation = [dialog.gpsRoll(), dialog.gpsPitch(), dialog.gpsYaw()]
-
-    dialog = vvCalibrationDialog(getMainWindow())
-    if calibrationFilename is None:
-        if not dialog.exec_():
-            return None
-        return Calibration(dialog)
-    else:
-        result = Calibration(dialog)
-        result.calibrationFile = calibrationFilename
-        return result
 
 def UpdateApplogicLidar(lidarProxyName, gpsProxyName):
 
@@ -1086,7 +1051,7 @@ def close():
 
 def _setSaveActionsEnabled(enabled):
     for action in ('SaveCSV', 'SavePCAP', 'SaveLAS',
-                   'Close', 'Choose_Calibration_File', 'CropReturns'):
+                   'Close', 'CropReturns'):
         app.actions['action'+action].setEnabled(enabled)
     getMainWindow().findChild('QMenu', 'menuSaveAs').enabled = enabled
 
@@ -1168,45 +1133,6 @@ def getPosition():
 
 def getLaserSelectionDialog():
     return getattr(app, 'laserSelectionDialog', None)
-
-def onChooseCalibrationFile():
-
-    calibration = chooseCalibration()
-    if not calibration:
-        return
-
-    calibrationFile = calibration.calibrationFile
-
-    lidar = getLidar()
-    if lidar:
-        lidar.CalibrationFile = calibrationFile
-        lidar.Interpreter.SensorTransform.Translate = calibration.lidarTranslation
-        lidar.Interpreter.SensorTransform.Rotate = calibration.lidarRotation
-
-    lidarStream = getSensor()
-    if lidarStream:
-      lidarStream.ListeningPort = calibration.lidarPort
-      lidarStream.ForwardedPort = calibration.lidarForwardingPort
-      lidarStream.IsForwarding = calibration.isForwarding
-      lidarStream.ForwardedIpAddress = calibration.ipAddressForwarding
-      lidarStream.IsCrashAnalysing = calibration.isCrashAnalysing
-
-    positionOrientation = getPosition()
-    if positionOrientation:
-      positionOrientation.Interpreter.SensorTransform.Translate = calibration.gpsTranslation
-      positionOrientation.Interpreter.SensorTransform.Rotate = calibration.gpsRotation
-      # If positionOrientation has an attribute "ListeningPort"
-      # This is a PositionOrientationstream so we have to update network part too
-      if(hasattr(positionOrientation, "ListeningPort")) :
-        positionOrientation.ListeningPort = calibration.gpsPort
-        positionOrientation.ForwardedPort = calibration.gpsForwardingPort
-        positionOrientation.IsForwarding = calibration.isForwarding
-        positionOrientation.ForwardedIpAddress = calibration.ipAddressForwarding
-        positionOrientation.IsCrashAnalysing = calibration.isCrashAnalysing
-
-    updateUIwithNewLidar()
-
-    smp.Render()
 
 def onCropReturns(show = True):
     dialog = vvCropReturnsDialog(getMainWindow())
