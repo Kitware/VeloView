@@ -125,7 +125,6 @@ def openData(filename):
 
     rep = smp.Show(reader)
     rep.InterpolateScalarsBeforeMapping = 0
-    colorByArrayName(reader, "intensity")
 
     showSourceInSpreadSheet(reader)
 
@@ -204,22 +203,13 @@ def createDSRColorsPreset():
         presets.AddPreset("DSR Colors",intensityJSON)
 
 
-def setDefaultLookupTables(sourceProxy, arrayName):
+def setDefaultLookupTables(sourceProxy):
     createDSRColorsPreset()
 
     presets = servermanager.vtkSMTransferFunctionPresets()
 
     dsrIndex = findPresetByName("DSR Colors")
     presetDSR = presets.GetPresetAsString(dsrIndex)
-
-    # LUT for arrayName
-    smp.GetLookupTableForArray(
-      arrayName, 1,
-      ScalarRangeInitialized=1.0,
-      ColorSpace='HSV',
-      RGBPoints=[0.0, 0.0, 0.0, 1.0,
-               100.0, 1.0, 1.0, 0.0,
-               256.0, 1.0, 0.0, 0.0])
 
     # LUT for 'intensity'
     smp.GetLookupTableForArray(
@@ -229,6 +219,15 @@ def setDefaultLookupTables(sourceProxy, arrayName):
       RGBPoints=[0.0, 0.0, 0.0, 1.0,
                100.0, 1.0, 1.0, 0.0,
                256.0, 1.0, 0.0, 0.0])
+
+    # LUT for 'reflectivity'
+    smp.GetLookupTableForArray(
+       'reflectivity', 1,
+       ScalarRangeInitialized=1.0,
+       ColorSpace='HSV',
+       RGBPoints=[0.0, 0.0, 0.0, 1.0,
+                100.0, 1.0, 1.0, 0.0,
+                256.0, 1.0, 0.0, 0.0])
 
     # LUT for 'dual_distance'
     smp.GetLookupTableForArray(
@@ -259,16 +258,6 @@ def setDefaultLookupTables(sourceProxy, arrayName):
           ScalarRangeInitialized=1.0,
           ColorSpace='RGB',
           RGBPoints=rgbRaw)
-
-
-def colorByArrayName(sourceProxy, arrayName):
-    setDefaultLookupTables(sourceProxy, arrayName)
-    rep = smp.GetDisplayProperties(sourceProxy)
-    rep.ColorArrayName = arrayName
-    rep.LookupTable = smp.GetLookupTableForArray(arrayName, 1)
-
-    return True
-
 
 def getTimeStamp():
     format = '%Y-%m-%d-%H-%M-%S'
@@ -359,7 +348,7 @@ def UpdateApplogicLidar(lidarProxyName, gpsProxyName):
     app.actions['actionDualReturnIntensityHigh'].enabled = True
     app.actions['actionDualReturnIntensityLow'].enabled = True
 
-    setDefaultLookupTables(sensor, "intensity")
+    setDefaultLookupTables(sensor)
     updateUIwithNewLidar()
     smp.Render()
 
@@ -438,11 +427,6 @@ def UpdateApplogicReader(lidarName, posOrName):
 
     smp.SetActiveView(app.mainView)
 
-    arrayName = "reflectivity"
-    if not hasArrayName(app.trailingFrame, arrayName):
-        arrayName = "intensity"
-    colorByArrayName(app.trailingFrame, arrayName)
-
     showSourceInSpreadSheet(app.trailingFrame)
 
     enableSaveActions()
@@ -466,6 +450,7 @@ def UpdateApplogicReader(lidarName, posOrName):
     app.actions['actionMeasurement_Grid'].setChecked(True)
     showMeasurementGrid()
 
+    setDefaultLookupTables(app.trailingFrame)
     smp.Show(app.trailingFrame)
     smp.SetActiveSource(app.trailingFrame)
     updateUIwithNewLidar()
