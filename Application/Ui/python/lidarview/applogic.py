@@ -28,8 +28,8 @@ from PythonQt import QtCore, QtGui
 
 from vtk import vtkXMLPolyDataWriter
 import lidarviewcore.kiwiviewerExporter as kiwiviewerExporter
-import gridAdjustmentDialog
-import aboutDialog
+import lidarview.gridAdjustmentDialog as gridAdjustmentDialog
+import lidarview.aboutDialog as aboutDialog
 import bisect
 
 from PythonQt.paraview import vvCalibrationDialog, vvCropReturnsDialog, vvSelectFramesDialog
@@ -39,7 +39,7 @@ from PythonQt.paraview import vvCalibrationDialog, vvCropReturnsDialog, vvSelect
 # without this plugin, GetClientSideObject(), would return the first mother class known by paraview
 import LidarPluginPython
 
-import planefit
+import lidarview.planefit
 
 
 _repCache = {}
