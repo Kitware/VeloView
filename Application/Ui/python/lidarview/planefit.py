@@ -81,12 +81,16 @@ def fitPlane(actionSpreadsheet=None):
 
     try:
         pd = extracter.GetClientSideObject().GetOutput()
-        if not pd.GetNumberOfBlocks() or not pd.GetNumberOfPoints():
+        if not pd.GetNumberOfPoints():
             print("An empty selection is defined")
             return
 
         # Append data from each block
         if pd.IsTypeOf("vtkMultiBlockDataSet"):
+            if not pd.GetNumberOfBlocks():
+                print("An empty selection is defined")
+                return
+
             appendFilter = vtk.vtkAppendFilter()
             for i in range(pd.GetNumberOfBlocks()):
                 appendFilter.AddInputData(pd.GetBlock(i))
