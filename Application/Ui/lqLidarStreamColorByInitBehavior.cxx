@@ -110,8 +110,7 @@ bool lqLidarStreamColorByInitBehavior::tryLidarStreamInitColorBy(vtkSMSourceProx
 
   // If the sensor is an APF one (apf or Special Velarray, we color by reflectivity
   // If the sensor is a "Legacy" one, we color by intensitys
-  if(sensorInfo.find("advanced") != std::string::npos ||
-     sensorInfo.find("MIC") != std::string::npos)
+  if(sensorInfo.find("advanced") != std::string::npos)
   {
     pvrp->SetScalarColoring("reflectivity", 0);
   }
