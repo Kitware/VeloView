@@ -394,6 +394,7 @@ def UpdateApplogicLidar(lidarProxyName, gpsProxyName):
     app.actions['actionDualReturnIntensityHigh'].enabled = True
     app.actions['actionDualReturnIntensityLow'].enabled = True
 
+    setDefaultLookupTables(sensor, "intensity")
     updateUIwithNewLidar()
     smp.Render()
 
