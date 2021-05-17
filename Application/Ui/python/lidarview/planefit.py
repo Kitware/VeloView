@@ -12,28 +12,63 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from __future__ import print_function
-import VelodynePluginPython as vpmod
 import paraview.simple as smp
 from paraview import vtk
-import math
 
-def GetSelectionSource(proxy=None):
-    """If a selection has exists for the proxy (if proxy is not specified then
-       the active source is used), returns that selection source"""
-    if not proxy:
-        proxy = smp.GetActiveSource()
-    if not proxy:
-        raise RuntimeError("GetSelectionSource() needs a proxy argument of that an active source is set.")
-    return proxy.GetSelectionInput(proxy.Port)
+# Clean last planefitting source and the spreadsheet view
+def cleanStats():
+    planeFitter1 = smp.FindSource('PlaneFitter1')
+    if planeFitter1 is not None:
+        smp.Delete(planeFitter1)
+        del planeFitter1
 
-def fitPlane():
-    src = smp.GetActiveSource()
-    if not src:
+    PVTrivialProducer1 = smp.FindSource('PVTrivialProducer1')
+    if PVTrivialProducer1 is not None:
+        smp.Delete(PVTrivialProducer1)
+        del PVTrivialProducer1
+
+# Find or create a 'SpreadSheet View' to display plane fitting statistics
+def showStats(actionSpreadsheet=None):
+    if actionSpreadsheet is None:
+        print("Unable to display stats : SpreadSheet action is not defined")
+        return
+    
+    planeFitter1 = smp.FindSource('PlaneFitter1')
+    if planeFitter1 is None:
+        print("Unable to create spreadsheet view : PlaneFitter1 source missing")
         return
 
-    selection = GetSelectionSource(src)
+    renderView1 = smp.FindView('RenderView1')
+    if renderView1 is None:
+        print("Unable to find main renderView")
+        return
 
-    if not selection:
+    # Check if main spreadsheet view exist or can be created
+    spreadSheetView1 = smp.FindView('main spreadsheet view')
+    if spreadSheetView1 is None:
+        # try to trigger actionSpreadsheet to display main spreadsheet view
+        actionSpreadsheet.trigger()
+        spreadSheetView1 = smp.FindView('main spreadsheet view')
+        if spreadSheetView1 is None:
+            print("Unable to get main spreadsheet view")
+            return
+
+    # display stats in main spreadsheet view
+    spreadSheetView1.ColumnToSort = ''
+    spreadSheetView1.BlockSize = 1024
+    spreadSheetView1.FieldAssociation = 'Row Data'
+    smp.Show(planeFitter1, spreadSheetView1)
+
+def fitPlane(actionSpreadsheet=None):
+    src = smp.GetActiveSource()
+    if src is None:
+        print("A source need to be selected before running plane fitting")
+        return
+
+    selection = src.GetSelectionInput(src.Port)
+
+    if selection is None:
+        print("A selection has to be defined to run plane fitting")
         return
 
     extracter = smp.ExtractSelection()
@@ -41,9 +76,16 @@ def fitPlane():
     extracter.Input = src
     smp.Show(extracter)
 
+    # Clean last plane fitting stats before processing a new one
+    cleanStats()
+
     try:
         pd = extracter.GetClientSideObject().GetOutput()
+        if not pd.GetNumberOfBlocks() or not pd.GetNumberOfPoints():
+            print("An empty selection is defined")
+            return
 
+        # Append data from each block
         if pd.IsTypeOf("vtkMultiBlockDataSet"):
             appendFilter = vtk.vtkAppendFilter()
             for i in range(pd.GetNumberOfBlocks()):
@@ -51,45 +93,23 @@ def fitPlane():
             appendFilter.Update()
             pd = appendFilter.GetOutput()
 
-        max_laser_id = pd.GetPointData().GetArray("laser_id").GetRange()[1]
-        nchannels = 2**vtk.vtkMath.CeilLog2(int(max_laser_id))
+        # Check if laser_id array exist before process
+        if not pd.GetPointData().GetArray('laser_id'):
+            print("The source needs to contain a laser_id array")
+            return
 
-        origin = list(range(3))
-        normal = list(range(3))
-        mind, maxd, stddev = vtk.mutable(0), vtk.mutable(0), vtk.mutable(0)
+        # Create a data source from selected points
+        PVTrivialProducer1 = smp.PVTrivialProducer()
+        PVTrivialProducer1Client = PVTrivialProducer1.GetClientSideObject()
+        PVTrivialProducer1Client.SetOutput(pd)
 
-        channelMean = list(range(nchannels))
-        channelStdDev = list(range(nchannels))
-        channelNpts = list(range(nchannels))
+        # Create and apply plane fitter filter
+        planeFitter1 = smp.PlaneFitter(Input=PVTrivialProducer1)
+        planeFitter1.UpdatePipeline()
 
-        vpmod.vtkPlaneFitter.PlaneFit(pd, origin, normal, mind, maxd, stddev, channelMean, channelStdDev, channelNpts, nchannels)
-        rows = [['overall', origin, normal, 0.0, stddev, stddev, pd.GetNumberOfPoints()]]
-        rows = rows + [['%d' % i, origin, normal,
-                        channelMean[i], channelStdDev[i],
-                        math.sqrt(channelMean[i]**2 + channelStdDev[i]**2),
-                        channelNpts[i]]
-                       for i in range(nchannels)]
+        # Display results on the main spreadsheet view
+        showStats(actionSpreadsheet)
 
-        def rowconverter(x):
-            try:
-                return '\t'.join(['%.4f' % d for d in x])
-            except TypeError:
-                try:
-                    x = x.get()
-                except AttributeError:
-                    pass
-                if type(x) == float:
-                    return '%.4f' % x
-                elif type(x) is int:
-                    return '%d' % x
-                else:
-                    return x
-
-        print('\t'.join(['channel','originx','originy','originz','normalx','normaly','normalz','mean','stddev','RMS','npts']))
-        for r in rows:
-            if r[-1] == 0:
-                r[-4:-1] = ['nan', 'nan', 'nan']
-            print('\t'.join([rowconverter(x) for x in r]))
     finally:
         smp.Delete(extracter)
         smp.SetActiveSource(src)

@@ -146,7 +146,7 @@ def openData(filename):
 
 
 def planeFit():
-    planefit.fitPlane()
+    planefit.fitPlane(app.actions['actionSpreadsheet'])
 
 
 def findPresetByName(name):
