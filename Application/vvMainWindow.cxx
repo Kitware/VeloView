@@ -34,6 +34,7 @@
 #include "lqEnableAdvancedArraysReaction.h"
 #include "lqOpenSensorReaction.h"
 #include "lqOpenPcapReaction.h"
+#include "lqOpenRecentFilesReaction.h"
 #include "lqUpdateCalibrationReaction.h"
 #include "lqLidarStreamColorByInitBehavior.h"
 
@@ -373,6 +374,8 @@ private:
 
     new lqOpenSensorReaction(this->Ui.actionOpen_Sensor_Stream);
     new lqOpenPcapReaction(this->Ui.actionOpenPcap);
+
+    new lqOpenRecentFilesReaction(this->Ui.menuRecent_Files, this->Ui.actionClear_Menu);
 
     lqSensorListWidget * listSensor = lqSensorListWidget::instance();
     listSensor->setCalibrationFunction(&lqUpdateCalibrationReaction::UpdateExistingSource);

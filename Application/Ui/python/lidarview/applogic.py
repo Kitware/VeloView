@@ -132,7 +132,6 @@ def openData(filename):
     app.filenameLabel.setText('File: %s' % os.path.basename(filename))
 
     enableSaveActions()
-    addRecentFile(filename)
     app.actions['actionSavePCAP'].setEnabled(False)
     app.actions['actionCropReturns'].setEnabled(False)
     app.actions['actionDualReturnModeDual'].enabled = True
@@ -1318,7 +1317,6 @@ def start():
     setupStatusBar()
     hideColorByComponent()
     restoreNativeFileDialogsAction()
-    updateRecentFiles()
     createRPMBehaviour()
 
 
@@ -1499,72 +1497,6 @@ def adjustScalarBarRangeLabelFormat():
         sb = smp.GetScalarBar(smp.GetLookupTableForArray(arrayName, []))
         sb.RangeLabelFormat = '%g'
         smp.Render()
-
-
-
-def addRecentFile(filename):
-    maxRecentFiles = 4
-    recentFiles = getRecentFiles()
-
-    # workaround to get system-locale to unicode conversion of filename
-    recentFiles.insert(0, filename)
-    getPVSettings().setValue('LidarPlugin/RecentFiles', recentFiles)
-    unicodeFilename = getPVSettings().value('LidarPlugin/RecentFiles')[0]
-    recentFiles = recentFiles[1:]
-
-    try:
-        recentFiles.remove(unicodeFilename)
-    except ValueError:
-        pass
-
-    recentFiles = recentFiles[:maxRecentFiles]
-    recentFiles.insert(0, unicodeFilename)
-
-    getPVSettings().setValue('LidarPlugin/RecentFiles', recentFiles)
-
-    updateRecentFiles()
-
-
-def openRecentFile(filename):
-    if not os.path.isfile(filename):
-        QtGui.QMessageBox.warning(getMainWindow(), 'File not found', 'File not found: %s' % filename)
-        return
-
-    if os.path.splitext(filename)[1].lower() == '.pcap':
-        openPCAP(filename)
-    else:
-        openData(filename)
-
-
-def getRecentFiles():
-    return list(getPVSettings().value('LidarPlugin/RecentFiles', []) or [])
-
-
-def updateRecentFiles():
-    settings = getPVSettings()
-    recentFiles = getRecentFiles()
-    recentFilesMenu = findQObjectByName(findQObjectByName(getMainWindow().menuBar().children(), 'menu_File').children(), 'menuRecent_Files')
-
-    clearMenuAction = app.actions['actionClear_Menu']
-    for action in recentFilesMenu.actions()[:-2]:
-        recentFilesMenu.removeAction(action)
-
-    def createActionFunction(filename):
-        def f():
-            openRecentFile(filename)
-        return f
-
-    actions = []
-    for filename in recentFiles:
-        actions.append(QtGui.QAction(os.path.basename(filename), recentFilesMenu))
-        actions[-1].connect('triggered()', createActionFunction(filename))
-    recentFilesMenu.insertActions(recentFilesMenu.actions()[0], actions)
-
-
-def onClearMenu():
-    settings = getPVSettings()
-    settings.setValue('LidarPlugin/RecentFiles', [])
-    updateRecentFiles()
 
 def toggleProjectionType():
 
@@ -1790,7 +1722,6 @@ def setupActions():
     app.actions['actionAbout_LidarView'].connect('triggered()', onAbout)
     app.actions['actionLidarViewUserGuide'].connect('triggered()', onUserGuide)
     app.actions['actionLidarViewDeveloperGuide'].connect('triggered()', onDeveloperGuide)
-    app.actions['actionClear_Menu'].connect('triggered()', onClearMenu)
 
     app.actions['actionToggleProjection'].connect('triggered()', toggleProjectionType)
     app.actions['actionMeasure'].connect('triggered()', toggleRulerContext)
