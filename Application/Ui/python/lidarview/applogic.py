@@ -39,7 +39,7 @@ from PythonQt.paraview import vvCalibrationDialog, vvCropReturnsDialog, vvSelect
 # without this plugin, GetClientSideObject(), would return the first mother class known by paraview
 import LidarPluginPython
 
-import lidarview.planefit
+import lidarview.planefit as planefit
 
 
 _repCache = {}
