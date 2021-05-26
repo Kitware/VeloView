@@ -93,9 +93,9 @@ void pqLidarViewManager::pythonStartup()
   QStringList pythonDirs;
   pythonDirs << QCoreApplication::applicationDirPath()
              << QCoreApplication::applicationDirPath() + "/../Libraries" // use lidarpluginpython module from packaging MacOS
-             << QCoreApplication::applicationDirPath() + "/../Python/lidarview" // use lidarview module from install MacOS
-             << QCoreApplication::applicationDirPath() + "/python3.7/site-packages/lidarview" // use lidarview module from install Linux
-             << QCoreApplication::applicationDirPath() + "/Lib/site-packages/lidarview"; // use lidarview module from install Windows
+             << QCoreApplication::applicationDirPath() + "/../Python"    // use lidarview module from install MacOS
+             << QCoreApplication::applicationDirPath() + "/python3.7/site-packages" // use lidarview, lidarviewcore modules from install Linux
+             << QCoreApplication::applicationDirPath() + "/Lib/site-packages";      // use lidarview module from install Windows
 
   foreach (const QString& dirname, pythonDirs)
   {
