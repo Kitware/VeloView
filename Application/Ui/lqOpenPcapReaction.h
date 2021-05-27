@@ -5,6 +5,7 @@
 
 #include "pqReaction.h"
 
+#include <vtkObject.h>
 /**
 * @ingroup Reactions
 * Reaction to open a pcap
@@ -16,14 +17,17 @@ class APPLICATIONUI_EXPORT lqOpenPcapReaction : public pqReaction
 
 public:
   lqOpenPcapReaction(QAction* action);
-
   static void createSourceFromFile(QString fileName);
 
 protected:
   /// Called when the action is triggered.
   void onTriggered() override;
 
+  static void onProgressEvent(vtkObject* caller, unsigned long, void*);
+
 private:
+
+  class vtkObserver;
   Q_DISABLE_COPY(lqOpenPcapReaction)
 };
 

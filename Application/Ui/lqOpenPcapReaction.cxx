@@ -19,9 +19,37 @@
 #include "vvCalibrationDialog.h"
 #include "lqSensorListWidget.h"
 
+#include <QApplication>
 #include <QFileDialog>
+#include <QProgressDialog>
 #include <QString>
 #include <string>
+
+#include <vtkCommand.h>
+
+#include <vtkProcessModule.h>
+#include <vtkPVSession.h>
+#include <vtkPVProgressHandler.h>
+
+//----------------------------------------------------------------------------
+class lqOpenPcapReaction::vtkObserver : public vtkCommand
+{
+public:
+  static vtkObserver* New()
+  {
+    vtkObserver* obs = new vtkObserver();
+    return obs;
+  }
+
+  void Execute(vtkObject* , unsigned long eventId, void*) override
+  {
+
+      if (eventId == vtkCommand::ProgressEvent)
+      {
+        QApplication::instance()->processEvents();
+      }
+  }
+};
 
 //-----------------------------------------------------------------------------
 lqOpenPcapReaction::lqOpenPcapReaction(QAction *action) :
@@ -65,6 +93,26 @@ void lqOpenPcapReaction::createSourceFromFile(QString fileName)
     return;
   }
 
+  // Create a progress bar so the user see that VeloView is running
+  QProgressDialog progress("Reading pcap", "", 0, 0, pqLidarViewManager::getMainWindow());
+  progress.setCancelButton(nullptr);
+  progress.setModal(true);
+  progress.show();
+
+  vtkProcessModule* pm = vtkProcessModule::GetProcessModule();
+  vtkPVSession* session = vtkPVSession::SafeDownCast(pm->GetSession());
+  if(!session)
+  {
+    return;
+  }
+  vtkSmartPointer<vtkPVProgressHandler> handler = session->GetProgressHandler();
+  handler->PrepareProgress();
+  double interval = handler->GetProgressInterval();
+  handler->SetProgressInterval(0.05);
+  vtkNew<vtkObserver> obs;
+  unsigned long tag = handler->AddObserver(vtkCommand::ProgressEvent, obs);
+
+
   // Remove all Streams (and every filter depending on them) from pipeline Browser
   // Thanks to the lqSensorListWidget,
   // if a LidarStream is delete, it will automatically delete its PositionOrientationStream.
@@ -106,4 +154,10 @@ void lqOpenPcapReaction::createSourceFromFile(QString fileName)
 
   //Update applogic to be able to use function only define in applogic.
   pqLidarViewManager::instance()->runPython(QString("lv.UpdateApplogicReader('%1', '%2')\n").arg(lidarName, posOrName));
+
+  // Remove the handler so the user can interact with VeloView again (pushing any button)
+  handler->RemoveObserver(tag);
+  handler->LocalCleanupPendingProgress();
+  handler->SetProgressInterval(interval);
+  progress.close();
 }

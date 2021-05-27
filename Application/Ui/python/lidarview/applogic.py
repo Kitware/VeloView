@@ -394,10 +394,6 @@ def UpdateApplogicReader(lidarName, posOrName):
     if SAMPLE_PROCESSING_MODE:
         processor = smp.ProcessingSample(reader)
 
-    handler.RemoveObserver(tag)
-    handler.LocalCleanupPendingProgress()
-    handler.SetProgressInterval(interval)
-    progressDialog.close()
 
     if SAMPLE_PROCESSING_MODE:
         prep = smp.Show(processor)
