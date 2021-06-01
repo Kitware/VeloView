@@ -352,7 +352,7 @@ void pqLidarViewManager::setPythonShell(pqPythonShell* shell)
 }
 
 //-----------------------------------------------------------------------------
-void pqLidarViewManager::openData(const QString& filename, const QString& positionFilename)
+void pqLidarViewManager::openData(const QString& filename)
 {
   if (QFileInfo(filename).suffix() == "pcap")
   {
