@@ -135,7 +135,8 @@ void lqOpenPcapReaction::createSourceFromFile(QString fileName)
   // To get the pqPipelineSource modified with the new property, you have to connect to the signal
   // "dataUpdated" of the pqServerManagerModel
   pqPipelineSource* lidarSource = builder->createSource("sources", "LidarReader", server);
-  UpdateProperty(lidarSource->getProxy(), "FileName", fileName.toStdString());
+  vtkSMPropertyHelper(lidarSource->getProxy(), "FileName").Set(fileName.toStdString().c_str());
+  lidarSource->getProxy()->UpdateProperty("FileName");
   QString lidarName = lidarSource->getSMName();
 
   pqPipelineSource * posOrSource = nullptr;
