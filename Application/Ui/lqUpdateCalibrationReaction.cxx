@@ -50,39 +50,51 @@ void lqUpdateCalibrationReaction::setTransform(vtkSMProxy * proxy,
   // Create a transform proxy
   // For Transform2 : name "Position" = label "Translate
   // name "Rotation" = label "Rotate"
-  // See ParaviewSrc/ParaViewCore/ServerManager/SMApplication/Resources/Utilities.xml
+  // See Paraview Src/ParaViewCore/ServerManager/SMApplication/Resources/Utilities.xml
   vtkSmartPointer<vtkSMProxy> transformProxy = vtkSmartPointer<vtkSMProxy>::Take(pxm->NewProxy("extended_sources", "Transform2"));
-  std::vector<std::string> translate;
-  translate.push_back(std::to_string(x));
-  translate.push_back(std::to_string(y));
-  translate.push_back(std::to_string(z));
-  std::vector<std::string> rotate;
-  rotate.push_back(std::to_string(roll));
-  rotate.push_back(std::to_string(pitch));
-  rotate.push_back(std::to_string(yaw));
-  UpdateProperty(transformProxy, "Position", translate);
-  UpdateProperty(transformProxy, "Rotation", rotate);
-
+  std::vector<double> translate;
+  translate.push_back(x);
+  translate.push_back(y);
+  translate.push_back(z);
+  std::vector<double> rotate;
+  rotate.push_back(roll);
+  rotate.push_back(pitch);
+  rotate.push_back(yaw);
+  vtkSMPropertyHelper(transformProxy, "Position").Set(translate.data(), translate.size());
+  vtkSMPropertyHelper(transformProxy, "Rotation").Set(rotate.data(), rotate.size());
   vtkSMProperty * TransformProp = interpreterProxy->GetProperty("Sensor Transform");
   vtkSMPropertyHelper(TransformProp).Set(transformProxy);
+  interpreterProxy->UpdateVTKObjects();
 }
 
 //-----------------------------------------------------------------------------
 void lqUpdateCalibrationReaction::setNetworkCalibration(vtkSMProxy * proxy, double listenningPort,
-     double forwardingPort, bool isForwarding, QString ipAddressForwarding, bool isCrashAnalysing)
+     double forwardingPort, bool isForwarding, QString ipAddressForwarding, bool isCrashAnalysing,
+     bool multiSensors)
 {
   if(IsStreamProxy(proxy))
   {
-    UpdateProperty(proxy, "ListeningPort", std::to_string(listenningPort));
-    UpdateProperty(proxy, "IsCrashAnalysing", std::to_string(isCrashAnalysing));
+    vtkSMPropertyHelper(proxy, "ListeningPort").Set(listenningPort);
+    vtkSMPropertyHelper(proxy, "IsCrashAnalysing").Set(isCrashAnalysing);
 
     if(isForwarding)
     {
-      UpdateProperty(proxy, "ForwardedPort", std::to_string(forwardingPort));
-      UpdateProperty(proxy, "IsForwarding", std::to_string(isForwarding));
-      UpdateProperty(proxy, "ForwardedIpAddress", ipAddressForwarding.toStdString());
+      vtkSMPropertyHelper(proxy, "IsForwarding").Set(forwardingPort);
+      vtkSMPropertyHelper(proxy, "IsForwarding").Set(isForwarding);
+      vtkSMPropertyHelper(proxy, "ForwardedIpAddress").Set(ipAddressForwarding.toStdString().c_str());
     }
   }
+  // We only select the reading port if the multisensor is enable
+  // To avoid displaying nothing with one pcap in case the port is wrong
+  else if(IsLidarReaderProxy(proxy) && multiSensors)
+  {
+    vtkSMPropertyHelper(proxy, "LidarPort").Set(listenningPort);
+  }
+  else if(IsPositionOrientationReaderProxy(proxy) && multiSensors)
+  {
+    vtkSMPropertyHelper(proxy, "PositionOrientationPort").Set(listenningPort);
+  }
+  proxy->UpdateVTKObjects();
 }
 
 //-----------------------------------------------------------------------------
@@ -92,7 +104,7 @@ void lqUpdateCalibrationReaction::setCalibrationFileAndDefaultInterpreter(vtkSMP
   if(IsLidarProxy(proxy))
   {
     // Set the calibration file
-    UpdateProperty(proxy, "CalibrationFileName", calibrationFile.toStdString());
+    vtkSMPropertyHelper(proxy, "CalibrationFileName").Set(calibrationFile.toStdString().c_str());
 
     // The default interpreter is the first one in the chronological order.
     // We need it to be the Meta one or the Special Velarray if the calibration file says so.
@@ -119,6 +131,7 @@ void lqUpdateCalibrationReaction::setCalibrationFileAndDefaultInterpreter(vtkSMP
     // Set the found proxy in the proxy list domain to the lidar property
     // This allows to update the "drop down" menu in the interpreter ui property
     vtkSMPropertyHelper(interpreterProp).Set(defaultProxy);
+    proxy->UpdateVTKObjects();
   }
 }
 
@@ -145,8 +158,8 @@ void lqUpdateCalibrationReaction::UpdateCalibration(pqPipelineSource* & lidarSou
 
   // Set the Network Part
   lqUpdateCalibrationReaction::setNetworkCalibration(lidarProxy, dialog.lidarPort(), dialog.lidarForwardingPort(),
-                                                     dialog.isForwarding(), dialog.ipAddressForwarding(), dialog.isCrashAnalysing());
-
+                                                     dialog.isForwarding(), dialog.ipAddressForwarding(),
+                                                     dialog.isCrashAnalysing(), dialog.isEnableMultiSensors());
 
   lidarProxy->UpdateSelfAndAllInputs();
   lidarSource->updatePipeline();
@@ -164,22 +177,42 @@ void lqUpdateCalibrationReaction::UpdateCalibration(pqPipelineSource* & lidarSou
     }
     else
     {
-      // If the Gps proxy is not created. We created now.
+      // If the Gps proxy is not created. We created one now.
       pqServer* server = pqActiveObjects::instance().activeServer();
       pqObjectBuilder* builder = pqApplicationCore::instance()->getObjectBuilder();
-      posOrSource = builder->createSource("sources", "PositionOrientationStream", server);
-      posOrProxy = posOrSource->getProxy();
+
+      if(IsLidarStreamProxy(lidarProxy))
+      {
+        // If the Lidar Source is a stream, we created a Position Orientation Stream
+        posOrSource = builder->createSource("sources", "PositionOrientationStream", server);
+        posOrProxy = posOrSource->getProxy();
+        posOrSource->getProxy()->InvokeCommand("Start");
+      }
+      else if (IsLidarReaderProxy(lidarProxy))
+      {
+        // If the Lidar Source is a Lidar Reader we created a Position Orientation Reader
+        // And we set the filename to interpret to the same as the Lidar one.
+        posOrSource = builder->createSource("sources", "PositionOrientationReader", server);
+        vtkSMProperty * lidarFileNameProperty = lidarProxy->GetProperty("FileName");
+        std::string pcapFileName = vtkSMPropertyHelper(lidarFileNameProperty).GetAsString();
+        vtkSMPropertyHelper(posOrSource->getProxy(), "FileName").Set(pcapFileName.c_str());
+        posOrProxy = posOrSource->getProxy();
+        posOrProxy->UpdateProperty("FileName");
+      }
     }
 
     // Set the Network Part
     lqUpdateCalibrationReaction::setNetworkCalibration(posOrProxy, dialog.gpsPort(),dialog.gpsForwardingPort(),
-                                                       dialog.isForwarding(), dialog.ipAddressForwarding(), dialog.isCrashAnalysing());
+                                                       dialog.isForwarding(), dialog.ipAddressForwarding(),
+                                                       dialog.isCrashAnalysing(), dialog.isEnableMultiSensors());
     // Set the transform of the gps Sensor
     lqUpdateCalibrationReaction::setTransform(posOrProxy, dialog.gpsX(), dialog.gpsY(), dialog.gpsZ(),
                                               dialog.gpsRoll(), dialog.gpsPitch(), dialog.gpsYaw());
 
-    posOrSource->updatePipeline();
     posOrProxy->UpdateSelfAndAllInputs();
+    posOrSource->updatePipeline();
+
+    pqApplicationCore::instance()->render();
 
     // Set the Position Orientation Stream Associated to the lidar
     lqSensorListWidget * listSensor = lqSensorListWidget::instance();
@@ -223,17 +256,9 @@ void lqUpdateCalibrationReaction::UpdateExistingSource(pqPipelineSource* & lidar
   pqView* view = pqActiveObjects::instance().activeView();
   vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
 
-  if(IsLidarStream(lidarSource))
-  {
-    pqActiveObjects::instance().setActiveSource(lidarSource);
-    controller->Show(lidarSource->getSourceProxy(), 0, view->getViewProxy());
-    lidarSource->getProxy()->InvokeCommand("Start");
-  }
-
-  if(IsPositionOrientationStream(posOrSource))
+  if(posOrSource && IsPositionOrientationProxy(posOrSource->getProxy()))
   {
     controller->Show(posOrSource->getSourceProxy(), 0, view->getViewProxy());
-    posOrSource->getProxy()->InvokeCommand("Start");
   }
 }
 
@@ -249,14 +274,6 @@ void lqUpdateCalibrationReaction::onTriggered()
   }
   vtkSMProxy * proxyToUpdate = lidarProxys[0];
 
-  // If the proxy to update is a reader
-  // We call the applogic function for now
-  if(IsLidarReaderProxy(proxyToUpdate))
-  {
-    pqLidarViewManager::instance()->runPython(QString("lv.onChooseCalibrationFile()\n"));
-    return;
-  }
-
   // Get the lidar source of the lidarProxy to update
   pqPipelineSource* lidarSource = GetPipelineSourceFromProxy(proxyToUpdate);
   if(!lidarSource)
@@ -270,8 +287,6 @@ void lqUpdateCalibrationReaction::onTriggered()
 
   lqUpdateCalibrationReaction::UpdateExistingSource(lidarSource, posOrSource);
 }
-
-
 
 //-----------------------------------------------------------------------------
 void lqUpdateCalibrationReaction::onSourceAdded(pqPipelineSource *src)

@@ -92,6 +92,4 @@ void lqOpenSensorReaction::onTriggered()
 
   //Update applogic to be able to use function only define in applogic.
   pqLidarViewManager::instance()->runPython(QString("lv.UpdateApplogicLidar('%1', '%2')\n").arg(lidarName, posOrName));
-
-  pqActiveObjects::instance().setActiveSource(lidarSource);
 }

@@ -564,23 +564,26 @@ vvCalibrationDialog::vvCalibrationDialog(vtkSMProxy * lidarProxy, vtkSMProxy * G
     }
   }
 
-  int lidarPort = vtkSMPropertyHelper(lidarProxy->GetProperty("ListeningPort")).GetAsInt();
-  this->Internal->LidarPortSpinBox->setValue(lidarPort);
-
-  bool isForwarding = vtkSMPropertyHelper(lidarProxy->GetProperty("IsForwarding")).GetAsInt();
-  this->Internal->EnableForwardingCheckBox->setChecked(isForwarding);
-
-  int lidarForwardedPort = vtkSMPropertyHelper(lidarProxy->GetProperty("ForwardedPort")).GetAsInt();
-  this->Internal->LidarForwardingPortSpinBox->setValue(lidarForwardedPort);
-
-  std::string forwardedIpAddress = vtkSMPropertyHelper(lidarProxy->GetProperty("ForwardedIpAddress")).GetAsString();
-  this->Internal->ipAddresslineEdit->setText(QString::fromStdString(forwardedIpAddress));
-
-  // Only restore the state if the crash analysing is enabled
-  if (this->Internal->CrashAnalysisCheckBox->isEnabled())
+  if(IsLidarStreamProxy(lidarProxy))
   {
-    bool isCrashAnalysing = vtkSMPropertyHelper(lidarProxy->GetProperty("IsCrashAnalysing")).GetAsInt();
-    this->Internal->CrashAnalysisCheckBox->setChecked(isCrashAnalysing);
+    int lidarPort = vtkSMPropertyHelper(lidarProxy->GetProperty("ListeningPort")).GetAsInt();
+    this->Internal->LidarPortSpinBox->setValue(lidarPort);
+
+    bool isForwarding = vtkSMPropertyHelper(lidarProxy->GetProperty("IsForwarding")).GetAsInt();
+    this->Internal->EnableForwardingCheckBox->setChecked(isForwarding);
+
+    int lidarForwardedPort = vtkSMPropertyHelper(lidarProxy->GetProperty("ForwardedPort")).GetAsInt();
+    this->Internal->LidarForwardingPortSpinBox->setValue(lidarForwardedPort);
+
+    std::string forwardedIpAddress = vtkSMPropertyHelper(lidarProxy->GetProperty("ForwardedIpAddress")).GetAsString();
+    this->Internal->ipAddresslineEdit->setText(QString::fromStdString(forwardedIpAddress));
+
+    // Only restore the state if the crash analysing is enabled
+    if (this->Internal->CrashAnalysisCheckBox->isEnabled())
+    {
+      bool isCrashAnalysing = vtkSMPropertyHelper(lidarProxy->GetProperty("IsCrashAnalysing")).GetAsInt();
+      this->Internal->CrashAnalysisCheckBox->setChecked(isCrashAnalysing);
+    }
   }
 
   // We can not change the "Enable Multi Sensor" option
@@ -603,11 +606,14 @@ vvCalibrationDialog::vvCalibrationDialog(vtkSMProxy * lidarProxy, vtkSMProxy * G
   {
     this->Internal->EnableInterpretGPSPackets->setChecked(true);
 
-    int gpsPort = vtkSMPropertyHelper(GPSProxy->GetProperty("ListeningPort")).GetAsInt();
-    this->Internal->GPSPortSpinBox->setValue(gpsPort);
+    if(IsPositionOrientationStreamProxy(GPSProxy))
+    {
+      int gpsPort = vtkSMPropertyHelper(GPSProxy->GetProperty("ListeningPort")).GetAsInt();
+      this->Internal->GPSPortSpinBox->setValue(gpsPort);
 
-    int gpsForwardingPort = vtkSMPropertyHelper(GPSProxy->GetProperty("ForwardedPort")).GetAsInt();
-    this->Internal->GPSForwardingPortSpinBox->setValue(gpsForwardingPort);
+      int gpsForwardingPort = vtkSMPropertyHelper(GPSProxy->GetProperty("ForwardedPort")).GetAsInt();
+      this->Internal->GPSForwardingPortSpinBox->setValue(gpsForwardingPort);
+    }
 
     std::vector<double> gpsTranslate;
     std::vector<double> gpsRotate;

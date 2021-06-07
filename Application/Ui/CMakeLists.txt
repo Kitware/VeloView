@@ -24,12 +24,14 @@ add_library(ApplicationUi
 
   pqLidarViewManager.cxx
   pqLidarViewManager.h
+  lqOpenPcapReaction.cxx
+  lqOpenPcapReaction.h
+  lqOpenRecentFilesReaction.cxx
+  lqOpenRecentFilesReaction.h
   lqOpenSensorReaction.cxx
   lqOpenSensorReaction.h
   lqUpdateCalibrationReaction.cxx
   lqUpdateCalibrationReaction.h
-  vvLoadDataReaction.cxx
-  vvLoadDataReaction.h
   vvPythonQtDecorators.h
   lqLidarStreamColorByInitBehavior.cxx
   lqLidarStreamColorByInitBehavior.h

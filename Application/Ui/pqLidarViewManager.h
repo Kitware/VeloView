@@ -64,7 +64,7 @@ public:
   void setup();
   void setPythonShell(pqPythonShell* pythonShell);
 
-  void openData(const QString& filename, const QString& positionFilename);
+  void openData(const QString& filename);
 
   void runPython(const QString& statements);
 
