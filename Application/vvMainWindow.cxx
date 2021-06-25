@@ -359,6 +359,7 @@ private:
       {
         if(action->objectName().compare("actionSelectFrustumPoints", Qt::CaseInsensitive) == 0)
         {
+          action->setText("Select Points (g)");
           this->Ui.toolBar->insertAction(this->Ui.actionSelectDualReturn2, action);
           break;
         }
