@@ -411,7 +411,7 @@
     <string>Open Data File</string>
    </property>
    <property name="shortcut">
-    <string>Ctrl+O</string>
+    <string>Ctrl+L</string>
    </property>
   </action>
   <action name="actionSelect_Visible_Points">
