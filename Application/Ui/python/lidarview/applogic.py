@@ -1032,8 +1032,7 @@ def close():
 
 
 def _setSaveActionsEnabled(enabled):
-    for action in ('SaveCSV', 'SavePCAP', 'SaveLAS',
-                   'Close', 'CropReturns'):
+    for action in ('SavePCAP', 'Close', 'CropReturns'):
         app.actions['action'+action].setEnabled(enabled)
     getMainWindow().findChild('QMenu', 'menuSaveAs').enabled = enabled
 
@@ -1713,9 +1712,7 @@ def setupActions():
     app.actions['actionPlaneFit'].connect('triggered()', planeFit)
 
     app.actions['actionClose'].connect('triggered()', close)
-    app.actions['actionSaveCSV'].connect('triggered()', onSaveCSV)
     app.actions['actionSavePositionCSV'].connect('triggered()', onSavePosition)
-    app.actions['actionSaveLAS'].connect('triggered()', onSaveLAS)
     app.actions['actionSavePCAP'].connect('triggered()', onSavePCAP)
     app.actions['actionSaveScreenshot'].connect('triggered()', onSaveScreenshot)
     app.actions['actionGrid_Properties'].connect('triggered()', onGridProperties)
