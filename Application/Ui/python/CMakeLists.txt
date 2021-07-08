@@ -1,10 +1,5 @@
 include(PythonModuleInstaller)
 
-python_module_install(NAME lidarview
-                      FILES
-                      lidarview/__init__.py
-                      lidarview/applogic.py
-                      lidarview/gridAdjustmentDialog.py
-                      lidarview/planefit.py
-                      lidarview/aboutDialog.py
-                      )
+python_module_install(
+  NAME lidarview
+  PATH ${CMAKE_CURRENT_LIST_DIR}/lidarview)
