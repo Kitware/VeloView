@@ -242,6 +242,9 @@ private:
       qobject_cast<pqRenderView*>(this->Builder->createView(pqRenderView::renderViewType(), this->Server));
     assert(this->MainView);
 
+    // Add view to layout
+    this->Builder->addToLayout(this->MainView);
+
     vtkSMPropertyHelper(this->MainView->getProxy(), "CenterAxesVisibility").Set(0);
     double bgcolor[3] = { 0, 0, 0 };
     vtkSMPropertyHelper(this->MainView->getProxy(), "Background").Set(bgcolor, 3);
