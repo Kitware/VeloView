@@ -26,7 +26,6 @@
 #include <pqPersistentMainWindowStateBehavior.h>
 #include <pqPipelineSource.h>
 #include <pqPythonShell.h>
-#include <pqPythonDialog.h>
 #include <pqPythonManager.h>
 #include <pqRenderView.h>
 #include <pqServer.h>
