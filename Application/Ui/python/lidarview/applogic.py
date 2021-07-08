@@ -84,8 +84,9 @@ class AppLogic(object):
         self.laserSelectionSession = {}
         self.gridPropertiesPersist = False
 
+        #Not plugins anymore, kept for future reference
         #smp.LoadPlugin(vtkGetFileNameFromPluginName('PointCloudPlugin'))
-        smp.LoadPlugin(vtkGetFileNameFromPluginName('EyeDomeLightingView'))
+        #smp.LoadPlugin(vtkGetFileNameFromPluginName('EyeDomeLightingView'))
 
 
     def createStatusBarWidgets(self):
