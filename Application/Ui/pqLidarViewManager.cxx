@@ -56,6 +56,12 @@
 
 #include <sstream>
 
+// Use LV_PYTHON_VERSION supplied at build time
+#ifndef LV_PYTHON_VERSION
+  #error "LV_PYTHON_VERSION not defined"
+#endif
+static_assert( LV_PYTHON_VERSION, "LV_PYTHON_VERSION is not defined" ); // For good measure
+
 //-----------------------------------------------------------------------------
 class pqLidarViewManager::pqInternal
 {
@@ -94,9 +100,10 @@ void pqLidarViewManager::pythonStartup()
   QStringList pythonDirs;
   pythonDirs << QCoreApplication::applicationDirPath()
              << QCoreApplication::applicationDirPath() + "/../Libraries" // use lidarpluginpython module from packaging MacOS
-             << QCoreApplication::applicationDirPath() + "/../Python"    // use lidarview module from install MacOS
-             << QCoreApplication::applicationDirPath() + "/python3.7/site-packages" // use lidarview, lidarviewcore modules from install Linux
-             << QCoreApplication::applicationDirPath() + "/Lib/site-packages";      // use lidarview module from install Windows
+             << QCoreApplication::applicationDirPath() + "/../Python/" // use lidarview module from install MacOS
+             << QCoreApplication::applicationDirPath() + "/../lib/pythonLV_PYTHON_VERSION/site-packages/" // use lidarview module from install Linux
+             << QCoreApplication::applicationDirPath() + "/Lib/site-packages/"; // use lidarview module from install Windows
+
 
   foreach (const QString& dirname, pythonDirs)
   {

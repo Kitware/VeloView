@@ -11,6 +11,7 @@ superbuild_add_project(lidarview
     -DLV_BUILD_ARCHITECTURE=${LV_BUILD_ARCHITECTURE}
     -DSOFTWARE_NAME=${SOFTWARE_NAME}
     -DSOFTWARE_VENDOR=${SOFTWARE_VENDOR}
+    -Dsuperbuild_python_version=${superbuild_python_version}
     -DParaView_DIR:PATH=${SuperBuild_BINARY_DIR}/common-superbuild/paraview/build
     -DVTK_DIR:PATH=${SuperBuild_BINARY_DIR}/common-superbuild/paraview/build/VTK
     -DCMAKE_CXX_STANDARD:STRING=${CMAKE_CXX_STANDARD}
