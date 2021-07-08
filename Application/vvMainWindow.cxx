@@ -204,7 +204,7 @@ private:
     {
       if (keys.size() > 0)
       {
-        vtkGenericWarningMacro("Settings weren't set correctly. Clearing settings.")
+        vtkGenericWarningMacro("Settings weren't set correctly. Clearing settings.");
       }
 
       // As pqPersistentMainWindowStateBehavior is not created right now,
