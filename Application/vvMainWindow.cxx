@@ -74,6 +74,7 @@
 #include <QMimeData>
 #include <QUrl>
 #include <QDockWidget>
+#include <QDragEnterEvent>
 
 #include <cassert>
 #include <iostream>
