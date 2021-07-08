@@ -14,6 +14,7 @@ superbuild_add_project(lidarview
     -DParaView_DIR:PATH=${SuperBuild_BINARY_DIR}/common-superbuild/paraview/build
     -DVTK_DIR:PATH=${SuperBuild_BINARY_DIR}/common-superbuild/paraview/build/VTK
     -DCMAKE_CXX_STANDARD:STRING=${CMAKE_CXX_STANDARD}
+    -Dparaview_version=${paraview_version}
     -Dqt_version:STRING=${qt_version}
     -DBoost_NO_BOOST_CMAKE:BOOL=${Boost_NO_BOOST_CMAKE}
     #$lidarview_appname dependencies options

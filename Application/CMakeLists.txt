@@ -11,8 +11,8 @@ endif()
 if(NOT LV_BUILD_ARCHITECTURE)
   message(FATAL_ERROR "LV_BUILD_ARCHITECTURE not set")
 endif()
-if(NOT PARAVIEW_VERSION_MAJOR OR NOT PARAVIEW_VERSION_MINOR)
-  message(FATAL_ERROR "PARAVIEW_VERSION_ not set")
+if(NOT paraview_version)
+  message(FATAL_ERROR "paraview_version not set")
 endif()
 
 add_subdirectory("Ui/")
@@ -31,7 +31,7 @@ set (source_files
 
 # This ensure that build_paraview_client() adds an "forwarding path" to locate
 # paraview from installed location.
-set (PARAVIEW_INSTALL_LIB_DIR "lib/paraview-${PARAVIEW_VERSION_MAJOR}.${PARAVIEW_VERSION_MINOR}")
+set (PARAVIEW_INSTALL_LIB_DIR "lib/paraview-${paraview_version}")
 
 # Please make sure to adapt the AboutDialog text in the followin file
 #  Lidar\python\lidarview\aboutDialog.py
