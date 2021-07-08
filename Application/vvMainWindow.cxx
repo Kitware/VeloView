@@ -276,8 +276,9 @@ private:
     QAction* tempDeleteAction = new QAction(window);
     pqDeleteReaction* handler = new pqDeleteReaction(tempDeleteAction);
     handler->connect(this->Ui.propertiesPanel,
-      SIGNAL(deleteRequested(pqPipelineSource*)),
-      SLOT(deleteSource(pqPipelineSource*)));
+      SIGNAL(deleteRequested(pqProxy*)),
+      SLOT(deleteSource(pqProxy*)));
+
 
     // specify how corner are occupied by the dockable widget
     window->setCorner(Qt::TopLeftCorner, Qt::LeftDockWidgetArea);
