@@ -66,7 +66,7 @@ protected:
   void setDefaultConfiguration();
 
 public slots:
-  virtual void accept();
+  virtual void accept() override;
 
 protected slots:
   void addFile();
