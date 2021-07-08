@@ -219,7 +219,7 @@ void lqUpdateCalibrationReaction::UpdateCalibration(pqPipelineSource* & lidarSou
   // If the user does not want the GPS Packet and one was created, we remove it
   if (posOrSource && !dialog.isEnableInterpretGPSPackets())
   {
-    QSet<pqPipelineSource*> sources;
+    QSet<pqProxy*> sources;
     sources.insert(posOrSource);
     pqDeleteReaction::deleteSources(sources);
     posOrSource = nullptr;
