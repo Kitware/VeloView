@@ -15,7 +15,6 @@ superbuild_add_project(lidarview
     -DVTK_DIR:PATH=${SuperBuild_BINARY_DIR}/common-superbuild/paraview/build/VTK
     -DCMAKE_CXX_STANDARD:STRING=${CMAKE_CXX_STANDARD}
     -Dqt_version:STRING=${qt_version}
-    -DPYTHONQT_DIR:PATH=<INSTALL_DIR>
     -DBoost_NO_BOOST_CMAKE:BOOL=${Boost_NO_BOOST_CMAKE}
     #$lidarview_appname dependencies options
     -DENABLE_pcl=${ENABLE_pcl}
