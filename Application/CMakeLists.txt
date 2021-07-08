@@ -1,4 +1,4 @@
-#Sanitize checks
+# Sanitize checks
 if(NOT LV_INSTALL_LIBRARY_DIR )
   message(FATAL_ERROR "LV_INSTALL_LIBRARY_DIR not set")
 endif()
@@ -10,9 +10,6 @@ if(NOT LV_VERSION_FULL)
 endif()
 if(NOT LV_BUILD_ARCHITECTURE)
   message(FATAL_ERROR "LV_BUILD_ARCHITECTURE not set")
-endif()
-if(NOT paraview_version)
-  message(FATAL_ERROR "paraview_version not set")
 endif()
 
 add_subdirectory("Ui/")
@@ -28,10 +25,6 @@ set (source_files
   vvMainWindow.cxx
   vvMainWindow.h
   )
-
-# This ensure that build_paraview_client() adds an "forwarding path" to locate
-# paraview from installed location.
-set (PARAVIEW_INSTALL_LIB_DIR "lib/paraview-${paraview_version}")
 
 # Please make sure to adapt the AboutDialog text in the followin file
 #  Lidar\python\lidarview\aboutDialog.py
