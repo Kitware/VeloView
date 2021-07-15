@@ -97,11 +97,6 @@ def fitPlane(actionSpreadsheet=None):
             appendFilter.Update()
             pd = appendFilter.GetOutput()
 
-        # Check if laser_id array exist before process
-        if not pd.GetPointData().GetArray('laser_id'):
-            print("The source needs to contain a laser_id array")
-            return
-
         # Create a data source from selected points
         PVTrivialProducer1 = smp.PVTrivialProducer()
         PVTrivialProducer1Client = PVTrivialProducer1.GetClientSideObject()
@@ -109,6 +104,13 @@ def fitPlane(actionSpreadsheet=None):
 
         # Create and apply plane fitter filter
         planeFitter1 = smp.PlaneFitter(Input=PVTrivialProducer1)
+
+        # if laser_id is the name of the array in Legacy and Special Velarray mode
+        # LCN is the name of the array in APF mode
+        if pd.GetPointData().GetArray("laser_id") :
+            planeFitter1.laserIDArray = "laser_id"
+        elif pd.GetPointData().GetArray("LCN"):
+            planeFitter1.laserIDArray = "LCN"
         planeFitter1.UpdatePipeline()
 
         # Display results on the main spreadsheet view
