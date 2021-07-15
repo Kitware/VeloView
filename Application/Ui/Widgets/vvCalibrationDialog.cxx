@@ -592,15 +592,15 @@ vvCalibrationDialog::vvCalibrationDialog(vtkSMProxy * lidarProxy, vtkSMProxy * G
 
   std::vector<double> translate;
   std::vector<double> rotate;
-  GetInterpreterTransform(lidarProxy, translate, rotate);
-  assert(translate.size() == 3);
-  assert(rotate.size() == 3);
-  this->Internal->LidarXSpinBox->setValue(translate[0]);
-  this->Internal->LidarYSpinBox->setValue(translate[1]);
-  this->Internal->LidarZSpinBox->setValue(translate[2]);
-  this->Internal->LidarRollSpinBox->setValue(rotate[0]);
-  this->Internal->LidarPitchSpinBox->setValue(rotate[1]);
-  this->Internal->LidarYawSpinBox->setValue(rotate[2]);
+  if(GetInterpreterTransform(lidarProxy, translate, rotate))
+  {
+    this->Internal->LidarXSpinBox->setValue(translate[0]);
+    this->Internal->LidarYSpinBox->setValue(translate[1]);
+    this->Internal->LidarZSpinBox->setValue(translate[2]);
+    this->Internal->LidarRollSpinBox->setValue(rotate[0]);
+    this->Internal->LidarPitchSpinBox->setValue(rotate[1]);
+    this->Internal->LidarYawSpinBox->setValue(rotate[2]);
+  }
 
   if(GPSProxy && IsPositionOrientationProxy(GPSProxy))
   {
