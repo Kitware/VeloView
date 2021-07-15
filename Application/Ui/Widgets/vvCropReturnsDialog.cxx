@@ -131,7 +131,7 @@ void vvCropReturnsDialog::pqInternal::restoreSettings()
 
   this->CropOutsideCheckBox->setChecked(this->Settings
                                             ->value("LidarPlugin/CropReturnsDialog/CropOutside",
-                                                    true)
+                                                    false)
                                             .toBool());
 
   this->X1SpinBox->setValue(
