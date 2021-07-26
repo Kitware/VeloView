@@ -183,7 +183,7 @@ void lqOpenRecentFilesReaction::RestoreRecentFilesFromSettings()
   pqSettings* settings = pqApplicationCore::instance()->settings();
   for(int unsigned i = 0; i < sizeOfTheQueue; i++)
   {
-    QString currentPcap = settings->value("LidarPlugin/RecentFiles/" + QString(i), "a").toString();
+    QString currentPcap = settings->value("LidarPlugin/RecentFiles/" + QString(i), "").toString();
     if(!currentPcap.isNull() && !currentPcap.isEmpty())
     {
       this->createNewRecentFile(currentPcap);
