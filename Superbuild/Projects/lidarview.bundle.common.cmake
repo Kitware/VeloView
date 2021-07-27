@@ -18,6 +18,7 @@ list(APPEND python_modules
   temporal_animation_cue_helpers
   example_temporal_animation
   example_non_temporal_animation
+  numpy
   )
 
 #auto load eye dome lighting plugin
