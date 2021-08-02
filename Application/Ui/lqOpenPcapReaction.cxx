@@ -153,8 +153,24 @@ void lqOpenPcapReaction::createSourceFromFile(QString fileName)
     controller->Show(posOrSource->getSourceProxy(), 0, view->getViewProxy());
   }
 
+  // Create the trailing Frame filter on the output of the LidarReader
+  QMap<QString, QList<pqOutputPort*> > namedInputs;
+  QList<pqOutputPort*> inputs;
+  inputs.push_back(lidarSource->getOutputPort(0));
+  namedInputs["Input"] = inputs;
+  pqPipelineSource* trailingFrameFilter = builder->createFilter("filters", "TrailingFrame", namedInputs, server);
+  QString trailingFrameName = trailingFrameFilter->getSMName();
+
+  // Set the trailing frame associated to the sensor Widget
+  lqSensorListWidget * listSensor = lqSensorListWidget::instance();
+  listSensor->setSourceToDisplayToLidarSourceWidget(lidarSource, trailingFrameFilter);
+
   //Update applogic to be able to use function only define in applogic.
-  pqLidarViewManager::instance()->runPython(QString("lv.UpdateApplogicReader('%1', '%2')\n").arg(lidarName, posOrName));
+  pqLidarViewManager::instance()->runPython(QString("lv.UpdateApplogicReader('%1', '%2', '%3')\n").arg(lidarName, posOrName, trailingFrameName));
+
+  // Show the trailing frame
+  controller->Show(trailingFrameFilter->getSourceProxy(), 0, view->getViewProxy());
+  pqActiveObjects::instance().setActiveSource(trailingFrameFilter);
 
   // Remove the handler so the user can interact with VeloView again (pushing any button)
   handler->RemoveObserver(tag);
