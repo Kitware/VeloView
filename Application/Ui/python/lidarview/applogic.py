@@ -1655,13 +1655,13 @@ def onToogleAdvancedGUI(updateSettings = True):
   """ Switch the GUI between advanced and classic mode"""
   # hide/show Sources menu
   menuSources = getMainWindow().findChild("QMenu", "menuSources").menuAction()
-  menuSources.visible = False # not menuSources.visible
+  menuSources.visible = not menuSources.visible
   # hide/show Filters menu
   menuFilters = getMainWindow().findChild("QMenu", "menuFilters").menuAction()
-  menuFilters.visible = False # not menuFilters.visible
+  menuFilters.visible = not menuFilters.visible
   # hide/show Advance menu
   menuAdvance = getMainWindow().findChild("QMenu", "menuAdvance").menuAction()
-  menuAdvance.visible = False # not menuAdvance.visible
+  menuAdvance.visible = not menuAdvance.visible
   # hide/show view decorator
   getMainWindow().centralWidget().toggleWidgetDecoration()
   # hide/show some views
