@@ -69,6 +69,7 @@ void lqOpenSensorReaction::onTriggered()
   // To get the pqPipelineSource modified with the new property, you have to connect to the signal
   // "dataUpdated" of the pqServerManagerModel
   pqPipelineSource* lidarSource = builder->createSource("sources", "LidarStream", server);
+  lidarSource->setModifiedState(pqProxy::UNMODIFIED);
   QString lidarName = lidarSource->getSMName();
   controller->Show(lidarSource->getSourceProxy(), 0, view->getViewProxy());
 
