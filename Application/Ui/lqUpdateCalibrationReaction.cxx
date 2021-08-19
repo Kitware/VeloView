@@ -185,6 +185,7 @@ void lqUpdateCalibrationReaction::UpdateCalibration(pqPipelineSource* & lidarSou
       {
         // If the Lidar Source is a stream, we created a Position Orientation Stream
         posOrSource = builder->createSource("sources", "PositionOrientationStream", server);
+        posOrSource->setModifiedState(pqProxy::UNMODIFIED);
         posOrProxy = posOrSource->getProxy();
         posOrSource->getProxy()->InvokeCommand("Start");
       }
