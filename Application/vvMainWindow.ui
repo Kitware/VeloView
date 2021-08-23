@@ -52,6 +52,9 @@
      <addaction name="actionSavePCAP"/>
      <addaction name="actionSaveCSV"/>
      <addaction name="actionSavePositionCSV"/>
+     <addaction name="actionSavePCD"/>
+     <addaction name="actionSavePLY"/>
+     <addaction name="actionSaveLAS"/>
     </widget>
     <widget class="QMenu" name="menu_Open">
      <property name="title">
@@ -564,6 +567,39 @@
    </property>
    <property name="toolTip">
     <string>Save PCAP</string>
+   </property>
+  </action>
+  <action name="actionSavePCD">
+   <property name="text">
+    <string>Save PCD...</string>
+   </property>
+   <property name="iconText">
+    <string>Save PCD</string>
+   </property>
+   <property name="toolTip">
+    <string>Save PCD</string>
+   </property>
+  </action>
+  <action name="actionSavePLY">
+   <property name="text">
+    <string>Save PLY...</string>
+   </property>
+   <property name="iconText">
+    <string>Save PLY</string>
+   </property>
+   <property name="toolTip">
+    <string>Save PLY</string>
+   </property>
+  </action>
+  <action name="actionSaveLAS">
+   <property name="text">
+    <string>Save LAS...</string>
+   </property>
+   <property name="iconText">
+    <string>Save LAS</string>
+   </property>
+   <property name="toolTip">
+    <string>Save LAS</string>
    </property>
   </action>
   <action name="actionAbout_LidarView">
