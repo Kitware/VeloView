@@ -23,7 +23,7 @@ class vvCalibrationDialog : public QDialog
   Q_OBJECT
 
 public:
-  vvCalibrationDialog(QWidget* p = 0);
+  vvCalibrationDialog(QWidget* p = 0, bool AdvancedVisible = true);
   vvCalibrationDialog(vtkSMProxy * lidarProxy, vtkSMProxy * GPSProxy, QWidget* p = 0);
 
   virtual ~vvCalibrationDialog();
