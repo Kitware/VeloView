@@ -162,7 +162,6 @@ void lqUpdateCalibrationReaction::UpdateCalibration(pqPipelineSource* & lidarSou
                                                      dialog.isCrashAnalysing(), dialog.isEnableMultiSensors());
 
   lidarProxy->UpdateSelfAndAllInputs();
-  lidarSource->updatePipeline();
 
   // The user can chose to enable the gps packet interpretation in the dialog.
   // This is why we create here the gps source if it's not already exist
@@ -211,9 +210,6 @@ void lqUpdateCalibrationReaction::UpdateCalibration(pqPipelineSource* & lidarSou
                                               dialog.gpsRoll(), dialog.gpsPitch(), dialog.gpsYaw());
 
     posOrProxy->UpdateSelfAndAllInputs();
-    posOrSource->updatePipeline();
-
-    pqApplicationCore::instance()->render();
 
     // Set the Position Orientation Stream Associated to the lidar
     lqSensorListWidget * listSensor = lqSensorListWidget::instance();
@@ -253,12 +249,16 @@ void lqUpdateCalibrationReaction::UpdateExistingSource(pqPipelineSource* & lidar
 
   UpdateCalibration(lidarSource, posOrSource, dialog);
 
+  lidarSource->updatePipeline();
+
   // Update UI
   pqView* view = pqActiveObjects::instance().activeView();
   vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
+  pqApplicationCore::instance()->render();
 
   if(posOrSource && IsPositionOrientationProxy(posOrSource->getProxy()))
   {
+    posOrSource->updatePipeline();
     controller->Show(posOrSource->getSourceProxy(), 0, view->getViewProxy());
   }
 }
