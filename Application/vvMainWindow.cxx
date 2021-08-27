@@ -39,6 +39,7 @@
 #include "lqLidarStreamColorByInitBehavior.h"
 #include "lqSaveLidarFrameReaction.h"
 #include "lqSaveLASReaction.h"
+#include "lqSwitchInterpreterBehavior.h"
 
 #include <vtkSMProxyManager.h>
 #include <vtkSMSessionProxyManager.h>
@@ -257,6 +258,7 @@ private:
     new lqUpdateCalibrationReaction(this->Ui.actionChoose_Calibration_File);
 
     new lqLidarStreamColorByInitBehavior();
+    new lqSwitchInterpreterBehavior();
 
     // Specify each Properties Panel as we do want to present one panel per dock
     this->Ui.propertiesPanel->setPanelMode(pqPropertiesPanel::SOURCE_PROPERTIES);
