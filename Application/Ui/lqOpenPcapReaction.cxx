@@ -112,7 +112,6 @@ void lqOpenPcapReaction::createSourceFromFile(QString fileName)
   vtkNew<vtkObserver> obs;
   unsigned long tag = handler->AddObserver(vtkCommand::ProgressEvent, obs);
 
-
   // Remove all Streams (and every filter depending on them) from pipeline Browser
   // Thanks to the lqSensorListWidget,
   // if a LidarStream is delete, it will automatically delete its PositionOrientationStream.
@@ -150,9 +149,11 @@ void lqOpenPcapReaction::createSourceFromFile(QString fileName)
 
   if (posOrSource)
   {
+    posOrSource->updatePipeline();
     posOrName = posOrSource->getSMName();
     controller->Show(posOrSource->getSourceProxy(), 0, view->getViewProxy());
   }
+
 
   // Create the trailing Frame filter on the output of the LidarReader
   QMap<QString, QList<pqOutputPort*> > namedInputs;
@@ -172,6 +173,7 @@ void lqOpenPcapReaction::createSourceFromFile(QString fileName)
   // Show the trailing frame
   controller->Show(trailingFrameFilter->getSourceProxy(), 0, view->getViewProxy());
   pqActiveObjects::instance().setActiveSource(trailingFrameFilter);
+  pqApplicationCore::instance()->render();
 
   // Remove the handler so the user can interact with VeloView again (pushing any button)
   handler->RemoveObserver(tag);

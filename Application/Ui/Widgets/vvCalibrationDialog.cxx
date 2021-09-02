@@ -436,13 +436,16 @@ QListWidgetItem* createEntry(QString path, bool useBaseName)
 }
 
 //-----------------------------------------------------------------------------
-vvCalibrationDialog::vvCalibrationDialog(QWidget* p)
+vvCalibrationDialog::vvCalibrationDialog(QWidget* p,  bool AdvancedVisible)
   : QDialog(p)
   , Internal(new pqInternal)
 {
   this->Internal->setupUi(this);
   this->setDefaultConfiguration();
   QListWidgetItem* liveCalibrationItem = new QListWidgetItem();
+
+  this->Internal->AdvancedConfiguration->setCheckable(AdvancedVisible);
+  this->Internal->AdvancedConfiguration->setVisible(AdvancedVisible);
 
   // Without settings about the Crash Analysis option on the
   // user's computer, we want the software to not save the log

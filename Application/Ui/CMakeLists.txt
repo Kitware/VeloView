@@ -35,12 +35,15 @@ add_library(ApplicationUi
   vvPythonQtDecorators.h
   lqLidarStreamColorByInitBehavior.cxx
   lqLidarStreamColorByInitBehavior.h
+  SupportSwitchInterpreter/lqSwitchInterpreterBehavior.cxx
+  SupportSwitchInterpreter/lqSwitchInterpreterBehavior.h
   )
-target_link_libraries(ApplicationUi PUBLIC LidarPlugin ${PYTHONQT_LIBRARIES} lqApplicationComponents)
+target_link_libraries(ApplicationUi PUBLIC LidarPlugin ${PYTHONQT_LIBRARIES} lqApplicationComponents VelodynePlugin)
 target_include_directories(ApplicationUi PUBLIC
   ${PYTHONQT_INCLUDE_DIRS}
   ${CMAKE_CURRENT_SOURCE_DIR}
   ${CMAKE_CURRENT_SOURCE_DIR}/Widgets
+  ${CMAKE_CURRENT_SOURCE_DIR}/SupportSwitchInterpreter/
   ${CMAKE_CURRENT_BINARY_DIR}
   )
 include(GenerateExportHeader)
