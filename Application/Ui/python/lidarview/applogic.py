@@ -1852,6 +1852,7 @@ def end_cue(self):
     smp.GetAnimationScene().Cues.append(PythonAnimationCue1)
     # force to be consistant with the UI
     toggleRPM()
+    smp.SetActiveSource(None)
 
 
 def onIgnoreZeroDistances():
