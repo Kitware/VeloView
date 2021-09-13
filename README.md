@@ -88,3 +88,10 @@ to the version blob/master of LVCore but this has the big risk of giving a
 version ahead of what the user needs, thus desynced!
 This link is however useful in IDEs that support following links.
 -->
+
+# For Github users
+[Github](https://github.com/Kitware/VeloView) is a mirror of the
+[official repository](https://gitlab.kitware.com/LidarView/VeloView-Velodyne).
+We do not actively monitor issues or pull request on Github. Please use the
+[official repository](https://gitlab.kitware.com/LidarView/VeloView-Velodyne) to report issues or contributes fixes.
+
