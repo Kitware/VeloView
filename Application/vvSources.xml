@@ -1,4 +1,4 @@
-<!-- list of Sources copy past from paraview -->
+<!-- list of Sources copy pasted from paraview -->
 <ParaViewSources>
   <Proxy group="sources" name="GlyphSource2D" />
   <Proxy group="sources" name="VectorText" />
