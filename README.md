@@ -29,17 +29,12 @@ displayed point cloud can be exported with the touch of a button.
 
 # How to Obtain
 
-Binary installers for LidarView are available as community contributed
-applications:
+Binary installers for VeloView are available on this page: [https://gitlab.kitware.com/LidarView/VeloView-Velodyne/-/releases](https://gitlab.kitware.com/LidarView/VeloView-Velodyne/-/releases)
 
-* [Version 2.0 - Windows 64](http://www.paraview.org/paraview-downloads/download.php?submit=Download&version=v4.1&type=app&os=win64&downloadFile=LidarView-2.0.0-31032014-Windows-64bit.exe)
-* [Version 2.0 - Windows 32](http://www.paraview.org/paraview-downloads/download.php?submit=Download&version=v4.1&type=app&os=win32&downloadFile=LidarView-2.0.0-31032014-Windows-32bit.exe)
-* [Version 2.0 - Mac OSX 10.8](http://www.paraview.org/paraview-downloads/download.php?submit=Download&version=v4.1&type=app&os=osx&downloadFile=LidarView-2.0.0-31032014-Darwin-64bit.dmg)
-
-The source code for LidarView is made available under the Apache 2.0
+The source code for VeloView is made available under the Apache 2.0
 license.
 
-Sample data for LidarView can be obtained from
+Sample data for VeloView can be obtained from
 [MIDAS](http://www.midasplatform.org/) in the
 [Velodyne LiDAR
 collection](http://midas3.kitware.com/midas/community/29).
