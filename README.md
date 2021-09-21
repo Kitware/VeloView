@@ -27,19 +27,33 @@ displayed point cloud can be exported with the touch of a button.
 -   Show multiple frames of data simultaneously (*New in 2.0*)
 -   Show or hide a subset of lasers (*New in 2.0*)
 
-# How to Obtain
+# How to Get
 
 Binary installers for VeloView are available on this page: [https://gitlab.kitware.com/LidarView/VeloView-Velodyne/-/releases](https://gitlab.kitware.com/LidarView/VeloView-Velodyne/-/releases)
 
+VeloView has the same runtime requirements as LidarView, see [INSTALLATION.md](https://gitlab.kitware.com/LidarView/lidarview-core/-/blob/master/Documentation/INSTALLATION.md)
+
+# How to Build
+
+VeloView compilation follows the same steps as LidarView, see [Developper Guide](https://gitlab.kitware.com/LidarView/lidarview-core/-/blob/master/Documentation/LidarView_Developer_Guide.md)
+
 The source code for VeloView is made available under the Apache 2.0
 license.
+
+# How to Use
+
+Take a look at: [VeloView User Guide](https://gitlab.kitware.com/LidarView/VeloView-Velodyne/-/blob/master/Documentation/VeloView_User_Guide.pdf)
+
+Get started with SLAM using this Guide : [How to SLAM](https://gitlab.kitware.com/keu-computervision/slam/-/blob/master/paraview_wrapping/doc/How_to_SLAM_with_LidarView.md)
+
+See LidarView & SLAM in action in the [LidarView 2021 Webinar Video](https://vimeo.com/524848891)
 
 Sample data for VeloView can be obtained from
 [MIDAS](http://www.midasplatform.org/) in the
 [Velodyne LiDAR
 collection](http://midas3.kitware.com/midas/community/29).
 
-# How to use
+# Configuration Tips
 
 For "sensor streaming" (live display of sensor data) it
 is important to change the network settings of the Ethernet adapter
@@ -67,24 +81,11 @@ file is needed (the HDL-32E calibration values are already incorporated
 in LidarView) therefore select "NONE".
 * For HDL-64E data the correct
 calibration file for that sensor needs to be chosen. The calibration
-file can be found on the individual product CD that was send with the
+file can be found on the individual product CD that was sent with the
 HDL-64E sensor.
 
-# How to build
-
-Detailed instructions for building and packaging are available in the
-[LidarView Developer Guide (link non working in Gitlab UI)](
-LVCore/Documentation/LidarView_Developer_Guide.md).
-In Gitlab UI click `LVCore` above then `Documentation` then
-`LidarView_Developer_Guide.md`.
-<!--
-This link indeed does not work in Gitlab web UI. We could link relatively
-to the version blob/master of LVCore but this has the big risk of giving a
-version ahead of what the user needs, thus desynced!
-This link is however useful in IDEs that support following links.
--->
-
 # For Github users
+
 [Github](https://github.com/Kitware/VeloView) is a mirror of the
 [official repository](https://gitlab.kitware.com/LidarView/VeloView-Velodyne).
 We do not actively monitor issues or pull request on Github. Please use the
