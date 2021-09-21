@@ -8,8 +8,8 @@ endif()
 if(NOT LV_VERSION_FULL)
   message(FATAL_ERROR "LV_VERSION_ variables not set")
 endif()
-if(NOT LV_BUILD_ARCHITECTURE)
-  message(FATAL_ERROR "LV_BUILD_ARCHITECTURE not set")
+if(NOT LV_BUILD_PLATFORM)
+  message(FATAL_ERROR "LV_BUILD_PLATFORM not set")
 endif()
 
 add_subdirectory("Ui/")
@@ -37,7 +37,7 @@ paraview_client_add(
   VERSION ${LV_VERSION_FULL}
   APPLICATION_NAME "${SOFTWARE_NAME}"
   ORGANIZATION "${SOFTWARE_VENDOR}"
-  TITLE "${SOFTWARE_NAME} ${LV_VERSION_FULL} ${LV_BUILD_ARCHITECTURE}-bit"
+  TITLE "${SOFTWARE_NAME} ${LV_VERSION_FULL} ${LV_BUILD_PLATFORM}"
   SPLASH_IMAGE     "${CMAKE_CURRENT_SOURCE_DIR}/SoftwareInformation/Splash.jpg"
   BUNDLE_ICON      "${CMAKE_CURRENT_SOURCE_DIR}/logo.icns"
   APPLICATION_ICON "${CMAKE_CURRENT_SOURCE_DIR}/SoftwareInformation/logo.ico"

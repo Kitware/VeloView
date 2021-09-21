@@ -8,7 +8,7 @@ superbuild_add_project(lidarview
     #LidarView base configuration
     -DBUILD_SHARED_LIBS:BOOL=ON
     -DBUILD_TESTING:BOOL=OFF
-    -DLV_BUILD_ARCHITECTURE=${LV_BUILD_ARCHITECTURE}
+    -DLV_BUILD_PLATFORM=${LV_BUILD_PLATFORM}
     -Dsuperbuild_python_version=${superbuild_python_version}
     -DParaView_DIR:PATH=${SuperBuild_BINARY_DIR}/common-superbuild/paraview/build
     -DCMAKE_CXX_STANDARD:STRING=${CMAKE_CXX_STANDARD}
