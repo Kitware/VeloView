@@ -37,7 +37,7 @@ from PythonQt.paraview import vvCalibrationDialog, vvCropReturnsDialog, vvSelect
 # import the vtk wrapping of the Lidar Plugin
 # this enable to get the specific vtkObject behind a proxy via GetClientSideObject()
 # without this plugin, GetClientSideObject(), would return the first mother class known by paraview
-import LidarPluginPython
+import LidarPlugin.LidarCore
 
 import lidarview.planefit as planefit
 
@@ -84,8 +84,9 @@ class AppLogic(object):
         self.laserSelectionSession = {}
         self.gridPropertiesPersist = False
 
+        #Not plugins anymore, kept for future reference
         #smp.LoadPlugin(vtkGetFileNameFromPluginName('PointCloudPlugin'))
-        smp.LoadPlugin(vtkGetFileNameFromPluginName('EyeDomeLightingView'))
+        #smp.LoadPlugin(vtkGetFileNameFromPluginName('EyeDomeLightingView'))
 
 
     def createStatusBarWidgets(self):

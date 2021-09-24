@@ -1,4 +1,4 @@
-#Sanitize checks
+# Sanitize checks
 if(NOT LV_INSTALL_LIBRARY_DIR )
   message(FATAL_ERROR "LV_INSTALL_LIBRARY_DIR not set")
 endif()
@@ -8,11 +8,8 @@ endif()
 if(NOT LV_VERSION_FULL)
   message(FATAL_ERROR "LV_VERSION_ variables not set")
 endif()
-if(NOT LV_BUILD_ARCHITECTURE)
-  message(FATAL_ERROR "LV_BUILD_ARCHITECTURE not set")
-endif()
-if(NOT PARAVIEW_VERSION_MAJOR OR NOT PARAVIEW_VERSION_MINOR)
-  message(FATAL_ERROR "PARAVIEW_VERSION_ not set")
+if(NOT LV_BUILD_PLATFORM)
+  message(FATAL_ERROR "LV_BUILD_PLATFORM not set")
 endif()
 
 add_subdirectory("Ui/")
@@ -29,35 +26,33 @@ set (source_files
   vvMainWindow.h
   )
 
-# This ensure that build_paraview_client() adds an "forwarding path" to locate
-# paraview from installed location.
-set (PARAVIEW_INSTALL_LIB_DIR "lib/paraview-${PARAVIEW_VERSION_MAJOR}.${PARAVIEW_VERSION_MINOR}")
-
 # Please make sure to adapt the AboutDialog text in the followin file
 #  Lidar\python\lidarview\aboutDialog.py
 # You also need to change:
 #   - bottom_logo.png (bottom logo)
 
-build_paraview_client(${SOFTWARE_NAME}
-  TITLE "${SOFTWARE_NAME} ${LV_VERSION_FULL} ${LV_BUILD_ARCHITECTURE}-bit"
+paraview_client_add(
+  NAME ${SOFTWARE_NAME}
+  NAMESPACE "LidarView"
+  VERSION ${LV_VERSION_FULL}
+  APPLICATION_NAME "${SOFTWARE_NAME}"
   ORGANIZATION "${SOFTWARE_VENDOR}"
-  VERSION_MAJOR ${LV_VERSION_MAJOR}
-  VERSION_MINOR ${LV_VERSION_MINOR}
-  VERSION_PATCH ${LV_VERSION_PATCH}
-  PVMAIN_WINDOW vvMainWindow
-  PVMAIN_WINDOW_INCLUDE vvMainWindow.h
-  SPLASH_IMAGE "${CMAKE_CURRENT_SOURCE_DIR}/SoftwareInformation/Splash.jpg"
-  # right now the bundle's logo.icns file must be at the root of LidarView sources
-  # this problem is due to paraview/src/CMake/ParaViewBranding.cmake,
-  # on line: GET_FILENAME_COMPONENT(bundle_icon_file "${BPC_BUNDLE_ICON}" NAME)
-  BUNDLE_ICON "${CMAKE_CURRENT_SOURCE_DIR}/logo.icns"
+  TITLE "${SOFTWARE_NAME} ${LV_VERSION_FULL} ${LV_BUILD_PLATFORM}"
+  SPLASH_IMAGE     "${CMAKE_CURRENT_SOURCE_DIR}/SoftwareInformation/Splash.jpg"
+  BUNDLE_ICON      "${CMAKE_CURRENT_SOURCE_DIR}/logo.icns"
   APPLICATION_ICON "${CMAKE_CURRENT_SOURCE_DIR}/SoftwareInformation/logo.ico"
+
+  REQUIRED_PLUGINS LidarPlugin VelodynePlugin
+
+  MAIN_WINDOW_CLASS vvMainWindow
+  MAIN_WINDOW_INCLUDE vvMainWindow.h
   SOURCES ${source_files}
-  GUI_CONFIGURATION_XMLS
+  APPLICATION_XMLS
     ${CMAKE_CURRENT_SOURCE_DIR}/vvSources.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/vvFilters.xml
-  INSTALL_BIN_DIR "bin"
-  INSTALL_LIB_DIR ${LV_INSTALL_LIBRARY_DIR}
+
+  RUNTIME_DESTINATION ${LV_INSTALL_RUNTIME_DIR}
+  LIBRARY_DESTINATION ${LV_INSTALL_LIBRARY_DIR}
 )
 
 target_include_directories(${SOFTWARE_NAME} PUBLIC
@@ -65,17 +60,26 @@ target_include_directories(${SOFTWARE_NAME} PUBLIC
   ${CMAKE_CURRENT_BINARY_DIR})
 
 # We directly link against the plugin and import them statically.
-if(NOT PYTHONQTPLUGIN_LIBRARY OR NOT PYTHONQT_LIBRARIES)
-  message(FATAL_ERROR "PYTHONQTPLUGIN_LIBRARY OR PYTHONQT_LIBRARIES not set")
-endif()
-target_link_libraries(${SOFTWARE_NAME}
-  PUBLIC
-    LidarPlugin
-    ApplicationUi
-    VelodynePlugin
-    ${PYTHONQTPLUGIN_LIBRARY}
-    ${PYTHONQT_LIBRARIES}
-    lqApplicationComponents)
+target_link_libraries(${SOFTWARE_NAME} PUBLIC
+  Qt5::Core
+  Qt5::Widgets
+  Qt5::UiTools
+  Qt5::Gui
+  Qt5::Help
+  Qt5::Network
+  Qt5::Sql
+  Qt5::Svg
+  ParaView::pqCore
+  ParaView::pqWidgets
+  ParaView::pqComponents
+  ParaView::pqApplicationComponents
+  ParaView::pqPython
+  ParaView::pvpythonmodules
+  ParaView::PythonInitializer
+  PythonQtPlugin # The plugin is needed to be loaded statically
+  lqApplicationComponents #actually LVCore/ApplicationComponents
+  ApplicationUi
+  )
 
 set(USER_GUIDE_SRC "${LidarView_SOURCE_DIR}/Documentation/VeloView_User_Guide.pdf")
 

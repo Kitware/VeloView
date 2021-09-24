@@ -15,6 +15,8 @@
 
 #include "ui_vvCropReturnsDialog.h"
 
+#include <vtkSetGet.h> //vtkNotUsed
+
 #include <pqApplicationCore.h>
 #include <pqSettings.h>
 

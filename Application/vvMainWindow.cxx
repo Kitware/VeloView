@@ -60,7 +60,6 @@
 #include <pqPythonManager.h>
 #include <pqTabbedMultiViewWidget.h>
 #include <pqSetName.h>
-#include <vtkPVPlugin.h>
 #include <vtkSMPropertyHelper.h>
 #include "pqAxesToolbar.h"
 #include <pqParaViewBehaviors.h>
@@ -75,6 +74,7 @@
 #include <QMimeData>
 #include <QUrl>
 #include <QDockWidget>
+#include <QDragEnterEvent>
 
 #include <cassert>
 #include <iostream>
@@ -84,9 +84,9 @@
 #include "lqLidarCameraToolbar.h"
 
 // Declare the plugin to load.
-PV_PLUGIN_IMPORT_INIT(LidarPlugin);
+#define PARAVIEW_BUILDING_PLUGIN
+#include "vtkPVPlugin.h"
 PV_PLUGIN_IMPORT_INIT(PythonQtPlugin);
-PV_PLUGIN_IMPORT_INIT(VelodynePlugin);
 
 class vvMainWindow::pqInternals
 {
@@ -204,7 +204,7 @@ private:
     {
       if (keys.size() > 0)
       {
-        vtkGenericWarningMacro("Settings weren't set correctly. Clearing settings.")
+        vtkGenericWarningMacro("Settings weren't set correctly. Clearing settings.");
       }
 
       // As pqPersistentMainWindowStateBehavior is not created right now,
@@ -243,6 +243,9 @@ private:
       qobject_cast<pqRenderView*>(this->Builder->createView(pqRenderView::renderViewType(), this->Server));
     assert(this->MainView);
 
+    // Add view to layout
+    this->Builder->addToLayout(this->MainView);
+
     vtkSMPropertyHelper(this->MainView->getProxy(), "CenterAxesVisibility").Set(0);
     double bgcolor[3] = { 0, 0, 0 };
     vtkSMPropertyHelper(this->MainView->getProxy(), "Background").Set(bgcolor, 3);
@@ -274,8 +277,9 @@ private:
     QAction* tempDeleteAction = new QAction(window);
     pqDeleteReaction* handler = new pqDeleteReaction(tempDeleteAction);
     handler->connect(this->Ui.propertiesPanel,
-      SIGNAL(deleteRequested(pqPipelineSource*)),
-      SLOT(deleteSource(pqPipelineSource*)));
+      SIGNAL(deleteRequested(pqProxy*)),
+      SLOT(deleteSource(pqProxy*)));
+
 
     // specify how corner are occupied by the dockable widget
     window->setCorner(Qt::TopLeftCorner, Qt::LeftDockWidgetArea);
@@ -440,9 +444,7 @@ vvMainWindow::vvMainWindow()
   this->connect(this->Internals->Ui.outputWidget, SIGNAL(messageDisplayed(const QString&, int)),
     SLOT(handleMessage(const QString&, int)));
 
-  PV_PLUGIN_IMPORT(LidarPlugin);
   PV_PLUGIN_IMPORT(PythonQtPlugin);
-  PV_PLUGIN_IMPORT(VelodynePlugin);
 
   // Branding
   std::stringstream ss;

@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from __future__ import print_function
+#import VelodynePlugin.VelodyneLidar as vpmod #wip unused ?
 import paraview.simple as smp
 from paraview import vtk
 

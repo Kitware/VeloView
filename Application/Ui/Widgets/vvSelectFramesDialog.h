@@ -70,7 +70,7 @@ public:
   bool frameTransformVisibility() const;
 
 public slots:
-  virtual void accept();
+  virtual void accept() override;
 
   void setFrameMode(int frameMode);
   void setFrameStart(int frameStart);
@@ -90,7 +90,7 @@ public slots:
   void restoreState();
 
 protected:
-  virtual void showEvent(QShowEvent*);
+  virtual void showEvent(QShowEvent*) override;
 
 private:
   class pqInternal;
